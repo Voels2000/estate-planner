@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [householdId, setHouseholdId] = useState<string | null>(null)
 
   // Profile fields
   const [fullName, setFullName] = useState('')
@@ -52,7 +53,6 @@ export default function ProfilePage() {
   const [stateCompare, setStateCompare] = useState('')
   const [inflationRate, setInflationRate] = useState('2.5')
 
-  // Load existing data
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -77,22 +77,23 @@ export default function ProfilePage() {
         .single()
 
       if (household) {
+        setHouseholdId(household.id)
         setHouseholdName(household.name ?? '')
         setPerson1Name(household.person1_name ?? '')
-        setPerson1BirthYear(household.person1_birth_year ?? '')
-        setPerson1RetirementAge(household.person1_retirement_age ?? '')
-        setPerson1SSClaimingAge(household.person1_ss_claiming_age ?? '')
-        setPerson1LongevityAge(household.person1_longevity_age ?? '')
+        setPerson1BirthYear(household.person1_birth_year?.toString() ?? '')
+        setPerson1RetirementAge(household.person1_retirement_age?.toString() ?? '')
+        setPerson1SSClaimingAge(household.person1_ss_claiming_age?.toString() ?? '')
+        setPerson1LongevityAge(household.person1_longevity_age?.toString() ?? '')
         setHasSpouse(household.has_spouse ?? false)
         setPerson2Name(household.person2_name ?? '')
-        setPerson2BirthYear(household.person2_birth_year ?? '')
-        setPerson2RetirementAge(household.person2_retirement_age ?? '')
-        setPerson2SSClaimingAge(household.person2_ss_claiming_age ?? '')
-        setPerson2LongevityAge(household.person2_longevity_age ?? '')
+        setPerson2BirthYear(household.person2_birth_year?.toString() ?? '')
+        setPerson2RetirementAge(household.person2_retirement_age?.toString() ?? '')
+        setPerson2SSClaimingAge(household.person2_ss_claiming_age?.toString() ?? '')
+        setPerson2LongevityAge(household.person2_longevity_age?.toString() ?? '')
         setFilingStatus(household.filing_status ?? 'single')
         setStatePrimary(household.state_primary ?? '')
         setStateCompare(household.state_compare ?? '')
-        setInflationRate(household.inflation_rate ?? '2.5')
+        setInflationRate(household.inflation_rate?.toString() ?? '2.5')
       }
 
       setIsLoading(false)
@@ -113,39 +114,53 @@ export default function ProfilePage() {
       // Save profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
+        .update({
           full_name: fullName,
           email: email,
           updated_at: new Date().toISOString(),
         })
+        .eq('id', user.id)
 
       if (profileError) throw profileError
 
-      // Save household
-      const { error: householdError } = await supabase
-        .from('households')
-        .upsert({
-          owner_id: user.id,
-          name: householdName || `${fullName}'s Household`,
-          person1_name: person1Name,
-          person1_birth_year: parseInt(person1BirthYear) || null,
-          person1_retirement_age: parseInt(person1RetirementAge) || null,
-          person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
-          person1_longevity_age: parseInt(person1LongevityAge) || null,
-          has_spouse: hasSpouse,
-          person2_name: hasSpouse ? person2Name : null,
-          person2_birth_year: hasSpouse ? parseInt(person2BirthYear) || null : null,
-          person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
-          person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
-          person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
-          filing_status: filingStatus,
-          state_primary: statePrimary,
-          state_compare: stateCompare || null,
-          inflation_rate: parseFloat(inflationRate) || 2.5,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'owner_id' })
+      // Household data
+      const householdData = {
+        owner_id: user.id,
+        name: householdName || `${fullName}'s Household`,
+        person1_name: person1Name,
+        person1_birth_year: parseInt(person1BirthYear) || null,
+        person1_retirement_age: parseInt(person1RetirementAge) || null,
+        person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
+        person1_longevity_age: parseInt(person1LongevityAge) || null,
+        has_spouse: hasSpouse,
+        person2_name: hasSpouse ? person2Name : null,
+        person2_birth_year: hasSpouse ? parseInt(person2BirthYear) || null : null,
+        person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
+        person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
+        person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
+        filing_status: filingStatus,
+        state_primary: statePrimary,
+        state_compare: stateCompare || null,
+        inflation_rate: parseFloat(inflationRate) || 2.5,
+        updated_at: new Date().toISOString(),
+      }
+
+      let householdError
+
+      if (householdId) {
+        // Update existing household
+        const { error } = await supabase
+          .from('households')
+          .update(householdData)
+          .eq('id', householdId)
+        householdError = error
+      } else {
+        // Insert new household
+        const { error } = await supabase
+          .from('households')
+          .insert(householdData)
+        householdError = error
+      }
 
       if (householdError) throw householdError
 
@@ -179,196 +194,120 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
 
-        {/* Personal Info */}
         <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Personal Information
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Full Name" required>
-              <input
-                type="text"
-                required
-                value={fullName}
+              <input type="text" required value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className={inputClass}
-                placeholder="Jane Doe"
-              />
+                className={inputClass} placeholder="Jane Doe" />
             </Field>
             <Field label="Email">
-              <input
-                type="email"
-                value={email}
+              <input type="email" value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                placeholder="you@example.com"
-              />
+                className={inputClass} placeholder="you@example.com" />
             </Field>
             <Field label="Household Name">
-              <input
-                type="text"
-                value={householdName}
+              <input type="text" value={householdName}
                 onChange={(e) => setHouseholdName(e.target.value)}
-                className={inputClass}
-                placeholder="The Smith Household"
-              />
+                className={inputClass} placeholder="The Smith Household" />
             </Field>
           </div>
         </section>
 
-        {/* Person 1 */}
         <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Your Information
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Your Name" required>
-              <input
-                type="text"
-                required
-                value={person1Name}
+              <input type="text" required value={person1Name}
                 onChange={(e) => setPerson1Name(e.target.value)}
-                className={inputClass}
-                placeholder="Jane"
-              />
+                className={inputClass} placeholder="Jane" />
             </Field>
             <Field label="Birth Year" required>
-              <input
-                type="number"
-                min="1920" max="2005"
-                required
-                value={person1BirthYear}
+              <input type="number" min="1920" max="2005" required value={person1BirthYear}
                 onChange={(e) => setPerson1BirthYear(e.target.value)}
-                className={inputClass}
-                placeholder="1970"
-              />
+                className={inputClass} placeholder="1970" />
             </Field>
             <Field label="Retirement Age">
-              <input
-                type="number"
-                min="50" max="80"
-                value={person1RetirementAge}
+              <input type="number" min="50" max="80" value={person1RetirementAge}
                 onChange={(e) => setPerson1RetirementAge(e.target.value)}
-                className={inputClass}
-                placeholder="65"
-              />
+                className={inputClass} placeholder="65" />
             </Field>
             <Field label="Social Security Claiming Age">
-              <input
-                type="number"
-                min="62" max="70"
-                value={person1SSClaimingAge}
+              <input type="number" min="62" max="70" value={person1SSClaimingAge}
                 onChange={(e) => setPerson1SSClaimingAge(e.target.value)}
-                className={inputClass}
-                placeholder="67"
-              />
+                className={inputClass} placeholder="67" />
             </Field>
             <Field label="Longevity Age (life expectancy)">
-              <input
-                type="number"
-                min="70" max="110"
-                value={person1LongevityAge}
+              <input type="number" min="70" max="110" value={person1LongevityAge}
                 onChange={(e) => setPerson1LongevityAge(e.target.value)}
-                className={inputClass}
-                placeholder="90"
-              />
+                className={inputClass} placeholder="90" />
             </Field>
           </div>
         </section>
 
-        {/* Spouse toggle */}
         <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <input
-              id="hasSpouse"
-              type="checkbox"
-              checked={hasSpouse}
+            <input id="hasSpouse" type="checkbox" checked={hasSpouse}
               onChange={(e) => setHasSpouse(e.target.checked)}
-              className="h-4 w-4 rounded border-neutral-300"
-            />
+              className="h-4 w-4 rounded border-neutral-300" />
             <label htmlFor="hasSpouse" className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
               Include Spouse / Partner
             </label>
           </div>
-
           {hasSpouse && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Spouse Name">
-                <input
-                  type="text"
-                  value={person2Name}
+                <input type="text" value={person2Name}
                   onChange={(e) => setPerson2Name(e.target.value)}
-                  className={inputClass}
-                  placeholder="John"
-                />
+                  className={inputClass} placeholder="John" />
               </Field>
               <Field label="Spouse Birth Year">
-                <input
-                  type="number"
-                  min="1920" max="2005"
-                  value={person2BirthYear}
+                <input type="number" min="1920" max="2005" value={person2BirthYear}
                   onChange={(e) => setPerson2BirthYear(e.target.value)}
-                  className={inputClass}
-                  placeholder="1968"
-                />
+                  className={inputClass} placeholder="1968" />
               </Field>
               <Field label="Spouse Retirement Age">
-                <input
-                  type="number"
-                  min="50" max="80"
-                  value={person2RetirementAge}
+                <input type="number" min="50" max="80" value={person2RetirementAge}
                   onChange={(e) => setPerson2RetirementAge(e.target.value)}
-                  className={inputClass}
-                  placeholder="65"
-                />
+                  className={inputClass} placeholder="65" />
               </Field>
               <Field label="Spouse SS Claiming Age">
-                <input
-                  type="number"
-                  min="62" max="70"
-                  value={person2SSClaimingAge}
+                <input type="number" min="62" max="70" value={person2SSClaimingAge}
                   onChange={(e) => setPerson2SSClaimingAge(e.target.value)}
-                  className={inputClass}
-                  placeholder="67"
-                />
+                  className={inputClass} placeholder="67" />
               </Field>
               <Field label="Spouse Longevity Age">
-                <input
-                  type="number"
-                  min="70" max="110"
-                  value={person2LongevityAge}
+                <input type="number" min="70" max="110" value={person2LongevityAge}
                   onChange={(e) => setPerson2LongevityAge(e.target.value)}
-                  className={inputClass}
-                  placeholder="88"
-                />
+                  className={inputClass} placeholder="88" />
               </Field>
             </div>
           )}
         </section>
 
-        {/* Tax & Location */}
         <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Tax & Location
+            Tax &amp; Location
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Filing Status">
-              <select
-                value={filingStatus}
+              <select value={filingStatus}
                 onChange={(e) => setFilingStatus(e.target.value)}
-                className={inputClass}
-              >
+                className={inputClass}>
                 {FILING_STATUSES.map((s) => (
                   <option key={s} value={s}>{FILING_STATUS_LABELS[s]}</option>
                 ))}
               </select>
             </Field>
             <Field label="Primary State">
-              <select
-                value={statePrimary}
+              <select value={statePrimary}
                 onChange={(e) => setStatePrimary(e.target.value)}
-                className={inputClass}
-              >
+                className={inputClass}>
                 <option value="">Select state</option>
                 {US_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -376,11 +315,9 @@ export default function ProfilePage() {
               </select>
             </Field>
             <Field label="Compare State (optional)">
-              <select
-                value={stateCompare}
+              <select value={stateCompare}
                 onChange={(e) => setStateCompare(e.target.value)}
-                className={inputClass}
-              >
+                className={inputClass}>
                 <option value="">None</option>
                 {US_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -388,14 +325,9 @@ export default function ProfilePage() {
               </select>
             </Field>
             <Field label="Inflation Rate (%)">
-              <input
-                type="number"
-                min="0" max="20" step="0.1"
-                value={inflationRate}
+              <input type="number" min="0" max="20" step="0.1" value={inflationRate}
                 onChange={(e) => setInflationRate(e.target.value)}
-                className={inputClass}
-                placeholder="2.5"
-              />
+                className={inputClass} placeholder="2.5" />
             </Field>
           </div>
         </section>
@@ -410,11 +342,8 @@ export default function ProfilePage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
+        <button type="submit" disabled={isSubmitting}
+          className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition">
           {isSubmitting ? 'Saving...' : 'Save Profile'}
         </button>
       </form>
