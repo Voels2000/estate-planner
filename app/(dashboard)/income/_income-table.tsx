@@ -1,88 +1,114 @@
 'use client'
 
-import type { IncomeRow } from '@/lib/validations/income'
-import { incomeSourceLabels } from '@/lib/validations/income'
+import { incomeSourceLabels, type IncomeRow } from '@/lib/validations/income'
 
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
-type Props = {
+type IncomeTableProps = {
   income: IncomeRow[]
+  onEdit: (row: IncomeRow) => void
+  onDelete: (id: string) => void
+  deleteIncome: (id: string, ownerId: string) => Promise<void>
+  ownerId: string
 }
 
-export function IncomeTable({ income }: Props) {
+export function IncomeTable({
+  income,
+  onEdit,
+  onDelete,
+  deleteIncome,
+  ownerId,
+}: IncomeTableProps) {
+  async function handleDelete(id: string) {
+    if (!confirm('Remove this income entry?')) return
+    try {
+      await deleteIncome(id, ownerId)
+      onDelete(id)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete')
+    }
+  }
+
   if (income.length === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          No income streams yet. Add your first income to get started.
-        </p>
-      </div>
+      <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+        No income entries yet. Add one to get started.
+      </p>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+    <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
       <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-        <thead className="bg-zinc-50 dark:bg-zinc-900/80">
+        <thead className="bg-zinc-50 dark:bg-zinc-800/50">
           <tr>
             <th
               scope="col"
-              className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
             >
               Source
             </th>
             <th
               scope="col"
-              className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
             >
               Amount
             </th>
             <th
               scope="col"
-              className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
             >
-              Start year
+              Start
             </th>
             <th
               scope="col"
-              className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
             >
-              End year
+              End
             </th>
             <th
               scope="col"
-              className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
             >
-              Inflation adjust
+              Inflation
+            </th>
+            <th scope="col" className="relative px-4 py-3">
+              <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-950">
+        <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
           {income.map((row) => (
-            <tr key={row.id} className="text-zinc-900 dark:text-zinc-100">
-              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
-                {row.source && row.source in incomeSourceLabels
-                  ? incomeSourceLabels[row.source as keyof typeof incomeSourceLabels]
-                  : row.source ?? '—'}
+            <tr key={row.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+              <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100">
+                {row.source ? incomeSourceLabels[row.source as keyof typeof incomeSourceLabels] ?? row.source : '—'}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                {formatCurrency(Number(row.amount))}
+              <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                ${Number(row.amount).toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
+              <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 {row.start_year ?? '—'}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
+              <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 {row.end_year ?? '—'}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
+              <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 {row.inflation_adjust ? 'Yes' : 'No'}
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                <button
+                  type="button"
+                  onClick={() => onEdit(row)}
+                  className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                >
+                  Edit
+                </button>
+                <span className="mx-2 text-zinc-300 dark:text-zinc-600">|</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(row.id)}
+                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}

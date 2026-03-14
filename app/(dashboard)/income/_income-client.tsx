@@ -2,47 +2,68 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { IncomeTable } from './_income-table'
-import { AddIncomeModal } from './_add-income-modal'
 import type { IncomeRow } from '@/lib/validations/income'
+import { AddIncomeModal } from './_add-income-modal'
+import { IncomeTable } from './_income-table'
+import { addIncome, updateIncome, deleteIncome } from './actions'
 
-type Props = {
+type IncomeClientProps = {
   income: IncomeRow[]
   ownerId: string
 }
 
-export function IncomeClient({ income, ownerId }: Props) {
+export function IncomeClient({ income, ownerId }: IncomeClientProps) {
   const router = useRouter()
   const [modalOpen, setModalOpen] = useState(false)
+  const [editRow, setEditRow] = useState<IncomeRow | null>(null)
 
   function handleSuccess() {
     router.refresh()
   }
 
+  function openAdd() {
+    setEditRow(null)
+    setModalOpen(true)
+  }
+
+  function openEdit(row: IncomeRow) {
+    setEditRow(row)
+    setModalOpen(true)
+  }
+
+  function closeModal() {
+    setModalOpen(false)
+    setEditRow(null)
+  }
+
   return (
     <>
-      <div className="mt-6">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {income.length} income stream{income.length !== 1 ? 's' : ''}
-          </p>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-          >
-            Add income
-          </button>
-        </div>
-        <div className="mt-4">
-          <IncomeTable income={income} />
-        </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={openAdd}
+          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
+          Add income
+        </button>
       </div>
+
+      <IncomeTable
+        income={income}
+        ownerId={ownerId}
+        onEdit={openEdit}
+        onDelete={() => router.refresh()}
+        deleteIncome={deleteIncome}
+      />
+
       <AddIncomeModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        isOpen={modalOpen}
+        onClose={closeModal}
         onSuccess={handleSuccess}
         ownerId={ownerId}
+        editRow={editRow}
+        addIncome={addIncome}
+        updateIncome={updateIncome}
       />
     </>
   )
