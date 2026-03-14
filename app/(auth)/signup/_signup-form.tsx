@@ -165,13 +165,13 @@ export function SignupForm() {
             disabled={isSubmitting}
             className="flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
-            {isSubmitting ? 'Creating account…' : 'Create account'}
+            {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           Already have an account?{' '}
-          
+          <a
             href="/login"
             className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"
           >
@@ -182,12 +182,3 @@ export function SignupForm() {
     </div>
   )
 }
-
-Cmd+S to save
-
-Then also do the same for app/signup/_signup-form.tsx — create that file and paste the exact same code in.
-Once both are saved, push:
-bashgit add -A
-git commit -m "fix: add signup form files"
-git push
-Let me know what Vercel says!
