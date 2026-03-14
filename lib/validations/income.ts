@@ -18,14 +18,12 @@ export const incomeSourceLabels: Record<IncomeSource, string> = {
   other: 'Other',
 }
 
-const currentYear = new Date().getFullYear()
-
 export const incomeFormSchema = z.object({
   source: z.enum(INCOME_SOURCES, { message: 'Please select a source' }),
-  amount: z.coerce.number().min(0, 'Amount must be 0 or greater'),
-  start_year: z.coerce.number().int().min(1900).max(2100),
+  amount: z.number().min(0, 'Amount must be 0 or greater'),
+  start_year: z.number().int().min(1900).max(2100),
   end_year: z.union([
-    z.coerce.number().int().min(1900).max(2100),
+    z.number().int().min(1900).max(2100),
     z.literal(''),
   ]),
   inflation_adjust: z.boolean(),
@@ -37,7 +35,7 @@ export const incomeFormSchema = z.object({
   { message: 'End year must be on or after start year', path: ['end_year'] }
 )
 
-export type IncomeFormValues = z.output<typeof incomeFormSchema>
+export type IncomeFormValues = z.infer<typeof incomeFormSchema>
 
 /** Row from Supabase (income table) for display */
 export type IncomeRow = {
