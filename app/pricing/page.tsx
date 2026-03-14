@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 const PLANS = [
   {
     id: 'consumer',
+    highlighted: false,
     name: 'Consumer',
     price: 19,
     description: 'For individuals planning their own estate.',
