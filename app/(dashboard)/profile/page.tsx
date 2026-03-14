@@ -1,23 +1,104 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const RISK_OPTIONS = ['Conservative', 'Moderate', 'Aggressive']
+const FILING_STATUSES = ['single', 'married_filing_jointly', 'married_filing_separately', 'head_of_household']
+const FILING_STATUS_LABELS: Record<string, string> = {
+  single: 'Single',
+  married_filing_jointly: 'Married Filing Jointly',
+  married_filing_separately: 'Married Filing Separately',
+  head_of_household: 'Head of Household',
+}
+
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC'
+]
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [currentAge, setCurrentAge] = useState('')
-  const [retirementAge, setRetirementAge] = useState('')
-  const [riskTolerance, setRiskTolerance] = useState('Moderate')
-  const [dependents, setDependents] = useState('')
-  const [maritalStatus, setMaritalStatus] = useState('Single')
+  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  // Profile fields
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+
+  // Household fields - Person 1
+  const [householdName, setHouseholdName] = useState('')
+  const [person1Name, setPerson1Name] = useState('')
+  const [person1BirthYear, setPerson1BirthYear] = useState('')
+  const [person1RetirementAge, setPerson1RetirementAge] = useState('')
+  const [person1SSClaimingAge, setPerson1SSClaimingAge] = useState('')
+  const [person1LongevityAge, setPerson1LongevityAge] = useState('')
+
+  // Household fields - Spouse
+  const [hasSpouse, setHasSpouse] = useState(false)
+  const [person2Name, setPerson2Name] = useState('')
+  const [person2BirthYear, setPerson2BirthYear] = useState('')
+  const [person2RetirementAge, setPerson2RetirementAge] = useState('')
+  const [person2SSClaimingAge, setPerson2SSClaimingAge] = useState('')
+  const [person2LongevityAge, setPerson2LongevityAge] = useState('')
+
+  // Household settings
+  const [filingStatus, setFilingStatus] = useState('single')
+  const [statePrimary, setStatePrimary] = useState('')
+  const [stateCompare, setStateCompare] = useState('')
+  const [inflationRate, setInflationRate] = useState('2.5')
+
+  // Load existing data
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setFullName(profile.full_name ?? '')
+        setEmail(profile.email ?? user.email ?? '')
+      }
+
+      const { data: household } = await supabase
+        .from('households')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single()
+
+      if (household) {
+        setHouseholdName(household.name ?? '')
+        setPerson1Name(household.person1_name ?? '')
+        setPerson1BirthYear(household.person1_birth_year ?? '')
+        setPerson1RetirementAge(household.person1_retirement_age ?? '')
+        setPerson1SSClaimingAge(household.person1_ss_claiming_age ?? '')
+        setPerson1LongevityAge(household.person1_longevity_age ?? '')
+        setHasSpouse(household.has_spouse ?? false)
+        setPerson2Name(household.person2_name ?? '')
+        setPerson2BirthYear(household.person2_birth_year ?? '')
+        setPerson2RetirementAge(household.person2_retirement_age ?? '')
+        setPerson2SSClaimingAge(household.person2_ss_claiming_age ?? '')
+        setPerson2LongevityAge(household.person2_longevity_age ?? '')
+        setFilingStatus(household.filing_status ?? 'single')
+        setStatePrimary(household.state_primary ?? '')
+        setStateCompare(household.state_compare ?? '')
+        setInflationRate(household.inflation_rate ?? '2.5')
+      }
+
+      setIsLoading(false)
+    }
+    load()
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,35 +108,64 @@ export default function ProfilePage() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { error: upsertError } = await supabase
+      // Save profile
+      const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
           full_name: fullName,
-          email,
-          phone,
-          current_age: parseInt(currentAge),
-          retirement_age: parseInt(retirementAge),
-          risk_tolerance: riskTolerance,
-          dependents: parseInt(dependents) || 0,
-          marital_status: maritalStatus,
+          email: email,
           updated_at: new Date().toISOString(),
         })
 
-      if (upsertError) throw upsertError
+      if (profileError) throw profileError
 
-      router.push('/dashboard')
-      router.refresh()
+      // Save household
+      const { error: householdError } = await supabase
+        .from('households')
+        .upsert({
+          owner_id: user.id,
+          name: householdName || `${fullName}'s Household`,
+          person1_name: person1Name,
+          person1_birth_year: parseInt(person1BirthYear) || null,
+          person1_retirement_age: parseInt(person1RetirementAge) || null,
+          person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
+          person1_longevity_age: parseInt(person1LongevityAge) || null,
+          has_spouse: hasSpouse,
+          person2_name: hasSpouse ? person2Name : null,
+          person2_birth_year: hasSpouse ? parseInt(person2BirthYear) || null : null,
+          person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
+          person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
+          person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
+          filing_status: filingStatus,
+          state_primary: statePrimary,
+          state_compare: stateCompare || null,
+          inflation_rate: parseFloat(inflationRate) || 2.5,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'owner_id' })
+
+      if (householdError) throw householdError
+
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/dashboard')
+        router.refresh()
+      }, 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-neutral-500">Loading...</p>
+      </div>
+    )
   }
 
   return (
@@ -63,134 +173,241 @@ export default function ProfilePage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Your Profile</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Complete your profile to get personalized estate and retirement planning.
+          Complete your household information for accurate projections.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-2xl border border-neutral-200 p-8 shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-8">
+
         {/* Personal Info */}
-        <div>
+        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Personal Information
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Full Name</label>
+            <Field label="Full Name" required>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                className={inputClass}
                 placeholder="Jane Doe"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+            </Field>
+            <Field label="Email">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                className={inputClass}
                 placeholder="you@example.com"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
+            </Field>
+            <Field label="Household Name">
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                placeholder="(555) 000-0000"
+                type="text"
+                value={householdName}
+                onChange={(e) => setHouseholdName(e.target.value)}
+                className={inputClass}
+                placeholder="The Smith Household"
               />
+            </Field>
+          </div>
+        </section>
+
+        {/* Person 1 */}
+        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
+            Your Information
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Your Name" required>
+              <input
+                type="text"
+                required
+                value={person1Name}
+                onChange={(e) => setPerson1Name(e.target.value)}
+                className={inputClass}
+                placeholder="Jane"
+              />
+            </Field>
+            <Field label="Birth Year" required>
+              <input
+                type="number"
+                min="1920" max="2005"
+                required
+                value={person1BirthYear}
+                onChange={(e) => setPerson1BirthYear(e.target.value)}
+                className={inputClass}
+                placeholder="1970"
+              />
+            </Field>
+            <Field label="Retirement Age">
+              <input
+                type="number"
+                min="50" max="80"
+                value={person1RetirementAge}
+                onChange={(e) => setPerson1RetirementAge(e.target.value)}
+                className={inputClass}
+                placeholder="65"
+              />
+            </Field>
+            <Field label="Social Security Claiming Age">
+              <input
+                type="number"
+                min="62" max="70"
+                value={person1SSClaimingAge}
+                onChange={(e) => setPerson1SSClaimingAge(e.target.value)}
+                className={inputClass}
+                placeholder="67"
+              />
+            </Field>
+            <Field label="Longevity Age (life expectancy)">
+              <input
+                type="number"
+                min="70" max="110"
+                value={person1LongevityAge}
+                onChange={(e) => setPerson1LongevityAge(e.target.value)}
+                className={inputClass}
+                placeholder="90"
+              />
+            </Field>
+          </div>
+        </section>
+
+        {/* Spouse toggle */}
+        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              id="hasSpouse"
+              type="checkbox"
+              checked={hasSpouse}
+              onChange={(e) => setHasSpouse(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300"
+            />
+            <label htmlFor="hasSpouse" className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+              Include Spouse / Partner
+            </label>
+          </div>
+
+          {hasSpouse && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Spouse Name">
+                <input
+                  type="text"
+                  value={person2Name}
+                  onChange={(e) => setPerson2Name(e.target.value)}
+                  className={inputClass}
+                  placeholder="John"
+                />
+              </Field>
+              <Field label="Spouse Birth Year">
+                <input
+                  type="number"
+                  min="1920" max="2005"
+                  value={person2BirthYear}
+                  onChange={(e) => setPerson2BirthYear(e.target.value)}
+                  className={inputClass}
+                  placeholder="1968"
+                />
+              </Field>
+              <Field label="Spouse Retirement Age">
+                <input
+                  type="number"
+                  min="50" max="80"
+                  value={person2RetirementAge}
+                  onChange={(e) => setPerson2RetirementAge(e.target.value)}
+                  className={inputClass}
+                  placeholder="65"
+                />
+              </Field>
+              <Field label="Spouse SS Claiming Age">
+                <input
+                  type="number"
+                  min="62" max="70"
+                  value={person2SSClaimingAge}
+                  onChange={(e) => setPerson2SSClaimingAge(e.target.value)}
+                  className={inputClass}
+                  placeholder="67"
+                />
+              </Field>
+              <Field label="Spouse Longevity Age">
+                <input
+                  type="number"
+                  min="70" max="110"
+                  value={person2LongevityAge}
+                  onChange={(e) => setPerson2LongevityAge(e.target.value)}
+                  className={inputClass}
+                  placeholder="88"
+                />
+              </Field>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Marital Status</label>
+          )}
+        </section>
+
+        {/* Tax & Location */}
+        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
+            Tax & Location
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Filing Status">
               <select
-                value={maritalStatus}
-                onChange={(e) => setMaritalStatus(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                value={filingStatus}
+                onChange={(e) => setFilingStatus(e.target.value)}
+                className={inputClass}
               >
-                {['Single', 'Married', 'Divorced', 'Widowed'].map((s) => (
+                {FILING_STATUSES.map((s) => (
+                  <option key={s} value={s}>{FILING_STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Primary State">
+              <select
+                value={statePrimary}
+                onChange={(e) => setStatePrimary(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select state</option>
+                {US_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Number of Dependents</label>
-              <input
-                type="number"
-                min="0"
-                value={dependents}
-                onChange={(e) => setDependents(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                placeholder="0"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Retirement Info */}
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Retirement Planning
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Current Age</label>
-              <input
-                type="number"
-                min="18"
-                max="100"
-                required
-                value={currentAge}
-                onChange={(e) => setCurrentAge(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                placeholder="45"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Target Retirement Age</label>
-              <input
-                type="number"
-                min="40"
-                max="100"
-                required
-                value={retirementAge}
-                onChange={(e) => setRetirementAge(e.target.value)}
-                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                placeholder="65"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Risk Tolerance */}
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Risk Tolerance
-          </h2>
-          <div className="grid grid-cols-3 gap-3">
-            {RISK_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setRiskTolerance(option)}
-                className={`rounded-lg border px-4 py-3 text-sm font-medium transition ${
-                  riskTolerance === option
-                    ? 'border-neutral-900 bg-neutral-900 text-white'
-                    : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400'
-                }`}
+            </Field>
+            <Field label="Compare State (optional)">
+              <select
+                value={stateCompare}
+                onChange={(e) => setStateCompare(e.target.value)}
+                className={inputClass}
               >
-                {option}
-              </button>
-            ))}
+                <option value="">None</option>
+                {US_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Inflation Rate (%)">
+              <input
+                type="number"
+                min="0" max="20" step="0.1"
+                value={inflationRate}
+                onChange={(e) => setInflationRate(e.target.value)}
+                className={inputClass}
+                placeholder="2.5"
+              />
+            </Field>
           </div>
-        </div>
+        </section>
 
         {error && (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+        )}
+
+        {success && (
+          <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            Profile saved! Redirecting to dashboard...
+          </p>
         )}
 
         <button
@@ -201,6 +418,19 @@ export default function ProfilePage() {
           {isSubmitting ? 'Saving...' : 'Save Profile'}
         </button>
       </form>
+    </div>
+  )
+}
+
+const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+
+function Field({ label, children, required }: { label: string, children: React.ReactNode, required?: boolean }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 mb-1">
+        {label}{required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      {children}
     </div>
   )
 }
