@@ -3,20 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const ASSET_TYPES = [
-  { value: 'primary_residence', label: 'Primary Residence' },
-  { value: 'secondary_residence', label: 'Secondary Residence' },
-  { value: 'investment_account', label: 'Investment Account' },
-  { value: 'retirement_401k', label: '401(k)' },
-  { value: 'retirement_ira', label: 'IRA' },
-  { value: 'retirement_roth', label: 'Roth IRA' },
-  { value: 'bank_account', label: 'Bank Account' },
-  { value: 'business', label: 'Business' },
-  { value: 'vehicle', label: 'Vehicle' },
-  { value: 'life_insurance', label: 'Life Insurance' },
-  { value: 'other', label: 'Other' },
-]
-
+type AssetType = { value: string; label: string }
 type Asset = {
   id: string
   owner_id: string
@@ -30,6 +17,7 @@ type Asset = {
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([])
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editAsset, setEditAsset] = useState<Asset | null>(null)
@@ -38,23 +26,23 @@ export default function AssetsPage() {
 
   const totalValue = assets.reduce((sum, a) => sum + Number(a.value), 0)
 
-  const loadAssets = useCallback(async () => {
+  const loadData = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data, error } = await supabase
-      .from('assets')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
+    const [{ data: assetsData, error: assetsError }, { data: typesData }] = await Promise.all([
+      supabase.from('assets').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('asset_types').select('value, label').order('sort_order'),
+    ])
 
-    if (error) setError(error.message)
-    else setAssets(data ?? [])
+    if (assetsError) setError(assetsError.message)
+    else setAssets(assetsData ?? [])
+    setAssetTypes(typesData ?? [])
     setIsLoading(false)
   }, [])
 
-  useEffect(() => { loadAssets() }, [loadAssets])
+  useEffect(() => { loadData() }, [loadData])
 
   async function handleDelete(id: string) {
     const supabase = createClient()
@@ -65,28 +53,20 @@ export default function AssetsPage() {
   }
 
   function getTypeLabel(type: string) {
-    return ASSET_TYPES.find((t) => t.value === type)?.label ?? type
+    return assetTypes.find((t) => t.value === type)?.label ?? type
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-neutral-500">Loading...</p>
-      </div>
-    )
+    return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>
   }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Assets</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Total value:{' '}
-            <span className="font-semibold text-neutral-900">
-              {formatDollars(totalValue)}
-            </span>
+            Total value: <span className="font-semibold text-neutral-900">{formatDollars(totalValue)}</span>
           </p>
         </div>
         <button
@@ -97,11 +77,8 @@ export default function AssetsPage() {
         </button>
       </div>
 
-      {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
-      )}
+      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
-      {/* Asset list */}
       {assets.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
           <div className="text-4xl mb-3">🏦</div>
@@ -114,9 +91,7 @@ export default function AssetsPage() {
             <thead className="bg-neutral-50">
               <tr>
                 {['Name', 'Type', 'Value', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                    {h}
-                  </th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -135,18 +110,8 @@ export default function AssetsPage() {
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => { setEditAsset(asset); setShowModal(true) }}
-                          className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(asset.id)}
-                          className="text-sm text-red-500 font-medium hover:text-red-700"
-                        >
-                          Delete
-                        </button>
+                        <button onClick={() => { setEditAsset(asset); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                        <button onClick={() => setConfirmDeleteId(asset.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
                       </span>
                     )}
                   </td>
@@ -157,31 +122,25 @@ export default function AssetsPage() {
         </div>
       )}
 
-      {/* Modal */}
       {showModal && (
         <AssetModal
           editAsset={editAsset}
-          assetTypes={ASSET_TYPES}
+          assetTypes={assetTypes}
           onClose={() => { setShowModal(false); setEditAsset(null) }}
-          onSave={() => { setShowModal(false); setEditAsset(null); loadAssets() }}
+          onSave={() => { setShowModal(false); setEditAsset(null); loadData() }}
         />
       )}
     </div>
   )
 }
 
-function AssetModal({
-  editAsset,
-  assetTypes,
-  onClose,
-  onSave,
-}: {
+function AssetModal({ editAsset, assetTypes, onClose, onSave }: {
   editAsset: Asset | null
-  assetTypes: { value: string; label: string }[]
+  assetTypes: AssetType[]
   onClose: () => void
   onSave: () => void
 }) {
-  const [type, setType] = useState(editAsset?.type ?? 'primary_residence')
+  const [type, setType] = useState(editAsset?.type ?? assetTypes[0]?.value ?? '')
   const [name, setName] = useState(editAsset?.name ?? '')
   const [value, setValue] = useState(editAsset?.value?.toString() ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -209,7 +168,6 @@ function AssetModal({
           .insert({ owner_id: user.id, type, name, value: parseFloat(value) })
         if (error) throw error
       }
-
       onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
@@ -218,58 +176,31 @@ function AssetModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-neutral-900">
-            {editAsset ? 'Edit Asset' : 'Add Asset'}
-          </h2>
+          <h2 className="text-base font-semibold text-neutral-900">{editAsset ? 'Edit Asset' : 'Add Asset'}</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
         </div>
-
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
-          )}
-
+          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Asset Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
-              {assetTypes.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
+              {assetTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Asset Name</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
-              placeholder="e.g. Primary Home, Fidelity 401k"
-            />
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)}
+              className={inputClass} placeholder="e.g. Primary Home, Fidelity 401k" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Current Value ($)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className={inputClass}
-              placeholder="0.00"
-            />
+            <input type="number" min="0" step="0.01" required value={value}
+              onChange={(e) => setValue(e.target.value)} className={inputClass} placeholder="0.00" />
           </div>
-
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition">
