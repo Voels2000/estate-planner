@@ -105,7 +105,7 @@ export function LoginForm() {
         <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           Don&apos;t have an account?{' '}
           <a
-            href="/(auth)/signup"
+            href="/signup
             className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"
           >
             Create one
