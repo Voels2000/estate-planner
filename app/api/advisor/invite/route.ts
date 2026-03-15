@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         advisor_id: user.id,
         client_id: null,
         invited_email: clientEmail.toLowerCase(),
-        status: 'pending',
+        status: 'active',
         client_status: 'inactive',
         invited_at: new Date().toISOString(),
         accepted_at: null,
