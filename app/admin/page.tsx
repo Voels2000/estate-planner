@@ -67,6 +67,7 @@ export default async function AdminPage() {
       projectionCount={projectionCount ?? 0}
       profiles={profiles ?? []}
       feedback={feedback ?? []}
+      appConfig={appConfig ?? []}
     />
   )
 }
