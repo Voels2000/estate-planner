@@ -19,6 +19,21 @@ const US_STATES = [
   'VA','WA','WV','WI','WY','DC'
 ]
 
+function calcSSBenefit(benefit62: string, benefit67: string, claimAge: string): number | null {
+  const b62 = parseFloat(benefit62)
+  const b67 = parseFloat(benefit67)
+  const age = parseInt(claimAge)
+  if (!b67 || !age) return null
+  if (age <= 62) return b62 || b67 * 0.7
+  if (age === 67) return b67
+  if (age < 67) {
+    const slope = (b67 - (b62 || b67 * 0.7)) / (67 - 62)
+    return (b62 || b67 * 0.7) + slope * (age - 62)
+  }
+  // age > 67: 8% per year increase
+  return b67 * (1 + 0.08 * (age - 67))
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -38,6 +53,8 @@ export default function ProfilePage() {
   const [person1RetirementAge, setPerson1RetirementAge] = useState('')
   const [person1SSClaimingAge, setPerson1SSClaimingAge] = useState('')
   const [person1LongevityAge, setPerson1LongevityAge] = useState('')
+  const [person1SSBenefit62, setPerson1SSBenefit62] = useState('')
+  const [person1SSBenefit67, setPerson1SSBenefit67] = useState('')
 
   // Household fields - Spouse
   const [hasSpouse, setHasSpouse] = useState(false)
@@ -46,6 +63,8 @@ export default function ProfilePage() {
   const [person2RetirementAge, setPerson2RetirementAge] = useState('')
   const [person2SSClaimingAge, setPerson2SSClaimingAge] = useState('')
   const [person2LongevityAge, setPerson2LongevityAge] = useState('')
+  const [person2SSBenefit62, setPerson2SSBenefit62] = useState('')
+  const [person2SSBenefit67, setPerson2SSBenefit67] = useState('')
 
   // Household settings
   const [filingStatus, setFilingStatus] = useState('single')
@@ -86,12 +105,16 @@ export default function ProfilePage() {
         setPerson1RetirementAge(household.person1_retirement_age?.toString() ?? '')
         setPerson1SSClaimingAge(household.person1_ss_claiming_age?.toString() ?? '')
         setPerson1LongevityAge(household.person1_longevity_age?.toString() ?? '')
+        setPerson1SSBenefit62(household.person1_ss_benefit_62?.toString() ?? '')
+        setPerson1SSBenefit67(household.person1_ss_benefit_67?.toString() ?? '')
         setHasSpouse(household.has_spouse ?? false)
         setPerson2Name(household.person2_name ?? '')
         setPerson2BirthYear(household.person2_birth_year?.toString() ?? '')
         setPerson2RetirementAge(household.person2_retirement_age?.toString() ?? '')
         setPerson2SSClaimingAge(household.person2_ss_claiming_age?.toString() ?? '')
         setPerson2LongevityAge(household.person2_longevity_age?.toString() ?? '')
+        setPerson2SSBenefit62(household.person2_ss_benefit_62?.toString() ?? '')
+        setPerson2SSBenefit67(household.person2_ss_benefit_67?.toString() ?? '')
         setFilingStatus(household.filing_status ?? 'single')
         setStatePrimary(household.state_primary ?? '')
         setStateCompare(household.state_compare ?? '')
@@ -136,12 +159,16 @@ export default function ProfilePage() {
         person1_retirement_age: parseInt(person1RetirementAge) || null,
         person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
         person1_longevity_age: parseInt(person1LongevityAge) || null,
+        person1_ss_benefit_62: parseFloat(person1SSBenefit62) || null,
+        person1_ss_benefit_67: parseFloat(person1SSBenefit67) || null,
         has_spouse: hasSpouse,
         person2_name: hasSpouse ? person2Name : null,
         person2_birth_year: hasSpouse ? parseInt(person2BirthYear) || null : null,
         person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
         person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
         person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
+        person2_ss_benefit_62: hasSpouse ? parseFloat(person2SSBenefit62) || null : null,
+        person2_ss_benefit_67: hasSpouse ? parseFloat(person2SSBenefit67) || null : null,
         filing_status: filingStatus,
         state_primary: statePrimary,
         state_compare: stateCompare || null,
@@ -169,6 +196,45 @@ export default function ProfilePage() {
       }
 
       if (householdError) throw householdError
+
+      // Auto-upsert SS income sources
+      const p1Benefit = calcSSBenefit(person1SSBenefit62, person1SSBenefit67, person1SSClaimingAge)
+      const p1ClaimAge = parseInt(person1SSClaimingAge)
+      const p1BirthYear = parseInt(person1BirthYear)
+      const p1StartYear = p1BirthYear && p1ClaimAge ? p1BirthYear + p1ClaimAge : null
+
+      if (p1Benefit != null && p1StartYear) {
+        const annualBenefit = Math.round(p1Benefit * 12)
+        await supabase.from('income').upsert({
+          owner_id: user.id,
+          source: 'social_security',
+          amount: annualBenefit,
+          start_year: p1StartYear,
+          end_year: null,
+          inflation_adjust: false,
+          ss_person: 'person1',
+        }, { onConflict: 'owner_id,ss_person' })
+      }
+
+      if (hasSpouse) {
+        const p2Benefit = calcSSBenefit(person2SSBenefit62, person2SSBenefit67, person2SSClaimingAge)
+        const p2ClaimAge = parseInt(person2SSClaimingAge)
+        const p2BirthYear = parseInt(person2BirthYear)
+        const p2StartYear = p2BirthYear && p2ClaimAge ? p2BirthYear + p2ClaimAge : null
+
+        if (p2Benefit != null && p2StartYear) {
+          const annualBenefit = Math.round(p2Benefit * 12)
+          await supabase.from('income').upsert({
+            owner_id: user.id,
+            source: 'social_security',
+            amount: annualBenefit,
+            start_year: p2StartYear,
+            end_year: null,
+            inflation_adjust: false,
+            ss_person: 'person2',
+          }, { onConflict: 'owner_id,ss_person' })
+        }
+      }
 
       setSuccess(true)
       setTimeout(() => {
@@ -253,6 +319,16 @@ export default function ProfilePage() {
                 onChange={(e) => setPerson1LongevityAge(e.target.value)}
                 className={inputClass} placeholder="90" />
             </Field>
+            <Field label="SS Monthly Benefit at Age 62 (from SS statement)">
+              <input type="number" min="0" value={person1SSBenefit62}
+                onChange={(e) => setPerson1SSBenefit62(e.target.value)}
+                className={inputClass} placeholder="e.g. 1800" />
+            </Field>
+            <Field label="SS Monthly Benefit at Age 67 (from SS statement)">
+              <input type="number" min="0" value={person1SSBenefit67}
+                onChange={(e) => setPerson1SSBenefit67(e.target.value)}
+                className={inputClass} placeholder="e.g. 2400" />
+            </Field>
           </div>
         </section>
 
@@ -291,6 +367,16 @@ export default function ProfilePage() {
                 <input type="number" min="70" max="110" value={person2LongevityAge}
                   onChange={(e) => setPerson2LongevityAge(e.target.value)}
                   className={inputClass} placeholder="88" />
+              </Field>
+              <Field label="Spouse SS Monthly Benefit at Age 62">
+                <input type="number" min="0" value={person2SSBenefit62}
+                  onChange={(e) => setPerson2SSBenefit62(e.target.value)}
+                  className={inputClass} placeholder="e.g. 1400" />
+              </Field>
+              <Field label="Spouse SS Monthly Benefit at Age 67">
+                <input type="number" min="0" value={person2SSBenefit67}
+                  onChange={(e) => setPerson2SSBenefit67(e.target.value)}
+                  className={inputClass} placeholder="e.g. 1900" />
               </Field>
             </div>
           )}
