@@ -236,12 +236,17 @@ export default function ProjectionsPage() {
         funds_outlast: (projections[projections.length - 1]?.portfolio ?? 0) > 0,
       }
 
+      const now = new Date()
+      const timestamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+        ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      const uniqueName = `${scenarioName} — ${timestamp}`
+
       const { error } = await supabase.from('projections').insert({
         household_id: household.id,
-        scenario_name: scenarioName,
+        scenario_name: uniqueName,
         projection_data: projections,
         summary,
-        calculated_at: new Date().toISOString(),
+        calculated_at: now.toISOString(),
       })
 
       if (error) throw error
