@@ -1,10 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip middleware for auth routes that handle codes/tokens
   if (
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/reset-password') ||
