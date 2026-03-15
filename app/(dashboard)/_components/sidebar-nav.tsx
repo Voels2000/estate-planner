@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { href: '/billing', label: 'Billing', icon: '💳' },
 ]
 
-export function SidebarNav({ user }: { user: User }) {
+export function SidebarNav({ user, role }: { user: User; role?: string }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -56,6 +56,32 @@ export function SidebarNav({ user }: { user: User }) {
             </Link>
           )
         })}
+        {role === 'financial_advisor' && (
+          <Link
+            href="/advisor"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              pathname === '/advisor' || pathname.startsWith('/advisor/')
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`}
+          >
+            <span className="text-base">💼</span>
+            Advisor Portal
+          </Link>
+        )}
+        {role === 'admin' && (
+          <Link
+            href="/admin"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              pathname === '/admin'
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`}
+          >
+            <span className="text-base">⚙️</span>
+            Admin Portal
+          </Link>
+        )}
       </nav>
 
       {/* Sign out */}
