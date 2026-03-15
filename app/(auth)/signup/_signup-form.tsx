@@ -16,6 +16,7 @@ export function SignupForm() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('consumer')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: FormEvent) {
@@ -49,9 +50,10 @@ export function SignupForm() {
         return
       }
 
+      setIsDone(true)
       router.push(redirectTo)
       router.refresh()
-    } catch {
+    } catch (err) {
       setError('Something went wrong. Please try again.')
       setIsSubmitting(false)
     }
@@ -95,7 +97,10 @@ export function SignupForm() {
           <div className="space-y-1.5">
             <p className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">Role</p>
             <div className="grid grid-cols-2 gap-2">
-              {([['consumer', 'Consumer', 'Manage your own estate planning.'], ['financial_advisor', 'Financial Advisor', 'Support clients with their estate plans.']] as const).map(([val, label, desc]) => (
+              {([
+                ['consumer', 'Consumer', 'Manage your own estate planning.'],
+                ['financial_advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
+              ] as const).map(([val, label, desc]) => (
                 <button key={val} type="button" onClick={() => setRole(val)}
                   className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition ${
                     role === val
@@ -111,9 +116,22 @@ export function SignupForm() {
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <button type="submit" disabled={isSubmitting}
-            className="flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-50 dark:text-zinc-950">
-            {isSubmitting ? 'Creating account…' : 'Create account'}
+          <button
+            type="submit"
+            disabled={isSubmitting || isDone}
+            className="relative flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-90 dark:bg-zinc-50 dark:text-zinc-950"
+          >
+            {isSubmitting || isDone ? (
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                {isDone ? 'Taking you in…' : 'Creating account…'}
+              </span>
+            ) : (
+              'Create account'
+            )}
           </button>
         </form>
 
