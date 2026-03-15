@@ -102,6 +102,8 @@ export default function ProjectionsPage() {
   const [savedMessage, setSavedMessage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'chart' | 'table'>('chart')
+  const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>('standard')
+  const [customDeduction, setCustomDeduction] = useState<number>(0)
 
   const loadData = useCallback(async () => {
     const supabase = createClient()
@@ -174,15 +176,25 @@ export default function ProjectionsPage() {
         return sum + (exp.inflation_adjust ? amt * inflFactor : amt)
       }, 0)
 
+      let deductionAmount = 0
+      if (deductionMode === 'standard') {
+        deductionAmount = standardDeductions.find(
+          d => d.filing_status === filingStatus
+        )?.amount ?? 14600
+      } else if (deductionMode === 'custom') {
+        deductionAmount = customDeduction
+      } else {
+        deductionAmount = 0
+      }
       const annualTaxes = taxBrackets.length > 0
-        ? calcTotalTax(
-            annualIncome,
-            filingStatus,
-            stateCode,
-            taxBrackets,
-            stateRates,
-            standardDeductions
-          )
+        ? (() => {
+            if (annualIncome <= 0) return 0
+            const taxableIncome = Math.max(0, annualIncome - deductionAmount)
+            const federalTax = calcFederalTax(taxableIncome, filingStatus, taxBrackets)
+            const stateRate = stateRates.find(s => s.state_code === stateCode)?.rate_pct ?? 0
+            const stateTax = taxableIncome * (stateRate / 100)
+            return Math.round(federalTax + stateTax)
+          })()
         : 0
 
       const net = annualIncome - annualExpenses - annualTaxes
@@ -208,7 +220,7 @@ export default function ProjectionsPage() {
     }
 
     setProjections(rows)
-  }, [household, incomes, expenses, assets, taxBrackets, stateRates, standardDeductions])
+  }, [household, incomes, expenses, assets, taxBrackets, stateRates, standardDeductions, deductionMode, customDeduction])
 
   async function handleSave() {
     if (!household) return
@@ -305,6 +317,32 @@ export default function ProjectionsPage() {
           ⚠️ Tax data not found — projections shown pre-tax. Contact your administrator to load tax bracket data.
         </div>
       )}
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-neutral-600">Tax Deduction:</span>
+        {(['standard', 'custom', 'none'] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => setDeductionMode(mode)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition capitalize ${
+              deductionMode === mode
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
+        {deductionMode === 'custom' && (
+          <input
+            type="number"
+            value={customDeduction}
+            onChange={(e) => setCustomDeduction(Number(e.target.value))}
+            placeholder="Enter deduction amount"
+            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 w-52"
+          />
+        )}
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
