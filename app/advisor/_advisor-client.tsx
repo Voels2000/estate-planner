@@ -16,7 +16,7 @@ type AdvisorClient = {
     email: string
     subscription_status: string
     created_at: string
-  }
+  } | null
 }
 
 type Props = {

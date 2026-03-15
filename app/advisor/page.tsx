@@ -66,7 +66,10 @@ export default async function AdvisorPage() {
 
   return (
     <AdvisorClient
-      advisorClients={advisorClients ?? []}
+      advisorClients={(advisorClients ?? []).map(ac => ({
+        ...ac,
+        profiles: Array.isArray(ac.profiles) ? ac.profiles[0] ?? null : ac.profiles,
+      }))}
       netWorthMap={netWorthMap}
       advisorId={user!.id}
     />
