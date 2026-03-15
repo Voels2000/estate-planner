@@ -197,23 +197,26 @@ export default function ProfilePage() {
 
       if (householdError) throw householdError
 
-      // Auto-upsert SS income sources
+      // Auto-upsert SS income sources: delete existing SS rows, then re-insert
+      await supabase.from('income').delete().eq('owner_id', user.id).eq('ss_person', 'person1')
+      await supabase.from('income').delete().eq('owner_id', user.id).eq('ss_person', 'person2')
+
       const p1Benefit = calcSSBenefit(person1SSBenefit62, person1SSBenefit67, person1SSClaimingAge)
       const p1ClaimAge = parseInt(person1SSClaimingAge)
       const p1BirthYear = parseInt(person1BirthYear)
       const p1StartYear = p1BirthYear && p1ClaimAge ? p1BirthYear + p1ClaimAge : null
 
       if (p1Benefit != null && p1StartYear) {
-        const annualBenefit = Math.round(p1Benefit * 12)
-        await supabase.from('income').upsert({
+        const { error: ssError } = await supabase.from('income').insert({
           owner_id: user.id,
           source: 'social_security',
-          amount: annualBenefit,
+          amount: Math.round(p1Benefit * 12),
           start_year: p1StartYear,
           end_year: null,
           inflation_adjust: false,
           ss_person: 'person1',
-        }, { onConflict: 'owner_id,ss_person' })
+        })
+        if (ssError) console.error('SS person1 insert error:', ssError)
       }
 
       if (hasSpouse) {
@@ -223,16 +226,16 @@ export default function ProfilePage() {
         const p2StartYear = p2BirthYear && p2ClaimAge ? p2BirthYear + p2ClaimAge : null
 
         if (p2Benefit != null && p2StartYear) {
-          const annualBenefit = Math.round(p2Benefit * 12)
-          await supabase.from('income').upsert({
+          const { error: ssError } = await supabase.from('income').insert({
             owner_id: user.id,
             source: 'social_security',
-            amount: annualBenefit,
+            amount: Math.round(p2Benefit * 12),
             start_year: p2StartYear,
             end_year: null,
             inflation_adjust: false,
             ss_person: 'person2',
-          }, { onConflict: 'owner_id,ss_person' })
+          })
+          if (ssError) console.error('SS person2 insert error:', ssError)
         }
       }
 
