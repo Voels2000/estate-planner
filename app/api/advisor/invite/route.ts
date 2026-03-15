@@ -82,12 +82,14 @@ export async function POST(req: NextRequest) {
       .from('advisor_clients')
       .insert({
         advisor_id: user.id,
-        client_id: null,
+        client_id: '00000000-0000-0000-0000-000000000000',
         status: 'pending',
         client_status: 'inactive',
         invited_at: new Date().toISOString(),
         accepted_at: null,
       })
+
+    if (inviteError) throw inviteError
 
     // Send invitation email
     await resend.emails.send({
