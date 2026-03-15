@@ -16,7 +16,7 @@ export default async function AdvisorLayout({
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'financial_advisor') redirect('/dashboard')
+  if (profile?.role !== 'advisor') redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-neutral-50">

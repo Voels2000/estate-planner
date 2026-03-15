@@ -56,7 +56,7 @@ export function SidebarNav({ user, role }: { user: User; role?: string }) {
             </Link>
           )
         })}
-        {role === 'financial_advisor' && (
+        {role === 'advisor' && (
           <Link
             href="/advisor"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
