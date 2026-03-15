@@ -44,6 +44,7 @@ export type AssetFormValues = z.output<typeof assetFormSchema>
 export type AssetRow = {
   id: string
   owner_id: string
+  tsowner: string
   type: AssetType
   name: string
   value: number

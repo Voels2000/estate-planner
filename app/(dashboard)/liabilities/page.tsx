@@ -7,6 +7,8 @@ type LiabilityType = { value: string; label: string }
 type Liability = {
   id: string
   owner_id: string
+  tsowner: string
+  owner?: string
   type: string
   name: string
   balance: number
@@ -99,7 +101,7 @@ export default function LiabilitiesPage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Name', 'Type', 'Balance', 'Interest Rate', 'Monthly Payment', ''].map(h => (
+                {['Name', 'Type', 'Owner', 'Balance', 'Interest Rate', 'Monthly Payment', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -109,6 +111,7 @@ export default function LiabilitiesPage() {
                 <tr key={liability.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{liability.name}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(liability.type)}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{liability.owner ?? 'person1'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-red-600">{formatDollars(Number(liability.balance))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {liability.interest_rate ? `${liability.interest_rate}%` : '—'}
@@ -135,7 +138,7 @@ export default function LiabilitiesPage() {
             </tbody>
             <tfoot className="bg-neutral-50 border-t-2 border-neutral-200">
               <tr>
-                <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-neutral-900">Total</td>
+                <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-neutral-900">Total</td>
                 <td className="px-4 py-3 text-sm font-bold text-red-600">{formatDollars(totalBalance)}</td>
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(totalMonthly)}</td>
@@ -164,6 +167,7 @@ function LiabilityModal({ editLiability, liabilityTypes, onClose, onSave }: {
   onClose: () => void
   onSave: () => void
 }) {
+  const [owner, setOwner] = useState(editLiability?.owner ?? 'person1')
   const [type, setType] = useState(editLiability?.type ?? liabilityTypes[0]?.value ?? '')
   const [name, setName] = useState(editLiability?.name ?? '')
   const [balance, setBalance] = useState(editLiability?.balance?.toString() ?? '')
@@ -183,6 +187,7 @@ function LiabilityModal({ editLiability, liabilityTypes, onClose, onSave }: {
       if (!user) return
 
       const payload = {
+        owner,
         type,
         name,
         balance: parseFloat(balance),
@@ -219,6 +224,14 @@ function LiabilityModal({ editLiability, liabilityTypes, onClose, onSave }: {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Liability Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
               {liabilityTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+            <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
+              <option value="person1">Person 1</option>
+              <option value="person2">Person 2</option>
+              <option value="joint">Joint</option>
             </select>
           </div>
           <div>

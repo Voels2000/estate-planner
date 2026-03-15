@@ -31,6 +31,7 @@ export type HouseholdForProjection = {
 export type IncomeRow = {
   id: string
   owner_id: string
+  tsowner: string
   amount: number
   start_year?: number | null
   end_year?: number | null

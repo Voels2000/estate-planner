@@ -7,6 +7,8 @@ type AssetType = { value: string; label: string }
 type Asset = {
   id: string
   owner_id: string
+  tsowner: string
+  owner?: string
   type: string
   name: string
   value: number
@@ -90,7 +92,7 @@ export default function AssetsPage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Name', 'Type', 'Value', ''].map((h) => (
+                {['Name', 'Type', 'Owner', 'Value', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -100,6 +102,7 @@ export default function AssetsPage() {
                 <tr key={asset.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{asset.name}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(asset.type)}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{asset.owner ?? 'person1'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(asset.value))}</td>
                   <td className="px-4 py-3 text-right">
                     {confirmDeleteId === asset.id ? (
@@ -140,6 +143,7 @@ function AssetModal({ editAsset, assetTypes, onClose, onSave }: {
   onClose: () => void
   onSave: () => void
 }) {
+  const [owner, setOwner] = useState(editAsset?.owner ?? 'person1')
   const [type, setType] = useState(editAsset?.type ?? assetTypes[0]?.value ?? '')
   const [name, setName] = useState(editAsset?.name ?? '')
   const [value, setValue] = useState(editAsset?.value?.toString() ?? '')
@@ -159,13 +163,13 @@ function AssetModal({ editAsset, assetTypes, onClose, onSave }: {
       if (editAsset) {
         const { error } = await supabase
           .from('assets')
-          .update({ type, name, value: parseFloat(value), updated_at: new Date().toISOString() })
+          .update({ owner, type, name, value: parseFloat(value), updated_at: new Date().toISOString() })
           .eq('id', editAsset.id)
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('assets')
-          .insert({ owner_id: user.id, type, name, value: parseFloat(value) })
+          .insert({ owner_id: user.id, owner, type, name, value: parseFloat(value) })
         if (error) throw error
       }
       onSave()
@@ -189,6 +193,14 @@ function AssetModal({ editAsset, assetTypes, onClose, onSave }: {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Asset Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
               {assetTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+            <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
+              <option value="person1">Person 1</option>
+              <option value="person2">Person 2</option>
+              <option value="joint">Joint</option>
             </select>
           </div>
           <div>

@@ -7,6 +7,8 @@ type IncomeType = { value: string; label: string }
 type Income = {
   id: string
   owner_id: string
+  tsowner: string
+  owner?: string
   source: string
   amount: number
   start_year: number
@@ -103,7 +105,7 @@ export default function IncomePage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Source', 'Type', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
+                {['Source', 'Type', 'Owner', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -113,6 +115,7 @@ export default function IncomePage() {
                 <tr key={income.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(income.source)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{income.source}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{income.owner ?? 'person1'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(income.amount))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {income.start_year} — {income.end_year ?? 'ongoing'}
@@ -160,6 +163,7 @@ function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
   onSave: () => void
 }) {
   const currentYear = new Date().getFullYear()
+  const [owner, setOwner] = useState(editIncome?.owner ?? 'person1')
   const [source, setSource] = useState(editIncome?.source ?? incomeTypes[0]?.value ?? '')
   const [amount, setAmount] = useState(editIncome?.amount?.toString() ?? '')
   const [startYear, setStartYear] = useState(editIncome?.start_year?.toString() ?? currentYear.toString())
@@ -179,6 +183,7 @@ function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
       if (!user) return
 
       const payload = {
+        owner,
         source,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),
@@ -215,6 +220,14 @@ function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Income Type</label>
             <select value={source} onChange={(e) => setSource(e.target.value)} className={inputClass}>
               {incomeTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+            <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
+              <option value="person1">Person 1</option>
+              <option value="person2">Person 2</option>
+              <option value="joint">Joint</option>
             </select>
           </div>
           {source === 'social_security' && (

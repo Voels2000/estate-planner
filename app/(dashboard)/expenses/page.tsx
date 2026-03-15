@@ -7,6 +7,8 @@ type ExpenseType = { value: string; label: string }
 type Expense = {
   id: string
   owner_id: string
+  tsowner: string
+  owner?: string
   category: string
   amount: number
   start_year: number
@@ -91,7 +93,7 @@ export default function ExpensesPage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Category', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
+                {['Category', 'Owner', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -100,6 +102,7 @@ export default function ExpensesPage() {
               {expenses.map((expense) => (
                 <tr key={expense.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(expense.category)}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{expense.owner ?? 'person1'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(expense.amount))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {expense.start_year} — {expense.end_year ?? 'ongoing'}
@@ -147,6 +150,7 @@ function ExpenseModal({ editExpense, expenseTypes, onClose, onSave }: {
   onSave: () => void
 }) {
   const currentYear = new Date().getFullYear()
+  const [owner, setOwner] = useState(editExpense?.owner ?? 'person1')
   const [category, setCategory] = useState(editExpense?.category ?? expenseTypes[0]?.value ?? '')
   const [amount, setAmount] = useState(editExpense?.amount?.toString() ?? '')
   const [startYear, setStartYear] = useState(editExpense?.start_year?.toString() ?? currentYear.toString())
@@ -166,6 +170,7 @@ function ExpenseModal({ editExpense, expenseTypes, onClose, onSave }: {
       if (!user) return
 
       const payload = {
+        owner,
         category,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),
@@ -202,6 +207,14 @@ function ExpenseModal({ editExpense, expenseTypes, onClose, onSave }: {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Expense Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
               {expenseTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+            <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
+              <option value="person1">Person 1</option>
+              <option value="person2">Person 2</option>
+              <option value="joint">Joint</option>
             </select>
           </div>
           <div>

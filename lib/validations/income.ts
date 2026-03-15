@@ -41,6 +41,7 @@ export type IncomeFormValues = z.infer<typeof incomeFormSchema>
 export type IncomeRow = {
   id: string
   owner_id: string
+  tsowner: string
   amount: number
   source: IncomeSource | string | null
   start_year: number | null
