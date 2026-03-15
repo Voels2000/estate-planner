@@ -150,7 +150,7 @@ async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, o
 async function fetchIncome(supabase: Awaited<ReturnType<typeof createClient>>, ownerId: string): Promise<IncomeRow[]> {
   const { data, error } = await supabase
     .from('income')
-    .select('id, owner_id, amount, start_year, end_year, inflation_adjust, source')
+    .select('id, owner_id, amount, start_year, end_year, inflation_adjust, source, owner')
     .eq('owner_id', ownerId)
   if (error) return []
   return (data ?? []).map((row) => ({
@@ -161,6 +161,7 @@ async function fetchIncome(supabase: Awaited<ReturnType<typeof createClient>>, o
     end_year: row.end_year != null ? Number(row.end_year) : null,
     inflation_adjust: row.inflation_adjust ?? true,
     source: row.source ?? null,
+    owner: row.owner ?? 'person1',
   }))
 }
 
