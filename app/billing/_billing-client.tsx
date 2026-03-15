@@ -1,4 +1,4 @@
-'use client'
+`'use client'
 
 import { useState } from 'react'
 
@@ -93,22 +93,12 @@ export function BillingClient({
 
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
-  <div className="mb-6">
-    <a href="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
-      ← Back to Dashboard
-    </a>
-  </div>
-  <div className="mb-10">
-    <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Advisor Billing</h1>
-    <p className="mt-2 text-neutral-600">Manage your advisor plan and client capacity.</p>
-
-  </div <div className="mx-auto max-w-4xl px-4 py-12">
         <div className="mb-6">
           <a href="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
             ← Back to Dashboard
           </a>
         </div>
-        <div className="text-center mb-10">
+        <div className="mb-10">
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Advisor Billing</h1>
           <p className="mt-2 text-neutral-600">Manage your advisor plan and client capacity.</p>
         </div>
@@ -215,9 +205,14 @@ export function BillingClient({
     )
   }
 
-  // ── Consumer billing view (unchanged) ────────────────────────────────────
+  // ── Consumer billing view ─────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
+      <div className="mb-6">
+        <a href="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
+          ← Back to Dashboard
+        </a>
+      </div>
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Choose your plan</h1>
         <p className="mt-3 text-neutral-600">Start planning your estate and retirement today.</p>
