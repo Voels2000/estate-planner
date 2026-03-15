@@ -1,16 +1,41 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export function ResetPasswordForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isExchanging, setIsExchanging] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    async function exchangeCode() {
+      const code = searchParams.get('code')
+      if (!code) {
+        setError('Invalid or expired reset link. Please request a new one.')
+        setIsExchanging(false)
+        return
+      }
+
+      try {
+        const supabase = createClient()
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) throw error
+        setIsExchanging(false)
+      } catch (err) {
+        setError('Invalid or expired reset link. Please request a new one.')
+        setIsExchanging(false)
+      }
+    }
+
+    exchangeCode()
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,7 +56,6 @@ export function ResetPasswordForm() {
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.updateUser({ password })
-
       if (error) throw error
 
       setSuccess(true)
@@ -40,6 +64,17 @@ export function ResetPasswordForm() {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
       setIsSubmitting(false)
     }
+  }
+
+  if (isExchanging) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-zinc-950">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800 text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Verifying your reset link...</p>
+        </div>
+      </div>
+    )
   }
 
   if (success) {
@@ -102,12 +137,19 @@ export function ResetPasswordForm() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              {error.includes('expired') && (
+                <a href="/forgot-password" className="mt-1 block text-sm font-medium text-red-700 hover:underline">
+                  Request a new reset link →
+                </a>
+              )}
+            </div>
           )}
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!error}
             className="flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
             {isSubmitting ? 'Updating...' : 'Update password'}
