@@ -19,6 +19,8 @@ type Liability = {
 }
 
 export default function LiabilitiesPage() {
+  const [person1Name, setPerson1Name] = useState('Person 1')
+  const [person2Name, setPerson2Name] = useState('Person 2')
   const [liabilities, setLiabilities] = useState<Liability[]>([])
   const [liabilityTypes, setLiabilityTypes] = useState<LiabilityType[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -35,14 +37,17 @@ export default function LiabilitiesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [{ data: liabData, error: liabError }, { data: typesData }] = await Promise.all([
+    const [{ data: liabData, error: liabError }, { data: typesData }, { data: household }] = await Promise.all([
       supabase.from('liabilities').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
       supabase.from('liability_types').select('value, label').order('sort_order'),
+      supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     ])
 
     if (liabError) setError(liabError.message)
     else setLiabilities(liabData ?? [])
     setLiabilityTypes(typesData ?? [])
+    if (household?.person1_name) setPerson1Name(household.person1_name)
+    if (household?.person2_name) setPerson2Name(household.person2_name)
     setIsLoading(false)
   }, [])
 
@@ -111,7 +116,9 @@ export default function LiabilitiesPage() {
                 <tr key={liability.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{liability.name}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(liability.type)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{liability.tsowner ?? liability.owner ?? 'person1'}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">
+                    {(liability.owner ?? 'person1') === 'person1' ? person1Name : (liability.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                  </td>
                   <td className="px-4 py-3 text-sm font-semibold text-red-600">{formatDollars(Number(liability.balance))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {liability.interest_rate ? `${liability.interest_rate}%` : '—'}
@@ -153,6 +160,8 @@ export default function LiabilitiesPage() {
         <LiabilityModal
           editLiability={editLiability}
           liabilityTypes={liabilityTypes}
+          person1Name={person1Name}
+          person2Name={person2Name}
           onClose={() => { setShowModal(false); setEditLiability(null) }}
           onSave={() => { setShowModal(false); setEditLiability(null); loadData() }}
         />
@@ -161,9 +170,11 @@ export default function LiabilitiesPage() {
   )
 }
 
-function LiabilityModal({ editLiability, liabilityTypes, onClose, onSave }: {
+function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Name, onClose, onSave }: {
   editLiability: Liability | null
   liabilityTypes: LiabilityType[]
+  person1Name: string
+  person2Name: string
   onClose: () => void
   onSave: () => void
 }) {
@@ -229,8 +240,8 @@ function LiabilityModal({ editLiability, liabilityTypes, onClose, onSave }: {
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
             <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
-              <option value="person1">Person 1</option>
-              <option value="person2">Person 2</option>
+              <option value="person1">{person1Name}</option>
+              <option value="person2">{person2Name}</option>
               <option value="joint">Joint</option>
             </select>
           </div>

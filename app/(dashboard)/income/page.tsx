@@ -19,6 +19,8 @@ type Income = {
 }
 
 export default function IncomePage() {
+  const [person1Name, setPerson1Name] = useState('Person 1')
+  const [person2Name, setPerson2Name] = useState('Person 2')
   const [incomes, setIncomes] = useState<Income[]>([])
   const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -34,14 +36,17 @@ export default function IncomePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [{ data: incomeData, error: incomeError }, { data: typesData }] = await Promise.all([
+    const [{ data: incomeData, error: incomeError }, { data: typesData }, { data: household }] = await Promise.all([
       supabase.from('income').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
       supabase.from('income_types').select('value, label').order('sort_order'),
+      supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     ])
 
     if (incomeError) setError(incomeError.message)
     else setIncomes(incomeData ?? [])
     setIncomeTypes(typesData ?? [])
+    if (household?.person1_name) setPerson1Name(household.person1_name)
+    if (household?.person2_name) setPerson2Name(household.person2_name)
     setIsLoading(false)
   }, [])
 
@@ -115,7 +120,9 @@ export default function IncomePage() {
                 <tr key={income.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(income.source)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{income.source}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{income.owner ?? 'person1'}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">
+                    {(income.owner ?? 'person1') === 'person1' ? person1Name : (income.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                  </td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(income.amount))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {income.start_year} — {income.end_year ?? 'ongoing'}
@@ -148,6 +155,8 @@ export default function IncomePage() {
         <IncomeModal
           editIncome={editIncome}
           incomeTypes={incomeTypes}
+          person1Name={person1Name}
+          person2Name={person2Name}
           onClose={() => { setShowModal(false); setEditIncome(null) }}
           onSave={() => { setShowModal(false); setEditIncome(null); loadData() }}
         />
@@ -156,9 +165,11 @@ export default function IncomePage() {
   )
 }
 
-function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
+function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClose, onSave }: {
   editIncome: Income | null
   incomeTypes: IncomeType[]
+  person1Name: string
+  person2Name: string
   onClose: () => void
   onSave: () => void
 }) {
@@ -225,8 +236,8 @@ function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
             <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
-              <option value="person1">Person 1</option>
-              <option value="person2">Person 2</option>
+              <option value="person1">{person1Name}</option>
+              <option value="person2">{person2Name}</option>
               <option value="joint">Joint</option>
             </select>
           </div>
