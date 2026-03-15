@@ -129,7 +129,7 @@ async function fetchHousehold(supabase: Awaited<ReturnType<typeof createClient>>
 async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, ownerId: string): Promise<AssetRow[]> {
   const { data, error } = await supabase
     .from('assets')
-    .select('id, owner_id, type, name, value, details, created_at, updated_at')
+    .select('id, owner_id, type, name, value, details, created_at, updated_at, owner')
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false })
   if (error) throw new Error(`Failed to fetch assets: ${error.message}`)
