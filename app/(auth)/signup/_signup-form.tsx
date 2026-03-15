@@ -50,6 +50,9 @@ export function SignupForm() {
         return
       }
 
+      // Auto-link to any advisor who invited this email
+      await fetch('/api/advisor/link-pending', { method: 'POST' })
+
       setIsDone(true)
       router.push(redirectTo)
       router.refresh()
