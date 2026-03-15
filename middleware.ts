@@ -2,20 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Don't run middleware on auth callback routes
   const { pathname } = request.nextUrl
+
+  // Skip middleware for auth routes that handle codes/tokens
   if (
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/auth/callback')
+    pathname.startsWith('/forgot-password')
   ) {
     return NextResponse.next()
   }
 
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   })
 
   const supabase = createServerClient(
@@ -23,9 +22,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
