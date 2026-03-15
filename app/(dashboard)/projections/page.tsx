@@ -335,10 +335,14 @@ export default function ProjectionsPage() {
         ))}
         {deductionMode === 'custom' && (
           <input
-            type="number"
-            value={customDeduction}
-            onChange={(e) => setCustomDeduction(Number(e.target.value))}
-            placeholder="Enter deduction amount"
+            type="text"
+            inputMode="numeric"
+            value={customDeduction === 0 ? '' : customDeduction}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, '')
+              setCustomDeduction(val === '' ? 0 : Number(val))
+            }}
+            placeholder="Enter annual deduction $"
             className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 w-52"
           />
         )}
@@ -480,7 +484,7 @@ function ProjectionTable({ projections, showTaxes }: { projections: ProjectionYe
               <td className="py-1.5 pr-4 text-red-500">{formatDollars(p.expenses)}</td>
               {showTaxes && (
                 <td className="py-1.5 pr-4 text-amber-600">
-                  {p.taxes > 0 ? formatDollars(p.taxes) : '—'}
+                  {formatDollars(p.taxes)}
                 </td>
               )}
               <td className={`py-1.5 pr-4 font-medium ${p.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
