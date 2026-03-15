@@ -5,23 +5,23 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Step 1 — get household first so we can use its id for projections
   const { data: household } = await supabase
     .from('households')
     .select('*')
     .eq('owner_id', user!.id)
     .single()
 
-  // Step 2 — get everything else in parallel
   const [
     { data: profile },
     { data: assets },
+    { data: liabilities },
     { data: income },
     { data: expenses },
     { data: projections },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('assets').select('value').eq('owner_id', user!.id),
+    supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
     supabase.from('income').select('amount').eq('owner_id', user!.id),
     supabase.from('expenses').select('amount').eq('owner_id', user!.id),
     household?.id
@@ -30,6 +30,8 @@ export default async function DashboardPage() {
   ])
 
   const totalAssets = (assets ?? []).reduce((sum, a) => sum + Number(a.value), 0)
+  const totalLiabilities = (liabilities ?? []).reduce((sum, l) => sum + Number(l.balance), 0)
+  const netWorth = totalAssets - totalLiabilities
   const totalIncome = (income ?? []).reduce((sum, i) => sum + Number(i.amount), 0)
   const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0)
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
@@ -38,6 +40,7 @@ export default async function DashboardPage() {
   const setupSteps = [
     { key: 'profile', label: 'Complete your profile', href: '/profile', done: !!(household?.person1_name && household?.person1_birth_year) },
     { key: 'assets', label: 'Add your assets', href: '/assets', done: (assets ?? []).length > 0 },
+    { key: 'liabilities', label: 'Add your liabilities', href: '/liabilities', done: (liabilities ?? []).length > 0 },
     { key: 'income', label: 'Add income sources', href: '/income', done: (income ?? []).length > 0 },
     { key: 'expenses', label: 'Add your expenses', href: '/expenses', done: (expenses ?? []).length > 0 },
     { key: 'projections', label: 'Run a projection', href: '/projections', done: (projections ?? []).length > 0 },
@@ -47,7 +50,6 @@ export default async function DashboardPage() {
   const completedSteps = setupSteps.filter(s => s.done).length
   const progressPct = Math.round((completedSteps / setupSteps.length) * 100)
 
-  // Retirement readiness score
   let readinessScore = 0
   if (latestProjection) {
     const summary = latestProjection as { funds_outlast?: boolean; at_retirement?: number; peak?: number }
@@ -62,6 +64,8 @@ export default async function DashboardPage() {
     <DashboardClient
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}
+      totalLiabilities={totalLiabilities}
+      netWorth={netWorth}
       totalIncome={totalIncome}
       totalExpenses={totalExpenses}
       savingsRate={savingsRate}
