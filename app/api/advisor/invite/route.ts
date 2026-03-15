@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,45 +22,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const advisorName = profile.full_name ?? profile.email ?? 'Your financial advisor'
-    const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://estate-planner-gules.vercel.app'}/signup?advisor=${user.id}&email=${encodeURIComponent(clientEmail)}`
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('email', clientEmail.toLowerCase())
+      .maybeSingle()
 
-    // Check if client already has an account
-const { data: existingProfile, error: profileError } = await supabase
-  .from('profiles')
-  .select('id, full_name')
-  .eq('email', clientEmail.toLowerCase())
-  .maybeSingle()
-
-console.log('Looking up email:', clientEmail.toLowerCase())
-console.log('Found profile:', existingProfile)
-console.log('Profile error:', profileError)
+    console.log('existingProfile:', JSON.stringify(existingProfile))
 
     if (existingProfile) {
-      // Check if already linked
       const { data: existing } = await supabase
         .from('advisor_clients')
         .select('id')
         .eq('advisor_id', user.id)
         .eq('client_id', existingProfile.id)
-        .single()
+        .maybeSingle()
 
       if (existing) {
         return NextResponse.json({ error: 'This client is already linked to your account.' }, { status: 400 })
       }
 
-      // Link existing client
+      console.log('Inserting existing client link...')
+      const insertPayload = {
+        advisor_id: user.id,
+        client_id: existingProfile.id,
+        status: 'active',
+        client_status: 'active',
+        invited_at: new Date().toISOString(),
+        accepted_at: new Date().toISOString(),
+      }
+      console.log('Insert payload:', JSON.stringify(insertPayload))
+
       const { error: linkError } = await supabase
         .from('advisor_clients')
-        .insert({
-          advisor_id: user.id,
-          client_id: existingProfile.id,
-          status: 'active',
-          client_status: 'active',
-          invited_at: new Date().toISOString(),
-          accepted_at: new Date().toISOString(),
-        })
+        .insert(insertPayload)
 
+      console.log('Link error:', JSON.stringify(linkError))
       if (linkError) throw linkError
 
       return NextResponse.json({
@@ -73,19 +67,23 @@ console.log('Profile error:', profileError)
       })
     }
 
-    // No account yet — store pending invite
+    console.log('Inserting pending invite...')
+    const pendingPayload = {
+      advisor_id: user.id,
+      client_id: null,
+      invited_email: clientEmail.toLowerCase(),
+      status: 'active',
+      client_status: 'inactive',
+      invited_at: new Date().toISOString(),
+      accepted_at: null,
+    }
+    console.log('Pending payload:', JSON.stringify(pendingPayload))
+
     const { error: inviteError } = await supabase
       .from('advisor_clients')
-      .insert({
-        advisor_id: user.id,
-        client_id: null,
-        invited_email: clientEmail.toLowerCase(),
-        status: 'active',
-        client_status: 'inactive',
-        invited_at: new Date().toISOString(),
-        accepted_at: null,
-      })
+      .insert(pendingPayload)
 
+    console.log('Invite error:', JSON.stringify(inviteError))
     if (inviteError) throw inviteError
 
     return NextResponse.json({
