@@ -52,6 +52,8 @@ export default function ProfilePage() {
   const [statePrimary, setStatePrimary] = useState('')
   const [stateCompare, setStateCompare] = useState('')
   const [inflationRate, setInflationRate] = useState('2.5')
+  const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>('standard')
+  const [customDeductionAmount, setCustomDeductionAmount] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -94,6 +96,8 @@ export default function ProfilePage() {
         setStatePrimary(household.state_primary ?? '')
         setStateCompare(household.state_compare ?? '')
         setInflationRate(household.inflation_rate?.toString() ?? '2.5')
+        setDeductionMode(household.deduction_mode ?? 'standard')
+        setCustomDeductionAmount(household.custom_deduction_amount?.toString() ?? '')
       }
 
       setIsLoading(false)
@@ -142,6 +146,8 @@ export default function ProfilePage() {
         state_primary: statePrimary,
         state_compare: stateCompare || null,
         inflation_rate: parseFloat(inflationRate) || 2.5,
+        deduction_mode: deductionMode,
+        custom_deduction_amount: parseFloat(customDeductionAmount) || 0,
         updated_at: new Date().toISOString(),
       }
 
@@ -329,6 +335,39 @@ export default function ProfilePage() {
                 onChange={(e) => setInflationRate(e.target.value)}
                 className={inputClass} placeholder="2.5" />
             </Field>
+            <Field label="Tax Deduction Method">
+              <div className="flex gap-2 mt-1">
+                {(['standard', 'custom', 'none'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setDeductionMode(mode)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition capitalize ${
+                      deductionMode === mode
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            {deductionMode === 'custom' && (
+              <Field label="Custom Deduction Amount ($)">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={customDeductionAmount}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '')
+                    setCustomDeductionAmount(val)
+                  }}
+                  className={inputClass}
+                  placeholder="e.g. 25000"
+                />
+              </Field>
+            )}
           </div>
         </section>
 
