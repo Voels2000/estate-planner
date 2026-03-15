@@ -78,6 +78,18 @@ export default function IncomePage() {
         </button>
       </div>
 
+      {/* Social Security hint */}
+      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-3">
+        <span className="text-xl mt-0.5">💡</span>
+        <div>
+          <p className="text-sm font-medium text-blue-900">Don&apos;t forget Social Security</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            Add Social Security as an income source with the year you plan to start collecting (age 62–70).
+            Delaying increases your benefit — age 67 is full retirement age for most people.
+          </p>
+        </div>
+      </div>
+
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
       {incomes.length === 0 ? (
@@ -205,6 +217,11 @@ function IncomeModal({ editIncome, incomeTypes, onClose, onSave }: {
               {incomeTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
+          {source === 'social_security' && (
+            <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+              💡 Set your start year to the age you plan to collect. Delaying past 67 increases your benefit by ~8% per year up to age 70.
+            </p>
+          )}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Annual Amount ($)</label>
             <input type="number" min="0" step="0.01" required value={amount}
