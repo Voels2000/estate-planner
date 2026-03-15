@@ -9,7 +9,8 @@ type AdvisorClient = {
   client_status: string
   invited_at: string
   accepted_at: string | null
-  client_id: string
+  client_id: string | null
+  invited_email: string | null
   profiles: {
     id: string
     full_name: string
@@ -93,7 +94,7 @@ export default function AdvisorClientPage({
     }
   }
 
-  async function handleStatusChange(clientRecordId: string, clientId: string, newStatus: string) {
+  async function handleStatusChange(clientRecordId: string, clientId: string | null, newStatus: string) {
     const supabase = createClient()
     await supabase
       .from('advisor_clients')
@@ -171,43 +172,62 @@ export default function AdvisorClientPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {clients.map((c) => (
-                    <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-neutral-900">
-                          {c.profiles?.full_name ?? 'Unknown'}
-                        </p>
-                        <p className="text-xs text-neutral-400">{c.profiles?.email}</p>
-                      </td>
-                      <td className="px-6 py-4 font-medium text-neutral-900">
-                        {formatDollars(netWorthMap[c.client_id] ?? 0)}
-                      </td>
-                      <td className="px-6 py-4 text-neutral-500">
-                        {c.profiles?.created_at ? formatDate(c.profiles.created_at) : '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <select
-                          value={c.client_status ?? 'active'}
-                          onChange={(e) => handleStatusChange(c.id, c.client_id, e.target.value)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium border-0 cursor-pointer ${
-                            STATUS_COLORS[c.client_status ?? 'active']
-                          }`}
-                        >
-                          {STATUS_OPTIONS.map(s => (
-                            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-6 py-4">
-                        <a
-                          href={`/advisor/clients/${c.client_id}`}
-                          className="text-sm text-indigo-600 hover:underline font-medium"
-                        >
-                          View →
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
+                  {clients.map((c) => {
+                    const isPending = !c.accepted_at
+                    const displayName = c.profiles?.full_name ?? c.invited_email ?? 'Unknown'
+                    const displayEmail = c.profiles?.email ?? c.invited_email ?? '—'
+
+                    return (
+                      <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-neutral-900">{displayName}</p>
+                          <p className="text-xs text-neutral-400">{displayEmail}</p>
+                          {isPending && (
+                            <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                              Pending signup
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-neutral-900">
+                          {isPending ? '—' : formatDollars(netWorthMap[c.client_id ?? ''] ?? 0)}
+                        </td>
+                        <td className="px-6 py-4 text-neutral-500">
+                          {c.profiles?.created_at ? formatDate(c.profiles.created_at) : '—'}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isPending ? (
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS['inactive']}`}>
+                              Invited
+                            </span>
+                          ) : (
+                            <select
+                              value={c.client_status ?? 'active'}
+                              onChange={(e) => handleStatusChange(c.id, c.client_id ?? '', e.target.value)}
+                              className={`rounded-full px-3 py-1 text-xs font-medium border-0 cursor-pointer ${
+                                STATUS_COLORS[c.client_status ?? 'active']
+                              }`}
+                            >
+                              {STATUS_OPTIONS.map(s => (
+                                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isPending ? (
+                            <span className="text-sm text-neutral-400 italic">Awaiting signup</span>
+                          ) : (
+                            <a
+                              href={`/advisor/clients/${c.client_id}`}
+                              className="text-sm text-indigo-600 hover:underline font-medium"
+                            >
+                              View →
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -223,7 +243,7 @@ export default function AdvisorClientPage({
               Add a Client by Email
             </h2>
             <p className="text-sm text-neutral-600 mb-4">
-              Enter your client's email address. They must already have an Estate Planner account.
+              Enter your client's email address. If they already have an account they'll be linked instantly. If not, they'll be linked automatically when they sign up.
             </p>
             <div className="space-y-3">
               <input

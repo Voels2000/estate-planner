@@ -15,6 +15,7 @@ export default async function AdvisorPage() {
       invited_at,
       accepted_at,
       client_id,
+      invited_email,
       profiles!advisor_clients_client_id_fkey (
         id,
         full_name,
