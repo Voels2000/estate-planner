@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +23,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const { data: existingProfile } = await supabase
+    // Use service role client to bypass RLS for profile lookup by email
+    const serviceClient = createAdminClient()
+    const { data: existingProfile } = await serviceClient
       .from('profiles')
       .select('id, full_name')
       .eq('email', clientEmail.toLowerCase())
