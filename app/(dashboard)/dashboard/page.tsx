@@ -1,71 +1,76 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
+import { DashboardClient } from './_dashboard-client'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
+  // Step 1 — get household first so we can use its id for projections
+  const { data: household } = await supabase
+    .from('households')
+    .select('*')
+    .eq('owner_id', user!.id)
+    .single()
+
+  // Step 2 — get everything else in parallel
+  const [
+    { data: profile },
+    { data: assets },
+    { data: income },
+    { data: expenses },
+    { data: projections },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user!.id).single(),
+    supabase.from('assets').select('value').eq('owner_id', user!.id),
+    supabase.from('income').select('amount').eq('owner_id', user!.id),
+    supabase.from('expenses').select('amount').eq('owner_id', user!.id),
+    household?.id
+      ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const totalAssets = (assets ?? []).reduce((sum, a) => sum + Number(a.value), 0)
+  const totalIncome = (income ?? []).reduce((sum, i) => sum + Number(i.amount), 0)
+  const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0)
+  const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
+  const latestProjection = projections?.[0]?.summary ?? null
+
+  const setupSteps = [
+    { key: 'profile', label: 'Complete your profile', href: '/profile', done: !!(household?.person1_name && household?.person1_birth_year) },
+    { key: 'assets', label: 'Add your assets', href: '/assets', done: (assets ?? []).length > 0 },
+    { key: 'income', label: 'Add income sources', href: '/income', done: (income ?? []).length > 0 },
+    { key: 'expenses', label: 'Add your expenses', href: '/expenses', done: (expenses ?? []).length > 0 },
+    { key: 'projections', label: 'Run a projection', href: '/projections', done: (projections ?? []).length > 0 },
+    { key: 'scenarios', label: 'Compare scenarios', href: '/scenarios', done: false },
+  ]
+
+  const completedSteps = setupSteps.filter(s => s.done).length
+  const progressPct = Math.round((completedSteps / setupSteps.length) * 100)
+
+  // Retirement readiness score
+  let readinessScore = 0
+  if (latestProjection) {
+    const summary = latestProjection as { funds_outlast?: boolean; at_retirement?: number; peak?: number }
+    if (summary.funds_outlast) readinessScore += 50
+    if ((summary.at_retirement ?? 0) > 500000) readinessScore += 25
+    if ((summary.peak ?? 0) > 1000000) readinessScore += 25
+  } else {
+    readinessScore = Math.round(progressPct * 0.4)
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-16 px-4">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">
-            Welcome back
-          </h1>
-          <p className="mt-2 text-neutral-600">
-            {user.email}
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <DashboardCard
-            title="Income"
-            description="Track your income sources"
-            href="/income"
-            icon="💰"
-          />
-          <DashboardCard
-            title="Projections"
-            description="View retirement projections"
-            href="/projections"
-            icon="📈"
-          />
-          <DashboardCard
-            title="Billing"
-            description="Manage your subscription"
-            href="/billing"
-            icon="💳"
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DashboardCard({
-  title,
-  description,
-  href,
-  icon,
-}: {
-  title: string
-  description: string
-  href: string
-  icon: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="block rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm transition hover:shadow-md"
-    >
-      <div className="text-3xl mb-3">{icon}</div>
-      <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
-      <p className="mt-1 text-sm text-neutral-600">{description}</p>
-    </Link>
+    <DashboardClient
+      userName={profile?.full_name ?? user!.email ?? ''}
+      totalAssets={totalAssets}
+      totalIncome={totalIncome}
+      totalExpenses={totalExpenses}
+      savingsRate={savingsRate}
+      setupSteps={setupSteps}
+      completedSteps={completedSteps}
+      progressPct={progressPct}
+      readinessScore={readinessScore}
+      hasProjection={!!latestProjection}
+      userId={user!.id}
+    />
   )
 }
