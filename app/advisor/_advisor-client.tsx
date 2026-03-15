@@ -70,52 +70,22 @@ export default function AdvisorClientPage({
     setInviteMessage(null)
 
     try {
-      const supabase = createClient()
+      const response = await fetch('/api/advisor/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientEmail: inviteEmail.trim() }),
+      })
 
-      // Find the client by email
-      const { data: clientProfile } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('email', inviteEmail.trim().toLowerCase())
-        .single()
+      const data = await response.json()
 
-      if (!clientProfile) {
-        setInviteError('No user found with that email address. They must sign up first.')
+      if (!response.ok) {
+        setInviteError(data.error ?? 'Something went wrong.')
         return
       }
 
-      // Check if already linked
-      const { data: existing } = await supabase
-        .from('advisor_clients')
-        .select('id')
-        .eq('advisor_id', advisorId)
-        .eq('client_id', clientProfile.id)
-        .single()
-
-      if (existing) {
-        setInviteError('This client is already linked to your account.')
-        return
-      }
-
-      // Create the link
-      const { error } = await supabase
-        .from('advisor_clients')
-        .insert({
-          advisor_id: advisorId,
-          client_id: clientProfile.id,
-          status: 'active',
-          client_status: 'active',
-          invited_at: new Date().toISOString(),
-          accepted_at: new Date().toISOString(),
-        })
-
-      if (error) throw error
-
-      setInviteMessage(`${clientProfile.full_name ?? inviteEmail} has been added to your client list.`)
+      setInviteMessage(data.message)
       setInviteEmail('')
-
-      // Refresh page to show new client
-      setTimeout(() => window.location.reload(), 1500)
+      setTimeout(() => window.location.reload(), 2000)
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
