@@ -29,11 +29,15 @@ export async function POST(req: NextRequest) {
     const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://estate-planner-gules.vercel.app'}/signup?advisor=${user.id}&email=${encodeURIComponent(clientEmail)}`
 
     // Check if client already has an account
-const { data: existingProfile } = await supabase
+const { data: existingProfile, error: profileError } = await supabase
   .from('profiles')
   .select('id, full_name')
   .eq('email', clientEmail.toLowerCase())
   .maybeSingle()
+
+console.log('Looking up email:', clientEmail.toLowerCase())
+console.log('Found profile:', existingProfile)
+console.log('Profile error:', profileError)
 
     if (existingProfile) {
       // Check if already linked
