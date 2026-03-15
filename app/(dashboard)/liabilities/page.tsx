@@ -111,7 +111,7 @@ export default function LiabilitiesPage() {
                 <tr key={liability.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{liability.name}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(liability.type)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{liability.owner ?? 'person1'}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{liability.tsowner ?? liability.owner ?? 'person1'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-red-600">{formatDollars(Number(liability.balance))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {liability.interest_rate ? `${liability.interest_rate}%` : '—'}
