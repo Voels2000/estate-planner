@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { AdvisorTier } from '@/lib/types'
 
 type Profile = {
   id: string
@@ -45,15 +46,15 @@ type Props = {
   profiles: Profile[]
   feedback: Feedback[]
   appConfig: AppConfig[]
+  advisorTiers: AdvisorTier[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers'
 
 export function AdminClient({
-  totalUsers, newToday, newThisWeek, newThisMonth,
-  activeSubscriptions, consumerCount, advisorCount, mrr,
-  assetCount, incomeCount, expenseCount, projectionCount,
-  profiles, feedback, appConfig,
+  appConfig,
+  advisorTiers,
+  ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all')
@@ -64,9 +65,42 @@ export function AdminClient({
   const [savedKey, setSavedKey] = useState<string | null>(null)
   const [configError, setConfigError] = useState<string | null>(null)
 
+  const [tiers, setTiers] = useState<AdvisorTier[]>(advisorTiers)
+  const [savingTierId, setSavingTierId] = useState<string | null>(null)
+  const [savedTierId, setSavedTierId] = useState<string | null>(null)
+  const [tierError, setTierError] = useState<string | null>(null)
+
+  function updateTier(id: string, field: keyof AdvisorTier, value: string | boolean | number | null) {
+    setTiers(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t))
+  }
+
+  async function handleSaveTier(tier: AdvisorTier) {
+    setSavingTierId(tier.id)
+    setTierError(null)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('advisor_tiers')
+        .update({
+          name: tier.name,
+          price_monthly: tier.price_monthly,
+          client_limit: tier.client_limit,
+          is_active: tier.is_active,
+        })
+        .eq('id', tier.id)
+      if (error) throw error
+      setSavedTierId(tier.id)
+      setTimeout(() => setSavedTierId(null), 2000)
+    } catch (err) {
+      setTierError(err instanceof Error ? err.message : 'Failed to save.')
+    } finally {
+      setSavingTierId(null)
+    }
+  }
+
   const filteredFeedback = feedbackFilter === 'all'
-    ? feedback
-    : feedback.filter(f => f.type === feedbackFilter)
+    ? rest.feedback
+    : rest.feedback.filter(f => f.type === feedbackFilter)
 
   async function handleSaveConfig(key: string) {
     setSavingKey(key)
@@ -93,6 +127,7 @@ export function AdminClient({
     { key: 'usage', label: 'Usage', icon: '📈' },
     { key: 'feedback', label: 'Feedback', icon: '💬' },
     { key: 'settings', label: 'Settings', icon: '⚙️' },
+    { key: 'tiers', label: 'Advisor Tiers', icon: '🏷️' },
   ]
 
   const CONFIG_LABELS: Record<string, { label: string; description: string; type: 'number' | 'text' }> = {
@@ -129,40 +164,40 @@ export function AdminClient({
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">User Growth</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Total Users" value={String(totalUsers)} icon="👥" />
-              <StatCard label="New Today" value={String(newToday)} icon="🆕" />
-              <StatCard label="New This Week" value={String(newThisWeek)} icon="📅" />
-              <StatCard label="New This Month" value={String(newThisMonth)} icon="📆" />
+              <StatCard label="Total Users" value={String(rest.totalUsers)} icon="👥" />
+              <StatCard label="New Today" value={String(rest.newToday)} icon="🆕" />
+              <StatCard label="New This Week" value={String(rest.newThisWeek)} icon="📅" />
+              <StatCard label="New This Month" value={String(rest.newThisMonth)} icon="📆" />
             </div>
           </section>
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">Revenue</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Est. MRR" value={`$${mrr.toLocaleString()}`} icon="💵" highlight="green" />
-              <StatCard label="Active Subscriptions" value={String(activeSubscriptions)} icon="✅" />
-              <StatCard label="Consumer Plan" value={String(consumerCount)} icon="👤" />
-              <StatCard label="Advisor Plan" value={String(advisorCount)} icon="🏦" />
+              <StatCard label="Est. MRR" value={`$${rest.mrr.toLocaleString()}`} icon="💵" highlight="green" />
+              <StatCard label="Active Subscriptions" value={String(rest.activeSubscriptions)} icon="✅" />
+              <StatCard label="Consumer Plan" value={String(rest.consumerCount)} icon="👤" />
+              <StatCard label="Advisor Plan" value={String(rest.advisorCount)} icon="🏦" />
             </div>
           </section>
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">Product Usage</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Assets Added" value={String(assetCount)} icon="🏦" />
-              <StatCard label="Income Sources" value={String(incomeCount)} icon="💰" />
-              <StatCard label="Expenses Added" value={String(expenseCount)} icon="💸" />
-              <StatCard label="Projections Run" value={String(projectionCount)} icon="📈" />
+              <StatCard label="Assets Added" value={String(rest.assetCount)} icon="🏦" />
+              <StatCard label="Income Sources" value={String(rest.incomeCount)} icon="💰" />
+              <StatCard label="Expenses Added" value={String(rest.expenseCount)} icon="💸" />
+              <StatCard label="Projections Run" value={String(rest.projectionCount)} icon="📈" />
             </div>
           </section>
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">Recent Feedback</h2>
-            {feedback.length === 0 ? (
+            {rest.feedback.length === 0 ? (
               <EmptyState icon="💬" message="No feedback yet" />
             ) : (
               <div className="space-y-3">
-                {feedback.slice(0, 5).map(f => <FeedbackCard key={f.id} feedback={f} profiles={profiles} />)}
-                {feedback.length > 5 && (
+                {rest.feedback.slice(0, 5).map(f => <FeedbackCard key={f.id} feedback={f} profiles={rest.profiles} />)}
+                {rest.feedback.length > 5 && (
                   <button onClick={() => setActiveTab('feedback')} className="text-sm text-indigo-600 hover:underline">
-                    View all {feedback.length} feedback items →
+                    View all {rest.feedback.length} feedback items →
                   </button>
                 )}
               </div>
@@ -183,7 +218,7 @@ export function AdminClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {profiles.map(profile => (
+              {rest.profiles.map(profile => (
                 <tr key={profile.id} className="hover:bg-neutral-50">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{profile.full_name ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{profile.email}</td>
@@ -217,18 +252,18 @@ export function AdminClient({
       {activeTab === 'usage' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Assets" value={String(assetCount)} icon="🏦" />
-            <StatCard label="Income Sources" value={String(incomeCount)} icon="💰" />
-            <StatCard label="Expenses" value={String(expenseCount)} icon="💸" />
-            <StatCard label="Projections" value={String(projectionCount)} icon="📈" />
+            <StatCard label="Total Assets" value={String(rest.assetCount)} icon="🏦" />
+            <StatCard label="Income Sources" value={String(rest.incomeCount)} icon="💰" />
+            <StatCard label="Expenses" value={String(rest.expenseCount)} icon="💸" />
+            <StatCard label="Projections" value={String(rest.projectionCount)} icon="📈" />
           </div>
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-neutral-900 mb-4">Average per User</h3>
             <div className="space-y-3">
-              <UsageBar label="Assets per user" value={totalUsers > 0 ? assetCount / totalUsers : 0} max={10} />
-              <UsageBar label="Income sources per user" value={totalUsers > 0 ? incomeCount / totalUsers : 0} max={10} />
-              <UsageBar label="Expenses per user" value={totalUsers > 0 ? expenseCount / totalUsers : 0} max={10} />
-              <UsageBar label="Projections per user" value={totalUsers > 0 ? projectionCount / totalUsers : 0} max={5} />
+              <UsageBar label="Assets per user" value={rest.totalUsers > 0 ? rest.assetCount / rest.totalUsers : 0} max={10} />
+              <UsageBar label="Income sources per user" value={rest.totalUsers > 0 ? rest.incomeCount / rest.totalUsers : 0} max={10} />
+              <UsageBar label="Expenses per user" value={rest.totalUsers > 0 ? rest.expenseCount / rest.totalUsers : 0} max={10} />
+              <UsageBar label="Projections per user" value={rest.totalUsers > 0 ? rest.projectionCount / rest.totalUsers : 0} max={5} />
             </div>
           </div>
         </div>
@@ -243,14 +278,88 @@ export function AdminClient({
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition capitalize ${
                   feedbackFilter === f ? 'bg-neutral-900 text-white' : 'bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300'
                 }`}>
-                {f === 'all' ? `All (${feedback.length})` : f}
+                {f === 'all' ? `All (${rest.feedback.length})` : f}
               </button>
             ))}
           </div>
           {filteredFeedback.length === 0
             ? <EmptyState icon="💬" message="No feedback yet" />
-            : <div className="space-y-3">{filteredFeedback.map(f => <FeedbackCard key={f.id} feedback={f} profiles={profiles} />)}</div>
+            : <div className="space-y-3">{filteredFeedback.map(f => <FeedbackCard key={f.id} feedback={f} profiles={rest.profiles} />)}</div>
           }
+        </div>
+      )}
+
+      {/* Advisor Tiers */}
+      {activeTab === 'tiers' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+            <h2 className="text-base font-semibold text-neutral-900 mb-1">Advisor Tiers</h2>
+            <p className="text-sm text-neutral-500 mb-6">Edit tier names, prices, client limits and active status. Stripe price IDs are read-only.</p>
+
+            {tierError && (
+              <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{tierError}</p>
+            )}
+
+            <div className="space-y-4">
+              {[...tiers].sort((a, b) => a.display_order - b.display_order).map(tier => (
+                <div key={tier.id} className="rounded-xl border border-neutral-200 p-4 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-500 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={tier.name}
+                        onChange={e => updateTier(tier.id, 'name', e.target.value)}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-500 mb-1">Price ($/month)</label>
+                      <input
+                        type="number"
+                        value={tier.price_monthly}
+                        onChange={e => updateTier(tier.id, 'price_monthly', Number(e.target.value))}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-500 mb-1">Client Limit (blank = unlimited)</label>
+                      <input
+                        type="number"
+                        value={tier.client_limit ?? ''}
+                        onChange={e => updateTier(tier.id, 'client_limit', e.target.value === '' ? null : Number(e.target.value))}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-500 mb-1">Active</label>
+                      <select
+                        value={tier.is_active ? 'true' : 'false'}
+                        onChange={e => updateTier(tier.id, 'is_active', e.target.value === 'true')}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-400 font-mono">{tier.stripe_price_id}</p>
+                    <button
+                      onClick={() => handleSaveTier(tier)}
+                      disabled={savingTierId === tier.id}
+                      className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+                    >
+                      {savingTierId === tier.id ? 'Saving…' : savedTierId === tier.id ? '✓ Saved' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {tiers.length === 0 && (
+              <p className="mt-4 text-sm text-neutral-500">No advisor tiers configured.</p>
+            )}
+          </div>
         </div>
       )}
 

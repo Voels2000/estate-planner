@@ -29,6 +29,11 @@ export default async function AdminPage() {
     .select('*')
     .order('key')
 
+  const { data: advisorTiers } = await supabase
+    .from('advisor_tiers')
+    .select('*')
+    .order('display_order')
+
   // Feedback
   const { data: feedback } = await supabase
     .from('feedback')
@@ -74,6 +79,7 @@ export default async function AdminPage() {
       profiles={profiles ?? []}
       feedback={feedback ?? []}
       appConfig={appConfig ?? []}
+      advisorTiers={advisorTiers ?? []}
     />
   )
 }
