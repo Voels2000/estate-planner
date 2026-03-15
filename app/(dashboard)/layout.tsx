@@ -40,17 +40,18 @@ export default async function DashboardLayout({
     ? Math.max(0, Math.ceil((trialExpiry.getTime() - now.getTime()) / 1000))
     : 0
 
-  const hasAccess = isAdmin || isActive || trialActive
+  const isAdvisor = profile?.role === 'advisor'
+  const hasAccess = isAdmin || isAdvisor || isActive || trialActive
 
   if (!hasAccess) {
     redirect('/billing')
   }
 
-  const showBanner = !isAdmin && !isActive && trialActive
+  const showBanner = !isAdmin && !isAdvisor && !isActive && trialActive
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
-      <SidebarNav user={user} />
+      <SidebarNav user={user} role={profile?.role} />
       <div className="flex flex-1 flex-col overflow-y-auto">
         {showBanner && (
           <TrialBanner
