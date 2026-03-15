@@ -23,6 +23,12 @@ export default async function AdminPage() {
     supabase.from('projections').select('*', { count: 'exact', head: true }),
   ])
 
+  // App config
+  const { data: appConfig } = await supabase
+    .from('app_config')
+    .select('*')
+    .order('key')
+
   // Feedback
   const { data: feedback } = await supabase
     .from('feedback')
