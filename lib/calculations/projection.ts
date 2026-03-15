@@ -142,6 +142,7 @@ async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, o
     details: (row.details as Record<string, unknown>) ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    owner: row.owner ?? 'person1',
   }))
 }
 
