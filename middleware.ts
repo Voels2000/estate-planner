@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Don't run middleware on auth callback routes
+  const { pathname } = request.nextUrl
+  if (
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/auth/callback')
+  ) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -25,21 +35,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refreshes the session and writes updated cookies to the response
   await supabase.auth.getUser()
-
   return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
