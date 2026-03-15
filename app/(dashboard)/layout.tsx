@@ -42,15 +42,17 @@ export default async function DashboardLayout({
 
   const isAdvisor = profile?.role === 'advisor'
 
-  // Check if user is an active client of any advisor
-  const { data: advisorLink } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('client_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle()
-
-  const isAdvisorClient = !!advisorLink
+  // Check if user is an advisor client (only when not an advisor)
+  let isAdvisorClient = false
+  if (!isAdvisor) {
+    const { data: clientRow } = await supabase
+      .from('advisor_clients')
+      .select('id')
+      .eq('client_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    isAdvisorClient = !!clientRow
+  }
   const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive
 
   if (!hasAccess) {

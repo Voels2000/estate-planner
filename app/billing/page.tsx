@@ -25,6 +25,18 @@ export default async function BillingPage() {
 
   const isAdvisor = profile?.role === 'advisor'
 
+  // Check if user is an advisor client (only when not an advisor)
+  let isAdvisorClient = false
+  if (!isAdvisor) {
+    const { data: clientRow } = await supabase
+      .from('advisor_clients')
+      .select('id')
+      .eq('client_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    isAdvisorClient = !!clientRow
+  }
+
   // Fetch advisor tier info if applicable
   let advisorTier = null
   let advisorClientCount = 0
@@ -79,6 +91,7 @@ export default async function BillingPage() {
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
       isAdvisor={isAdvisor}
+      isAdvisorClient={isAdvisorClient}
       advisorTier={advisorTier}
       advisorClientCount={advisorClientCount}
     />
