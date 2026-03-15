@@ -41,13 +41,23 @@ export default async function DashboardLayout({
     : 0
 
   const isAdvisor = profile?.role === 'advisor'
-  const hasAccess = isAdmin || isAdvisor || isActive || trialActive
+
+  // Check if user is an active client of any advisor
+  const { data: advisorLink } = await supabase
+    .from('advisor_clients')
+    .select('id')
+    .eq('client_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  const isAdvisorClient = !!advisorLink
+  const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive
 
   if (!hasAccess) {
     redirect('/billing')
   }
 
-  const showBanner = !isAdmin && !isAdvisor && !isActive && trialActive
+  const showBanner = !isAdmin && !isAdvisor && !isAdvisorClient && !isActive && trialActive
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
