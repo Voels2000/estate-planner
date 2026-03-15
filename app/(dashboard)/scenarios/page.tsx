@@ -110,8 +110,8 @@ export default function ScenariosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [scenarios, setScenarios] = useState<ScenarioInputs[]>([])
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
-  const [savedIndex, setSavedIndex] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [savedIndexes, setSavedIndexes] = useState<number[]>([])
+  const [errors, setErrors] = useState<(string | null)[]>([null, null, null])
 
   const loadData = useCallback(async () => {
     const supabase = createClient()
@@ -142,9 +142,9 @@ export default function ScenariosPage() {
         inflationRate: Number(householdData.inflation_rate) ?? 2.5,
       }
       setScenarios([
-        base,
-        { ...base, name: 'Retire Earlier', retirementAge: Math.max(50, base.retirementAge - 5) },
-        { ...base, name: 'Retire Later', retirementAge: Math.min(80, base.retirementAge + 5) },
+        { ...base, name: 'Base Case' },
+        { ...base, name: 'Scenario 2', retirementAge: Math.max(50, base.retirementAge - 5) },
+        { ...base, name: 'Scenario 3', retirementAge: Math.min(80, base.retirementAge + 5) },
       ])
     }
 
@@ -158,22 +158,29 @@ export default function ScenariosPage() {
 
   function updateScenario(index: number, field: keyof ScenarioInputs, value: string | number) {
     setScenarios(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
+    // Clear saved indicator when inputs change
+    setSavedIndexes(prev => prev.filter(i => i !== index))
   }
 
   async function handleSave(index: number) {
     if (!household) return
     setSavingIndex(index)
-    setError(null)
+    setErrors(prev => prev.map((e, i) => i === index ? null : e))
 
     try {
       const supabase = createClient()
       const inputs = scenarios[index]
       const result = calcProjection(inputs, household.person1_birth_year, incomes, expenses, totalAssets)
 
+      // Make name unique by appending timestamp
+      const uniqueName = `${inputs.name} — ${new Date().toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      })}`
+
       const { error } = await supabase.from('projections').insert({
         household_id: household.id,
-        scenario_name: inputs.name,
-        state_override: inputs.statePrimary,
+        scenario_name: uniqueName,
+        state_override: inputs.statePrimary || null,
         projection_data: { inputs, result },
         summary: {
           at_retirement: result.atRetirement,
@@ -185,10 +192,11 @@ export default function ScenariosPage() {
       })
 
       if (error) throw error
-      setSavedIndex(index)
-      setTimeout(() => setSavedIndex(null), 3000)
+
+      setSavedIndexes(prev => [...prev, index])
+      setTimeout(() => setSavedIndexes(prev => prev.filter(i => i !== index)), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setErrors(prev => prev.map((e, i) => i === index ? (err instanceof Error ? err.message : 'Something went wrong.') : e))
     } finally {
       setSavingIndex(null)
     }
@@ -216,67 +224,78 @@ export default function ScenariosPage() {
 
   const COLORS = ['bg-neutral-900', 'bg-indigo-600', 'bg-emerald-600']
   const TEXT_COLORS = ['text-neutral-900', 'text-indigo-600', 'text-emerald-600']
+  const ACCENT_COLORS = ['accent-neutral-900', 'accent-indigo-600', 'accent-emerald-600']
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Scenarios</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Compare up to 3 scenarios side by side. Adjust inputs to see how changes affect your plan.
+          Compare up to 3 scenarios side by side. Name each scenario and adjust inputs to model different futures.
         </p>
       </div>
-
-      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {scenarios.map((scenario, index) => {
           const result = results[index]
+          const isSaved = savedIndexes.includes(index)
+          const isSaving = savingIndex === index
+          const err = errors[index]
+
           return (
-            <div key={index} className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-              {/* Scenario header */}
+            <div key={index} className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col">
+              {/* Scenario header — editable name */}
               <div className={`${COLORS[index]} px-6 py-4`}>
+                <label className="block text-xs text-white/60 font-medium mb-1 uppercase tracking-wide">
+                  Scenario {index + 1} Name
+                </label>
                 <input
                   type="text"
                   value={scenario.name}
                   onChange={(e) => updateScenario(index, 'name', e.target.value)}
-                  className="w-full bg-transparent text-white font-semibold text-base placeholder-white/60 border-none outline-none"
+                  className="w-full bg-white/10 text-white font-semibold text-base placeholder-white/40 border border-white/20 rounded-lg px-3 py-1.5 outline-none focus:bg-white/20 transition"
+                  placeholder="Enter scenario name..."
                 />
               </div>
 
               {/* Inputs */}
-              <div className="px-6 py-4 space-y-3 border-b border-neutral-100">
+              <div className="px-6 py-4 space-y-4 border-b border-neutral-100">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Assumptions</h3>
 
                 <SliderRow
                   label="Retirement Age"
                   value={scenario.retirementAge}
                   min={50} max={80}
-                  format={(v) => `${v}`}
+                  format={(v) => `${v} yrs`}
                   color={TEXT_COLORS[index]}
+                  accent={ACCENT_COLORS[index]}
                   onChange={(v) => updateScenario(index, 'retirementAge', v)}
                 />
                 <SliderRow
                   label="SS Claiming Age"
                   value={scenario.ssClaimingAge}
                   min={62} max={70}
-                  format={(v) => `${v}`}
+                  format={(v) => `${v} yrs`}
                   color={TEXT_COLORS[index]}
+                  accent={ACCENT_COLORS[index]}
                   onChange={(v) => updateScenario(index, 'ssClaimingAge', v)}
                 />
                 <SliderRow
                   label="Longevity Age"
                   value={scenario.longevityAge}
                   min={70} max={105}
-                  format={(v) => `${v}`}
+                  format={(v) => `${v} yrs`}
                   color={TEXT_COLORS[index]}
+                  accent={ACCENT_COLORS[index]}
                   onChange={(v) => updateScenario(index, 'longevityAge', v)}
                 />
                 <SliderRow
                   label="Inflation Rate"
                   value={scenario.inflationRate}
                   min={0} max={10} step={0.1}
-                  format={(v) => `${v}%`}
+                  format={(v) => `${Number(v).toFixed(1)}%`}
                   color={TEXT_COLORS[index]}
+                  accent={ACCENT_COLORS[index]}
                   onChange={(v) => updateScenario(index, 'inflationRate', v)}
                 />
 
@@ -306,9 +325,8 @@ export default function ScenariosPage() {
               </div>
 
               {/* Results */}
-              <div className="px-6 py-4 space-y-3">
+              <div className="px-6 py-4 space-y-3 flex-1">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Projected Results</h3>
-
                 <ResultRow label="At Retirement" value={formatDollars(result.atRetirement)} />
                 <ResultRow label="Peak Portfolio" value={formatDollars(result.peak)} />
                 <ResultRow label="Final Balance" value={formatDollars(result.final)} />
@@ -325,16 +343,21 @@ export default function ScenariosPage() {
               </div>
 
               {/* Save button */}
-              <div className="px-6 pb-6">
-                {savedIndex === index && (
-                  <p className="text-xs text-green-600 text-center mb-2">Saved successfully!</p>
+              <div className="px-6 pb-6 space-y-2">
+                {err && (
+                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>
+                )}
+                {isSaved && (
+                  <p className="text-xs text-green-600 bg-green-50 border border-green-200 rounded px-3 py-2 text-center">
+                    ✓ Saved as &ldquo;{scenario.name}&rdquo;
+                  </p>
                 )}
                 <button
                   onClick={() => handleSave(index)}
-                  disabled={savingIndex === index}
+                  disabled={isSaving}
                   className={`w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50 ${COLORS[index]} hover:opacity-90`}
                 >
-                  {savingIndex === index ? 'Saving...' : 'Save Scenario'}
+                  {isSaving ? 'Saving...' : 'Save Scenario'}
                 </button>
               </div>
             </div>
@@ -345,7 +368,7 @@ export default function ScenariosPage() {
   )
 }
 
-function SliderRow({ label, value, min, max, step = 1, format, color, onChange }: {
+function SliderRow({ label, value, min, max, step = 1, format, color, accent, onChange }: {
   label: string
   value: number
   min: number
@@ -353,6 +376,7 @@ function SliderRow({ label, value, min, max, step = 1, format, color, onChange }
   step?: number
   format: (v: number) => string
   color: string
+  accent: string
   onChange: (v: number) => void
 }) {
   return (
@@ -365,7 +389,7 @@ function SliderRow({ label, value, min, max, step = 1, format, color, onChange }
         type="range"
         min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 cursor-pointer accent-neutral-900"
+        className={`w-full h-1.5 cursor-pointer ${accent}`}
       />
     </div>
   )
