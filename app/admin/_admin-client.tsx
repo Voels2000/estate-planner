@@ -1,5 +1,4 @@
-cat > /Users/al/Estate/app/admin/_admin-client.tsx << 'ENDOFFILE'
-'use client'cat > /Users/al/Estate/app/admin/_admin-client.tsx << 'ENDOFFILE'
+
 'use client'
 
 import { useState } from 'react'
