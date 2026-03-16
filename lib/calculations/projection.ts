@@ -25,13 +25,15 @@ export type HouseholdForProjection = {
   state_primary: string | null
   state_compare: string | null
   inflation_rate: number
+  growth_rate_accumulation: number
+  growth_rate_retirement: number
+
 }
 
 /** Income row: annual or recurring income for the household */
 export type IncomeRow = {
   id: string
   owner_id: string
-  owner: string
   amount: number
   start_year?: number | null
   end_year?: number | null
@@ -117,7 +119,7 @@ async function fetchHousehold(supabase: Awaited<ReturnType<typeof createClient>>
   const { data, error } = await supabase
     .from('households')
     .select(
-      'id, owner_id, person1_name, person1_birth_year, person1_retirement_age, person1_ss_claiming_age, person1_longevity_age, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_ss_claiming_age, person2_longevity_age, filing_status, state_primary, state_compare, inflation_rate'
+       'id, owner_id, person1_name, person1_birth_year, person1_retirement_age, person1_ss_claiming_age, person1_longevity_age, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_ss_claiming_age, person2_longevity_age, filing_status, state_primary, state_compare, inflation_rate, growth_rate_accumulation, growth_rate_retirement'
     )
     .eq('id', householdId)
     .maybeSingle()
@@ -129,7 +131,7 @@ async function fetchHousehold(supabase: Awaited<ReturnType<typeof createClient>>
 async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, ownerId: string): Promise<AssetRow[]> {
   const { data, error } = await supabase
     .from('assets')
-    .select('id, owner_id, type, name, value, details, created_at, updated_at, owner')
+    .select('id, owner_id, type, name, value, details, created_at, updated_at')
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false })
   if (error) throw new Error(`Failed to fetch assets: ${error.message}`)
@@ -142,7 +144,6 @@ async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, o
     details: (row.details as Record<string, unknown>) ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    owner: row.owner ?? 'person1',
   }))
 }
 
@@ -150,7 +151,7 @@ async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, o
 async function fetchIncome(supabase: Awaited<ReturnType<typeof createClient>>, ownerId: string): Promise<IncomeRow[]> {
   const { data, error } = await supabase
     .from('income')
-    .select('id, owner_id, amount, start_year, end_year, inflation_adjust, source, owner')
+    .select('id, owner_id, amount, start_year, end_year, inflation_adjust, source')
     .eq('owner_id', ownerId)
   if (error) return []
   return (data ?? []).map((row) => ({
@@ -161,7 +162,6 @@ async function fetchIncome(supabase: Awaited<ReturnType<typeof createClient>>, o
     end_year: row.end_year != null ? Number(row.end_year) : null,
     inflation_adjust: row.inflation_adjust ?? true,
     source: row.source ?? null,
-    owner: row.owner ?? 'person1',
   }))
 }
 
@@ -421,7 +421,8 @@ export async function runProjection(
 
   const startYear = options.start_year ?? CURRENT_YEAR
   const endYear = options.end_year ?? startYear + 40
-  const growthRate = options.growth_rate ?? 0.05
+  const growthRateAccumulation = (household.growth_rate_accumulation ?? 7) / 100
+  const growthRateRetirement = (household.growth_rate_retirement ?? 5) / 100
   const inflationPct = household.inflation_rate ?? 3
   const baseYear = startYear
 
@@ -494,6 +495,8 @@ export async function runProjection(
 
     for (const a of assets) {
       const prev = balances[a.id] ?? 0
+      const isRetired = person1RetirementAge != null && person1Age >= person1RetirementAge
+      const growthRate = isRetired ? growthRateRetirement : growthRateAccumulation
       let next = prev * (1 + growthRate)
       if (RMD_ELIGIBLE_TYPES.includes(a.type as (typeof RMD_ELIGIBLE_TYPES)[number]) && rmdDivisor > 0) {
         const rmdForAccount = prev / rmdDivisor
