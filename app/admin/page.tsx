@@ -33,6 +33,26 @@ export default async function AdminPage() {
     .from('advisor_tiers')
     .select('*')
     .order('display_order')
+  
+    const { data: assetTypes } = await supabase
+    .from('asset_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: liabilityTypes } = await supabase
+    .from('liability_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: incomeTypes } = await supabase
+    .from('income_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: expenseTypes } = await supabase
+    .from('expense_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
 
   // Feedback
   const { data: feedback } = await supabase
@@ -80,6 +100,10 @@ export default async function AdminPage() {
       feedback={feedback ?? []}
       appConfig={appConfig ?? []}
       advisorTiers={advisorTiers ?? []}
+      assetTypes={assetTypes ?? []}
+      liabilityTypes={liabilityTypes ?? []}
+      incomeTypes={incomeTypes ?? []}
+      expenseTypes={expenseTypes ?? []}
     />
   )
 }
