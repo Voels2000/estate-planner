@@ -9,6 +9,8 @@ type Household = {
   person1_retirement_age: number
   person1_longevity_age: number
   inflation_rate: number
+  growth_rate_accumulation: number
+  growth_rate_retirement: number
   state_primary: string
   filing_status: string
   deduction_mode: 'standard' | 'custom' | 'none'
@@ -147,6 +149,8 @@ export default function ProjectionsPage() {
     const retirementAge = household.person1_retirement_age ?? 65
     const longevityAge = household.person1_longevity_age ?? 90
     const inflationRate = Number(household.inflation_rate) / 100 || 0.025
+    const growthAccumulation = Number(household.growth_rate_accumulation ?? 7) / 100
+    const growthRetirement = Number(household.growth_rate_retirement ?? 5) / 100
     const filingStatus = household.filing_status ?? 'single'
     const stateCode = household.state_primary ?? ''
     const totalAssets = assets.reduce((sum, a) => sum + Number(a.value), 0)
@@ -199,11 +203,11 @@ export default function ProjectionsPage() {
 
       const net = annualIncome - annualExpenses - annualTaxes
 
-      // Grow portfolio at 7% during accumulation, draw down in retirement
+      // Grow portfolio at configured rate during accumulation vs retirement
       if (!isRetirement) {
-        portfolio = portfolio * 1.07 + Math.max(0, net)
+        portfolio = portfolio * (1 + growthAccumulation) + Math.max(0, net)
       } else {
-        portfolio = portfolio * 1.05 + net
+        portfolio = portfolio * (1 + growthRetirement) + net
         if (portfolio < 0) portfolio = 0
       }
 
@@ -317,6 +321,51 @@ export default function ProjectionsPage() {
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
       {savedMessage && <p className="mb-4 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3">Scenario saved successfully!</p>}
+            {/* Growth Rate Assumptions */}
+            <div className="mb-6 rounded-xl border border-neutral-200 bg-white shadow-sm p-4">
+        <h2 className="text-sm font-semibold text-neutral-700 mb-3">Projection Assumptions</h2>
+        <div className="flex flex-wrap gap-6 items-end">
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">
+              Accumulation Growth Rate (%)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              step="0.1"
+              value={household.growth_rate_accumulation ?? 7}
+              onChange={e => setHousehold(h => h ? { ...h, growth_rate_accumulation: Number(e.target.value) } : h)}
+              onBlur={async e => {
+                if (!household) return
+                const supabase = createClient()
+                await supabase.from('households').update({ growth_rate_accumulation: Number(e.target.value) }).eq('id', household.id)
+              }}
+              className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">
+              Retirement Growth Rate (%)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              step="0.1"
+              value={household.growth_rate_retirement ?? 5}
+              onChange={e => setHousehold(h => h ? { ...h, growth_rate_retirement: Number(e.target.value) } : h)}
+              onBlur={async e => {
+                if (!household) return
+                const supabase = createClient()
+                await supabase.from('households').update({ growth_rate_retirement: Number(e.target.value) }).eq('id', household.id)
+              }}
+              className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <p className="text-xs text-neutral-400 pb-2">Changes save automatically on blur and update the projection instantly.</p>
+        </div>
+      </div>
       {!taxDataAvailable && (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           ⚠️ Tax data not found — projections shown pre-tax. Contact your administrator to load tax bracket data.
