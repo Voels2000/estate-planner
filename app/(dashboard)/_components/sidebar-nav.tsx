@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/expenses', label: 'Expenses', icon: '💸' },
   { href: '/projections', label: 'Projections', icon: '📈' },
   { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
+  { href: '/import', label: 'Import Data', icon: '📥' },
   { href: '/billing', label: 'Billing', icon: '💳' },
 ]
 
