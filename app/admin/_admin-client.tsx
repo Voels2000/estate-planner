@@ -30,6 +30,15 @@ type AppConfig = {
   updated_at: string
 }
 
+type CategoryItem = {
+  value: string
+  label: string
+  sort_order: number
+  is_active: boolean
+}
+
+type CategoryTable = 'asset_types' | 'liability_types' | 'income_types' | 'expense_types'
+
 type Props = {
   totalUsers: number
   newToday: number
@@ -47,13 +56,21 @@ type Props = {
   feedback: Feedback[]
   appConfig: AppConfig[]
   advisorTiers: AdvisorTier[]
+  assetTypes: CategoryItem[]
+  liabilityTypes: CategoryItem[]
+  incomeTypes: CategoryItem[]
+  expenseTypes: CategoryItem[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories'
 
 export function AdminClient({
   appConfig,
   advisorTiers,
+  assetTypes: initialAssetTypes,
+  liabilityTypes: initialLiabilityTypes,
+  incomeTypes: initialIncomeTypes,
+  expenseTypes: initialExpenseTypes,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -69,6 +86,67 @@ export function AdminClient({
   const [savingTierId, setSavingTierId] = useState<string | null>(null)
   const [savedTierId, setSavedTierId] = useState<string | null>(null)
   const [tierError, setTierError] = useState<string | null>(null)
+
+  const [categories, setCategories] = useState<Record<CategoryTable, CategoryItem[]>>({
+    asset_types: initialAssetTypes,
+    liability_types: initialLiabilityTypes,
+    income_types: initialIncomeTypes,
+    expense_types: initialExpenseTypes,
+  })
+  const [savingCategory, setSavingCategory] = useState<string | null>(null)
+  const [savedCategory, setSavedCategory] = useState<string | null>(null)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
+  const [addingTo, setAddingTo] = useState<CategoryTable | null>(null)
+  const [newLabel, setNewLabel] = useState('')
+  const [newValue, setNewValue] = useState('')
+
+  function updateCategory(table: CategoryTable, value: string, field: keyof CategoryItem, newVal: string | boolean | number) {
+    setCategories(prev => ({
+      ...prev,
+      [table]: prev[table].map(item =>
+        item.value === value ? { ...item, [field]: newVal } : item
+      )
+    }))
+  }
+
+  async function handleSaveCategory(table: CategoryTable, item: CategoryItem) {
+    const key = `${table}:${item.value}`
+    setSavingCategory(key)
+    setCategoryError(null)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from(table)
+        .update({ label: item.label, sort_order: item.sort_order, is_active: item.is_active })
+        .eq('value', item.value)
+      if (error) throw error
+      setSavedCategory(key)
+      setTimeout(() => setSavedCategory(null), 2000)
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to save.')
+    } finally {
+      setSavingCategory(null)
+    }
+  }
+
+  async function handleAddCategory(table: CategoryTable) {
+    if (!newLabel.trim() || !newValue.trim()) return
+    setCategoryError(null)
+    const slug = newValue.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    const maxOrder = Math.max(0, ...categories[table].map(i => i.sort_order))
+    const newItem: CategoryItem = { value: slug, label: newLabel.trim(), sort_order: maxOrder + 10, is_active: true }
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from(table).insert(newItem)
+      if (error) throw error
+      setCategories(prev => ({ ...prev, [table]: [...prev[table], newItem].sort((a, b) => a.sort_order - b.sort_order) }))
+      setAddingTo(null)
+      setNewLabel('')
+      setNewValue('')
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to add category.')
+    }
+  }
 
   function updateTier(id: string, field: keyof AdvisorTier, value: string | boolean | number | null) {
     setTiers(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t))
@@ -128,6 +206,14 @@ export function AdminClient({
     { key: 'feedback', label: 'Feedback', icon: '💬' },
     { key: 'settings', label: 'Settings', icon: '⚙️' },
     { key: 'tiers', label: 'Advisor Tiers', icon: '🏷️' },
+    { key: 'categories', label: 'Categories', icon: '🗂️' },
+  ]
+
+  const CATEGORY_SECTIONS: { table: CategoryTable; label: string; description: string }[] = [
+    { table: 'asset_types', label: 'Asset Types', description: 'Categories shown in the asset owner dropdown.' },
+    { table: 'liability_types', label: 'Liability Types', description: 'Categories shown in the liabilities dropdown.' },
+    { table: 'income_types', label: 'Income Types', description: 'Categories shown in the income source dropdown.' },
+    { table: 'expense_types', label: 'Expense Categories', descrshown in the expenses dropdown.' },
   ]
 
   const CONFIG_LABELS: Record<string, { label: string; description: string; type: 'number' | 'text' }> = {
@@ -145,7 +231,7 @@ export function AdminClient({
         <p className="mt-1 text-sm text-neutral-600">Monitor your app&apos;s growth, usage and feedback</p>
       </div>
 
-      <div className="flex gap-1 border-b border-neutral-200 mb-8">
+      <div className="flex gap-1 border-b border-neutral-200 mb-8 flex-wrap">
         {TABS.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
@@ -158,7 +244,6 @@ export function AdminClient({
         ))}
       </div>
 
-      {/* Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
           <section>
@@ -173,7 +258,7 @@ export function AdminClient({
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">Revenue</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Est. MRR" value={`$${rest.mrr.toLocaleString()}`} icon="💵" highlight="green" />
+            ard label="Est. MRR" value={`$${rest.mrr.toLocaleString()}`} icon="💵" highlight="green" />
               <StatCard label="Active Subscriptions" value={String(rest.activeSubscriptions)} icon="✅" />
               <StatCard label="Consumer Plan" value={String(rest.consumerCount)} icon="👤" />
               <StatCard label="Advisor Plan" value={String(rest.advisorCount)} icon="🏦" />
@@ -183,7 +268,7 @@ export function AdminClient({
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">Product Usage</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard label="Assets Added" value={String(rest.assetCount)} icon="🏦" />
-              <StatCard label="Income Sources" value={String(rest.incomeCount)} icon="💰" />
+         Card label="Income Sources" value={String(rest.incomeCount)} icon="💰" />
               <StatCard label="Expenses Added" value={String(rest.expenseCount)} icon="💸" />
               <StatCard label="Projections Run" value={String(rest.projectionCount)} icon="📈" />
             </div>
@@ -199,14 +284,13 @@ export function AdminClient({
                   <button onClick={() => setActiveTab('feedback')} className="text-sm text-indigo-600 hover:underline">
                     View all {rest.feedback.length} feedback items →
                   </button>
-                )}
+      )}
               </div>
             )}
           </section>
         </div>
       )}
 
-      {/* Users */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
           <table className="min-w-full divide-y divide-neutral-100">
@@ -222,7 +306,7 @@ export function AdminClient({
                 <tr key={profile.id} className="hover:bg-neutral-50">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{profile.full_name ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{profile.email}</td>
-                  <td className="px-4 py-3">
+                <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       profile.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                       profile.role === 'advisor' ? 'bg-blue-100 text-blue-700' :
@@ -235,7 +319,7 @@ export function AdminClient({
                       profile.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
                       profile.subscription_status === 'trialing' ? 'bg-yellow-100 text-yellow-700' :
                       profile.subscription_status === 'canceled' ? 'bg-red-100 text-red-700' :
-                      'bg-neutral-100 text-neutral-600'
+                      'bg-neutral-0 text-neutral-600'
                     }`}>{profile.subscription_status ?? 'none'}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
@@ -248,7 +332,6 @@ export function AdminClient({
         </div>
       )}
 
-      {/* Usage */}
       {activeTab === 'usage' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -257,7 +340,7 @@ export function AdminClient({
             <StatCard label="Expenses" value={String(rest.expenseCount)} icon="💸" />
             <StatCard label="Projections" value={String(rest.projectionCount)} icon="📈" />
           </div>
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border bordal-200 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-neutral-900 mb-4">Average per User</h3>
             <div className="space-y-3">
               <UsageBar label="Assets per user" value={rest.totalUsers > 0 ? rest.assetCount / rest.totalUsers : 0} max={10} />
@@ -269,7 +352,6 @@ export function AdminClient({
         </div>
       )}
 
-      {/* Feedback */}
       {activeTab === 'feedback' && (
         <div className="space-y-4">
           <div className="flex gap-2">
@@ -289,55 +371,31 @@ export function AdminClient({
         </div>
       )}
 
-      {/* Advisor Tiers */}
       {activeTab === 'tiers' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
             <h2 className="text-base font-semibold text-neutral-900 mb-1">Advisor Tiers</h2>
-            <p className="text-sm text-neutral-500 mb-6">Edit tier names, prices, client limits and active status. Stripe price IDs are read-only.</p>
-
-            {tierError && (
-              <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{tierError}</p>
-            )}
-
+            <p className="text-sm text-neutral-500 mb-6">Edit tier names, prices, client limits and active status. Stripe ice IDs are read-only.</p>
+            {tierError && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{tierError}</p>}
             <div className="space-y-4">
               {[...tiers].sort((a, b) => a.display_order - b.display_order).map(tier => (
                 <div key={tier.id} className="rounded-xl border border-neutral-200 p-4 space-y-3">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-neutral-500 mb-1">Name</label>
-                      <input
-                        type="text"
-                        value={tier.name}
-                        onChange={e => updateTier(tier.id, 'name', e.target.value)}
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                      />
+                      <input type="text" value={tier.name} onChange={e => updateTier(tier.id, 'name', e.target.value)} className={inputClass} />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-neutral-500 mb-1">Price ($/month)</label>
-                      <input
-                        type="number"
-                        value={tier.price_monthly}
-                        onChange={e => updateTier(tier.id, 'price_monthly', Number(e.target.value))}
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                      />
+                      <input type="number" value={tier.price_monthly} onChange={e => updateTier(tier.id, 'price_monthly', Number(e.target.value))} className={inputClass} />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-neutral-500 mb-1">Client Limit (blank = unlimited)</label>
-                      <input
-                        type="number"
-                        value={tier.client_limit ?? ''}
-                        onChange={e => updateTier(tier.id, 'client_limit', e.target.value === '' ? null : Number(e.target.value))}
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                      />
+                      <input type="number" value={tier.client_limit ?? ''} onChange={e => updateTier(tier.id, 'client_limit', e.target.value === '' ? null : Number(e.target.value))} className={inputClass} />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-neutral-500 mb-1">Active</label>
-                      <select
-                        value={tier.is_active ? 'true' : 'false'}
-                        onChange={e => updateTier(tier.id, 'is_active', e.target.value === 'true')}
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                      >
+                      <select value={tier.is_active ? 'true' : 'false'} onChange={e => updateTier(tier.id, 'is_active', e.target.value === 'true')} className={inputClass}>
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                       </select>
@@ -345,69 +403,132 @@ export function AdminClient({
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-neutral-400 font-mono">{tier.stripe_price_id}</p>
-                    <button
-                      onClick={() => handleSaveTier(tier)}
-                      disabled={savingTierId === tier.id}
-                      className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
-                    >
+                    <button onClick={() => handleSaveTier(tier)} disabled={savingTierId === tier.id}
+                      className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
                       {savingTierId === tier.id ? 'Saving…' : savedTierId === tier.id ? '✓ Saved' : 'Save'}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
-            {tiers.length === 0 && (
-              <p className="mt-4 text-sm text-neutral-500">No advisor tiers configured.</p>
-            )}
+            {tiers.length === 0 && <p className="mt-4 text-sm text-neutral-500">No advisor tiers configured.</p>}
           </div>
         </div>
       )}
 
-      {/* Settings */}
+      {activeTab === 'categories' && (
+        <div className="space-y-8">
+          {categoryError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{categoryError}</p>}
+          {CATEGORY_SECTIONS.map(({ tablabel, description }) => (
+            <div key={table} className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-base font-semibold text-neutral-900">{label}</h2>
+                <button
+                  onClick={() => { setAddingTo(table); setNewLabel(''); setNewValue('') }}
+                  className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
+                  + Add
+                </button>
+              </div>
+              <p className="text-sm text-neutral-500 mb-5">{description}</p>
+              {addingTo === table && (
+                <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                  <p className="text-xs font-semibold text-indigo-700 mb-3">New Category</p>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">Display Label</label>
+                      <input type="text" placeholder="e.g. Real Estate" value={newLabel}
+                        onChange={e => setNewLabel(e.target.value)} className={inputClass} autoFocus />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">Value / Slug (auto-generated)</label>
+                      <input type="text" placeholder="e.g. real_estate"
+                        value={newValue || newLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}
+                        onChange={e => setNewValue(e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleAddCategory(table)}
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
+                      Add Category
+                    </button>
+                    <button onClick={() => setAddingTo(null)}
+                      className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                {[...categories[table]].sort((a, b) => a.sort_order - b.sort_order).map(item => {
+                  const key = `${table}:${item.value}`
+                  return (
+                    <div key={item.value} className="rounded-xl border border-neutral-200 p-3">
+                      <div className="grid grid-cols-12 gap-3 items-center">
+                        <div className="col-span-4">
+                          <label className="block text-xs font-medium text-neutral-500 mb-1">Label</label>
+                          <input type="text" value={item.label}
+                            onChange={e => updateCategory(table, item.value, 'label', e.target.value)} className={inputClass} />
+                        </div>
+                        <div className="col-span-3">
+                          <label className="block text-xs font-medium text-neutral-500 mb-1">Value (slug)</label>
+                          <p className="text-sm font-mono text-neutral-400 py-2 px-1">{item.value}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-xs font-medium text-neutral-500 mb-1">Sort Order</label>
+                          <input type="number" value={item.sort_order}
+                            onChange={e => updateCategory(table, item.value, 'sort_order', Number(e.target.value))} className={inputClass} />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-xs font-medium text-neutral-500 mb-1">Active</label>
+                          <select value={item.is_active ? 'true' : 'false'}
+                            onChange={e => updateCategory(table, item.value, 'is_active', e.target.value === 'true')} className={inputClass}>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                          </select>
+                        </div>
+                        <div className="col-span-1 pt-5">
+                          <button onClick={() => handleSaveCategory(table, item)} disabled={savingCategory === key}
+                            className="w-full rounded-lg bg-neutral-900 px-2 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
+                            {savingCategory === key ? '…' : savedCategory === key ? '✓' : 'Save'}
+                          </button                      </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {categories[table].length === 0 && (
+                  <p className="text-sm text-neutral-400 py-4 text-center">No categories yet. Add one above.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {activeTab === 'settings' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
             <h2 className="text-base font-semibold text-neutral-900 mb-1">App Configuration</h2>
             <p className="text-sm text-neutral-500 mb-6">Changes take effect immediately for new sessions.</p>
-
-            {configError && (
-              <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{configError}</p>
-            )}
-
+            {configError && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{configError}</p>}
             <div className="space-y-6">
               {appConfig.map(config => {
                 const meta = CONFIG_LABELS[config.key]
                 return (
                   <div key={config.key} className="flex items-start justify-between gap-6 pb-6 border-b border-neutral-100 last:border-0 last:pb-0">
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-neutral-800">
-                        {meta?.label ?? config.key}
-                      </label>
-                      {meta?.description && (
-                        <p className="text-xs text-neutral-500 mt-0.5">{meta.description}</p>
-                      )}
+                      <label className="block text-sm font-semibold text-neutral-800">{meta?.label ?? config.key}</label>
+                      {meta?.description && <p className="text-xs text-neutral-500 mt-0.5">{meta.description}</p>}
                       <p className="text-xs text-neutral-400 mt-1">
-                        Last updated: {new Date(config.updated_at).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric',
-                          hour: 'numeric', minute: '2-digit'
-                        })}
+                        Last updated: {new Date(config.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <input
-                        type={meta?.type ?? 'text'}
-                        value={configValues[config.key] ?? config.value}
+                      <input type={meta?.type ?? 'text'} value={configValues[config.key] ?? config.value}
                         onChange={(e) => setConfigValues(prev => ({ ...prev, [config.key]: e.target.value }))}
-                        className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 text-center focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                      />
-                      {config.key === 'trial_duration_minutes' && (
-                        <span className="text-xs text-neutral-400">minutes</span>
-                      )}
-                      <button
-                        onClick={() => handleSaveConfig(config.key)}
-                        disabled={savingKey === config.key}
-                        className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
-                      >
+                        className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 text-center focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500" />
+                      {config.key === 'trial_duration_minutes' && <span className="text-xs text-neutral-400">minutes</span>}
+                      <button onClick={() => handleSaveConfig(config.key)} disabled={savingKey === config.key}
+                        className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
                         {savingKey === config.key ? 'Saving…' : savedKey === config.key ? '✓ Saved' : 'Save'}
                       </button>
                     </div>
@@ -421,6 +542,8 @@ export function AdminClient({
     </div>
   )
 }
+
+const inputClass = "block w-full rounded-lg border border-neutral-3x-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
 function StatCard({ label, value, icon, highlight }: { label: string; value: string; icon: string; highlight?: 'green' }) {
   return (
