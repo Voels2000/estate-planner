@@ -213,7 +213,7 @@ export function AdminClient({
     { table: 'asset_types', label: 'Asset Types', description: 'Categories shown in the asset owner dropdown.' },
     { table: 'liability_types', label: 'Liability Types', description: 'Categories shown in the liabilities dropdown.' },
     { table: 'income_types', label: 'Income Types', description: 'Categories shown in the income source dropdown.' },
-    { table: 'expense_types', label: 'Expense Categories', descrshown in the expenses dropdown.' },
+    { table: 'expense_types', label: 'Expense Categories', description: 'Categories shown in the expenses dropdown.' },
   ]
 
   const CONFIG_LABELS: Record<string, { label: string; description: string; type: 'number' | 'text' }> = {
