@@ -150,6 +150,8 @@ export default async function ClientDetailPage({
             <Detail label="Retirement Age" value={household.person1_retirement_age} />
             <Detail label="SS Claiming Age" value={household.person1_ss_claiming_age} />
             <Detail label="Inflation Rate" value={`${household.inflation_rate}%`} />
+            <Detail label="Growth (Accumulation)" value={`${household.growth_rate_accumulation ?? 7}%`} />
+            <Detail label="Growth (Retirement)" value={`${household.growth_rate_retirement ?? 5}%`} />
             <Detail label="Longevity Age" value={household.person1_longevity_age} />
             <Detail label="Deduction Mode" value={household.deduction_mode} />
             <Detail label="Has Spouse" value={household.has_spouse ? 'Yes' : 'No'} />

@@ -30,6 +30,16 @@ export const householdFormSchema = z.object({
     .min(0, 'Inflation must be at least 0%')
     .max(20, 'Inflation must be at most 20%')
     .default(3),
+  growth_rate_accumulation: z.coerce
+    .number()
+    .min(-10, 'Growth rate must be at least -10%')
+    .max(30, 'Growth rate must be at most 30%')
+    .default(7),
+  growth_rate_retirement: z.coerce
+    .number()
+    .min(-10, 'Growth rate must be at least -10%')
+    .max(30, 'Growth rate must be at most 30%')
+    .default(5),
 })
 
 export type HouseholdFormValues = z.output<typeof householdFormSchema>
@@ -53,6 +63,8 @@ export type HouseholdRow = {
   state_primary: string | null
   state_compare: string | null
   inflation_rate: number
+  growth_rate_accumulation?: number
+  growth_rate_retirement?: number
   created_at?: string
   updated_at?: string
 }

@@ -21,6 +21,8 @@ type ScenarioInputs = {
   statePrimary: string
   stateCompare: string
   inflationRate: number
+  growthRateAccumulation: number
+  growthRateRetirement: number
 }
 
 type ScenarioResult = {
@@ -40,6 +42,8 @@ type Household = {
   state_primary: string
   state_compare: string
   inflation_rate: number
+  growth_rate_accumulation: number
+  growth_rate_retirement: number
 }
 
 function calcProjection(
@@ -57,6 +61,9 @@ function calcProjection(
   let peak = totalAssets
   let atRetirement = 0
   let monthlyAtRetirement = 0
+
+  const growthAccumulation = inputs.growthRateAccumulation / 100
+  const growthRetirement = inputs.growthRateRetirement / 100
 
   for (let age = currentAge; age <= inputs.longevityAge; age++) {
     const year = currentYear + (age - currentAge)
@@ -79,9 +86,9 @@ function calcProjection(
     const net = annualIncome - annualExpenses
 
     if (!isRetirement) {
-      portfolio = portfolio * 1.07 + Math.max(0, net)
+      portfolio = portfolio * (1 + growthAccumulation) + Math.max(0, net)
     } else {
-      portfolio = portfolio * 1.05 + net
+      portfolio = portfolio * (1 + growthRetirement) + net
       if (portfolio < 0) portfolio = 0
     }
 
@@ -140,6 +147,8 @@ export default function ScenariosPage() {
         statePrimary: householdData.state_primary ?? '',
         stateCompare: householdData.state_compare ?? '',
         inflationRate: Number(householdData.inflation_rate) ?? 2.5,
+        growthRateAccumulation: Number(householdData.growth_rate_accumulation) ?? 7,
+        growthRateRetirement: Number(householdData.growth_rate_retirement) ?? 5,
       }
       setScenarios([
         { ...base, name: 'Base Case' },
