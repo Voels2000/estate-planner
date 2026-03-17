@@ -14,11 +14,11 @@ const NAV_ITEMS = [
   { href: '/income', label: 'Income', icon: '💰' },
   { href: '/expenses', label: 'Expenses', icon: '💸' },
   { href: '/projections', label: 'Projections', icon: '📈' },
-  { href: '/rmd', label: 'RMD', icon: '📋' },
   { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
   { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
   { href: '/import', label: 'Import Data', icon: '📥' },
   { href: '/billing', label: 'Billing', icon: '💳' },
+
 ]
 
 export function SidebarNav({ user, role }: { user: User; role?: string }) {
