@@ -212,7 +212,7 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
       }
       onSave()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

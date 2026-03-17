@@ -124,8 +124,8 @@ export default function CompleteClient({
                 <thead className="sticky top-0 bg-white border-b border-neutral-200">
                   <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
                     <th className="pb-2 pr-3">Year</th>
-                    <th className="pb-2 pr-3">Age 1</th>
-                    {person2Name && <th className="pb-2 pr-3">Age 2</th>}
+                   <th className="pb-2 pr-3">{person1Name}&apos;s Age</th>
+                    {person2Name && <th className="pb-2 pr-3">{person2Name}&apos;s Age</th>}
                     <th className="pb-2 pr-3">Income</th>
                     <th className="pb-2 pr-3">Tax</th>
                     <th className="pb-2 pr-3">Expenses</th>
