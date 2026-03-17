@@ -24,6 +24,7 @@ export type HouseholdForProjection = {
   filing_status: string
   state_primary: string | null
   state_compare: string | null
+  state_secondary: string | null
   inflation_rate: number
   growth_rate_accumulation: number
   growth_rate_retirement: number
@@ -105,6 +106,8 @@ export type ProjectionOptions = {
   state_primary?: string | null
   /** Override second state for tax comparison */
   state_compare?: string | null
+  /** Override secondary state for tax */
+  state_secondary?: string | null
   /** Override retirement age for person1 (scenario comparison). Before this age: salary income included. After: salary stops, assets drawn down. */
   person1_retirement_age?: number | null
   /** Override Social Security claiming age for person1 (scenario comparison). At or after this age: SS income from income entries with source social_security. */
@@ -119,7 +122,7 @@ async function fetchHousehold(supabase: Awaited<ReturnType<typeof createClient>>
   const { data, error } = await supabase
     .from('households')
     .select(
-       'id, owner_id, person1_name, person1_birth_year, person1_retirement_age, person1_ss_claiming_age, person1_longevity_age, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_ss_claiming_age, person2_longevity_age, filing_status, state_primary, state_compare, inflation_rate, growth_rate_accumulation, growth_rate_retirement'
+       'id, owner_id, person1_name, person1_birth_year, person1_retirement_age, person1_ss_claiming_age, person1_longevity_age, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_ss_claiming_age, person2_longevity_age, filing_status, state_primary, state_compare, state_secondary, inflation_rate, growth_rate_accumulation, growth_rate_retirement'
     )
     .eq('id', householdId)
     .maybeSingle()
