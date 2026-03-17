@@ -181,7 +181,7 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
       if (!user) return
 
       const payload = {
-        owner,
+        tsowner: owner,
         category,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),

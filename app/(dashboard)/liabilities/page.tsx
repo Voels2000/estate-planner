@@ -198,7 +198,7 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
       if (!user) return
 
       const payload = {
-        owner,
+        tsowner: owner,
         type,
         name,
         balance: parseFloat(balance),

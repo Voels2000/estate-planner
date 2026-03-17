@@ -194,7 +194,7 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
       if (!user) return
 
       const payload = {
-        owner,
+        tsowner: owner,
         source,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),
