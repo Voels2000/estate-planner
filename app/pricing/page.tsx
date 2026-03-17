@@ -17,6 +17,7 @@ const PLANS = [
   },
   {
     id: 'advisor',
+    highlighted: true,
     name: 'Advisor',
     price: 49,
     description: 'For financial advisors and professionals.',
@@ -26,7 +27,6 @@ const PLANS = [
       'Client management',
       'Priority support',
     ],
-    highlighted: true,
   },
 ] as const
 

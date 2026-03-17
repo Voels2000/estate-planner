@@ -12,6 +12,10 @@ export type YearRow = {
   // Tax
   tax_federal: number
   tax_state: number
+  tax_state_secondary: number
+  tax_capital_gains: number
+  tax_niit: number
+  tax_payroll: number
   irmaa_part_b: number
   irmaa_part_d: number
   tax_total: number
@@ -54,6 +58,7 @@ export type CompleteProjectionInput = {
     person2_ss_benefit_67: number | null
     filing_status: string
     state_primary: string | null
+    state_secondary?: string | null
     inflation_rate: number
     growth_rate_accumulation: number
     growth_rate_retirement: number
@@ -140,9 +145,52 @@ function calcFederalTax(taxableIncome: number, filingStatus: string): number {
   return Math.round(tax)
 }
 
-function calcStateTax(income: number, state: string | null): number {
-  if (!state || income <= 0) return 0
-  // Flat-rate approximation by state — Sprint 9 will expand to full bracket tables
+// 2024 long-term capital gains brackets (0%, 15%, 20%)
+const LTCG_LIMIT_0_MFJ = 94050
+const LTCG_LIMIT_15_MFJ = 583750
+const LTCG_LIMIT_0_SINGLE = 47025
+const LTCG_LIMIT_15_SINGLE = 518900
+
+function calcCapitalGainsTax(gains: number, ordinaryIncome: number, filingStatus: string): number {
+  if (gains <= 0) return 0
+  const isMfj = filingStatus === 'married_joint'
+  const limit0 = isMfj ? LTCG_LIMIT_0_MFJ : LTCG_LIMIT_0_SINGLE
+  const limit15 = isMfj ? LTCG_LIMIT_15_MFJ : LTCG_LIMIT_15_SINGLE
+  const room0 = Math.max(0, limit0 - ordinaryIncome)
+  const gainsAt0 = Math.min(gains, room0)
+  const room15 = Math.max(0, limit15 - Math.max(ordinaryIncome, limit0))
+  const gainsAt15 = Math.min(gains - gainsAt0, room15)
+  const gainsAt20 = gains - gainsAt0 - gainsAt15
+  return Math.round(0.15 * gainsAt15 + 0.2 * gainsAt20)
+}
+
+const NIIT_THRESHOLD_MFJ = 250000
+const NIIT_THRESHOLD_SINGLE = 200000
+const NIIT_RATE = 0.038
+
+function calcNiit(investmentIncome: number, magi: number, filingStatus: string): number {
+  if (investmentIncome <= 0) return 0
+  const threshold = filingStatus === 'married_joint' ? NIIT_THRESHOLD_MFJ : NIIT_THRESHOLD_SINGLE
+  const excess = Math.max(0, magi - threshold)
+  const taxable = Math.min(investmentIncome, excess)
+  return Math.round(taxable * NIIT_RATE)
+}
+
+const SS_WAGE_BASE_2024 = 168600
+const SS_RATE = 0.062
+const MEDICARE_RATE = 0.0145
+
+function calcPayrollTax(earnedIncome: number): number {
+  if (earnedIncome <= 0) return 0
+  const ssTaxable = Math.min(earnedIncome, SS_WAGE_BASE_2024)
+  return Math.round(ssTaxable * SS_RATE + earnedIncome * MEDICARE_RATE)
+}
+
+function calcStateTax(
+  income: number,
+  state: string | null,
+  state_secondary?: string | null
+): { primary: number; secondary: number } {
   const rates: Record<string, number> = {
     AL: 0.05, AK: 0.00, AZ: 0.025, AR: 0.049, CA: 0.093, CO: 0.044,
     CT: 0.065, DE: 0.066, FL: 0.00, GA: 0.055, HI: 0.11, ID: 0.058,
@@ -154,8 +202,9 @@ function calcStateTax(income: number, state: string | null): number {
     TX: 0.00, UT: 0.0465, VT: 0.0875, VA: 0.0575, WA: 0.00, WV: 0.065,
     WI: 0.0765, WY: 0.00, DC: 0.0895,
   }
-  const rate = rates[state.toUpperCase()] ?? 0.05
-  return Math.round(income * rate)
+  const primary = !state || income <= 0 ? 0 : Math.round(income * (rates[state.toUpperCase()] ?? 0.05))
+  const secondary = !state_secondary || income <= 0 ? 0 : Math.round(income * (rates[state_secondary.toUpperCase()] ?? 0.05))
+  return { primary, secondary }
 }
 
 function calcIrmaa(
@@ -323,8 +372,19 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     // MAGI for IRMAA uses PRIOR year
     const irmaa = calcIrmaa(prevMagi, household.filing_status, irmaa_brackets)
     const tax_federal = calcFederalTax(income_total, household.filing_status)
-    const tax_state = calcStateTax(income_total, household.state_primary)
-    const tax_total = tax_federal + tax_state + irmaa.part_b + irmaa.part_d
+    const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
+      income_total,
+      household.state_primary,
+      household.state_secondary
+    )
+    const deduction = household.filing_status === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
+    const ordinaryTaxableIncome = Math.max(0, income_total - deduction)
+    const taxableBrokerageGrowth = taxable * growthRate
+    const tax_capital_gains = calcCapitalGainsTax(taxableBrokerageGrowth, ordinaryTaxableIncome, household.filing_status)
+    const investmentIncome = income_rmd + taxableBrokerageGrowth + income_other
+    const tax_niit = calcNiit(investmentIncome, income_total, household.filing_status)
+    const tax_payroll = calcPayrollTax(income_earned)
+    const tax_total = tax_federal + tax_state + tax_state_secondary + tax_capital_gains + tax_niit + tax_payroll + irmaa.part_b + irmaa.part_d
 
     // Store this year's income as next year's MAGI
     prevMagi = income_total
@@ -407,6 +467,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       income_total: Math.round(income_total),
       tax_federal: Math.round(tax_federal),
       tax_state: Math.round(tax_state),
+      tax_state_secondary: Math.round(tax_state_secondary),
+      tax_capital_gains: Math.round(tax_capital_gains),
+      tax_niit: Math.round(tax_niit),
+      tax_payroll: Math.round(tax_payroll),
       irmaa_part_b: Math.round(irmaa.part_b),
       irmaa_part_d: Math.round(irmaa.part_d),
       tax_total: Math.round(tax_total),

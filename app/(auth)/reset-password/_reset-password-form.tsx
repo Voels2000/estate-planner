@@ -34,7 +34,7 @@ export function ResetPasswordForm() {
       setSuccess(true)
       setTimeout(() => router.push('/dashboard'), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

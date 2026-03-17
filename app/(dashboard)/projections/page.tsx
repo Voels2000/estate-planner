@@ -257,7 +257,7 @@ export default function ProjectionsPage() {
       setSavedMessage(true)
       setTimeout(() => setSavedMessage(false), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setIsSaving(false)
     }

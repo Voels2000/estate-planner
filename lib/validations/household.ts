@@ -64,8 +64,6 @@ export type HouseholdRow = {
   state_compare: string | null
   state_secondary: string | null
   inflation_rate: number
-  growth_rate_accumulation?: number
-  growth_rate_retirement?: number
   created_at?: string
   updated_at?: string
 }

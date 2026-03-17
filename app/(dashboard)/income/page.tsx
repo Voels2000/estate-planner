@@ -9,6 +9,7 @@ type Income = {
   owner_id: string
   tsowner: string
   owner?: string
+  ss_person?: string
   source: string
   amount: number
   start_year: number
@@ -121,7 +122,7 @@ export default function IncomePage() {
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(income.source)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{income.source}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {(income.owner ?? 'person1') === 'person1' ? person1Name : (income.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                    {(income.ss_person ?? 'person1') === 'person1' ? person1Name : (income.ss_person ?? 'person1') === 'person2' ? person2Name : 'Joint'}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(income.amount))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
@@ -194,7 +195,7 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
       if (!user) return
 
       const payload = {
-        tsowner: owner,
+        ss_person: owner,
         source,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),

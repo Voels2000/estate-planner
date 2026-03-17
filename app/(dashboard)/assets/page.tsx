@@ -174,18 +174,18 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
       if (editAsset) {
         const { error } = await supabase
           .from('assets')
-          .update({ tsowner: owner, type, name, value: parseFloat(value), updated_at: new Date().toISOString() })
+          .update({ owner: owner, type, name, value: parseFloat(value), updated_at: new Date().toISOString() })
           .eq('id', editAsset.id)
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('assets')
-          .insert({ owner_id: user.id, tsowner: owner, type, name, value: parseFloat(value) })
+          .insert({ owner_id: user.id, owner: owner, type, name, value: parseFloat(value) })
         if (error) throw error
       }
       onSave()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

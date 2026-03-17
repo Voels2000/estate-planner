@@ -42,7 +42,7 @@ export function FeedbackButton({ userId }: { userId: string }) {
         setIsOpen(false)
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setIsSubmitting(false)
     }

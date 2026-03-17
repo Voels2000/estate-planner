@@ -198,7 +198,7 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
       if (!user) return
 
       const payload = {
-        tsowner: owner,
+        owner,
         type,
         name,
         balance: parseFloat(balance),
@@ -216,7 +216,7 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
       }
       onSave()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

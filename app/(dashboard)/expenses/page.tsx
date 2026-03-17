@@ -181,7 +181,6 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
       if (!user) return
 
       const payload = {
-        tsowner: owner,
         category,
         amount: parseFloat(amount),
         start_year: parseInt(startYear),
@@ -199,7 +198,7 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
       }
       onSave()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

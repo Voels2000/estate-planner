@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { number } from 'zod'
 
 const FILING_STATUSES = ['single', 'married_filing_jointly', 'married_filing_separately', 'head_of_household']
 const FILING_STATUS_LABELS: Record<string, string> = {
@@ -251,7 +252,7 @@ export default function ProfilePage() {
         router.refresh()
       }, 1500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+     setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }

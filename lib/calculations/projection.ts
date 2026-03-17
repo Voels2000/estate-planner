@@ -147,7 +147,7 @@ async function fetchAssets(supabase: Awaited<ReturnType<typeof createClient>>, o
     details: (row.details as Record<string, unknown>) ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    owner: row.owner ?? 'person1',
+    owner: String((row as Record<string, unknown>).owner ?? ''),
   }))
 }
 
@@ -500,7 +500,9 @@ export async function runProjection(
     for (const a of assets) {
       const prev = balances[a.id] ?? 0
       const isRetired = person1RetirementAge != null && person1Age >= person1RetirementAge
-      const growthRate = isRetired ? growthRateRetirement : growthRateAccumulation
+      const growthRate = isRetired
+        ? (household.growth_rate_retirement ?? 5) / 100
+        : (household.growth_rate_accumulation ?? 7) / 100
       let next = prev * (1 + growthRate)
       if (RMD_ELIGIBLE_TYPES.includes(a.type as (typeof RMD_ELIGIBLE_TYPES)[number]) && rmdDivisor > 0) {
         const rmdForAccount = prev / rmdDivisor
