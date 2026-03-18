@@ -233,7 +233,7 @@ export default function EstateTaxClient({
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Federal Estate Tax</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
           <p className="mt-1 text-sm text-neutral-600">
             Simplified federal estate picture (illustrative only—not tax advice).
           </p>
