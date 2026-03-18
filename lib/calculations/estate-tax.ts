@@ -31,7 +31,7 @@ function computeProgressiveTaxFromBrackets(
         ? Infinity
         : bracket.max_amount
     if (taxableBase <= bracketMin) break
-    const taxableInBracket = Math.min(taxablease, bracketMax) - bracketMin
+    const taxableInBracket = Math.min(taxableBase, bracketMax) - bracketMin
     if (taxableInBracket > 0) {
       tax += taxableInBracket * (bracket.rate_pct / 100)
     }
