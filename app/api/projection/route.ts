@@ -65,7 +65,7 @@ export async function GET() {
     household,
     assets: (assets ?? []) as AssetRowSelect[],
     liabilities: (liabilities ?? []) as LiabilityRowSelect[],
-    income: (income ?? []) as IncomeRowSelect[],
+    income: (income ?? []) as unknown as IncomeRowSelect[],
     expenses: (expenses ?? []) as ExpenseRowSelect[],
     irmaa_brackets: irmaa_brackets ?? [],
   })
