@@ -16,6 +16,8 @@ export default async function EstateTaxPage() {
     { data: trustsRows },
     { data: householdRow },
     { data: federalEstateTaxBracketsRows },
+    { data: stateEstateTaxRows },
+    { data: stateInheritanceTaxRows },
   ] = await Promise.all([
     supabase
       .from('real_estate')
@@ -42,6 +44,17 @@ export default async function EstateTaxPage() {
       .from('federal_estate_tax_brackets')
       .select('*')
       .order('min_amount', { ascending: true }),
+    supabase
+      .from('state_estate_tax_rules')
+      .select('*')
+      .eq('tax_year', 2024)
+      .order('state', { ascending: true })
+      .order('min_amount', { ascending: true }),
+    supabase
+      .from('state_inheritance_tax_rules')
+      .select('*')
+      .eq('tax_year', 2024)
+      .order('state', { ascending: true }),
   ])
 
   return (
@@ -52,6 +65,8 @@ export default async function EstateTaxPage() {
       trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
       household={householdRow as Record<string, unknown> | null}
       brackets={federalEstateTaxBracketsRows ?? []}
+      stateEstateTaxRules={stateEstateTaxRows ?? []}
+      stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
     />
   )
 }
