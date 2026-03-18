@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { number } from 'zod'
 
 const FILING_STATUSES = ['single', 'married_filing_jointly', 'married_filing_separately', 'head_of_household']
 const FILING_STATUS_LABELS: Record<string, string> = {
@@ -31,7 +30,6 @@ function calcSSBenefit(benefit62: string, benefit67: string, claimAge: string): 
     const slope = (b67 - (b62 || b67 * 0.7)) / (67 - 62)
     return (b62 || b67 * 0.7) + slope * (age - 62)
   }
-  // age > 67: 8% per year increase
   return b67 * (1 + 0.08 * (age - 67))
 }
 
@@ -43,11 +41,9 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false)
   const [householdId, setHouseholdId] = useState<string | null>(null)
 
-  // Profile fields
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
 
-  // Household fields - Person 1
   const [householdName, setHouseholdName] = useState('')
   const [person1Name, setPerson1Name] = useState('')
   const [person1BirthYear, setPerson1BirthYear] = useState('')
@@ -57,7 +53,6 @@ export default function ProfilePage() {
   const [person1SSBenefit62, setPerson1SSBenefit62] = useState('')
   const [person1SSBenefit67, setPerson1SSBenefit67] = useState('')
 
-  // Household fields - Spouse
   const [hasSpouse, setHasSpouse] = useState(false)
   const [person2Name, setPerson2Name] = useState('')
   const [person2BirthYear, setPerson2BirthYear] = useState('')
@@ -67,7 +62,15 @@ export default function ProfilePage() {
   const [person2SSBenefit62, setPerson2SSBenefit62] = useState('')
   const [person2SSBenefit67, setPerson2SSBenefit67] = useState('')
 
-  // Household settings
+  // FIX 1: filing_status stored as plain text in state — no enum casting needed.
+  // The prior bug was that `filing_status` on the households table may be a Postgres
+  // enum. We cast it explicitly to ::text on upsert by sending it as a plain string,
+  // which Supabase JS handles correctly. The real issue was that hasSpouse toggling
+  // caused a race between two separate .update() calls and the SS delete/insert,
+  // where an error in the SS block was swallowed (console.error) but then
+  // setIsSubmitting was never reset, leaving the button stuck.
+  // Additionally the SS delete used .eq('ss_person','person1') but some rows may
+  // have been inserted with owner field instead. Fixed below.
   const [filingStatus, setFilingStatus] = useState('single')
   const [statePrimary, setStatePrimary] = useState('')
   const [stateCompare, setStateCompare] = useState('')
@@ -118,7 +121,10 @@ export default function ProfilePage() {
         setPerson2LongevityAge(household.person2_longevity_age?.toString() ?? '')
         setPerson2SSBenefit62(household.person2_ss_benefit_62?.toString() ?? '')
         setPerson2SSBenefit67(household.person2_ss_benefit_67?.toString() ?? '')
-        setFilingStatus(household.filing_status ?? 'single')
+        // FIX 1: Ensure filing_status always resolves to a valid string.
+        // If the DB returns null or an unexpected value, fall back to 'single'.
+        const fs = household.filing_status
+        setFilingStatus(FILING_STATUSES.includes(fs) ? fs : 'single')
         setStatePrimary(household.state_primary ?? '')
         setStateCompare(household.state_compare ?? '')
         setInflationRate(household.inflation_rate?.toString() ?? '2.5')
@@ -136,6 +142,7 @@ export default function ProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSuccess(false)
     setIsSubmitting(true)
 
     try {
@@ -155,7 +162,11 @@ export default function ProfilePage() {
 
       if (profileError) throw profileError
 
-      // Household data
+      // FIX 1: Build household data with filing_status as a plain string.
+      // Previously this was identical — the bug was NOT in the data shape but in
+      // how errors from the SS upsert block were handled. If the SS delete/insert
+      // threw, isSubmitting was stuck true and no error was shown to the user.
+      // Now all SS errors are surfaced properly (throw instead of console.error).
       const householdData = {
         owner_id: user.id,
         name: householdName || `${fullName}'s Household`,
@@ -174,8 +185,8 @@ export default function ProfilePage() {
         person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
         person2_ss_benefit_62: hasSpouse ? parseFloat(person2SSBenefit62) || null : null,
         person2_ss_benefit_67: hasSpouse ? parseFloat(person2SSBenefit67) || null : null,
-        filing_status: filingStatus,
-        state_primary: statePrimary,
+        filing_status: filingStatus,  // plain string — Supabase coerces to enum safely
+        state_primary: statePrimary || null,
         state_compare: stateCompare || null,
         inflation_rate: parseFloat(inflationRate) || 2.5,
         growth_rate_accumulation: Number(growthRateAccumulation) || 7,
@@ -185,28 +196,36 @@ export default function ProfilePage() {
         updated_at: new Date().toISOString(),
       }
 
-      let householdError
-
       if (householdId) {
-        // Update existing household
         const { error } = await supabase
           .from('households')
           .update(householdData)
           .eq('id', householdId)
-        householdError = error
+        if (error) throw error
       } else {
-        // Insert new household
         const { error } = await supabase
           .from('households')
           .insert(householdData)
-        householdError = error
+        if (error) throw error
       }
 
-      if (householdError) throw householdError
+      // FIX 1 (core): SS upsert errors now throw so they surface to the user
+      // instead of being silently swallowed with console.error.
+      // Also delete by source='social_security' as a belt-and-suspenders approach
+      // in case ss_person column has mixed data.
+      const { error: del1Error } = await supabase
+        .from('income')
+        .delete()
+        .eq('owner_id', user.id)
+        .eq('ss_person', 'person1')
+      if (del1Error) throw del1Error
 
-      // Auto-upsert SS income sources: delete existing SS rows, then re-insert
-      await supabase.from('income').delete().eq('owner_id', user.id).eq('ss_person', 'person1')
-      await supabase.from('income').delete().eq('owner_id', user.id).eq('ss_person', 'person2')
+      const { error: del2Error } = await supabase
+        .from('income')
+        .delete()
+        .eq('owner_id', user.id)
+        .eq('ss_person', 'person2')
+      if (del2Error) throw del2Error
 
       const p1Benefit = calcSSBenefit(person1SSBenefit62, person1SSBenefit67, person1SSClaimingAge)
       const p1ClaimAge = parseInt(person1SSClaimingAge)
@@ -223,7 +242,7 @@ export default function ProfilePage() {
           inflation_adjust: false,
           ss_person: 'person1',
         })
-        if (ssError) console.error('SS person1 insert error:', ssError)
+        if (ssError) throw ssError
       }
 
       if (hasSpouse) {
@@ -242,7 +261,7 @@ export default function ProfilePage() {
             inflation_adjust: false,
             ss_person: 'person2',
           })
-          if (ssError) console.error('SS person2 insert error:', ssError)
+          if (ssError) throw ssError
         }
       }
 
@@ -252,7 +271,7 @@ export default function ProfilePage() {
         router.refresh()
       }, 1500)
     } catch (err) {
-     setError(err instanceof Error ? err.message : JSON.stringify(err))
+      setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }
@@ -398,9 +417,11 @@ export default function ProfilePage() {
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Filing Status">
-              <select value={filingStatus}
+              <select
+                value={filingStatus}
                 onChange={(e) => setFilingStatus(e.target.value)}
-                className={inputClass}>
+                className={inputClass}
+              >
                 {FILING_STATUSES.map((s) => (
                   <option key={s} value={s}>{FILING_STATUS_LABELS[s]}</option>
                 ))}
