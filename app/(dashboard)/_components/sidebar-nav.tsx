@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
   { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
   { href: '/real-estate', label: 'Real Estate', icon: '🏠' },
+  { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️' },
   { href: '/import', label: 'Import Data', icon: '📥' },
   { href: '/billing', label: 'Billing', icon: '💳' },
 
