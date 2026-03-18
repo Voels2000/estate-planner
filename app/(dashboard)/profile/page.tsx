@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const FILING_STATUSES = ['single', 'married_filing_jointly', 'married_filing_separately', 'head_of_household']
+const FILING_STATUSES = ['single', 'mfj', 'mfs', 'hoh', 'qw']
 const FILING_STATUS_LABELS: Record<string, string> = {
   single: 'Single',
-  married_filing_jointly: 'Married Filing Jointly',
-  married_filing_separately: 'Married Filing Separately',
-  head_of_household: 'Head of Household',
+  mfj: 'Married Filing Jointly',
+  mfs: 'Married Filing Separately',
+  hoh: 'Head of Household',
+  qw: 'Qualifying Widow(er)',
 }
 
 const US_STATES = [
