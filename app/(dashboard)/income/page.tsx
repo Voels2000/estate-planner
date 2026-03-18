@@ -7,10 +7,9 @@ type IncomeType = { value: string; label: string }
 type Income = {
   id: string
   owner_id: string
-  tsowner: string
-  owner?: string
   ss_person?: string
   source: string
+  name?: string | null        // FIX 3: custom display name
   amount: number
   start_year: number
   end_year: number | null
@@ -61,8 +60,17 @@ export default function IncomePage() {
     setConfirmDeleteId(null)
   }
 
-  function getTypeLabel(source: string) {
-    return incomeTypes.find((t) => t.value === source)?.label ?? source
+  // FIX 3: Display custom name if set, otherwise fall back to type label
+  function getDisplayName(income: Income) {
+    if (income.name && income.name.trim()) return income.name.trim()
+    return incomeTypes.find((t) => t.value === income.source)?.label ?? income.source
+  }
+
+  function getOwnerLabel(income: Income) {
+    const person = income.ss_person ?? 'person1'
+    if (person === 'person2') return person2Name
+    if (person === 'joint') return 'Joint'
+    return person1Name
   }
 
   if (isLoading) {
@@ -86,7 +94,6 @@ export default function IncomePage() {
         </button>
       </div>
 
-      {/* Social Security hint */}
       <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-3">
         <span className="text-xl mt-0.5">💡</span>
         <div>
@@ -111,7 +118,7 @@ export default function IncomePage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Source', 'Type', 'Owner', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
+                {['Name / Source', 'Type', 'Owner', 'Annual Amount', 'Start → End', 'Inflation Adj.', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -119,14 +126,16 @@ export default function IncomePage() {
             <tbody className="divide-y divide-neutral-100">
               {incomes.map((income) => (
                 <tr key={income.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(income.source)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{income.source}</td>
+                  {/* FIX 3: Show custom name or type label */}
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(income)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {(income.ss_person ?? 'person1') === 'person1' ? person1Name : (income.ss_person ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                    {incomeTypes.find(t => t.value === income.source)?.label ?? income.source}
                   </td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(income)}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(income.amount))}</td>
+                  {/* FIX 4: Explicit number coercion guards undefined/null display */}
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {income.start_year} — {income.end_year ?? 'ongoing'}
+                    {income.start_year ?? '—'} → {income.end_year ? income.end_year : 'Ongoing'}
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {income.inflation_adjust ? '✓' : '—'}
@@ -175,11 +184,18 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
   onSave: () => void
 }) {
   const currentYear = new Date().getFullYear()
-  const [owner, setOwner] = useState(editIncome?.owner ?? 'person1')
+  const [owner, setOwner] = useState(editIncome?.ss_person ?? 'person1')
   const [source, setSource] = useState(editIncome?.source ?? incomeTypes[0]?.value ?? '')
+  // FIX 3: custom name field
+  const [name, setName] = useState(editIncome?.name ?? '')
   const [amount, setAmount] = useState(editIncome?.amount?.toString() ?? '')
-  const [startYear, setStartYear] = useState(editIncome?.start_year?.toString() ?? currentYear.toString())
-  const [endYear, setEndYear] = useState(editIncome?.end_year?.toString() ?? '')
+  // FIX 4: Ensure start_year is always a valid string, never undefined
+  const [startYear, setStartYear] = useState(
+    editIncome?.start_year != null ? editIncome.start_year.toString() : currentYear.toString()
+  )
+  const [endYear, setEndYear] = useState(
+    editIncome?.end_year != null ? editIncome.end_year.toString() : ''
+  )
   const [inflationAdjust, setInflationAdjust] = useState(editIncome?.inflation_adjust ?? true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -189,17 +205,33 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
     setError(null)
     setIsSubmitting(true)
 
+    // FIX 4: Validate start year is a real number before submitting
+    const parsedStartYear = parseInt(startYear)
+    if (!parsedStartYear || parsedStartYear < 1900 || parsedStartYear > 2100) {
+      setError('Please enter a valid start year (1900–2100).')
+      setIsSubmitting(false)
+      return
+    }
+
+    const parsedEndYear = endYear ? parseInt(endYear) : null
+    if (parsedEndYear !== null && parsedEndYear < parsedStartYear) {
+      setError('End year must be after start year.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
       const payload = {
-        ss_person: owner,
+        ss_person: owner,          // FIX 4: was using 'owner' field name but column is ss_person
         source,
+        name: name.trim() || null, // FIX 3: save custom name, null if blank
         amount: parseFloat(amount),
-        start_year: parseInt(startYear),
-        end_year: endYear ? parseInt(endYear) : null,
+        start_year: parsedStartYear,
+        end_year: parsedEndYear,
         inflation_adjust: inflationAdjust,
         updated_at: new Date().toISOString(),
       }
@@ -228,12 +260,29 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Income Type</label>
             <select value={source} onChange={(e) => setSource(e.target.value)} className={inputClass}>
               {incomeTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
+
+          {/* FIX 3: Custom name/description field */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Name / Description <span className="text-neutral-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder={`e.g. ${incomeTypes.find(t => t.value === source)?.label ?? 'Rental Income — Main St'}`}
+            />
+            <p className="mt-1 text-xs text-neutral-400">Give this source a custom name to tell it apart from others of the same type.</p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
             <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
@@ -242,28 +291,50 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
               <option value="joint">Joint</option>
             </select>
           </div>
+
           {source === 'social_security' && (
             <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
               💡 Set your start year to the age you plan to collect. Delaying past 67 increases your benefit by ~8% per year up to age 70.
             </p>
           )}
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Annual Amount ($)</label>
             <input type="number" min="0" step="0.01" required value={amount}
               onChange={(e) => setAmount(e.target.value)} className={inputClass} placeholder="0.00" />
           </div>
+
+          {/* FIX 4: Start/End year with clear labels and validation feedback */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Start Year</label>
-              <input type="number" min="1900" max="2100" required value={startYear}
-                onChange={(e) => setStartYear(e.target.value)} className={inputClass} />
+              <input
+                type="number"
+                min="1900"
+                max="2100"
+                required
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+                className={inputClass}
+                placeholder={currentYear.toString()}
+              />
+              <p className="mt-1 text-xs text-neutral-400">Year income begins</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">End Year (optional)</label>
-              <input type="number" min="1900" max="2100" value={endYear}
-                onChange={(e) => setEndYear(e.target.value)} className={inputClass} placeholder="Ongoing" />
+              <label className="block text-sm font-medium text-neutral-700 mb-1">End Year</label>
+              <input
+                type="number"
+                min="1900"
+                max="2100"
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+                className={inputClass}
+                placeholder="Ongoing"
+              />
+              <p className="mt-1 text-xs text-neutral-400">Leave blank if ongoing</p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <input id="inflationAdjust" type="checkbox" checked={inflationAdjust}
               onChange={(e) => setInflationAdjust(e.target.checked)}
@@ -272,6 +343,7 @@ function IncomeModal({ editIncome, incomeTypes, person1Name, person2Name, onClos
               Adjust for inflation in projections
             </label>
           </div>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition">
