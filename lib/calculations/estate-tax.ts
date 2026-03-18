@@ -1,155 +1,206 @@
-/**
- * Federal estate tax and IRC §121 (home sale exclusion) helpers.
- *
- * Estate tax: tentative tax is computed on the full taxable estate using the
- * progressive rate schedule (same stacking pattern as federal income tax in
- * scenarios/projections). The unified credit is modeled as the tentative tax
- * that would apply to the applicable exclusion amount at those rates, so
- * net tax = max(0, tax_on_estate − credit_on_exemption).
- */
+/** Federal + State estate tax, inheritance tax, and §121 helpers. */
 
-/** 2024 basic exclusion amount per person (Rev. Proc. 2023-34). */
-export const FEDERAL_EXEMPTION_2024 = 13_610_000
-
-/** One row of the federal estate (or gift) tax rate schedule. */
 export type EstateTaxBracket = {
   min_amount: number
   max_amount: number
   rate_pct: number
 }
 
+export const FEDERAL_EXEMPTION_2024 = 13_610_000
+
 export type FederalEstateTaxResult = {
-  /** Estate after debts and excluded trust assets (input to exemption/credit). */
   taxable_estate: number
-  /** Portion of the estate sheltered by the applicable exclusion (capped at estate size). */
   exemption_used: number
-  /** Tentative transfer tax from dollar one through the bracket schedule. */
   tax_before_credit: number
-  /** Credit offsetting tax on the applicable exclusion amount (unified credit analog). */
   applicable_credit: number
-  /** Tentative tax minus applicable credit, not below zero. */
   net_estate_tax: number
+  gifting_reduction: number
 }
 
-/**
- * Applies progressive brackets to a positive base amount.
- * Same stacking logic as `calcFederalTax` on scenarios/projections pages:
- * sort by `min_amount`, then for each bracket take min(base, max) − min.
- */
 function computeProgressiveTaxFromBrackets(
   taxableBase: number,
-  brackets: EstateTaxBracket[]
+  brackets: EstateTaxBracket[],
 ): number {
   if (taxableBase <= 0 || brackets.length === 0) return 0
-
   const sorted = [...brackets].sort((a, b) => a.min_amount - b.min_amount)
   let tax = 0
-
   for (const bracket of sorted) {
     const bracketMin = bracket.min_amount
-    // Treat very large max as unlimited top bracket
     const bracketMax =
       !Number.isFinite(bracket.max_amount) || bracket.max_amount >= 1e15
         ? Infinity
         : bracket.max_amount
-
-    // No tax in this bracket until base exceeds its floor
     if (taxableBase <= bracketMin) break
-
-    const taxableInBracket = Math.min(taxableBase, bracketMax) - bracketMin
+    const taxableInBracket = Math.min(taxablease, bracketMax) - bracketMin
     if (taxableInBracket > 0) {
       tax += taxableInBracket * (bracket.rate_pct / 100)
     }
   }
-
   return Math.round(tax * 100) / 100
 }
 
-/**
- * Total unified exclusion for the filing picture.
- * `married_joint` models portability (two BEAs) → double the per-person amount.
- */
 function applicableExemptionAmount(filingStatus: string): number {
-  const isJoint = filingStatus === 'married_joint'
-  return isJoint ? FEDERAL_EXEMPTION_2024 * 2 : FEDERAL_EXEMPTION_2024
+  return filingStatus === 'married_joint'
+    ? FEDERAL_EXEMPTION_2024 * 2
+    : FEDERAL_EXEMPTION_2024
 }
 
-/**
- * Federal estate tax (simplified Form 706-style).
- *
- * @param grossEstate — Total assets of the gross estate
- * @param liabilities — Debts and other deductions (mortgages, etc.)
- * @param trustsExcluded — Assets removed from estate (e.g. irrevocable trust corpus)
- * @param filingStatus — `married_joint` uses doubled exemption (portability); others use single BEA
- * @param brackets — IRC §2001(c)-style progressive schedule (min/max/rate_pct)
- */
 export function computeFederalEstateTax(
   grossEstate: number,
   liabilities: number,
   trustsExcluded: number,
   filingStatus: string,
-  brackets: EstateTaxBracket[]
+  brackets: EstateTaxBracket[],
+  annualGifting = 0,
+  giftingYears = 1,
 ): FederalEstateTaxResult {
-  // Net amount potentially subject to estate tax after simple deductions
+  const gifting_reduction = Math.max(0, annualGifting * giftingYears)
   const taxable_estate = Math.max(
     0,
-    grossEstate - liabilities - trustsExcluded
+    grossEstate - liabilities - trustsExcluded - gifting_reduction,
   )
-
   const exemptionCap = applicableExemptionAmount(filingStatus)
-
-  // Tentative tax on the entire taxable estate from the first dollar
-  const tax_before_credit = computeProgressiveTaxFromBrackets(
-    taxable_estate,
-    brackets
-  )
-
-  // Unified credit analog: tax that the schedule assigns to the exclusion amount
-  const applicable_credit = computeProgressiveTaxFromBrackets(
-    exemptionCap,
-    brackets
-  )
-
+  const tax_before_credit = computeProgressiveTaxFromBrackets(taxable_estate, brackets)
+  const applicable_credit = computeProgressiveTaxFromBrackets(exemptionCap, brackets)
   const net_estate_tax = Math.max(
     0,
-    Math.round((tax_before_credit - applicable_credit) * 100) / 100
+    Math.round((tax_before_credit - applicable_credit) * 100) / 100,
   )
-
-  // How much of the estate is "used up" against the exclusion for reporting
   const exemption_used = Math.min(taxable_estate, exemptionCap)
-
   return {
     taxable_estate,
     exemption_used,
     tax_before_credit,
     applicable_credit,
     net_estate_tax,
+    gifting_reduction,
   }
 }
 
-/** §121(b)(2): $500,000 for joint sellers; $250,000 otherwise. */
+export type StateEstateTaxBracket = {
+  state: string
+  min_amount: number
+  max_amount: number
+  rate_pct: number
+  exemption_amount: number
+}
+
+export type StateEstateTaxResult = {
+  state: string
+  state_taxable: number
+  state_exemption: number
+  state_estate_tax: number
+}
+
+export function computeStateEstateTax(
+  state: string,
+  taxableEstate: number,
+  brackets: StateEstateTaxBracket[],
+): StateEstateTaxResult {
+  const stateRows = brackets.filter((b) => b.state === state)
+  if (stateRows.length === 0) {
+    return { state, state_taxable: 0, state_exemption: 0, state_estate_tax: 0 }
+  }
+  const state_exemption = stateRows[0].exemption_amount
+  const state_taxable = Math.max(0, taxableEstate - state_exemption)
+  const bracketArgs: EstateTaxBracket[] = stateRows.map((r) => ({
+    min_amount: r.min_amount,
+    max_amount: r.max_amount,
+    rate_pct: r.rate_pct,
+  }))
+  const state_estate_tax = computeProgressiveTaxFromBrackets(state_taxable, bracketArgs)
+  return {
+    state,
+    state_taxable,
+    state_exemption,
+    state_estate_tax: Math.round(state_estate_tax * 100) / 100,
+  }
+}
+
+export type BeneficiaryClass = 'spouse' | 'child' | 'sibling' | 'other'
+
+export type StateInheritanceTaxRule = {
+  state: string
+  beneficiary_class: string
+  min_amount: number
+  max_amount: number
+  rate_pct: number
+  exemption_amount: number
+}
+
+export type StateInheritanceTaxResult = {
+  state: string
+  beneficiary_class: BeneficiaryClass
+  share_amount: number
+  class_exemption: number
+  taxable_share: number
+  inheritance_tax: number
+}
+
+export function computeStateInheritanceTax(
+  state: string,
+  beneficiaryClass: BeneficiaryClass,
+  shareAmount: number,
+  rules: StateInheritanceTaxRule[],
+): StateInheritanceTaxResult {
+  const classRows = rules.filter(
+    (r) => r.state === state && r.beneficiary_class === beneficiaryClass,
+  )
+  if (classRows.length === 0 || shareAmount <= 0) {
+    return {
+      state,
+      beneficiary_class: beneficiaryClass,
+      share_amount: shareAmount,
+      class_exemption: 0,
+      taxable_share: 0,
+      inheritance_tax: 0,
+    }
+  }
+  const class_exemption = classRows[0].exemption_amount
+  const taxable_share = Math.max(0, shareAmount - class_exemption)
+  const bracketArgs: EstateTaxBracket[] = classRows.map((r) => ({
+    min_amount: r.min_amount,
+    max_amount: r.max_amount,
+    rate_pct: r.rate_pct,
+  }))
+  const inheritance_tax = computeProgressiveTaxFromBrackets(taxable_share, bracketArgs)
+  return {
+    state,
+    beneficiary_class: beneficiaryClass,
+    share_amount: shareAmount,
+    class_exemption,
+    taxable_share,
+    inheritance_tax: Math.round(inheritance_tax * 100) / 100,
+  }
+}
+
+export function computeStateInheritanceTaxTotal(
+  state: string,
+  shares: Partial<Record<BeneficiaryClass, number>>,
+  rules: StateInheritanceTaxRule[],
+): { results: StateInheritanceTaxResult[]; total_inheritance_tax: number } {
+  const classes: BeneficiaryClass[] = ['spouse', 'child', 'sibling', 'other']
+  const results = classes.map((cls) =>
+    computeStateInheritanceTax(state, cls, shares[cls] ?? 0, rules),
+  )
+  const total_inheritance_tax = Math.round(
+    results.reduce((s, r) => s + r.inheritance_tax, 0) * 100,
+  ) / 100
+  return { results, total_inheritance_tax }
+}
+
 const SECTION_121_CAP_SINGLE = 250_000
 const SECTION_121_CAP_MFJ = 500_000
 
-/**
- * IRC §121 principal residence gain exclusion (simplified).
- *
- * Requires primary residence and ownership + use 2 of the last 5 years
- * (here: `years_lived_in >= 2`). Returns excludable gain, capped by status.
- */
 export function calcSection121Exclusion(
   is_primary_residence: boolean,
   years_lived_in: number,
   filing_status: string,
-  gain: number
+  gain: number,
 ): number {
   if (!is_primary_residence || years_lived_in < 2) return 0
   if (gain <= 0) return 0
-
   const cap =
-    filing_status === 'married_joint'
-      ? SECTION_121_CAP_MFJ
-      : SECTION_121_CAP_SINGLE
-
+    filing_status === 'married_joint' ? SECTION_121_CAP_MFJ : SECTION_121_CAP_SINGLE
   return Math.min(gain, cap)
 }
