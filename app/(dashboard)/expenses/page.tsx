@@ -7,9 +7,9 @@ type ExpenseType = { value: string; label: string }
 type Expense = {
   id: string
   owner_id: string
-  tsowner: string
   owner?: string
   category: string
+  name?: string | null         // FIX 3: custom display name
   amount: number
   start_year: number
   end_year: number | null
@@ -60,8 +60,17 @@ export default function ExpensesPage() {
     setConfirmDeleteId(null)
   }
 
-  function getTypeLabel(category: string) {
-    return expenseTypes.find((t) => t.value === category)?.label ?? category
+  // FIX 3: Display custom name if set, otherwise fall back to type label
+  function getDisplayName(expense: Expense) {
+    if (expense.name && expense.name.trim()) return expense.name.trim()
+    return expenseTypes.find((t) => t.value === expense.category)?.label ?? expense.category
+  }
+
+  function getOwnerLabel(expense: Expense) {
+    const owner = expense.owner ?? 'person1'
+    if (owner === 'person2') return person2Name
+    if (owner === 'joint') return 'Joint'
+    return person1Name
   }
 
   if (isLoading) {
@@ -98,7 +107,7 @@ export default function ExpensesPage() {
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Category', 'Owner', 'Annual Amount', 'Years', 'Inflation Adj.', ''].map((h) => (
+                {['Name / Category', 'Type', 'Owner', 'Annual Amount', 'Start → End', 'Inflation Adj.', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -106,13 +115,16 @@ export default function ExpensesPage() {
             <tbody className="divide-y divide-neutral-100">
               {expenses.map((expense) => (
                 <tr key={expense.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getTypeLabel(expense.category)}</td>
+                  {/* FIX 3: Show custom name or type label */}
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(expense)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {(expense.owner ?? 'person1') === 'person1' ? person1Name : (expense.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                    {expenseTypes.find(t => t.value === expense.category)?.label ?? expense.category}
                   </td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(expense)}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(expense.amount))}</td>
+                  {/* FIX 4: Explicit null/undefined guards */}
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {expense.start_year} — {expense.end_year ?? 'ongoing'}
+                    {expense.start_year ?? '—'} → {expense.end_year ? expense.end_year : 'Ongoing'}
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
                     {expense.inflation_adjust ? '✓' : '—'}
@@ -163,9 +175,16 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
   const currentYear = new Date().getFullYear()
   const [owner, setOwner] = useState(editExpense?.owner ?? 'person1')
   const [category, setCategory] = useState(editExpense?.category ?? expenseTypes[0]?.value ?? '')
+  // FIX 3: custom name field
+  const [name, setName] = useState(editExpense?.name ?? '')
   const [amount, setAmount] = useState(editExpense?.amount?.toString() ?? '')
-  const [startYear, setStartYear] = useState(editExpense?.start_year?.toString() ?? currentYear.toString())
-  const [endYear, setEndYear] = useState(editExpense?.end_year?.toString() ?? '')
+  // FIX 4: Ensure start_year is always a valid string, never undefined
+  const [startYear, setStartYear] = useState(
+    editExpense?.start_year != null ? editExpense.start_year.toString() : currentYear.toString()
+  )
+  const [endYear, setEndYear] = useState(
+    editExpense?.end_year != null ? editExpense.end_year.toString() : ''
+  )
   const [inflationAdjust, setInflationAdjust] = useState(editExpense?.inflation_adjust ?? true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -175,6 +194,21 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
     setError(null)
     setIsSubmitting(true)
 
+    // FIX 4: Validate years before submitting
+    const parsedStartYear = parseInt(startYear)
+    if (!parsedStartYear || parsedStartYear < 1900 || parsedStartYear > 2100) {
+      setError('Please enter a valid start year (1900–2100).')
+      setIsSubmitting(false)
+      return
+    }
+
+    const parsedEndYear = endYear ? parseInt(endYear) : null
+    if (parsedEndYear !== null && parsedEndYear < parsedStartYear) {
+      setError('End year must be after start year.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -182,9 +216,11 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
 
       const payload = {
         category,
+        name: name.trim() || null,  // FIX 3: save custom name
+        owner,                       // FIX: owner was missing from payload entirely
         amount: parseFloat(amount),
-        start_year: parseInt(startYear),
-        end_year: endYear ? parseInt(endYear) : null,
+        start_year: parsedStartYear,
+        end_year: parsedEndYear,
         inflation_adjust: inflationAdjust,
         updated_at: new Date().toISOString(),
       }
@@ -198,7 +234,7 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
       }
       onSave()
     } catch (err) {
-     setError(err instanceof Error ? err.message : JSON.stringify(err))
+      setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)
     }
   }
@@ -213,12 +249,29 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Expense Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
               {expenseTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
+
+          {/* FIX 3: Custom name/description field */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Name / Description <span className="text-neutral-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder={`e.g. ${expenseTypes.find(t => t.value === category)?.label ?? 'Mortgage — Main St'}`}
+            />
+            <p className="mt-1 text-xs text-neutral-400">Give this expense a custom name to tell it apart from others of the same type.</p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
             <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
@@ -227,23 +280,44 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
               <option value="joint">Joint</option>
             </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Annual Amount ($)</label>
             <input type="number" min="0" step="0.01" required value={amount}
               onChange={(e) => setAmount(e.target.value)} className={inputClass} placeholder="0.00" />
           </div>
+
+          {/* FIX 4: Start/End year with clear labels and hint text */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Start Year</label>
-              <input type="number" min="1900" max="2100" required value={startYear}
-                onChange={(e) => setStartYear(e.target.value)} className={inputClass} />
+              <input
+                type="number"
+                min="1900"
+                max="2100"
+                required
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+                className={inputClass}
+                placeholder={currentYear.toString()}
+              />
+              <p className="mt-1 text-xs text-neutral-400">Year expense begins</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">End Year (optional)</label>
-              <input type="number" min="1900" max="2100" value={endYear}
-                onChange={(e) => setEndYear(e.target.value)} className={inputClass} placeholder="Ongoing" />
+              <label className="block text-sm font-medium text-neutral-700 mb-1">End Year</label>
+              <input
+                type="number"
+                min="1900"
+                max="2100"
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+                className={inputClass}
+                placeholder="Ongoing"
+              />
+              <p className="mt-1 text-xs text-neutral-400">Leave blank if ongoing</p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <input id="inflationAdjust" type="checkbox" checked={inflationAdjust}
               onChange={(e) => setInflationAdjust(e.target.checked)}
@@ -252,6 +326,7 @@ function ExpenseModal({ editExpense, expenseTypes, person1Name, person2Name, onC
               Adjust for inflation in projections
             </label>
           </div>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition">
