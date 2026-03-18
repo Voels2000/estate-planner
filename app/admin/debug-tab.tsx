@@ -143,7 +143,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           icon: '💰',
           inputs: {
             user: profiles.find(p => p.id === selectedUserId)?.full_name ?? selectedUserId,
-            year: String (year)
+            year: String(year),
             person1_age: p1Age,
             filing_status: household.filing_status,
             state: household.state_primary,
