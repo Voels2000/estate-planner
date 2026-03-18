@@ -137,7 +137,6 @@ export function AdminClient({
       : newLabel.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     if (!slug) return
     setCategoryError(null)
-    const slug = newValue.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     const maxOrder = Math.max(0, ...categories[table].map(i => i.sort_order))
     const newItem: CategoryItem = { value: slug, label: newLabel.trim(), sort_order: maxOrder + 10, is_active: true }
     try {
