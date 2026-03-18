@@ -334,7 +334,7 @@ export default function ScenariosPage() {
       const timestamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
         ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       const { error } = await supabase.from('projections').insert({
-        household_id: household.id,
+        household_id: household!.id,
         scenario_name: `${name} — ${timestamp}`,
         projection_data: result.rows,
         summary: {
