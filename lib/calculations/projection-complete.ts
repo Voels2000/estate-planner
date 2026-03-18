@@ -84,7 +84,7 @@ export type CompleteProjectionInput = {
     start_year: number | null
     end_year: number | null
     inflation_adjust: boolean
-    owner: string
+    ss_person: string | null
   }[]
   expenses: {
     id: string
