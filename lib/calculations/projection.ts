@@ -313,7 +313,7 @@ function getIncomeForYearBySource(
   return Math.round(total * 100) / 100
 }
 
-/** Salary income for a year: only 'salary' source, and only when person1 is before retirement age. */
+/** Salary income for a year: all 'salary' source rows within their start/end year range. */
 function getSalaryIncomeForYear(
   year: number,
   incomeRows: IncomeRow[],
@@ -322,7 +322,6 @@ function getSalaryIncomeForYear(
   person1Age: number,
   retirementAge: number | null
 ): number {
-  if (retirementAge != null && person1Age >= retirementAge) return 0
   return getIncomeForYearBySource(
     year,
     incomeRows,
