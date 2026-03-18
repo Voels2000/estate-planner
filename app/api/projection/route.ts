@@ -10,7 +10,6 @@ import type {
 
 export async function GET() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -22,6 +21,7 @@ export async function GET() {
     { data: income },
     { data: expenses },
     { data: irmaa_brackets },
+    { data: real_estate },
   ] = await Promise.all([
     supabase
       .from('households')
@@ -55,6 +55,10 @@ export async function GET() {
       .from('irmaa_brackets')
       .select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status')
       .eq('tax_year', 2024),
+    supabase
+      .from('real_estate')
+      .select('id, name, current_value, is_primary_residence, owner')
+      .eq('owner_id', user.id),
   ])
 
   if (!household) {
@@ -63,12 +67,13 @@ export async function GET() {
 
   const rows = computeCompleteProjection({
     household,
-    assets: (assets ?? []) as AssetRowSelect[],
-    liabilities: (liabilities ?? []) as LiabilityRowSelect[],
-    income: (income ?? []) as unknown as IncomeRowSelect[],
-    expenses: (expenses ?? []) as ExpenseRowSelect[],
-    irmaa_brackets: irmaa_brackets ?? [],
+    assets:         (assets        ?? []) as AssetRowSelect[],
+    liabilities:    (liabilities   ?? []) as LiabilityRowSelect[],
+    income:         (income        ?? []) as unknown as IncomeRowSelect[],
+    expenses:       (expenses      ?? []) as ExpenseRowSelect[],
+    irmaa_brackets:  irmaa_brackets ?? [],
+    real_estate:    (real_estate   ?? []) as { id: string; name: string; current_value: number; is_primary_residence: boolean; owner: string }[],
   })
 
-  return NextResponse.json({ rows, household })
+  return NextResponse.json({ rows })
 }

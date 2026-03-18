@@ -28,6 +28,7 @@ export default async function CompletePage() {
       rows={rows}
       person1Name={household.person1_name ?? 'Person 1'}
       person2Name={household.has_spouse ? (household.person2_name ?? 'Person 2') : null}
+      hasSpouse={household.has_spouse ?? false}
     />
   )
 }
