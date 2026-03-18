@@ -202,7 +202,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           engine: 'Asset Projection',
           icon: '📈',
           inputs: {
-            year: selectedYear,
+            year: String(selectedYear),
             person1_age: p1Age,
             retirement_age: household.person1_retirement_age,
             is_retired: isRetired,
