@@ -308,7 +308,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           engine: 'RMD Calculator',
           icon: '📋',
           inputs: {
-            year: String(year)
+            year: String(year),
             person1_birth_year: household.person1_birth_year,
             person1_age: p1Age,
             rmd_eligible_accounts: rmdEligibleAssets.length,
