@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/profile', label: 'Profile', icon: '👤' },
   { href: '/assets', label: 'Assets', icon: '🏦' },
   { href: '/liabilities', label: 'Liabilities', icon: '💳' },
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/complete', label: 'Complete', icon: '📊' },
   { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
   { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
+  { href: '/real-estate', label: 'Real Estate', icon: '🏠' },
   { href: '/import', label: 'Import Data', icon: '📥' },
   { href: '/billing', label: 'Billing', icon: '💳' },
 

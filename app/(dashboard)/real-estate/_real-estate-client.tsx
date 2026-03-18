@@ -1,0 +1,578 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+/** Matches `real_estate` table columns */
+export type RealEstate = {
+  id: string
+  owner_id: string
+  name: string
+  property_type: 'primary_residence' | 'rental' | 'vacation' | 'commercial'
+  current_value: number
+  purchase_price: number | null
+  purchase_year: number | null
+  mortgage_balance: number
+  monthly_payment: number | null
+  interest_rate: number | null
+  planned_sale_year: number | null
+  selling_costs_pct: number | null
+  is_primary_residence: boolean
+  years_lived_in: number | null
+  owner: string
+  created_at: string
+  updated_at: string
+}
+
+const PROPERTY_TYPE_LABELS: Record<RealEstate['property_type'], string> = {
+  primary_residence: 'Primary residence',
+  rental: 'Rental',
+  vacation: 'Vacation',
+  commercial: 'Commercial',
+}
+
+const inputClass =
+  'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
+
+function SummaryCard({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string
+  value: string
+  sub?: string
+  highlight?: 'green' | 'red' | 'amber'
+}) {
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+      <p
+        className={`mt-1 text-xl font-bold ${
+          highlight === 'green'
+            ? 'text-green-600'
+            : highlight === 'red'
+              ? 'text-red-600'
+              : highlight === 'amber'
+                ? 'text-amber-600'
+                : 'text-neutral-900'
+        }`}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+function num(v: unknown): number {
+  if (typeof v === 'number' && !Number.isNaN(v)) return v
+  if (typeof v === 'string' && v !== '') return Number(v) || 0
+  return 0
+}
+
+function equity(row: RealEstate): number {
+  return Math.max(0, num(row.current_value) - num(row.mortgage_balance))
+}
+
+/** Net cash after sale: value minus selling costs minus mortgage payoff */
+function netProceedsAfterSale(row: RealEstate): number {
+  const value = num(row.current_value)
+  const mortgage = num(row.mortgage_balance)
+  const pct = row.selling_costs_pct != null ? num(row.selling_costs_pct) : 6
+  const costs = value * (pct / 100)
+  return Math.max(0, value - costs - mortgage)
+}
+
+function formatDollars(n: number) {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+}
+
+type RealEstateClientProps = {
+  initialProperties: RealEstate[]
+  person1Name: string
+  person2Name: string
+}
+
+export default function RealEstateClient({
+  initialProperties,
+  person1Name,
+  person2Name,
+}: RealEstateClientProps) {
+  const router = useRouter()
+  const [rows, setRows] = useState<RealEstate[]>(initialProperties)
+  const [showModal, setShowModal] = useState(false)
+  const [editRow, setEditRow] = useState<RealEstate | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function loadData() {
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    const { data, error: fetchError } = await supabase
+      .from('real_estate')
+      .select('*')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false })
+    if (fetchError) setError(fetchError.message)
+    else setRows((data as RealEstate[]) ?? [])
+  }
+
+  async function handleDelete(id: string) {
+    const supabase = createClient()
+    const { error } = await supabase.from('real_estate').delete().eq('id', id)
+    if (error) setError(error.message)
+    else setRows((prev) => prev.filter((r) => r.id !== id))
+    setConfirmDeleteId(null)
+  }
+
+  function ownerLabel(owner: string) {
+    if (owner === 'person2') return person2Name
+    if (owner === 'joint') return 'Joint'
+    return person1Name
+  }
+
+  const totalValue = rows.reduce((s, r) => s + num(r.current_value), 0)
+  const totalEquity = rows.reduce((s, r) => s + equity(r), 0)
+  const totalNetProceeds = rows.reduce((s, r) => s + netProceedsAfterSale(r), 0)
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Real Estate</h1>
+          <p className="mt-1 text-sm text-neutral-600">
+            Properties and estimated sale proceeds after costs.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditRow(null)
+            setShowModal(true)
+          }}
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+        >
+          + Add Property
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <SummaryCard label="Total value" value={formatDollars(totalValue)} sub="Current estimated value" />
+        <SummaryCard label="Total equity" value={formatDollars(totalEquity)} sub="Value − mortgage" />
+        <SummaryCard
+          label="Est. net proceeds"
+          value={formatDollars(totalNetProceeds)}
+          sub="After selling costs & payoff"
+          highlight="green"
+        />
+      </div>
+
+      {error && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+      )}
+
+      {rows.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
+          <div className="text-4xl mb-3">🏠</div>
+          <p className="text-sm font-medium text-neutral-600">No properties yet</p>
+          <p className="text-xs text-neutral-400 mt-1">Add your first property to track equity and sale plans</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto">
+          <table className="min-w-full divide-y divide-neutral-100">
+            <thead className="bg-neutral-50">
+              <tr>
+                {[
+                  'Name',
+                  'Type',
+                  'Value',
+                  'Mortgage',
+                  'Equity',
+                  'Sale year',
+                  'Owner',
+                  '',
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {rows.map((row) => (
+                <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{row.name}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">
+                    {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
+                    {formatDollars(num(row.current_value))}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">
+                    {formatDollars(num(row.mortgage_balance))}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-900 whitespace-nowrap">
+                    {formatDollars(equity(row))}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">
+                    {row.planned_sale_year != null ? row.planned_sale_year : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">{ownerLabel(row.owner ?? 'person1')}</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {confirmDeleteId === row.id ? (
+                      <span className="inline-flex items-center gap-2 text-sm">
+                        <span className="text-neutral-500">Delete?</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(row.id)}
+                          className="text-red-600 font-medium hover:text-red-800"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-neutral-400 hover:text-neutral-600"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditRow(row)
+                            setShowModal(true)
+                          }}
+                          className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(row.id)}
+                          className="text-sm text-red-500 font-medium hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showModal && (
+        <RealEstateModal
+          editRow={editRow}
+          person1Name={person1Name}
+          person2Name={person2Name}
+          onClose={() => {
+            setShowModal(false)
+            setEditRow(null)
+          }}
+          onSave={() => {
+            setShowModal(false)
+            setEditRow(null)
+            void loadData()
+            router.refresh()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function RealEstateModal({
+  editRow,
+  person1Name,
+  person2Name,
+  onClose,
+  onSave,
+}: {
+  editRow: RealEstate | null
+  person1Name: string
+  person2Name: string
+  onClose: () => void
+  onSave: () => void
+}) {
+  const currentYear = new Date().getFullYear()
+  const [name, setName] = useState(editRow?.name ?? '')
+  const [propertyType, setPropertyType] = useState<RealEstate['property_type']>(
+    editRow?.property_type ?? 'primary_residence',
+  )
+  const [currentValue, setCurrentValue] = useState(editRow?.current_value?.toString() ?? '')
+  const [purchasePrice, setPurchasePrice] = useState(editRow?.purchase_price?.toString() ?? '')
+  const [purchaseYear, setPurchaseYear] = useState(editRow?.purchase_year?.toString() ?? '')
+  const [mortgageBalance, setMortgageBalance] = useState(
+    editRow != null ? String(editRow.mortgage_balance ?? 0) : '0',
+  )
+  const [monthlyPayment, setMonthlyPayment] = useState(editRow?.monthly_payment?.toString() ?? '')
+  const [interestRate, setInterestRate] = useState(editRow?.interest_rate?.toString() ?? '')
+  const [plannedSaleYear, setPlannedSaleYear] = useState(editRow?.planned_sale_year?.toString() ?? '')
+  const [sellingCostsPct, setSellingCostsPct] = useState(
+    editRow?.selling_costs_pct != null ? String(editRow.selling_costs_pct) : '6',
+  )
+  const [isPrimaryResidence, setIsPrimaryResidence] = useState(editRow?.is_primary_residence ?? false)
+  const [yearsLivedIn, setYearsLivedIn] = useState(editRow?.years_lived_in?.toString() ?? '')
+  const [owner, setOwner] = useState(editRow?.owner ?? 'person1')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFormError(null)
+    setIsSubmitting(true)
+
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const payload = {
+        name: name.trim(),
+        property_type: propertyType,
+        current_value: parseFloat(currentValue) || 0,
+        purchase_price: purchasePrice === '' ? null : parseFloat(purchasePrice),
+        purchase_year: purchaseYear === '' ? null : parseInt(purchaseYear, 10),
+        mortgage_balance: parseFloat(mortgageBalance) || 0,
+        monthly_payment: monthlyPayment === '' ? null : parseFloat(monthlyPayment),
+        interest_rate: interestRate === '' ? null : parseFloat(interestRate),
+        planned_sale_year: plannedSaleYear === '' ? null : parseInt(plannedSaleYear, 10),
+        selling_costs_pct: sellingCostsPct === '' ? 6 : parseFloat(sellingCostsPct),
+        is_primary_residence: isPrimaryResidence,
+        years_lived_in: yearsLivedIn === '' ? null : parseInt(yearsLivedIn, 10),
+        owner,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (editRow) {
+        const { error } = await supabase.from('real_estate').update(payload).eq('id', editRow.id)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('real_estate').insert({
+          ...payload,
+          owner_id: user.id,
+        })
+        if (error) throw error
+      }
+      onSave()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : JSON.stringify(err))
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
+          <h2 className="text-base font-semibold text-neutral-900">
+            {editRow ? 'Edit Property' : 'Add Property'}
+          </h2>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+            ✕
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
+          {formError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{formError}</p>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="e.g. Main Street home"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Property type</label>
+            <select
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value as RealEstate['property_type'])}
+              className={inputClass}
+            >
+              <option value="primary_residence">Primary residence</option>
+              <option value="rental">Rental</option>
+              <option value="vacation">Vacation</option>
+              <option value="commercial">Commercial</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Current value ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={currentValue}
+                onChange={(e) => setCurrentValue(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Purchase price ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={purchasePrice}
+                onChange={(e) => setPurchasePrice(e.target.value)}
+                className={inputClass}
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Purchase year</label>
+            <input
+              type="number"
+              min="1900"
+              max={currentYear + 1}
+              value={purchaseYear}
+              onChange={(e) => setPurchaseYear(e.target.value)}
+              className={inputClass}
+              placeholder="Optional"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Mortgage balance ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={mortgageBalance}
+                onChange={(e) => setMortgageBalance(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Monthly payment ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={monthlyPayment}
+                onChange={(e) => setMonthlyPayment(e.target.value)}
+                className={inputClass}
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Interest rate (% annual)</label>
+            <input
+              type="number"
+              min="0"
+              max="30"
+              step="0.001"
+              value={interestRate}
+              onChange={(e) => setInterestRate(e.target.value)}
+              className={inputClass}
+              placeholder="e.g. 6.5"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Planned sale year</label>
+              <input
+                type="number"
+                min={currentYear}
+                max="2100"
+                value={plannedSaleYear}
+                onChange={(e) => setPlannedSaleYear(e.target.value)}
+                className={inputClass}
+                placeholder="Optional"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Selling costs (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={sellingCostsPct}
+                onChange={(e) => setSellingCostsPct(e.target.value)}
+                className={inputClass}
+                placeholder="6"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="isPrimaryResidence"
+              type="checkbox"
+              checked={isPrimaryResidence}
+              onChange={(e) => setIsPrimaryResidence(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300"
+            />
+            <label htmlFor="isPrimaryResidence" className="text-sm text-neutral-700">
+              Is primary residence
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Years lived in</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={yearsLivedIn}
+              onChange={(e) => setYearsLivedIn(e.target.value)}
+              className={inputClass}
+              placeholder="For exclusion / tax planning"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+            <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputClass}>
+              <option value="person1">{person1Name}</option>
+              <option value="person2">{person2Name}</option>
+              <option value="joint">Joint</option>
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2 pb-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+            >
+              {isSubmitting ? 'Saving...' : editRow ? 'Save Changes' : 'Add Property'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
