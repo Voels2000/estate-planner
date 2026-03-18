@@ -1,34 +1,109 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import CompleteClient from './_complete-client'
+import { AdminClient } from './_admin-client'
 
-export default async function CompletePage() {
+export default async function AdminPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projection`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: 'no-store',
-  })
+  // User stats
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, role, subscription_status, subscription_plan, created_at')
+    .order('created_at', { ascending: false })
 
-  if (!res.ok) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        No household data found. Please complete your profile first.
-      </div>
-    )
-  }
+  // Usage stats
+  const [
+    { count: assetCount },
+    { count: incomeCount },
+    { count: expenseCount },
+    { count: projectionCount },
+  ] = await Promise.all([
+    supabase.from('assets').select('*', { count: 'exact', head: true }),
+    supabase.from('income').select('*', { count: 'exact', head: true }),
+    supabase.from('expenses').select('*', { count: 'exact', head: true }),
+    supabase.from('projections').select('*', { count: 'exact', head: true }),
+  ])
 
-  const { rows, household } = await res.json()
+  // App config
+  const { data: appConfig } = await supabase
+    .from('app_config')
+    .select('*')
+    .order('key')
+
+  const { data: advisorTiers } = await supabase
+    .from('advisor_tiers')
+    .select('*')
+    .order('display_order')
+  
+    const { data: assetTypes } = await supabase
+    .from('asset_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: liabilityTypes } = await supabase
+    .from('liability_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: incomeTypes } = await supabase
+    .from('income_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: expenseTypes } = await supabase
+    .from('expense_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  // Feedback
+  const { data: feedback } = await supabase
+    .from('feedback')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  // Compute stats
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - 7)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const totalUsers = profiles?.length ?? 0
+  const newToday = profiles?.filter(p => new Date(p.created_at) >= startOfDay).length ?? 0
+  const newThisWeek = profiles?.filter(p => new Date(p.created_at) >= startOfWeek).length ?? 0
+  const newThisMonth = profiles?.filter(p => new Date(p.created_at) >= startOfMonth).length ?? 0
+
+  const activeSubscriptions = profiles?.filter(p =>
+    p.subscription_status === 'active' || p.subscription_status === 'trialing'
+  ).length ?? 0
+
+  const consumerCount = profiles?.filter(p => p.subscription_plan === 'consumer').length ?? 0
+  const advisorCount = profiles?.filter(p => p.subscription_plan === 'advisor').length ?? 0
+
+  // MRR estimate
+  const mrr = (consumerCount * 19) + (advisorCount * 159)
 
   return (
-    <CompleteClient
-      rows={rows}
-      person1Name={household.person1_name ?? 'Person 1'}
-      person2Name={household.has_spouse ? (household.person2_name ?? 'Person 2') : null}
-      
+    <AdminClient
+      totalUsers={totalUsers}
+      newToday={newToday}
+      newThisWeek={newThisWeek}
+      newThisMonth={newThisMonth}
+      activeSubscriptions={activeSubscriptions}
+      consumerCount={consumerCount}
+      advisorCount={advisorCount}
+      mrr={mrr}
+      assetCount={assetCount ?? 0}
+      incomeCount={incomeCount ?? 0}
+      expenseCount={expenseCount ?? 0}
+      projectionCount={projectionCount ?? 0}
+      profiles={profiles ?? []}
+      feedback={feedback ?? []}
+      appConfig={appConfig ?? []}
+      advisorTiers={advisorTiers ?? []}
+      assetTypes={assetTypes ?? []}
+      liabilityTypes={liabilityTypes ?? []}
+      incomeTypes={incomeTypes ?? []}
+      expenseTypes={expenseTypes ?? []}
     />
   )
 }
