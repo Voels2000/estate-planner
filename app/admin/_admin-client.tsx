@@ -131,7 +131,11 @@ export function AdminClient({
   }
 
   async function handleAddCategory(table: CategoryTable) {
-    if (!newLabel.trim() || !newValue.trim()) return
+    if (!newLabel.trim()) return
+    const slug = newValue.trim()
+      ? newValue.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+      : newLabel.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    if (!slug) return
     setCategoryError(null)
     const slug = newValue.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     const maxOrder = Math.max(0, ...categories[table].map(i => i.sort_order))
@@ -449,7 +453,8 @@ export function AdminClient({
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleAddCategory(table)}
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
+                      disabled={!newLabel.trim()}
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition">
                       Add Category
                     </button>
                     <button onClick={() => setAddingTo(null)}
