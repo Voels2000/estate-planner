@@ -45,7 +45,7 @@ export async function GET() {
       .eq('owner_id', user.id),
     supabase
       .from('income')
-      .select('id, source, amount, start_year, end_year, inflation_adjust, owner')
+      .select('id, source, amount, start_year, end_year, inflation_adjust, ss_person')
       .eq('owner_id', user.id),
     supabase
       .from('expenses')
