@@ -157,7 +157,7 @@ async function fetchIncome(supabase: Awaited<ReturnType<typeof createClient>>, o
     .from('income')
     .select('id, owner_id, amount, start_year, end_year, inflation_adjust, source')
     .eq('owner_id', ownerId)
-  if (error) return []
+  if (error) throw new Error('fetchIncome failed: ' + error.message)
   return (data ?? []).map((row) => ({
     id: row.id,
     owner_id: row.owner_id,
