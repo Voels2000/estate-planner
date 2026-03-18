@@ -337,8 +337,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       const amount = inc.inflation_adjust
         ? inc.amount * inflationFactor
         : inc.amount
-      if (inc.source === 'employment' || inc.source === 'self_employment') {
+      if (inc.source === 'salary' || inc.source === 'employment' || inc.source === 'self_employment') {
         income_earned += amount
+      } else if (inc.source === 'social_security') {
+        // Skip — SS is calculated separately via getSsBenefit()
       } else {
         income_other += amount
       }
