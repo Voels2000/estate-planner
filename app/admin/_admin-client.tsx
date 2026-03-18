@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { AdvisorTier } from '@/lib/types'
+import DebugTab from './debug-tab'
 
 type Profile = {
   id: string
@@ -63,7 +64,7 @@ type Props = {
   expenseTypes: CategoryItem[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'debug' | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -137,6 +138,7 @@ export function AdminClient({
       : newLabel.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     if (!slug) return
     setCategoryError(null)
+  
     const maxOrder = Math.max(0, ...categories[table].map(i => i.sort_order))
     const newItem: CategoryItem = { value: slug, label: newLabel.trim(), sort_order: maxOrder + 10, is_active: true }
     try {
@@ -211,6 +213,7 @@ export function AdminClient({
     { key: 'settings', label: 'Settings', icon: '⚙️' },
     { key: 'tiers', label: 'Advisor Tiers', icon: '🏷️' },
     { key: 'categories', label: 'Categories', icon: '🗂️' },
+    { key: 'debug', label: 'Debug', icon: '🔧' },
   ]
 
   const CATEGORY_SECTIONS: { table: CategoryTable; label: string; description: string }[] = [
@@ -452,8 +455,7 @@ export function AdminClient({
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleAddCategory(table)}
-                      disabled={!newLabel.trim()}
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition">
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
                       Add Category
                     </button>
                     <button onClick={() => setAddingTo(null)}
@@ -509,6 +511,8 @@ export function AdminClient({
           ))}
         </div>
       )}
+
+      {activeTab === 'debug' && <DebugTab profiles={rest.profiles} />}
 
       {activeTab === 'settings' && (
         <div className="space-y-4">
