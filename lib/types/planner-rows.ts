@@ -29,7 +29,7 @@ export type IncomeRowSelect = {
   start_year: number | null
   end_year: number | null
   inflation_adjust: boolean
-  owner: string
+  ss_person: string | null
 }
 
 /** Row shape when selecting: id, category, amount, inflation_adjust, owner */
