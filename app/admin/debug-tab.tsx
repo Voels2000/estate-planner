@@ -143,7 +143,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           icon: '💰',
           inputs: {
             user: profiles.find(p => p.id === selectedUserId)?.full_name ?? selectedUserId,
-            year,
+            year: String (year)
             person1_age: p1Age,
             filing_status: household.filing_status,
             state: household.state_primary,
@@ -154,7 +154,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             { label: 'Inflation factor', value: inflFactor.toFixed(4), note: `(1 + ${inflationRate})^${year - baseYear}` },
             { label: 'Salary income', value: fmtDollars(salary), note: `From ${incomeRows.filter(r => r.source === 'salary').length} salary row(s)` },
             { label: 'Social Security income', value: fmtDollars(ssIncome), note: `From ${incomeRows.filter(r => r.source === 'social_security').length} SS row(s)` },
-            { label: 'Other income', value: fmtDollars(otherIncome), note: `Rental, pension, interest, etc.` },
+            { label: 'Other income (total)', value: fmtDollars(otherIncome), note: incomeRows.filter((r: any) => r.source !== 'salary' && r.source !== 'social_security').map((r: any) => `${r.source}: ${fmtDollars(Number(r.amount))}`).join(', ') || 'None' },
             { label: 'Gross income', value: fmtDollars(grossIncome), note: 'salary + SS + other' },
             { label: 'Standard deduction', value: fmtDollars(deduction), note: fs === 'married_filing_jointly' ? 'MFJ 2024' : 'Single 2024' },
             { label: 'Taxable income', value: fmtDollars(taxableIncome), note: 'gross - deduction (floor 0)' },
@@ -308,7 +308,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           engine: 'RMD Calculator',
           icon: '📋',
           inputs: {
-            year,
+            year: String(year)
             person1_birth_year: household.person1_birth_year,
             person1_age: p1Age,
             rmd_eligible_accounts: rmdEligibleAssets.length,
