@@ -151,7 +151,15 @@ export default function ProjectionsPage() {
     const inflationRate = Number(household.inflation_rate) / 100 || 0.025
     const growthAccumulation = Number(household.growth_rate_accumulation ?? 7) / 100
     const growthRetirement = Number(household.growth_rate_retirement ?? 5) / 100
-    const filingStatus = household.filing_status ?? 'single'
+    const filingStatusRaw = household.filing_status ?? 'single'
+    const filingStatusMap: Record<string, string> = {
+      mfj: 'married_filing_jointly',
+      mfs: 'married_filing_separately',
+      hoh: 'head_of_household',
+      qw: 'qualifying_widow',
+      single: 'single',
+    }
+    const filingStatus = filingStatusMap[filingStatusRaw] ?? filingStatusRaw
     const stateCode = household.state_primary ?? ''
     const totalAssets = assets.reduce((sum, a) => sum + Number(a.value), 0)
 
