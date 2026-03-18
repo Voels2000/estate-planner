@@ -369,20 +369,23 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const income_total = income_earned + income_ss_person1 + income_ss_person2 + income_rmd + income_other
 
     // --- TAX ---
+    // Normalize filing status short codes to internal format
+    const fsMap: Record<string, string> = { mfj: 'married_joint', married_filing_jointly: 'married_joint', mfs: 'single', hoh: 'single', qw: 'married_joint', single: 'single' }
+    const fs = fsMap[household.filing_status] ?? 'single'
     // MAGI for IRMAA uses PRIOR year
-    const irmaa = calcIrmaa(prevMagi, household.filing_status, irmaa_brackets)
-    const tax_federal = calcFederalTax(income_total, household.filing_status)
+    const irmaa = calcIrmaa(prevMagi, fs, irmaa_brackets)
+    const tax_federal = calcFederalTax(income_total, fs)
     const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
       income_total,
       household.state_primary,
       household.state_secondary
     )
-    const deduction = household.filing_status === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
+    const deduction = fs === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
     const ordinaryTaxableIncome = Math.max(0, income_total - deduction)
     const taxableBrokerageGrowth = taxable * growthRate
-    const tax_capital_gains = calcCapitalGainsTax(taxableBrokerageGrowth, ordinaryTaxableIncome, household.filing_status)
+    const tax_capital_gains = calcCapitalGainsTax(taxableBrokerageGrowth, ordinaryTaxableIncome, fs)
     const investmentIncome = income_rmd + taxableBrokerageGrowth + income_other
-    const tax_niit = calcNiit(investmentIncome, income_total, household.filing_status)
+    const tax_niit = calcNiit(investmentIncome, income_total, fs)
     const tax_payroll = calcPayrollTax(income_earned)
     const tax_total = tax_federal + tax_state + tax_state_secondary + tax_capital_gains + tax_niit + tax_payroll + irmaa.part_b + irmaa.part_d
 
