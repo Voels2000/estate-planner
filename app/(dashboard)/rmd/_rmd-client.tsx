@@ -163,7 +163,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
     </div>
   )
 
-  const currentYear = n).getFullYear()
+  const currentYear = new Date().getFullYear()
   const p1Name = household.person1_name?.split(' ')[0] ?? 'Person 1'
   const p2Name = household.has_spouse ? (household.person2_name?.split(' ')[0] ?? 'Person 2') : null
   const p1StartAge = rmdStartAge(household.person1_birth_year)
