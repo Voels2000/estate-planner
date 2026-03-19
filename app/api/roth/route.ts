@@ -137,7 +137,9 @@ export async function GET() {
     taxDeferredBalance,
     rothBalance,
     taxableBalance,
-    ordinaryIncome,
+    person1Income: ordinaryIncome,
+person2Income: 0,
+
     ordinaryIncomeGrowthRate: 0.02,  // flat 2% wage growth assumption
     ssIncomePerson1,
     ssIncomePerson2,
