@@ -82,13 +82,13 @@ export default async function RothPage() {
 
   // Person1 income: rows where ss_person matches person1 OR is unassigned
   const person1Income = activeOrdinary
-    .filter((r) => !r.ss_person || r.ss_person === hh.person1_name)
+    .filter((r) => !r.ss_person || r.ss_person === hh.person1_name || r.ss_person === 'person1')
     .reduce((s, r) => s + (r.amount ?? 0), 0);
 
   // Person2 income: rows where ss_person matches person2
   const person2Income = hh.has_spouse
     ? activeOrdinary
-        .filter((r) => r.ss_person === hh.person2_name)
+        .filter((r) => r.ss_person === hh.person2_name || r.ss_person === 'person2')
         .reduce((s, r) => s + (r.amount ?? 0), 0)
     : 0;
 
@@ -97,10 +97,10 @@ export default async function RothPage() {
     (r) => r.source === "social_security" && currentYear >= (r.start_year ?? 1900)
   );
   const ssIncomePerson1 = ssRows
-    .filter((r) => r.ss_person === hh.person1_name)
+    .filter((r) => r.ss_person === hh.person1_name || r.ss_person === 'person1')
     .reduce((s, r) => s + r.amount, 0);
   const ssIncomePerson2 = ssRows
-    .filter((r) => r.ss_person === hh.person2_name)
+    .filter((r) => r.ss_person === hh.person2_name || r.ss_person === 'person2')
     .reduce((s, r) => s + r.amount, 0);
 
   const filingStatus = hh.filing_status ?? "single";
