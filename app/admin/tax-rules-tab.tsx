@@ -284,7 +284,12 @@ export default function TaxRulesTab() {
       const { data, error } = await supabase.from('federal_estate_tax_brackets').insert(rows).select()
       console.log('Federal copy result:', JSON.stringify({ data, error }))
       if (error) throw error
-      setYearFi  }
+      setYearFilter(targetYear)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to copy.')
+    } finally {
+      setLoadingFederal(false)
+    }
   }
 
   // ── IRMAA Handlers ─────────────────────────────────────────────────────────
