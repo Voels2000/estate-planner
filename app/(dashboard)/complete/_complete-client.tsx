@@ -323,7 +323,7 @@ export default function CompleteClient({
                 const pooledOther = r.income_other_pooled ?? 0
                 const pooledSplit = hasSpouse ? Math.round(pooledOther / 2) : pooledOther
                 const p1Income = (r.income_earned_p1 ?? 0) + r.income_ss_person1 + (r.income_rmd_p1 ?? 0) + (r.income_other_p1 ?? 0) + (hasSpouse ? pooledSplit : pooledOther)
-                const p2Income = hasSpouse ? (r.income_earned_p2 ?? 0) + r.income_ss_person2 + (r.income_rmd_p2 ?0) + (r.income_other_p2 ?? 0) + pooledSplit : 0
+                const p2Income = hasSpouse ? (r.income_earned_p2 ?? 0) + r.income_ss_person2 + (r.income_rmd_p2 ?? 0) + (r.income_other_p2 ?? 0) + pooledSplit : 0
                 const p1Assets = (r.assets_p1_total ?? 0)
                 const p2Assets = (r.assets_p2_total ?? 0)
                 const irmaaTotal = (r.irmaa_part_b ?? 0) + (r.irmaa_part_d ?? 0)

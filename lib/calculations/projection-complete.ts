@@ -187,9 +187,7 @@ function calcCapitalGainsTax(gains: number, ordinaryIncome: number, filingStatus
   const limit15 = isMfj ? LTCG_LIMIT_15_MFJ : LTCG_LIMIT_15_SINGLE
   const room0      = Math.max(0, limit0 - ordinaryIncome)
   const gainsAt0   = Math.min(gains, room0)
-  const room15     = Math.max(0, limit15 - Math.max(person1Income: ordinaryIncome,
-person2Income: 0,
- limit0))
+  const room15     = Math.max(0, limit15 - Math.max(ordinaryIncome, limit0))
   const gainsAt15  = Math.min(gains - gainsAt0, room15)
   const gainsAt20  = gains - gainsAt0 - gainsAt15
   return Math.round(0.15 * gainsAt15 + 0.2 * gainsAt20)
