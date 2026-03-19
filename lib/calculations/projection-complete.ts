@@ -298,7 +298,7 @@ function isRetired(birthYear: number | null, retirementAge: number | null, year:
 
 // ─── Asset type classification ────────────────────────────────────────────────
 
-const TAX_DEFERRED_TYPES = ['traditional_ira', '401k', '403b', '457', 'sep_ira', 'simple_ira', 'pension']
+const TAX_DEFERRED_TYPES = ['traditional_ira', '401k', 'traditional_401k', '403b', 'traditional_403b', '457', 'sep_ira', 'simple_ira', 'pension']
 const ROTH_TYPES         = ['roth_ira', 'roth_401k']
 
 type AssetBucket = { taxDeferred: number; roth: number; taxable: number }
