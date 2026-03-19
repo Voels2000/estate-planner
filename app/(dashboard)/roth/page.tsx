@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { RothClient } from "./_roth-client";
 import { runRothOptimizer, FederalBracket } from "@/lib/calculations/roth-optimizer";
 
-// 2024 federal brackets — same defaults as API route
 const BRACKETS_MFJ: FederalBracket[] = [
   { min: 0,       max: 23200,  rate: 0.10 },
   { min: 23200,   max: 94300,  rate: 0.12 },
@@ -31,7 +30,7 @@ function getBrackets(fs: string): FederalBracket[] {
 }
 
 function getStandardDeduction(fs: string): number {
-  return { mfj: 29200, mfs: 14600, hoh: 21900, qw: 29200, single: 14600 }[fs] ?? 14600;
+  return ({ mfj: 29200, mfs: 14600, hoh: 21900, qw: 29200, single: 14600 } as Record<string, number>)[fs] ?? 14600;
 }
 
 export default async function RothPage() {
@@ -41,7 +40,7 @@ export default async function RothPage() {
 
   const [{ data: hh }, { data: incomeRows }, { data: assetRows }] = await Promise.all([
     supabase.from("households").select("*").eq("owner_id", user.id).single(),
-    supabase.from("income").select("source, amount, ss_person, start_year, end_year").eq("owner_id", user.id),
+    supabase.from("income").select("source, amount, ss_person, start_year, end_year, owner_id").eq("owner_id", user.id),
     supabase.from("assets").select("type, value, owner").eq("owner_id", user.id),
   ]);
 
@@ -55,6 +54,7 @@ export default async function RothPage() {
 
   const currentYear = new Date().getFullYear();
 
+  // Asset classification
   const taxDeferredBalance = (assetRows ?? [])
     .filter((a) => ["traditional_ira","401k","403b","sep_ira","simple_ira"].includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
@@ -67,36 +67,58 @@ export default async function RothPage() {
     .filter((a) => ["brokerage","savings","checking","money_market"].includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
-  const ordinaryIncome = (incomeRows ?? [])
-    .filter((r) => r.source !== "social_security")
-    .filter((r) => currentYear >= (r.start_year ?? 1900) && currentYear <= (r.end_year ?? 9999))
+  // Ordinary income split by person — active this year
+  const activeOrdinary = (incomeRows ?? []).filter(
+    (r) => r.source !== "social_security" &&
+      currentYear >= (r.start_year ?? 1900) &&
+      currentYear <= (r.end_year ?? 9999)
+  );
+
+  // Match income to person by ss_person name field (same pattern as other engines)
+  const person1Income = activeOrdinary
+    .filter((r) => !r.ss_person || r.ss_person === hh.person1_name)
     .reduce((s, r) => s + (r.amount ?? 0), 0);
 
+  const person2Income = hh.has_spouse
+    ? activeOrdinary
+        .filter((r) => r.ss_person === hh.person2_name)
+        .reduce((s, r) => s + (r.amount ?? 0), 0)
+    : 0;
+
+  // SS income
   const ssRows = (incomeRows ?? []).filter(
     (r) => r.source === "social_security" && currentYear >= (r.start_year ?? 1900)
   );
   const ssIncomePerson1 = ssRows.filter((r) => r.ss_person === hh.person1_name).reduce((s, r) => s + r.amount, 0);
   const ssIncomePerson2 = ssRows.filter((r) => r.ss_person === hh.person2_name).reduce((s, r) => s + r.amount, 0);
 
+  // Retirement years — per person with sensible fallbacks
+  const person1RetirementYear = hh.person1_retirement_year ?? (hh.person1_birth_year + 65);
+  const person2RetirementYear = hh.has_spouse
+    ? (hh.person2_retirement_year ?? (hh.person2_birth_year + 65))
+    : 9999;
+
   const filingStatus = hh.filing_status ?? "single";
-  const retirementYear = hh.retirement_year ?? (hh.person1_birth_year + 65);
   const rmdStartAge = hh.person1_birth_year >= 1960 ? 75 : 73;
 
   const result = runRothOptimizer({
     currentYear,
-    retirementYear,
+    person1RetirementYear,
+    person2RetirementYear,
     deathYear: currentYear + 30,
     filingStatus,
     state: hh.state_primary ?? "",
     taxDeferredBalance,
     rothBalance,
     taxableBalance,
-    ordinaryIncome,
+    person1Income,
+    person2Income,
     ordinaryIncomeGrowthRate: 0.02,
     ssIncomePerson1,
     ssIncomePerson2,
     rmdStartAge,
     person1BirthYear: hh.person1_birth_year,
+    person2BirthYear: hh.has_spouse ? (hh.person2_birth_year ?? 0) : 0,
     growthRateAccumulation: hh.growth_rate_accumulation ?? 0.07,
     growthRateRetirement: hh.growth_rate_retirement ?? 0.05,
     inflationRate: hh.inflation_rate ?? 0.025,
