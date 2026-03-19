@@ -8,6 +8,24 @@ export type EstateTaxBracket = {
 
 export const FEDERAL_EXEMPTION_2024 = 13_610_000
 
+// Year-aware federal estate tax exemptions
+// 2026: TCJA sunsets — exemption drops back to ~$7M per person
+const FEDERAL_EXEMPTIONS_BY_YEAR: Record<number, number> = {
+  2024: 13_610_000,
+  2025: 13_990_000,
+  2026:  7_000_000,  // TCJA sunset estimate — update if legislation changes
+}
+
+export function getFederalExemption(taxYear?: number): number {
+  if (!taxYear) return FEDERAL_EXEMPTION_2024
+  // Use exact year if available, otherwise nearest past year
+  const years = Object.keys(FEDERAL_EXEMPTIONS_BY_YEAR).map(Number).sort((a, b) => b - a)
+  for (const y of years) {
+    if (taxYear >= y) return FEDERAL_EXEMPTIONS_BY_YEAR[y]
+  }
+  return FEDERAL_EXEMPTION_2024
+}
+
 export type FederalEstateTaxResult = {
   taxable_estate: number
   exemption_used: number
@@ -39,10 +57,9 @@ function computeProgressiveTaxFromBrackets(
   return Math.round(tax * 100) / 100
 }
 
-function applicableExemptionAmount(filingStatus: string): number {
-  return filingStatus === 'married_joint'
-    ? FEDERAL_EXEMPTION_2024 * 2
-    : FEDERAL_EXEMPTION_2024
+function applicableExemptionAmount(filingStatus: string, taxYear?: number): number {
+  const exemption = getFederalExemption(taxYear)
+  return filingStatus === 'married_joint' ? exemption * 2 : exemption
 }
 
 export function computeFederalEstateTax(
@@ -53,13 +70,14 @@ export function computeFederalEstateTax(
   brackets: EstateTaxBracket[],
   annualGifting = 0,
   giftingYears = 1,
+  taxYear?: number,
 ): FederalEstateTaxResult {
   const gifting_reduction = Math.max(0, annualGifting * giftingYears)
   const taxable_estate = Math.max(
     0,
     grossEstate - liabilities - trustsExcluded - gifting_reduction,
   )
-  const exemptionCap = applicableExemptionAmount(filingStatus)
+  const exemptionCap = applicableExemptionAmount(filingStatus, taxYear)
   const tax_before_credit = computeProgressiveTaxFromBrackets(taxable_estate, brackets)
   const applicable_credit = computeProgressiveTaxFromBrackets(exemptionCap, brackets)
   const net_estate_tax = Math.max(

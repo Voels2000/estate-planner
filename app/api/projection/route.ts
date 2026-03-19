@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     supabase.from('liabilities').select('id, type, balance, monthly_payment, interest_rate, owner').eq('owner_id', user.id),
     supabase.from('income').select('id, source, amount, start_year, end_year, inflation_adjust, ss_person').eq('owner_id', user.id),
     supabase.from('expenses').select('id, category, amount, inflation_adjust, owner').eq('owner_id', user.id),
-    supabase.from('irmaa_brackets').select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status').eq('tax_year', 2024),
+    supabase.from('irmaa_brackets').select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status').order('tax_year', { ascending: false }).limit(20),
     supabase.from('real_estate').select('id, name, current_value, is_primary_residence, owner').eq('owner_id', user.id),
     // Fetch state income tax rates from DB — no hardcoding
     supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),

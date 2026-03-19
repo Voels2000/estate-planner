@@ -40,20 +40,24 @@ export default async function EstateTaxPage() {
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('households').select('*').eq('owner_id', user.id).maybeSingle(),
+    // Fetch all years — client filters to most recent
     supabase
       .from('federal_estate_tax_brackets')
       .select('*')
+      .order('tax_year', { ascending: false })
       .order('min_amount', { ascending: true }),
+    // Fetch all years — client filters to most recent
     supabase
       .from('state_estate_tax_rules')
       .select('*')
-      .eq('tax_year', 2024)
+      .order('tax_year', { ascending: false })
       .order('state', { ascending: true })
       .order('min_amount', { ascending: true }),
+    // Fetch all years — client filters to most recent
     supabase
       .from('state_inheritance_tax_rules')
       .select('*')
-      .eq('tax_year', 2024)
+      .order('tax_year', { ascending: false })
       .order('state', { ascending: true }),
   ])
 
