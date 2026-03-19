@@ -138,8 +138,9 @@ export async function GET() {
     rothBalance,
     taxableBalance,
     person1Income: ordinaryIncome,
-person2Income: 0,
-
+    person2Income: hh.has_spouse ? ordinaryIncome : 0,
+    person1BirthYear: hh.person1_birth_year,
+    person2BirthYear: hh.has_spouse ? (hh.person2_birth_year ?? hh.person1_birth_year) : hh.person1_birth_year,
     ordinaryIncomeGrowthRate: 0.02,  // flat 2% wage growth assumption
     ssIncomePerson1,
     ssIncomePerson2,
