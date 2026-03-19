@@ -269,6 +269,24 @@ export default function TaxRulesTab() {
     }
   }
 
+  async function handleCopyFederalToYear(targetYear: number) {
+    if (!federalBrackets.length) return
+    setError(null)
+    const supabase = createClient()
+    try {
+      const rows = federalBrackets.map(b => ({
+        tax_year: targetYear,
+        min_amount: b.min_amount,
+        max_amount: b.max_amount,
+        rate_pct: b.rate_pct,
+      }))
+      console.log('Copying federal brackets:', JSON.stringify(rows))
+      const { data, error } = await supabase.from('federal_estate_tax_brackets').insert(rows).select()
+      console.log('Federal copy result:', JSON.stringify({ data, error }))
+      if (error) throw error
+      setYearFi  }
+  }
+
   // ── IRMAA Handlers ─────────────────────────────────────────────────────────
 
   async function handleSaveIrmaa(row: IrmaaBracket) {
@@ -526,7 +544,13 @@ export default function TaxRulesTab() {
       {/* ── Federal Estate Tax ────────────────────────────────────────────────── */}
       {activeSection === 'federal_estate' && (
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <h2 className="text-base font-semibold text-neutral-900 mb-1">Federal Estate Tax Brackets — {yearFilter}</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-base font-semibold text-neutral-900">Federal Estate Tax Brackets — {yearFilter}</h2>
+            <button onClick={() => handleCopyFederalToYear(yearFilter + 1)}
+              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition">
+              Copy to {yearFilter + 1}
+            </button>
+          </div>
           <p className="text-sm text-neutral-500 mb-5">Progressive federal estate tax brackets. Applied after exemption credit.</p>
 
           {loadingFederal ? (
