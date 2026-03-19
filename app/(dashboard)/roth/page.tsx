@@ -40,7 +40,7 @@ export default async function RothPage() {
 
   const [{ data: hh }, { data: incomeRows }, { data: assetRows }] = await Promise.all([
     supabase.from("households").select("*").eq("owner_id", user.id).single(),
-    supabase.from("income").select("source, amount, ss_person, start_year, end_year, owner_id").eq("owner_id", user.id),
+    supabase.from("income").select("source, amount, ss_person, start_year, end_year").eq("owner_id", user.id),
     supabase.from("assets").select("type, value, owner").eq("owner_id", user.id),
   ]);
 
@@ -53,6 +53,12 @@ export default async function RothPage() {
   }
 
   const currentYear = new Date().getFullYear();
+
+  // Retirement years — calculated from birth_year + retirement_age
+  const person1RetirementYear = hh.person1_birth_year + (hh.person1_retirement_age ?? 65);
+  const person2RetirementYear = hh.has_spouse
+    ? hh.person2_birth_year + (hh.person2_retirement_age ?? 65)
+    : 9999;
 
   // Asset classification
   const taxDeferredBalance = (assetRows ?? [])
@@ -67,18 +73,19 @@ export default async function RothPage() {
     .filter((a) => ["brokerage","savings","checking","money_market"].includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
-  // Ordinary income split by person — active this year
+  // Ordinary income active this year, split by person
   const activeOrdinary = (incomeRows ?? []).filter(
     (r) => r.source !== "social_security" &&
       currentYear >= (r.start_year ?? 1900) &&
       currentYear <= (r.end_year ?? 9999)
   );
 
-  // Match income to person by ss_person name field (same pattern as other engines)
+  // Person1 income: rows where ss_person matches person1 OR is unassigned
   const person1Income = activeOrdinary
     .filter((r) => !r.ss_person || r.ss_person === hh.person1_name)
     .reduce((s, r) => s + (r.amount ?? 0), 0);
 
+  // Person2 income: rows where ss_person matches person2
   const person2Income = hh.has_spouse
     ? activeOrdinary
         .filter((r) => r.ss_person === hh.person2_name)
@@ -89,14 +96,12 @@ export default async function RothPage() {
   const ssRows = (incomeRows ?? []).filter(
     (r) => r.source === "social_security" && currentYear >= (r.start_year ?? 1900)
   );
-  const ssIncomePerson1 = ssRows.filter((r) => r.ss_person === hh.person1_name).reduce((s, r) => s + r.amount, 0);
-  const ssIncomePerson2 = ssRows.filter((r) => r.ss_person === hh.person2_name).reduce((s, r) => s + r.amount, 0);
-
-  // Retirement years — per person with sensible fallbacks
-  const person1RetirementYear = hh.person1_retirement_year ?? (hh.person1_birth_year + 65);
-  const person2RetirementYear = hh.has_spouse
-    ? (hh.person2_retirement_year ?? (hh.person2_birth_year + 65))
-    : 9999;
+  const ssIncomePerson1 = ssRows
+    .filter((r) => r.ss_person === hh.person1_name)
+    .reduce((s, r) => s + r.amount, 0);
+  const ssIncomePerson2 = ssRows
+    .filter((r) => r.ss_person === hh.person2_name)
+    .reduce((s, r) => s + r.amount, 0);
 
   const filingStatus = hh.filing_status ?? "single";
   const rmdStartAge = hh.person1_birth_year >= 1960 ? 75 : 73;
