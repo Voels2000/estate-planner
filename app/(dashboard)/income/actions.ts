@@ -26,7 +26,11 @@ export async function addIncome(ownerId: string, values: {
   revalidatePath('/income')
 }
 
-export async fuber
+export async function updateIncome(id: string, ownerId: string, values: {
+  source: string
+  name?: string | null
+  ss_person: string
+  amount: number
   start_year: number
   end_year: number | null
   inflation_adjust: boolean
