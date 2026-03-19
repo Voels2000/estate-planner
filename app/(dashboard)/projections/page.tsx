@@ -151,7 +151,7 @@ export default function ProjectionsPage() {
   }
 
   const currentYear = new Date().getFullYear()
-  const currentAge = currentYear - househoerson1_birth_year
+  const currentAge = currentYear - household.person1_birth_year
   const retirementRow = projections.find(p => p.phase === 'retirement')
   const finalRow = projections[projections.length - 1]
   const peakPortfolio = projections.length > 0 ? Math.max(...projections.map(p => p.portfolio)) : 0
