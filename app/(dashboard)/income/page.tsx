@@ -4,7 +4,11 @@ import { IncomeClient } from './_income-client'
 
 export default async function IncomePage() {
   const supabase = await createClient()
-  const { data: { user } } = asupabase.from('income').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const [{ data: income }, { data: household }] = await Promise.all([
+    supabase.from('income').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
     supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
   ])
 
