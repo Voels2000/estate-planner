@@ -305,7 +305,7 @@ export default function TaxRulesTab() {
         part_b_surcharge: b.part_b_surcharge,
         part_d_surcharge: b.part_d_surcharge,
       }))
-      const { error } = await supabase.from('irmaa_brackets').upsert(rows, { onConflict: 'tax_year,filing_status,magi_threshold' })
+      const { error } = await supabase.from('irmaa_brackets').insert(rows)
       if (error) throw error
       setYearFilter(targetYear)
     } catch (err) {
