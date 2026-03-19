@@ -1,36 +1,46 @@
 'use server'
-
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { IncomeFormValues } from '@/lib/validations/income'
 
-export async function addIncome(ownerId: string, values: IncomeFormValues) {
+export async function addIncome(ownerId: string, values: {
+  source: string
+  name?: string | null
+  ss_person: string
+  amount: number
+  start_year: number
+  end_year: number | null
+  inflation_adjust: boolean
+}) {
   const supabase = await createClient()
   const { error } = await supabase.from('income').insert({
     owner_id: ownerId,
-    amount: values.amount,
     source: values.source,
+    name: values.name ?? null,
+    ss_person: values.ss_person,
+    amount: values.amount,
     start_year: values.start_year,
-    end_year: values.end_year === '' ? null : values.end_year,
+    end_year: values.end_year,
     inflation_adjust: values.inflation_adjust,
   })
   if (error) throw new Error(error.message)
   revalidatePath('/income')
 }
 
-export async function updateIncome(
-  id: string,
-  ownerId: string,
-  values: IncomeFormValues
-) {
+export async fuber
+  start_year: number
+  end_year: number | null
+  inflation_adjust: boolean
+}) {
   const supabase = await createClient()
   const { error } = await supabase
     .from('income')
     .update({
-      amount: values.amount,
       source: values.source,
+      name: values.name ?? null,
+      ss_person: values.ss_person,
+      amount: values.amount,
       start_year: values.start_year,
-      end_year: values.end_year === '' ? null : values.end_year,
+      end_year: values.end_year,
       inflation_adjust: values.inflation_adjust,
       updated_at: new Date().toISOString(),
     })
