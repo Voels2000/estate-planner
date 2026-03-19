@@ -223,8 +223,7 @@ export default function ProjectionsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <SummaryCard label="Current Age" value={String(currentAge)} sub={`Born ${household.person1_birth_year}`} />
-        <SummaryCard label="At Retirement" value={formatDollars(retirementRow?.portfolio ?? 0)} sub={`Age ${household.person1_retirement_age}`} />
+<SummaryCard label="At Retirement" value={formatDollars(retirementRow?.portfolio ?? 0)} sub={`Age ${household.person1_retirement_age}`} />
         <SummaryCard label="Avg Tax in Retirement" value={formatDollars(avgRetirementTax)} sub="Federal + state/yr" highlight="amber" />
         <SummaryCard label="Funds Outlast" value={fundsOutlast ? 'Yes ✓' : 'No ✗'} sub={fundsOutlast ? 'On track' : 'Review plan'} highlight={fundsOutlast ? 'green' : 'red'} />
       </div>
