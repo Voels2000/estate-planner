@@ -12,11 +12,10 @@ type IncomeRow = {
   ss_person?: string | null
   amount: number
   start_year: number | null
-  eome: IncomeRow[]
-  ownerId: string
-  person1Name: string
-  person2Name: string
-  hasSpouse: boolean
+  end_year: number | null
+  inflation_adjust: boolean
+  created_at: string
+  updated_at: string
 }
 
 const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
@@ -33,6 +32,14 @@ const INCOME_SOURCES = [
   { value: 'business',        label: 'Business Income' },
   { value: 'other',           label: 'Other' },
 ]
+
+type Props = {
+  income: IncomeRow[]
+  ownerId: string
+  person1Name: string
+  person2Name: string
+  hasSpouse: boolean
+}
 
 function sourceLabel(value: string) {
   return INCOME_SOURCES.find(s => s.value === value)?.label ?? value
