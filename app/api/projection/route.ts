@@ -75,5 +75,5 @@ export async function GET() {
     real_estate:    (real_estate   ?? []) as { id: string; name: string; current_value: number; is_primary_residence: boolean; owner: string }[],
   })
 
-  return NextResponse.json({ rows })
+  return NextResponse.json({ rows, household })
 }
