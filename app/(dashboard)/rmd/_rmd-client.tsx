@@ -194,7 +194,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <SummaryCard label="Peak Annual RMD" value={peakTotal > 0 ? formatDollars(peakTotal) : '—'} sub="Highest single-year combined" />
-        <SummaryCard label="Lifetime RMDs" value={formatDollars(p1TotalLifetime + p2TotalLifetime)} sub={`${p1Name}: ${formatDollars(p1TotalLetime)}${p2Name ? ' · ' + p2Name + ': ' + formatDollars(p2TotalLifetime) : ''}`} />
+        <SummaryCard label="Lifetime RMDs" value={formatDollars(p1TotalLifetime + p2TotalLifetime)} sub={`${p1Name}: ${formatDollars(p1TotalLifetime)}${p2Name ? ' · ' + p2Name + ': ' + formatDollars(p2TotalLifetime) : ''}`} />
       </div>
 
       <div className="mb-8">
