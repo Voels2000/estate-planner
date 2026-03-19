@@ -129,7 +129,8 @@ export async function GET() {
 
   const result = runRothOptimizer({
     currentYear,
-    retirementYear,
+    person1RetirementYear: hh.person1_retirement_age ?? (hh.person1_birth_year + 65),
+    person2RetirementYear: hh.has_spouse ? (hh.person2_retirement_age ?? (hh.person2_birth_year + 65)) : 9999,
     deathYear,
     filingStatus,
     state: hh.state_primary ?? "",
