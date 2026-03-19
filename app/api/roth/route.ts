@@ -145,7 +145,6 @@ export async function GET() {
     ssIncomePerson1,
     ssIncomePerson2,
     rmdStartAge,
-    person1BirthYear: hh.person1_birth_year,
     growthRateAccumulation: hh.growth_rate_accumulation ?? 0.07,
     growthRateRetirement: hh.growth_rate_retirement ?? 0.05,
     inflationRate: hh.inflation_rate ?? 0.025,
