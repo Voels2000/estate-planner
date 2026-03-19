@@ -197,7 +197,7 @@ export default function CompleteClient({
 
                 {/* Person 1 group */}
                 <th
-                  colSpan={expandP1 ? 6 : 1}
+                  colSpan={expandP1 ? 6 : 3}
                   className="pb-1 pt-3 px-2 text-center"
                 >
                   <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
@@ -208,7 +208,7 @@ export default function CompleteClient({
                 {/* Person 2 group */}
                 {p2 && (
                   <th
-                    colSpan={expandP2 ? 6 : 1}
+                    colSpan={expandP2 ? 6 : 3}
                     className="pb-1 pt-3 px-2 text-center"
                   >
                     <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
@@ -263,10 +263,10 @@ export default function CompleteClient({
 
                 {/* Person 1 */}
                 <th className="py-2 px-2 whitespace-nowrap text-blue-600">Income</th>
+                <th className="py-2 px-2 whitespace-nowrap text-blue-500">SS</th>
+                <th className="py-2 px-2 whitespace-nowrap text-blue-500">RMD</th>
                 {expandP1 && <>
                   <th className="py-2 px-2 whitespace-nowrap text-blue-500">Earned</th>
-                  <th className="py-2 px-2 whitespace-nowrap text-blue-500">SS</th>
-                  <th className="py-2 px-2 whitespace-nowrap text-blue-500">RMD</th>
                   <th className="py-2 px-2 whitespace-nowrap text-blue-500">Other</th>
                   <th className="py-2 px-2 whitespace-nowrap text-blue-500">Assets</th>
                 </>}
@@ -274,10 +274,10 @@ export default function CompleteClient({
                 {/* Person 2 */}
                 {p2 && <>
                   <th className="py-2 px-2 whitespace-nowrap text-violet-600">Income</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-violet-500">SS</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-violet-500">RMD</th>
                   {expandP2 && <>
                     <th className="py-2 px-2 whitespace-nowrap text-violet-500">Earned</th>
-                    <th className="py-2 px-2 whitespace-nowrap text-violet-500">SS</th>
-                    <th className="py-2 px-2 whitespace-nowrap text-violet-500">RMD</th>
                     <th className="py-2 px-2 whitespace-nowrap text-violet-500">Other</th>
                     <th className="py-2 px-2 whitespace-nowrap text-violet-500">Assets</th>
                   </>}
@@ -341,10 +341,10 @@ export default function CompleteClient({
 
                     {/* Person 1 */}
                     <td className="py-2 px-2 text-blue-700 font-medium">{fmt(p1Income)}</td>
+                    <td className="py-2 px-2 text-blue-600">{fmt(r.income_ss_person1)}</td>
+                    <td className="py-2 px-2 text-blue-600">{fmt(r.income_rmd_p1 ?? 0)}</td>
                     {expandP1 && <>
                       <td className="py-2 px-2 text-blue-600">{fmt(r.income_earned_p1 ?? 0)}</td>
-                      <td className="py-2 px-2 text-blue-600">{fmt(r.income_ss_person1)}</td>
-                      <td className="py-2 px-2 text-blue-600">{fmt(r.income_rmd_p1 ?? 0)}</td>
                       <td className="py-2 px-2 text-blue-600">{fmt(r.income_other_p1 ?? 0)}</td>
                       <td className="py-2 px-2 text-blue-600">{fmt(p1Assets)}</td>
                     </>}
@@ -352,10 +352,10 @@ export default function CompleteClient({
                     {/* Person 2 */}
                     {p2 && <>
                       <td className="py-2 px-2 text-violet-700 font-medium">{fmt(p2Income)}</td>
+                      <td className="py-2 px-2 text-violet-600">{fmt(r.income_ss_person2)}</td>
+                      <td className="py-2 px-2 text-violet-600">{fmt(r.income_rmd_p2 ?? 0)}</td>
                       {expandP2 && <>
                         <td className="py-2 px-2 text-violet-600">{fmt(r.income_earned_p2 ?? 0)}</td>
-                        <td className="py-2 px-2 text-violet-600">{fmt(r.income_ss_person2)}</td>
-                        <td className="py-2 px-2 text-violet-600">{fmt(r.income_rmd_p2 ?? 0)}</td>
                         <td className="py-2 px-2 text-violet-600">{fmt(r.income_other_p2 ?? 0)}</td>
                         <td className="py-2 px-2 text-violet-600">{fmt(p2Assets)}</td>
                       </>}

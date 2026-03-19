@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('assets').select('value').eq('owner_id', user!.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
-    supabase.from('income').select('amount').eq('owner_id', user!.id),
+    supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id),
     supabase.from('expenses').select('amount').eq('owner_id', user!.id),
     household?.id
       ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
@@ -32,7 +32,12 @@ export default async function DashboardPage() {
   const totalAssets = (assets ?? []).reduce((sum, a) => sum + Number(a.value), 0)
   const totalLiabilities = (liabilities ?? []).reduce((sum, l) => sum + Number(l.balance), 0)
   const netWorth = totalAssets - totalLiabilities
-  const totalIncome = (income ?? []).reduce((sum, i) => sum + Number(i.amount), 0)
+  const currentYear = new Date().getFullYear()
+  const totalIncome = (income ?? []).reduce((sum, i) => {
+    if (i.start_year && i.start_year > currentYear) return sum
+    if (i.end_year && i.end_year < currentYear) return sum
+    return sum + Number(i.amount)
+  }, 0)
   const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0)
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
   const latestProjection = projections?.[0]?.summary ?? null
