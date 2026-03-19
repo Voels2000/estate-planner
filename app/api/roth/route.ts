@@ -43,7 +43,7 @@ function getStandardDeduction(filingStatus: string): number {
 }
 
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
