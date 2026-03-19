@@ -55,7 +55,7 @@ export default async function RothPage() {
   const currentYear = new Date().getFullYear();
 
   // Retirement years — calculated from birth_year + retirement_age
-  const person1RetirementYear = hh.person1_birth_year + (hh.person1_retirement_age ?? 65);
+  const person1RetirementYear = currentYear + 30; // person1 already retired — use actual income rows
   const person2RetirementYear = hh.has_spouse
     ? hh.person2_birth_year + (hh.person2_retirement_age ?? 65)
     : 9999;
@@ -124,9 +124,9 @@ export default async function RothPage() {
     rmdStartAge,
     person1BirthYear: hh.person1_birth_year,
     person2BirthYear: hh.has_spouse ? (hh.person2_birth_year ?? 0) : 0,
-    growthRateAccumulation: hh.growth_rate_accumulation ?? 0.07,
-    growthRateRetirement: hh.growth_rate_retirement ?? 0.05,
-    inflationRate: hh.inflation_rate ?? 0.025,
+    growthRateAccumulation: (hh.growth_rate_accumulation ?? 7) / 100,
+    growthRateRetirement: (hh.growth_rate_retirement ?? 5) / 100,
+    inflationRate: (hh.inflation_rate ?? 2.5) / 100,
     federalBrackets: getBrackets(filingStatus),
     standardDeduction: getStandardDeduction(filingStatus),
     maxAnnualConversion: 500000,
