@@ -216,15 +216,16 @@ export default function EstateTaxClient({
   const grossEstate = financialAssets + realEstateIncluded
 
   // ── Federal brackets ────────────────────────────────────────
-  const brackets: EstateTaxBracket[] = useMemo(
-    () =>
-      bracketRows.map((b) => ({
+  const brackets: EstateTaxBracket[] = useMemo(() => {
+    const latestYear = Math.max(...bracketRows.map(b => num(b.tax_year)), 0)
+    return bracketRows
+      .filter(b => num(b.tax_year) === latestYear)
+      .map((b) => ({
         min_amount: num(b.min_amount),
         max_amount: num(b.max_amount),
         rate_pct: num(b.rate_pct),
-      })),
-    [bracketRows],
-  )
+      }))
+  }, [bracketRows])
 
   // ── Federal result (includes gifting) ───────────────────────
   const federalResult =
@@ -241,31 +242,33 @@ export default function EstateTaxClient({
       : null
 
   // ── State estate tax rules ───────────────────────────────────
-  const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(
-    () =>
-      stateEstateTaxRows.map((r) => ({
+  const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(() => {
+    const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
+    return stateEstateTaxRows
+      .filter(r => num(r.tax_year) === latestYear)
+      .map((r) => ({
         state: String(r.state ?? '').trim().toUpperCase(),
         min_amount: num(r.min_amount),
         max_amount: num(r.max_amount),
         rate_pct: num(r.rate_pct),
         exemption_amount: num(r.exemption_amount),
-      })),
-    [stateEstateTaxRows],
-  )
+      }))
+  }, [stateEstateTaxRows])
 
   // ── State inheritance tax rules ──────────────────────────────
-  const stateInheritanceRules: StateInheritanceTaxRule[] = useMemo(
-    () =>
-      stateInheritanceTaxRuleRows.map((r) => ({
+  const stateInheritanceRules: StateInheritanceTaxRule[] = useMemo(() => {
+    const latestYear = Math.max(...stateInheritanceTaxRuleRows.map(r => num(r.tax_year)), 0)
+    return stateInheritanceTaxRuleRows
+      .filter(r => num(r.tax_year) === latestYear)
+      .map((r) => ({
         state: String(r.state ?? '').trim().toUpperCase(),
         beneficiary_class: String(r.beneficiary_class ?? ''),
         min_amount: num(r.min_amount),
         max_amount: num(r.max_amount),
         rate_pct: num(r.rate_pct),
         exemption_amount: num(r.exemption_amount),
-      })),
-    [stateInheritanceTaxRuleRows],
-  )
+      }))
+  }, [stateInheritanceTaxRuleRows])
 
   // ── State estate tax results ─────────────────────────────────
   const taxableForState = federalResult?.taxable_estate ?? 0
