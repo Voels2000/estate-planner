@@ -127,7 +127,8 @@ export default function ProjectionsPage() {
   }
 
   async function handleGrowthRateChange(field: 'growth_rate_accumulation' | 'growth_rate_retirement', value: number) {
-    if (!household) return   const supabase = createClient()
+    if (!household) return
+    const supabase = createClient()
     await supabase.from('households').update({ [field]: value }).eq('id', household.id)
     setHousehold(h => h ? { ...h, [field]: value } : h)
     await loadData()
