@@ -343,8 +343,16 @@ function classifyPooledAssets(
 
 // ─── RMD factor (Uniform Lifetime Table approximation) ───────────────────────
 
-function getRmdAmount(age: number, taxDeferredBalance: number): number {
-  if (age < 73 || taxDeferredBalance <= 0) return 0
+function getRmdStartAge(birthYear: number): number {
+  // SECURE Act 2.0: RMD age is 75 for those born 1960+, 73 for 1951-1959
+  if (birthYear >= 1960) return 75
+  if (birthYear >= 1951) return 73
+  return 72 // pre-SECURE Act
+}
+
+function getRmdAmount(age: number, taxDeferredBalance: number, birthYear: number): number {
+  const rmdAge = getRmdStartAge(birthYear)
+  if (age < rmdAge || taxDeferredBalance <= 0) return 0
   const factor = Math.max(1, 27.4 - (age - 72))
   return Math.round(taxDeferredBalance / factor)
 }
@@ -495,9 +503,9 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       ? year - household.person2_birth_year
       : null
 
-    const income_rmd_p1 = getRmdAmount(age1, p1Bucket.taxDeferred)
-    const income_rmd_p2 = p2Age !== null ? getRmdAmount(p2Age, p2Bucket.taxDeferred) : 0
-    const income_rmd_pooled = getRmdAmount(age1, poolBucket.taxDeferred)  // use p1 age for pooled
+    const income_rmd_p1 = getRmdAmount(age1, p1Bucket.taxDeferred, p1Birth)
+    const income_rmd_p2 = p2Age !== null ? getRmdAmount(p2Age, p2Bucket.taxDeferred, household.person2_birth_year ?? p1Birth) : 0
+    const income_rmd_pooled = getRmdAmount(age1, poolBucket.taxDeferred, p1Birth)  // use p1 birth for pooled
 
     // Force RMD withdrawals out of each bucket
     if (income_rmd_p1 > 0)     { p1Bucket.taxDeferred   = Math.max(0, p1Bucket.taxDeferred   - income_rmd_p1) }
