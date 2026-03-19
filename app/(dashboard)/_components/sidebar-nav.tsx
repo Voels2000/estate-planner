@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/expenses', label: 'Expenses', icon: '💸' },
   { href: '/projections', label: 'Projections', icon: '📈' },
   { href: '/complete', label: 'Lifetime Financial & Estate Snapshot', icon: '📊' },
+  { href: "/roth", label: "Roth optimizer", icon: ... }
   { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
   { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
   { href: '/real-estate', label: 'Real Estate', icon: '🏠' },
