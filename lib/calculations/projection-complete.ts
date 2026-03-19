@@ -16,6 +16,7 @@ export type YearRow = {
   income_rmd_p2: number
   income_other_p1: number
   income_other_p2: number
+  income_other_pooled: number
   // Tax
   tax_federal: number
   tax_state: number
@@ -186,7 +187,9 @@ function calcCapitalGainsTax(gains: number, ordinaryIncome: number, filingStatus
   const limit15 = isMfj ? LTCG_LIMIT_15_MFJ : LTCG_LIMIT_15_SINGLE
   const room0      = Math.max(0, limit0 - ordinaryIncome)
   const gainsAt0   = Math.min(gains, room0)
-  const room15     = Math.max(0, limit15 - Math.max(ordinaryIncome, limit0))
+  const room15     = Math.max(0, limit15 - Math.max(person1Income: ordinaryIncome,
+person2Income: 0,
+ limit0))
   const gainsAt15  = Math.min(gains - gainsAt0, room15)
   const gainsAt20  = gains - gainsAt0 - gainsAt15
   return Math.round(0.15 * gainsAt15 + 0.2 * gainsAt20)
@@ -451,8 +454,8 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
       const amount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
       const owner  = inc.ss_person?.trim().toLowerCase() ?? ''
-      const isP1   = owner === p1Name.trim().toLowerCase()
-      const isP2   = p2Name ? owner === p2Name.trim().toLowerCase() : false
+      const isP1   = owner === 'person1'
+      const isP2   = owner === 'person2'
 
       const isEarned = ['salary', 'employment', 'self_employment'].includes(inc.source)
 
@@ -606,6 +609,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       income_rmd_p2:     Math.round(income_rmd_p2),
       income_other_p1:   Math.round(income_other_p1),
       income_other_p2:   Math.round(income_other_p2),
+      income_other_pooled: Math.round(income_other_pooled),
 
       // Tax
       tax_federal:          Math.round(tax_federal),
