@@ -281,10 +281,14 @@ function getSsBenefit(
   if (currentYear < birthYear + claimingAge) return 0
   const b62 = benefit62 ?? 0
   const b67 = benefit67 ?? 0
-  if (claimingAge <= 62) return b62 * 12
-  if (claimingAge >= 67) return b67 * 12
-  const t = (claimingAge - 62) / (67 - 62)
-  return Math.round((b62 + t * (b67 - b62)) * 12)
+  if (claimingAge <= 62) return Math.round(b62 * 12)
+  if (claimingAge <= 67) {
+    const t = (claimingAge - 62) / (67 - 62)
+    return Math.round((b62 + t * (b67 - b62)) * 12)
+  }
+  // Delayed credits: 8% per year above 67, up to age 70
+  const delayedYears = Math.min(claimingAge - 67, 3)
+  return Math.round(b67 * (1 + 0.08 * delayedYears) * 12)
 }
 
 function isRetired(birthYear: number | null, retirementAge: number | null, year: number): boolean {
@@ -301,10 +305,15 @@ type AssetBucket = { taxDeferred: number; roth: number; taxable: number }
 
 function classifyAssets(
   assets: CompleteProjectionInput['assets'],
-  matchName: string | null
+  matchName: string | null,
+  literalKey?: string
 ): AssetBucket {
   const matched = matchName
-    ? assets.filter(a => a.owner?.trim().toLowerCase() === matchName.trim().toLowerCase())
+    ? assets.filter(a => {
+        const owner = a.owner?.trim().toLowerCase() ?? ''
+        return owner === matchName.trim().toLowerCase() ||
+               (literalKey ? owner === literalKey : false)
+      })
     : []
   return {
     taxDeferred: matched.filter(a => TAX_DEFERRED_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
@@ -318,11 +327,11 @@ function classifyPooledAssets(
   p1Name: string,
   p2Name: string | null
 ): AssetBucket {
-  // Pooled = everything NOT matching p1 or p2 by name
+  // Pooled = everything NOT matching p1 or p2 by name or literal key
   const pooled = assets.filter(a => {
     const owner = a.owner?.trim().toLowerCase() ?? ''
-    const isP1  = owner === p1Name.trim().toLowerCase()
-    const isP2  = p2Name ? owner === p2Name.trim().toLowerCase() : false
+    const isP1  = owner === p1Name.trim().toLowerCase() || owner === 'person1'
+    const isP2  = p2Name ? (owner === p2Name.trim().toLowerCase() || owner === 'person2') : owner === 'person2'
     return !isP1 && !isP2
   })
   return {
@@ -390,8 +399,8 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const inflationRate = (household.inflation_rate          ?? 3) / 100
 
   // ── Starting asset buckets (mutable state across loop) ──────────────────────
-  const p1Bucket:   AssetBucket = classifyAssets(assets, p1Name)
-  const p2Bucket:   AssetBucket = classifyAssets(assets, p2Name)
+  const p1Bucket:   AssetBucket = classifyAssets(assets, p1Name, 'person1')
+  const p2Bucket:   AssetBucket = classifyAssets(assets, p2Name, 'person2')
   const poolBucket: AssetBucket = classifyPooledAssets(assets, p1Name, p2Name)
 
   // ── Starting real estate values (grown at inflation each year) ───────────────
