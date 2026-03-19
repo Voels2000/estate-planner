@@ -1,10 +1,10 @@
+
 'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { AdvisorTier } from '@/lib/types'
 import DebugTab from './debug-tab'
-import TaxRulesTab from './tax-rules-tab'
 
 type Profile = {
   id: string
@@ -64,7 +64,7 @@ type Props = {
   expenseTypes: CategoryItem[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'debug'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'debug' | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -138,6 +138,7 @@ export function AdminClient({
       : newLabel.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     if (!slug) return
     setCategoryError(null)
+  
     const maxOrder = Math.max(0, ...categories[table].map(i => i.sort_order))
     const newItem: CategoryItem = { value: slug, label: newLabel.trim(), sort_order: maxOrder + 10, is_active: true }
     try {
@@ -164,7 +165,12 @@ export function AdminClient({
       const supabase = createClient()
       const { error } = await supabase
         .from('advisor_tiers')
-        .update({ name: tier.name, price_monthly: tier.price_monthly, client_limit: tier.client_limit, is_active: tier.is_active })
+        .update({
+          name: tier.name,
+          price_monthly: tier.price_monthly,
+          client_limit: tier.client_limit,
+          is_active: tier.is_active,
+        })
         .eq('id', tier.id)
       if (error) throw error
       setSavedTierId(tier.id)
@@ -200,22 +206,21 @@ export function AdminClient({
   }
 
   const TABS: { key: Tab; label: string; icon: string }[] = [
-    { key: 'overview',   label: 'Overview',       icon: '📊' },
-    { key: 'users',      label: 'Users',           icon: '👥' },
-    { key: 'usage',      label: 'Usage',           icon: '📈' },
-    { key: 'feedback',   label: 'Feedback',        icon: '💬' },
-    { key: 'settings',   label: 'Settings',        icon: '⚙️' },
-    { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
-    { key: 'categories', label: 'Categories',      icon: '🗂️' },
-    { key: 'tax_rules',  label: 'Tax Rules',       icon: '🏛️' },
-    { key: 'debug',      label: 'Debugger',        icon: '🔍' },
+    { key: 'overview', label: 'Overview', icon: '📊' },
+    { key: 'users', label: 'Users', icon: '👥' },
+    { key: 'usage', label: 'Usage', icon: '📈' },
+    { key: 'feedback', label: 'Feedback', icon: '💬' },
+    { key: 'settings', label: 'Settings', icon: '⚙️' },
+    { key: 'tiers', label: 'Advisor Tiers', icon: '🏷️' },
+    { key: 'categories', label: 'Categories', icon: '🗂️' },
+    { key: 'debug', label: 'Debug', icon: '🔧' },
   ]
 
   const CATEGORY_SECTIONS: { table: CategoryTable; label: string; description: string }[] = [
-    { table: 'asset_types',     label: 'Asset Types',         description: 'Categories shown in the asset owner dropdown.' },
-    { table: 'liability_types', label: 'Liability Types',     description: 'Categories shown in the liabilities dropdown.' },
-    { table: 'income_types',    label: 'Income Types',        description: 'Categories shown in the income source dropdown.' },
-    { table: 'expense_types',   label: 'Expense Categories',  description: 'Categories shown in the expenses dropdown.' },
+    { table: 'asset_types', label: 'Asset Types', description: 'Categories shown in the asset owner dropdown.' },
+    { table: 'liability_types', label: 'Liability Types', description: 'Categories shown in the liabilities dropdown.' },
+    { table: 'income_types', label: 'Income Types', description: 'Categories shown in the income source dropdown.' },
+    { table: 'expense_types', label: 'Expense Categories', description: 'Categories shown in the expenses dropdown.' },
   ]
 
   const CONFIG_LABELS: Record<string, { label: string; description: string; type: 'number' | 'text' }> = {
@@ -425,7 +430,8 @@ export function AdminClient({
             <div key={table} className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-base font-semibold text-neutral-900">{label}</h2>
-                <button onClick={() => { setAddingTo(table); setNewLabel(''); setNewValue('') }}
+                <button
+                  onClick={() => { setAddingTo(table); setNewLabel(''); setNewValue('') }}
                   className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
                   + Add
                 </button>
@@ -505,8 +511,6 @@ export function AdminClient({
           ))}
         </div>
       )}
-
-      {activeTab === 'tax_rules' && <TaxRulesTab />}
 
       {activeTab === 'debug' && <DebugTab profiles={rest.profiles} />}
 

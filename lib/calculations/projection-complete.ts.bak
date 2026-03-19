@@ -55,17 +55,11 @@ export type YearRow = {
   liabilities_other: number
   liabilities_total: number
   // Estate Snapshot
-  estate_excl_home: number
-  estate_incl_home: number
+  estate_excl_home: number   // all assets + RE_other - liabilities
+  estate_incl_home: number   // estate_excl_home + real_estate_primary
   // Bottom line
   net_cash_flow: number
   net_worth: number
-}
-
-export type StateIncomeTaxRate = {
-  state_code: string
-  rate_pct: number
-  tax_year?: number
 }
 
 export type CompleteProjectionInput = {
@@ -130,6 +124,7 @@ export type CompleteProjectionInput = {
     part_d_surcharge: number
     filing_status: string
   }[]
+  // NEW — real estate input for Lifetime Snapshot
   real_estate?: {
     id: string
     name: string
@@ -137,53 +132,9 @@ export type CompleteProjectionInput = {
     is_primary_residence: boolean
     owner: string
   }[]
-  // State income tax rates from DB — replaces hardcoded STATE_RATES
-  state_income_tax_rates?: StateIncomeTaxRate[]
-  // Optional overrides — used by Scenarios page to test alternate states / growth rates
-  overrides?: {
-    state_primary?: string | null
-    growth_rate_accumulation?: number
-    growth_rate_retirement?: number
-    person1_retirement_age?: number
-    person1_ss_claiming_age?: number
-    person2_retirement_age?: number | null
-    person2_ss_claiming_age?: number | null
-  }
 }
 
-// ─── Fallback state income tax rates (used only if DB rates not supplied) ────
-// These are approximate flat/top-marginal rates as a safety net.
-// The DB (state_income_tax_rates table) is the authoritative source.
-const FALLBACK_STATE_RATES: Record<string, number> = {
-  AL: 5.0,  AK: 0.0,  AZ: 2.5,  AR: 4.9,  CA: 9.3,  CO: 4.4,
-  CT: 6.5,  DE: 6.6,  FL: 0.0,  GA: 5.49, HI: 11.0, ID: 5.8,
-  IL: 4.95, IN: 3.15, IA: 6.0,  KS: 5.7,  KY: 4.5,  LA: 4.25,
-  ME: 7.15, MD: 5.75, MA: 5.0,  MI: 4.25, MN: 9.85, MS: 5.0,
-  MO: 4.8,  MT: 6.5,  NE: 6.64, NV: 0.0,  NH: 0.0,  NJ: 8.97,
-  NM: 5.9,  NY: 6.85, NC: 4.99, ND: 2.5,  OH: 4.0,  OK: 4.75,
-  OR: 9.9,  PA: 3.07, RI: 5.99, SC: 6.5,  SD: 0.0,  TN: 0.0,
-  TX: 0.0,  UT: 4.65, VT: 8.75, VA: 5.75, WA: 0.0,  WV: 6.5,
-  WI: 7.65, WY: 0.0,  DC: 8.95,
-}
-
-function getStateIncomeTaxRate(
-  stateCode: string | null,
-  dbRates: StateIncomeTaxRate[] | undefined
-): number {
-  if (!stateCode) return 0
-  const code = stateCode.toUpperCase()
-  if (dbRates && dbRates.length > 0) {
-    // Use most recent year available in DB
-    const stateRows = dbRates
-      .filter(r => r.state_code.toUpperCase() === code)
-      .sort((a, b) => (b.tax_year ?? 0) - (a.tax_year ?? 0))
-    if (stateRows.length > 0) return stateRows[0].rate_pct
-  }
-  // Fall back to hardcoded rates
-  return FALLBACK_STATE_RATES[code] ?? 5.0
-}
-
-// ─── Federal Tax Brackets 2024 ────────────────────────────────────────────────
+// ─── Federal Tax Brackets 2024 ───────────────────────────────────────────────
 
 const FEDERAL_BRACKETS_MFJ = [
   { limit: 23200,    rate: 0.10 },
@@ -222,7 +173,7 @@ function calcFederalTax(taxableIncome: number, filingStatus: string): number {
   return Math.round(tax)
 }
 
-// ─── Capital Gains ─────────────────────────────────────────────────────────────
+// ─── Capital Gains ────────────────────────────────────────────────────────────
 
 const LTCG_LIMIT_0_MFJ    = 94050
 const LTCG_LIMIT_15_MFJ   = 583750
@@ -242,7 +193,7 @@ function calcCapitalGainsTax(gains: number, ordinaryIncome: number, filingStatus
   return Math.round(0.15 * gainsAt15 + 0.2 * gainsAt20)
 }
 
-// ─── NIIT ──────────────────────────────────────────────────────────────────────
+// ─── NIIT ────────────────────────────────────────────────────────────────────
 
 const NIIT_THRESHOLD_MFJ    = 250000
 const NIIT_THRESHOLD_SINGLE = 200000
@@ -255,7 +206,7 @@ function calcNiit(investmentIncome: number, magi: number, filingStatus: string):
   return Math.round(Math.min(investmentIncome, excess) * NIIT_RATE)
 }
 
-// ─── Payroll Tax ───────────────────────────────────────────────────────────────
+// ─── Payroll Tax ──────────────────────────────────────────────────────────────
 
 const SS_WAGE_BASE_2024 = 168600
 const SS_RATE           = 0.062
@@ -266,25 +217,31 @@ function calcPayrollTax(earnedIncome: number): number {
   return Math.round(Math.min(earnedIncome, SS_WAGE_BASE_2024) * SS_RATE + earnedIncome * MEDICARE_RATE)
 }
 
-// ─── State Income Tax ─────────────────────────────────────────────────────────
-// Now reads from DB rates passed in via input.state_income_tax_rates
+// ─── State Tax ────────────────────────────────────────────────────────────────
+
+const STATE_RATES: Record<string, number> = {
+  AL: 0.05,  AK: 0.00,  AZ: 0.025, AR: 0.049, CA: 0.093, CO: 0.044,
+  CT: 0.065, DE: 0.066, FL: 0.00,  GA: 0.055, HI: 0.11,  ID: 0.058,
+  IL: 0.0495,IN: 0.0315,IA: 0.06,  KS: 0.057, KY: 0.045, LA: 0.0425,
+  ME: 0.075, MD: 0.0575,MA: 0.05,  MI: 0.0425,MN: 0.0985,MS: 0.05,
+  MO: 0.048, MT: 0.065, NE: 0.0664,NV: 0.00,  NH: 0.00,  NJ: 0.0897,
+  NM: 0.059, NY: 0.0685,NC: 0.0499,ND: 0.025, OH: 0.04,  OK: 0.0475,
+  OR: 0.099, PA: 0.0307,RI: 0.0599,SC: 0.065, SD: 0.00,  TN: 0.00,
+  TX: 0.00,  UT: 0.0465,VT: 0.0875,VA: 0.0575,WA: 0.00,  WV: 0.065,
+  WI: 0.0765,WY: 0.00,  DC: 0.0895,
+}
 
 function calcStateTax(
   income: number,
   state: string | null,
-  dbRates: StateIncomeTaxRate[] | undefined,
   state_secondary?: string | null
 ): { primary: number; secondary: number } {
-  if (income <= 0) return { primary: 0, secondary: 0 }
-  const primaryRate   = getStateIncomeTaxRate(state, dbRates) / 100
-  const secondaryRate = state_secondary ? getStateIncomeTaxRate(state_secondary, dbRates) / 100 : 0
-  return {
-    primary:   !state   ? 0 : Math.round(income * primaryRate),
-    secondary: !state_secondary ? 0 : Math.round(income * secondaryRate),
-  }
+  const primary   = !state || income <= 0 ? 0 : Math.round(income * (STATE_RATES[state.toUpperCase()] ?? 0.05))
+  const secondary = !state_secondary || income <= 0 ? 0 : Math.round(income * (STATE_RATES[state_secondary.toUpperCase()] ?? 0.05))
+  return { primary, secondary }
 }
 
-// ─── IRMAA ─────────────────────────────────────────────────────────────────────
+// ─── IRMAA ────────────────────────────────────────────────────────────────────
 
 function calcIrmaa(
   magi: number,
@@ -311,7 +268,7 @@ function calcIrmaa(
   }
 }
 
-// ─── Social Security ───────────────────────────────────────────────────────────
+// ─── Social Security ──────────────────────────────────────────────────────────
 
 function getSsBenefit(
   birthYear: number | null,
@@ -339,7 +296,7 @@ function isRetired(birthYear: number | null, retirementAge: number | null, year:
   return year >= birthYear + retirementAge
 }
 
-// ─── Asset type classification ─────────────────────────────────────────────────
+// ─── Asset type classification ────────────────────────────────────────────────
 
 const TAX_DEFERRED_TYPES = ['traditional_ira', '401k', 'traditional_401k', '403b', 'traditional_403b', '457', 'sep_ira', 'simple_ira', 'pension']
 const ROTH_TYPES         = ['roth_ira', 'roth_401k']
@@ -370,6 +327,7 @@ function classifyPooledAssets(
   p1Name: string,
   p2Name: string | null
 ): AssetBucket {
+  // Pooled = everything NOT matching p1 or p2 by name or literal key
   const pooled = assets.filter(a => {
     const owner = a.owner?.trim().toLowerCase() ?? ''
     const isP1  = owner === p1Name.trim().toLowerCase() || owner === 'person1'
@@ -383,12 +341,13 @@ function classifyPooledAssets(
   }
 }
 
-// ─── RMD ──────────────────────────────────────────────────────────────────────
+// ─── RMD factor (Uniform Lifetime Table approximation) ───────────────────────
 
 function getRmdStartAge(birthYear: number): number {
+  // SECURE Act 2.0: RMD age is 75 for those born 1960+, 73 for 1951-1959
   if (birthYear >= 1960) return 75
   if (birthYear >= 1951) return 73
-  return 72
+  return 72 // pre-SECURE Act
 }
 
 function getRmdAmount(age: number, taxDeferredBalance: number, birthYear: number): number {
@@ -398,7 +357,9 @@ function getRmdAmount(age: number, taxDeferredBalance: number, birthYear: number
   return Math.round(taxDeferredBalance / factor)
 }
 
-// ─── Withdrawal waterfall ──────────────────────────────────────────────────────
+// ─── Withdrawal waterfall ─────────────────────────────────────────────────────
+// Draws from taxable → tax-deferred → roth to cover a shortfall.
+// Mutates the bucket object in place; returns actual amount withdrawn.
 
 function applyWithdrawal(bucket: AssetBucket, needed: number): number {
   let remaining = needed
@@ -428,14 +389,12 @@ function bucketTotal(bucket: AssetBucket): number {
   return bucket.taxDeferred + bucket.roth + bucket.taxable
 }
 
-// ─── Main engine ───────────────────────────────────────────────────────────────
+// ─── Main engine ──────────────────────────────────────────────────────────────
 
 export function computeCompleteProjection(input: CompleteProjectionInput): YearRow[] {
   const { household, assets, liabilities, income, expenses, irmaa_brackets } = input
-  const realEstateInput    = input.real_estate ?? []
-  const dbStateRates       = input.state_income_tax_rates
-  const overrides          = input.overrides ?? {}
-  const currentYear        = new Date().getFullYear()
+  const realEstateInput = input.real_estate ?? []
+  const currentYear = new Date().getFullYear()
 
   const p1Name      = household.person1_name ?? ''
   const p2Name      = household.has_spouse ? (household.person2_name ?? null) : null
@@ -443,29 +402,22 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const p1Longevity = household.person1_longevity_age ?? 90
   const endYear     = p1Birth + p1Longevity
 
-  // Apply overrides for scenario comparisons
-  const effectiveState       = overrides.state_primary   !== undefined ? overrides.state_primary   : household.state_primary
-  const effectiveAccumRate   = (overrides.growth_rate_accumulation ?? household.growth_rate_accumulation ?? 7) / 100
-  const effectiveRetireRate  = (overrides.growth_rate_retirement   ?? household.growth_rate_retirement   ?? 5) / 100
-  const inflationRate        = (household.inflation_rate ?? 3) / 100
+  const accumRate    = (household.growth_rate_accumulation ?? 7) / 100
+  const retireRate   = (household.growth_rate_retirement   ?? 5) / 100
+  const inflationRate = (household.inflation_rate          ?? 3) / 100
 
-  const p1RetirementAge = overrides.person1_retirement_age ?? household.person1_retirement_age
-  const p1SsClaimingAge = overrides.person1_ss_claiming_age ?? household.person1_ss_claiming_age
-  const p2RetirementAge = overrides.person2_retirement_age !== undefined
-    ? overrides.person2_retirement_age
-    : household.person2_retirement_age
-  const p2SsClaimingAge = overrides.person2_ss_claiming_age !== undefined
-    ? overrides.person2_ss_claiming_age
-    : household.person2_ss_claiming_age
-
-  // ── Starting asset buckets ───────────────────────────────────────────────────
+  // ── Starting asset buckets (mutable state across loop) ──────────────────────
   const p1Bucket:   AssetBucket = classifyAssets(assets, p1Name, 'person1')
   const p2Bucket:   AssetBucket = classifyAssets(assets, p2Name, 'person2')
   const poolBucket: AssetBucket = classifyPooledAssets(assets, p1Name, p2Name)
 
-  // ── Starting real estate ─────────────────────────────────────────────────────
-  let re_primary = realEstateInput.filter(r => r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
-  let re_other   = realEstateInput.filter(r => !r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
+  // ── Starting real estate values (grown at inflation each year) ───────────────
+  let re_primary = realEstateInput
+    .filter(r => r.is_primary_residence)
+    .reduce((s, r) => s + (r.current_value ?? 0), 0)
+  let re_other = realEstateInput
+    .filter(r => !r.is_primary_residence)
+    .reduce((s, r) => s + (r.current_value ?? 0), 0)
 
   // ── Starting liabilities ─────────────────────────────────────────────────────
   let mortgageBalance = liabilities.filter(l => l.type === 'mortgage').reduce((s, l) => s + (l.balance ?? 0), 0)
@@ -480,7 +432,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       : 0
   })()
 
-  // ── Filing status normalisation ──────────────────────────────────────────────
+  // ── Filing status normalisation map ──────────────────────────────────────────
   const fsMap: Record<string, string> = {
     mfj: 'married_joint', married_filing_jointly: 'married_joint',
     mfs: 'single', hoh: 'single', qw: 'married_joint', single: 'single',
@@ -491,7 +443,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   let prevMagi = 0
 
   for (let year = currentYear; year <= endYear; year++) {
-    const yearsFromNow    = year - currentYear
+    const yearsFromNow   = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
 
     const age1 = year - p1Birth
@@ -499,13 +451,13 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       ? year - household.person2_birth_year
       : null
 
-    const p1Retired  = isRetired(household.person1_birth_year, p1RetirementAge, year)
+    const p1Retired  = isRetired(household.person1_birth_year, household.person1_retirement_age, year)
     const p2Retired  = household.has_spouse
-      ? isRetired(household.person2_birth_year, p2RetirementAge, year)
+      ? isRetired(household.person2_birth_year, household.person2_retirement_age, year)
       : true
-    const growthRate = p1Retired && p2Retired ? effectiveRetireRate : effectiveAccumRate
+    const growthRate = p1Retired && p2Retired ? retireRate : accumRate
 
-    // ── Income ─────────────────────────────────────────────────────────────────
+    // ── Income ────────────────────────────────────────────────────────────────
     let income_earned_p1 = 0, income_earned_p2 = 0
     let income_other_p1  = 0, income_other_p2  = 0
     let income_other_pooled = 0
@@ -513,18 +465,19 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     for (const inc of income) {
       if (inc.start_year && year < inc.start_year) continue
       if (inc.end_year   && year > inc.end_year)   continue
-      if (inc.source === 'social_security') continue
+      if (inc.source === 'social_security') continue   // handled via getSsBenefit()
 
       const amount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
       const owner  = inc.ss_person?.trim().toLowerCase() ?? ''
       const isP1   = owner === 'person1'
       const isP2   = owner === 'person2'
+
       const isEarned = ['salary', 'employment', 'self_employment'].includes(inc.source)
 
       if (isEarned) {
         if (isP1) income_earned_p1 += amount
         else if (isP2) income_earned_p2 += amount
-        else income_earned_p1 += amount
+        else income_earned_p1 += amount  // unmatched earned → p1 (conservative default)
       } else {
         if (isP1) income_other_p1 += amount
         else if (isP2) income_other_p2 += amount
@@ -535,42 +488,41 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const income_earned = income_earned_p1 + income_earned_p2
     const income_other  = income_other_p1 + income_other_p2 + income_other_pooled
 
-    // ── Social Security ────────────────────────────────────────────────────────
+    // ── Social Security ───────────────────────────────────────────────────────
     const income_ss_person1 = getSsBenefit(
-      household.person1_birth_year, p1SsClaimingAge,
+      household.person1_birth_year, household.person1_ss_claiming_age,
       household.person1_ss_benefit_62, household.person1_ss_benefit_67, year
     )
     const income_ss_person2 = household.has_spouse ? getSsBenefit(
-      household.person2_birth_year, p2SsClaimingAge,
+      household.person2_birth_year, household.person2_ss_claiming_age,
       household.person2_ss_benefit_62, household.person2_ss_benefit_67, year
     ) : 0
 
-    // ── RMD ────────────────────────────────────────────────────────────────────
+    // ── RMD — per person then pooled ──────────────────────────────────────────
     const p2Age = household.has_spouse && household.person2_birth_year
       ? year - household.person2_birth_year
       : null
 
-    const income_rmd_p1     = getRmdAmount(age1, p1Bucket.taxDeferred, p1Birth)
-    const income_rmd_p2     = p2Age !== null ? getRmdAmount(p2Age, p2Bucket.taxDeferred, household.person2_birth_year ?? p1Birth) : 0
-    const income_rmd_pooled = getRmdAmount(age1, poolBucket.taxDeferred, p1Birth)
+    const income_rmd_p1 = getRmdAmount(age1, p1Bucket.taxDeferred, p1Birth)
+    const income_rmd_p2 = p2Age !== null ? getRmdAmount(p2Age, p2Bucket.taxDeferred, household.person2_birth_year ?? p1Birth) : 0
+    const income_rmd_pooled = getRmdAmount(age1, poolBucket.taxDeferred, p1Birth)  // use p1 birth for pooled
 
+    // Force RMD withdrawals out of each bucket
     if (income_rmd_p1 > 0)     { p1Bucket.taxDeferred   = Math.max(0, p1Bucket.taxDeferred   - income_rmd_p1) }
     if (income_rmd_p2 > 0)     { p2Bucket.taxDeferred   = Math.max(0, p2Bucket.taxDeferred   - income_rmd_p2) }
     if (income_rmd_pooled > 0) { poolBucket.taxDeferred = Math.max(0, poolBucket.taxDeferred - income_rmd_pooled) }
 
-    const income_rmd   = income_rmd_p1 + income_rmd_p2 + income_rmd_pooled
+    const income_rmd = income_rmd_p1 + income_rmd_p2 + income_rmd_pooled
+
     const income_total = income_earned + income_ss_person1 + income_ss_person2 + income_rmd + income_other
 
-    // ── Tax ────────────────────────────────────────────────────────────────────
+    // ── Tax ───────────────────────────────────────────────────────────────────
     const irmaa = calcIrmaa(prevMagi, fs, irmaa_brackets)
     const tax_federal = calcFederalTax(income_total, fs)
-
-    // State tax now uses DB rates via effectiveState (supports scenario overrides)
     const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
-      income_total, effectiveState, dbStateRates, household.state_secondary
+      income_total, household.state_primary, household.state_secondary
     )
-
-    const deduction              = fs === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
+    const deduction = fs === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
     const ordinaryTaxableIncome  = Math.max(0, income_total - deduction)
     const allTaxableGrowth       = poolBucket.taxable * growthRate + p1Bucket.taxable * growthRate + p2Bucket.taxable * growthRate
     const tax_capital_gains      = calcCapitalGainsTax(allTaxableGrowth, ordinaryTaxableIncome, fs)
@@ -581,7 +533,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
     prevMagi = income_total
 
-    // ── Expenses ───────────────────────────────────────────────────────────────
+    // ── Expenses ──────────────────────────────────────────────────────────────
     let expenses_living = 0, expenses_healthcare = 0
     for (const exp of expenses) {
       const amount = exp.inflation_adjust ? exp.amount * inflationFactor : exp.amount
@@ -594,7 +546,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     expenses_healthcare += irmaa.part_b + irmaa.part_d
     const expenses_total = expenses_living + expenses_healthcare
 
-    // ── Liabilities paydown ────────────────────────────────────────────────────
+    // ── Liabilities paydown ───────────────────────────────────────────────────
     if (mortgageBalance > 0 && annualMortgagePayment > 0) {
       const interest  = mortgageBalance * avgMortgageRate
       const principal = Math.min(mortgageBalance, Math.max(0, annualMortgagePayment - interest))
@@ -605,10 +557,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     }
     const liabilities_total = mortgageBalance + otherDebt
 
-    // ── Net cash flow & withdrawals ────────────────────────────────────────────
+    // ── Net cash flow & withdrawals ───────────────────────────────────────────
     const net_cash_flow_pre = income_total - tax_total - expenses_total - annualMortgagePayment - annualOtherDebtPayment
 
     if (net_cash_flow_pre < 0) {
+      // Draw proportionally from each bucket based on their taxable balance
       const totalTaxable = poolBucket.taxable + p1Bucket.taxable + p2Bucket.taxable
       const shortfall    = Math.abs(net_cash_flow_pre)
       if (totalTaxable > 0) {
@@ -616,23 +569,28 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
         applyWithdrawal(p1Bucket,   shortfall * (p1Bucket.taxable   / totalTaxable))
         applyWithdrawal(p2Bucket,   shortfall * (p2Bucket.taxable   / totalTaxable))
       } else {
+        // Waterfall: pool → p1 → p2
         let rem = shortfall
         rem -= applyWithdrawal(poolBucket, rem)
         rem -= applyWithdrawal(p1Bucket,   rem)
              applyWithdrawal(p2Bucket,   rem)
       }
     } else {
+      // Surplus: park in pooled taxable
       poolBucket.taxable += net_cash_flow_pre
     }
 
+    // ── Grow all buckets (investment rate) ────────────────────────────────────
     growBucket(p1Bucket,   growthRate)
     growBucket(p2Bucket,   growthRate)
     growBucket(poolBucket, growthRate)
 
+    // ── Grow real estate (inflation rate) ────────────────────────────────────
     re_primary = Math.round(re_primary * (1 + inflationRate))
     re_other   = Math.round(re_other   * (1 + inflationRate))
     const re_total = re_primary + re_other
 
+    // ── Asset totals ──────────────────────────────────────────────────────────
     const p1Total   = bucketTotal(p1Bucket)
     const p2Total   = bucketTotal(p2Bucket)
     const poolTotal = bucketTotal(poolBucket)
@@ -640,19 +598,26 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
     const net_worth = assets_total + re_total - liabilities_total
 
-    const estate_excl_home = assets_total + re_other - liabilities_total
-    const estate_incl_home = assets_total + re_total - liabilities_total
+    // ── Estate snapshot ───────────────────────────────────────────────────────
+    const estate_excl_home = assets_total + re_other   - liabilities_total
+    const estate_incl_home = assets_total + re_total   - liabilities_total
+
+    const net_cash_flow = Math.round(net_cash_flow_pre)
 
     rows.push({
       year,
       age_person1: age1,
       age_person2: age2,
+
+      // Income — household
       income_earned:     Math.round(income_earned),
       income_ss_person1: Math.round(income_ss_person1),
       income_ss_person2: Math.round(income_ss_person2),
       income_rmd:        Math.round(income_rmd),
       income_other:      Math.round(income_other),
       income_total:      Math.round(income_total),
+
+      // Income — per person
       income_earned_p1:  Math.round(income_earned_p1),
       income_earned_p2:  Math.round(income_earned_p2),
       income_rmd_p1:     Math.round(income_rmd_p1),
@@ -660,6 +625,8 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       income_other_p1:   Math.round(income_other_p1),
       income_other_p2:   Math.round(income_other_p2),
       income_other_pooled: Math.round(income_other_pooled),
+
+      // Tax
       tax_federal:          Math.round(tax_federal),
       tax_state:            Math.round(tax_state),
       tax_state_secondary:  Math.round(tax_state_secondary),
@@ -669,30 +636,46 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       irmaa_part_b:         Math.round(irmaa.part_b),
       irmaa_part_d:         Math.round(irmaa.part_d),
       tax_total:            Math.round(tax_total),
+
+      // Expenses
       expenses_living:     Math.round(expenses_living),
       expenses_healthcare: Math.round(expenses_healthcare),
       expenses_total:      Math.round(expenses_total),
+
+      // Assets — household pooled (joint / unmatched)
       assets_tax_deferred: poolBucket.taxDeferred,
       assets_roth:         poolBucket.roth,
       assets_taxable:      poolBucket.taxable,
-      assets_total:        poolTotal,
+      assets_total:        poolTotal,   // pooled subtotal (backward compat label, now excludes p1/p2)
+
+      // Assets — Person 1
       assets_p1_tax_deferred: p1Bucket.taxDeferred,
       assets_p1_roth:         p1Bucket.roth,
       assets_p1_taxable:      p1Bucket.taxable,
       assets_p1_total:        p1Total,
+
+      // Assets — Person 2
       assets_p2_tax_deferred: p2Bucket.taxDeferred,
       assets_p2_roth:         p2Bucket.roth,
       assets_p2_taxable:      p2Bucket.taxable,
       assets_p2_total:        p2Total,
+
+      // Real estate (inflation-grown)
       real_estate_primary: re_primary,
       real_estate_other:   re_other,
       real_estate_total:   re_total,
+
+      // Liabilities
       liabilities_mortgage: Math.round(mortgageBalance),
       liabilities_other:    Math.round(otherDebt),
       liabilities_total:    Math.round(liabilities_total),
+
+      // Estate snapshot
       estate_excl_home: Math.round(estate_excl_home),
       estate_incl_home: Math.round(estate_incl_home),
-      net_cash_flow: Math.round(net_cash_flow_pre),
+
+      // Bottom line
+      net_cash_flow,
       net_worth: Math.round(net_worth),
     })
   }

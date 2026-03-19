@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { YearRow } from '@/lib/calculations/projection-complete'
 
 type Household = {
   id: string
@@ -9,35 +10,15 @@ type Household = {
   person1_birth_year: number
   person1_retirement_age: number
   person1_ss_claiming_age: number
-  person1_longevity_age: number
   person2_name: string | null
   person2_birth_year: number | null
   person2_retirement_age: number | null
   person2_ss_claiming_age: number | null
   has_spouse: boolean
-  inflation_rate: number
+  state_primary: string
   growth_rate_accumulation: number
   growth_rate_retirement: number
-  state_primary: string
-  filing_status: string
-  deduction_mode: 'standard' | 'custom' | 'none'
-  custom_deduction_amount: number
 }
-
-type Income = { amount: number; start_year: number; end_year: number | null; inflation_adjust: boolean; source?: string | null }
-type Expense = { amount: number; start_year: number; end_year: number | null; inflation_adjust: boolean }
-type Asset = { value: number }
-
-type TaxBracket = {
-  bracket_order: number
-  min_amount: number
-  max_amount: number | null
-  rate_pct: number
-  filing_status: string
-}
-
-type StateRate = { state_code: string; rate_pct: number }
-type StandardDeduction = { filing_status: string; amount: number }
 
 type ScenarioOverrides = {
   name: string
@@ -50,25 +31,14 @@ type ScenarioOverrides = {
   growth_rate_retirement: number
 }
 
-type ProjectionYear = {
-  age: number
-  year: number
-  income: number
-  expenses: number
-  taxes: number
-  net: number
-  portfolio: number
-  phase: 'accumulation' | 'retirement'
-}
-
 type ScenarioResult = {
-  rows: ProjectionYear[]
+  rows: YearRow[]
   portfolioAtRetirement: number
   peakPortfolio: number
   finalPortfolio: number
   avgAnnualTaxRetirement: number
   fundsOutlast: boolean
-}
+} | null
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -77,195 +47,125 @@ const US_STATES = [
   'VA','WA','WV','WI','WY','DC'
 ]
 
-// Map short filing status codes to tax bracket keys
-const FS_MAP: Record<string, string> = {
-  mfj: 'married_filing_jointly',
-  mfs: 'married_filing_separately',
-  hoh: 'head_of_household',
-  qw: 'married_filing_jointly',
-  single: 'single',
-}
+const SCENARIO_COLORS = ['#1a1a1a', '#2563eb', '#16a34a']
+const SCENARIO_TEXT   = ['text-neutral-900', 'text-blue-700', 'text-green-700']
 
-function calcFederalTax(taxableIncome: number, filingStatus: string, brackets: TaxBracket[]): number {
-  if (taxableIncome <= 0) return 0
-  const fs = FS_MAP[filingStatus] ?? filingStatus
-  const relevant = brackets.filter(b => b.filing_status === fs).sort((a, b) => a.bracket_order - b.bracket_order)
-  let tax = 0
-  for (const bracket of relevant) {
-    const bracketMin = bracket.min_amount
-    const bracketMax = bracket.max_amount ?? Infinity
-    if (taxableIncome <= bracketMin) break
-    const taxableInBracket = Math.min(taxableIncome, bracketMax) - bracketMin
-    tax += taxableInBracket * (bracket.rate_pct / 100)
+function buildQueryString(overrides: ScenarioOverrides): string {
+  const params = new URLSearchParams({
+    state_primary:            overrides.state_primary ?? '',
+    growth_rate_accumulation: String(overrides.growth_rate_accumulation),
+    growth_rate_retirement:   String(overrides.growth_rate_retirement),
+    person1_retirement_age:   String(overrides.person1_retirement_age),
+    person1_ss_claiming_age:  String(overrides.person1_ss_claiming_age),
+  })
+  if (overrides.person2_retirement_age !== null && overrides.person2_retirement_age !== undefined) {
+    params.set('person2_retirement_age', String(overrides.person2_retirement_age))
+  } else {
+    params.set('person2_retirement_age', 'null')
   }
-  return tax
-}
-
-function runScenario(
-  household: Household,
-  overrides: ScenarioOverrides,
-  incomes: Income[],
-  expenses: Expense[],
-  assets: Asset[],
-  taxBrackets: TaxBracket[],
-  stateRates: StateRate[],
-  standardDeductions: StandardDeduction[]
-): ProjectionYear[] {
-  const currentYear = new Date().getFullYear()
-  const currentAge = currentYear - household.person1_birth_year
-  const longevityAge = household.person1_longevity_age ?? 90
-  const inflationRate = Number(household.inflation_rate) / 100 || 0.025
-  const growthAccumulation = overrides.growth_rate_accumulation / 100
-  const growthRetirement = overrides.growth_rate_retirement / 100
-  const filingStatus = household.filing_status ?? 'single'
-  const fs = FS_MAP[filingStatus] ?? filingStatus
-  const stateCode = overrides.state_primary ?? ''
-  const totalAssets = assets.reduce((sum, a) => sum + Number(a.value), 0)
-
-  const rows: ProjectionYear[] = []
-  let portfolio = totalAssets
-
-  for (let age = currentAge; age <= longevityAge; age++) {
-    const year = currentYear + (age - currentAge)
-    const isRetirement = age >= overrides.person1_retirement_age
-    const yearsFromNow = age - currentAge
-    const inflFactor = Math.pow(1 + inflationRate, yearsFromNow)
-
-    const annualIncome = incomes.reduce((sum, inc) => {
-      if (year < inc.start_year) return sum
-      if (inc.end_year && year > inc.end_year) return sum
-      const amt = Number(inc.amount)
-      return sum + (inc.inflation_adjust ? amt * inflFactor : amt)
-    }, 0)
-
-    const annualExpenses = expenses.reduce((sum, exp) => {
-      if (year < exp.start_year) return sum
-      if (exp.end_year && year > exp.end_year) return sum
-      const amt = Number(exp.amount)
-      return sum + (exp.inflation_adjust ? amt * inflFactor : amt)
-    }, 0)
-
-    let deductionAmount = 0
-    if (household.deduction_mode === 'standard') {
-      deductionAmount = standardDeductions.find(d => d.filing_status === fs)?.amount ?? 14600
-    } else if (household.deduction_mode === 'custom') {
-      deductionAmount = household.custom_deduction_amount ?? 0
-    }
-
-    const annualTaxes = taxBrackets.length > 0 && annualIncome > 0
-      ? (() => {
-          const taxableIncome = Math.max(0, annualIncome - deductionAmount)
-          const federalTax = calcFederalTax(taxableIncome, filingStatus, taxBrackets)
-          const stateRate = stateRates.find(s => s.state_code === stateCode)?.rate_pct ?? 0
-          const stateTax = taxableIncome * (stateRate / 100)
-          return Math.round(federalTax + stateTax)
-        })()
-      : 0
-
-    const net = annualIncome - annualExpenses - annualTaxes
-
-    if (!isRetirement) {
-      portfolio = portfolio * (1 + growthAccumulation) + Math.max(0, net)
-    } else {
-      portfolio = portfolio * (1 + growthRetirement) + net
-      if (portfolio < 0) portfolio = 0
-    }
-
-    rows.push({
-      age,
-      year,
-      income: Math.round(annualIncome),
-      expenses: Math.round(annualExpenses),
-      taxes: annualTaxes,
-      net: Math.round(net),
-      portfolio: Math.round(portfolio),
-      phase: isRetirement ? 'retirement' : 'accumulation',
-    })
+  if (overrides.person2_ss_claiming_age !== null && overrides.person2_ss_claiming_age !== undefined) {
+    params.set('person2_ss_claiming_age', String(overrides.person2_ss_claiming_age))
+  } else {
+    params.set('person2_ss_claiming_age', 'null')
   }
-
-  return rows
+  return params.toString()
 }
 
-function summarize(rows: ProjectionYear[], retirementAge: number): ScenarioResult {
-  const retirementRows = rows.filter(r => r.phase === 'retirement')
-  const portfolioAtRetirement = rows.find(r => r.phase === 'retirement')?.portfolio ?? 0
-  const peakPortfolio = Math.max(...rows.map(r => r.portfolio))
-  const finalPortfolio = rows[rows.length - 1]?.portfolio ?? 0
+function summarize(rows: YearRow[], retirementAge: number) {
+  const retirementRows      = rows.filter(r => r.age_person1 >= retirementAge)
+  const portfolioAtRetirement = rows.find(r => r.age_person1 >= retirementAge)?.net_worth ?? 0
+  const peakPortfolio       = Math.max(...rows.map(r => r.net_worth))
+  const finalPortfolio      = rows[rows.length - 1]?.net_worth ?? 0
   const avgAnnualTaxRetirement = retirementRows.length > 0
-    ? Math.round(retirementRows.reduce((s, r) => s + r.taxes, 0) / retirementRows.length)
+    ? Math.round(retirementRows.reduce((s, r) => s + r.tax_total, 0) / retirementRows.length)
     : 0
   return { rows, portfolioAtRetirement, peakPortfolio, finalPortfolio, avgAnnualTaxRetirement, fundsOutlast: finalPortfolio > 0 }
 }
 
 function formatDollars(n: number) {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`
+  if (n >= 1_000)     return `$${Math.round(n / 1_000)}K`
   return `$${Math.round(n).toLocaleString()}`
 }
 
-const SCENARIO_COLORS = ['#1a1a1a', '#2563eb', '#16a34a']
-const SCENARIO_BG = ['bg-neutral-900', 'bg-blue-600', 'bg-green-600']
-const SCENARIO_LIGHT = ['bg-neutral-50 border-neutral-200', 'bg-blue-50 border-blue-200', 'bg-green-50 border-green-200']
-const SCENARIO_TEXT = ['text-neutral-900', 'text-blue-700', 'text-green-700']
-
 export default function ScenariosPage() {
-  const [household, setHousehold] = useState<Household | null>(null)
-  const [incomes, setIncomes] = useState<Income[]>([])
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [taxBrackets, setTaxBrackets] = useState<TaxBracket[]>([])
-  const [stateRates, setStateRates] = useState<StateRate[]>([])
-  const [standardDeductions, setStandardDeductions] = useState<StandardDeduction[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState<number | null>(null)
-  const [savedIdx, setSavedIdx] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'chart' | 'table'>('chart')
+  const [household, setHousehold]     = useState<Household | null>(null)
+  const [isLoading, setIsLoading]     = useState(true)
+  const [isSaving, setIsSaving]       = useState<number | null>(null)
+  const [savedIdx, setSavedIdx]       = useState<number | null>(null)
+  const [error, setError]             = useState<string | null>(null)
+  const [activeTab, setActiveTab]     = useState<'chart' | 'table'>('chart')
 
   const [scenarioB, setScenarioB] = useState<ScenarioOverrides | null>(null)
   const [scenarioC, setScenarioC] = useState<ScenarioOverrides | null>(null)
 
-  const loadData = useCallback(async () => {
+  const [resultA, setResultA] = useState<ScenarioResult>(null)
+  const [resultB, setResultB] = useState<ScenarioResult>(null)
+  const [resultC, setResultC] = useState<ScenarioResult>(null)
+  const [loadingA, setLoadingA] = useState(false)
+  const [loadingB, setLoadingB] = useState(false)
+  const [loadingC, setLoadingC] = useState(false)
+
+  // Debounce timers
+  const timerB = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerC = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Fetch base scenario (no overrides) ──────────────────────────────────────
+  const fetchBase = useCallback(async () => {
+    setLoadingA(true)
+    try {
+      const res = await fetch('/api/projection')
+      const data = await res.json()
+      if (data.rows) setResultA(summarize(data.rows, data.household?.person1_retirement_age ?? 65))
+    } catch {
+      setError('Failed to load base scenario.')
+    } finally {
+      setLoadingA(false)
+    }
+  }, [])
+
+  // ── Fetch a scenario with overrides ─────────────────────────────────────────
+  async function fetchScenario(
+    overrides: ScenarioOverrides,
+    setter: (r: ScenarioResult) => void,
+    setLoading: (b: boolean) => void
+  ) {
+    setLoading(true)
+    try {
+      const qs  = buildQueryString(overrides)
+      const res = await fetch(`/api/projection?${qs}`)
+      const data = await res.json()
+      if (data.rows) setter(summarize(data.rows, overrides.person1_retirement_age))
+    } catch {
+      // silently fail — keep previous result visible
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Load household on mount ──────────────────────────────────────────────────
+  const loadHousehold = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [
-      { data: householdData },
-      { data: incomeData },
-      { data: expenseData },
-      { data: assetData },
-      { data: bracketsData },
-      { data: stateRatesData },
-      { data: deductionsData },
-    ] = await Promise.all([
-      supabase.from('households').select('*').eq('owner_id', user.id).single(),
-      supabase.from('income').select('*').eq('owner_id', user.id),
-      supabase.from('expenses').select('*').eq('owner_id', user.id),
-      supabase.from('assets').select('value').eq('owner_id', user.id),
-      supabase.from('federal_tax_brackets').select('*'),
-      supabase.from('state_tax_rates').select('*'),
-      supabase.from('standard_deductions').select('*'),
-    ])
-
-    setHousehold(householdData)
-    setIncomes(incomeData ?? [])
-    setExpenses(expenseData ?? [])
-    setAssets(assetData ?? [])
-    setTaxBrackets(bracketsData ?? [])
-    setStateRates(stateRatesData ?? [])
-    setStandardDeductions(deductionsData ?? [])
+    const { data: householdData } = await supabase
+      .from('households')
+      .select('*')
+      .eq('owner_id', user.id)
+      .single()
 
     if (householdData) {
+      setHousehold(householdData)
       const base: ScenarioOverrides = {
         name: 'Scenario B',
-        person1_retirement_age: householdData.person1_retirement_age ?? 65,
+        person1_retirement_age:  householdData.person1_retirement_age ?? 65,
         person1_ss_claiming_age: householdData.person1_ss_claiming_age ?? 67,
-        person2_retirement_age: householdData.person2_retirement_age ?? null,
+        person2_retirement_age:  householdData.person2_retirement_age ?? null,
         person2_ss_claiming_age: householdData.person2_ss_claiming_age ?? null,
-        state_primary: householdData.state_primary ?? '',
+        state_primary:           householdData.state_primary ?? '',
         growth_rate_accumulation: householdData.growth_rate_accumulation ?? 7,
-        growth_rate_retirement: householdData.growth_rate_retirement ?? 5,
+        growth_rate_retirement:   householdData.growth_rate_retirement ?? 5,
       }
       setScenarioB({ ...base, name: 'Scenario B' })
       setScenarioC({ ...base, name: 'Scenario C' })
@@ -274,10 +174,33 @@ export default function ScenariosPage() {
     setIsLoading(false)
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    loadHousehold()
+    fetchBase()
+  }, [loadHousehold, fetchBase])
+
+  // ── Re-run B when scenarioB changes (debounced 600ms) ───────────────────────
+  useEffect(() => {
+    if (!scenarioB) return
+    if (timerB.current) clearTimeout(timerB.current)
+    timerB.current = setTimeout(() => {
+      fetchScenario(scenarioB, setResultB, setLoadingB)
+    }, 600)
+    return () => { if (timerB.current) clearTimeout(timerB.current) }
+  }, [scenarioB])
+
+  // ── Re-run C when scenarioC changes (debounced 600ms) ───────────────────────
+  useEffect(() => {
+    if (!scenarioC) return
+    if (timerC.current) clearTimeout(timerC.current)
+    timerC.current = setTimeout(() => {
+      fetchScenario(scenarioC, setResultC, setLoadingC)
+    }, 600)
+    return () => { if (timerC.current) clearTimeout(timerC.current) }
+  }, [scenarioC])
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>
+    return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading…</p></div>
   }
 
   if (!household || !scenarioB || !scenarioC) {
@@ -292,55 +215,30 @@ export default function ScenariosPage() {
     )
   }
 
-  // Build base overrides from household
-  const baseOverrides: ScenarioOverrides = {
-    name: 'Base Case',
-    person1_retirement_age: household.person1_retirement_age ?? 65,
-    person1_ss_claiming_age: household.person1_ss_claiming_age ?? 67,
-    person2_retirement_age: household.person2_retirement_age ?? null,
-    person2_ss_claiming_age: household.person2_ss_claiming_age ?? null,
-    state_primary: household.state_primary ?? '',
-    growth_rate_accumulation: household.growth_rate_accumulation ?? 7,
-    growth_rate_retirement: household.growth_rate_retirement ?? 5,
-  }
-
-  const runAll = () => {
-    const common = [incomes, expenses, assets, taxBrackets, stateRates, standardDeductions] as const
-    const rowsA = runScenario(household, baseOverrides, ...common)
-    const rowsB = runScenario(household, scenarioB, ...common)
-    const rowsC = runScenario(household, scenarioC, ...common)
-    return [
-      summarize(rowsA, baseOverrides.person1_retirement_age),
-      summarize(rowsB, scenarioB.person1_retirement_age),
-      summarize(rowsC, scenarioC.person1_retirement_age),
-    ]
-  }
-
-  const [resultA, resultB, resultC] = runAll()
   const results = [resultA, resultB, resultC]
-  const overrides = [baseOverrides, scenarioB, scenarioC]
-  const names = [baseOverrides.name, scenarioB.name, scenarioC.name]
+  const names   = ['Base Case', scenarioB.name, scenarioC.name]
+  const loading  = [loadingA, loadingB, loadingC]
 
-  const peakAll = Math.max(...results.flatMap(r => r.rows.map(row => row.portfolio)))
+  const peakAll = Math.max(...results.flatMap(r => r?.rows.map(row => row.net_worth) ?? [0]))
 
   async function handleSave(idx: number) {
     const result = results[idx]
-    const name = names[idx]
+    if (!result) return
     setIsSaving(idx)
     setError(null)
     try {
       const supabase = createClient()
-      const now = new Date()
+      const now       = new Date()
       const timestamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
         ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       const { error } = await supabase.from('projections').insert({
         household_id: household!.id,
-        scenario_name: `${name} — ${timestamp}`,
+        scenario_name: `${names[idx]} — ${timestamp}`,
         projection_data: result.rows,
         summary: {
           at_retirement: result.portfolioAtRetirement,
-          peak: result.peakPortfolio,
-          final: result.finalPortfolio,
+          peak:          result.peakPortfolio,
+          final:         result.finalPortfolio,
           funds_outlast: result.fundsOutlast,
         },
         calculated_at: now.toISOString(),
@@ -375,20 +273,18 @@ export default function ScenariosPage() {
               <span className="inline-flex items-center rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">Base Case</span>
               <p className="mt-2 text-xs text-neutral-400">Locked to your profile</p>
             </div>
-            <button
-              onClick={() => handleSave(0)}
-              disabled={isSaving === 0}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
-            >
+            <button onClick={() => handleSave(0)} disabled={isSaving === 0 || !resultA}
+              className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
               {isSaving === 0 ? 'Saving…' : savedIdx === 0 ? '✓ Saved' : 'Save'}
             </button>
           </div>
           <div className="space-y-2 text-sm text-neutral-600">
-            <p><span className="font-medium text-neutral-800">{household.person1_name ?? 'Person 1'}</span> retires at {baseOverrides.person1_retirement_age}, claims SS at {baseOverrides.person1_ss_claiming_age}</p>
-            {household.has_spouse && <p><span className="font-medium text-neutral-800">{household.person2_name ?? 'Person 2'}</span> retires at {baseOverrides.person2_retirement_age ?? '—'}, claims SS at {baseOverrides.person2_ss_claiming_age ?? '—'}</p>}
-            <p>State: <span className="font-medium text-neutral-800">{baseOverrides.state_primary || 'None'}</span></p>
-            <p>Growth: <span className="font-medium text-neutral-800">{baseOverrides.growth_rate_accumulation}% / {baseOverrides.growth_rate_retirement}%</span></p>
+            <p><span className="font-medium text-neutral-800">{household.person1_name ?? 'Person 1'}</span> retires at {household.person1_retirement_age}, SS at {household.person1_ss_claiming_age}</p>
+            {household.has_spouse && <p><span className="font-medium text-neutral-800">{household.person2_name ?? 'Person 2'}</span> retires at {household.person2_retirement_age ?? '—'}, SS at {household.person2_ss_claiming_age ?? '—'}</p>}
+            <p>State: <span className="font-medium text-neutral-800">{household.state_primary || 'None'}</span></p>
+            <p>Growth: <span className="font-medium text-neutral-800">{household.growth_rate_accumulation}% / {household.growth_rate_retirement}%</span></p>
           </div>
+          {loadingA && <p className="mt-3 text-xs text-neutral-400 animate-pulse">Calculating…</p>}
         </div>
 
         {/* Scenario B */}
@@ -400,6 +296,7 @@ export default function ScenariosPage() {
           onSave={() => handleSave(1)}
           isSaving={isSaving === 1}
           saved={savedIdx === 1}
+          isCalculating={loadingB}
         />
 
         {/* Scenario C */}
@@ -411,6 +308,7 @@ export default function ScenariosPage() {
           onSave={() => handleSave(2)}
           isSaving={isSaving === 2}
           saved={savedIdx === 2}
+          isCalculating={loadingC}
         />
       </div>
 
@@ -426,42 +324,44 @@ export default function ScenariosPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">Metric</th>
                 {names.map((name, i) => (
                   <th key={i} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">
-                    <span className={`inline-flex items-center gap-1.5`}>
+                    <span className="inline-flex items-center gap-1.5">
                       <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SCENARIO_COLORS[i] }} />
                       <span className={SCENARIO_TEXT[i]}>{name}</span>
+                      {loading[i] && <span className="text-neutral-300 text-xs animate-pulse">●</span>}
                     </span>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {[
+              {([
                 { label: 'Portfolio at Retirement', key: 'portfolioAtRetirement' as const },
-                { label: 'Peak Portfolio', key: 'peakPortfolio' as const },
-                { label: 'Final Portfolio', key: 'finalPortfolio' as const },
+                { label: 'Peak Portfolio',          key: 'peakPortfolio'         as const },
+                { label: 'Final Portfolio',         key: 'finalPortfolio'        as const },
                 { label: 'Avg Annual Tax (Retirement)', key: 'avgAnnualTaxRetirement' as const },
-              ].map(({ label, key }) => {
-                const vals = results.map(r => r[key])
+              ] as const).map(({ label, key }) => {
+                const vals = results.map(r => r?.[key] ?? 0)
                 const best = Math.max(...vals)
                 return (
                   <tr key={key} className="hover:bg-neutral-50">
                     <td className="px-6 py-3 text-sm font-medium text-neutral-700">{label}</td>
-                    {vals.map((val, i) => (
-                      <td key={i} className={`px-6 py-3 text-sm font-semibold ${val === best && key !== 'avgAnnualTaxRetirement' ? SCENARIO_TEXT[i] : key === 'avgAnnualTaxRetirement' && val === Math.min(...vals) ? SCENARIO_TEXT[i] : 'text-neutral-600'}`}>
-                        {formatDollars(val)}
-                        {((val === best && key !== 'avgAnnualTaxRetirement') || (key === 'avgAnnualTaxRetirement' && val === Math.min(...vals))) && (
-                          <span className="ml-1.5 text-xs font-normal opacity-60">★ best</span>
-                        )}
-                      </td>
-                    ))}
+                    {vals.map((val, i) => {
+                      const isBest = key !== 'avgAnnualTaxRetirement' ? val === best : val === Math.min(...vals)
+                      return (
+                        <td key={i} className={`px-6 py-3 text-sm font-semibold ${loading[i] ? 'text-neutral-300' : isBest ? SCENARIO_TEXT[i] : 'text-neutral-600'}`}>
+                          {loading[i] ? '…' : formatDollars(val)}
+                          {!loading[i] && isBest && <span className="ml-1.5 text-xs font-normal opacity-60">★ best</span>}
+                        </td>
+                      )
+                    })}
                   </tr>
                 )
               })}
               <tr className="hover:bg-neutral-50">
                 <td className="px-6 py-3 text-sm font-medium text-neutral-700">Funds Outlast</td>
                 {results.map((r, i) => (
-                  <td key={i} className={`px-6 py-3 text-sm font-semibold ${r.fundsOutlast ? 'text-green-600' : 'text-red-600'}`}>
-                    {r.fundsOutlast ? 'Yes ✓' : 'No ✗'}
+                  <td key={i} className={`px-6 py-3 text-sm font-semibold ${loading[i] ? 'text-neutral-300' : r?.fundsOutlast ? 'text-green-600' : 'text-red-600'}`}>
+                    {loading[i] ? '…' : r?.fundsOutlast ? 'Yes ✓' : 'No ✗'}
                   </td>
                 ))}
               </tr>
@@ -471,40 +371,40 @@ export default function ScenariosPage() {
       </div>
 
       {/* Chart / Table */}
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
-        <div className="flex border-b border-neutral-200 px-4 pt-4 gap-1">
-          {(['chart', 'table'] as const).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg capitalize transition-colors ${
-                activeTab === tab ? 'border-b-2 border-neutral-900 text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'
-              }`}>
-              {tab}
-            </button>
-          ))}
-          {/* Legend */}
-          <div className="ml-auto flex items-center gap-4 pb-2">
-            {names.map((name, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs text-neutral-500">
-                <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: SCENARIO_COLORS[i] }} />
-                {name}
-              </span>
+      {(resultA || resultB || resultC) && (
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
+          <div className="flex border-b border-neutral-200 px-4 pt-4 gap-1">
+            {(['chart', 'table'] as const).map((tab) => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg capitalize transition-colors ${
+                  activeTab === tab ? 'border-b-2 border-neutral-900 text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'
+                }`}>
+                {tab}
+              </button>
             ))}
+            <div className="ml-auto flex items-center gap-4 pb-2">
+              {names.map((name, i) => (
+                <span key={i} className="flex items-center gap-1.5 text-xs text-neutral-500">
+                  <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: SCENARIO_COLORS[i] }} />
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4">
+            {activeTab === 'chart'
+              ? <MultiLineChart results={results} names={names} peak={peakAll} loading={loading} />
+              : <ComparisonTable results={results} names={names} loading={loading} />
+            }
           </div>
         </div>
-        <div className="p-4">
-          {activeTab === 'chart' ? (
-            <MultiLineChart results={results} names={names} peak={peakAll} />
-          ) : (
-            <ComparisonTable results={results} names={names} />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
 
 function ScenarioEditor({
-  scenario, onChange, household, colorIdx, onSave, isSaving, saved,
+  scenario, onChange, household, colorIdx, onSave, isSaving, saved, isCalculating,
 }: {
   scenario: ScenarioOverrides
   onChange: (s: ScenarioOverrides) => void
@@ -513,10 +413,12 @@ function ScenarioEditor({
   onSave: () => void
   isSaving: boolean
   saved: boolean
+  isCalculating: boolean
 }) {
   const borderColor = colorIdx === 1 ? 'border-blue-500' : 'border-green-500'
-  const badgeBg = colorIdx === 1 ? 'bg-blue-600' : 'bg-green-600'
-  const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+  const badgeBg     = colorIdx === 1 ? 'bg-blue-600'     : 'bg-green-600'
+  const btnBg       = colorIdx === 1 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
+  const inputClass  = "block w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
   return (
     <div className={`rounded-2xl border-2 ${borderColor} bg-white p-5`}>
@@ -525,16 +427,13 @@ function ScenarioEditor({
           <span className={`inline-flex items-center rounded-full ${badgeBg} px-3 py-1 text-xs font-semibold text-white`}>
             {scenario.name}
           </span>
-          <input
-            type="text"
-            value={scenario.name}
+          <input type="text" value={scenario.name}
             onChange={e => onChange({ ...scenario, name: e.target.value })}
             className="text-xs border-b border-dashed border-neutral-300 bg-transparent text-neutral-500 focus:outline-none focus:border-neutral-500 w-28"
-            placeholder="Rename..."
-          />
+            placeholder="Rename…" />
         </div>
         <button onClick={onSave} disabled={isSaving}
-          className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 transition ${colorIdx === 1 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}>
+          className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 transition ${btnBg}`}>
           {isSaving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
         </button>
       </div>
@@ -575,7 +474,7 @@ function ScenarioEditor({
         <div>
           <label className="block text-xs font-medium text-neutral-500 mb-1">Primary State</label>
           <select value={scenario.state_primary} onChange={e => onChange({ ...scenario, state_primary: e.target.value })} className={inputClass}>
-            <option value="">None</option>
+            <option value="">None (no state tax)</option>
             {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
@@ -595,36 +494,47 @@ function ScenarioEditor({
           </div>
         </div>
       </div>
+
+      {isCalculating && <p className="mt-3 text-xs text-neutral-400 animate-pulse">Recalculating…</p>}
     </div>
   )
 }
 
-function MultiLineChart({ results, names, peak }: { results: ScenarioResult[]; names: string[]; peak: number }) {
-  const allAges = results[0].rows.map(r => r.age)
-  const step = allAges.length > 40 ? 5 : allAges.length > 25 ? 2 : 1
-  const sampledAges = allAges.filter((_, i) => i % step === 0)
+function MultiLineChart({ results, names, peak, loading }: {
+  results: (ScenarioResult)[]
+  names: string[]
+  peak: number
+  loading: boolean[]
+}) {
+  const baseRows = results.find(r => r !== null)?.rows ?? []
+  const allAges  = baseRows.map(r => r.age_person1)
+  const step     = allAges.length > 40 ? 5 : allAges.length > 25 ? 2 : 1
+  const sampled  = allAges.filter((_, i) => i % step === 0)
 
   return (
     <div className="relative">
       <div className="flex items-end gap-0.5 h-56 w-full px-2">
-        {sampledAges.map((age) => (
+        {sampled.map((age) => (
           <div key={age} className="flex-1 flex flex-col items-center gap-1 group relative">
             <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 hidden group-hover:block whitespace-nowrap rounded-lg bg-neutral-900 px-2 py-1.5 text-xs text-white shadow-lg">
               <p className="font-semibold mb-0.5">Age {age}</p>
               {results.map((r, i) => {
-                const row = r.rows.find(row => row.age === age)
-                return <p key={i} style={{ color: SCENARIO_COLORS[i] === '#1a1a1a' ? '#fff' : SCENARIO_COLORS[i] }}>{names[i]}: {formatDollars(row?.portfolio ?? 0)}</p>
+                const row = r?.rows.find(row => row.age_person1 === age)
+                return (
+                  <p key={i} style={{ color: SCENARIO_COLORS[i] === '#1a1a1a' ? '#fff' : SCENARIO_COLORS[i] }}>
+                    {names[i]}: {formatDollars(row?.net_worth ?? 0)}
+                  </p>
+                )
               })}
             </div>
             <div className="w-full flex items-end gap-px" style={{ height: '200px' }}>
               {results.map((r, i) => {
-                const row = r.rows.find(row => row.age === age)
-                const pct = peak > 0 ? ((row?.portfolio ?? 0) / peak) * 100 : 0
+                const row = r?.rows.find(row => row.age_person1 === age)
+                const pct = peak > 0 ? ((row?.net_worth ?? 0) / peak) * 100 : 0
                 return (
-                  <div key={i} className="flex-1 rounded-t transition-all" style={{
+                  <div key={i} className={`flex-1 rounded-t transition-all ${loading[i] ? 'opacity-30' : ''}`} style={{
                     height: `${Math.max(pct, 1)}%`,
                     backgroundColor: SCENARIO_COLORS[i],
-                    opacity: row?.phase === 'retirement' ? 0.85 : 1,
                   }} />
                 )
               })}
@@ -637,8 +547,13 @@ function MultiLineChart({ results, names, peak }: { results: ScenarioResult[]; n
   )
 }
 
-function ComparisonTable({ results, names }: { results: ScenarioResult[]; names: string[] }) {
-  const rows = results[0].rows
+function ComparisonTable({ results, names, loading }: {
+  results: (ScenarioResult)[]
+  names: string[]
+  loading: boolean[]
+}) {
+  const baseRows = results.find(r => r !== null)?.rows ?? []
+
   return (
     <div className="overflow-auto max-h-96">
       <table className="min-w-full text-sm">
@@ -650,48 +565,45 @@ function ComparisonTable({ results, names }: { results: ScenarioResult[]; names:
               <th key={i} className="pb-2 pr-4">
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: SCENARIO_COLORS[i] }} />
-                  {name} Portfolio
+                  {name} Net Worth
                 </span>
               </th>
             ))}
             {names.map((name, i) => (
-              <th key={i} className="pb-2 pr-4">
+              <th key={`tax-${i}`} className="pb-2 pr-4">
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: SCENARIO_COLORS[i] }} />
-                  {name} Income
+                  {name} Tax
                 </span>
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
-          {rows.map((row) => {
-            const isRetirement = row.phase === 'retirement'
-            return (
-              <tr key={row.age} className={isRetirement ? 'bg-orange-50/40' : ''}>
-                <td className="py-1.5 pr-4 font-medium text-neutral-800">{row.age}</td>
-                <td className="py-1.5 pr-4 text-neutral-500">{row.year}</td>
-                {results.map((r, i) => {
-                  const yr = r.rows.find(y => y.age === row.age)
-                  const portfolios = results.map(res => res.rows.find(y => y.age === row.age)?.portfolio ?? 0)
-                  const isBest = (yr?.portfolio ?? 0) === Math.max(...portfolios)
-                  return (
-                    <td key={i} className={`py-1.5 pr-4 font-semibold ${isBest ? SCENARIO_TEXT[i] : 'text-neutral-600'}`}>
-                      {formatDollars(yr?.portfolio ?? 0)}
-                    </td>
-                  )
-                })}
-                {results.map((r, i) => {
-                  const yr = r.rows.find(y => y.age === row.age)
-                  return (
-                    <td key={i} className="py-1.5 pr-4 text-neutral-600">
-                      {formatDollars(yr?.income ?? 0)}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
+          {baseRows.map((row) => (
+            <tr key={row.age_person1} className={row.age_person1 >= (results[0]?.rows.find(r => r.age_person1 >= 65)?.age_person1 ?? 65) ? 'bg-orange-50/40' : ''}>
+              <td className="py-1.5 pr-4 font-medium text-neutral-800">{row.age_person1}</td>
+              <td className="py-1.5 pr-4 text-neutral-500">{row.year}</td>
+              {results.map((r, i) => {
+                const yr        = r?.rows.find(y => y.age_person1 === row.age_person1)
+                const allVals   = results.map(res => res?.rows.find(y => y.age_person1 === row.age_person1)?.net_worth ?? 0)
+                const isBest    = (yr?.net_worth ?? 0) === Math.max(...allVals)
+                return (
+                  <td key={i} className={`py-1.5 pr-4 font-semibold ${loading[i] ? 'text-neutral-300' : isBest ? SCENARIO_TEXT[i] : 'text-neutral-600'}`}>
+                    {loading[i] ? '…' : formatDollars(yr?.net_worth ?? 0)}
+                  </td>
+                )
+              })}
+              {results.map((r, i) => {
+                const yr = r?.rows.find(y => y.age_person1 === row.age_person1)
+                return (
+                  <td key={`tax-${i}`} className={`py-1.5 pr-4 ${loading[i] ? 'text-neutral-300' : 'text-neutral-600'}`}>
+                    {loading[i] ? '…' : formatDollars(yr?.tax_total ?? 0)}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
