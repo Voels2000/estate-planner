@@ -18,20 +18,7 @@ type IncomeRow = {
   updated_at: string
 }
 
-const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-
-const INCOME_SOURCES = [
-  { value: 'salary',          label: 'Salary / Wages' },
-  { value: 'self_employment', label: 'Self-Employment' },
-  { value: 'social_security', label: 'Social Security' },
-  { value: 'pension',         label: 'Pension' },
-  { value: 'rental',          label: 'Rental Income' },
-  { value: 'dividends',       label: 'Dividends' },
-  { value: 'interest',        label: 'Interest' },
-  { value: 'annuity',         label: 'Annuity' },
-  { value: 'business',        label: 'Business Income' },
-  { value: 'other',           label: 'Other' },
-]
+type IncomeType = { value: string; label: string }
 
 type Props = {
   income: IncomeRow[]
@@ -39,10 +26,13 @@ type Props = {
   person1Name: string
   person2Name: string
   hasSpouse: boolean
+  incomeTypes: IncomeType[]
 }
 
-function sourceLabel(value: string) {
-  return INCOME_SOURCES.find(s => s.value === value)?.label ?? value
+const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+
+function sourceLabel(value: string, types: IncomeType[]) {
+  return types.find(s => s.value === value)?.label ?? value
 }
 
 function formatDollars(n: number) {
@@ -51,12 +41,12 @@ function formatDollars(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpouse }: Props) {
+export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpouse, incomeTypes }: Props) {
   const router = useRouter()
-  const [modalOpen, setModalOpen]       = useState(false)
-  const [editRow, setEditRow]           = useState<IncomeRow | null>(null)
+  const [modalOpen, setModalOpen]             = useState(false)
+  const [editRow, setEditRow]                 = useState<IncomeRow | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [error, setError]               = useState<string | null>(null)
+  const [error, setError]                     = useState<string | null>(null)
 
   const totalAnnual = income.reduce((sum, i) => sum + Number(i.amount), 0)
 
@@ -69,7 +59,7 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
 
   function getDisplayName(row: IncomeRow) {
     if (row.name && row.name.trim()) return row.name.trim()
-    return sourceLabel(row.source)
+    return sourceLabel(row.source, incomeTypes)
   }
 
   async function handleDelete(id: string) {
@@ -82,10 +72,10 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
     setConfirmDeleteId(null)
   }
 
-  function openAdd()              { setEditRow(null);  setModalOpen(true) }
-  function openEdit(row: IncomeRow) { setEditRow(row); setModalOpen(true) }
-  function closeModal()           { setModalOpen(false); setEditRow(null) }
-  function handleSuccess()        { closeModal(); router.refresh() }
+  function openAdd()               { setEditRow(null);  setModalOpen(true) }
+  function openEdit(row: IncomeRow){ setEditRow(row);   setModalOpen(true) }
+  function closeModal()            { setModalOpen(false); setEditRow(null) }
+  function handleSuccess()         { closeModal(); router.refresh() }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -116,12 +106,12 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
           <p className="text-xs text-neutral-400 mt-1">Add your first income source to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-neutral-200 shadowm overflow-hidden">
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50">
               <tr>
-                {['Name / Source', 'Type', 'Owner', 'Annual Amount', 'Start → End', 'Inflation Adj.', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neu-500">{h}</th>
+                {['Name / Source', 'Type', 'Owner', 'Annual Amount', 'Start to End', 'Inflation Adj.', ''].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -129,19 +119,19 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
               {income.map((row) => (
                 <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(row)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{sourceLabel(row.source)}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">{sourceLabel(row.source, incomeTypes)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(row)}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(row.amount))}</td>
                   <td className="px-4 py-3 text-sm text-neutral-500">
-                    {row.start_year ?? '—'} → {row.end_year ? row.end_year : 'Ongoing'}
+                    {row.start_year ?? '—'} to {row.end_year ? row.end_year : 'Ongoing'}
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{row.inflation_adjust ? '✓' : '—'}</td>
-          <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right">
                     {confirmDeleteId === row.id ? (
                       <span className="inline-flex items-center gap-2 text-sm">
                         <span className="text-neutral-500">Delete?</span>
                         <button onClick={() => handleDelete(row.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
+                  <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -164,6 +154,7 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
           person1Name={person1Name}
           person2Name={person2Name}
           hasSpouse={hasSpouse}
+          incomeTypes={incomeTypes}
           onClose={closeModal}
           onSuccess={handleSuccess}
         />
@@ -172,18 +163,19 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   )
 }
 
-function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, onClose, onSuccess }: {
+function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, incomeTypes, onClose, onSuccess }: {
   editRow: IncomeRow | null
   ownerId: string
   person1Name: string
   person2Name: string
   hasSpouse: boolean
+  incomeTypes: IncomeType[]
   onClose: () => void
   onSuccess: () => void
 }) {
   const currentYear = new Date().getFullYear()
   const [ssPerson,        setSsPerson]        = useState(editRow?.ss_person ?? 'person1')
-  const [source,          setSource]          = useState(editRow?.source ?? 'salary')
+  const [source,          setSource]          = useState(editRow?.source ?? (incomeTypes[0]?.value ?? 'salary'))
   const [name,            setName]            = useState(editRow?.name ?? '')
   const [amount,          setAmount]          = useState(editRow?.amount?.toString() ?? '')
   const [startYear,       setStartYear]       = useState(editRow?.start_year != null ? editRow.start_year.toString() : currentYear.toString())
@@ -246,7 +238,7 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, on
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Income Source</label>
             <select value={source} onChange={(e) => setSource(e.target.value)} className={inputClass}>
-              {INCOME_SOURCES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {incomeTypes.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
 
@@ -256,7 +248,7 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, on
             </label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className={inputClass}
-              placeholder={`e.g. ${INCOME_SOURCES.find(s => s.value === source)?.label ?? 'My Salary'}`} />
+              placeholder={`e.g. ${incomeTypes.find(s => s.value === source)?.label ?? 'My Salary'}`} />
             <p className="mt-1 text-xs text-neutral-400">Give this entry a custom name to tell it apart from others of the same type.</p>
           </div>
 
