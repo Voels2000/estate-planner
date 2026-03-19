@@ -210,62 +210,8 @@ export default function ProfilePage() {
         if (error) throw error
       }
 
-      // FIX 1 (core): SS upsert errors now throw so they surface to the user
-      // instead of being silently swallowed with console.error.
-      // Also delete by source='social_security' as a belt-and-suspenders approach
-      // in case ss_person column has mixed data.
-      const { error: del1Error } = await supabase
-        .from('income')
-        .delete()
-        .eq('owner_id', user.id)
-        .eq('ss_person', 'person1')
-      if (del1Error) throw del1Error
-
-      const { error: del2Error } = await supabase
-        .from('income')
-        .delete()
-        .eq('owner_id', user.id)
-        .eq('ss_person', 'person2')
-      if (del2Error) throw del2Error
-
-      const p1Benefit = calcSSBenefit(person1SSBenefit62, person1SSBenefit67, person1SSClaimingAge)
-      const p1ClaimAge = parseInt(person1SSClaimingAge)
-      const p1BirthYear = parseInt(person1BirthYear)
-      const p1StartYear = p1BirthYear && p1ClaimAge ? p1BirthYear + p1ClaimAge : null
-
-      if (p1Benefit != null && p1StartYear) {
-        const { error: ssError } = await supabase.from('income').insert({
-          owner_id: user.id,
-          source: 'social_security',
-          amount: Math.round(p1Benefit * 12),
-          start_year: p1StartYear,
-          end_year: null,
-          inflation_adjust: false,
-          ss_person: 'person1',
-        })
-        if (ssError) throw ssError
-      }
-
-      if (hasSpouse) {
-        const p2Benefit = calcSSBenefit(person2SSBenefit62, person2SSBenefit67, person2SSClaimingAge)
-        const p2ClaimAge = parseInt(person2SSClaimingAge)
-        const p2BirthYear = parseInt(person2BirthYear)
-        const p2StartYear = p2BirthYear && p2ClaimAge ? p2BirthYear + p2ClaimAge : null
-
-        if (p2Benefit != null && p2StartYear) {
-          const { error: ssError } = await supabase.from('income').insert({
-            owner_id: user.id,
-            source: 'social_security',
-            amount: Math.round(p2Benefit * 12),
-            start_year: p2StartYear,
-            end_year: null,
-            inflation_adjust: false,
-            ss_person: 'person2',
-          })
-          if (ssError) throw ssError
-        }
-      }
-
+      // SS is handled entirely by the projection engine via households table.
+      // No SS rows are written to the income table.
       setSuccess(true)
       setTimeout(() => {
         router.push('/dashboard')

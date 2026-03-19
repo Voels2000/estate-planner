@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('assets').select('value').eq('owner_id', user!.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
-    supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id),
+    supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id).neq('source', 'social_security'),
     supabase.from('expenses').select('amount').eq('owner_id', user!.id),
     household?.id
       ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
