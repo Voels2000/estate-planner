@@ -21,7 +21,17 @@ export default async function CompletePage() {
     )
   }
 
-  const { rows, household } = await res.json()
+  const data = await res.json()
+  const { rows, household } = data
+
+  if (!household) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        No household data found. Please complete your profile first.
+      </div>
+    )
+  }
+
 
   return (
     <CompleteClient
