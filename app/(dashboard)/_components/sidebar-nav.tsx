@@ -96,7 +96,7 @@ export function SidebarNav({
               <span className="text-base">{item.icon}</span>
               <span className="flex-1 truncate">{item.label}</span>
               {locked && (
-                <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
                   🔒 {lockLabel(item.feature)}
                 </span>
               )}

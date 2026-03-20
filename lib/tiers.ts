@@ -11,7 +11,7 @@ export const CONSUMER_PRICE_IDS = {
 export const LEGACY_PRICE_ID = 'price_1TAlJjCaljka9gJthGTMogQb'
 
 export const TIER_NAMES = {
-  1: 'Starter',
+  1: 'Financial',
   2: 'Retirement',
   3: 'Estate',
 } as const
