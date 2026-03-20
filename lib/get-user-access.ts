@@ -40,6 +40,7 @@ export async function getUserAccess(): Promise<UserAccess> {
     isAdvisorClient = !!clientRow
   }
 
+  console.log('GET_USER_ACCESS profile:', JSON.stringify({ role: profile?.role, status: profile?.subscription_status, tier: profile?.consumer_tier, userId: user.id }))
   // Advisors and advisor clients get full access
   if (isAdvisor || isAdvisorClient) {
     return { tier: 3, isAdvisor, isAdvisorClient, isTrial, subscriptionStatus }
