@@ -41,7 +41,7 @@ export function GatedPage({ requiredTier, currentTier, featureName, children }: 
             Upgrade to {tierName}
           </button>
           <p className="mt-3 text-xs text-neutral-400">
-            You're currently on the {TIER_NAMES[currentTier as 1|2|3] ?? 'Starter'} plan
+            You're currently on the {TIER_NAMES[currentTier as 1|2|3] ?? 'Financial'} plan
           </p>
         </div>
       </div>

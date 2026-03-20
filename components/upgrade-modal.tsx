@@ -101,7 +101,7 @@ export function UpgradeModal({ requiredTier, currentTier, onClose }: Props) {
 
           {currentTier > 0 && (
             <p className="mt-3 text-xs text-center text-neutral-400">
-              You're currently on the {TIER_NAMES[currentTier as 1|2|3] ?? 'Starter'} plan
+              You're currently on the {TIER_NAMES[currentTier as 1|2|3] ?? 'Financial'} plan
             </p>
           )}
         </div>
