@@ -17,11 +17,18 @@ export async function getUserAccess(): Promise<UserAccess> {
     return { tier: 0, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus: null }
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, subscription_status, subscription_plan, consumer_tier, trial_start')
-    .eq('id', user.id)
-    .single()
+  let profile: any = null
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role, subscription_status, subscription_plan, consumer_tier, trial_start')
+      .eq('id', user.id)
+      .single()
+    console.log('PROFILE QUERY:', JSON.stringify({ data, error }))
+    profile = data
+  } catch (e) {
+    console.log('PROFILE QUERY EXCEPTION:', String(e))
+  }
 
   const isAdvisor = profile?.role === 'advisor'
   const subscriptionStatus = profile?.subscription_status ?? null
