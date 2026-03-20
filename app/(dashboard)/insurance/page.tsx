@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic"
 
 export default async function InsurancePage() {
   const { tier, isAdvisor } = await getUserAccess()
+  console.log("INSURANCE PAGE ACCESS:", JSON.stringify({ tier, isAdvisor }))
 
   if (!isAdvisor && tier < 2) {
     return (
