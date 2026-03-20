@@ -17,7 +17,6 @@ export async function getUserAccess(): Promise<UserAccess> {
     return { tier: 0, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus: null }
   }
 
-  // Use admin client to bypass RLS for profile lookup
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
@@ -46,7 +45,7 @@ export async function getUserAccess(): Promise<UserAccess> {
   }
 
   if (!isActive) {
-    return { tier: 0, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus }
+    return { tier: 1, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus }
   }
 
   const tier = resolveConsumerTier(
