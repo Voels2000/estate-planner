@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const PRICE_TO_TIER: Record<string, number> = {
+  'price_1TD2SMCaljka9gJtsbsXsPjC': 1, // Financial
+  'price_1TD2TECaljka9gJtp8fpf3Yk': 2, // Retirement
+  'price_1TD2WZCaljka9gJt5xUAnv4J': 3, // Estate
+  'price_1TAlJjCaljka9gJthGTMogQb': 2, // Legacy consumer -> tier 2
+}
+
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-02-24.acacia',
@@ -35,9 +42,11 @@ export async function POST(req: Request) {
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
         updates.subscription_plan = subscription.items.data[0]?.price.id ?? null
       }
+      // Set consumer_tier based on price
+      const tier = updates.subscription_plan ? (PRICE_TO_TIER[updates.subscription_plan] ?? 1) : 1
       await supabase
         .from('profiles')
-        .update(updates)
+        .update({ ...updates, consumer_tier: tier })
         .eq('id', userId)
       break
     }
@@ -50,11 +59,13 @@ export async function POST(req: Request) {
         .eq('stripe_customer_id', subscription.customer as string)
         .maybeSingle()
       if (profile) {
+        const updatedTier = priceId ? (PRICE_TO_TIER[priceId] ?? 1) : 1
         await supabase
           .from('profiles')
           .update({
             subscription_status: subscription.status,
             subscription_plan: priceId,
+            consumer_tier: updatedTier,
           })
           .eq('id', profile.id)
       }

@@ -3,8 +3,16 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 
 const PRICE_IDS: Record<string, string> = {
+  // Consumer tiers
+  financial:  'price_1TD2SMCaljka9gJtsbsXsPjC',
+  retirement: 'price_1TD2TECaljka9gJtp8fpf3Yk',
+  estate:     'price_1TD2WZCaljka9gJt5xUAnv4J',
+  // Advisor tiers
+  advisor:         'price_1TAlRkCaljka9gJtL7jcTwWY',
+  advisor_pro:     'price_1TBIjWCaljka9gJt5tAXddM7',
+  advisor_unlimited: 'price_1TBIkSCaljka9gJtUqwl9reU',
+  // Legacy
   consumer: 'price_1TAlJjCaljka9gJthGTMogQb',
-  advisor: 'price_1TAlRkCaljka9gJtL7jcTwWY',
 }
 
 export async function POST(req: Request) {
