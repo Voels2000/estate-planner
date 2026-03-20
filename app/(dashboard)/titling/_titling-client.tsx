@@ -319,7 +319,7 @@ export default function TitlingClient({
                   kind: 'asset', id: asset.id, name: asset.name, existing: null, beneficiaryType: type,
                 })}
                 onEditBeneficiary={(ben) => setBeneficiaryModal({
-                  kind: 'asset', id: asset.id, name: asset.name, existing: ben,
+                  kind: 'asset', id: asset.id, name: asset.name, existing: ben, beneficiaryType: ben.beneficiary_type,
                 })}
                 onDeleteBeneficiary={handleDeleteBeneficiary}
               />
@@ -354,7 +354,8 @@ export default function TitlingClient({
                   kind: 're', id: re.id, name: re.name, existing: null, beneficiaryType: type,
                 })}
                 onEditBeneficiary={(ben) => setBeneficiaryModal({
-                  kind: 're', id: re.id, name: re.name, existing: ben,
+                  kind: 're', id: re.id, name: re.name, existing: ben, beneficiaryType: ben.beneficiary_type,
+
                 })}
                 onDeleteBeneficiary={handleDeleteBeneficiary}
               />

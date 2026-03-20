@@ -3,10 +3,6 @@ import { BillingClient } from './_billing-client'
 import Stripe from 'stripe'
 import { redirect } from 'next/navigation'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-})
-
 const CONSUMER_PRICE_IDS = [
   'price_1TAlJjCaljka9gJthGTMogQb', // Consumer
 ]
@@ -23,6 +19,9 @@ export default async function BillingPage() {
     .eq('id', user.id)
     .single()
 
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-02-24.acacia',
+  })
   const isAdvisor = profile?.role === 'advisor'
 
   // Check if user is an advisor client (only when not an advisor)
