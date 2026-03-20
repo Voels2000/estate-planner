@@ -226,7 +226,7 @@ export function BillingClient({
         <p className="mt-3 text-neutral-600">Start planning your estate and retirement today.</p>
         {isActive && (
           <p className="mt-2 text-sm text-green-600 font-medium">
-            You are currently on the {currentPlan} plan
+            You are currently on the {plans.find(p => p.priceId === currentPlan)?.name ?? currentPlan} plan
           </p>
         )}
       </div>
@@ -240,7 +240,7 @@ export function BillingClient({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {plans.map((plan) => {
           const { price, period } = formatPrice(plan.amount, plan.currency, plan.interval)
-          const isCurrentPlan = currentPlan === plan.name.toLowerCase()
+          const isCurrentPlan = currentPlan === plan.priceId
           return (
             <div
               key={plan.priceId}
