@@ -60,7 +60,7 @@ export default async function DashboardLayout({
   }
 
   // Get user tier for sidebar gating
-  const access = await getUserAccess()
+  const access = { tier: (isAdvisor || isAdvisorClient) ? 3 : isAdmin ? 3 : 1 }
   const showBanner = !isAdmin && !isAdvisor && !isAdvisorClient && !isActive && trialActive
 
   return (
