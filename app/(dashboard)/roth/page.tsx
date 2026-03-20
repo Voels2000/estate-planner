@@ -1,3 +1,5 @@
+import { getUserAccess } from '@/lib/get-user-access'
+import { GatedPage } from '@/components/gated-page'
 // app/(dashboard)/roth/page.tsx
 // Sprint 13 — Roth Optimizer page (server component)
 
@@ -34,6 +36,16 @@ function getStandardDeduction(fs: string): number {
 }
 
 export default async function RothPage() {
+  const access = await getUserAccess()
+  if (access.tier < 2) {
+    return (
+      <GatedPage requiredTier={2} currentTier={access.tier} featureName="Roth Conversion Strategy">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <h1 className="text-2xl font-bold text-neutral-900">Roth Conversion Strategy</h1>
+        </div>
+      </GatedPage>
+    )
+  }
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");

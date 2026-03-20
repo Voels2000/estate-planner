@@ -1,32 +1,48 @@
 'use client'
-
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
+import { FEATURE_TIERS, TIER_NAMES } from '@/lib/tiers'
 
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/profile', label: 'Profile', icon: '👤' },
-  { href: '/assets', label: 'Assets', icon: '🏦' },
-  { href: '/liabilities', label: 'Liabilities', icon: '💳' },
-  { href: '/income', label: 'Income', icon: '💰' },
-  { href: '/expenses', label: 'Expenses', icon: '💸' },
-  { href: '/projections', label: 'Projections', icon: '📈' },
-  { href: '/complete', label: 'Lifetime Financial & Estate Snapshot', icon: '📊' },
-  { href: '/scenarios', label: 'Scenarios', icon: '🔮' },
-  { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
-  { href: '/roth', label: 'Roth Conversion Strategy', icon: '🔄' },
-  { href: '/real-estate', label: 'Real Estate', icon: '🏠' },
-  { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜' },
-  { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️' },
-  { href: '/import', label: 'Import Data', icon: '📥' },
-  { href: '/billing', label: 'Billing', icon: '💳' },
+type NavItem = {
+  href: string
+  label: string
+  icon: string
+  feature?: string
+}
 
+const NAV_ITEMS: NavItem[] = [
+  { href: '/dashboard',   label: 'Dashboard',                           icon: '📊', feature: 'dashboard' },
+  { href: '/profile',     label: 'Profile',                             icon: '👤', feature: 'profile' },
+  { href: '/assets',      label: 'Assets',                              icon: '🏦', feature: 'assets' },
+  { href: '/liabilities', label: 'Liabilities',                         icon: '💳', feature: 'liabilities' },
+  { href: '/income',      label: 'Income',                              icon: '💰', feature: 'income' },
+  { href: '/expenses',    label: 'Expenses',                            icon: '💸', feature: 'expenses' },
+  { href: '/projections', label: 'Projections',                         icon: '📈', feature: 'projections' },
+  { href: '/scenarios',   label: 'Scenarios',                           icon: '🔮', feature: 'scenarios' },
+  { href: '/complete',    label: 'Lifetime Financial & Estate Snapshot', icon: '📊', feature: 'complete' },
+  { href: '/rmd',         label: 'RMD Calculator',                      icon: '📋', feature: 'rmd' },
+  { href: '/roth',        label: 'Roth Conversion Strategy',            icon: '🔄', feature: 'roth' },
+  { href: '/real-estate', label: 'Real Estate',                         icon: '🏠', feature: 'real-estate' },
+  { href: '/import',      label: 'Import Data',                         icon: '📥', feature: 'import' },
+  { href: '/titling',     label: 'Titling & Beneficiaries',             icon: '📜', feature: 'titling' },
+  { href: '/estate-tax',  label: 'Estate Tax',                          icon: '⚖️', feature: 'estate-tax' },
+  { href: '/billing',     label: 'Billing',             icon: '💳' },
 ]
 
-export function SidebarNav({ user, role }: { user: User; role?: string }) {
+export function SidebarNav({
+  user,
+  role,
+  tier = 1,
+  isAdvisor = false,
+}: {
+  user: User
+  role?: string
+  tier?: number
+  isAdvisor?: boolean
+}) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -37,18 +53,34 @@ export function SidebarNav({ user, role }: { user: User; role?: string }) {
     router.refresh()
   }
 
+  function isLocked(feature?: string): boolean {
+    if (!feature) return false
+    if (isAdvisor) return false
+    const required = FEATURE_TIERS[feature] ?? 1
+    return tier < required
+  }
+
+  function lockLabel(feature?: string): string {
+    if (!feature) return ''
+    const required = FEATURE_TIERS[feature] ?? 1
+    return TIER_NAMES[required as 1|2|3]
+  }
+
   return (
     <aside className="w-64 shrink-0 border-r border-neutral-200 bg-white flex flex-col">
-      {/* Logo */}
       <div className="px-6 py-5 border-b border-neutral-200">
         <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
-        <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
+      <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
+        {!isAdvisor && (
+          <span className="mt-1.5 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+            {TIER_NAMES[tier as 1|2|3] ?? 'Starter'} Plan
+          </span>
+        )}
       </div>
-
-      {/* Nav items */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
+          const locked = isLocked(item.feature)
           return (
             <Link
               key={item.href}
@@ -56,11 +88,18 @@ export function SidebarNav({ user, role }: { user: User; role?: string }) {
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                  : locked
+                    ? 'text-neutral-400 hover:bg-neutral-50'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              {item.label}
+              <span className="flex-1 truncate">{item.label}</span>
+              {locked && (
+                <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                  🔒 {lockLabel(item.feature)}
+                </span>
+              )}
             </Link>
           )
         })}
@@ -91,8 +130,6 @@ export function SidebarNav({ user, role }: { user: User; role?: string }) {
           </Link>
         )}
       </nav>
-
-      {/* Sign out */}
       <div className="px-3 py-4 border-t border-neutral-200">
         <button
           onClick={handleSignOut}

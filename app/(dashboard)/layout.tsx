@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
 import { TrialBanner } from './_components/trial-banner'
+import { getUserAccess } from '@/lib/get-user-access'
 
 export default async function DashboardLayout({
   children,
@@ -10,7 +11,6 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) {
     redirect('/login')
   }
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
     ? new Date(profile.trial_started_at)
     : null
   const trialExpiry = trialStarted
-    ? new Date(trialStarted.getTime() + 15 * 60 * 1000) // 15 minutes
+    ? new Date(trialStarted.getTime() + 15 * 60 * 1000)
     : null
   const now = new Date()
   const trialActive = trialExpiry ? now < trialExpiry : false
@@ -42,7 +42,7 @@ export default async function DashboardLayout({
 
   const isAdvisor = profile?.role === 'advisor'
 
-  // Check if user is an advisor client (only when not an advisor)
+  // Check if user is an advisor client
   let isAdvisorClient = false
   if (!isAdvisor) {
     const { data: clientRow } = await supabase
@@ -53,17 +53,24 @@ export default async function DashboardLayout({
       .maybeSingle()
     isAdvisorClient = !!clientRow
   }
-  const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive
 
+  const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive
   if (!hasAccess) {
     redirect('/billing')
   }
 
+  // Get user tier for sidebar gating
+  const access = await getUserAccess()
   const showBanner = !isAdmin && !isAdvisor && !isAdvisorClient && !isActive && trialActive
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
-      <SidebarNav user={user} role={profile?.role} />
+      <SidebarNav
+        user={user}
+        role={profile?.role}
+        tier={access.tier}
+        isAdvisor={isAdvisor || isAdvisorClient}
+      />
       <div className="flex flex-1 flex-col overflow-y-auto">
         {showBanner && (
           <TrialBanner

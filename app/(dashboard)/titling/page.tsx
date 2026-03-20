@@ -1,8 +1,20 @@
+import { getUserAccess } from '@/lib/get-user-access'
+import { GatedPage } from '@/components/gated-page'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import TitlingClient from './_titling-client'
 
 export default async function TitlingPage() {
+  const access = await getUserAccess()
+  if (access.tier < 3) {
+    return (
+      <GatedPage requiredTier={3} currentTier={access.tier} featureName="Titling & Beneficiaries">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <h1 className="text-2xl font-bold text-neutral-900">Titling & Beneficiaries</h1>
+        </div>
+      </GatedPage>
+    )
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
