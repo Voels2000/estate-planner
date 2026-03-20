@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveConsumerTier } from '@/lib/tiers'
 
 export type UserAccess = {
@@ -12,15 +13,13 @@ export type UserAccess = {
 export async function getUserAccess(): Promise<UserAccess> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  // Temp admin bypass
-  if (user?.id === '854051be-3aac-4d43-8062-df414a7055e1') {
-    return { tier: 3, isAdvisor: true, isAdvisorClient: false, isTrial: false, subscriptionStatus: 'active' }
-  }
   if (!user) {
     return { tier: 0, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus: null }
   }
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS for profile lookup
+  const admin = createAdminClient()
+  const { data: profile } = await admin
     .from('profiles')
     .select('role, subscription_status, subscription_plan, consumer_tier, trial_start')
     .eq('id', user.id)
@@ -33,7 +32,7 @@ export async function getUserAccess(): Promise<UserAccess> {
 
   let isAdvisorClient = false
   if (!isAdvisor) {
-    const { data: clientRow } = await supabase
+    const { data: clientRow } = await admin
       .from('advisor_clients')
       .select('id')
       .eq('client_id', user.id)
