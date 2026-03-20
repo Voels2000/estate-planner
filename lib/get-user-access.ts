@@ -17,6 +17,10 @@ export async function getUserAccess(): Promise<UserAccess> {
     return { tier: 0, isAdvisor: false, isAdvisorClient: false, isTrial: false, subscriptionStatus: null }
   }
 
+  // Temp bypass for admin testing
+  if (user.id === '854051be-3aac-4d43-8062-df414a7055e1') {
+    return { tier: 3, isAdvisor: true, isAdvisorClient: false, isTrial: false, subscriptionStatus: 'active' }
+  }
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
