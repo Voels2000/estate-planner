@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/rmd', label: 'RMD Calculator', icon: '📋' },
   { href: '/roth', label: 'Roth Conversion Strategy', icon: '🔄' },
   { href: '/real-estate', label: 'Real Estate', icon: '🏠' },
+  { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜' },
   { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️' },
   { href: '/import', label: 'Import Data', icon: '📥' },
   { href: '/billing', label: 'Billing', icon: '💳' },

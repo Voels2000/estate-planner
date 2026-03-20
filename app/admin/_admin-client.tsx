@@ -41,6 +41,14 @@ type CategoryItem = {
 
 type CategoryTable = 'asset_types' | 'liability_types' | 'income_types' | 'expense_types'
 
+type TitlingCategory = {
+  value: string
+  label: string
+  icon: string
+  sort_order: number
+  is_active: boolean
+}
+
 type Props = {
   totalUsers: number
   newToday: number
@@ -62,6 +70,7 @@ type Props = {
   liabilityTypes: CategoryItem[]
   incomeTypes: CategoryItem[]
   expenseTypes: CategoryItem[]
+  titlingCategories: TitlingCategory[]
 }
 
 type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'debug'
@@ -73,6 +82,7 @@ export function AdminClient({
   liabilityTypes: initialLiabilityTypes,
   incomeTypes: initialIncomeTypes,
   expenseTypes: initialExpenseTypes,
+  titlingCategories: initialTitlingCategories,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -97,6 +107,7 @@ export function AdminClient({
   })
   const [savingCategory, setSavingCategory] = useState<string | null>(null)
   const [savedCategory, setSavedCategory] = useState<string | null>(null)
+  const [titlingCategories, setTitlingCategories] = useState<TitlingCategory[]>(initialTitlingCategories)
   const [categoryError, setCategoryError] = useState<string | null>(null)
   const [addingTo, setAddingTo] = useState<CategoryTable | null>(null)
   const [newLabel, setNewLabel] = useState('')
@@ -150,6 +161,60 @@ export function AdminClient({
       setNewValue('')
     } catch (err) {
       setCategoryError(err instanceof Error ? err.message : 'Failed to add category.')
+    }
+  }
+
+  async function handleDeleteTitlingCategory(value: string) {
+    setCategoryError(null)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('titling_asset_categories')
+        .delete()
+        .eq('value', value)
+      if (error) throw error
+      setTitlingCategories(prev => prev.filter(c => c.value !== value))
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to delete.')
+    }
+  }
+
+  function updateTitlingCategory(value: string, field: keyof TitlingCategory, newVal: string | boolean | number) {
+    setTitlingCategories(prev => prev.map(item =>
+      item.value === value ? { ...item, [field]: newVal } : item
+    ))
+  }
+
+  async function handleSaveTitlingCategory(item: TitlingCategory) {
+    setCategoryError(null)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('titling_asset_categories')
+        .update({ label: item.label, icon: item.icon, sort_order: item.sort_order, is_active: item.is_active })
+        .eq('value', item.value)
+      if (error) throw error
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to save.')
+    }
+  }
+
+  async function handleAddTitlingCategory(label: string, value: string, icon: string) {
+    if (!label.trim()) return
+    const slug = value.trim()
+      ? value.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+      : label.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    if (!slug) return
+    setCategoryError(null)
+    const maxOrder = Math.max(0, ...titlingCategories.map(i => i.sort_order))
+    const newItem: TitlingCategory = { value: slug, label: label.trim(), icon: icon.trim() || '📄', sort_order: maxOrder + 10, is_active: true }
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('titling_asset_categories').insert(newItem)
+      if (error) throw error
+      setTitlingCategories(prev => [...prev, newItem].sort((a, b) => a.sort_order - b.sort_order))
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to add.')
     }
   }
 
@@ -503,6 +568,16 @@ export function AdminClient({
               </div>
             </div>
           ))}
+
+          {/* Titling Asset Categories */}
+          <TitlingCategoriesSection
+            categories={titlingCategories}
+            error={categoryError}
+            onUpdate={updateTitlingCategory}
+            onSave={handleSaveTitlingCategory}
+            onAdd={handleAddTitlingCategory}
+            onDelete={handleDeleteTitlingCategory}
+          />
         </div>
       )}
 
@@ -598,7 +673,7 @@ function FeedbackCard({ feedback, profiles }: { feedback: Feedback; profiles: Pr
         <span className="text-xs text-neutral-400">{user ? (user.full_name ?? user.email) : 'Anonymous'}</span>
         <span className="text-xs text-neutral-300">•</span>
         <span className="text-xs text-neutral-400">
-          {new Date(feedback.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          {new Date(feedback.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
       </div>
     </div>
@@ -610,6 +685,143 @@ function EmptyState({ icon, message }: { icon: string; message: string }) {
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
       <div className="text-4xl mb-3">{icon}</div>
       <p className="text-sm font-medium text-neutral-600">{message}</p>
+    </div>
+  )
+}
+
+// ─── Titling Categories Section ───────────────────────────────────────────────
+
+function TitlingCategoriesSection({
+  categories, error, onUpdate, onSave, onAdd, onDelete,
+}: {
+  categories: TitlingCategory[]
+  error: string | null
+  onUpdate: (value: string, field: keyof TitlingCategory, newVal: string | boolean | number) => void
+  onSave: (item: TitlingCategory) => void
+  onAdd: (label: string, value: string, icon: string) => void
+  onDelete: (value: string) => void
+}) {
+  const [adding, setAdding] = useState(false)
+  const [newLabel, setNewLabel] = useState('')
+  const [newValue, setNewValue] = useState('')
+  const [newIcon, setNewIcon] = useState('📄')
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const iClass = 'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-base font-semibold text-neutral-900">Titling Asset Categories</h2>
+        <button
+          onClick={() => { setAdding(true); setNewLabel(''); setNewValue(''); setNewIcon('📄') }}
+          className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
+          + Add
+        </button>
+      </div>
+      <p className="text-sm text-neutral-500 mb-5">
+        Categories shown as tabs on the Titling page. Add new asset classes here and they appear automatically.
+      </p>
+      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+      {adding && (
+        <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <p className="text-xs font-semibold text-indigo-700 mb-3">New Category</p>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Display Label</label>
+              <input type="text" placeholder="e.g. Insurance" value={newLabel}
+                onChange={e => setNewLabel(e.target.value)} className={iClass} autoFocus />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Value / Slug</label>
+              <input type="text" placeholder="e.g. insurance"
+                value={newValue || newLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}
+                onChange={e => setNewValue(e.target.value)} className={iClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Icon (emoji)</label>
+              <input type="text" placeholder="📄" value={newIcon}
+                onChange={e => setNewIcon(e.target.value)} className={iClass} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (!newLabel.trim()) return
+                onAdd(newLabel, newValue, newIcon)
+                setAdding(false)
+                setNewLabel('')
+                setNewValue('')
+                setNewIcon('📄')
+              }}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
+              Add Category
+            </button>
+            <button
+              onClick={() => setAdding(false)}
+              className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Column headers */}
+      {categories.length > 0 && (
+        <div className="grid grid-cols-[2rem_1fr_1fr_1fr_5rem_4rem] gap-3 px-4 mb-1">
+          <div />
+          <p className="text-xs font-medium text-neutral-400">Label</p>
+          <p className="text-xs font-medium text-neutral-400">Icon</p>
+          <p className="text-xs font-medium text-neutral-400">Sort Order</p>
+          <p className="text-xs font-medium text-neutral-400">Active</p>
+          <div />
+        </div>
+      )}
+      <div className="space-y-2">
+        {categories.map(item => (
+          <div key={item.value} className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+            <span className="text-xl w-8 text-center">{item.icon}</span>
+            <div className="flex-1 grid grid-cols-3 gap-3">
+              <input type="text" value={item.label}
+                onChange={e => onUpdate(item.value, 'label', e.target.value)}
+                className={iClass} />
+              <input type="text" value={item.icon} placeholder="emoji"
+                onChange={e => onUpdate(item.value, 'icon', e.target.value)}
+                className={iClass} />
+              <input type="number" value={isNaN(item.sort_order) ? '' : item.sort_order}
+                onChange={e => onUpdate(item.value, 'sort_order', parseInt(e.target.value) || 0)}
+                className={iClass} />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs text-neutral-500 whitespace-nowrap">
+              <input type="checkbox" checked={item.is_active}
+                onChange={e => onUpdate(item.value, 'is_active', e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300" />
+              Active
+            </label>
+            {confirmDelete === item.value ? (
+              <span className="inline-flex items-center gap-1 text-xs whitespace-nowrap">
+                <button onClick={() => { onDelete(item.value); setConfirmDelete(null) }}
+                  className="text-red-600 font-medium hover:text-red-800">Yes</button>
+                <span className="text-neutral-300">|</span>
+                <button onClick={() => setConfirmDelete(null)}
+                  className="text-neutral-4 hover:text-neutral-600">No</button>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <button onClick={() => onSave(item)}
+                  className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
+                  Save
+                </button>
+                <button onClick={() => setConfirmDelete(item.value)}
+                  className="text-xs text-red-500 font-medium hover:text-red-700">
+                  Delete
+                </button>
+              </span>
+            )}
+          </div>
+        ))}
+        {categories.length === 0 && (
+          <p className="text-sm text-neutral-400 py-4 text-center">No categories yet.</p>
+        )}
+      </div>
     </div>
   )
 }

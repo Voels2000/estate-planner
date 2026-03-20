@@ -86,6 +86,36 @@ function netProceedsAfterSale(row: RealEstate): number {
   return Math.max(0, value - costs - mortgage)
 }
 
+/**
+ * Section 121 capital gain exclusion.
+ * $500,000 for married filing jointly (mfj / qw), $250,000 for all others.
+ * Requires is_primary_residence and at least 2 of last 5 years lived in.
+ */
+function section121Exclusion(row: RealEstate, filingStatus: string): number {
+  if (!row.is_primary_residence) return 0
+  const yearsLived = num(row.years_lived_in)
+  if (yearsLived < 2) return 0
+  // mfj and qualifying widow(er) get the full $500K exclusion
+  const isMfj = filingStatus === 'mfj' || filingStatus === 'qw' ||
+                filingStatus === 'married_filing_jointly' || filingStatus === 'married_joint'
+  return isMfj ? 500_000 : 250_000
+}
+
+/**
+ * Estimated taxable gain after Section 121 exclusion.
+ * Gain = current value - purchase price - selling costs.
+ * Taxable gain = max(0, gain - exclusion).
+ */
+function taxableGain(row: RealEstate, filingStatus: string): number {
+  const value = num(row.current_value)
+  const basis = row.purchase_price != null ? num(row.purchase_price) : value
+  const pct = row.selling_costs_pct != null ? num(row.selling_costs_pct) : 6
+  const costs = value * (pct / 100)
+  const totalGain = Math.max(0, value - basis - costs)
+  const exclusion = section121Exclusion(row, filingStatus)
+  return Math.max(0, totalGain - exclusion)
+}
+
 function formatDollars(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
@@ -94,12 +124,15 @@ type RealEstateClientProps = {
   initialProperties: RealEstate[]
   person1Name: string
   person2Name: string
+  /** Filing status short code from households table: mfj | mfs | hoh | qw | single */
+  filingStatus: string
 }
 
 export default function RealEstateClient({
   initialProperties,
   person1Name,
   person2Name,
+  filingStatus,
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
@@ -107,6 +140,11 @@ export default function RealEstateClient({
   const [editRow, setEditRow] = useState<RealEstate | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Section 121 exclusion amount label for display
+  const isMfj = filingStatus === 'mfj' || filingStatus === 'qw' ||
+                filingStatus === 'married_filing_jointly' || filingStatus === 'married_joint'
+  const exclusionAmount = isMfj ? 500_000 : 250_000
 
   async function loadData() {
     const supabase = createClient()
@@ -141,6 +179,9 @@ export default function RealEstateClient({
   const totalEquity = rows.reduce((s, r) => s + equity(r), 0)
   const totalNetProceeds = rows.reduce((s, r) => s + netProceedsAfterSale(r), 0)
 
+  // Primary residences that qualify for Section 121
+  const primaryResidences = rows.filter(r => r.is_primary_residence && num(r.years_lived_in) >= 2)
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -173,6 +214,22 @@ export default function RealEstateClient({
         />
       </div>
 
+      {/* Section 121 info banner */}
+      {primaryResidences.length > 0 && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50/40 px-4 py-3 flex items-start gap-3">
+          <span className="text-blue-500 mt-0.5">ℹ️</span>
+          <div>
+            <p className="text-sm font-medium text-blue-800">Section 121 Exclusion</p>
+            <p className="text-xs text-blue-600 mt-0.5">
+              Based on your <strong>{isMfj ? 'Married Filing Jointly' : 'Single / Other'}</strong> filing status,
+              your primary residence exclusion is{' '}
+              <strong>{formatDollars(exclusionAmount)}</strong>.
+              {' '}You must have lived in the home 2 of the last 5 years to qualify.
+            </p>
+          </div>
+        </div>
+      )}
+
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
       )}
@@ -194,6 +251,8 @@ export default function RealEstateClient({
                   'Value',
                   'Mortgage',
                   'Equity',
+                  'Sec. 121 Excl.',
+                  'Est. Taxable Gain',
                   'Sale year',
                   'Owner',
                   '',
@@ -208,68 +267,90 @@ export default function RealEstateClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {rows.map((row) => (
-                <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{row.name}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
-                    {formatDollars(num(row.current_value))}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">
-                    {formatDollars(num(row.mortgage_balance))}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900 whitespace-nowrap">
-                    {formatDollars(equity(row))}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {row.planned_sale_year != null ? row.planned_sale_year : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{ownerLabel(row.owner ?? 'person1')}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {confirmDeleteId === row.id ? (
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className="text-neutral-500">Delete?</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(row.id)}
-                          className="text-red-600 font-medium hover:text-red-800"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="text-neutral-400 hover:text-neutral-600"
-                        >
-                          No
-                        </button>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditRow(row)
-                            setShowModal(true)
-                          }}
-                          className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(row.id)}
-                          className="text-sm text-red-500 font-medium hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const excl = section121Exclusion(row, filingStatus)
+                const gain = taxableGain(row, filingStatus)
+                return (
+                  <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">{row.name}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
+                      {formatDollars(num(row.current_value))}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">
+                      {formatDollars(num(row.mortgage_balance))}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-neutral-900 whitespace-nowrap">
+                      {formatDollars(equity(row))}
+                    </td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                      {excl > 0 ? (
+                        <span className="text-green-600 font-medium">{formatDollars(excl)}</span>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                      {row.purchase_price != null ? (
+                        gain > 0 ? (
+                          <span className="text-amber-600 font-medium">{formatDollars(gain)}</span>
+                        ) : (
+                          <span className="text-green-600 font-medium">$0 (fully excluded)</span>
+                        )
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {row.planned_sale_year != null ? row.planned_sale_year : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">{ownerLabel(row.owner ?? 'person1')}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {confirmDeleteId === row.id ? (
+                        <span className="inline-flex items-center gap-2 text-sm">
+                          <span className="text-neutral-500">Delete?</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(row.id)}
+                            className="text-red-600 font-medium hover:text-red-800"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-neutral-400 hover:text-neutral-600"
+                          >
+                            No
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditRow(row)
+                              setShowModal(true)
+                            }}
+                            className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(row.id)}
+                            className="text-sm text-red-500 font-medium hover:text-red-700"
+                          >
+                            Delete
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -536,7 +617,12 @@ function RealEstateModal({
             </label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Years lived in</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Years lived in
+              {isPrimaryResidence && (
+                <span className="ml-1 text-xs font-normal text-blue-600">(2+ years required for Section 121)</span>
+              )}
+            </label>
             <input
               type="number"
               min="0"
@@ -544,7 +630,7 @@ function RealEstateModal({
               value={yearsLivedIn}
               onChange={(e) => setYearsLivedIn(e.target.value)}
               className={inputClass}
-              placeholder="For exclusion / tax planning"
+              placeholder="For Section 121 exclusion"
             />
           </div>
           <div>

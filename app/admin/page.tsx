@@ -54,6 +54,11 @@ export default async function AdminPage() {
     .select('value, label, sort_order, is_active')
     .order('sort_order')
 
+  const { data: titlingCategories } = await supabase
+    .from('titling_asset_categories')
+    .select('value, label, icon, sort_order, is_active')
+    .order('sort_order')
+
   // Feedback
   const { data: feedback } = await supabase
     .from('feedback')
@@ -104,6 +109,7 @@ export default async function AdminPage() {
       liabilityTypes={liabilityTypes ?? []}
       incomeTypes={incomeTypes ?? []}
       expenseTypes={expenseTypes ?? []}
+      titlingCategories={titlingCategories ?? []}
     />
   )
 }

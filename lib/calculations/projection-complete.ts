@@ -121,6 +121,8 @@ export type CompleteProjectionInput = {
     id: string
     category: string
     amount: number
+    start_year: number | null
+    end_year: number | null
     inflation_adjust: boolean
     owner: string
   }[]
@@ -582,8 +584,15 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     prevMagi = income_total
 
     // ── Expenses ───────────────────────────────────────────────────────────────
+    // FIX: Filter expenses by start_year and end_year before summing.
+    // Expenses outside their active date range are excluded for this projection year.
     let expenses_living = 0, expenses_healthcare = 0
     for (const exp of expenses) {
+      // Skip if this expense hasn't started yet
+      if (exp.start_year && year < exp.start_year) continue
+      // Skip if this expense has ended
+      if (exp.end_year && year > exp.end_year) continue
+
       const amount = exp.inflation_adjust ? exp.amount * inflationFactor : exp.amount
       if (exp.category === 'healthcare' || exp.category === 'medical') {
         expenses_healthcare += amount
@@ -687,13 +696,13 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       real_estate_primary: re_primary,
       real_estate_other:   re_other,
       real_estate_total:   re_total,
-      liabilities_mortgage: Math.round(mortgageBalance),
-      liabilities_other:    Math.round(otherDebt),
-      liabilities_total:    Math.round(liabilities_total),
+      liabilities_mortgage: mortgageBalance,
+      liabilities_other:    otherDebt,
+      liabilities_total,
       estate_excl_home: Math.round(estate_excl_home),
       estate_incl_home: Math.round(estate_incl_home),
       net_cash_flow: Math.round(net_cash_flow_pre),
-      net_worth: Math.round(net_worth),
+      net_worth:     Math.round(net_worth),
     })
   }
 

@@ -48,6 +48,8 @@ type RmdYearRow = {
   is_first_year_p2: boolean
 }
 
+const ROWS_PER_PAGE = 10
+
 const uniformFactors: Record<number, number> = {
   72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9,
   78: 22.0, 79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7,
@@ -104,7 +106,7 @@ function computePersonRmds(
       const totalIraRmd = Math.round((totalIraBal / factor) * 100) / 100
       const perIra = Math.round((totalIraRmd / iras.length) * 100) / 100
       for (const a of iras) {
-        accountResults.push({ asset_id: a.id, asset_name: a.name, asset_type: a.type, prior_year_balance: balances[a.id] ?? 0, owner_age: age, life_expectancy_factor: factor, rmd_amount: perIra, notes: [`IRA aggregation — total IRA RMD: ${formatDollars(totalIraRmd)}`, ...(isFirstYear ? ['First RMD year — deferrapr 1 available'] : [])] })
+        accountResults.push({ asset_id: a.id, asset_name: a.name, asset_type: a.type, prior_year_balance: balances[a.id] ?? 0, owner_age: age, life_expectancy_factor: factor, rmd_amount: perIra, notes: [`IRA aggregation — total IRA RMD: ${formatDollars(totalIraRmd)}`, ...(isFirstYear ? ['First RMD year — deferral to Apr 1 available'] : [])] })
       }
       totalRmd += totalIraRmd
     }
@@ -120,6 +122,7 @@ function computePersonRmds(
 export function RmdClient({ household, assets }: { household: Household | null; assets: Asset[] }) {
   const [rows, setRows] = useState<RmdYearRow[]>([])
   const [expandedYear, setExpandedYear] = useState<number | null>(null)
+  const [periodOffset, setPeriodOffset] = useState(0)
 
   useEffect(() => {
     if (!household) return
@@ -139,6 +142,14 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       return { year, p1_age: household.person1_birth_year ? year - household.person1_birth_year : null, p2_age: household.person2_birth_year ? year - household.person2_birth_year : null, p1_rmd: p1?.rmd ?? 0, p2_rmd: p2?.rmd ?? 0, total_rmd: (p1?.rmd ?? 0) + (p2?.rmd ?? 0), p1_accounts: p1?.accounts ?? [], p2_accounts: p2?.accounts ?? [], is_first_year_p1: p1?.isFirstYear ?? false, is_first_year_p2: p2?.isFirstYear ?? false }
     })
     setRows(combined)
+    // Reset to first page when data reloads — find page that contains current year
+    const currentYear = new Date().getFullYear()
+    const currentYearIdx = combined.findIndex(r => r.year === currentYear)
+    if (currentYearIdx >= 0) {
+      setPeriodOffset(Math.floor(currentYearIdx / ROWS_PER_PAGE))
+    } else {
+      setPeriodOffset(0)
+    }
   }, [household, assets])
 
   if (!household) return (
@@ -176,6 +187,12 @@ export function RmdClient({ household, assets }: { household: Household | null; 
   const p2Assets = household.has_spouse ? assets.filter(a => { const o = a.owner?.trim().toLowerCase() ?? ''; return o === 'person2' || o === p2Name?.toLowerCase() || o === household.person2_name?.trim().toLowerCase() }) : []
   const pooledAssets = assets.filter(a => !p1Assets.includes(a) && !p2Assets.includes(a))
 
+  // Pagination
+  const totalPages = Math.ceil(rows.length / ROWS_PER_PAGE)
+  const visibleRows = rows.slice(periodOffset * ROWS_PER_PAGE, (periodOffset + 1) * ROWS_PER_PAGE)
+  const periodStartYear = visibleRows[0]?.year ?? currentYear
+  const periodEndYear = visibleRows[visibleRows.length - 1]?.year ?? currentYear
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-8">
@@ -209,7 +226,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
               <p className="text-xs font-semibold text-neutral-500 mb-2">{group.name}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {group.accts.map(a => (
-                  <div key={a.id} className={`rounded-xl border px-4 py-3 lex items-center justify-between ${group.color}`}>
+                  <div key={a.id} className={`rounded-xl border px-4 py-3 flex items-center justify-between ${group.color}`}>
                     <div>
                       <p className="text-sm font-medium text-neutral-900">{a.name}</p>
                       <p className="text-xs text-neutral-400 mt-0.5 capitalize">{a.type.replace(/_/g, ' ')}</p>
@@ -224,11 +241,17 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       </div>
 
       <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-100">
-          <h2 className="text-base font-semibold text-neutral-900">Year-by-Year RMD Projection</h2>
-          <p className="text-xs text-neutral-400 mt-0.5">Click a row to see per-account breakdown</p>
+        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Year-by-Year RMD Projection</h2>
+            <p className="text-xs text-neutral-400 mt-0.5">Click a row to see per-account breakdown</p>
+          </div>
+          {/* Period label */}
+          <span className="text-sm text-neutral-500 font-medium">
+            {periodStartYear} – {periodEndYear}
+          </span>
         </div>
-        <div className="overflow-auto max-h-[500px]">
+        <div className="overflow-auto">
           <table className="min-w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50 sticky top-0">
               <tr>
@@ -244,7 +267,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {rows.map(r => (
+              {visibleRows.map(r => (
                 <Fragment key={r.year}>
                   <tr onClick={() => setExpandedYear(expandedYear === r.year ? null : r.year)} className={`cursor-pointer hover:bg-neutral-50 transition-colors ${r.year === currentYear ? 'bg-blue-50/50' : ''}`}>
                     <td className="px-4 py-3 text-sm font-medium text-neutral-900">
@@ -265,7 +288,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                   {expandedYear === r.year && (
                     <tr>
                       <td colSpan={p2Name ? 7 : 5} className="px-4 py-3 bg-neutral-50">
-                        <div className="grid grid-cols-1s-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {r.p1_accounts.length > 0 && (
                             <div>
                               <p className="text-xs font-semibold text-blue-600 mb-2">{p1Name}</p>
@@ -315,7 +338,39 @@ export function RmdClient({ household, assets }: { household: Household | null; 
             </tbody>
           </table>
         </div>
+
+        {/* ── Pagination controls ── */}
+        <div className="px-6 py-4 border-t border-neutral-100 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => {
+              setPeriodOffset(p => Math.max(0, p - 1))
+              setExpandedYear(null)
+            }}
+            disabled={periodOffset === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            ← Previous
+          </button>
+
+          <span className="text-xs text-neutral-400">
+            Period {periodOffset + 1} of {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPeriodOffset(p => Math.min(totalPages - 1, p + 1))
+              setExpandedYear(null)
+            }}
+            disabled={periodOffset >= totalPages - 1}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            Next →
+          </button>
+        </div>
       </div>
+
       <p className="mt-4 text-xs text-neutral-400">
         * RMD calculations use the IRS Uniform Lifetime Table (2022 final regulations).
         Balances shown are projections at {household.growth_rate_retirement ?? 5}% annual growth.

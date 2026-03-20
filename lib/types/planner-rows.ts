@@ -37,6 +37,8 @@ export type ExpenseRowSelect = {
   id: string
   category: string
   amount: number
+  start_year: number | null
+  end_year: number | null
   inflation_adjust: boolean
   owner: string
 }
