@@ -48,7 +48,7 @@ export async function GET() {
   const p2_social_security_monthly = household?.person2_ss_benefit_67 ?? null
 
   // Portfolio
-  const investable_types = ['brokerage', 'retirement', '401k', 'ira', 'roth', 'savings', 'cash', 'other']
+  const investable_types = ['brokerage', 'retirement', '401k', 'ira', 'roth', 'savings', 'cash', 'other', 'bank', 'hsa']
   const current_portfolio = assets && assets.length > 0
     ? assets
         .filter(a => investable_types.some(t => a.type?.toLowerCase().includes(t)))
