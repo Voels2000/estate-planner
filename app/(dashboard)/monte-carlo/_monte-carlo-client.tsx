@@ -190,6 +190,170 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   )
 }
 
+
+function CompareMedianChart({ runA, runB }: { runA: SavedRun; runB: SavedRun }) {
+  const dataA = new Map(runA.percentile_50.map(pt => [pt.age, pt.balance]))
+  const dataB = new Map(runB.percentile_50.map(pt => [pt.age, pt.balance]))
+  const allAges = [...runA.percentile_50.map(p => p.age), ...runB.percentile_50.map(p => p.age)]
+  const ages = Array.from(new Set(allAges)).sort((a, b) => a - b)
+  const data = ages.map(age => ({ age, runA: dataA.get(age) ?? null, runB: dataB.get(age) ?? null }))
+  const labelA = runA.label || 'Run A'
+  const labelB = runB.label || 'Run B'
+  return (
+    <div>
+      <div className="flex gap-6 mb-3 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-indigo-500 inline-block rounded" />{labelA} median</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-amber-500 inline-block rounded" />{labelB} median</span>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="cgA" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="cgB" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey="age" tick={{ fontSize: 11 }} label={{ value: 'Age', position: 'insideBottom', offset: -2 }} />
+          <YAxis tickFormatter={v => formatCurrency(v)} tick={{ fontSize: 11 }} width={70} />
+          <Tooltip formatter={(v, name) => [formatCurrency(Number(v ?? 0)), name === 'runA' ? labelA : labelB]} labelFormatter={l => `Age ${l}`} />
+          <ReferenceLine x={runA.retirement_age} stroke="#6366f1" strokeDasharray="4 4" strokeOpacity={0.5} />
+          {runB.retirement_age !== runA.retirement_age && (
+            <ReferenceLine x={runB.retirement_age} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.5} />
+          )}
+          <Area type="monotone" dataKey="runA" stroke="#6366f1" fill="url(#cgA)" strokeWidth={2} dot={false} connectNulls />
+          <Area type="monotone" dataKey="runB" stroke="#f59e0b" fill="url(#cgB)" strokeWidth={2} dot={false} connectNulls />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function AssumptionsDiff({ runA, runB }: { runA: SavedRun; runB: SavedRun }) {
+  const labelA = runA.label || 'Run A'
+  const labelB = runB.label || 'Run B'
+  type Row = { label: string; a: string; b: string; diff: boolean; delta?: string; deltaPos?: boolean }
+  const rows: Row[] = [
+    { label: 'Success Rate', a: `${runA.success_rate}%`, b: `${runB.success_rate}%`, diff: runA.success_rate !== runB.success_rate, delta: `${runB.success_rate - runA.success_rate >= 0 ? '+' : ''}${runB.success_rate - runA.success_rate}%`, deltaPos: runB.success_rate >= runA.success_rate },
+    { label: 'Median End Balance', a: formatCurrency(runA.median_balance), b: formatCurrency(runB.median_balance), diff: runA.median_balance !== runB.median_balance, delta: `${runB.median_balance >= runA.median_balance ? '+' : ''}${formatCurrency(runB.median_balance - runA.median_balance)}`, deltaPos: runB.median_balance >= runA.median_balance },
+    { label: 'Worst Case', a: formatCurrency(runA.worst_case_balance), b: formatCurrency(runB.worst_case_balance), diff: runA.worst_case_balance !== runB.worst_case_balance, delta: `${runB.worst_case_balance >= runA.worst_case_balance ? '+' : ''}${formatCurrency(runB.worst_case_balance - runA.worst_case_balance)}`, deltaPos: runB.worst_case_balance >= runA.worst_case_balance },
+    { label: 'Withdrawal Rate', a: `${runA.safe_withdrawal_rate}%`, b: `${runB.safe_withdrawal_rate}%`, diff: runA.safe_withdrawal_rate !== runB.safe_withdrawal_rate },
+    { label: 'Retirement Age', a: String(runA.retirement_age), b: String(runB.retirement_age), diff: runA.retirement_age !== runB.retirement_age },
+    { label: 'Annual Spending', a: formatCurrency(runA.annual_spending), b: formatCurrency(runB.annual_spending), diff: runA.annual_spending !== runB.annual_spending },
+    { label: 'Plan End Age', a: String(runA.plan_end_age), b: String(runB.plan_end_age), diff: runA.plan_end_age !== runB.plan_end_age },
+    { label: 'Plan Type', a: runA.is_joint ? 'Joint' : 'Individual', b: runB.is_joint ? 'Joint' : 'Individual', diff: runA.is_joint !== runB.is_joint },
+  ]
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase tracking-wide w-44">Metric</th>
+            <th className="text-right py-2 px-4 text-xs font-medium text-indigo-600 uppercase tracking-wide">{labelA}</th>
+            <th className="text-right py-2 px-4 text-xs font-medium text-amber-600 uppercase tracking-wide">{labelB}</th>
+            <th className="text-right py-2 pl-4 text-xs font-medium text-gray-500 uppercase tracking-wide w-24">Change</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map(row => (
+            <tr key={row.label} className={row.diff ? 'bg-amber-50/40' : ''}>
+              <td className="py-2.5 pr-4 text-gray-600 font-medium">{row.label}</td>
+              <td className="py-2.5 px-4 text-right font-semibold text-indigo-700">{row.a}</td>
+              <td className="py-2.5 px-4 text-right font-semibold text-amber-700">{row.b}</td>
+              <td className="py-2.5 pl-4 text-right text-xs">
+                {row.delta
+                  ? <span className={row.deltaPos ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}>{row.delta}</span>
+                  : row.diff ? <span className="text-amber-600">different</span> : <span className="text-gray-300">same</span>
+                }
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: { history: SavedRun[]; compareA: SavedRun | null; compareB: SavedRun | null; setCompareA: (r: SavedRun | null) => void; setCompareB: (r: SavedRun | null) => void }) {
+  if (history.length < 2) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center space-y-2">
+        <p className="text-3xl">📊</p>
+        <p className="text-gray-600 text-sm font-medium">You need at least 2 saved runs to compare</p>
+        <p className="text-gray-400 text-xs">Run a simulation, label it, then run another with different assumptions.</p>
+      </div>
+    )
+  }
+  const runA = compareA ?? history[0]
+  const runB = compareB ?? history[1]
+  const labelA = runA.label || 'Run A'
+  const labelB = runB.label || 'Run B'
+  const successDiff = runB.success_rate - runA.success_rate
+  const balanceDiff = runB.median_balance - runA.median_balance
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <p className="text-xs font-semiboltext-gray-500 uppercase tracking-wide mb-3">Select runs to compare</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-indigo-600 mb-1.5">Run A (indigo)</label>
+            <select value={runA.id} onChange={e => setCompareA(history.find(r => r.id === e.target.value) ?? null)} className="w-full border border-indigo-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              {history.map(r => <option key={r.id} value={r.id}>{r.label || 'Unnamed'} — {r.success_rate}% · {new Date(r.created_at).toLocaleDateString()}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-amber-600 mb-1.5">Run B (amber)</label>
+            <select value={runB.id} onChange={e => setCompareB(history.find(r => r.id === e.target.value) ?? null)} className="w-full border border-amber-200 rounded-lg py-2 px-3 text-sm focus:outlinone focus:ring-2 focus:ring-amber-400">
+              {history.map(r => <option key={r.id} value={r.id}>{r.label || 'Unnamed'} — {r.success_rate}% · {new Date(r.created_at).toLocaleDateString()}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-indigo-100 p-5 flex flex-col items-center gap-2">
+          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">{labelA}</p>
+          <SuccessGauge rate={runA.success_rate} />
+          <p className="text-xs text-gray-400 text-center">{runA.is_joint ? 'Joint' : 'Individual'} through age {runA.plan_end_age}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-amber-100 p-5 flex flex-col items-center gap-2">
+          <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">{labelB}</p>
+          <SuccessGauge rate={runB.success_rate} />
+          <p className="text-xext-gray-400 text-center">{runB.is_joint ? 'Joint' : 'Individual'} through age {runB.plan_end_age}</p>
+        </div>
+      </div>
+      {runA.id !== runB.id && (
+        <div className={`rounded-xl border p-4 text-sm ${successDiff > 0 ? 'bg-green-50 border-green-200 text-green-800' : successDiff < 0 ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+          <span className="font-semibold">{labelB}</span> has a <span className="font-bold">{Math.abs(successDiff)}% {successDiff >= 0 ? 'higher' : 'lower'} success rate</span> and a <span className="font-bold">{balanceDiff >= 0 ? '+' : ''}{formatCurrency(balanceDiff)} median end balance</span> compared to <span className="font-semibold">{labelA}</span>.
+        </div>
+      )}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-4">Median Portfolio Trajectory</h3>
+        <CompareMedianChart runA={runA} runB={runB} />
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-4">Metrics and Assumptions</h3>
+        <AssumptionsDiff runA={runA} runB={runB} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+          <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">{labelA} Analysis</p>
+          <p className="text-sm text-indigo-800">{runA.insight}</p>
+          <p className="text-sm text-indigo-700 mt-1">{runA.insight_boost}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">{labelB} Analysis</p>
+          <p className="text-sm text-amber-800">{runB.insight}</p>
+          <p className="text-sm text-amber-700 mt-1">{runB.insight_boost}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function MonteCarloClient() {
   const [step, setStep]             = useState<Step>('portfolio')
   const [inputs, setInputs]         = useState<MonteCarloInputs>(EMPTY_INPUTS)
@@ -203,6 +367,10 @@ export function MonteCarloClient() {
   const [label, setLabel]           = useState('')
   const [p1Name, setP1Name]         = useState('Person 1')
   const [p2Name, setP2Name]         = useState('Person 2')
+
+  const [activeTab, setActiveTab] = useState<'simulate' | 'compare'>('simulate')
+  const [compareA, setCompareA] = useState<SavedRun | null>(null)
+  const [compareB, setCompareB] = useState<SavedRun | null>(null)
 
   const set = (k: keyof MonteCarloInputs, v: number | boolean) =>
     setInputs(prev => ({ ...prev, [k]: v }))
@@ -279,6 +447,8 @@ export function MonteCarloClient() {
     await fetch(`/api/monte-carlo/${id}`, { method: 'DELETE' })
     setHistory(prev => prev.filter(r => r.id !== id))
     if (result?.id === id) setResult(null)
+    if (compareA?.id === id) setCompareA(null)
+    if (compareB?.id === id) setCompareB(null)
   }
 
   const stepIdx = STEPS.findIndex(s => s.key === step)
@@ -294,11 +464,23 @@ export function MonteCarloClient() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Monte Carlo Simulations</h1>
-        <p className="text-gray-500 mt-1">Probabilistic retirement modeling across 1,000+ market scenarios</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Monte Carlo Simulations</h1>
+          <p className="text-gray-500 mt-1">Probabilistic retirement modeling across 1,000+ market scenarios</p>
+        </div>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 shrink-0 mt-1">
+          <button onClick={() => setActiveTab('simulate')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'simulate' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Simulate</button>
+          <button onClick={() => setActiveTab('compare')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'compare' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Compare {history.length >= 2 ? `(${history.length})` : ''}</button>
+        </div>
       </div>
 
+      {activeTab === 'compare' && (
+        <CompareView history={history} compareA={compareA} compareB={compareB} setCompareA={setCompareA} setCompareB={setCompareB} />
+      )}
+
+      {activeTab === 'simulate' && (
+      <>
       {summary && (
         <div className="rounded-xl border p-4 space-y-2 bg-indigo-50 border-indigo-100">
           <p className="text-sm font-semibold text-indigo-900">We pre-filled what we could from your profile</p>
@@ -522,7 +704,7 @@ export function MonteCarloClient() {
           {result && !loading && (
             <>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex its-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-gray-700">
                     {result.is_joint ? 'Joint Retirement Plan' : 'Retirement Plan'} — Plan through age {result.plan_end_age}
                   </h3>
@@ -572,12 +754,15 @@ export function MonteCarloClient() {
                   <span className={`text-sm font-semibold ${run.success_rate >= 90 ? 'text-green-600' : run.success_rate >= 75 ? 'text-amber-600' : 'texted-500'}`}>
                     {run.success_rate}% success
                   </span>
-                  <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-300 hover:text-red-400 text-xs">X</button>
+                  <button onClick={e => { e.stopPropagation(); setCompareA(run); setActiveTab('compare') }} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium px-2 py-0.5 border border-indigo-200 rounded">Compare</button>
+                  <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-300 hover:text-red-400 text-xs px-1">✕</button>
                 </div>
               </div>
             ))}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )
