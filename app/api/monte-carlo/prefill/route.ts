@@ -21,7 +21,7 @@ export async function GET() {
     { data: income },
     { data: expenses },
   ] = await Promise.all([
-    admin.from('households').select('person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation').eq('owner_id', user.id).single(),
+    admin.from('households').select('person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation').eq('owner_id', user.id).single(),
     admin.from('assets').select('type, value').eq('owner_id', user.id),
     admin.from('income').select('source, amount, ss_person').eq('owner_id', user.id),
     admin.from('expenses').select('amount').eq('owner_id', user.id),
@@ -108,6 +108,8 @@ export async function GET() {
   const missingCount   = Object.values(confidence).filter(v => v === 'missing').length
 
   return NextResponse.json({
+    person1_name: household?.person1_name ?? null,
+    person2_name: household?.person2_name ?? null,
     prefill: {
       birth_year,
       current_age,

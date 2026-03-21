@@ -201,6 +201,8 @@ export function MonteCarloClient() {
   const [prefilling, setPrefilling] = useState(true)
   const [error, setError]           = useState<string | null>(null)
   const [label, setLabel]           = useState('')
+  const [p1Name, setP1Name]         = useState('Person 1')
+  const [p2Name, setP2Name]         = useState('Person 2')
 
   const set = (k: keyof MonteCarloInputs, v: number | boolean) =>
     setInputs(prev => ({ ...prev, [k]: v }))
@@ -241,6 +243,8 @@ export function MonteCarloClient() {
           annual_spending:             p.annual_spending          ?? prev.annual_spending,
           survivor_spending_pct:       p.survivor_spending_pct    ?? prev.survivor_spending_pct,
         }))
+        if (prefillData.person1_name) setP1Name(prefillData.person1_name)
+        if (prefillData.person2_name) setP2Name(prefillData.person2_name)
         setConfidence(prefillData.confidence ?? {})
         setSummary(prefillData.summary ?? null)
       }
@@ -328,7 +332,7 @@ export function MonteCarloClient() {
 
           {step === 'portfolio' && (
             <div className="space-y-4">
-              <SectionHeader title="Person 1" />
+              <SectionHeader title={p1Name} />
               <Field label="Current Age" confidence={confidence.current_age}>
                 <NumInput value={inputs.current_age} onChange={v => set('current_age', v)} step={1} />
               </Field>
@@ -341,7 +345,7 @@ export function MonteCarloClient() {
 
               {inputs.has_spouse && (
                 <>
-                  <SectionHeader title="Person 2 (Spouse)" />
+                  <SectionHeader title={`${p2Name} (Spouse)`} />
                   <Field label="Spouse Current Age" confidence={confidence.p2_current_age}>
                     <NumInput value={inputs.p2_current_age} onChange={v => set('p2_current_age', v)} step={1} />
                   </Field>
@@ -395,7 +399,7 @@ export function MonteCarloClient() {
                 </Field>
               )}
 
-              <SectionHeader title="Person 1 — Social Security" />
+              <SectionHeader title={`${p1Name} — Social Security`} />
               <Field label="Monthly SS Benefit" confidence={confidence.social_security_monthly}>
                 <NumInput value={inputs.social_security_monthly} onChange={v => set('social_security_monthly', v)} prefix="$" step={100} />
               </Field>
@@ -405,7 +409,7 @@ export function MonteCarloClient() {
 
               {inputs.has_spouse && (
                 <>
-                  <SectionHeader title="Person 2 — Social Security" subtitle="Survivor keeps the higher of the two benefits" />
+                  <SectionHeader title={`${p2Name} — Social Security`} subtitle="Survivor keeps the higher of the two benefits" />
                   <Field label="Spouse Monthly SS Benefit" confidence={confidence.p2_social_security_monthly}>
                     <NumInput value={inputs.p2_social_security_monthly} onChange={v => set('p2_social_security_monthly', v)} prefix="$" step={100} />
                   </Field>
