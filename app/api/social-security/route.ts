@@ -65,7 +65,7 @@ export async function GET() {
     const { data: household, error: hhError } = await supabase
       .from('households')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .single()
 
     if (hhError || !household) {
