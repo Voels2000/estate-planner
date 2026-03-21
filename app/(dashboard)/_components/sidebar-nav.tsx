@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/roth',        label: 'Roth Conversion Strategy',            icon: '🔄', feature: 'roth' },
   { href: '/real-estate', label: 'Real Estate',                         icon: '🏠', feature: 'real-estate' },
   { href: '/insurance',   label: 'Insurance Gap Analysis',              icon: '🛡️', feature: 'insurance' },
+  { href: '/monte-carlo', label: 'Monte Carlo Simulations',              icon: '📊', feature: 'monte-carlo' },
   { href: '/import',      label: 'Import Data',                         icon: '📥', feature: 'import' },
   { href: '/titling',     label: 'Titling & Beneficiaries',             icon: '📜', feature: 'titling' },
   { href: '/estate-tax',  label: 'Estate Tax',                          icon: '⚖️', feature: 'estate-tax' },
