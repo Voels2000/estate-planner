@@ -578,7 +578,7 @@ export function MonteCarloClient() {
                     />
                     <span className="text-sm font-medium w-10 text-right">{inputs.survivor_spending_pct}%</span>
                   </div>
-                  <p className="texxs text-gray-400">Industry standard is 70-80% of joint spending</p>
+                  <p className="text-xs text-gray-400">Industry standard is 70-80% of joint spending</p>
                 </Field>
               )}
 
@@ -586,7 +586,7 @@ export function MonteCarloClient() {
               <div className="space-y-3">
                 <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5">
                   <p className="text-xs font-medium text-indigo-800 mb-1">How spending schedules work</p>
-                  <p className="text-xs text-indigo-700 leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at whicthe change takes effect and enter your new total annual household spending from that point forward.</p>
+                  <p className="text-xs text-indigo-700 leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at which the change takes effect and enter your new total annual household spending from that point forward.</p>
                 </div>
                 {(inputs.spending_schedule ?? []).map((entry, idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -811,7 +811,7 @@ export function MonteCarloClient() {
                     {run.success_rate}% success
                   </span>
                   <button onClick={e => { e.stopPropagation(); setCompareA(run); setActiveTab('compare') }} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium px-2 py-0.5 border border-indigo-200 rounded">Compare</button>
-                  <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-300 hover:text-red-400 text-xs px-1">✕</button>
+                  <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-400 hover:text-red-500 text-sm px-1 font-medium">✕</button>
                 </div>
               </div>
             ))}
