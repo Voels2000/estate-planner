@@ -588,6 +588,13 @@ export function MonteCarloClient() {
                   <p className="text-xs font-medium text-indigo-800 mb-1">How spending schedules work</p>
                   <p className="text-xs text-indigo-700 leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at which the change takes effect and enter your new total annual household spending from that point forward.</p>
                 </div>
+                {(inputs.spending_schedule ?? []).length === 0 && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-xs text-gray-400">
+                    <span className="w-20">e.g. age 72</span>
+                    <span className="flex-1">e.g. $120,000 (mortgage paid off)</span>
+                    <span className="text-gray-300 text-xs">← example only</span>
+                  </div>
+                )}
                 {(inputs.spending_schedule ?? []).map((entry, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 w-16 shrink-0">From age</span>
