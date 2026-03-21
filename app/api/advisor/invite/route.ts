@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (!advisor || advisor.role !== 'advisor') {
+    if (!advisor || (advisor.role !== 'advisor' && advisor.role !== 'financial_advisor')) {
       return NextResponse.json({ error: 'Only advisors can send invites' }, { status: 403 })
     }
 
