@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 type Scenario = {
   age: number
   monthly: number
@@ -163,7 +165,24 @@ function BreakevenChart({ person, compareAge }: { person: PersonData; compareAge
   )
 }
 
-export function SSClient({ data }: { data: SSData | null }) {
+export function SSClient({ data: initialData }: { data: SSData | null }) {
+  const [data, setData] = useState<SSData | null>(initialData)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/social-security')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <p className='text-neutral-500'>Loading Social Security data...</p>
+      </div>
+    )
+  }
   if (!data) {
     return (
       <div className='rounded-xl border border-neutral-200 p-8 text-center text-neutral-500'>
