@@ -75,6 +75,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   import:       2,
 
   // Tier 3 — Estate only
+  'social-security': 2,
   'estate-tax': 3,
   titling:      3,
 }
@@ -114,3 +115,4 @@ export function hasFeatureAccess(
   if (isTrial) return required <= TRIAL_TIER
   return userTier >= required
 }
+

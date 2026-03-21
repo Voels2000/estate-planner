@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/real-estate', label: 'Real Estate',                         icon: '🏠', feature: 'real-estate' },
   { href: '/insurance',   label: 'Insurance Gap Analysis',              icon: '🛡️', feature: 'insurance' },
   { href: '/monte-carlo', label: 'Monte Carlo Simulations',              icon: '📊', feature: 'monte-carlo' },
+  { href: '/social-security', label: 'Social Security Report',               icon: '🏛️', feature: 'social-security' },
   { href: '/import',      label: 'Import Data',                         icon: '📥', feature: 'import' },
   { href: '/titling',     label: 'Titling & Beneficiaries',             icon: '📜', feature: 'titling' },
   { href: '/estate-tax',  label: 'Estate Tax',                          icon: '⚖️', feature: 'estate-tax' },
@@ -144,3 +145,4 @@ export function SidebarNav({
     </aside>
   )
 }
+
