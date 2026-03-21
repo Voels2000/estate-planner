@@ -59,6 +59,9 @@ export function SignupForm() {
         body: JSON.stringify({ inviteToken })
       })
 
+      // Fire welcome email
+      await fetch('/api/email/welcome', { method: 'POST' })
+
       setIsDone(true)
       router.push(redirectTo)
       router.refresh()
