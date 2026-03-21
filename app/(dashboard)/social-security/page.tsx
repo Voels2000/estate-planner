@@ -4,25 +4,16 @@ import { SSClient } from './_ss-client'
 
 export default async function SocialSecurityPage() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: household } = await supabase
     .from('households')
-    .select('*')
-    .eq('user_id', user.id)
+    .select('id')
+    .eq('owner_id', user.id)
     .single()
 
-  if (!household) return null
-
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/social-security`, {
-    headers: { cookie: '' },
-    cache: 'no-store',
-  })
-
-  const data = res.ok ? await res.json() : null
+  if (!household) redirect('/profile')
 
   return (
     <div className='max-w-5xl mx-auto px-4 py-8'>
@@ -32,7 +23,7 @@ export default async function SocialSecurityPage() {
           Optimal claiming analysis and spousal coordination strategy
         </p>
       </div>
-      <SSClient data={data} />
+      <SSClient data={null} />
     </div>
   )
 }
