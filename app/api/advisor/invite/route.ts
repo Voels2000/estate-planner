@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
-import { AdvisorInviteEmail } from '@/emails/advisor-invite'
-import * as React from 'react'
+
 
 export async function POST(request: Request) {
   try {
@@ -73,11 +72,22 @@ export async function POST(request: Request) {
       from: 'MyWealthMap <onboarding@resend.dev>',
       to: invitedEmail,
       subject: `${advisor.full_name} has invited you to MyWealthMap`,
-      react: React.createElement(AdvisorInviteEmail, {
-        advisorName: advisor.full_name,
-        invitedEmail,
-        acceptUrl
-      })
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
+          <h1 style="color:#1a1a2e;font-size:24px">MyWealthMap</h1>
+          <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
+          <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
+            <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">You have been invited</h2>
+            <p style="color:#374151;font-size:16px;line-height:1.6"><strong>${advisor.full_name}</strong> has invited you to join MyWealthMap.</p>
+            <p style="color:#374151;font-size:16px;line-height:1.6">Your advisor will collaborate with you on your financial plan directly through the platform.</p>
+            <div style="text-align:center;margin:32px 0">
+              <a href="${acceptUrl}" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Accept Invitation</a>
+            </div>
+            <p style="color:#6b7280;font-size:14px;text-align:center">This invitation was sent to ${invitedEmail}. It expires in 7 days.</p>
+          </div>
+          <p style="color:#9ca3af;font-size:12px;text-align:center">If you did not expect this invitation, you can safely ignore this email.</p>
+        </div>
+      `
     })
 
     if (emailError) {
