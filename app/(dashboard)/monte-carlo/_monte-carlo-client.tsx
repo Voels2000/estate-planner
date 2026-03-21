@@ -583,11 +583,14 @@ export function MonteCarloClient() {
               )}
 
               <SectionHeader title="Spending Schedule (optional)" />
-              <div className="space-y-2">
-                <p className="text-xs text-gray-400">Add future years where spending changes — e.g. mortgage payoff, kids done with college, health care increase. Each entry overrides the base spending from that age onward.</p>
+              <div className="space-y-3">
+                <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5">
+                  <p className="text-xs font-medium text-indigo-800 mb-1">How spending schedules work</p>
+                  <p className="text-xs text-indigo-700 leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at whicthe change takes effect and enter your new total annual household spending from that point forward.</p>
+                </div>
                 {(inputs.spending_schedule ?? []).map((entry, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-8">Age</span>
+                    <span className="text-xs text-gray-500 w-16 shrink-0">From age</span>
                     <input
                       type="number" min={inputs.retirement_age} max={inputs.life_expectancy}
                       value={entry.age}
@@ -596,27 +599,31 @@ export function MonteCarloClient() {
                         updated[idx] = { ...updated[idx], age: Number(e.target.value) }
                         setInputs(prev => ({ ...prev, spending_schedule: updated }))
                       }}
-                      className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+                      className="w-16 rounded border border-gray-300 px-2 py-1 text-sm text-center"
                     />
-                    <span className="text-xs text-gray-500">$</span>
-                    <input
-                      type="number" min={0} step={1000}
-                      value={entry.amount}
-                      onChange={e => {
-                        const updated = [...(inputs.spending_schedule ?? [])]
-                        updated[idx] = { ...updated[idx], amount: Number(e.target.value) }
-                        setInputs(prev => ({ ...prev, spending_schedule: updated }))
-                      }}
-                      className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
-                      placeholder="Annual spending"
-                    />
+                    <span className="text-xs text-gray-500 shrink-0">spend</span>
+                    <div className="relative flex-1">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                      <input
+                        type="number" min={0} step={1}
+                        value={entry.amount}
+                        onChange={e => {
+                          const updated = [...(inputs.spending_schedule ?? [])]
+                          updated[idx] = { ...updated[idx], amount: Number(e.target.value) }
+                          setInputs(prev => ({ ...prev, spending_schedule: updated }))
+                        }}
+                        className="w-full rounded border border-gray-300 pl-6 pr-2 py-1 text-sm"
+                        placeholder="Annual amount"
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500 shrink-0">/yr</span>
                     <button
                       type="button"
                       onClick={() => {
                         const updated = (inputs.spending_schedule ?? []).filter((_, i) => i !== idx)
                         setInputs(prev => ({ ...prev, spending_schedule: updated }))
                       }}
-                      className="text-red-400 hover:text-red-600 text-sm font-medium"
+                      className="text-red-400 hover:text-red-600 text-sm font-medium px-1"
                     >×</button>
                   </div>
                 ))}
