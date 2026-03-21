@@ -73,9 +73,11 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   'real-estate': 2,
   complete:     2,
   import:       2,
+  allocation:   2,
 
   // Tier 3 — Estate only
   'social-security': 2,
+  'asset-allocation': 2,
   'estate-tax': 3,
   titling:      3,
 }

@@ -76,6 +76,7 @@ export default function ProfilePage() {
   const [statePrimary, setStatePrimary] = useState('')
   const [stateCompare, setStateCompare] = useState('')
   const [inflationRate, setInflationRate] = useState('2.5')
+  const [riskTolerance, setRiskTolerance] = useState('moderate')
   const [growthRateAccumulation, setGrowthRateAccumulation] = useState('7')
   const [growthRateRetirement, setGrowthRateRetirement] = useState('5')
   const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>('standard')
@@ -129,6 +130,7 @@ export default function ProfilePage() {
         setStatePrimary(household.state_primary ?? '')
         setStateCompare(household.state_compare ?? '')
         setInflationRate(household.inflation_rate?.toString() ?? '2.5')
+        setRiskTolerance(household.risk_tolerance ?? 'moderate')
         setGrowthRateAccumulation(household.growth_rate_accumulation?.toString() ?? '7')
         setGrowthRateRetirement(household.growth_rate_retirement?.toString() ?? '5')
         setDeductionMode(household.deduction_mode ?? 'standard')
@@ -194,6 +196,7 @@ export default function ProfilePage() {
         state_primary: statePrimary || null,
         state_compare: stateCompare || null,
         inflation_rate: parseFloat(inflationRate) || 2.5,
+        risk_tolerance: riskTolerance,
         growth_rate_accumulation: Number(growthRateAccumulation) || 7,
         growth_rate_retirement: Number(growthRateRetirement) || 5,
         deduction_mode: deductionMode,
@@ -402,6 +405,13 @@ export default function ProfilePage() {
               <input type="number" min="0" max="20" step="0.1" value={inflationRate}
                 onChange={(e) => setInflationRate(e.target.value)}
                 className={inputClass} placeholder="2.5" />
+            </Field>
+            <Field label="Risk Tolerance">
+              <select value={riskTolerance} onChange={(e) => setRiskTolerance(e.target.value)} className={inputClass}>
+                <option value="conservative">Conservative</option>
+                <option value="moderate">Moderate</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
             </Field>
             <Field label="Growth Rate – Accumulation (%)">
               <input type="number" min="-10" max="30" step="0.5" value={growthRateAccumulation}
