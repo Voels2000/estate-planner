@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     inflation_rate:             body.inflation_rate ?? 2.5,
     simulation_count:           body.simulation_count ?? 1000,
     include_rmd:                body.include_rmd ?? true,
+    spending_schedule:          body.spending_schedule ?? [],
   }
 
   const result = runSimulation(inputs)

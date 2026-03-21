@@ -38,6 +38,9 @@ export interface MonteCarloInputs {
   // Other income
   other_income_annual: number
 
+  // Spending schedule (optional — overrides flat spending in specific years)
+  spending_schedule?: { age: number; amount: number }[]
+
   // Assumptions
   inflation_rate: number
   simulation_count: number
@@ -176,9 +179,15 @@ export function runSimulation(inputs: MonteCarloInputs): MonteCarloResult {
         // Full distribution phase
         const inflationMultiplier = Math.pow(1 + inflationFactor, year)
 
+        // Spending schedule: find the most recent step at or before current age
+        const scheduleEntry = inputs.spending_schedule
+          ?.filter(s => p1Age >= s.age)
+          .sort((a, b) => b.age - a.age)[0]
+        const baseSpending = scheduleEntry ? scheduleEntry.amount : annual_spending
+
         // Spending adjusts down if only one spouse alive
         const spendingMultiplier = (!has_spouse || bothAlive) ? 1.0 : (survivor_spending_pct / 100)
-        const inflatedSpending = annual_spending * inflationMultiplier * spendingMultiplier
+        const inflatedSpending = baseSpending * inflationMultiplier * spendingMultiplier
 
         // Person 1 SS
         const p1SS = p1Alive && p1Age >= social_security_start_age

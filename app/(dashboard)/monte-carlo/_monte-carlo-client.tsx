@@ -77,6 +77,7 @@ const EMPTY_INPUTS: MonteCarloInputs = {
   inflation_rate:              2.5,
   simulation_count:            1000,
   include_rmd:                 true,
+  spending_schedule:           [] as { age: number; amount: number }[],
 }
 
 function confidenceDot(c: Confidence | undefined) {
@@ -581,6 +582,54 @@ export function MonteCarloClient() {
                 </Field>
               )}
 
+              <SectionHeader title="Spending Schedule (optional)" />
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400">Add future years where spending changes — e.g. mortgage payoff, kids done with college, health care increase. Each entry overrides the base spending from that age onward.</p>
+                {(inputs.spending_schedule ?? []).map((entry, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-8">Age</span>
+                    <input
+                      type="number" min={inputs.retirement_age} max={inputs.life_expectancy}
+                      value={entry.age}
+                      onChange={e => {
+                        const updated = [...(inputs.spending_schedule ?? [])]
+                        updated[idx] = { ...updated[idx], age: Number(e.target.value) }
+                        setInputs(prev => ({ ...prev, spending_schedule: updated }))
+                      }}
+                      className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+                    />
+                    <span className="text-xs text-gray-500">$</span>
+                    <input
+                      type="number" min={0} step={1000}
+                      value={entry.amount}
+                      onChange={e => {
+                        const updated = [...(inputs.spending_schedule ?? [])]
+                        updated[idx] = { ...updated[idx], amount: Number(e.target.value) }
+                        setInputs(prev => ({ ...prev, spending_schedule: updated }))
+                      }}
+                      className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+                      placeholder="Annual spending"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = (inputs.spending_schedule ?? []).filter((_, i) => i !== idx)
+                        setInputs(prev => ({ ...prev, spending_schedule: updated }))
+                      }}
+                      className="text-red-400 hover:text-red-600 text-sm font-medium"
+                    >×</button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const existing = inputs.spending_schedule ?? []
+                    const lastAge = existing.length > 0 ? existing[existing.length - 1].age + 5 : (inputs.retirement_age + 5)
+                    setInputs(prev => ({ ...prev, spending_schedule: [...existing, { age: lastAge, amount: inputs.annual_spending }] }))
+                  }}
+                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                >+ Add spending change</button>
+              </div>
               <SectionHeader title={`${p1Name} — Social Security`} />
               <Field label="Monthly SS Benefit" confidence={confidence.social_security_monthly}>
                 <NumInput value={inputs.social_security_monthly} onChange={v => set('social_security_monthly', v)} prefix="$" step={100} />
