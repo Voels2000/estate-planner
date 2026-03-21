@@ -74,7 +74,7 @@ export default function AdvisorClientPage({
       const response = await fetch('/api/advisor/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientEmail: inviteEmail.trim() }),
+        body: JSON.stringify({ invitedEmail: inviteEmail.trim() }),
       })
 
       const data = await response.json()
