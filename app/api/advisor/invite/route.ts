@@ -31,7 +31,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only advisors can send invites' }, { status: 403 })
     }
 
-    console.log('DEBUG advisor id:', user.id, 'role:', advisor?.role)
     // Check for existing pending invite
     const { data: existing } = await supabase
       .from('advisor_clients')
