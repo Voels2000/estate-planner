@@ -12,7 +12,9 @@ export function SignupForm() {
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
+  const inviteEmail = searchParams.get('email') || ''
+  const inviteToken = searchParams.get('invite') || ''
+  const [email, setEmail] = useState(inviteEmail)
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('consumer')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,7 +53,11 @@ export function SignupForm() {
       }
 
       // Auto-link to any advisor who invited this email
-      await fetch('/api/advisor/link-pending', { method: 'POST' })
+      await fetch('/api/advisor/link-pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteToken })
+      })
 
       setIsDone(true)
       router.push(redirectTo)

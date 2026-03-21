@@ -1,103 +1,94 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { resend } from '@/lib/resend'
+import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
+import { AdvisorInviteEmail } from '@/emails/advisor-invite'
+import * as React from 'react'
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, full_name, email')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'advisor') {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { clientEmail } = await req.json()
-    if (!clientEmail) {
+    const { invitedEmail } = await request.json()
+
+    if (!invitedEmail) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // Use service role client to bypass RLS for profile lookup by email
-    const serviceClient = createAdminClient()
-    const { data: existingProfile } = await serviceClient
+    // Get advisor profile
+    const { data: advisor } = await supabase
       .from('profiles')
-      .select('id, full_name')
-      .eq('email', clientEmail.toLowerCase())
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single()
+
+    if (!advisor || advisor.role !== 'advisor') {
+      return NextResponse.json({ error: 'Only advisors can send invites' }, { status: 403 })
+    }
+
+    // Check for existing pending invite
+    const { data: existing } = await supabase
+      .from('advisor_clients')
+      .select('id, status')
+      .eq('advisor_id', user.id)
+      .eq('invited_email', invitedEmail)
+      .eq('status', 'pending')
       .maybeSingle()
 
-    console.log('existingProfile:', JSON.stringify(existingProfile))
-
-    if (existingProfile) {
-      const { data: existing } = await supabase
-        .from('advisor_clients')
-        .select('id')
-        .eq('advisor_id', user.id)
-        .eq('client_id', existingProfile.id)
-        .maybeSingle()
-
-      if (existing) {
-        return NextResponse.json({ error: 'This client is already linked to your account.' }, { status: 400 })
-      }
-
-      console.log('Inserting existing client link...')
-      const insertPayload = {
-        advisor_id: user.id,
-        client_id: existingProfile.id,
-        status: 'active',
-        client_status: 'active',
-        invited_at: new Date().toISOString(),
-        accepted_at: new Date().toISOString(),
-      }
-      console.log('Insert payload:', JSON.stringify(insertPayload))
-
-      const { error: linkError } = await supabase
-        .from('advisor_clients')
-        .insert(insertPayload)
-
-      console.log('Link error:', JSON.stringify(linkError))
-      if (linkError) throw linkError
-
-      return NextResponse.json({
-        success: true,
-        message: `${existingProfile.full_name ?? clientEmail} has been linked to your account.`,
-        isNew: false
-      })
+    if (existing) {
+      return NextResponse.json({ error: 'An invite is already pending for this email' }, { status: 409 })
     }
 
-    console.log('Inserting pending invite...')
-    const pendingPayload = {
-      advisor_id: user.id,
-      client_id: null,
-      invited_email: clientEmail.toLowerCase(),
-      status: 'active',
-      client_status: 'inactive',
-      invited_at: new Date().toISOString(),
-      accepted_at: null,
-    }
-    console.log('Pending payload:', JSON.stringify(pendingPayload))
+    // Generate token
+    const token = generateInviteToken()
+    const expiresAt = tokenExpiresAt()
 
-    const { error: inviteError } = await supabase
+    // Insert invite row
+    const { error: insertError } = await supabase
       .from('advisor_clients')
-      .insert(pendingPayload)
+      .insert({
+        advisor_id: user.id,
+        invited_email: invitedEmail,
+        status: 'pending',
+        invited_at: new Date().toISOString(),
+        invite_token: token,
+        invite_expires_at: expiresAt.toISOString()
+      })
 
-    console.log('Invite error:', JSON.stringify(inviteError))
-    if (inviteError) throw inviteError
+    if (insertError) {
+      console.error('Insert error:', insertError)
+      return NextResponse.json({ error: 'Failed to create invite' }, { status: 500 })
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: `Invitation sent to ${clientEmail}. They will be linked once they sign up.`,
-      isNew: true
+    // Send email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const acceptUrl = `${appUrl}/invite/${token}`
+
+    const { error: emailError } = await resend.emails.send({
+      from: 'MyWealthMap <onboarding@resend.dev>',
+      to: invitedEmail,
+      subject: `${advisor.full_name} has invited you to MyWealthMap`,
+      react: React.createElement(AdvisorInviteEmail, {
+        advisorName: advisor.full_name,
+        invitedEmail,
+        acceptUrl
+      })
     })
 
+    if (emailError) {
+      console.error('Resend error:', emailError)
+      return NextResponse.json({ error: 'Invite created but email failed to send' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+
   } catch (err) {
-    const message = err instanceof Error ? err.message : JSON.stringify(err)
-    console.error('Invite error:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Invite route error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,43 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const adminClient = createAdminClient()
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Find any pending invites for this email
-    const { data: pendingInvites } = await adminClient
+    // Find any pending invite for this email
+    const { data: invite } = await supabase
       .from('advisor_clients')
-      .select('id')
-      .eq('invited_email', user.email!.toLowerCase())
-      .is('client_id', null)
+      .select('id, invite_expires_at')
+      .eq('invited_email', user.email)
+      .eq('status', 'pending')
+      .maybeSingle()
 
-    if (!pendingInvites || pendingInvites.length === 0) {
+    if (!invite) {
       return NextResponse.json({ linked: false })
     }
 
-    // Link them all (could be invited by multiple advisors)
-    const { error } = await adminClient
+    // Check not expired
+    if (new Date(invite.invite_expires_at) < new Date()) {
+      return NextResponse.json({ linked: false, reason: 'expired' })
+    }
+
+    // Link the new user to their advisor
+    const { error } = await supabase
       .from('advisor_clients')
       .update({
         client_id: user.id,
-        accepted_at: new Date().toISOString(),
-        client_status: 'active',
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
       })
-      .eq('invited_email', user.email!.toLowerCase())
-      .is('client_id', null)
+      .eq('id', invite.id)
 
-    if (error) throw error
+    if (error) {
+      console.error('Link error:', error)
+      return NextResponse.json({ error: 'Failed to link invite' }, { status: 500 })
+    }
 
-    return NextResponse.json({ linked: true, count: pendingInvites.length })
+    return NextResponse.json({ linked: true })
+
   } catch (err) {
-    const message = err instanceof Error ? err.message : JSON.stringify(err)
-    console.error('Link pending error:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Link-pending error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
