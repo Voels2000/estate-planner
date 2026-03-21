@@ -68,7 +68,12 @@ function formatDollars(n: number) {
 }
 
 function filingForTax(household: Record<string, unknown> | null): string {
-  return household?.filing_status === 'married_filing_jointly' ? 'married_joint' : 'single'
+  const fs = household?.filing_status as string | null
+  if (!fs) return 'single'
+  if (fs === 'mfj' || fs === 'qw' || fs === 'married_filing_jointly' || fs === 'married_joint') {
+    return 'married_joint'
+  }
+  return 'single'
 }
 
 function trustsExcludedSum(trusts: EstateTaxTrustRow[]): number {
