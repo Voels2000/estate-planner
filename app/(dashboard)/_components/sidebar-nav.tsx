@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/expenses',    label: 'Expenses',                            icon: '💸', feature: 'expenses' },
   { href: '/projections', label: 'Projections',                         icon: '📈', feature: 'projections' },
   { href: '/scenarios',   label: 'Scenarios',                           icon: '🔮', feature: 'scenarios' },
-  { href: '/allocation',  label: 'Asset Allocation',                  icon: '📐', feature: 'allocation' },
+  { href: '/allocation',  label: 'Portfolio Target Mix',              icon: '📐', feature: 'allocation' },
   { href: '/complete',    label: 'Lifetime Financial & Estate Snapshot', icon: '📊', feature: 'complete' },
   { href: '/rmd',         label: 'RMD Calculator',                      icon: '📋', feature: 'rmd' },
   { href: '/roth',        label: 'Roth Conversion Strategy',            icon: '🔄', feature: 'roth' },
