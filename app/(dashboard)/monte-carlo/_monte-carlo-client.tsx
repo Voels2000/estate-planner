@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
@@ -30,6 +30,17 @@ interface SavedRun {
 }
 
 type Step = 'portfolio' | 'spending' | 'assumptions' | 'review'
+type Confidence = 'profile' | 'estimated' | 'missing'
+
+interface PrefillSummary {
+  profile_count: number
+  estimated_count: number
+  missing_count: number
+  has_household: boolean
+  has_assets: boolean
+  has_income: boolean
+  has_expenses: boolean
+}
 
 const STEPS: { key: Step; label: string }[] = [
   { key: 'portfolio',   label: 'Portfolio' },
@@ -38,22 +49,28 @@ const STEPS: { key: Step; label: string }[] = [
   { key: 'review',      label: 'Review & Run' },
 ]
 
-const DEFAULT_INPUTS: MonteCarloInputs = {
-  current_age:               45,
+const EMPTY_INPUTS: MonteCarloInputs = {
+  current_age:               0,
   retirement_age:            65,
   life_expectancy:           90,
-  current_portfolio:         500000,
-  monthly_contribution:      2000,
+  current_portfolio:         0,
+  monthly_contribution:      0,
   stocks_pct:                70,
   bonds_pct:                 20,
   cash_pct:                  10,
-  annual_spending:           80000,
-  social_security_monthly:   2000,
+  annual_spending:           0,
+  social_security_monthly:   0,
   social_security_start_age: 67,
   other_income_annual:       0,
   inflation_rate:            2.5,
   simulation_count:          1000,
   include_rmd:               true,
+}
+
+function confidenceDot(c: Confidence | undefined) {
+  if (c === 'profile')   return <span title="Pulled from your profile" className="text-green-500 text-xs ml-1">●</span>
+  if (c === 'estimated') return <span title="Estimated from your profile" className="text-amber-400 text-xs ml-1">●</span>
+  return <span title="Not found — please enter manually" className="text-red-400 text-xs ml-1">○</span>
 }
 
 function SuccessGauge({ rate }: { rate: number }) {
@@ -131,10 +148,14 @@ function FanChart({ run }: { run: SavedRun }) {
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, confidence, children }: {
+  label: string; hint?: string; confidence?: Confidence; children: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-gray-700 flex items-center">
+        {label}{confidenceDot(confidence)}
+      </label>
       {hint && <span className="text-xs text-gray-400">{hint}</span>}
       {children}
     </div>
@@ -149,9 +170,10 @@ function NumInput({ value, onChange, prefix, step = 1000, min = 0 }: {
       {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
       <input
         type="number"
-        value={value}
+        value={value || ''}
         min={min}
         step={step}
+        placeholder="Enter value..."
         onChange={e => onChange(Number(e.target.value))}
         className={`w-full border border-gray-300 rounded-lg py-2 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${prefix ? 'pl-7' : 'pl-3'}`}
       />
@@ -160,14 +182,16 @@ function NumInput({ value, onChange, prefix, step = 1000, min = 0 }: {
 }
 
 export function MonteCarloClient() {
-  const [step, setStep]       = useState<Step>('portfolio')
-  const [inputs, setInputs]   = useState<MonteCarloInputs>(DEFAULT_INPUTS)
-  const [result, setResult]   = useState<SavedRun | null>(null)
-  const [history, setHistory] = useState<SavedRun[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
-  const [label, setLabel]     = useState('')
-  const [loaded, setLoaded]   = useState(false)
+  const [step, setStep]             = useState<Step>('portfolio')
+  const [inputs, setInputs]         = useState<MonteCarloInputs>(EMPTY_INPUTS)
+  const [confidence, setConfidence] = useState<Record<string, Confidence>>({})
+  const [summary, setSummary]       = useState<PrefillSummary | null>(null)
+  const [result, setResult]         = useState<SavedRun | null>(null)
+  const [history, setHistory]       = useState<SavedRun[]>([])
+  const [loading, setLoading]       = useState(false)
+  const [prefilling, setPrefilling] = useState(true)
+  const [error, setError]           = useState<string | null>(null)
+  const [label, setLabel]           = useState('')
 
   const set = (k: keyof MonteCarloInputs, v: number | boolean) =>
     setInputs(prev => ({ ...prev, [k]: v }))
@@ -175,13 +199,41 @@ export function MonteCarloClient() {
   const allocationTotal = inputs.stocks_pct + inputs.bonds_pct + inputs.cash_pct
   const allocationValid = allocationTotal === 100
 
-  if (!loaded) {
-    setLoaded(true)
-    fetch('/api/monte-carlo')
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setHistory(d) })
-      .catch(() => {})
-  }
+  // Load prefill + history on mount
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/monte-carlo/prefill').then(r => r.json()),
+      fetch('/api/monte-carlo').then(r => r.json()),
+    ]).then(([prefillData, historyData]) => {
+      if (prefillData?.prefill) {
+        const p = prefillData.prefill
+        setInputs(prev => ({
+          ...prev,
+          current_age:               p.current_age               ?? prev.current_age,
+          retirement_age:            p.retirement_age            ?? prev.retirement_age,
+          life_expectancy:           p.life_expectancy           ?? prev.life_expectancy,
+          inflation_rate:            p.inflation_rate            ?? prev.inflation_rate,
+          social_security_monthly:   p.social_security_monthly   ?? prev.social_security_monthly,
+          social_security_start_age: p.social_security_start_age ?? prev.social_security_start_age,
+          current_portfolio:         p.current_portfolio         ?? prev.current_portfolio,
+          monthly_contribution:      p.monthly_contribution      ?? prev.monthly_contribution,
+          stocks_pct:                p.stocks_pct                ?? prev.stocks_pct,
+          bonds_pct:                 p.bonds_pct                 ?? prev.bonds_pct,
+          cash_pct:                  p.cash_pct                  ?? prev.cash_pct,
+          other_income_annual:       p.other_income_annual       ?? prev.other_income_annual,
+          annual_spending:           p.annual_spending           ?? prev.annual_spending,
+        }))
+        setConfidence(prefillData.confidence ?? {})
+        setSummary(prefillData.summary ?? null)
+      }
+      if (Array.isArray(historyData)) setHistory(historyData)
+      setPrefilling(false)
+    }).catch(() => setPrefilling(false))
+  }, [])
+
+  const missingCritical = [
+    'current_age', 'current_portfolio', 'annual_spending'
+  ].filter(k => confidence[k] === 'missing')
 
   async function runSimulation() {
     if (!allocationValid) { setError('Allocation must sum to 100%'); return }
@@ -213,15 +265,55 @@ export function MonteCarloClient() {
 
   const stepIdx = STEPS.findIndex(s => s.key === step)
 
+  if (prefilling) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8 flex items-center justify-center h-64 text-gray-400 text-sm gap-3">
+        <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <p>Loading your profile data...</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Monte Carlo Simulations</h1>
         <p className="text-gray-500 mt-1">Probabilistic retirement modeling across 1,000+ market scenarios</p>
       </div>
 
+      {/* Prefill banner */}
+      {summary && (
+        <div className="rounded-xl border p-4 space-y-2 bg-indigo-50 border-indigo-100">
+          <p className="text-sm font-semibold text-indigo-900">
+            We pre-filled what we could from your profile
+          </p>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <span className="flex items-center gap-1 text-green-700"><span className="text-green-500">●</span> {summary.profile_count} pulled from profile</span>
+            <span className="flex items-center gap-1 text-amber-700"><span className="text-amber-400">●</span> {summary.estimated_count} estimated</span>
+            <span className="flex items-center gap-xt-red-600"><span className="text-red-400">○</span> {summary.missing_count} need your input</span>
+          </div>
+          {!summary.has_household && (
+            <p className="text-xs text-indigo-700">
+              Tip: Complete your <a href="/profile" className="underline font-medium">Profile</a> to auto-fill age, retirement age, and Social Security estimates.
+            </p>
+          )}
+          {!summary.has_assets && (
+            <p className="text-xs text-indigo-700">
+              Tip: Add entries in <a href="/assets" className="underline font-medium">Assets</a> to auto-fill your portfolio balance.
+            </p>
+          )}
+          {!summary.has_expenses && (
+            <p className="text-xs text-indigo-700">
+              Tip: Add entries in <a href="/expenses" className="underline font-medium">Expenses</a> to auto-fill your retirement spending estimate.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-4">
+
+          {/* Step tabs */}
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             {STEPS.map((s, i) => (
               <button
@@ -239,28 +331,28 @@ export function MonteCarloClient() {
 
           {step === 'portfolio' && (
             <div className="space-y-4">
-              <Field label="Current Age">
+              <Field label="Current Age" confidence={confidence.current_age}>
                 <NumInput value={inputs.current_age} onChange={v => set('current_age', v)} step={1} />
               </Field>
-              <Field label="Retirement Age">
+              <Field label="Retirement Age" confidence={confidence.retirement_age}>
                 <NumInput value={inputs.retirement_age} onChange={v => set('retirement_age', v)} step={1} />
               </Field>
-              <Field label="Life Expectancy">
+              <Field label="Life Expectancy" confidence={confidence.life_expectancy}>
                 <NumInput value={inputs.life_expectancy} onChange={v => set('life_expectancy', v)} step={1} />
               </Field>
-              <Field label="Current Portfolio" hint="Total investable assets">
+              <Field label="Current Portfolio" hint="Total investable assets" confidence={confidence.current_portfolio}>
                 <NumInput value={inputs.current_portfolio} onChange={v => set('current_portfolio', v)} prefix="$" />
               </Field>
-              <Field label="Monthly Contribution">
+              <Field label="Monthly Contribution" confidence={confidence.monthly_contribution}>
                 <NumInput value={inputs.monthly_contribution} onChange={v => set('monthly_contribution', v)} prefix="$" step={100} />
               </Field>
-              <Field label="Stocks %" hint={`Total: ${allocationTotal}% ${allocationValid ? 'OK' : 'must equal 100'}`}>
+              <Field label="Stocks %" hint={`Total: ${allocationTotal}% ${allocationValid ? 'OK' : '— must equal 100'}`} confidence={confidence.stocks_pct}>
                 <NumInput value={inputs.stocks_pct} onChange={v => set('stocks_pct', v)} step={5} />
               </Field>
-              <Field label="Bonds %">
+              <Field label="Bonds %" confidence={confidence.bonds_pct}>
                 <NumInput value={inputs.bonds_pct} onChange={v => set('bonds_pct', v)} step={5} />
               </Field>
-              <Field label="Cash %">
+              <Field label="Cash %" confidence={confidence.cash_pct}>
                 <NumInput value={inputs.cash_pct} onChange={v => set('cash_pct', v)} step={5} />
               </Field>
               <button onClick={() => setStep('spending')} className="w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">Next</button>
@@ -269,16 +361,16 @@ export function MonteCarloClient() {
 
           {step === 'spending' && (
             <div className="space-y-4">
-              <Field label="Annual Retirement Spending" hint="In today's dollars">
+              <Field label="Annual Retirement Spending" hint="In today's dollars" confidence={confidence.annual_spending}>
                 <NumInput value={inputs.annual_spending} onChange={v => set('annual_spending', v)} prefix="$" />
               </Field>
-              <Field label="Social Security Monthly" hint="Your estimated benefit">
+              <Field label="Social Security Monthly" hint="Your estimated benefit" confidence={confidence.social_security_monthly}>
                 <NumInput value={inputs.social_security_monthly} onChange={v => set('social_security_monthly', v)} prefix="$" step={100} />
               </Field>
-              <Field label="SS Start Age">
+              <Field label="SS Start Age" confidence={confidence.social_security_start_age}>
                 <NumInput value={inputs.social_security_start_age} onChange={v => set('social_security_start_age', v)} step={1} min={62} />
               </Field>
-              <Field label="Other Annual Income" hint="Pension, rental, part-time">
+              <Field label="Other Annual Income" hint="Pension, rental, part-time" confidence={confidence.other_income_annual}>
                 <NumInput value={inputs.other_income_annual} onChange={v => set('other_income_annual', v)} prefix="$" />
               </Field>
               <div className="flex gap-2">
@@ -290,7 +382,7 @@ export function MonteCarloClient() {
 
           {step === 'assumptions' && (
             <div className="space-y-4">
-              <Field label="Inflation Rate %" hint="Historical avg: 2.5-3%">
+              <Field label="Inflation Rate %" hint="Historical avg: 2.5-3%" confidence={confidence.inflation_rate}>
                 <NumInput value={inputs.inflation_rate} onChange={v => set('inflation_rate', v)} step={0.1} />
               </Field>
               <Field label="Simulations" hint="More = slower but more accurate">
@@ -325,16 +417,35 @@ export function MonteCarloClient() {
 
           {step === 'review' && (
             <div className="space-y-4">
+              {/* Missing critical fields warning */}
+              {missingCritical.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-amber-800 mb-1">Review before running</p>
+                  <ul className="text-xs text-amber-700 space-y-0.5">
+                    {missingCritical.includes('current_age') && <li>○ Current age is missing — go to step 1</li>}
+                    {missingCritical.includes('current_portfolio') && <li>○ Portfolio balance is missing — go to step 1</li>}
+                    {missingCritical.includes('annual_spending') && <li> spending is missing — go to step 2</li>}
+                  </ul>
+                </div>
+              )}
+
               <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Age</span><span className="font-medium">{inputs.current_age} to {inputs.retirement_age}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Portfolio</span><span className="font-medium">{formatCurrency(inputs.current_portfolio)}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Monthly contribution</span><span className="font-medium">{formatCurrency(inputs.monthly_contribution)}/mo</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Allocation</span><span className="font-medium">{inputs.stocks_pct}% / {inputs.bonds_pct}% / {inputs.cash_pct}%</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Annual spending</span><span className="font-medium">{formatCurrency(inputs.annual_spending)}</span></div>
+                <div className="flex justify-beeen"><span className="text-gray-500">Annual spending</span><span className="font-medium">{formatCurrency(inputs.annual_spending)}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Social Security</span><span className="font-medium">{formatCurrency(inputs.social_security_monthly)}/mo at {inputs.social_security_start_age}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Inflation</span><span className="font-medium">{inputs.inflation_rate}%</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Simulations</span><span className="font-medium">{inputs.simulation_count.toLocaleString()}</span></div>
               </div>
+
+              <div className="text-xs text-gray-400 flex flex-wrap gap-3">
+                <span className="flex items-center gap-1"><span className="text-green-500">●</span> From your profile</span>
+                <span className="flex items-center gap"><span className="text-amber-400">●</span> Estimated</span>
+                <span className="flex items-center gap-1"><span className="text-red-400">○</span> Manual entry needed</span>
+              </div>
+
               <Field label="Label this run (optional)">
                 <input
                   type="text"
@@ -369,7 +480,7 @@ export function MonteCarloClient() {
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-sm gap-3">
+            <div className="flex flex-col items-centejustify-center h-64 text-gray-400 text-sm gap-3">
               <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
               <p>Running {inputs.simulation_count.toLocaleString()} simulations...</p>
             </div>

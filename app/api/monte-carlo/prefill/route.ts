@@ -1,0 +1,115 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getUserAccess } from '@/lib/get-user-access'
+
+export async function GET() {
+  const access = await getUserAccess()
+  if (access.tier < 3) {
+    return NextResponse.json({ error: 'Tier 3 required' }, { status: 403 })
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
+
+  const [
+    { data: household },
+    { data: assets },
+    { data: income },
+    { data: expenses },
+  ] = await Promise.all([
+    admin.from('households').select('person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, inflation_rate, growth_rate_accumulation').eq('owner_id', user.id).single(),
+    admin.from('assets').select('type, value').eq('owner_id', user.id),
+    admin.from('income').select('source, amount, ss_person').eq('owner_id', user.id),
+    admin.from('expenses').select('amount').eq('owner_id', user.id),
+  ])
+
+  const currentYear = new Date().getFullYear()
+
+  const current_age = household?.person1_birth_year
+    ? currentYear - household.person1_birth_year
+    : null
+
+  const retirement_age = household?.person1_retirement_age ?? null
+  const life_expectancy = household?.person1_longevity_age ?? null
+  const inflation_rate = household?.inflation_rate ?? null
+  const social_security_start_age = household?.person1_ss_claiming_age ?? null
+  const social_security_monthly = household?.person1_ss_benefit_67 ?? null
+
+  const investable_types = ['brokerage', 'retirement', '401k', 'ira', 'roth', 'savings', 'cash', 'other']
+  const current_portfolio = assets && assets.length > 0
+    ? assets
+        .filter(a => investable_types.some(t => a.type?.toLowerCase().includes(t)))
+        .reduce((sum, a) => sum + (a.value ?? 0), 0)
+    : null
+
+  const other_income_annual = income && income.length > 0
+    ? income.filter(i => !i.ss_person).reduce((sum, i) => sum + (i.amount ?? 0), 0)
+    : null
+
+  const annual_spending = expenses && expenses.length > 0
+    ? expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0)
+    : null
+
+  const hasGrowthRate = !!household?.growth_rate_accumulation
+
+  const confidence: Record<string, string> = {
+    current_age:               current_age !== null ? 'profile' : 'missing',
+    retirement_age:            retirement_age !== null ? 'profile' : 'missing',
+    life_expectancy:           life_expectancy !== null ? 'profile' : 'missing',
+    inflation_rate:            inflation_rate !== null ? 'profile' : 'estimated',
+    social_security_monthly:   social_security_monthly !== null ? 'profile' : 'missing',
+    social_security_start_age: social_security_start_age !== null ? 'profile' : 'estimated',
+    current_portfolio:         current_portfolio !== null && current_portfolio > 0 ? 'profile' : 'missing',
+    monthly_contribution:      'missing',
+    stocks_pct:                hasGrowthRate ? 'estimated' : 'missing',
+    bonds_pct:                 hasGrowthRate ? 'estimated' : 'missing',
+    cash_pct:                  hasGrowthRate ? 'estimated' : 'missing',
+    other_income_annual:       other_income_annual !== null && other_income_annual > 0 ? 'profile' : 'missing',
+    annual_spending:           annual_spending !== null && annual_spending > 0 ? 'profile' : 'missing',
+  }
+
+  let stocks_pct = null, bonds_pct = null, cash_pct = null
+  if (household?.growth_rate_accumulation) {
+    const g = household.growth_rate_accumulation
+    if (g >= 8)      { stocks_pct = 80; bonds_pct = 15; cash_pct = 5 }
+    else if (g >= 6) { stocks_pct = 70; bonds_pct = 20; cash_pct = 10 }
+    else if (g >= 4) { stocks_pct = 55; bonds_pct = 35; cash_pct = 10 }
+    else             { stocks_pct = 40; bonds_pct = 45; cash_pct = 15 }
+  }
+
+  const profileCount   = Object.values(confidence).filter(v => v === 'profile').length
+  const estimatedCount = Object.values(confidence).filter(v => v === 'estimated').length
+  const missingCount   = Object.values(confidence).filter(v => v === 'missing').length
+
+  return NextResponse.json({
+    prefill: {
+      current_age,
+      retirement_age,
+      life_expectancy,
+      inflation_rate,
+      social_security_monthly,
+      social_security_start_age,
+      current_portfolio,
+      monthly_contribution: null,
+      stocks_pct,
+      bonds_pct,
+      cash_pct,
+      other_income_annual,
+      annual_spending,
+    },
+    confidence,
+    summary: {
+      profile_count:   profileCount,
+      estimated_count: estimatedCount,
+      missing_count:   missingCount,
+      has_household:   !!household,
+      has_assets:      !!(assets && assets.length > 0),
+      has_income:      !!(income && income.length > 0),
+      has_expenses:    !!(expenses && expenses.length > 0),
+    }
+  })
+}
