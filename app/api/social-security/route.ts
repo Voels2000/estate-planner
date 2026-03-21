@@ -76,13 +76,13 @@ export async function GET() {
     const p1PIA       = household.person1_ss_benefit_67   ?? 0
     const p1ClaimAge  = household.person1_ss_claiming_age ?? 67
     const p1Longevity = household.person1_longevity_age   ?? 90
-    const p1Name      = household.person1_first_name      ?? 'Person 1'
+    const p1Name      = household.person1_name ?? 'Person 1'
 
     const p2BirthYear = household.person2_birth_year      ?? null
     const p2PIA       = household.person2_ss_benefit_67   ?? 0
     const p2ClaimAge  = household.person2_ss_claiming_age ?? 67
     const p2Longevity = household.person2_longevity_age   ?? 90
-    const p2Name      = household.person2_first_name      ?? 'Person 2'
+    const p2Name      = household.person2_name ?? 'Person 2'
     const hasSpouse   = !!p2BirthYear && p2PIA > 0
 
     const cola = (household.inflation_rate ?? 2.5) / 100

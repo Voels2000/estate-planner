@@ -14,7 +14,7 @@ export default async function SocialSecurityPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (!household) redirect('/profile')
+  if (!household) return null
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const res = await fetch(`${baseUrl}/api/social-security`, {
