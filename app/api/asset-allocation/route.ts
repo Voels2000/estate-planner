@@ -6,8 +6,8 @@ const INVESTABLE_TYPES = ['brokerage', '401k', 'ira', 'roth', 'savings', 'cash',
 
 function assetClass(type: string): 'stocks' | 'bonds' | 'cash' | 'other' {
   const t = type.toLowerCase()
-  if (['brokerage', '401k', 'ira', 'roth', 'hsa'].includes(t)) return 'stocks'
-  if (['savings', 'cash', 'bank'].includes(t))                  return 'cash'
+  if (t.includes('brokerage') || t.includes('401k') || t.includes('ira') || t.includes('roth') || t === 'hsa') return 'stocks'
+  if (t.includes('bank') || t.includes('savings') || t.includes('cash'))                                       return 'cash'
   return 'other'
 }
 
@@ -64,9 +64,7 @@ export async function GET() {
 
   const risk = household.risk_tolerance ?? 'moderate'
 
-  const investable = (assets ?? []).filter(a =>
-    INVESTABLE_TYPES.some(t => a.type?.toLowerCase().includes(t))
-  )
+  const investable = (assets ?? []).filter(a => a.type?.toLowerCase() !== 'life_insurance')
 
   const current = { stocks: 0, bonds: 0, cash: 0, other: 0 }
   for (const a of investable) {
