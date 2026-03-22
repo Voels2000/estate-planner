@@ -41,7 +41,7 @@ export async function GET() {
   ] = await Promise.all([
     supabase
       .from('households')
-      .select('person1_first_name, person1_birth_year, person1_retirement_age, has_spouse, person2_first_name, person2_birth_year, risk_tolerance')
+      .select('person1_first_name, person1_birth_year, person1_retirement_age, has_spouse, person2_first_name, person2_birth_year, risk_tolerance, target_stocks_pct, target_bonds_pct, target_cash_pct')
       .eq('owner_id', user.id)
       .single(),
     supabase
@@ -79,7 +79,13 @@ export async function GET() {
     other:  Math.round((current.other  / totalPortfolio) * 100),
   } : { stocks: 0, bonds: 0, cash: 0, other: 0 }
 
-  const recommended = age ? recommendedAllocation(age, risk) : null
+  const ageBasedTarget = age ? recommendedAllocation(age, risk) : null
+
+  // Use saved target mix if set, otherwise fall back to age/risk formula
+  const hasTargetMix = household.target_stocks_pct != null
+  const recommended = hasTargetMix
+    ? { stocks: household.target_stocks_pct!, bonds: household.target_bonds_pct!, cash: household.target_cash_pct! }
+    : ageBasedTarget
 
   const drift = recommended ? {
     stocks: currentPct.stocks - recommended.stocks,
@@ -92,6 +98,25 @@ export async function GET() {
     bonds:  Math.round((recommended.bonds  / 100) * totalPortfolio) - current.bonds,
     cash:   Math.round((recommended.cash   / 100) * totalPortfolio) - current.cash,
   } : null
+
+  // All three benchmark models for the unified page
+  const retirementYear = household.person1_birth_year
+    ? household.person1_birth_year + (household.person1_retirement_age ?? 65)
+    : null
+  const yearsToRetirement = retirementYear ? Math.max(0, retirementYear - currentYear) : null
+  const ageBenchmark = age ? recommendedAllocation(age, risk) : null
+  const riskBenchmark = {
+    conservative:  { stocks: 30, bonds: 60, cash: 10 },
+    moderate:      { stocks: 60, bonds: 35, cash: 5  },
+    aggressive:    { stocks: 85, bonds: 12, cash: 3  },
+  }[risk as string] ?? { stocks: 60, bonds: 35, cash: 5 }
+  const targetDateBenchmark = yearsToRetirement != null ? (
+    yearsToRetirement >= 30 ? { stocks: 90, bonds: 8,  cash: 2  } :
+    yearsToRetirement >= 20 ? { stocks: 80, bonds: 17, cash: 3  } :
+    yearsToRetirement >= 10 ? { stocks: 65, bonds: 30, cash: 5  } :
+    yearsToRetirement >= 5  ? { stocks: 50, bonds: 42, cash: 8  } :
+                               { stocks: 35, bonds: 52, cash: 13 }
+  ) : null
 
   const annual_spending = (expenses ?? [])
     .filter(e => {
@@ -117,14 +142,23 @@ export async function GET() {
     person1_first_name: household.person1_first_name,
     age,
     risk,
-    total_portfolio:  totalPortfolio,
+    retirement_year:   retirementYear,
+    years_to_retirement: yearsToRetirement,
+    total_portfolio:   totalPortfolio,
     annual_spending,
     withdrawal_rate,
-    current_amounts:  current,
-    current_pct:      currentPct,
+    current_amounts:   current,
+    current_pct:       currentPct,
+    target_mix:        hasTargetMix ? recommended : null,
+    target_mix_source: hasTargetMix ? 'saved' : 'formula',
     recommended,
     drift,
     rebalance,
+    benchmarks: {
+      age_based:   ageBenchmark,
+      risk_based:  riskBenchmark,
+      target_date: targetDateBenchmark,
+    },
     breakdown,
     has_assets: investable.length > 0,
   })
