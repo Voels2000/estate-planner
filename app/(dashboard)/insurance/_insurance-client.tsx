@@ -35,6 +35,7 @@ const EMPTY_FORM: Partial<InsurancePolicy> = {
   policy_subtype: undefined,
   is_employer_provided: false,
   property_type: undefined,
+  covered_members: [],
   notes: "",
 }
 
@@ -45,6 +46,7 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
   const [editingPolicy, setEditingPolicy] = useState<InsurancePolicy | null>(null)
   const [form, setForm] = useState<Partial<InsurancePolicy>>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const defaultProfile: HouseholdProfile = {
@@ -80,6 +82,7 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
 
   const handleSave = async () => {
     setSaving(true)
+    setSaveError(null)
     try {
       if (editingPolicy) {
         const res = await fetch(`/api/insurance/${editingPolicy.id}`, {
@@ -88,6 +91,7 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
           body: JSON.stringify(form),
         })
         const updated = await res.json()
+        if (updated.error) { setSaveError(updated.error); return }
         setPolicies(prev => prev.map(p => p.id === updated.id ? updated : p))
       } else {
         const res = await fetch("/api/insurance", {
@@ -96,9 +100,12 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
           body: JSON.stringify(form),
         })
         const created = await res.json()
+        if (created.error) { setSaveError(created.error); return }
         setPolicies(prev => [...prev, created])
       }
       closeModal()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed")
     } finally {
       setSaving(false)
     }
@@ -235,6 +242,13 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
                     {policy.provider && policy.policy_name ? ` · ${policy.provider}` : ""}
                     {policy.is_employer_provided ? " · Employer" : ""}
                   </p>
+                  {policy.covered_members && policy.covered_members.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Covers: {policy.covered_members.map((m: string) =>
+                        m === "person1" ? "You" : m === "person2" ? "Spouse" : "Dependents"
+                      ).join(", ")}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-6">
@@ -476,6 +490,34 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
                 </div>
               </div>
 
+              {/* Covered Members */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Who is covered?</label>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { key: "person1", label: "You" },
+                    { key: "person2", label: "Spouse / Partner" },
+                    { key: "dependents", label: "Dependents" },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(form.covered_members || []).includes(key)}
+                        onChange={e => {
+                          const current = form.covered_members || []
+                          const updated = e.target.checked
+                            ? [...current, key]
+                            : current.filter((m: string) => m !== key)
+                          setForm(f => ({ ...f, covered_members: updated }))
+                        }}
+                        className="rounded"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Notes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -489,7 +531,11 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <div className="p-6 border-t border-gray-100 space-y-3">
+              {saveError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+              )}
+              <div className="flex justify-end gap-3">
               <button
                 onClick={closeModal}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
@@ -503,6 +549,7 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
               >
                 {saving ? "Saving..." : editingPolicy ? "Save Changes" : "Add Policy"}
               </button>
+              </div>
             </div>
           </div>
         </div>

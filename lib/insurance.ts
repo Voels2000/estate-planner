@@ -16,6 +16,7 @@ export interface InsurancePolicy {
   term_years?: number
   expiration_date?: string
   is_employer_provided?: boolean
+  covered_members?: string[]
   policy_subtype?: LifeSubtype
   cash_value?: number
   death_benefit?: number
