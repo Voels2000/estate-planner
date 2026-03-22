@@ -10,12 +10,14 @@ export default async function InvitePage({ params }: Props) {
   const supabase = await createClient()
 
   // Look up the invite
-  const { data: invite } = await supabase
+  const { data: invite, error: inviteError } = await supabase
     .from('advisor_clients')
     .select('id, invited_email, status, invite_expires_at')
     .eq('invite_token', token)
     .eq('status', 'pending')
     .maybeSingle()
+
+  console.log('DEBUG invite lookup:', JSON.stringify(invite), 'error:', JSON.stringify(inviteError))
 
   // Invalid or already used token
   if (!invite) {
@@ -29,21 +31,19 @@ export default async function InvitePage({ params }: Props) {
 
   // Check if user is already logged in
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('DEBUG user:', user?.id ?? 'not logged in')
 
   if (user) {
-    // Already has an account — attempt to link them directly
-    try {
-      await supabase
-        .from('advisor_clients')       .update({
-          client_id: user.id,
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invite.id)
-    } catch (err) {
-      console.error('Could not link existing user to invite:', err)
-    }
-    console.log('DEBUG invite update attempted for invite id:', invite.id, 'user id:', user.id)
+    const { error: updateError } = await supabase
+      .from('advisor_clients')
+      .update({
+        client_id: user.id,
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', invite.id)
+
+    console.log('DEBUG update error:', JSON.stringify(updateError))
     redirect('/dashboard')
   }
 
