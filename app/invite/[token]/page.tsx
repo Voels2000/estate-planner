@@ -31,16 +31,18 @@ export default async function InvitePage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    // Already has an account — link them directly
-    await supabase
-      .from('advisor_clients')
-      .update({
-        cent_id: user.id,
-        status: 'accepted',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', invite.id)
-
+    // Already has an account — attempt to link them directly
+    try {
+      await supabase
+        .from('advisor_clients')       .update({
+          client_id: user.id,
+          status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', invite.id)
+    } catch (err) {
+      console.error('Could not link existing user to invite:', err)
+    }
     redirect('/dashboard')
   }
 
