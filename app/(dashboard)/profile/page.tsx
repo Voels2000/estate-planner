@@ -391,16 +391,7 @@ export default function ProfilePage() {
                 ))}
               </select>
             </Field>
-            <Field label="Compare State (optional)">
-              <select value={stateCompare}
-                onChange={(e) => setStateCompare(e.target.value)}
-                className={inputClass}>
-                <option value="">None</option>
-                {US_STATES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </Field>
+
             <Field label="Inflation Rate (%)">
               <input type="number" min="0" max="20" step="0.1" value={inflationRate}
                 onChange={(e) => setInflationRate(e.target.value)}
