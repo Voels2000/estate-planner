@@ -43,6 +43,7 @@ export default async function InvitePage({ params }: Props) {
     } catch (err) {
       console.error('Could not link existing user to invite:', err)
     }
+    console.log('DEBUG invite update attempted for invite id:', invite.id, 'user id:', user.id)
     redirect('/dashboard')
   }
 
