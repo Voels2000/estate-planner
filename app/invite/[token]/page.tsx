@@ -2,11 +2,11 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 interface Props {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
 export default async function InvitePage({ params }: Props) {
-  const { token } = params
+  const { token } = await params
   const supabase = await createClient()
 
   // Look up the invite
@@ -17,7 +17,7 @@ export default async function InvitePage({ params }: Props) {
     .eq('status', 'pending')
     .maybeSingle()
 
-  console.log('DEBUG invite lookup:', JSON.stringify(invite), 'error:', JSON.stringify(inviteError))
+  console.log('DEBUG token:', token, 'invite:', JSON.stringify(invite), 'error:', JSON.stringify(inviteError))
 
   // Invalid or already used token
   if (!invite) {
@@ -31,7 +31,6 @@ export default async function InvitePage({ params }: Props) {
 
   // Check if user is already logged in
   const { data: { user } } = await supabase.auth.getUser()
-  console.log('DEBUG user:', user?.id ?? 'not logged in')
 
   if (user) {
     const { error: updateError } = await supabase

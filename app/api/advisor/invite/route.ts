@@ -70,6 +70,8 @@ export async function POST(request: Request) {
 
     const { error: emailError } = await resend.emails.send({
       from: 'MyWealthMap <onboarding@resend.dev>',
+      headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
+      tags: [{ name: 'category', value: 'advisor_invite' }],
       to: invitedEmail,
       subject: `${advisor.full_name} has invited you to MyWealthMap`,
       html: `
