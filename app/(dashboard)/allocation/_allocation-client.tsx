@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -11,6 +12,40 @@ export default function AllocationClient({ userTier }: { userTier: number }) {
   const [stocks, setStocks] = useState(60)
   const [bonds, setBonds] = useState(30)
   const [cash, setCash] = useState(10)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('households')
+        .select('target_stocks_pct, target_bonds_pct, target_cash_pct')
+        .eq('owner_id', user.id)
+        .single()
+      if (data?.target_stocks_pct != null) setStocks(data.target_stocks_pct)
+      if (data?.target_bonds_pct  != null) setBonds(data.target_bonds_pct)
+      if (data?.target_cash_pct   != null) setCash(data.target_cash_pct)
+    }
+    load()
+  }, [])
+
+  async function handleSave() {
+    if (!valid) return
+    setSaving(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    await supabase
+      .from('households')
+      .update({ target_stocks_pct: stocks, target_bonds_pct: bonds, target_cash_pct: cash })
+      .eq('owner_id', user.id)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
 
   const total = stocks + bonds + cash
   const valid = Math.abs(total - 100) < 0.01
@@ -102,10 +137,18 @@ export default function AllocationClient({ userTier }: { userTier: number }) {
           </span>
           <button
             type="button"
-            onClick={normalize}
+      onClick={normalize}
             className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             Scale to 100%
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!valid || saving}
+            className="rounded-lg bg-neutral-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Target Mix'}
           </button>
         </div>
       </div>

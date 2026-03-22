@@ -21,7 +21,7 @@ export async function GET() {
     { data: income },
     { data: expenses },
   ] = await Promise.all([
-    admin.from('households').select('person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation').eq('owner_id', user.id).single(),
+    admin.from('households').select('person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation, target_stocks_pct, target_bonds_pct, target_cash_pct').eq('owner_id', user.id).single(),
     admin.from('assets').select('type, value').eq('owner_id', user.id),
     admin.from('income').select('source, amount, ss_person').eq('owner_id', user.id),
     admin.from('expenses').select('amount').eq('owner_id', user.id),
@@ -71,16 +71,26 @@ export async function GET() {
     ? expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0)
     : null
 
-  // Allocation from growth rate
-  const hasGrowthRate = !!household?.growth_rate_accumulation
-  let stocks_pct = null, bonds_pct = null, cash_pct = null
-  if (household?.growth_rate_accumulation) {
+  // Allocation - prefer saved target mix, fall back to growth rate estimate
+  let stocks_pct: number | null = null
+  let bonds_pct: number | null = null
+  let cash_pct: number | null = null
+  let allocationSource: string = 'missing'
+
+  if (household?.target_stocks_pct != null) {
+    stocks_pct = household.target_stocks_pct
+    bonds_pct  = household.target_bonds_pct ?? null
+    cash_pct   = household.target_cash_pct  ?? null
+    allocationSource = 'target_mix'
+  } else if (household?.growth_rate_accumulation) {
     const g = household.growth_rate_accumulation
     if (g >= 8)      { stocks_pct = 80; bonds_pct = 15; cash_pct = 5 }
     else if (g >= 6) { stocks_pct = 70; bonds_pct = 20; cash_pct = 10 }
     else if (g >= 4) { stocks_pct = 55; bonds_pct = 35; cash_pct = 10 }
     else             { stocks_pct = 40; bonds_pct = 45; cash_pct = 15 }
+    allocationSource = 'growth_rate'
   }
+  const hasGrowthRate = allocationSource !== 'missing'
 
   const confidence: Record<string, string> = {
     current_age:                current_age !== null ? 'profile' : 'missing',
@@ -91,9 +101,9 @@ export async function GET() {
     social_security_start_age:  social_security_start_age !== null ? 'profile' : 'estimated',
     current_portfolio:          current_portfolio !== null && current_portfolio > 0 ? 'profile' : 'missing',
     monthly_contribution:       'missing',
-    stocks_pct:                 hasGrowthRate ? 'estimated' : 'missing',
-    bonds_pct:                  hasGrowthRate ? 'estimated' : 'missing',
-    cash_pct:                   hasGrowthRate ? 'estimated' : 'missing',
+    stocks_pct:                 allocationSource === 'target_mix' ? 'profile' : allocationSource === 'growth_rate' ? 'estimated' : 'missing',
+    bonds_pct:                  allocationSource === 'target_mix' ? 'profile' : allocationSource === 'growth_rate' ? 'estimated' : 'missing',
+    cash_pct:                   allocationSource === 'target_mix' ? 'profile' : allocationSource === 'growth_rate' ? 'estimated' : 'missing',
     other_income_annual:        other_income_annual !== null && other_income_annual > 0 ? 'profile' : 'missing',
     annual_spending:            annual_spending !== null && annual_spending > 0 ? 'profile' : 'missing',
     p2_current_age:             has_spouse && p2_current_age !== null ? 'profile' : has_spouse ? 'missing' : 'estimated',
