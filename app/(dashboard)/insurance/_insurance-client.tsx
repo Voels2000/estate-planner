@@ -255,12 +255,12 @@ export function InsuranceClient({ initialPolicies, profile }: Props) {
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-gray-900">
                     {policy.insurance_type === "life"
-                      ? formatCurrency(policy.death_benefit || policy.coverage_amount || 0)
+                      ? (policy.death_benefit || policy.coverage_amount) ? formatCurrency(policy.death_benefit || policy.coverage_amount || 0) : "—"
                       : policy.insurance_type === "disability"
-                        ? `${formatCurrency(policy.monthly_benefit || 0)}/mo`
+                        ? policy.monthly_benefit ? `${formatCurrency(policy.monthly_benefit)}/mo` : "—"
                         : policy.insurance_type === "ltc"
-                          ? `$${policy.daily_benefit || 0}/day`
-                          : formatCurrency(policy.coverage_amount || 0)}
+                          ? policy.daily_benefit ? `$${policy.daily_benefit}/day` : "—"
+                          : policy.coverage_amount ? formatCurrency(policy.coverage_amount) : "—"}
                   </p>
                   {policy.monthly_premium && (
                     <p className="text-xs text-gray-400">{formatCurrency(policy.monthly_premium)}/mo premium</p>
