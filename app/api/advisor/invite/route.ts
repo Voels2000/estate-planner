@@ -69,7 +69,8 @@ export async function POST(request: Request) {
     const acceptUrl = `${appUrl}/invite/${token}`
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMap <onboarding@resend.dev>',
+      from: 'MyWealthMap <noreply@my-wealth-map.com>'
+,
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'advisor_invite' }],
       to: invitedEmail,

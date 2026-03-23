@@ -22,7 +22,8 @@ export async function POST() {
     const firstName = fullName.split(' ')[0] || 'there'
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMap <onboarding@resend.dev>',
+      from: 'MyWealthMap <noreply@my-wealth-map.com>'
+,
       to: user.email,
       subject: 'Welcome to MyWealthMap',
       html: `
