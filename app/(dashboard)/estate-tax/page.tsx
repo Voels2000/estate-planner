@@ -1,8 +1,10 @@
 import { getUserAccess } from '@/lib/get-user-access'
 import { GatedPage } from '@/components/gated-page'
+import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
+import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -73,16 +75,24 @@ export default async function EstateTaxPage() {
       .order('state', { ascending: true }),
   ])
 
-  return (
-    <EstateTaxClient
-      realEstate={realEstateRows ?? []}
-      assets={assetsRows ?? []}
-      liabilities={liabilitiesRows ?? []}
-      trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
-      household={householdRow as Record<string, unknown> | null}
-      brackets={federalEstateTaxBracketsRows ?? []}
-      stateEstateTaxRules={stateEstateTaxRows ?? []}
-      stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
-    />
-  )
-}
+    return (
+      <>
+        {householdRow?.id && (
+          <EstatePlanningDashboard
+            householdId={householdRow.id as string}
+            userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+            consumerTier={access.tier}
+          />
+        )}
+        <EstateTaxClient
+          realEstate={realEstateRows ?? []}
+          assets={assetsRows ?? []}
+          liabilities={liabilitiesRows ?? []}
+          trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
+          household={householdRow as Record<string, unknown> | null}
+          brackets={federalEstateTaxBracketsRows ?? []}
+          stateEstateTaxRules={stateEstateTaxRows ?? []}
+          stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+        />
+      </>
+    )
