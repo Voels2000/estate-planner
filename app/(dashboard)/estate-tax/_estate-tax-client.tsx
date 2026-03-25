@@ -283,7 +283,7 @@ export default function EstateTaxClient({
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
     return computeStateEstateTax(
       statePrimary.toUpperCase(),
-      taxableForStateMD = isMFJ ? taxableForState * 0.5 : grossEstate
+      taxableForStateMD = isMFJ ? grossEstate * 0.5 : grossEstate
       stateEstateBrackets,
     )
   }, [statePrimary, taxableForStateMD, stateEstateBrackets])
