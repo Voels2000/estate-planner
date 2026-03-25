@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FeedbackButton } from '@/components/feedback-button'
+import { FeedbackButton } from './components/feedback-button'
 
 type SetupStep = {
   key: string
