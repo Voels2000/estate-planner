@@ -276,26 +276,27 @@ export default function EstateTaxClient({
   }, [stateInheritanceTaxRuleRows])
 
   // ── State estate tax results ─────────────────────────────────
-  const taxableForState = federalResult?.taxable_estate ?? 0
-
+  const taxableForState = num(federalResult?.taxable_estate)
+  const isMFJ = filing === 'married_joint'
+  const taxableForStateMD = isMFJ ? taxableForState * 0.5 : taxableForState
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
     return computeStateEstateTax(
       statePrimary.toUpperCase(),
-      taxableForState,
+      taxableForStateMD,
       stateEstateBrackets,
     )
-  }, [statePrimary, taxableForState, stateEstateBrackets])
+  }, [statePrimary, taxableForStateMD, stateEstateBrackets])
 
   const compareStateTax = useMemo(() => {
     const sc = stateCompare?.toUpperCase()
     if (!sc || sc === statePrimary?.toUpperCase()) return null
     if (!STATE_ESTATE_TAX_STATES.has(sc)) return null
-    return computeStateEstateTax(sc, taxableForState, stateEstateBrackets)
-  }, [stateCompare, statePrimary, taxableForState, stateEstateBrackets])
+    return computeStateEstateTax(sc, taxableForStateMD, stateEstateBrackets)
+  }, [stateCompare, statePrimary, taxableForStateMD, stateEstateBrackets])
 
   // ── State inheritance tax results ────────────────────────────
-  const totalForInheritance = taxableForState
+  const totalForInheritance = taxableForStateMD // was taxableForState
   const inheritanceShareDollars = useMemo<Partial<Record<BeneficiaryClass, number>>>(() => {
     const total = inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
     if (total === 0) return {}
