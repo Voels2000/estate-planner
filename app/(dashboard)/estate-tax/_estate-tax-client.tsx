@@ -218,7 +218,8 @@ export default function EstateTaxClient({
   )
 
   const trustsExcluded = useMemo(() => trustsExcludedSum(trusts), [trusts])
-  const grossEstate = financialAssets + realEstateFmv
+  const grossEstate = financialAssets + realEstateIncluded
+  const grossEstateForState = financialAssets + realEstateFmv
 
   // ── Federal brackets ────────────────────────────────────────
   const brackets: EstateTaxBracket[] = useMemo(() => {
@@ -278,7 +279,7 @@ export default function EstateTaxClient({
   // ── State estate tax results ─────────────────────────────────
   const taxableForState = num(federalResult?.taxable_estate)
   const isMFJ = filing === 'married_joint'
-  const taxableForStateMD = isMFJ ? grossEstateForState * 0.5 : grossEstateForState
+  const taxableForStateMD = isMFJ ? grossEstate * 0.5 : grossEstate
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
     return computeStateEstateTax(
