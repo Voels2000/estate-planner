@@ -4,7 +4,6 @@ import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
-import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -96,3 +95,4 @@ export default async function EstateTaxPage() {
         />
       </>
     )
+}
