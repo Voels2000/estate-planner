@@ -53,6 +53,8 @@ interface EstatePlanningDashboardProps {
   householdId: string;
   userRole: 'consumer' | 'advisor';
   consumerTier?: number;
+  /** When false, hides the advisor "Estate Tax Exposure" card (e.g. on pages that show tax elsewhere). Default false. */
+  showTaxExposure?: boolean;
 }
 
 const formatCurrency = (n: number) =>
@@ -86,6 +88,7 @@ export default function EstatePlanningDashboard({
   householdId,
   userRole,
   consumerTier = 1,
+  showTaxExposure = false,
 }: EstatePlanningDashboardProps) {
   const supabase = createClient();
   const [recommendations, setRecommendations] = useState<RecommendationsResult | null>(null);
@@ -215,7 +218,7 @@ export default function EstatePlanningDashboard({
       </div>
 
       {/* Tax Exposure — Advisor only */}
-      {isAdvisor && (
+      {isAdvisor && showTaxExposure && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Estate Tax Exposure</h2>
           <div className="grid grid-cols-3 gap-4">
@@ -247,7 +250,7 @@ export default function EstatePlanningDashboard({
       )}
 
       {/* Consumer T3 notice — no numbers */}
-      {isConsumerT3 && !isAdvisor && recommendations.total_tax_exposure > 0 && (
+      {isConsumerT3 && !isAdvisor && showTaxExposure && recommendations.total_tax_exposure > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
