@@ -96,9 +96,11 @@ export default function IncapacityPlanningDashboard({
 
   if (!data || !canView) return null;
 
-  const completedCount = data.checklist.filter(i => i.complete).length;
-  const totalCount = data.checklist.length;
-  const completePct = Math.round((completedCount / totalCount) * 100);
+  const guardianRequired = data.has_minor_beneficiaries
+  const guardianComplete = data.has_guardian_designation
+  const completedCount = data.checklist.filter(i => i.complete).length + (guardianRequired && guardianComplete ? 1 : 0)
+  const totalCount = data.checklist.length + (guardianRequired ? 1 : 0)
+  const completePct = Math.round((completedCount / totalCount) * 100);ß
 
   const highGaps = data.incapacity_gaps.filter(g => g.priority === 'high');
   const moderateGaps = data.incapacity_gaps.filter(g => g.priority === 'moderate');
