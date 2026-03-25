@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/import',      label: 'Import Data',                         icon: '📥', feature: 'import' },
   { href: '/titling',     label: 'Titling & Beneficiaries',             icon: '📜', feature: 'titling' },
   { href: '/estate-tax',  label: 'Estate Tax',                          icon: '⚖️', feature: 'estate-tax' },
+  { href: '/incapacity',  label: 'Incapacity Planning',                 icon: '🏥', feature: 'incapacity' },
   { href: '/billing',     label: 'Billing',             icon: '💳' },
 ]
 
