@@ -218,7 +218,7 @@ export default function EstateTaxClient({
   )
 
   const trustsExcluded = useMemo(() => trustsExcludedSum(trusts), [trusts])
-  const grossEstate = financialAssets + realEstateIncluded
+  const grossEstate = financialAssets + realEstateFmv
 
   // ── Federal brackets ────────────────────────────────────────
   const brackets: EstateTaxBracket[] = useMemo(() => {
@@ -276,10 +276,9 @@ export default function EstateTaxClient({
   }, [stateInheritanceTaxRuleRows])
 
   // ── State estate tax results ─────────────────────────────────
-  // Apply marital deduction to gross estate for MFJ households (matches database function logic)
+  const taxableForState = num(federalResult?.taxable_estate)
   const isMFJ = filing === 'married_joint'
-  const taxableForStateMD = isMFJ ? grossEstate * 0.5 : grossEstate
-
+  const taxableForStateMD = isMFJ ? grossEstateForState * 0.5 : grossEstateForState
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
     return computeStateEstateTax(
@@ -297,7 +296,7 @@ export default function EstateTaxClient({
   }, [stateCompare, statePrimary, taxableForStateMD, stateEstateBrackets])
 
   // ── State inheritance tax results ────────────────────────────
-  const totalForInheritance = taxableForStateMD
+  const totalForInheritance = taxableForStateMD // was taxableForState
   const inheritanceShareDollars = useMemo<Partial<Record<BeneficiaryClass, number>>>(() => {
     const total = inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
     if (total === 0) return {}
