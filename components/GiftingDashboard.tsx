@@ -67,7 +67,6 @@ const priorityBadge: Record<string, string> = {
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
-const supabase = createClient();
 
 const emptyForm = {
   tax_year: CURRENT_YEAR,
@@ -89,6 +88,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const supabase = createClient();
 
   const load = async () => {
     setLoading(true);
