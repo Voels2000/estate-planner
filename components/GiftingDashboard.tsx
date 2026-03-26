@@ -66,20 +66,18 @@ const priorityBadge: Record<string, string> = {
   low: 'bg-green-100 text-green-700',
 };
 
-const CURRENT_YEAR = new Date().getFullYear();
-
-const emptyForm = {
-  tax_year: CURRENT_YEAR,
-  donor_person: 'person1',
-  recipient_name: '',
-  recipient_relationship: '',
-  amount: '',
-  gift_type: 'annual',
-  form_709_filed: false,
-  notes: '',
-};
-
 export default function GiftingDashboard({ householdId, userRole, consumerTier }: GiftingDashboardProps) {
+  const CURRENT_YEAR = new Date().getFullYear();
+  const emptyForm = {
+    tax_year: CURRENT_YEAR,
+    donor_person: 'person1',
+    recipient_name: '',
+    recipient_relationship: '',
+    amount: '',
+    gift_type: 'annual',
+    form_709_filed: false,
+    notes: '',
+  };
   const [summary, setSummary] = useState<GiftingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +86,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  useEffect(() => { setActiveTab('overview'); }, []);
   const supabase = createClient();
 
   const load = async () => {
