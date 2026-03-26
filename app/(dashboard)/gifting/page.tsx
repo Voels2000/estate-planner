@@ -2,9 +2,7 @@ import { getUserAccess } from '@/lib/get-user-access'
 import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import dynamic from 'next/dynamic'
-
-const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
+import GiftingDashboardClient from '@/components/GiftingDashboardClient'
 
 export default async function GiftingPage() {
   const access = await getUserAccess()
@@ -41,7 +39,7 @@ export default async function GiftingPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <GiftingDashboard
+      <GiftingDashboardClient
         householdId={householdRow.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
