@@ -6,7 +6,6 @@ import GiftingDashboardClient from '@/components/GiftingDashboardClient'
 
 export default async function GiftingPage() {
   const access = await getUserAccess()
-
   if (access.tier < 3) {
     return (
       <GatedPage requiredTier={3} currentTier={access.tier} featureName="Gifting Strategy">
@@ -16,19 +15,14 @@ export default async function GiftingPage() {
       </GatedPage>
     )
   }
-
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-
   const { data: householdRow } = await supabase
     .from('households')
     .select('id')
     .eq('owner_id', user.id)
     .maybeSingle()
-
   if (!householdRow?.id) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
@@ -36,7 +30,6 @@ export default async function GiftingPage() {
       </div>
     )
   }
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <GiftingDashboardClient

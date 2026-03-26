@@ -1,6 +1,4 @@
 'use client';
-// client wrapper - ssr disabled
-
 import dynamic from 'next/dynamic';
 
 const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false });
