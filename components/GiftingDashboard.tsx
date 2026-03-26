@@ -296,7 +296,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
           </div>
           <button
             type="button"
-            onClick={() => { alert("clicked"); setShowAddForm(true); }}
+            onClick={() => setShowAddForm(true)}
             className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
