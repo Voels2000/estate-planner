@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -51,6 +52,8 @@ export function SidebarNav({
   isAdvisor?: boolean
 }) {
   const pathname = usePathname()
+  const [activePath, setActivePath] = useState('')
+  useEffect(() => { setActivePath(pathname) }, [pathname])
   const router = useRouter()
 
   async function handleSignOut() {
@@ -86,7 +89,7 @@ export function SidebarNav({
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = activePath === item.href
           const locked = isLocked(item.feature)
           return (
             <Link
@@ -114,7 +117,7 @@ export function SidebarNav({
           <Link
             href="/advisor"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === '/advisor' || pathname.startsWith('/advisor/')
+              activePath === '/advisor' || activePath.startsWith('/advisor/')
                 ? 'bg-neutral-900 text-white'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
@@ -127,7 +130,7 @@ export function SidebarNav({
           <Link
             href="/admin"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === '/admin'
+              activePath === '/admin'
                 ? 'bg-neutral-900 text-white'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
