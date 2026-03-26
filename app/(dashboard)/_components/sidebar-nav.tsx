@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/titling',     label: 'Titling & Beneficiaries',             icon: '📜', feature: 'titling' },
   { href: '/estate-tax',  label: 'Estate Tax',                          icon: '⚖️', feature: 'estate-tax' },
   { href: '/incapacity',  label: 'Incapacity Planning',                 icon: '🏥', feature: 'incapacity' },
+  { href: '/gifting',    label: 'Gifting Strategy',                     icon: '🎁', feature: 'gifting' },
   { href: '/billing',     label: 'Billing',             icon: '💳' },
 ]
 

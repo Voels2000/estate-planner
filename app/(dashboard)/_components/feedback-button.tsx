@@ -53,7 +53,7 @@ export function FeedbackButton({ userId }: { userId: string }) {
       {/* Floating button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-neutral-800 transition-all hover:scale-105"
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-neutral-800 transition-all hover:scale-105"
       >
         <span>💬</span>
         <span>Feedback</span>

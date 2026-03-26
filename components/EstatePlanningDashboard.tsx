@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 
 interface Recommendation {
   branch: string;
@@ -155,9 +156,14 @@ export default function EstatePlanningDashboard({
           <h1 className="text-2xl font-bold text-gray-900">Estate Planning</h1>
           <p className="text-sm text-gray-500 mt-1">{recommendations.tax_year} tax year parameters</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${complexityColors[recommendations.complexity_flag]}`}>
-          {recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} Complexity
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${complexityColors[recommendations.complexity_flag]}`}>
+            {recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} Complexity
+          </span>
+          {userRole === 'advisor' && (
+            <ExportPDFButton householdId={householdId} role={userRole} />
+          )}
+        </div>
       </div>
 
       {/* Completeness Score */}

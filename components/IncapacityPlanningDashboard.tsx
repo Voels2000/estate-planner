@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 
 interface ChecklistItem {
   doc_type: string;
@@ -133,6 +134,14 @@ export default function IncapacityPlanningDashboard({
             Complete
           </span>
         )}
+                 {!hasGaps && (
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+              Complete
+            </span>
+          )}
+          {userRole === 'advisor' && (
+            <ExportPDFButton householdId={householdId} role={userRole} />
+          )}
       </div>
 
       {/* Document Checklist */}
