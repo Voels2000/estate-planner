@@ -2,7 +2,9 @@ import { getUserAccess } from '@/lib/get-user-access'
 import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import GiftingDashboard from '@/components/GiftingDashboard'
+import dynamic from 'next/dynamic'
+
+const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
 
 export default async function GiftingPage() {
   const access = await getUserAccess()
