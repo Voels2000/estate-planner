@@ -1,4 +1,5 @@
 'use client';
+// client wrapper - ssr disabled
 
 import dynamic from 'next/dynamic';
 
