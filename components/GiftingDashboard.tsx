@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface GiftingDashboardProps {
@@ -86,8 +86,8 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
-  useEffect(() => { setActiveTab('overview'); }, []);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const load = async () => {
     setLoading(true);
