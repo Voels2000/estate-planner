@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import CharitableGivingDashboardClient from './_charitable-client';
 
 export default async function CharitablePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
