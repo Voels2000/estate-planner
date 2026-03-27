@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import BusinessSuccessionClient from './_business-succession-client';
 
 export default async function BusinessSuccessionPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
