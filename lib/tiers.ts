@@ -54,6 +54,7 @@ export const TIER_FEATURES = {
     'Advanced tax planning',
     'Gifting scenarios',
     'Multi-state comparison',
+    'Business succession planning',
   ],
 } as const
 

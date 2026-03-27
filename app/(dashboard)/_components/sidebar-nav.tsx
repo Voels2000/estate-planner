@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/incapacity',  label: 'Incapacity Planning',                 icon: '🏥', feature: 'incapacity' },
   { href: '/gifting',    label: 'Gifting Strategy',                     icon: '🎁', feature: 'gifting' },
   { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable' },
+  { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession' },
   { href: '/billing',     label: 'Billing',             icon: '💳' },
 ]
 
