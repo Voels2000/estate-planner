@@ -60,7 +60,11 @@ export function SignupForm() {
       })
 
       // Fire welcome email
-      await fetch('/api/email/welcome', { method: 'POST' })
+      await fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' })
+      })
 
       setIsDone(true)
       router.push(redirectTo)

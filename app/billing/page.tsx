@@ -26,6 +26,7 @@ export default async function BillingPage() {
     .single()
 
   const isAdvisor = profile?.role === 'advisor'
+  const isActive = profile?.subscription_status === 'active'
 
   // Check if user is an advisor client
   let isAdvisorClient = false
@@ -61,9 +62,15 @@ export default async function BillingPage() {
     advisorClientCount = count ?? 0
   }
 
-  // Fetch consumer plans from Stripe
+  // For consumers: show only Tier 1 if not yet active, all tiers if active (for upgrade)
+  const priceIdsToShow = isAdvisor
+    ? []
+    : isActive
+      ? CONSUMER_PRICE_IDS
+      : [CONSUMER_PRICE_IDS[0]]
+
   const plans = isAdvisor ? [] : await Promise.all(
-    CONSUMER_PRICE_IDS.map(async id => {
+    priceIdsToShow.map(async id => {
       const price = await stripe.prices.retrieve(id, { expand: ['product'] })
       const product = price.product as Stripe.Product
       const tierMap: Record<string, 1 | 2 | 3> = {

@@ -30,7 +30,6 @@ export async function POST(req: Request) {
     const url = new URL(req.url)
     const planParam = url.searchParams.get('plan')
     let priceId: string | undefined
-
     if (planParam) {
       priceId = PRICE_IDS[planParam]
     } else {
@@ -42,17 +41,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
+    // Check if user has completed profile setup (has a household)
+    const { data: household } = await supabase
+      .from('households')
+      .select('person1_name')
+      .eq('owner_id', user.id)
+      .single()
+
+    const isNewUser = !household?.person1_name
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const successUrl = isNewUser
+      ? `${baseUrl}/profile?success=true`
+      : `${baseUrl}/dashboard?success=true`
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+      success_url: successUrl,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
       metadata: { userId: user.id },
     })
 
-    return NextResponse.redirect(session.url!, 303)
+    return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error('Stripe checkout error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
