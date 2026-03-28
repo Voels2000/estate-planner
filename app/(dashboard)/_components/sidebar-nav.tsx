@@ -12,12 +12,14 @@ type NavItem = {
   label: string
   icon: string
   feature?: string
+  advisorOnly?: boolean
 }
 
 type NavGroup = {
   label: string
   icon: string
   items: NavItem[]
+  locked?: boolean
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -39,31 +41,33 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/expenses', label: 'Expenses', icon: '💸', feature: 'expenses' },
       { href: '/projections', label: 'Projections', icon: '📈', feature: 'projections' },
       { href: '/allocation', label: 'Asset Allocation', icon: '📐', feature: 'allocation' },
-      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
+      { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
+      { href: '/scenarios', label: 'Scenarios', icon: '🔮', feature: 'scenarios' },
+      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
     ],
   },
   {
     label: 'Retirement Planning',
     icon: '🏖️',
+    locked: true,
     items: [
+      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
       { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
-      { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
-      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
-      { href: '/scenarios', label: 'Scenarios', icon: '🔮', feature: 'scenarios' },
     ],
   },
   {
     label: 'Estate Planning',
     icon: '📜',
+    locked: true,
     items: [
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
-      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
       { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
-      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
-      { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable' },
-      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession' },
+      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax', advisorOnly: true },
+      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting', advisorOnly: true },
+      { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable', advisorOnly: true },
+      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: true },
     ],
   },
   {
@@ -72,6 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
+      { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
   },
 ]
@@ -148,6 +153,10 @@ export function SidebarNav({
         {NAV_GROUPS.map((group) => {
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
+          const groupIsLocked = group.locked === true && !isAdvisor && (
+            (group.label === 'Retirement Planning' && tier < 2) ||
+            (group.label === 'Estate Planning' && tier < 3)
+          )
 
           return (
             <div key={group.label}>
@@ -159,36 +168,72 @@ export function SidebarNav({
                     : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'
                 }`}
               >
-                <span>{group.icon}</span>
                 <span className="flex-1 text-left">{group.label}</span>
+                {groupIsLocked && (
+                  <span className="text-amber-400 text-sm mr-1">🔒</span>
+                )}
                 <span className="text-neutral-400">{isOpen ? '▾' : '▸'}</span>
               </button>
 
               {isOpen && (
                 <div className="mt-1 ml-2 space-y-0.5">
+                  {groupIsLocked && (
+                    <p className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-lg mb-1">
+                      {group.label === 'Retirement Planning'
+                        ? 'Complete Financial Planning to unlock'
+                        : 'Complete Retirement Planning to unlock'}
+                    </p>
+                  )}
                   {group.items.map((item) => {
+                    if (groupIsLocked) {
+                      return (
+                        <div
+                          key={item.href}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-default select-none"
+                        >
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {item.advisorOnly && (
+                            <span className="ml-auto shrink-0 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] font-medium text-blue-400">
+                              Advisor
+                            </span>
+                          )}
+                        </div>
+                      )
+                    }
+                    if (item.advisorOnly && !isAdvisor) {
+                      return (
+                        <div
+                          key={item.href}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-default select-none"
+                        >
+                          <span className="flex-1 truncate">{item.label}</span>
+                          <span className="ml-auto shrink-0 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] font-medium text-blue-500">
+                            Advisor
+                          </span>
+                        </div>
+                      )
+                    }
                     const isActive = activePath === item.href
                     const locked = isLocked(item.feature)
                     return (
                       <div key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-neutral-900 text-white'
-                            : locked
-                              ? 'text-neutral-400 hover:bg-neutral-50'
-                              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                        }`}
-                      >
-                        <span className="text-base">{item.icon}</span>
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {locked && (
-                          <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
-                            🔒 {lockLabel(item.feature)}
-                          </span>
-                        )}
-                      </Link>
+                        <Link
+                          href={item.href}
+                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-neutral-900 text-white'
+                              : locked
+                                ? 'text-neutral-400 hover:bg-neutral-50'
+                                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                          }`}
+                        >
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {locked && (
+                            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
+                              🔒 {lockLabel(item.feature)}
+                            </span>
+                          )}
+                        </Link>
                       </div>
                     )
                   })}
@@ -208,13 +253,12 @@ export function SidebarNav({
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >
-            <span className="text-base">💼</span>
-            Advisor Portal
+            💼 Advisor Portal
           </Link>
         )}
 
         {/* Admin Portal */}
-    {role === 'admin' && (
+        {role === 'admin' && (
           <Link
             href="/admin"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -223,8 +267,7 @@ export function SidebarNav({
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >
-            <span className="text-base">⚙️</span>
-            Admin Portal
+            ⚙️ Admin Portal
           </Link>
         )}
 
@@ -237,8 +280,7 @@ export function SidebarNav({
               : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
           }`}
         >
-          <span className="text-base">💳</span>
-          Billing
+          💳 Billing
         </Link>
       </nav>
 
@@ -248,8 +290,7 @@ export function SidebarNav({
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
         >
-          <span className="text-base">🚪</span>
-          Sign out
+          🚪 Sign out
         </button>
       </div>
     </aside>

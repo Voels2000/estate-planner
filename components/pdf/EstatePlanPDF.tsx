@@ -114,21 +114,22 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   scoreBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: NAVY,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 10,
   },
   scoreBadgeGrade: {
-    fontSize: 20,
+    fontSize: 14,
     fontFamily: 'Helvetica-Bold',
     color: WHITE,
   },
   scoreDetails: {
     flex: 1,
+    flexDirection: 'column',
   },
   scoreLabel: {
     fontSize: 8,
@@ -136,7 +137,7 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   scoreValue: {
-    fontSize: 16,
+    fontSize: 13,
     fontFamily: 'Helvetica-Bold',
     color: NAVY,
     marginBottom: 2,
@@ -188,10 +189,11 @@ const s = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
+    minHeight: 36,
   },
   tableRowAlt: {
     backgroundColor: GRAY_LIGHT,
@@ -200,9 +202,9 @@ const s = StyleSheet.create({
     fontSize: 8,
     color: GRAY_DARK,
   },
-  colPriority: { width: '15%' },
-  colItem:     { width: '30%' },
-  colReason:   { width: '55%' },
+  colPriority: { width: '12%' },
+  colItem:     { width: '23%' },
+  colReason:   { width: '65%' },
   badgeHigh: {
     backgroundColor: '#FDECEA',
     color: RED,
@@ -467,7 +469,7 @@ const CompletenessSection = ({ data }: { data: any }) => {
           <Text style={s.scoreLabel}>Overall Score</Text>
           <Text style={s.scoreValue}>{pct}%</Text>
           <View style={s.progressBarOuter}>
-            <View style={[s.progressBarInner, { width: `${pct}%` }]} />
+            <View style={[s.progressBarInner, { width: (pct / 100) * 370 }]} />
           </View>
           <Text style={s.scoreSubtext}>Will/Trust  |  DPOA  |  Healthcare Directive  |  Beneficiaries  |  Tax Strategy</Text>
         </View>
@@ -554,22 +556,25 @@ const IncapacitySection = ({ data }: { data: any }) => {
         <Text style={s.priorityScoreValue}>{inc.priority_score ?? 0} / 100</Text>
       </View>
       <View style={[s.table, { marginBottom: 0 }]}>
-        {inc.checklist?.map((item: any, i: number) => (
-          <View key={i} style={s.checklistItem} wrap={false}>
-            <View style={[s.checkDot, item.complete ? s.checkDotComplete : s.checkDotMissing]} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.checkLabel}>{item.label}</Text>
-              {!item.complete && data.role === 'advisor' && (
-                <Text style={s.checkReason}>
-                  {inc.incapacity_gaps?.find((g: any) => g.doc_type === item.doc_type)?.reason ?? ''}
+        {inc.checklist?.map((item: any, i: number) => {
+          const gap = inc.incapacity_gaps?.find((g: any) => g.doc_type === item.doc_type)
+          return (
+            <View key={i} wrap={false}>
+              <View style={s.checklistItem}>
+                <View style={[s.checkDot, item.complete ? s.checkDotComplete : s.checkDotMissing]} />
+                <Text style={[s.checkLabel, { flex: 1 }]}>{item.label}</Text>
+                <Text style={{ fontSize: 7, color: item.complete ? GREEN : RED, fontFamily: 'Helvetica-Bold' }}>
+                  {item.complete ? 'ON FILE' : 'MISSING'}
                 </Text>
-              )}
+              </View>
+              {!item.complete && data.role === 'advisor' && gap?.reason ? (
+                <View style={{ paddingHorizontal: 10, paddingTop: 4, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: BORDER }}>
+                  <Text style={[s.checkReason, { color: GRAY_MID, fontSize: 8, lineHeight: 1.5 }]}>{'Why: ' + gap.reason}</Text>
+                </View>
+              ) : null}
             </View>
-            <Text style={{ fontSize: 7, color: item.complete ? GREEN : RED, fontFamily: 'Helvetica-Bold' }}>
-              {item.complete ? 'ON FILE' : 'MISSING'}
-            </Text>
-          </View>
-        ))}
+          )
+        })}
       </View>
     </Section>
   )
