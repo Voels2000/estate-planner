@@ -102,7 +102,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
         </h1>
         <p className="mt-2 text-neutral-600">
           {existingId
-            ? 'Update your firm's information in the advisor directory.'
+            ? 'Update your firm information in the advisor directory.'
             : 'Add your firm to the My Wealth Maps advisor directory. Listings are reviewed before going live.'}
         </p>
       </div>
