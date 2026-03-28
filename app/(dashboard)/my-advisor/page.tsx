@@ -43,9 +43,18 @@ export default async function MyAdvisorPage() {
     .order('accessed_at', { ascending: false })
     .limit(5)
 
+  const normalizedConnection = connection
+    ? {
+        ...connection,
+        profiles: Array.isArray(connection.profiles)
+          ? connection.profiles[0] ?? null
+          : connection.profiles,
+      }
+    : null
+
   return (
     <MyAdvisorClient
-      connection={connection ?? null}
+      connection={normalizedConnection}
       listing={listing ?? null}
       accessLog={accessLog ?? []}
     />
