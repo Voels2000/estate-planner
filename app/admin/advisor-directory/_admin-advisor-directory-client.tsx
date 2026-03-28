@@ -131,7 +131,7 @@ export function AdminAdvisorDirectoryClient({ advisors: initial }: Props) {
                 <td className="px-4 py-3 text-center">
                   <button
                     onClick={() => toggleField(advisor.id, 'is_active', !advisor.is_active)}
-                    disabled={log === `${advisor.id}-is_active`}
+                    disabled={loading === `${advisor.id}-is_active`}
                     className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
                       advisor.is_active
                         ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
