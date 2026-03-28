@@ -73,7 +73,7 @@ export function AdminAdvisorDirectoryClient({ advisors: initial }: Props) {
           href="/advisor-directory"
           className="text-sm text-neutral-500 hover:text-neutral-900 underline-offset-4 hover:underline"
         >
-          View public directory →
+          View public directory &rarr;
         </a>
       </div>
 
