@@ -82,6 +82,7 @@ export default function MyAdvisorClient({ connection, listing, accessLog }: Prop
           </p>
           
             
+            
             href="/advisor-directory"
             className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
           >
