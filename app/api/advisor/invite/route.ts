@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invite created but email failed to send' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: `Invitation sent to ${invitedEmail}` })
 
   } catch (err) {
     console.error('Invite route error:', err)

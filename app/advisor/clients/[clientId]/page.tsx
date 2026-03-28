@@ -11,8 +11,9 @@ function formatDollars(n: number) {
 export default async function ClientDetailPage({
   params,
 }: {
-  params: { clientId: string }
+  params: Promise<{ clientId: string }>
 }) {
+  const { clientId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -22,10 +23,17 @@ export default async function ClientDetailPage({
     .from('advisor_clients')
     .select('id, client_status')
     .eq('advisor_id', user.id)
-    .eq('client_id', params.clientId)
+    .eq('client_id', clientId)
     .single()
 
   if (!link) redirect('/advisor')
+
+  // Log this advisor access
+  supabase.from('advisor_access_log').insert({
+    advisor_id: user.id,
+    client_id: clientId,
+    page: 'client_detail'
+  })
 
   // Fetch client data (household first so we can use its id for projections)
   const [
@@ -37,16 +45,16 @@ export default async function ClientDetailPage({
     { data: expenses },
     { data: notes },
   ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', params.clientId).single(),
-    supabase.from('households').select('*').eq('owner_id', params.clientId).single(),
-    supabase.from('assets').select('*').eq('owner_id', params.clientId),
-    supabase.from('liabilities').select('*').eq('owner_id', params.clientId),
-    supabase.from('income').select('*').eq('owner_id', params.clientId),
-    supabase.from('expenses').select('*').eq('owner_id', params.clientId),
+    supabase.from('profiles').select('*').eq('id', clientId).single(),
+    supabase.from('households').select('*').eq('owner_id', clientId).single(),
+    supabase.from('assets').select('*').eq('owner_id', clientId),
+    supabase.from('liabilities').select('*').eq('owner_id', clientId),
+    supabase.from('income').select('*').eq('owner_id', clientId),
+    supabase.from('expenses').select('*').eq('owner_id', clientId),
     supabase.from('advisor_notes')
       .select('*')
       .eq('advisor_id', user.id)
-      .eq('client_id', params.clientId)
+      .eq('client_id', clientId)
       .order('created_at', { ascending: false }),
   ])
 
@@ -133,7 +141,7 @@ export default async function ClientDetailPage({
         {/* Advisor Notes */}
         <NotesPanel
           advisorId={user.id}
-          clientId={params.clientId}
+          clientId={clientId}
           initialNotes={notes ?? []}
         />
       </div>

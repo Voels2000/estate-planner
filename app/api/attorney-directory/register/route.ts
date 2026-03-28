@@ -8,21 +8,11 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'advisor') {
-      return NextResponse.json({ error: 'Only advisors can register listings' }, { status: 403 })
-    }
-
     const body = await req.json()
     const {
       firm_name, contact_name, email, website, city, state, zip_code,
-      bio, credentials, specializations, fee_structure, minimum_assets,
-      is_fiduciary, serves_remote, languages, adv_link, submitted_by,
+      bio, credentials, specializations, fee_structure,
+      serves_remote, languages, submitted_by,
     } = body
 
     if (!firm_name || !email) {
@@ -30,35 +20,34 @@ export async function POST(req: Request) {
     }
 
     const { error } = await supabase
-      .from('advisor_directory')
+      .from('attorney_listings')
       .insert({
         firm_name, contact_name, email, website, city, state, zip_code,
-        bio, credentials, specializations, fee_structure, minimum_assets,
-        is_fiduciary, serves_remote, languages, adv_link,
+        bio, credentials, specializations, fee_structure,
+        serves_remote, languages,
         submitted_by,
         is_verified: false,
-        is_active: false, // Requires admin approval before going live
+        is_active: false,
       })
 
     if (error) throw error
 
-    // Notify admin of new listing pending review
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     try {
       await resend.emails.send({
         from: 'MyWealthMaps <hello@mywealthmaps.com>',
         to: 'avoels@comcast.net',
-        subject: 'New Advisor Listing Submitted — Pending Review',
+        subject: 'New Attorney Listing Submitted — Pending Review',
         headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-        tags: [{ name: 'category', value: 'admin_advisor_listing' }],
+        tags: [{ name: 'category', value: 'admin_attorney_listing' }],
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
             <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
             <p style="color:#6b7280;font-size:14px">Admin Notification</p>
             <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
-              <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">New Advisor Listing Pending Review</h2>
+              <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">New Attorney Listing Pending Review</h2>
               <p style="color:#374151;font-size:16px;line-height:1.6">
-                A new advisor listing has been submitted and is awaiting your approval.
+                A new attorney listing has been submitted and is awaiting your approval.
               </p>
               <table style="width:100%;border-collapse:collapse;margin:16px 0">
                 <tr>
@@ -79,7 +68,7 @@ export async function POST(req: Request) {
                 </tr>
               </table>
               <div style="text-align:center;margin:32px 0">
-                <a href="${appUrl}/admin/advisor-directory"
+                <a href="${appUrl}/admin/attorney-directory"
                    style="background:#1a1a2e;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
                   Review Listing →
                 </a>
@@ -92,13 +81,12 @@ export async function POST(req: Request) {
         `,
       })
     } catch (emailErr) {
-      // Non-fatal — listing saved successfully, email failure should not block response
       console.error('Admin notification email failed:', emailErr)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Advisor register POST error:', error)
+    console.error('Attorney register POST error:', error)
     return NextResponse.json({ error: 'Failed to submit listing' }, { status: 500 })
   }
 }
@@ -112,8 +100,8 @@ export async function PUT(req: Request) {
     const body = await req.json()
     const {
       existingId, firm_name, contact_name, email, website, city, state, zip_code,
-      bio, credentials, specializations, fee_structure, minimum_assets,
-      is_fiduciary, serves_remote, languages, adv_link,
+      bio, credentials, specializations, fee_structure,
+      serves_remote, languages,
     } = body
 
     if (!existingId || !firm_name || !email) {
@@ -121,11 +109,11 @@ export async function PUT(req: Request) {
     }
 
     const { error } = await supabase
-      .from('advisor_directory')
+      .from('attorney_listings')
       .update({
         firm_name, contact_name, email, website, city, state, zip_code,
-        bio, credentials, specializations, fee_structure, minimum_assets,
-        is_fiduciary, serves_remote, languages, adv_link,
+        bio, credentials, specializations, fee_structure,
+        serves_remote, languages,
       })
       .eq('id', existingId)
       .eq('submitted_by', user.id)
@@ -134,7 +122,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Advisor register PUT error:', error)
+    console.error('Attorney register PUT error:', error)
     return NextResponse.json({ error: 'Failed to update listing' }, { status: 500 })
   }
 }

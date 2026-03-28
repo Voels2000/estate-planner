@@ -13,8 +13,6 @@ type NavItem = {
   icon: string
   feature?: string
   advisorOnly?: boolean
-  consumerOnly?: boolean
-  minTier?: number          // optional minimum consumer tier (1|2|3)
 }
 
 type NavGroup = {
@@ -57,7 +55,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
-      { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
   {
@@ -71,7 +68,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting', advisorOnly: true },
       { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable', advisorOnly: true },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: true },
-      { href: '/print', label: 'Export Estate Plan', icon: '📄', minTier: 3 },
     ],
   },
   {
@@ -79,10 +75,6 @@ const NAV_GROUPS: NavGroup[] = [
     icon: '📚',
     items: [
       { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
-      { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
-      { href: '/referrals', label: 'Attorney Referrals', icon: '📝', consumerOnly: true },
-      { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
-      { href: '/advisor-directory/register', label: 'List Your Practice', icon: '📋', advisorOnly: true },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
@@ -193,9 +185,6 @@ export function SidebarNav({
                     </p>
                   )}
                   {group.items.map((item) => {
-                    if (item.consumerOnly && role === 'advisor') {
-                      return null
-                    }
                     if (groupIsLocked) {
                       return (
                         <div
@@ -210,9 +199,6 @@ export function SidebarNav({
                           )}
                         </div>
                       )
-                    }
-                    if (item.minTier && !isAdvisor && tier < item.minTier) {
-                      return null
                     }
                     if (item.advisorOnly && !isAdvisor) {
                       return (
@@ -282,33 +268,6 @@ export function SidebarNav({
             }`}
           >
             ⚙️ Admin Portal
-          </Link>
-        )}
-
-        {/* Admin — Advisor Directory */}
-        {role === 'admin' && (
-          <Link
-            href="/admin/advisor-directory"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/admin/advisor-directory'
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
-            📋 Advisor Directory
-          </Link>
-        )}
-
-        {role === 'admin' && (
-          <Link
-            href="/admin/attorney-directory"
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/admin/attorney-directory'
-                ? 'bg-neutral-100 text-neutral-900'
-                : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-            }`}
-          >
-            ⚖️ Attorney Directory
           </Link>
         )}
 

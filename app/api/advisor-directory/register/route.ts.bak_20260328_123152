@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resend } from '@/lib/resend'
+import { resend } from '@/lib/resend'
 
 export async function POST(req: Request) {
   try {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
                 </tr>
                 <tr>
                   <td style="padding:8px 0;color:#6b7280;font-size:14px">Contact</td>
-                  <td style="padding:8px 0;color:#111827;font-size:14px">${contact_name ?? '—'}</td>
+                  <td style="padding:8px 0;color:#111827;font-size:14px">${contact_name or ''}</td>
                 </tr>
                 <tr>
                   <td style="padding:8px 0;color:#6b7280;font-size:14px">Email</td>
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
                 </tr>
                 <tr>
                   <td style="padding:8px 0;color:#6b7280;font-size:14px">Location</td>
-                  <td style="padding:8px 0;color:#111827;font-size:14px">${[city, state].filter(Boolean).join(', ') || '—'}</td>
+                  <td style="padding:8px 0;color:#111827;font-size:14px">${city or ''}, ${state or ''}</td>
                 </tr>
               </table>
               <div style="text-align:center;margin:32px 0">
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
         `,
       })
     } catch (emailErr) {
-      // Non-fatal — listing saved successfully, email failure should not block response
+      // Non-fatal — listing was saved successfully, email failure should not block response
       console.error('Admin notification email failed:', emailErr)
     }
 
