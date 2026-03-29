@@ -44,6 +44,7 @@ export const TIER_FEATURES = {
     'Everything in Retirement',
     'Federal & state estate tax',
     'Account titling & beneficiaries',
+    'Domicile analysis',
     'Incapacity planning',
     'Gifting strategy',
     'Charitable giving',
@@ -74,6 +75,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   // Tier 3 — Estate Planning
   'estate-tax':          3,
   titling:               3,
+  'domicile-analysis':   3,
   incapacity:            3,
   gifting:               3,
   charitable:            3,
