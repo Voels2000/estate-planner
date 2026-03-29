@@ -55,20 +55,20 @@ export default async function TrustWillPage() {
 
   // Check for existing trust in titling
   const { data: titling } = await admin
-    .from('account_titling')
-    .select('titling_type')
+    .from('asset_titling')
+    .select('title_type')
     .eq('owner_id', user.id)
 
   const hasExistingTrust = (titling ?? []).some((t) =>
-    t.titling_type?.toLowerCase().includes('trust')
+    t.title_type?.toLowerCase().includes('trust')
   )
 
   // Check for business assets
   const { data: businessAssets } = await admin
     .from('assets')
-    .select('asset_type')
+    .select('type')
     .eq('owner_id', user.id)
-    .ilike('asset_type', '%business%')
+    .ilike('type', '%business%')
 
   const hasBusinessInterests = (businessAssets ?? []).length > 0
 

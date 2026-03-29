@@ -9,11 +9,11 @@ export default async function AdminAttorneyDirectoryPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_admin')
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profile?.role !== 'admin' && profile?.is_admin !== true) redirect('/dashboard')
 
   const { data: attorneys } = await supabase
     .from('attorney_listings')

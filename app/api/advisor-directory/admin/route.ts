@@ -6,10 +6,10 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   if (!user) return false
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_admin')
     .eq('id', user.id)
     .single()
-  return profile?.role === 'admin'
+  return profile?.role === 'admin' || profile?.is_admin === true
 }
 
 export async function PATCH(req: Request) {
