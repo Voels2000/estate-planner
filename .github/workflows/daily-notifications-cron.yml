@@ -13,6 +13,6 @@ jobs:
         run: |
           curl -X GET https://estate-planner-git-main-voels2000s-projects.vercel.app/api/cron/notifications \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -f \
             --silent \
-            --show-error
+            --show-error \
+            -w "\nHTTP Status: %{http_code}\n"
