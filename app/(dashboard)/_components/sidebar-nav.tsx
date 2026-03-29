@@ -74,6 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting', advisorOnly: true },
       { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable', advisorOnly: true },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: true },
+      { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', minTier: 3 },
     ],
   },
@@ -97,11 +98,13 @@ export function SidebarNav({
   role,
   tier = 1,
   isAdvisor = false,
+  isAdmin = false,
 }: {
   user: User
   role?: string
   tier?: number
   isAdvisor?: boolean
+  isAdmin?: boolean
 }) {
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
@@ -280,7 +283,7 @@ export function SidebarNav({
         )}
 
         {/* Admin Portal */}
-        {role === 'admin' && (
+        {(role === 'admin' || isAdmin) && (
           <Link
             href="/admin"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -294,7 +297,7 @@ export function SidebarNav({
         )}
 
         {/* Admin — Advisor Directory */}
-        {role === 'admin' && (
+        {(role === 'admin' || isAdmin) && (
           <Link
             href="/admin/advisor-directory"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -307,7 +310,7 @@ export function SidebarNav({
           </Link>
         )}
 
-        {role === 'admin' && (
+        {(role === 'admin' || isAdmin) && (
           <Link
             href="/admin/attorney-directory"
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${

@@ -8,12 +8,13 @@ import Link from 'next/link'
 export default function MFAEnrollPage() {
   const router = useRouter()
   const [factorId, setFactorId] = useState<string | null>(null)
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [qrSvg, setQrSvg] = useState<string | null>(null)
   const [secret, setSecret] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [enrollLoading, setEnrollLoading] = useState(true)
+  const [enrollSuccess, setEnrollSuccess] = useState(false)
 
   useEffect(() => {
     const client = createClient()
@@ -47,9 +48,7 @@ export default function MFAEnrollPage() {
       }
       setFactorId(data.id)
       setSecret(data.totp.secret)
-      setQrDataUrl(
-        `data:image/svg+xml;utf-8,${encodeURIComponent(data.totp.qr_code)}`
-      )
+      setQrSvg(data.totp.qr_code)
       setEnrollLoading(false)
     }
     enroll()
@@ -74,8 +73,11 @@ export default function MFAEnrollPage() {
         setError('Invalid code. Check your app and try again.')
         return
       }
-      router.push('/settings/security')
-      router.refresh()
+      setEnrollSuccess(true)
+      setTimeout(() => {
+        router.push('/dashboard')
+        router.refresh()
+      }, 3000)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -98,17 +100,20 @@ export default function MFAEnrollPage() {
           <p className="mt-8 text-sm text-zinc-500">Preparing…</p>
         )}
 
-        {!enrollLoading && error && !qrDataUrl && (
+        {!enrollLoading && error && !qrSvg && (
           <p className="mt-6 text-sm text-red-600">{error}</p>
         )}
 
-        {qrDataUrl && (
+        {qrSvg && (
           <div className="mt-6 flex flex-col items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={qrDataUrl}
-              alt="QR code for authenticator setup"
-              className="h-48 w-48 rounded-lg border border-zinc-200 bg-white p-2 dark:border-zinc-700"
+            <div
+              className="h-64 w-64 rounded-lg border border-zinc-200 bg-white p-2 dark:border-zinc-700"
+              style={{ overflow: 'hidden' }}
+              dangerouslySetInnerHTML={{
+                __html:
+                  qrSvg?.replace('<svg ', '<svg style="width:100%;height:100%" ') ??
+                  '',
+              }}
             />
             {secret && (
               <div className="w-full rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800">
@@ -123,7 +128,13 @@ export default function MFAEnrollPage() {
           </div>
         )}
 
-        {qrDataUrl && (
+        {enrollSuccess && (
+          <div className="mt-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 border border-green-200">
+            ✅ Authenticator set up successfully! Redirecting to your dashboard…
+          </div>
+        )}
+
+        {qrSvg && (
           <form onSubmit={handleVerify} className="mt-6 space-y-4">
             <input
               type="text"

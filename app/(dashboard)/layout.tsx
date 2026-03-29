@@ -17,11 +17,11 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, role, trial_started_at, consumer_tier')
+    .select('subscription_status, role, trial_started_at, consumer_tier, is_admin')
     .eq('id', user.id)
     .single()
 
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || profile?.is_admin === true
   const isActive = profile?.subscription_status === 'active'
 
   // Check trial status
@@ -70,6 +70,7 @@ export default async function DashboardLayout({
         role={profile?.role}
         tier={access.tier}
         isAdvisor={isAdvisor || isAdvisorClient}
+        isAdmin={profile?.is_admin === true}
       />
       <div className="flex flex-1 flex-col overflow-y-auto">
         {showBanner && (
