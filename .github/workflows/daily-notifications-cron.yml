@@ -2,8 +2,8 @@ name: Daily Notifications Cron
 
 on:
   schedule:
-    - cron: '0 14 * * *' # Daily at 14:00 UTC (10am EST / 7am PST)
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+    - cron: '0 14 * * *'
+  workflow_dispatch:
 
 jobs:
   notify:
@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Trigger notification cron
         run: |
-          curl -X GET https://mywealthmaps.com/api/cron/notifications \
+          curl -X GET https://estate-planner-git-main-voels2000s-projects.vercel.app/api/cron/notifications \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -f \
             --silent \
