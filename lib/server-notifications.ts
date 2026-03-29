@@ -6,17 +6,18 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export function fireReferralStatusUpdateNotification(userId: string, referralId: string) {
   const admin = createAdminClient()
-  void admin
-    .rpc('create_notification', {
-      p_user_id: userId,
-      p_type: 'referral_status_update',
-      p_title: 'Your attorney referral has been updated',
-      p_body:
-        'Your referral status has been updated. Visit referrals to see the latest.',
-      p_delivery: 'both',
-      p_metadata: { referral_id: referralId },
-      p_cooldown: '1 hour',
-    })
-    .then(() => {})
-    .catch(() => {})
+  ;(async () => {
+    try {
+      await admin.rpc('create_notification', {
+        p_user_id: userId,
+        p_type: 'referral_status_update',
+        p_title: 'Your attorney referral has been updated',
+        p_body:
+          'Your referral status has been updated. Visit referrals to see the latest.',
+        p_delivery: 'both',
+        p_metadata: { referral_id: referralId },
+        p_cooldown: '1 hour',
+      })
+    } catch {}
+  })()
 }

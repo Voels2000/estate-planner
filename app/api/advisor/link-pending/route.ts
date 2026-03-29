@@ -47,19 +47,20 @@ export async function POST() {
     const clientId = user.id
     after(() => {
       const admin = createAdminClient()
-      void admin
-        .rpc('create_notification', {
-          p_user_id: advisorId,
-          p_type: 'client_accepted_invite',
-          p_title: 'A client accepted your invitation',
-          p_body:
-            'A new client has accepted your invitation and is now linked to your account.',
-          p_delivery: 'both',
-          p_metadata: { client_id: clientId },
-          p_cooldown: '1 hour',
-        })
-        .then(() => {})
-        .catch(() => {})
+      ;(async () => {
+        try {
+          await admin.rpc('create_notification', {
+            p_user_id: advisorId,
+            p_type: 'client_accepted_invite',
+            p_title: 'A client accepted your invitation',
+            p_body:
+              'A new client has accepted your invitation and is now linked to your account.',
+            p_delivery: 'both',
+            p_metadata: { client_id: clientId },
+            p_cooldown: '1 hour',
+          })
+        } catch {}
+      })()
     })
 
     return NextResponse.json({ linked: true })

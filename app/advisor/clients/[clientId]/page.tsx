@@ -40,18 +40,19 @@ export default async function ClientDetailPage({
   // Fire-and-forget: notify client their advisor viewed their profile (service role RPC)
   after(() => {
     const admin = createAdminClient()
-    void admin
-      .rpc('create_notification', {
-        p_user_id: clientId,
-        p_type: 'advisor_viewed',
-        p_title: 'Your advisor viewed your profile',
-        p_body: 'Your advisor reviewed your estate plan and profile.',
-        p_delivery: 'both',
-        p_metadata: {},
-        p_cooldown: '1 day',
-      })
-      .then(() => {})
-      .catch(() => {})
+    ;(async () => {
+      try {
+        await admin.rpc('create_notification', {
+          p_user_id: clientId,
+          p_type: 'advisor_viewed',
+          p_title: 'Your advisor viewed your profile',
+          p_body: 'Your advisor reviewed your estate plan and profile.',
+          p_delivery: 'both',
+          p_metadata: {},
+          p_cooldown: '1 day',
+        })
+      } catch {}
+    })()
   })
 
   // Fetch client data (household first so we can use its id for projections)
