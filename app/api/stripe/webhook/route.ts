@@ -31,11 +31,21 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
         if (userId) {
+          const subId = session.subscription as string | null
+          let renewalIso: string | null = null
+          let stripeSubId: string | null = null
+          if (subId) {
+            const sub = await stripe.subscriptions.retrieve(subId)
+            stripeSubId = sub.id
+            renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+          }
           await supabase
             .from('profiles')
             .update({
               subscription_status: 'active',
               stripe_customer_id: session.customer as string,
+              ...(stripeSubId ? { stripe_subscription_id: stripeSubId } : {}),
+              ...(renewalIso ? { subscription_renewal_date: renewalIso } : {}),
             })
             .eq('id', userId)
           console.log('Subscription activated for user:', userId)
@@ -55,9 +65,16 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
+        const renewalIso = new Date(
+          subscription.current_period_end * 1000
+        ).toISOString()
         await supabase
           .from('profiles')
-          .update({ subscription_status: subscription.status })
+          .update({
+            subscription_status: subscription.status,
+            subscription_renewal_date: renewalIso,
+            stripe_subscription_id: subscription.id,
+          })
           .eq('stripe_customer_id', customerId)
         console.log('Subscription updated for customer:', customerId)
         break

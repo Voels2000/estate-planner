@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import NotesPanel from './NotesPanel'
 
 function formatDollars(n: number) {
@@ -33,6 +35,23 @@ export default async function ClientDetailPage({
     advisor_id: user.id,
     client_id: clientId,
     page: 'client_detail'
+  })
+
+  // Fire-and-forget: notify client their advisor viewed their profile (service role RPC)
+  after(() => {
+    const admin = createAdminClient()
+    void admin
+      .rpc('create_notification', {
+        p_user_id: clientId,
+        p_type: 'advisor_viewed',
+        p_title: 'Your advisor viewed your profile',
+        p_body: 'Your advisor reviewed your estate plan and profile.',
+        p_delivery: 'both',
+        p_metadata: {},
+        p_cooldown: '1 day',
+      })
+      .then(() => {})
+      .catch(() => {})
   })
 
   // Fetch client data (household first so we can use its id for projections)

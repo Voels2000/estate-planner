@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { FEATURE_TIERS, TIER_NAMES } from '@/lib/tiers'
+import { NotificationBell } from './notification-bell'
 
 type NavItem = {
   href: string
@@ -31,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
+      { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
     ],
   },
   {
@@ -148,13 +150,18 @@ export function SidebarNav({
     <aside className="w-64 shrink-0 border-r border-neutral-200 bg-white flex flex-col">
       {/* Header */}
       <div className="px-6 py-5 border-b border-neutral-200">
-        <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
-        <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
-        {!isAdvisor && (
-          <span className="mt-1.5 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
-            {TIER_NAMES[tier as 1 | 2 | 3] ?? 'Starter'} Plan
-          </span>
-        )}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
+            {!isAdvisor && (
+              <span className="mt-1.5 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+                {TIER_NAMES[tier as 1 | 2 | 3] ?? 'Starter'} Plan
+              </span>
+            )}
+          </div>
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Nav */}

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST() {
@@ -13,7 +14,7 @@ export async function POST() {
     // Find any pending invite for this email
     const { data: invite } = await supabase
       .from('advisor_clients')
-      .select('id, invite_expires_at')
+      .select('id, advisor_id, invite_expires_at')
       .eq('invited_email', user.email)
       .eq('status', 'pending')
       .maybeSingle()
@@ -41,6 +42,25 @@ export async function POST() {
       console.error('Link error:', error)
       return NextResponse.json({ error: 'Failed to link invite' }, { status: 500 })
     }
+
+    const advisorId = invite.advisor_id
+    const clientId = user.id
+    after(() => {
+      const admin = createAdminClient()
+      void admin
+        .rpc('create_notification', {
+          p_user_id: advisorId,
+          p_type: 'client_accepted_invite',
+          p_title: 'A client accepted your invitation',
+          p_body:
+            'A new client has accepted your invitation and is now linked to your account.',
+          p_delivery: 'both',
+          p_metadata: { client_id: clientId },
+          p_cooldown: '1 hour',
+        })
+        .then(() => {})
+        .catch(() => {})
+    })
 
     return NextResponse.json({ linked: true })
 

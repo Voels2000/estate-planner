@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 interface Props {
@@ -11,7 +13,7 @@ export default async function InvitePage({ params }: Props) {
 
   const { data: invite } = await supabase
     .from('advisor_clients')
-    .select('id, invited_email, status, invite_expires_at')
+    .select('id, advisor_id, invited_email, status, invite_expires_at')
     .eq('invite_token', token)
     .eq('status', 'pending')
     .maybeSingle()
@@ -27,7 +29,7 @@ export default async function InvitePage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    await supabase
+    const { error: acceptError } = await supabase
       .from('advisor_clients')
       .update({
         client_id: user.id,
@@ -35,6 +37,27 @@ export default async function InvitePage({ params }: Props) {
         accepted_at: new Date().toISOString()
       })
       .eq('id', invite.id)
+
+    if (!acceptError) {
+      const advisorId = invite.advisor_id
+      const clientId = user.id
+      after(() => {
+        const admin = createAdminClient()
+        void admin
+          .rpc('create_notification', {
+            p_user_id: advisorId,
+            p_type: 'client_accepted_invite',
+            p_title: 'A client accepted your invitation',
+            p_body:
+              'A new client has accepted your invitation and is now linked to your account.',
+            p_delivery: 'both',
+            p_metadata: { client_id: clientId },
+            p_cooldown: '1 hour',
+          })
+          .then(() => {})
+          .catch(() => {})
+      })
+    }
 
     redirect('/dashboard')
   }
