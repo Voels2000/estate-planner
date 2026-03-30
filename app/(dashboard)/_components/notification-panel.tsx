@@ -79,7 +79,7 @@ export default function NotificationPanel({
 
   return (
     <div
-      className="absolute right-0 top-10 z-50 w-80 rounded-xl border border-gray-200
+      className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-gray-200
                     bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
       role="dialog"
       aria-label="Notifications"

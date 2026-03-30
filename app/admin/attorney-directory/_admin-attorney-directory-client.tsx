@@ -17,12 +17,50 @@ type Attorney = {
   credentials: string[] | null
 }
 
-type Props = { attorneys: Attorney[] }
+type ConsumerProfile = { id: string; email: string | null; full_name: string | null }
+type AttorneyBrief = { id: string; firm_name: string; email: string }
 
-export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
-  const [attorneys, setAttorneys] = useState(initial)
+type AttorneyReferralRow = {
+  id: string
+  status: string
+  trigger_reason: string | null
+  notes: string | null
+  created_at: string
+  status_updated_at: string | null
+  requested_by: string
+  attorney_id: string | null
+  advisor_id: string | null
+  consumer: ConsumerProfile | ConsumerProfile[] | null
+  attorney: AttorneyBrief | AttorneyBrief[] | null
+}
+
+const STATUS_OPTIONS = ['pending', 'contacted', 'converted', 'closed'] as const
+type ReferralStatus = (typeof STATUS_OPTIONS)[number]
+
+const STATUS_STYLES: Record<ReferralStatus, string> = {
+  pending: 'bg-yellow-100 text-yellow-700',
+  contacted: 'bg-blue-100 text-blue-700',
+  converted: 'bg-green-100 text-green-700',
+  closed: 'bg-neutral-100 text-neutral-500',
+}
+
+function embedOne<T extends { id: string }>(x: T | T[] | null | undefined): T | null {
+  if (x == null) return null
+  return Array.isArray(x) ? x[0] ?? null : x
+}
+
+type Props = { attorneys: Attorney[]; referrals: AttorneyReferralRow[] }
+
+export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, referrals: initialReferrals }: Props) {
+  const [attorneys, setAttorneys] = useState(initialAttorneys)
+  const [referrals, setReferrals] = useState(initialReferrals)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const [edits, setEdits] = useState<Record<string, { status: string; notes: string }>>(() =>
+    Object.fromEntries(initialReferrals.map(r => [r.id, { status: r.status, notes: r.notes ?? '' }])),
+  )
 
   async function toggleField(id: string, field: 'is_verified' | 'is_active', value: boolean) {
     setLoading(`${id}-${field}`)
@@ -33,8 +71,11 @@ export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, field, value }),
       })
-      if (!res.ok) { setError('Update failed'); return }
-      setAttorneys(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a))
+      if (!res.ok) {
+        setError('Update failed')
+        return
+      }
+      setAttorneys(prev => prev.map(a => (a.id === id ? { ...a, [field]: value } : a)))
     } catch {
       setError('Something went wrong.')
     } finally {
@@ -52,8 +93,48 @@ export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
-      if (!res.ok) { setError('Delete failed'); return }
+      if (!res.ok) {
+        setError('Delete failed')
+        return
+      }
       setAttorneys(prev => prev.filter(a => a.id !== id))
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function saveReferralStatus(referralId: string) {
+    const edit = edits[referralId]
+    if (!edit) return
+    setLoading(`${referralId}-status`)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await fetch('/api/referrals/admin', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referral_id: referralId,
+          status: edit.status,
+          notes: edit.notes || null,
+        }),
+      })
+      if (!res.ok) {
+        setError('Failed to update referral status')
+        return
+      }
+      const now = new Date().toISOString()
+      setReferrals(prev =>
+        prev.map(r =>
+          r.id === referralId
+            ? { ...r, status: edit.status, notes: edit.notes || null, status_updated_at: now }
+            : r,
+        ),
+      )
+      setSuccess('Referral status updated and notifications sent.')
+      setTimeout(() => setSuccess(null), 4000)
     } catch {
       setError('Something went wrong.')
     } finally {
@@ -68,13 +149,20 @@ export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Attorney Directory</h1>
           <p className="mt-1 text-neutral-500">{attorneys.length} listings</p>
         </div>
-
-        <a href="/attorney-directory" className="text-sm text-neutral-500 hover:text-neutral-900 underline-offset-4 hover:underline">View public directory</a>
+        <a
+          href="/attorney-directory"
+          className="text-sm text-neutral-500 hover:text-neutral-900 underline-offset-4 hover:underline"
+        >
+          View public directory
+        </a>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
+        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
+      {success && (
+        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+          {success}
         </div>
       )}
 
@@ -97,13 +185,13 @@ export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
                   <p className="font-medium text-neutral-900">{attorney.firm_name}</p>
                   <p className="text-neutral-500">{attorney.email}</p>
                 </td>
-                <td className="px-4 py-3 text-neutral-600">
-                  {[attorney.city, attorney.state].filter(Boolean).join(', ')}
-                </td>
+                <td className="px-4 py-3 text-neutral-600">{[attorney.city, attorney.state].filter(Boolean).join(', ')}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {(attorney.specializations ?? []).slice(0, 2).map(s => (
-                      <span key={s} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{s}</span>
+                      <span key={s} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                        {s}
+                      </span>
                     ))}
                     {(attorney.specializations ?? []).length > 2 && (
                       <span className="text-xs text-neutral-400">+{(attorney.specializations ?? []).length - 2}</span>
@@ -152,6 +240,106 @@ export function AdminAttorneyDirectoryClient({ attorneys: initial }: Props) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-12">
+        <div className="mb-4">
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900">Attorney Referrals</h2>
+          <p className="mt-1 text-neutral-500">{referrals.length} referrals</p>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[880px]">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Consumer</th>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Attorney</th>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Reason</th>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Submitted</th>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-neutral-500">Notes</th>
+                <th className="px-4 py-3 text-center font-medium text-neutral-500">Save</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {referrals.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-neutral-400">
+                    No referrals yet.
+                  </td>
+                </tr>
+              )}
+              {referrals.map(r => {
+                const consumer = embedOne(r.consumer)
+                const att = embedOne(r.attorney)
+                const edit = edits[r.id] ?? { status: r.status, notes: r.notes ?? '' }
+                const isDirty = edit.status !== r.status || edit.notes !== (r.notes ?? '')
+                const statusOptions = Array.from(new Set([...STATUS_OPTIONS, edit.status]))
+
+                return (
+                  <tr key={r.id} className="hover:bg-neutral-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-neutral-900">{consumer?.full_name ?? '—'}</p>
+                      <p className="text-neutral-500 text-xs">{consumer?.email ?? '—'}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-neutral-900">{att?.firm_name ?? '—'}</p>
+                      <p className="text-neutral-500 text-xs">{att?.email ?? '—'}</p>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-600 max-w-[140px] truncate">{r.trigger_reason ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-500 whitespace-nowrap">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={edit.status}
+                        onChange={e =>
+                          setEdits(prev => ({ ...prev, [r.id]: { ...edit, status: e.target.value } }))
+                        }
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium border-0 cursor-pointer
+                          focus:ring-2 focus:ring-indigo-300 focus:outline-none
+                          ${STATUS_STYLES[edit.status as ReferralStatus] ?? 'bg-neutral-100 text-neutral-500'}`}
+                      >
+                        {statusOptions.map(s => (
+                          <option key={s} value={s}>
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="text"
+                        value={edit.notes}
+                        onChange={e =>
+                          setEdits(prev => ({ ...prev, [r.id]: { ...edit, notes: e.target.value } }))
+                        }
+                        placeholder="Optional note…"
+                        className="w-full rounded-lg border border-neutral-200 px-2 py-1 text-xs
+                          text-neutral-700 placeholder-neutral-300 focus:outline-none
+                          focus:ring-2 focus:ring-indigo-300"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => void saveReferralStatus(r.id)}
+                        disabled={!isDirty || loading === `${r.id}-status`}
+                        className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                          isDirty
+                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {loading === `${r.id}-status` ? 'Saving…' : 'Save'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

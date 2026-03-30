@@ -16,6 +16,7 @@ export default async function AdvisorPage() {
       accepted_at,
       client_id,
       invited_email,
+      request_message,
       profiles!advisor_clients_client_id_fkey (
         id,
         full_name,
@@ -25,6 +26,7 @@ export default async function AdvisorPage() {
       )
     `)
     .eq('advisor_id', user!.id)
+    .neq('status', 'removed')
     .order('invited_at', { ascending: false })
 
   // Fetch households for net worth calculation

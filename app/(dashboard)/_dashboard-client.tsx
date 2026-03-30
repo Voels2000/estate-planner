@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { CompletionScore } from '@/lib/get-completion-score'
 import { FeedbackButton } from './_components/feedback-button'
 
 type SetupStep = {
@@ -24,6 +25,7 @@ type Props = {
   readinessScore: number
   hasProjection: boolean
   userId: string
+  completionScore?: CompletionScore | null
 }
 
 export function DashboardClient({
@@ -40,6 +42,7 @@ export function DashboardClient({
   readinessScore,
   hasProjection,
   userId,
+  completionScore,
 }: Props) {
   const firstName = userName.split(' ')[0]
   const allDone = completedSteps === setupSteps.length
@@ -93,6 +96,41 @@ export function DashboardClient({
                 {!step.done && <span className="ml-auto text-xs text-neutral-400">→</span>}
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {completionScore && !completionScore.unlocked && (
+        <div className="mb-8 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-900">
+                🔓 Unlock Estate Planning
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Complete {completionScore.threshold} of {completionScore.total} Retirement Planning steps
+              </p>
+            </div>
+            <Link
+              href="/unlock-estate"
+              className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 transition"
+            >
+              View checklist →
+            </Link>
+          </div>
+          <div className="w-full bg-amber-100 rounded-full h-2.5 mb-3">
+            <div
+              className="bg-amber-500 h-2.5 rounded-full transition-all duration-500"
+              style={{ width: `${Math.round((completionScore.completed / completionScore.total) * 100)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-amber-700">
+            <span>{completionScore.completed} of {completionScore.total} complete</span>
+            <span>
+              {completionScore.threshold - completionScore.completed > 0
+                ? `${completionScore.threshold - completionScore.completed} more step${completionScore.threshold - completionScore.completed === 1 ? '' : 's'} to unlock`
+                : '🎉 Ready to unlock!'}
+            </span>
           </div>
         </div>
       )}

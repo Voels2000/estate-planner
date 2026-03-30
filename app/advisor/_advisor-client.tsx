@@ -11,6 +11,7 @@ type AdvisorClient = {
   accepted_at: string | null
   client_id: string | null
   invited_email: string | null
+  request_message: string | null
   profiles: {
     id: string
     full_name: string
@@ -47,9 +48,9 @@ function formatDollars(n: number) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  })
+  const date = new Date(d)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`
 }
 
 export default function AdvisorClientPage({
@@ -58,6 +59,8 @@ export default function AdvisorClientPage({
   advisorId,
 }: Props) {
   const [clients, setClients] = useState(advisorClients)
+  const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
   const [isInviting, setIsInviting] = useState(false)
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
@@ -106,8 +109,78 @@ export default function AdvisorClientPage({
     )
   }
 
-  const acceptedClients = clients.filter(c => c.accepted_at)
-  const pendingClients = clients.filter(c => !c.accepted_at)
+  async function handleRemoveClient(advisorClientId: string) {
+    if (!confirm('Remove this client? If billing was transferred their tier will be reverted.')) return
+    setLoading(`${advisorClientId}-remove`)
+    setError(null)
+    try {
+      const res = await fetch('/api/advisor/remove-client', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ advisor_client_id: advisorClientId }),
+      })
+      if (!res.ok) {
+        setError('Failed to remove client')
+        return
+      }
+      setClients(prev => prev.filter(c => c.id !== advisorClientId))
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleAcceptRequest(advisorClientId: string) {
+    setLoading(`${advisorClientId}-accept`)
+    setError(null)
+    try {
+      const res = await fetch('/api/advisor/accept-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ advisor_client_id: advisorClientId }),
+      })
+      if (!res.ok) {
+        setError('Failed to accept request')
+        return
+      }
+      // Move from incoming to pending (invite sent, awaiting acceptance)
+      setClients(prev =>
+        prev.map(c => c.id === advisorClientId ? { ...c, status: 'pending' } : c)
+      )
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleDeclineRequest(advisorClientId: string) {
+    if (!confirm('Decline this connection request?')) return
+    setLoading(`${advisorClientId}-decline`)
+    setError(null)
+    try {
+      const res = await fetch('/api/advisor/decline-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ advisor_client_id: advisorClientId }),
+      })
+      if (!res.ok) {
+        setError('Failed to decline request')
+        return
+      }
+      setClients(prev => prev.filter(c => c.id !== advisorClientId))
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const incomingRequests = clients.filter(c => c.status === 'consumer_requested')
+  const acceptedClients = clients.filter(c => c.accepted_at && c.status !== 'consumer_requested')
+  const pendingClients = clients.filter(c => !c.accepted_at && c.status !== 'consumer_requested')
+  const listedClients = clients.filter(c => c.status !== 'consumer_requested')
 
   return (
     <div className="space-y-8">
@@ -118,6 +191,7 @@ export default function AdvisorClientPage({
           <p className="mt-1 text-sm text-neutral-500">
             {acceptedClients.length} active client{acceptedClients.length !== 1 ? 's' : ''}
             {pendingClients.length > 0 ? ` · ${pendingClients.length} pending` : ''}
+            {incomingRequests.length > 0 ? ` · ${incomingRequests.length} incoming request${incomingRequests.length !== 1 ? 's' : ''}` : ''}
           </p>
         </div>
         <button
@@ -148,6 +222,56 @@ export default function AdvisorClientPage({
       {/* Clients Tab */}
       {activeTab === 'clients' && (
         <div className="space-y-4">
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </p>
+          )}
+          {/* Incoming Requests */}
+          {incomingRequests.length > 0 && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-amber-800">
+                Incoming Requests ({incomingRequests.length})
+              </h2>
+              {incomingRequests.map(c => {
+                const displayName = c.profiles?.full_name ?? c.invited_email ?? 'Unknown'
+                const displayEmail = c.profiles?.email ?? c.invited_email ?? '—'
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-start justify-between gap-4 rounded-xl bg-white border border-amber-100 px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900">{displayName}</p>
+                      <p className="text-xs text-neutral-500">{displayEmail}</p>
+                      {c.request_message && (
+                        <p className="mt-1 text-xs text-neutral-600 italic">"{c.request_message}"</p>
+                      )}
+                      <p className="mt-1 text-xs text-neutral-400">
+                        Requested {formatDate(c.invited_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleAcceptRequest(c.id)}
+                        disabled={!!loading}
+                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition"
+                      >
+                        {loading === `${c.id}-accept` ? 'Accepting...' : 'Accept'}
+                      </button>
+                      <button
+                        onClick={() => handleDeclineRequest(c.id)}
+                        disabled={!!loading}
+                        className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition"
+                      >
+                        {loading === `${c.id}-decline` ? 'Declining...' : 'Decline'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
           {clients.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
               <div className="text-4xl mb-3">👥</div>
@@ -159,7 +283,7 @@ export default function AdvisorClientPage({
                 Add your first client →
               </button>
             </div>
-          ) : (
+          ) : listedClients.length > 0 ? (
             <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
               <table className="min-w-full text-sm">
                 <thead>
@@ -172,7 +296,7 @@ export default function AdvisorClientPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {clients.map((c) => {
+                  {listedClients.map((c) => {
                     const isPending = !c.accepted_at
                     const displayName = c.profiles?.full_name ?? c.invited_email ?? 'Unknown'
                     const displayEmail = c.profiles?.email ?? c.invited_email ?? '—'
@@ -215,14 +339,34 @@ export default function AdvisorClientPage({
                         </td>
                         <td className="px-6 py-4">
                           {isPending ? (
-                            <span className="text-sm text-neutral-400 italic">Awaiting signup</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-neutral-400 italic">Awaiting signup</span>
+                              <button
+                                type="button"
+                                onClick={() => void handleRemoveClient(c.id)}
+                                disabled={loading === `${c.id}-remove`}
+                                className="text-xs text-red-500 hover:text-red-700 transition disabled:opacity-50"
+                              >
+                                {loading === `${c.id}-remove` ? 'Removing…' : 'Delete'}
+                              </button>
+                            </div>
                           ) : (
-                            <a
-                              href={`/advisor/clients/${c.client_id}`}
-                              className="text-sm text-indigo-600 hover:underline font-medium"
-                            >
-                              View →
-                            </a>
+                            <div className="flex items-center gap-3">
+                              <a
+                                href={`/advisor/clients/${c.client_id}`}
+                                className="text-sm font-medium text-indigo-600 hover:underline"
+                              >
+                                View →
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveClient(c.id)}
+                                disabled={loading === `${c.id}-remove`}
+                                className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {loading === `${c.id}-remove` ? 'Removing...' : 'Remove'}
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -231,7 +375,7 @@ export default function AdvisorClientPage({
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
         </div>
       )}
 

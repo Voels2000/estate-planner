@@ -1,3 +1,4 @@
+import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '../_dashboard-client'
 
@@ -65,6 +66,11 @@ export default async function DashboardPage() {
     readinessScore = Math.round(progressPct * 0.4)
   }
 
+  const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
+  const completionScore: CompletionScore | null = isConsumerTier2
+    ? await getCompletionScore(user!.id)
+    : null
+
   return (
     <DashboardClient
       userName={profile?.full_name ?? user!.email ?? ''}
@@ -80,6 +86,7 @@ export default async function DashboardPage() {
       readinessScore={readinessScore}
       hasProjection={!!latestProjection}
       userId={user!.id}
+      completionScore={completionScore}
     />
   )
 }

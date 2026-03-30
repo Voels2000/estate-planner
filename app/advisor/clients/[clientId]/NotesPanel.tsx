@@ -61,10 +61,15 @@ function NotesPanel({ advisorId, clientId, initialNotes }: {
             <div key={n.id} className="rounded-lg bg-neutral-50 px-4 py-3">
               <p className="text-sm text-neutral-700">{n.note}</p>
               <p className="mt-1 text-xs text-neutral-400">
-                {new Date(n.created_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                  hour: 'numeric', minute: '2-digit'
-                })}
+                {(() => {
+                  const d = new Date(n.created_at)
+                  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                  const hours = d.getUTCHours()
+                  const minutes = d.getUTCMinutes().toString().padStart(2, '0')
+                  const ampm = hours >= 12 ? 'PM' : 'AM'
+                  const hour12 = hours % 12 || 12
+                  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()} at ${hour12}:${minutes} ${ampm}`
+                })()}
               </p>
             </div>
           ))}

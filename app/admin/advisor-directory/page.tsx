@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { AdminAdvisorDirectoryClient } from './_admin-advisor-directory-client'
 
@@ -15,7 +16,9 @@ export default async function AdminAdvisorDirectoryPage() {
 
   if (profile?.role !== 'admin' && profile?.is_admin !== true) redirect('/dashboard')
 
-  const { data: advisors } = await supabase
+  const admin = createAdminClient()
+
+  const { data: advisors } = await admin
     .from('advisor_directory')
     .select('*')
     .order('created_at', { ascending: false })

@@ -86,7 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
       { href: '/referrals', label: 'Attorney Referrals', icon: '📝', consumerOnly: true },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
-      { href: '/advisor-directory/register', label: 'List Your Practice', icon: '📋', advisorOnly: true },
+      { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
@@ -197,11 +197,21 @@ export function SidebarNav({
               {isOpen && (
                 <div className="mt-1 ml-2 space-y-0.5">
                   {groupIsLocked && (
-                    <p className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-lg mb-1">
-                      {group.label === 'Retirement Planning'
-                        ? 'Complete Financial Planning to unlock'
-                        : 'Complete Retirement Planning to unlock'}
-                    </p>
+                    <div className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-lg mb-1">
+                      {group.label === 'Retirement Planning' ? (
+                        <span>{`Upgrade to the ${TIER_NAMES[2]} plan to unlock`}</span>
+                      ) : tier < 2 ? (
+                        <span>{`Upgrade to the ${TIER_NAMES[2]} plan first`}</span>
+                      ) : (
+                        <Link
+                          href="/unlock-estate"
+                          className="flex items-center justify-between hover:underline"
+                        >
+                          <span>Complete Retirement Planning steps to unlock</span>
+                          <span className="ml-1 shrink-0">→</span>
+                        </Link>
+                      )}
+                    </div>
                   )}
                   {group.items.map((item) => {
                     if (item.consumerOnly && role === 'advisor') {
@@ -279,6 +289,20 @@ export function SidebarNav({
             }`}
           >
             💼 Advisor Portal
+          </Link>
+        )}
+
+        {/* Attorney Portal */}
+        {role === 'attorney' && (
+          <Link
+            href="/attorney"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activePath === '/attorney' || activePath.startsWith('/attorney/')
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`}
+          >
+            ⚖️ Attorney Portal
           </Link>
         )}
 
