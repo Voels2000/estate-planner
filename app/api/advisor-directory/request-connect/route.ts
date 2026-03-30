@@ -15,15 +15,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. Active subscriber check
+  // 2. Consumer role check only — no subscription gate
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status')
+    .select('role')
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'consumer' || profile.subscription_status !== 'active') {
-    return NextResponse.json({ error: 'Active subscription required' }, { status: 403 })
+  if (!profile || profile.role !== 'consumer') {
+    return NextResponse.json({ error: 'Consumer access required' }, { status: 403 })
   }
 
   // 3. Parse body

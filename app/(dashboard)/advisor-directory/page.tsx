@@ -5,17 +5,6 @@ export default async function AdvisorDirectoryPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = user
-    ? await supabase
-        .from('profiles')
-        .select('role, subscription_status')
-        .eq('id', user.id)
-        .single()
-    : { data: null }
-
-  const isActiveConsumer =
-    profile?.role === 'consumer' && profile?.subscription_status === 'active'
-
   const { data: connectionRows } = user
     ? await supabase
         .from('advisor_clients')
@@ -52,7 +41,6 @@ export default async function AdvisorDirectoryPage() {
       allSpecializations={allSpecializations}
       allCredentials={allCredentials}
       allStates={allStates}
-      isActiveConsumer={isActiveConsumer}
       existingConnections={existingConnections}
     />
   )

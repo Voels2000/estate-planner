@@ -27,7 +27,6 @@ type Props = {
   allSpecializations: string[]
   allCredentials: string[]
   allStates: string[]
-  isActiveConsumer: boolean
   existingConnections: string[] // advisor_ids with non-removed rows
 }
 
@@ -36,7 +35,6 @@ export function AdvisorDirectoryClient({
   allSpecializations,
   allCredentials,
   allStates,
-  isActiveConsumer,
   existingConnections,
 }: Props) {
   const [search, setSearch] = useState('')
@@ -125,7 +123,6 @@ export function AdvisorDirectoryClient({
   const hasFilters = search || selectedState || selectedSpec || selectedCred || fiduciaryOnly || remoteOnly
 
   function getButtonState(advisorId: string) {
-    if (!isActiveConsumer) return 'upgrade'
     if (existingConnections.includes(advisorId) || sentIds.includes(advisorId)) return 'sent'
     return 'request'
   }
@@ -284,14 +281,6 @@ export function AdvisorDirectoryClient({
                     </Link>
 
                     {/* Request to Connect button */}
-                    {btnState === 'upgrade' && (
-                      <Link
-                        href="/billing"
-                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
-                      >
-                        Subscribe to connect
-                      </Link>
-                    )}
                     {btnState === 'sent' && (
                       <span className="rounded-lg bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700">
                         ✓ Request sent
