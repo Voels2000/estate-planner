@@ -17,7 +17,7 @@ export default async function AdvisorDirectoryPage() {
 
   const { data: advisors } = await supabase
     .from('advisor_directory')
-    .select('*')
+    .select('*, profile_id')
     .eq('is_active', true)
     .order('is_verified', { ascending: false })
     .order('firm_name')

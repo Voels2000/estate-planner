@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 type Advisor = {
   id: string
+  profile_id: string | null
   firm_name: string
   contact_name: string | null
   email: string
@@ -104,14 +105,14 @@ export function AdvisorDirectoryClient({
       const res = await fetch('/api/advisor-directory/request-connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advisor_id: modalAdvisor.id, message }),
+        body: JSON.stringify({ advisor_id: modalAdvisor.profile_id, message }),
       })
       if (!res.ok) {
         const data = await res.json()
         setError(data.error || 'Something went wrong. Please try again.')
         return
       }
-      setSentIds(prev => [...prev, modalAdvisor.id])
+      setSentIds(prev => [...prev, modalAdvisor.profile_id ?? ''])
       closeModal()
     } catch {
       setError('Something went wrong. Please try again.')
@@ -122,8 +123,8 @@ export function AdvisorDirectoryClient({
 
   const hasFilters = search || selectedState || selectedSpec || selectedCred || fiduciaryOnly || remoteOnly
 
-  function getButtonState(advisorId: string) {
-    if (existingConnections.includes(advisorId) || sentIds.includes(advisorId)) return 'sent'
+  function getButtonState(advisor: Advisor) {
+    if (existingConnections.includes(advisor.profile_id ?? '') || sentIds.includes(advisor.profile_id ?? '')) return 'sent'
     return 'request'
   }
 
@@ -216,7 +217,7 @@ export function AdvisorDirectoryClient({
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filtered.map(advisor => {
-            const btnState = getButtonState(advisor.id)
+            const btnState = getButtonState(advisor)
             return (
               <div
                 key={advisor.id}
