@@ -4,6 +4,21 @@ import { AttorneyDirectoryClient } from './_attorney-directory-client'
 export default async function AttorneyDirectoryPage() {
   const supabase = await createClient()
 
+  // Get current user and role
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let userRole: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    userRole = profile?.role ?? null
+  }
+
   const { data: attorneys } = await supabase
     .from('attorney_listings')
     .select('*')
@@ -23,6 +38,7 @@ export default async function AttorneyDirectoryPage() {
       attorneys={attorneys ?? []}
       allSpecializations={allSpecializations}
       allStates={allStates}
+      userRole={userRole}
     />
   )
 }
