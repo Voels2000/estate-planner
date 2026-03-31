@@ -17,6 +17,7 @@ Complete Context, Decisions, Schema & Sprint Status
 | Step 4 | You do not need to re-upload any previous schema CSVs — the complete current schema is documented in Section 5. |
 | Step 5 | For deploying database functions, use the psql method (see Section 9). The Supabase dashboard SQL editor has a metadata injection bug that breaks complex functions. |
 | Step 6 | All file writing is done via Cursor agent — avoids heredoc corruption issues. Cursor agent is preferred for all files especially app/(dashboard)/ paths. |
+| Step 7 | At the end of every sprint, update this handoff document to reflect what was built, then run: `pandoc docs/Estate_Planner_Sprint29B_Handoff_v1.md -o docs/Estate_Planner_Sprint29B_Handoff_v1.docx` to export a fresh Word doc. Upload the new .docx at the start of the next session. |
 
 ---
 
@@ -225,6 +226,7 @@ These are confirmed and must not be revisited:
 |---|---|
 | 1 — FIRST | Sprint 30 candidates: Attorney directory Request to Connect button (Q14), admin email on attorney listing submission (Q11), advisor/attorney tier enforcement (Q12/Q13). |
 | 2 | Decide Sprint 30 scope and sequence before writing any code. |
+| 3 — END OF SESSION | Update this handoff doc with sprint summary, new locked decisions, and open questions. Export to .docx via pandoc and save for next session. |
 
 ---
 
