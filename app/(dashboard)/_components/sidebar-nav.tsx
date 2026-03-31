@@ -99,12 +99,14 @@ export function SidebarNav({
   tier = 1,
   isAdvisor = false,
   isAdmin = false,
+  isAttorney = false,
 }: {
   user: User
   role?: string
   tier?: number
   isAdvisor?: boolean
   isAdmin?: boolean
+  isAttorney?: boolean
 }) {
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
@@ -293,7 +295,7 @@ export function SidebarNav({
         )}
 
         {/* Attorney Portal */}
-        {role === 'attorney' && (
+        {(role === 'attorney' || isAttorney) && (
           <Link
             href="/attorney"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
