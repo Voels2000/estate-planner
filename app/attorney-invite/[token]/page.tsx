@@ -24,7 +24,8 @@ export default async function AttorneyInvitePage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    const { error: acceptError } = await supabase
+    const admin = createAdminClient()
+    const { error: acceptError } = await admin
       .from('attorney_clients')
       .update({
         client_id: user.id,
