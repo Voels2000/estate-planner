@@ -11,11 +11,11 @@ export default async function AttorneyPage() {
   // Role guard — attorney only
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_attorney')
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'attorney') redirect('/dashboard')
+  if (!profile || (profile.role !== 'attorney' && !profile.is_attorney)) redirect('/dashboard')
 
   // Fetch all clients linked to this attorney
   const { data: attorneyClients } = await supabase
