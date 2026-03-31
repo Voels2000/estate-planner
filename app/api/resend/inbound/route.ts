@@ -20,34 +20,37 @@ const PERSONA_LABELS: Record<string, string> = {
 export const POST = async (request: NextRequest) => {
   try {
     const event = await request.json();
+    console.log('[Resend Inbound] Event type:', event.type);
+    console.log('[Resend Inbound] Full event:', JSON.stringify(event, null, 2));
 
     if (event.type === 'email.received') {
       const emailId: string = event.data.email_id;
       const toAddress: string = event.data.to?.[0] ?? '';
-
-      // Extract persona from local part e.g. "consumer1" from "consumer1@rolobe.resend.app"
       const persona = toAddress.split('@')[0]?.toLowerCase() ?? 'unknown';
       const label = PERSONA_LABELS[persona] ?? `[TEST: ${persona}]`;
 
-      console.log(`[Resend Inbound] Email received for persona: ${label} (${toAddress})`);
+      console.log(`[Resend Inbound] Attempting forward for persona: ${label}`);
+      console.log(`[Resend Inbound] Email ID: ${emailId}`);
 
       const { data, error } = await resend.emails.receiving.forward({
         emailId,
-        to: FORWARD_TO,
+        to:   FORWARD_TO,
         from: 'onboarding@resend.dev',
       });
+
+      console.log('[Resend Inbound] Forward data:', JSON.stringify(data, null, 2));
+      console.log('[Resend Inbound] Forward error:', JSON.stringify(error, null, 2));
 
       if (error) {
         console.error('[Resend Inbound] Forward error:', error);
         return new NextResponse(`Error: ${error.message}`, { status: 500 });
       }
 
-      console.log(`[Resend Inbound] Forwarded successfully to ${FORWARD_TO}`);
       return NextResponse.json({ forwarded: true, persona: label, data });
     }
 
-    // Not an email.received event — acknowledge and ignore
     return NextResponse.json({ received: true });
+
   } catch (err) {
     console.error('[Resend Inbound] Unexpected error:', err);
     return new NextResponse('Internal Server Error', { status: 500 });
