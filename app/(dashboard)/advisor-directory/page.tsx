@@ -7,13 +7,14 @@ export default async function AdvisorDirectoryPage() {
 
   const { data: connectionRows } = user
     ? await supabase
-        .from('advisor_clients')
-        .select('advisor_id')
-        .eq('client_id', user.id)
-        .neq('status', 'removed')
+      .from('connection_requests')
+      .select('listing_id')
+      .eq('consumer_id', user.id)
+      .eq('listing_type', 'advisor')
+      .eq('status', 'pending')
     : { data: null }
 
-  const existingConnections = (connectionRows ?? []).map(r => r.advisor_id)
+const existingConnections = (connectionRows ?? []).map(r => r.listing_id)
 
   const { data: advisors } = await supabase
     .from('advisor_directory')

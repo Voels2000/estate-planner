@@ -105,14 +105,14 @@ export function AdvisorDirectoryClient({
       const res = await fetch('/api/advisor-directory/request-connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advisor_id: modalAdvisor.profile_id, message }),
+        body: JSON.stringify({ listing_id: modalAdvisor.id, message }),
       })
       if (!res.ok) {
         const data = await res.json()
         setError(data.error || 'Something went wrong. Please try again.')
         return
       }
-      setSentIds(prev => [...prev, modalAdvisor.profile_id ?? ''])
+      setSentIds(prev => [...prev, modalAdvisor.id])
       closeModal()
     } catch {
       setError('Something went wrong. Please try again.')
@@ -124,7 +124,7 @@ export function AdvisorDirectoryClient({
   const hasFilters = search || selectedState || selectedSpec || selectedCred || fiduciaryOnly || remoteOnly
 
   function getButtonState(advisor: Advisor) {
-    if (existingConnections.includes(advisor.profile_id ?? '') || sentIds.includes(advisor.profile_id ?? '')) return 'sent'
+    if (existingConnections.includes(advisor.id) || sentIds.includes(advisor.id)) return 'sent'
     return 'request'
   }
 
