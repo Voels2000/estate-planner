@@ -17,6 +17,10 @@ const PERSONA_LABELS: Record<string, string> = {
   admin: '[TEST: Admin]',
 };
 
+export const GET = async () => {
+  return NextResponse.json({ ok: true });
+};
+
 export const POST = async (request: NextRequest) => {
   try {
     const event = await request.json();
