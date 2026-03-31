@@ -4,7 +4,8 @@ import { FormEvent, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type Role = 'consumer' | 'financial_advisor'
+// FIX: canonical role values — 'advisor' not 'financial_advisor'
+type Role = 'consumer' | 'advisor'
 
 export function SignupForm() {
   const router = useRouter()
@@ -66,10 +67,26 @@ export function SignupForm() {
         body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' })
       })
 
+      // FIX: check whether email confirmation is required before redirecting.
+      // If no session was returned, Supabase requires email confirmation first.
+      // Route to /confirm-email holding page instead of dashboard.
+      if (!data.session) {
+        setIsDone(true)
+        router.push('/confirm-email')
+        return
+      }
+
+      // Session exists — email confirmation is disabled or user is already confirmed.
+      // For new advisors without a subscription, route to billing.
+      // All others go to redirectTo (defaults to /dashboard).
       setIsDone(true)
-      router.push(redirectTo)
+      if (role === 'advisor') {
+        router.push('/billing')
+      } else {
+        router.push(redirectTo)
+      }
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
       setIsSubmitting(false)
     }
@@ -128,7 +145,8 @@ export function SignupForm() {
             <div className="grid grid-cols-2 gap-2">
               {([
                 ['consumer', 'Consumer', 'Manage your own estate planning.'],
-                ['financial_advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
+                // FIX: value is now 'advisor' — matches canonical role in profiles table
+                ['advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
               ] as const).map(([val, label, desc]) => (
                 <button key={val} type="button" onClick={() => setRole(val)}
                   className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition ${

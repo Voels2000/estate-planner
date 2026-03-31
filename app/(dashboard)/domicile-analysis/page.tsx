@@ -22,7 +22,7 @@ export default async function DomicileAnalysisPage() {
   const isAdmin = profile?.role === 'admin'
   const isAdvisor = profile?.role === 'advisor'
   if (!isAdmin && !isAdvisor && access.tier < 3) {
-    redirect('/billing')
+    redirect('/billing?returnTo=/domicile-analysis')
   }
 
   const { data: analysis } = await supabase

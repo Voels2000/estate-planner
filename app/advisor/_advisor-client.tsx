@@ -66,6 +66,11 @@ export default function AdvisorClientPage({
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'clients' | 'invite'>('clients')
+  const [tierLimitModal, setTierLimitModal] = useState<{
+    current_count: number
+    max_clients: number
+    tier_name: string
+  } | null>(null)
 
   async function handleInvite() {
     if (!inviteEmail.trim()) return
@@ -140,10 +145,21 @@ export default function AdvisorClientPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ advisor_client_id: advisorClientId }),
       })
+
       if (!res.ok) {
-        setError('Failed to accept request')
+        const data = await res.json().catch(() => ({}))
+        if (data.error === 'tier_limit_reached') {
+          setTierLimitModal({
+            current_count: data.current_count,
+            max_clients: data.max_clients,
+            tier_name: data.tier_name,
+          })
+          return
+        }
+        setError(data.error ?? 'Failed to accept request')
         return
       }
+
       // Move from incoming to pending (invite sent, awaiting acceptance)
       setClients(prev =>
         prev.map(c => c.id === advisorClientId ? { ...c, status: 'pending' } : c)
@@ -184,6 +200,38 @@ export default function AdvisorClientPage({
 
   return (
     <div className="space-y-8">
+      {/* Tier limit upgrade modal */}
+      {tierLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+            <div className="mb-1 text-2xl">🔒</div>
+            <h2 className="text-lg font-bold text-neutral-900">Client Limit Reached</h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Your <span className="font-medium">{tierLimitModal.tier_name}</span> plan
+              allows up to <span className="font-medium">{tierLimitModal.max_clients} clients</span>.
+              You currently have <span className="font-medium">{tierLimitModal.current_count}</span>.
+            </p>
+            <p className="mt-2 text-sm text-neutral-600">
+              Upgrade your plan to accept more clients.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <a
+                href="/billing"
+                className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-neutral-800 transition"
+              >
+                View Upgrade Options →
+              </a>
+              <button
+                onClick={() => setTierLimitModal(null)}
+                className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

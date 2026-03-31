@@ -45,10 +45,14 @@ export function BillingClient({
     setError(null)
     setLoadingPriceId(priceId)
     try {
+      // FIX: pass returnTo from URL params so post-payment lands back on the
+      // gated page the user came from rather than always going to /dashboard
+      const params = new URLSearchParams(window.location.search)
+      const returnTo = params.get('returnTo') ?? undefined
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, ...(returnTo ? { returnTo } : {}) }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong.'); setLoadingPriceId(null); return }

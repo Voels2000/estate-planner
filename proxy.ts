@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   '/billing',
   '/forgot-password',
   '/reset-password',
+  '/confirm-email',
   '/api/stripe/webhook',
   '/api/resend/inbound',
   '/api/cron',
@@ -67,6 +68,13 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     return redirectPreservingCookies(request, '/login', supabaseResponse)
+  }
+
+  // FIX: block unconfirmed users from accessing the app.
+  // Supabase sets email_confirmed_at once the user clicks the confirmation link.
+  // Until then, redirect to the holding page regardless of auth state.
+  if (!user.email_confirmed_at) {
+    return redirectPreservingCookies(request, '/confirm-email', supabaseResponse)
   }
 
   if (MFA_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) {

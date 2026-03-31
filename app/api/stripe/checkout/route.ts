@@ -8,8 +8,8 @@ const PRICE_IDS: Record<string, string> = {
   retirement: 'price_1TD2TECaljka9gJtp8fpf3Yk',
   estate:     'price_1TD2WZCaljka9gJt5xUAnv4J',
   // Advisor tiers
-  advisor:         'price_1TAlRkCaljka9gJtL7jcTwWY',
-  advisor_pro:     'price_1TBIjWCaljka9gJt5tAXddM7',
+  advisor:           'price_1TAlRkCaljka9gJtL7jcTwWY',
+  advisor_pro:       'price_1TBIjWCaljka9gJt5tAXddM7',
   advisor_unlimited: 'price_1TBIkSCaljka9gJtUqwl9reU',
   // Legacy
   consumer: 'price_1TAlJjCaljka9gJthGTMogQb',
@@ -29,30 +29,43 @@ export async function POST(req: Request) {
 
     const url = new URL(req.url)
     const planParam = url.searchParams.get('plan')
+
     let priceId: string | undefined
+    let returnTo: string | undefined
+
     if (planParam) {
       priceId = PRICE_IDS[planParam]
     } else {
       const body = await req.json().catch(() => ({}))
       priceId = body.priceId ?? PRICE_IDS[body.plan]
+      // FIX: read returnTo from request body so gated pages can pass their path
+      returnTo = typeof body.returnTo === 'string' ? body.returnTo : undefined
     }
 
     if (!priceId) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
-    // Check if user has completed profile setup (has a household)
-    const { data: household } = await supabase
-      .from('households')
-      .select('person1_name')
-      .eq('owner_id', user.id)
-      .single()
-
-    const isNewUser = !household?.person1_name
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const successUrl = isNewUser
-      ? `${baseUrl}/profile?success=true`
-      : `${baseUrl}/dashboard?success=true`
+
+    // FIX: build success_url using returnTo if provided.
+    // Fall back to /profile for new users, /dashboard for returning users.
+    let successUrl: string
+    if (returnTo) {
+      // Sanitize — only allow relative paths starting with /
+      const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
+      successUrl = `${baseUrl}${safePath}?success=true`
+    } else {
+      const { data: household } = await supabase
+        .from('households')
+        .select('person1_name')
+        .eq('owner_id', user.id)
+        .single()
+      const isNewUser = !household?.person1_name
+      successUrl = isNewUser
+        ? `${baseUrl}/profile?success=true`
+        : `${baseUrl}/dashboard?success=true`
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -60,7 +73,10 @@ export async function POST(req: Request) {
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
-      cancel_url: `${baseUrl}/billing?canceled=true`,
+      // FIX: preserve returnTo in cancel_url so back-navigation works correctly
+      cancel_url: returnTo
+        ? `${baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(returnTo)}`
+        : `${baseUrl}/billing?canceled=true`,
       metadata: { userId: user.id },
     })
 

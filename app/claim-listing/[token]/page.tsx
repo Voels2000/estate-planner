@@ -11,21 +11,24 @@ export default async function ClaimListingPage({ params }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // 1. Find the connection request by claim token
+  // 1. Find the connection request by claim token — supports both advisor and attorney
   const { data: connectionRequest } = await admin
     .from('connection_requests')
     .select('id, listing_id, listing_type, consumer_id, message, status')
     .eq('claim_token', token)
-    .eq('listing_type', 'advisor')
+    .in('listing_type', ['advisor', 'attorney'])
     .maybeSingle()
 
   if (!connectionRequest || connectionRequest.status !== 'pending') {
     redirect('/claim-listing/invalid')
   }
 
-  // 2. Fetch the listing
+  const isAttorney = connectionRequest.listing_type === 'attorney'
+
+  // 2. Fetch the listing from the correct table
+  const listingTable = isAttorney ? 'attorney_listings' : 'advisor_directory'
   const { data: listing } = await admin
-    .from('advisor_directory')
+    .from(listingTable)
     .select('id, firm_name, email, profile_id')
     .eq('id', connectionRequest.listing_id)
     .single()
@@ -33,16 +36,13 @@ export default async function ClaimListingPage({ params }: Props) {
   if (!listing) redirect('/claim-listing/invalid')
 
   // 3. Check if user is logged in
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    // Not logged in — redirect to login with claim token preserved
     redirect(`/login?claim=${token}&next=/claim-listing/${token}`)
   }
 
-  // 4. Verify the logged in user is an advisor
+  // 4. Verify the logged-in user has an appropriate role
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, is_attorney, full_name')
@@ -58,30 +58,33 @@ export default async function ClaimListingPage({ params }: Props) {
     redirect('/claim-listing/already-claimed')
   }
 
-  // 6. Claim the listing — link profile_id
+  // 6. Claim the listing — link profile_id in the correct table
   if (!listing.profile_id) {
     await admin
-      .from('advisor_directory')
+      .from(listingTable)
       .update({ profile_id: user.id })
       .eq('id', listing.id)
   }
 
-  // 7. Migrate this connection request into advisor_clients as consumer_requested
-  const { data: existingRow } = await admin
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', user.id)
-    .eq('client_id', connectionRequest.consumer_id)
-    .neq('status', 'removed')
-    .maybeSingle()
+  // 7. For advisor-type: migrate into advisor_clients as consumer_requested
+  //    For attorney-type: the connection_request row itself is the record — no separate clients table yet
+  if (!isAttorney) {
+    const { data: existingRow } = await admin
+      .from('advisor_clients')
+      .select('id')
+      .eq('advisor_id', user.id)
+      .eq('client_id', connectionRequest.consumer_id)
+      .neq('status', 'removed')
+      .maybeSingle()
 
-  if (!existingRow) {
-    await admin.from('advisor_clients').insert({
-      advisor_id: user.id,
-      client_id: connectionRequest.consumer_id,
-      status: 'consumer_requested',
-      request_message: connectionRequest.message,
-    })
+    if (!existingRow) {
+      await admin.from('advisor_clients').insert({
+        advisor_id: user.id,
+        client_id: connectionRequest.consumer_id,
+        status: 'consumer_requested',
+        request_message: connectionRequest.message,
+      })
+    }
   }
 
   // 8. Mark connection request as accepted
@@ -90,7 +93,7 @@ export default async function ClaimListingPage({ params }: Props) {
     .update({ status: 'accepted', profile_id: user.id })
     .eq('id', connectionRequest.id)
 
-  // 9. Notify consumer that advisor has claimed and is reviewing
+  // 9. Notify consumer that the listing has been claimed and is under review
   ;(async () => {
     try {
       await admin.rpc('create_notification', {
@@ -107,6 +110,6 @@ export default async function ClaimListingPage({ params }: Props) {
     }
   })()
 
-  // 10. Redirect to advisor portal where they can accept/decline
-  redirect('/advisor?claimed=true')
+  // 10. Redirect to the appropriate portal
+  redirect(isAttorney ? '/attorney?claimed=true' : '/advisor?claimed=true')
 }
