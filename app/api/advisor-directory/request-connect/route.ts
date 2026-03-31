@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,8 +63,11 @@ export async function POST(request: Request) {
     )
   }
 
-  // 6. Insert connection request
-  const { error: insertError } = await admin
+  // 6. Generate unique claim token for this request
+  const claimToken = randomUUID()
+
+  // 7. Insert connection request with claim token
+  const { data: requestRow, error: insertError } = await admin
     .from('connection_requests')
     .insert({
       listing_type: 'advisor',
@@ -72,16 +76,20 @@ export async function POST(request: Request) {
       consumer_id: user.id,
       message: message.trim(),
       status: 'pending',
+      claim_token: claimToken,
     })
+    .select()
+    .single()
 
-  if (insertError) {
+  if (insertError || !requestRow) {
     console.error('Insert error:', insertError)
     return NextResponse.json({ error: 'Failed to send request' }, { status: 500 })
   }
 
-  // 7. Fire email + notifications (fire-and-forget)
+  // 8. Fire email + notifications (fire-and-forget)
   const consumerLabel = profile.full_name?.trim() || profile.email || 'A potential client'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
+  const claimUrl = `${appUrl}/claim-listing/${claimToken}`
 
   ;(async () => {
     try {
@@ -104,12 +112,12 @@ export async function POST(request: Request) {
                 <p style="color:#374151;font-size:14px;font-style:italic;margin:0">"${message.trim()}"</p>
               </div>
               <div style="text-align:center;margin:32px 0">
-                <a href="${appUrl}/advisor" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
-                  Claim Your Listing &amp; Respond
+                <a href="${claimUrl}" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
+                  Respond to this Request
                 </a>
               </div>
               <p style="color:#6b7280;font-size:14px;text-align:center">
-                Log in or create your advisor account to manage connection requests.
+                Click above to log in or create your advisor account and respond to this request.
               </p>
             </div>
             <p style="color:#9ca3af;font-size:12px;text-align:center">
@@ -125,9 +133,9 @@ export async function POST(request: Request) {
           p_user_id: listing.profile_id,
           p_type: 'consumer_connection_request',
           p_title: 'New connection request',
-          p_body: `${consumerLabel} has requested to connect with you. Check your email to respond.`,
+          p_body: `${consumerLabel} has requested to connect with you. Check your advisor portal to respond.`,
           p_delivery: 'in_app',
-          p_metadata: { listing_id, consumer_id: user.id },
+          p_metadata: { listing_id, consumer_id: user.id, claim_token: claimToken },
           p_cooldown: '1 hour',
         })
       }
