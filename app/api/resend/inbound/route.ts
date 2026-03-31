@@ -34,7 +34,7 @@ export const POST = async (request: NextRequest) => {
       const { data, error } = await resend.emails.receiving.forward({
         emailId,
         to: FORWARD_TO,
-        from: 'hello@mywealthmaps.com',
+        from: 'onboarding@resend.dev',
       });
 
       if (error) {
