@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/api/stripe/webhook',
+  '/api/resend/inbound',
   '/api/cron',
 ]
 
