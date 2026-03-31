@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         p_cooldown: '1 hour',
       })
     } catch (err) {
-      console.error('Notification error:', err)
+      console.error('Notification/email error:', err)
     }
   })()
 
