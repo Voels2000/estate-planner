@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import NotesPanel from './NotesPanel'
+import BusinessSuccessionDashboard from '@/components/BusinessSuccessionDashboard'
 
 function formatDollars(n: number) {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
@@ -64,6 +65,7 @@ export default async function ClientDetailPage({
     { data: income },
     { data: expenses },
     { data: notes },
+    { data: businessInterests },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', clientId).single(),
     supabase.from('households').select('*').eq('owner_id', clientId).single(),
@@ -76,6 +78,10 @@ export default async function ClientDetailPage({
       .eq('advisor_id', user.id)
       .eq('client_id', clientId)
       .order('created_at', { ascending: false }),
+    supabase.from('business_interests')
+      .select('id')
+      .eq('owner_id', clientId)
+      .limit(1),
   ])
 
   const { data: projections } = household?.id
@@ -184,6 +190,35 @@ export default async function ClientDetailPage({
             <Detail label="Deduction Mode" value={household.deduction_mode} />
             <Detail label="Has Spouse" value={household.has_spouse ? 'Yes' : 'No'} />
           </div>
+        </div>
+      )}
+
+      {/* Business Succession */}
+      {household?.id && (businessInterests ?? []).length > 0 && (
+        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-6">
+            Business Succession
+          </h2>
+          <BusinessSuccessionDashboard
+            householdId={household.id}
+            userRole="advisor"
+          />
+        </div>
+      )}
+
+      {/* Business Succession — no interests yet */}
+      {household?.id && (businessInterests ?? []).length === 0 && (
+        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+            Business Succession
+          </h2>
+          <p className="text-sm text-neutral-400 mb-4">
+            No business interests on file for this client.
+          </p>
+          <BusinessSuccessionDashboard
+            householdId={household.id}
+            userRole="advisor"
+          />
         </div>
       )}
     </div>

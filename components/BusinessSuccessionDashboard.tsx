@@ -132,6 +132,8 @@ export default function BusinessSuccessionDashboard({
   const [saving, setSaving]           = useState(false);
   const [activeTab, setActiveTab]     = useState<'overview' | 'businesses' | 'recommendations'>('overview');
   const [hydrated, setHydrated]       = useState(false);
+  const [editingId, setEditingId]     = useState<string | null>(null);
+  const [deleting, setDeleting]       = useState<string | null>(null);
   useEffect(() => { setHydrated(true); }, []);
 
   const supabaseRef = useRef(createClient());
@@ -155,14 +157,58 @@ export default function BusinessSuccessionDashboard({
 
   useEffect(() => { load(); }, [householdId]);
 
+  const handleEdit = async (biz: BusinessDetail) => {
+    // Fetch full row from DB to get all fields not in summary
+    const { data } = await supabase
+      .from('business_interests')
+      .select('*')
+      .eq('id', biz.id)
+      .single();
+
+    if (!data) return;
+
+    setForm({
+      entity_name:                 data.entity_name                 ?? '',
+      entity_type:                 data.entity_type                 ?? 'llc',
+      ownership_pct:               data.ownership_pct?.toString()   ?? '',
+      total_entity_value:          data.total_entity_value?.toString() ?? '',
+      fmv_estimated:               data.fmv_estimated?.toString()   ?? '',
+      valuation_method:            data.valuation_method            ?? 'capitalized_earnings',
+      succession_plan_type:        data.succession_plan_type        ?? 'undecided',
+      successor_name:              data.successor_name              ?? '',
+      transfer_timeline_years:     data.transfer_timeline_years?.toString() ?? '',
+      buy_sell_agreement_type:     data.buy_sell_agreement_type     ?? 'none',
+      buy_sell_funded:             data.buy_sell_funded             ?? false,
+      key_person_insured:          data.key_person_insured          ?? false,
+      key_person_insurance_amount: data.key_person_insurance_amount?.toString() ?? '',
+      co_owner_names:              data.co_owner_names              ?? '',
+    });
+    setEditingId(biz.id);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async (bizId: string, bizName: string) => {
+    if (!confirm(`Delete "${bizName}"? This cannot be undone.`)) return;
+    setDeleting(bizId);
+    try {
+      const { error } = await supabase
+        .from('business_interests')
+        .delete()
+        .eq('id', bizId);
+      if (error) throw error;
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const handleAdd = async () => {
     if (!form.entity_name || !form.fmv_estimated) return;
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: insertError } = await supabase.from('business_interests').insert({
-        household_id:                householdId,
-        owner_id:                    user!.id,
+      const payload = {
         entity_name:                 form.entity_name,
         entity_type:                 form.entity_type,
         ownership_pct:               form.ownership_pct               ? parseFloat(form.ownership_pct as string)               : null,
@@ -178,9 +224,27 @@ export default function BusinessSuccessionDashboard({
         key_person_insured:          form.key_person_insured,
         key_person_insurance_amount: form.key_person_insurance_amount ? parseFloat(form.key_person_insurance_amount as string) : null,
         co_owner_names:              form.co_owner_names              || null,
-      });
-      if (insertError) throw insertError;
+        updated_at:                  new Date().toISOString(),
+      };
+
+      if (editingId) {
+        // UPDATE existing business
+        const { error: updateError } = await supabase
+          .from('business_interests')
+          .update(payload)
+          .eq('id', editingId);
+        if (updateError) throw updateError;
+      } else {
+        // INSERT new business
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error: insertError } = await supabase
+          .from('business_interests')
+          .insert({ ...payload, household_id: householdId, owner_id: user!.id });
+        if (insertError) throw insertError;
+      }
+
       setForm(emptyForm);
+      setEditingId(null);
       setShowAddForm(false);
       await load();
     } catch (e: any) {
@@ -215,7 +279,7 @@ export default function BusinessSuccessionDashboard({
         >
           <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#111827' }}>Add Business Interest</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#111827' }}>{editingId ? 'Edit Business Interest' : 'Add Business Interest'}</h2>
               <button type="button" onClick={() => setShowAddForm(false)} style={{ color: '#9ca3af', cursor: 'pointer', background: 'none', border: 'none', fontSize: '20px' }}>x</button>
             </div>
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -329,9 +393,9 @@ export default function BusinessSuccessionDashboard({
 
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', padding: '16px 24px', borderTop: '1px solid #e5e7eb' }}>
-              <button type="button" onClick={() => setShowAddForm(false)} style={{ padding: '8px 16px', fontSize: '14px', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+              <button type="button" onClick={() => { setShowAddForm(false); setEditingId(null); setForm(emptyForm); }} style={{ padding: '8px 16px', fontSize: '14px', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
               <button type="button" onClick={handleAdd} disabled={saving || !form.entity_name || !form.fmv_estimated} style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 500, backgroundColor: saving || !form.entity_name || !form.fmv_estimated ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: saving || !form.entity_name || !form.fmv_estimated ? 'not-allowed' : 'pointer' }}>
-                {saving ? 'Saving...' : 'Save Business'}
+                {saving ? 'Saving...' : editingId ? 'Update Business' : 'Save Business'}
               </button>
             </div>
           </div>
@@ -474,9 +538,30 @@ export default function BusinessSuccessionDashboard({
                         <p className="text-sm font-semibold text-gray-900">{biz.entity_name}</p>
                         <p className="text-xs text-gray-500">{ENTITY_LABELS[biz.entity_type] ?? biz.entity_type} · {biz.ownership_pct}% ownership</p>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${readinessColor(biz.readiness_score)}`}>{biz.readiness_score}/100</p>
-                        <p className="text-xs text-gray-400">{readinessLabel(biz.readiness_score)}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className={`text-sm font-bold ${readinessColor(biz.readiness_score)}`}>{biz.readiness_score}/100</p>
+                          <p className="text-xs text-gray-400">{readinessLabel(biz.readiness_score)}</p>
+                        </div>
+                        {userRole === 'advisor' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(biz)}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(biz.id, biz.entity_name)}
+                              disabled={deleting === biz.id}
+                              className="text-xs text-red-600 hover:text-red-800 font-medium px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {deleting === biz.id ? '...' : '🗑️ Delete'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="divide-y divide-gray-100">
