@@ -36,7 +36,7 @@ export default async function BusinessSuccessionPage() {
     .eq('owner_id', user.id)
     .single();
 
-  if (!household) redirect('/dashboard');
+  if (!household) redirect('/profile');
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
