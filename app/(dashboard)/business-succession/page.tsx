@@ -36,6 +36,7 @@ export default async function BusinessSuccessionPage() {
     .eq('owner_id', user.id)
     .single();
 
+  console.log('DEBUG household:', { household, userId: user.id });
   if (!household) redirect('/profile');
 
   return (
