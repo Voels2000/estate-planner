@@ -7,13 +7,12 @@ const BusinessSuccessionDashboard = dynamic(
   { ssr: false }
 );
 
-export default function BusinessSuccessionClient({
-  householdId,
-  userRole,
-}: {
+interface Props {
   householdId: string;
   userRole: 'consumer' | 'advisor';
-}) {
+}
+
+export default function BusinessSuccessionClient({ householdId, userRole }: Props) {
   return (
     <BusinessSuccessionDashboard
       householdId={householdId}
