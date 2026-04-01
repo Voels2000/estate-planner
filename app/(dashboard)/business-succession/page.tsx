@@ -20,7 +20,7 @@ export default async function BusinessSuccessionPage() {
   if (!profile) redirect('/login');
 
   // Advisor-only for v1
-  if (profile.role !== 'advisor' && profile.consumer_tier < 3) {
+  if (profile.role !== 'advisor' && Number(profile.consumer_tier) < 3) {
     redirect('/billing?returnTo=/business-succession');
   }
 
