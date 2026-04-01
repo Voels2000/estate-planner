@@ -19,6 +19,12 @@ export default async function BusinessSuccessionPage() {
 
   if (!profile) redirect('/login');
 
+  console.log('DEBUG business-succession gate:', {
+    role: profile.role,
+    consumer_tier: profile.consumer_tier,
+    tierType: typeof profile.consumer_tier,
+  });
+
   // Advisor-only for v1
   if (profile.role !== 'advisor' && Number(profile.consumer_tier) < 3) {
     redirect('/billing?returnTo=/business-succession');
