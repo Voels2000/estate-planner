@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 type Attorney = {
   id: string
+  attorney_id: string | null
   firm_name: string
   contact_name: string | null
   email: string
@@ -44,6 +45,7 @@ export function AttorneyDirectoryClient({
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
+  const [consentChecked, setConsentChecked] = useState(false)
 
   const isConsumer = userRole === 'consumer'
 
@@ -82,20 +84,29 @@ export function AttorneyDirectoryClient({
     setModalAttorney(null)
     setMessage('')
     setModalError(null)
+    setConsentChecked(false)
   }
 
   async function submitRequest() {
-    if (!modalAttorney || !message.trim()) return
+    if (!modalAttorney) return
+    if (!consentChecked) {
+      setModalError('Please confirm your consent before granting access.')
+      return
+    }
+    if (!modalAttorney.attorney_id) {
+      setModalError('This attorney listing is not yet linked to an attorney account.')
+      return
+    }
     setSubmitting(true)
     setModalError(null)
     try {
-      const res = await fetch('/api/attorney-directory/request-connect', {
+      const res = await fetch('/api/attorney/grant-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing_id: modalAttorney.id, message: message.trim() }),
+        body: JSON.stringify({ attorney_id: modalAttorney.attorney_id }),
       })
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
         setModalError(data.error ?? 'Something went wrong. Please try again.')
         return
       }
@@ -278,15 +289,30 @@ export function AttorneyDirectoryClient({
               Request to Connect
             </h2>
             <p className="text-sm text-neutral-500 mb-4">
-              Send a message to <strong>{modalAttorney.firm_name}</strong>. They will receive your request and can choose to accept or decline.
+              You are about to grant <strong>{modalAttorney.firm_name}</strong> read-only
+              access to your estate plan and document vault. You can revoke this access
+              at any time from <strong>Settings → Attorney Access</strong>.
             </p>
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Introduce yourself and describe what you need help with..."
-              rows={4}
-              className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none"
-            />
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-800 space-y-1">
+              <p>⚖️ <strong>What this attorney will be able to do:</strong></p>
+              <p>✅ View your estate plan summary</p>
+              <p>✅ Upload legal documents to your vault</p>
+              <p>✅ Download documents from your vault</p>
+              <p>❌ Make changes to your estate plan</p>
+              <p>❌ See your login credentials or billing information</p>
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={e => setConsentChecked(e.target.checked)}
+                className="mt-0.5 rounded border-neutral-300"
+              />
+              <span className="text-sm text-neutral-700">
+                I understand and consent to granting <strong>{modalAttorney.firm_name}</strong> read-only
+                access to my estate plan and document vault.
+              </span>
+            </label>
             {modalError && (
               <p className="mt-2 text-sm text-red-600">{modalError}</p>
             )}
@@ -301,10 +327,10 @@ export function AttorneyDirectoryClient({
               <button
                 type="button"
                 onClick={submitRequest}
-                disabled={submitting || !message.trim()}
+                disabled={submitting}
                 className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Sending…' : 'Send Request'}
+                {submitting ? 'Granting access…' : 'Grant Access'}
               </button>
             </div>
           </div>

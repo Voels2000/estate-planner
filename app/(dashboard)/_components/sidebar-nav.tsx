@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
+      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', consumerOnly: true },
     ],
   },
   {
