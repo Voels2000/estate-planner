@@ -44,10 +44,23 @@ interface BusinessSuccessionSummary {
   businesses: BusinessDetail[];
 }
 
+interface SuccessionNote {
+  id: string;
+  household_id: string;
+  user_id: string;
+  business_interest_id: string | null;
+  note_text: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const fmt$ = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
 const fmtPct = (n: number) => `${n.toFixed(1)}%`;
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 const ENTITY_LABELS: Record<string, string> = {
   llc:         'LLC',
@@ -119,21 +132,174 @@ const emptyForm = {
   co_owner_names:              '',
 };
 
+// ─── Notes sub-component ────────────────────────────────────────────────────
+
+interface NotesProps {
+  notes: SuccessionNote[];
+  userRole: 'consumer' | 'advisor';
+  businessInterestId: string | null; // null = general notes
+  onAdd: (text: string, bizId: string | null) => Promise<void>;
+  onEdit: (id: string, text: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}
+
+function NotesPanel({ notes, userRole, businessInterestId, onAdd, onEdit, onDelete }: NotesProps) {
+  const [draft, setDraft]           = useState('');
+  const [saving, setSaving]         = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [editText, setEditText]     = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const scoped = notes.filter(n =>
+    businessInterestId
+      ? n.business_interest_id === businessInterestId
+      : n.business_interest_id === null
+  );
+
+  const handleAdd = async () => {
+    if (!draft.trim()) return;
+    setSaving(true);
+    await onAdd(draft.trim(), businessInterestId);
+    setDraft('');
+    setSaving(false);
+  };
+
+  const handleEdit = async (id: string) => {
+    if (!editText.trim()) return;
+    setSaving(true);
+    await onEdit(id, editText.trim());
+    setEditingId(null);
+    setEditText('');
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    await onDelete(id);
+    setDeletingId(null);
+  };
+
+  return (
+    <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 space-y-3">
+      {/* Header */}
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        {userRole === 'advisor' ? '📝 Consumer Notes' : '📝 My Notes'}
+      </p>
+
+      {/* Existing notes */}
+      {scoped.length === 0 && userRole === 'advisor' && (
+        <p className="text-sm text-gray-400 italic">No consumer notes.</p>
+      )}
+
+      {scoped.map(note => (
+        <div key={note.id} className="bg-white border border-gray-200 rounded-lg p-3">
+          {editingId === note.id ? (
+            <div className="space-y-2">
+              <textarea
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setEditingId(null); setEditText(''); }}
+                  className="text-xs text-gray-500 px-3 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(note.id)}
+                  disabled={saving || !editText.trim()}
+                  className="text-xs text-white px-3 py-1.5 bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">{note.note_text}</p>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <span className="text-xs text-gray-400">{fmtDate(note.updated_at)}</span>
+                {userRole === 'consumer' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingId(note.id); setEditText(note.note_text); }}
+                      className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 ml-1"
+                      title="Edit note"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(note.id)}
+                      disabled={deletingId === note.id}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 disabled:opacity-50"
+                      title="Delete note"
+                    >
+                      {deletingId === note.id ? '...' : '🗑️'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Add note — consumer only */}
+      {userRole === 'consumer' && (
+        <div className="space-y-2">
+          <textarea
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            placeholder="Add a note…"
+            rows={2}
+            className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+          />
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={saving || !draft.trim()}
+              className="text-xs text-white px-3 py-1.5 bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving...' : 'Add Note'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
 export default function BusinessSuccessionDashboard({
   householdId,
   userRole,
 }: BusinessSuccessionDashboardProps) {
 
-  const [summary, setSummary]         = useState<BusinessSuccessionSummary | null>(null);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm]               = useState(emptyForm);
-  const [saving, setSaving]           = useState(false);
-  const [activeTab, setActiveTab]     = useState<'overview' | 'businesses' | 'recommendations'>('overview');
-  const [hydrated, setHydrated]       = useState(false);
-  const [editingId, setEditingId]     = useState<string | null>(null);
-  const [deleting, setDeleting]       = useState<string | null>(null);
+  const [summary, setSummary]               = useState<BusinessSuccessionSummary | null>(null);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState<string | null>(null);
+  const [showAddForm, setShowAddForm]       = useState(false);
+  const [form, setForm]                     = useState(emptyForm);
+  const [saving, setSaving]                 = useState(false);
+  const [activeTab, setActiveTab]           = useState<'overview' | 'businesses' | 'recommendations'>('overview');
+  const [hydrated, setHydrated]             = useState(false);
+  const [editingId, setEditingId]           = useState<string | null>(null);
+  const [deleting, setDeleting]             = useState<string | null>(null);
+
+  // Notes state
+  const [notes, setNotes]                   = useState<SuccessionNote[]>([]);
+  const [notesLoading, setNotesLoading]     = useState(false);
+  const [expandedNotes, setExpandedNotes]   = useState<Set<string>>(new Set()); // biz ids + 'general'
+
   useEffect(() => { setHydrated(true); }, []);
 
   const supabaseRef = useRef(createClient());
@@ -155,10 +321,74 @@ export default function BusinessSuccessionDashboard({
     }
   };
 
-  useEffect(() => { load(); }, [householdId]);
+  const loadNotes = async () => {
+    setNotesLoading(true);
+    try {
+      const { data, error: notesError } = await supabase
+        .from('business_succession_notes')
+        .select('*')
+        .eq('household_id', householdId)
+        .order('created_at', { ascending: true });
+      if (notesError) throw notesError;
+      setNotes(data ?? []);
+    } catch (e: any) {
+      // non-fatal — notes failure shouldn't block the main view
+      console.error('Failed to load notes:', e.message);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    loadNotes();
+  }, [householdId]);
+
+  const toggleNotes = (key: string) => {
+    setExpandedNotes(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  // ── Note CRUD ──────────────────────────────────────────────────────────────
+
+  const handleAddNote = async (text: string, bizId: string | null) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('business_succession_notes')
+      .insert({
+        household_id:        householdId,
+        user_id:             user!.id,
+        business_interest_id: bizId,
+        note_text:           text,
+      });
+    if (error) { setError(error.message); return; }
+    await loadNotes();
+  };
+
+  const handleEditNote = async (id: string, text: string) => {
+    const { error } = await supabase
+      .from('business_succession_notes')
+      .update({ note_text: text, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) { setError(error.message); return; }
+    await loadNotes();
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    const { error } = await supabase
+      .from('business_succession_notes')
+      .delete()
+      .eq('id', id);
+    if (error) { setError(error.message); return; }
+    await loadNotes();
+  };
+
+  // ── Business CRUD (advisor only) ───────────────────────────────────────────
 
   const handleEdit = async (biz: BusinessDetail) => {
-    // Fetch full row from DB to get all fields not in summary
     const { data } = await supabase
       .from('business_interests')
       .select('*')
@@ -228,14 +458,12 @@ export default function BusinessSuccessionDashboard({
       };
 
       if (editingId) {
-        // UPDATE existing business
         const { error: updateError } = await supabase
           .from('business_interests')
           .update(payload)
           .eq('id', editingId);
         if (updateError) throw updateError;
       } else {
-        // INSERT new business
         const { data: { user } } = await supabase.auth.getUser();
         const { error: insertError } = await supabase
           .from('business_interests')
@@ -254,6 +482,8 @@ export default function BusinessSuccessionDashboard({
     }
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   if (loading) return (
     <div className="flex items-center justify-center p-12">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -269,9 +499,17 @@ export default function BusinessSuccessionDashboard({
 
   const hasBuySell = (type: string | null) => type && type !== 'none';
 
+  const noteCount = (key: string) =>
+    notes.filter(n =>
+      key === 'general'
+        ? n.business_interest_id === null
+        : n.business_interest_id === key
+    ).length;
+
   return (
     <Fragment>
 
+      {/* ── Add/Edit modal (advisor only) ──────────────────────────────── */}
       {showAddForm && (
         <div
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
@@ -402,6 +640,7 @@ export default function BusinessSuccessionDashboard({
         </div>
       )}
 
+      {/* ── Main layout ────────────────────────────────────────────────── */}
       <div className="space-y-6">
 
         <div className="flex items-center justify-between">
@@ -423,6 +662,7 @@ export default function BusinessSuccessionDashboard({
           )}
         </div>
 
+        {/* KPI cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Business FMV</p>
@@ -452,6 +692,7 @@ export default function BusinessSuccessionDashboard({
           </div>
         </div>
 
+        {/* Empty state */}
         {summary.business_count === 0 && (
           <div className="text-center py-16 text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -461,6 +702,7 @@ export default function BusinessSuccessionDashboard({
           </div>
         )}
 
+        {/* Tabs */}
         {hydrated && summary.business_count > 0 && (
           <>
             <div className="border-b border-gray-200">
@@ -473,6 +715,7 @@ export default function BusinessSuccessionDashboard({
               </nav>
             </div>
 
+            {/* Overview tab */}
             {activeTab === 'overview' && (
               <div className="space-y-4">
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -529,10 +772,12 @@ export default function BusinessSuccessionDashboard({
               </div>
             )}
 
+            {/* Businesses tab */}
             {activeTab === 'businesses' && (
               <div className="space-y-4">
                 {summary.businesses.map((biz) => (
                   <div key={biz.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    {/* Card header */}
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{biz.entity_name}</p>
@@ -564,6 +809,8 @@ export default function BusinessSuccessionDashboard({
                         )}
                       </div>
                     </div>
+
+                    {/* Card data rows */}
                     <div className="divide-y divide-gray-100">
                       {[
                         { label: 'Estimated FMV',      value: fmt$(biz.fmv) },
@@ -581,6 +828,8 @@ export default function BusinessSuccessionDashboard({
                         </div>
                       ))}
                     </div>
+
+                    {/* Gaps */}
                     {biz.gaps.length > 0 && (
                       <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Gaps</p>
@@ -594,11 +843,78 @@ export default function BusinessSuccessionDashboard({
                         </div>
                       </div>
                     )}
+
+                    {/* Notes toggle row */}
+                    <button
+                      type="button"
+                      onClick={() => toggleNotes(biz.id)}
+                      className="w-full flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-white hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        📝 {userRole === 'advisor' ? 'Consumer Notes' : 'My Notes'}
+                        {noteCount(biz.id) > 0 && (
+                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 normal-case tracking-normal">
+                            {noteCount(biz.id)}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-gray-400 text-xs">{expandedNotes.has(biz.id) ? '▲' : '▼'}</span>
+                    </button>
+
+                    {/* Notes panel — expanded */}
+                    {expandedNotes.has(biz.id) && (
+                      <NotesPanel
+                        notes={notes}
+                        userRole={userRole}
+                        businessInterestId={biz.id}
+                        onAdd={handleAddNote}
+                        onEdit={handleEditNote}
+                        onDelete={handleDeleteNote}
+                      />
+                    )}
                   </div>
                 ))}
+
+                {/* General notes card */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => toggleNotes('general')}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">
+                        📝 General Notes
+                        {noteCount('general') > 0 && (
+                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {noteCount('general')}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {userRole === 'consumer'
+                          ? 'Notes about your overall succession plan — visible to your advisor'
+                          : 'Consumer\'s general notes about their succession plan'}
+                      </p>
+                    </div>
+                    <span className="text-gray-400 text-xs">{expandedNotes.has('general') ? '▲' : '▼'}</span>
+                  </button>
+
+                  {expandedNotes.has('general') && (
+                    <NotesPanel
+                      notes={notes}
+                      userRole={userRole}
+                      businessInterestId={null}
+                      onAdd={handleAddNote}
+                      onEdit={handleEditNote}
+                      onDelete={handleDeleteNote}
+                    />
+                  )}
+                </div>
               </div>
             )}
 
+            {/* Recommendations tab */}
             {activeTab === 'recommendations' && (
               <div className="space-y-3">
                 {summary.recommendations.length === 0 ? (

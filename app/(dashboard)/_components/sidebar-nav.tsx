@@ -74,7 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax', advisorOnly: true },
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting', advisorOnly: true },
       { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable', advisorOnly: true },
-      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: true },
+      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', minTier: 3 },
     ],
