@@ -547,8 +547,8 @@ export default function BusinessSuccessionDashboard({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>Estimated FMV *</label>
-                  <input type="number" value={form.fmv_estimated} onChange={e => setForm(f => ({ ...f, fmv_estimated: e.target.value }))} placeholder="Your ownership share FMV" style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', fontSize: '14px' }} />
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>Estimated FMV ($ dollar value) *</label>
+                  <input type="number" value={form.fmv_estimated} onChange={e => setForm(f => ({ ...f, fmv_estimated: e.target.value }))} placeholder="e.g. 624000 — your ownership share in dollars" style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', fontSize: '14px' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>Valuation Method</label>
@@ -625,6 +625,12 @@ export default function BusinessSuccessionDashboard({
               {form.ownership_pct && parseFloat(form.ownership_pct as string) < 50 && (
                 <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '6px', padding: '10px 12px', fontSize: '13px', color: '#92400e' }}>
                   Ownership below 50% — minority interest and DLOM discounts may apply. Your advisor can add discount entries after saving.
+                </div>
+              )}
+
+              {form.fmv_estimated && parseFloat(form.fmv_estimated as string) > 0 && parseFloat(form.fmv_estimated as string) < 100 && (
+                <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', padding: '10px 12px', fontSize: '13px', color: '#991b1b' }}>
+                  ⚠️ Estimated FMV looks low — this field expects a dollar amount (e.g. $624,000), not a percentage.
                 </div>
               )}
 
