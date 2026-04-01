@@ -185,7 +185,9 @@ function NotesPanel({ notes, userRole, businessInterestId, onAdd, onEdit, onDele
 
       {/* Existing notes */}
       {scoped.length === 0 && userRole === 'advisor' && (
-        <p className="text-sm text-gray-400 italic">No consumer notes.</p>
+        <p className="text-sm text-gray-400 italic">
+          {businessInterestId ? 'No consumer notes.' : 'No general notes.'}
+        </p>
       )}
 
       {scoped.map(note => (
