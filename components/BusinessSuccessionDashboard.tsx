@@ -182,9 +182,6 @@ function NotesPanel({ notes, userRole, businessInterestId, onAdd, onEdit, onDele
   return (
     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 space-y-3">
       {/* Header */}
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        {userRole === 'advisor' ? '📝 Consumer Notes' : '📝 My Notes'}
-      </p>
 
       {/* Existing notes */}
       {scoped.length === 0 && userRole === 'advisor' && (
