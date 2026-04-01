@@ -14,7 +14,7 @@ export default async function TrustWillPage() {
   if (!user) redirect('/login')
 
   const access = await getUserAccess()
-  if (access.tier < 3 && !access.isAdvisor) redirect('/dashboard')
+  if (access.tier < 3 && !access.isAdvisor) redirect('/billing?returnTo=/trust-will')
 
   const admin = createAdminClient()
 

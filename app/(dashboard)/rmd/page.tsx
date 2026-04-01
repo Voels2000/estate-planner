@@ -1,18 +1,12 @@
+import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
-import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { RmdClient } from './_rmd-client'
 
 export default async function RmdPage() {
   const access = await getUserAccess()
   if (access.tier < 2) {
-    return (
-      <GatedPage requiredTier={2} currentTier={access.tier} featureName="RMD Calculator">
-        <div className="mx-auto max-w-5xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-neutral-900">RMD Calculator</h1>
-        </div>
-      </GatedPage>
-    )
+    redirect('/billing?returnTo=/rmd')
   }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

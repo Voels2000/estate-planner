@@ -1,5 +1,4 @@
 import { getUserAccess } from '@/lib/get-user-access'
-import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import IncapacityPlanningDashboard from '@/components/IncapacityPlanningDashboard'
@@ -8,13 +7,7 @@ export default async function IncapacityPage() {
   const access = await getUserAccess()
 
   if (access.tier < 3) {
-    return (
-      <GatedPage requiredTier={3} currentTier={access.tier} featureName="Incapacity Planning">
-        <div className="mx-auto max-w-4xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-neutral-900">Incapacity Planning</h1>
-        </div>
-      </GatedPage>
-    )
+    redirect('/billing?returnTo=/incapacity')
   }
 
   const supabase = await createClient()

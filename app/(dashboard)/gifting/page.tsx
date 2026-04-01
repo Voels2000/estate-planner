@@ -1,5 +1,4 @@
 import { getUserAccess } from '@/lib/get-user-access'
-import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GiftingDashboardClient from '@/components/GiftingDashboardClient'
@@ -7,13 +6,7 @@ import GiftingDashboardClient from '@/components/GiftingDashboardClient'
 export default async function GiftingPage() {
   const access = await getUserAccess()
   if (access.tier < 3) {
-    return (
-      <GatedPage requiredTier={3} currentTier={access.tier} featureName="Gifting Strategy">
-        <div className="mx-auto max-w-4xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-neutral-900">Gifting Strategy</h1>
-        </div>
-      </GatedPage>
-    )
+    redirect('/billing?returnTo=/gifting')
   }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

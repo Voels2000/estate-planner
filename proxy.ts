@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/confirm-email',
+  '/terms',
+  '/api/terms',
   '/api/stripe/webhook',
   '/api/resend/inbound',
   '/api/cron',
@@ -75,6 +77,17 @@ export async function proxy(request: NextRequest) {
   // Until then, redirect to the holding page regardless of auth state.
   if (!user.email_confirmed_at) {
     return redirectPreservingCookies(request, '/confirm-email', supabaseResponse)
+  }
+
+  // Block users who haven't accepted current T&C
+  const { data: termsProfile } = await supabase
+    .from('profiles')
+    .select('terms_accepted_at')
+    .eq('id', user.id)
+    .single()
+
+  if (!termsProfile?.terms_accepted_at) {
+    return redirectPreservingCookies(request, '/terms', supabaseResponse)
   }
 
   if (MFA_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) {

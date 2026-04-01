@@ -1,6 +1,6 @@
+import { redirect } from "next/navigation"
 
 import { getUserAccess } from "@/lib/get-user-access"
-import { GatedPage } from "@/components/gated-page"
 import { InsuranceClient } from "./_insurance-client"
 import { createClient } from "@/lib/supabase/server"
 
@@ -11,13 +11,7 @@ export default async function InsurancePage() {
   console.log("INSURANCE PAGE ACCESS:", JSON.stringify({ tier, isAdvisor }))
 
   if (!isAdvisor && tier < 2) {
-    return (
-      <GatedPage
-        requiredTier={2}
-        currentTier={tier}
-        featureName="Insurance Gap Analysis"
-      >{null}</GatedPage>
-    )
+    redirect("/billing?returnTo=/insurance")
   }
 
   const supabase = await createClient()

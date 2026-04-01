@@ -10,8 +10,8 @@ export const metadata = {
 export default async function MonteCarloPage() {
   const access = await getUserAccess()
 
-  if (access.tier < 3) {
-    redirect('/pricing')
+  if (access.tier < 2) {
+    redirect('/billing?returnTo=/monte-carlo')
   }
 
   return <MonteCarloClient />

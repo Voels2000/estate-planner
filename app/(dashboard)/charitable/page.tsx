@@ -18,7 +18,7 @@ export default async function CharitablePage() {
 
   // Tier gate: consumer must be tier 3+ or advisor
   if (profile.role === 'consumer' && (profile.consumer_tier ?? 0) < 3) {
-    redirect('/dashboard');
+    redirect('/billing?returnTo=/charitable');
   }
 
   const { data: household } = await supabase

@@ -1,5 +1,4 @@
 import { getUserAccess } from '@/lib/get-user-access'
-import { GatedPage } from '@/components/gated-page'
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -8,13 +7,7 @@ import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
   if (access.tier < 3) {
-    return (
-      <GatedPage requiredTier={3} currentTier={access.tier} featureName="Estate Tax Planning">
-        <div className="mx-auto max-w-5xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-neutral-900">Estate Tax Planning</h1>
-        </div>
-      </GatedPage>
-    )
+    redirect('/billing?returnTo=/estate-tax')
   }
   const supabase = await createClient()
   const {

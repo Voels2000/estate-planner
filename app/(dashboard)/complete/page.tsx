@@ -1,5 +1,4 @@
 import { getUserAccess } from '@/lib/get-user-access'
-import { GatedPage } from '@/components/gated-page'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
@@ -7,14 +6,8 @@ import CompleteClient from './_complete-client'
 
 export default async function CompletePage() {
   const access = await getUserAccess()
-  if (access.tier < 2) {
-    return (
-      <GatedPage requiredTier={2} currentTier={access.tier} featureName="Lifetime Financial & Estate Snapshot">
-        <div className="mx-auto max-w-5xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-neutral-900">Lifetime Financial & Estate Snapshot</h1>
-        </div>
-      </GatedPage>
-    )
+  if (access.tier < 3) {
+    redirect('/billing?returnTo=/complete')
   }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
