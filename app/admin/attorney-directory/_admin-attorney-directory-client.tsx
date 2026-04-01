@@ -15,6 +15,7 @@ type Attorney = {
   created_at: string
   specializations: string[] | null
   credentials: string[] | null
+  submitted_by: string | null
 }
 
 type ConsumerProfile = { id: string; email: string | null; full_name: string | null }
@@ -55,12 +56,64 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
   const [attorneys, setAttorneys] = useState(initialAttorneys)
   const [referrals, setReferrals] = useState(initialReferrals)
   const [loading, setLoading] = useState<string | null>(null)
+  const [approving, setApproving] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
   const [edits, setEdits] = useState<Record<string, { status: string; notes: string }>>(() =>
     Object.fromEntries(initialReferrals.map(r => [r.id, { status: r.status, notes: r.notes ?? '' }])),
   )
+
+  async function handleApprove(id: string) {
+    setApproving(`${id}-approve`)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await fetch('/api/attorney-directory/admin-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: id, action: 'approve' }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Approval failed.')
+        return
+      }
+      setAttorneys(prev =>
+        prev.map(a => (a.id === id ? { ...a, is_active: true, is_verified: true } : a)),
+      )
+      setSuccess(`Listing approved and attorney notified.`)
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setApproving(null)
+    }
+  }
+
+  async function handleReject(id: string, firmName: string) {
+    if (!confirm(`Reject and permanently delete the listing for "${firmName}"?`)) return
+    setApproving(`${id}-reject`)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await fetch('/api/attorney-directory/admin-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: id, action: 'reject' }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Rejection failed.')
+        return
+      }
+      setAttorneys(prev => prev.filter(a => a.id !== id))
+      setSuccess(`Listing rejected and attorney notified.`)
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setApproving(null)
+    }
+  }
 
   async function toggleField(id: string, field: 'is_verified' | 'is_active', value: boolean) {
     setLoading(`${id}-${field}`)
@@ -143,7 +196,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <div className="mx-auto max-w-7xl space-y-10 px-4 py-12">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Attorney Directory</h1>
@@ -156,6 +209,85 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
           View public directory
         </a>
       </div>
+
+      {/* ── Pending Nominations ───────────────────────────── */}
+      {(() => {
+        const pending = attorneys.filter(a => !a.is_active && !a.is_verified)
+        if (pending.length === 0) return null
+        return (
+          <div>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+                ⏳ Pending Nominations
+              </h2>
+              <p className="mt-1 text-neutral-500">
+                {pending.length} nomination{pending.length !== 1 ? 's' : ''} awaiting review
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {pending.map(a => (
+                <div
+                  key={a.id}
+                  className="flex items-start justify-between gap-4 rounded-xl border border-amber-200 bg-white p-5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-neutral-900">{a.firm_name}</p>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        Pending Review
+                      </span>
+                    </div>
+                    {a.contact_name && (
+                      <p className="mt-0.5 text-sm text-neutral-500">{a.contact_name}</p>
+                    )}
+                    <p className="text-sm text-neutral-500">{a.email}</p>
+                    {(a.city || a.state) && (
+                      <p className="mt-1 text-xs text-neutral-400">
+                        📍 {[a.city, a.state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {(a.specializations ?? []).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {(a.specializations ?? []).map(s => (
+                          <span
+                            key={s}
+                            className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-neutral-400">
+                      Nominated {new Date(a.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(a.id)}
+                      disabled={approving === `${a.id}-approve`}
+                      className="whitespace-nowrap rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {approving === `${a.id}-approve` ? 'Approving...' : '✅ Approve'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReject(a.id, a.firm_name)}
+                      disabled={approving === `${a.id}-reject`}
+                      className="whitespace-nowrap rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {approving === `${a.id}-reject` ? 'Rejecting...' : '🚫 Reject'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {error && (
         <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -179,7 +311,9 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {attorneys.map(attorney => (
+            {attorneys
+              .filter(a => a.is_active || a.is_verified)
+              .map(attorney => (
               <tr key={attorney.id} className="hover:bg-neutral-50 transition-colors">
                 <td className="px-4 py-3">
                   <p className="font-medium text-neutral-900">{attorney.firm_name}</p>
