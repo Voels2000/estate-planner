@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { household_id: string } }
+  { params }: { params: Promise<{ household_id: string }> }
 ) {
   const supabase = await createClient()
 
@@ -16,7 +16,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { household_id } = params
+  const { household_id } = await params
 
   // ── 2. Get caller role ─────────────────────────────────────
   const { data: profile } = await supabase

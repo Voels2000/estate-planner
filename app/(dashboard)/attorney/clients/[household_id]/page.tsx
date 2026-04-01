@@ -7,7 +7,7 @@ import { AttorneyClientVault } from '../../_attorney-client-vault'
 export default async function AttorneyClientPage({
   params,
 }: {
-  params: { household_id: string }
+  params: Promise<{ household_id: string }>
 }) {
   const supabase = await createClient()
 
@@ -23,11 +23,13 @@ export default async function AttorneyClientPage({
   const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
   if (!isAttorney) redirect('/dashboard')
 
+  const { household_id } = await params
+
   const { data: connection } = await supabase
     .from('attorney_clients')
     .select('id, granted_at')
     .eq('attorney_id', user.id)
-    .eq('client_id', params.household_id)
+    .eq('client_id', household_id)
     .in('status', ['active', 'accepted'])
     .maybeSingle()
 
@@ -36,7 +38,7 @@ export default async function AttorneyClientPage({
   const { data: household } = await supabase
     .from('households')
     .select('*')
-    .eq('id', params.household_id)
+    .eq('id', household_id)
     .single()
 
   if (!household) redirect('/attorney')
@@ -64,7 +66,7 @@ export default async function AttorneyClientPage({
   const { data: documents } = await supabase
     .from('legal_documents')
     .select('id, document_type, file_name, version, is_current, uploader_role, created_at')
-    .eq('household_id', params.household_id)
+    .eq('household_id', household_id)
     .eq('is_current', true)
     .eq('is_deleted', false)
     .order('document_type', { ascending: true })
@@ -120,7 +122,7 @@ export default async function AttorneyClientPage({
       </div>
 
       <AttorneyClientVault
-        householdId={params.household_id}
+        householdId={household_id}
         attorneyId={user.id}
         documents={documents ?? []}
       />

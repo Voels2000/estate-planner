@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { document_id: string } }
+  { params }: { params: Promise<{ document_id: string }> }
 ) {
   const supabase = await createClient()
 
@@ -16,7 +16,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { document_id } = params
+  const { document_id } = await params
 
   // ── 2. Fetch document record ────────────────────────────────
   // RLS on legal_documents ensures caller can only fetch docs
