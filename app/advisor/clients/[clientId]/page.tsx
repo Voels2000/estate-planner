@@ -194,27 +194,11 @@ export default async function ClientDetailPage({
       )}
 
       {/* Business Succession */}
-      {household?.id && (businessInterests ?? []).length > 0 && (
+      {household?.id && (
         <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-6">
             Business Succession
           </h2>
-          <BusinessSuccessionDashboard
-            householdId={household.id}
-            userRole="advisor"
-          />
-        </div>
-      )}
-
-      {/* Business Succession — no interests yet */}
-      {household?.id && (businessInterests ?? []).length === 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-2">
-            Business Succession
-          </h2>
-          <p className="text-sm text-neutral-400 mb-4">
-            No business interests on file for this client.
-          </p>
           <BusinessSuccessionDashboard
             householdId={household.id}
             userRole="advisor"
