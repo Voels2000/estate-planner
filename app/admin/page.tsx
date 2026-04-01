@@ -29,6 +29,15 @@ export default async function AdminPage() {
     .select('*')
     .order('key')
 
+  // T&C content
+  const termsVersionRow  = appConfig?.find(r => r.key === 'terms_version')
+  const termsSectionsRow = appConfig?.find(r => r.key === 'terms_sections')
+
+  const termsVersion  = termsVersionRow?.value  ?? '2026-03-31'
+  const termsSections = (() => {
+    try { return JSON.parse(termsSectionsRow?.value ?? '[]') } catch { return [] }
+  })()
+
   const { data: advisorTiers } = await supabase
     .from('advisor_tiers')
     .select('*')
@@ -110,6 +119,8 @@ export default async function AdminPage() {
       incomeTypes={incomeTypes ?? []}
       expenseTypes={expenseTypes ?? []}
       titlingCategories={titlingCategories ?? []}
+      termsVersion={termsVersion}
+      termsSections={termsSections}
     />
   )
 }

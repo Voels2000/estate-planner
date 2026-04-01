@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { AdvisorTier } from '@/lib/types'
 import DebugTab from './debug-tab'
 import TaxRulesTab from './tax-rules-tab'
+import TermsTab from './terms-tab'
 
 type Profile = {
   id: string
@@ -71,9 +72,11 @@ type Props = {
   incomeTypes: CategoryItem[]
   expenseTypes: CategoryItem[]
   titlingCategories: TitlingCategory[]
+  termsVersion:  string
+  termsSections: { title: string; body: string }[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'debug'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -83,6 +86,8 @@ export function AdminClient({
   incomeTypes: initialIncomeTypes,
   expenseTypes: initialExpenseTypes,
   titlingCategories: initialTitlingCategories,
+  termsVersion,
+  termsSections,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -273,7 +278,8 @@ export function AdminClient({
     { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
     { key: 'categories', label: 'Categories',      icon: '🗂️' },
     { key: 'tax_rules',  label: 'Tax Rules',       icon: '🏛️' },
-    { key: 'debug',      label: 'Debugger',        icon: '🔍' },
+    { key: 'terms',      label: 'T&C',             icon: '📋' },
+    { key: 'debug',      label: 'Debug',           icon: '🐛' },
   ]
 
   const CATEGORY_SECTIONS: { table: CategoryTable; label: string; description: string }[] = [
@@ -583,6 +589,12 @@ export function AdminClient({
 
       {activeTab === 'tax_rules' && <TaxRulesTab />}
 
+      {activeTab === 'terms' && (
+        <TermsTab
+          initialVersion={termsVersion}
+          initialSections={termsSections}
+        />
+      )}
       {activeTab === 'debug' && <DebugTab profiles={rest.profiles} />}
 
       {activeTab === 'settings' && (

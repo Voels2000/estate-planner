@@ -4,8 +4,6 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const TERMS_VERSION = '2026-03-31'
-
 export async function POST() {
   const supabase = await createClient()
   const admin = createAdminClient()
@@ -16,12 +14,20 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { data: versionRow } = await admin
+    .from('app_config')
+    .select('value')
+    .eq('key', 'terms_version')
+    .maybeSingle()
+
+  const termsVersion = versionRow?.value ?? '2026-03-31'
+
   // 2. Write acceptance to profiles
   const { error: updateError } = await admin
     .from('profiles')
     .update({
       terms_accepted_at: new Date().toISOString(),
-      terms_version: TERMS_VERSION,
+      terms_version: termsVersion,
     })
     .eq('id', user.id)
 
