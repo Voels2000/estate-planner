@@ -1,189 +1,129 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import EstateTaxClient, { type EstateTaxTrustRow } from '@/app/(dashboard)/estate-tax/_estate-tax-client'
+import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
+import { AttorneyClientVault } from '../../_attorney-client-vault'
 
-import { useState, useRef } from 'react'
+export default async function AttorneyClientPage({
+  params,
+}: {
+  params: { household_id: string }
+}) {
+  const supabase = await createClient()
 
-type Document = {
-  id:            string
-  document_type: string
-  file_name:     string
-  version:       number
-  is_current:    boolean
-  uploader_role: string
-  created_at:    string
-}
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-type Props = {
-  householdId: string
-  attorneyId:  string
-  documents:   Document[]
-}
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, is_attorney')
+    .eq('id', user.id)
+    .single()
 
-const DOCTYPE_LABELS: Record<string, string> = {
-  will:              'Will',
-  trust:             'Trust',
-  dpoa:              'DPOA',
-  medical_poa:       'Medical POA',
-  advance_directive: 'Advance Directive',
-  living_will:       'Living Will',
-  deed:              'Deed',
-  titling:           'Titling',
-  correspondence:    'Correspondence',
-  other:             'Other',
-}
+  const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
+  if (!isAttorney) redirect('/dashboard')
 
-export function AttorneyClientVault({ householdId, attorneyId, documents }: Props) {
-  const [docs, setDocs]           = useState<Document[]>(documents)
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError]   = useState<string | null>(null)
-  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
-  const [docType, setDocType]     = useState('will')
-  const fileRef                   = useRef<HTMLInputElement>(null)
+  const { data: connection } = await supabase
+    .from('attorney_clients')
+    .select('id, granted_at')
+    .eq('attorney_id', user.id)
+    .eq('client_id', params.household_id)
+    .in('status', ['active', 'accepted'])
+    .maybeSingle()
 
-  // ── Upload handler ─────────────────────────────────────────
-  async function handleUpload() {
-    setUploadError(null)
-    setUploadSuccess(null)
-    const file = fileRef.current?.files?.[0]
-    if (!file) {
-      setUploadError('Please select a PDF file.')
-      return
-    }
-    if (file.type !== 'application/pdf') {
-      setUploadError('Only PDF files are accepted.')
-      return
-    }
+  if (!connection) redirect('/attorney')
 
-    setUploading(true)
-    try {
-      const form = new FormData()
-      form.append('file',         file)
-      form.append('household_id', householdId)
-      form.append('document_type', docType)
-      form.append('attorney_id',  attorneyId)
+  const { data: household } = await supabase
+    .from('households')
+    .select('*')
+    .eq('id', params.household_id)
+    .single()
 
-      const res  = await fetch('/api/documents/upload', { method: 'POST', body: form })
-      const data = await res.json()
+  if (!household) redirect('/attorney')
 
-      if (!res.ok) {
-        setUploadError(data.error ?? 'Upload failed.')
-      } else {
-        setUploadSuccess(`${file.name} uploaded successfully.`)
-        // Refresh doc list
-        const updated = await fetch(`/api/documents/${householdId}`)
-        const updatedData = await updated.json()
-        if (updatedData.documents) setDocs(updatedData.documents)
-        if (fileRef.current) fileRef.current.value = ''
-      }
-    } catch {
-      setUploadError('An unexpected error occurred.')
-    } finally {
-      setUploading(false)
-    }
-  }
+  const ownerId = household.owner_id
 
-  // ── Download handler ───────────────────────────────────────
-  async function handleDownload(documentId: string, fileName: string) {
-    try {
-      const res  = await fetch(`/api/documents/download/${documentId}`)
-      const data = await res.json()
-      if (!res.ok) {
-        alert(data.error ?? 'Download failed.')
-        return
-      }
-      // Open signed URL in new tab
-      window.open(data.url, '_blank')
-    } catch {
-      alert('An unexpected error occurred.')
-    }
-  }
+  const [
+    { data: realEstateRows },
+    { data: assetsRows },
+    { data: liabilitiesRows },
+    { data: trustsRows },
+    { data: federalEstateTaxBracketsRows },
+    { data: stateEstateTaxRows },
+    { data: stateInheritanceTaxRows },
+  ] = await Promise.all([
+    supabase.from('real_estate').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
+    supabase.from('assets').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
+    supabase.from('liabilities').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
+    supabase.from('trusts').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
+    supabase.from('federal_estate_tax_brackets').select('*').order('tax_year', { ascending: false }).order('min_amount', { ascending: true }),
+    supabase.from('state_estate_tax_rules').select('*').order('tax_year', { ascending: false }).order('state', { ascending: true }).order('min_amount', { ascending: true }),
+    supabase.from('state_inheritance_tax_rules').select('*').order('tax_year', { ascending: false }).order('state', { ascending: true }),
+  ])
+
+  const { data: documents } = await supabase
+    .from('legal_documents')
+    .select('id, document_type, file_name, version, is_current, uploader_role, created_at')
+    .eq('household_id', params.household_id)
+    .eq('is_current', true)
+    .eq('is_deleted', false)
+    .order('document_type', { ascending: true })
+
+  const { data: clientProfile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', ownerId)
+    .single()
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl p-6">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-1">
-        📁 Document Vault
-      </h2>
-      <p className="text-sm text-neutral-400 mb-6">
-        Upload legal documents for this client. All uploads are timestamped and logged.
-      </p>
-
-      {/* Upload panel */}
-      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 mb-6">
-        <p className="text-sm font-medium text-neutral-700 mb-3">Upload a document</p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <select
-            value={docType}
-            onChange={e => setDocType(e.target.value)}
-            className="border border-neutral-200 rounded-lg px-3 py-2 text-sm
-                       bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {Object.entries(DOCTYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/pdf"
-            className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-3
-                       file:rounded-lg file:border file:border-neutral-200
-                       file:text-sm file:bg-white file:text-neutral-700
-                       hover:file:bg-neutral-50 flex-1"
-          />
-          <button
-            onClick={handleUpload}
-            disabled={uploading}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg
-                       hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
-                       whitespace-nowrap"
-          >
-            {uploading ? 'Uploading...' : '⬆️ Upload PDF'}
-          </button>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <a href="/attorney" className="text-sm text-neutral-400 hover:text-neutral-600 mb-1 block">
+            ← Back to clients
+          </a>
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            {clientProfile?.full_name ?? 'Client'}
+          </h1>
+          <p className="text-sm text-neutral-400 mt-0.5">
+            {clientProfile?.email} · Access granted{' '}
+            {connection.granted_at ? new Date(connection.granted_at).toLocaleDateString() : ''}
+          </p>
         </div>
-        {uploadError   && <p className="text-red-500 text-xs mt-2">{uploadError}</p>}
-        {uploadSuccess && <p className="text-green-600 text-xs mt-2">✅ {uploadSuccess}</p>}
+        <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full font-medium">
+          👁 Read-only view
+        </span>
       </div>
 
-      {/* Document list */}
-      {docs.length === 0 ? (
-        <div className="text-center py-10 text-neutral-400">
-          <p className="text-2xl mb-2">📄</p>
-          <p className="text-sm">No documents uploaded yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {docs.map(doc => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between p-3 border
-                         border-neutral-200 rounded-lg hover:bg-neutral-50"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">📄</span>
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">
-                    {doc.file_name}
-                  </p>
-                  <p className="text-xs text-neutral-400">
-                    {DOCTYPE_LABELS[doc.document_type] ?? doc.document_type}
-                    {' · '}v{doc.version}
-                    {' · '}
-                    {doc.uploader_role === 'attorney' ? '⚖️ Attorney' : '👤 Client'}
-                    {' · '}
-                    {new Date(doc.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDownload(doc.id, doc.file_name)}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3
-                           py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50"
-              >
-                ⬇️ Download
-              </button>
-            </div>
-          ))}
-        </div>
+      {household?.id && (
+        <EstatePlanningDashboard
+          householdId={household.id}
+          userRole="advisor"
+          consumerTier={3}
+        />
       )}
+
+      <div className="pointer-events-none opacity-95 select-none">
+        <p className="text-xs text-amber-600 mb-2 pointer-events-none">
+          ⚠️ This is a read-only view. Changes cannot be made from the attorney portal.
+        </p>
+        <EstateTaxClient
+          realEstate={realEstateRows ?? []}
+          assets={assetsRows ?? []}
+          liabilities={liabilitiesRows ?? []}
+          trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
+          household={household as Record<string, unknown> | null}
+          brackets={federalEstateTaxBracketsRows ?? []}
+          stateEstateTaxRules={stateEstateTaxRows ?? []}
+          stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+        />
+      </div>
+
+      <AttorneyClientVault
+        householdId={params.household_id}
+        attorneyId={user.id}
+        documents={documents ?? []}
+      />
     </div>
   )
 }
