@@ -39,6 +39,12 @@ interface IncapacityPlanningDashboardProps {
   consumerTier?: number;
 }
 
+interface DocumentConfirmation {
+  doc_type: string;
+  status: string;
+  last_reviewed: string | null;
+}
+
 const priorityColors: Record<string, string> = {
   high: 'border-l-red-500',
   moderate: 'border-l-yellow-500',
@@ -60,6 +66,9 @@ export default function IncapacityPlanningDashboard({
   const [data, setData] = useState<IncapacityResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmations, setConfirmations] = useState<Record<string, DocumentConfirmation>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const isAdvisor = userRole === 'advisor';
   const isConsumerT3 = userRole === 'consumer' && consumerTier >= 3;
@@ -83,6 +92,65 @@ export default function IncapacityPlanningDashboard({
     }
     load();
   }, [householdId]);
+
+  useEffect(() => {
+    async function loadConfirmations() {
+      const { data: docs } = await supabase
+        .from('estate_documents')
+        .select('doc_type, status, last_reviewed')
+        .eq('household_id', householdId)
+        .in('doc_type', ['dpoa', 'medical_poa', 'advance_directive', 'living_will']);
+      if (docs) {
+        const map: Record<string, DocumentConfirmation> = {};
+        docs.forEach(d => {
+          map[d.doc_type] = d;
+        });
+        setConfirmations(map);
+      }
+    }
+    loadConfirmations();
+  }, [householdId]);
+
+  async function handleToggleConfirmation(doc_type: string, confirmed: boolean) {
+    setSaving(doc_type);
+    setSaveError(null);
+    try {
+      if (confirmed) {
+        const { error } = await supabase
+          .from('estate_documents')
+          .upsert(
+            {
+              household_id: householdId,
+              doc_type,
+              status: 'confirmed',
+              last_reviewed: new Date().toISOString().split('T')[0],
+            },
+            { onConflict: 'household_id,doc_type' }
+          );
+        if (error) throw error;
+        setConfirmations(prev => ({
+          ...prev,
+          [doc_type]: { doc_type, status: 'confirmed', last_reviewed: new Date().toISOString().split('T')[0] },
+        }));
+      } else {
+        const { error } = await supabase
+          .from('estate_documents')
+          .delete()
+          .eq('household_id', householdId)
+          .eq('doc_type', doc_type);
+        if (error) throw error;
+        setConfirmations(prev => {
+          const next = { ...prev };
+          delete next[doc_type];
+          return next;
+        });
+      }
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to save.');
+    } finally {
+      setSaving(null);
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center p-12">
@@ -228,6 +296,65 @@ export default function IncapacityPlanningDashboard({
             </span>
           </div>
         )}
+      </div>
+
+      {/* Document Confirmation */}
+      <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-1 text-base font-semibold text-neutral-900">Document Confirmation</h2>
+        <p className="mb-5 text-sm text-neutral-500">
+          Confirm which incapacity planning documents you have in place. This updates your gap analysis.
+        </p>
+        {saveError && (
+          <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+        )}
+        <div className="space-y-3">
+          {[
+            { doc_type: 'dpoa', label: 'Durable Power of Attorney (DPOA)' },
+            { doc_type: 'medical_poa', label: 'Medical Power of Attorney' },
+            { doc_type: 'advance_directive', label: 'Advance Directive' },
+            { doc_type: 'living_will', label: 'Living Will' },
+          ].map(({ doc_type, label }) => {
+            const confirmed = confirmations[doc_type]?.status === 'confirmed';
+            const isSaving = saving === doc_type;
+            const reviewedDate = confirmations[doc_type]?.last_reviewed;
+            return (
+              <div
+                key={doc_type}
+                className={`flex items-center justify-between rounded-lg border px-4 py-3 transition-colors ${
+                  confirmed ? 'border-green-200 bg-green-50' : 'border-neutral-200 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id={`confirm-${doc_type}`}
+                    checked={confirmed}
+                    disabled={isSaving}
+                    onChange={e => void handleToggleConfirmation(doc_type, e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 text-green-600 focus:ring-green-500"
+                  />
+                  <div>
+                    <label
+                      htmlFor={`confirm-${doc_type}`}
+                      className={`text-sm font-medium cursor-pointer ${confirmed ? 'text-green-800' : 'text-neutral-700'}`}
+                    >
+                      {label}
+                    </label>
+                    {reviewedDate && (
+                      <p className="text-xs text-neutral-400 mt-0.5">Confirmed {reviewedDate}</p>
+                    )}
+                  </div>
+                </div>
+                {isSaving && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-400" />
+                )}
+                {confirmed && !isSaving && (
+                  <span className="text-xs font-medium text-green-600">✓ On file</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Gap Analysis — advisor full detail */}

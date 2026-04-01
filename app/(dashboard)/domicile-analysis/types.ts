@@ -19,3 +19,21 @@ export type DomicileChecklistRow = {
   completed: boolean
   completed_at: string | null
 }
+
+export type StateEstateTaxRule = {
+  state: string
+  exemption_amount: number
+  tax_year: number
+  min_amount: number
+}
+
+export type StateInheritanceTaxRule = {
+  state: string
+  tax_year: number
+}
+
+export type StateIncomeTaxRate = {
+  state_code: string
+  rate_pct: number
+  tax_year: number
+}

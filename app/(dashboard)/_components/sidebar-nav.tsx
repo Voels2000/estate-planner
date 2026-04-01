@@ -47,7 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/allocation', label: 'Asset Allocation', icon: '📐', feature: 'allocation' },
       { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
       { href: '/scenarios', label: 'Scenarios', icon: '🔮', feature: 'scenarios' },
-      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
+      { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
   {
@@ -55,11 +55,11 @@ const NAV_GROUPS: NavGroup[] = [
     icon: '🏖️',
     locked: true,
     items: [
+      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
       { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
       { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
-      { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
   {

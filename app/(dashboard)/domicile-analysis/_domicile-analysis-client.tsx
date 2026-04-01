@@ -5,7 +5,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import DomicileChecklist from './_domicile-checklist'
 import DomicileForm, { type DomicileFormPayload } from './_domicile-form'
 import DomicileResults from './_domicile-results'
-import type { DomicileAnalysisRow, DomicileChecklistRow } from './types'
+import type {
+  DomicileAnalysisRow,
+  DomicileChecklistRow,
+  StateEstateTaxRule,
+  StateInheritanceTaxRule,
+  StateIncomeTaxRate,
+} from './types'
 
 export type { DomicileAnalysisRow, DomicileChecklistRow } from './types'
 
@@ -31,12 +37,18 @@ export default function DomicileAnalysisClient({
   role,
   clients,
   userId,
+  stateEstateTaxRules,
+  stateInheritanceTaxRules,
+  stateIncomeTaxRates,
 }: {
   initialAnalysis: DomicileAnalysisRow | null
   initialChecklist: DomicileChecklistRow[]
   role: string
   clients: ClientOption[]
   userId: string
+  stateEstateTaxRules: StateEstateTaxRule[]
+  stateInheritanceTaxRules: StateInheritanceTaxRule[]
+  stateIncomeTaxRates: StateIncomeTaxRate[]
 }) {
   const isAdvisor = role === 'advisor'
   const [subjectId, setSubjectId] = useState(userId)
@@ -234,6 +246,9 @@ export default function DomicileAnalysisClient({
             analysis={analysis}
             onRerun={() => scrollToId('domicile-facts')}
             onViewChecklist={() => scrollToId('domicile-checklist')}
+            stateEstateTaxRules={stateEstateTaxRules}
+            stateInheritanceTaxRules={stateInheritanceTaxRules}
+            stateIncomeTaxRates={stateIncomeTaxRates}
           />
         </section>
       )}
