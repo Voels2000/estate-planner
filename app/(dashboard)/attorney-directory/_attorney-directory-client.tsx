@@ -93,17 +93,13 @@ export function AttorneyDirectoryClient({
       setModalError('Please confirm your consent before granting access.')
       return
     }
-    if (!modalAttorney.attorney_id) {
-      setModalError('This attorney listing is not yet linked to an attorney account.')
-      return
-    }
     setSubmitting(true)
     setModalError(null)
     try {
       const res = await fetch('/api/attorney/grant-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attorney_id: modalAttorney.attorney_id }),
+        body: JSON.stringify({ attorney_id: modalAttorney.id }),
       })
       const data = await res.json()
       if (!res.ok) {
