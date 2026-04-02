@@ -171,7 +171,7 @@ export function SidebarNav({
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {!isAttorney && NAV_GROUPS.map((group) => {
+        {NAV_GROUPS.map((group) => {
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked = group.locked === true && !isAdvisor && (

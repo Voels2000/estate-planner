@@ -24,7 +24,6 @@ const ATTORNEY_ONLY_PATHS = [
 const ATTORNEY_BLOCKED_PATHS = [
   '/dashboard',
   '/profile',
-  '/billing',
   '/advisor',
 ]
 
