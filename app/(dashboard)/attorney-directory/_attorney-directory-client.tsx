@@ -103,7 +103,17 @@ export function AttorneyDirectoryClient({
       })
       const data = await res.json()
       if (!res.ok) {
-        setModalError(data.error ?? 'Something went wrong. Please try again.')
+        if (
+          res.status === 404 &&
+          typeof data.error === 'string' &&
+          data.error.startsWith('Household not found')
+        ) {
+          setModalError(
+            'Please complete your profile before connecting with an attorney. Go to Profile to get started.'
+          )
+        } else {
+          setModalError(data.error ?? 'Something went wrong. Please try again.')
+        }
         return
       }
       setRequestedIds(prev => new Set(prev).add(modalAttorney.id))
