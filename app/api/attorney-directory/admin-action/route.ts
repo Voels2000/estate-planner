@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
           from: 'MyWealthMaps <hello@mywealthmaps.com>',
           to: advisorProfile.email,
           bcc: 'avoels@comcast.net',
-          subject: 'Attorney nomination approved — MyWealthMaps',
+          subject: 'The attorney you nominated is now live — MyWealthMaps',
           html: `
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
               <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
@@ -115,16 +115,17 @@ export async function POST(req: NextRequest) {
                 <p style="color:#374151;font-size:16px;line-height:1.6">Hi ${advisorProfile.full_name ?? 'there'},</p>
                 <p style="color:#374151;font-size:16px;line-height:1.6">
                   The attorney you nominated — <strong>${listing.firm_name}</strong> —
-                  has been approved and is now live in the directory.
-                </p>
-                <p style="color:#374151;font-size:16px;line-height:1.6">
-                  Sign in to MyWealthMaps to view the directory and your referrals.
+                  is now live in the MyWealthMaps attorney directory. Your clients can
+                  find this attorney and request to connect with them.
                 </p>
                 <div style="text-align:center;margin:32px 0">
-                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/login"
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL}/login"
                     style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
-                    Log In to MyWealthMaps
+                    Sign in to MyWealthMaps
                   </a>
+                  <p style="color:#6b7280;font-size:13px;margin-top:12px">
+                    View the directory and your referrals from your advisor portal.
+                  </p>
                 </div>
               </div>
               <p style="color:#9ca3af;font-size:12px;text-align:center">Questions? Reply to this email.</p>

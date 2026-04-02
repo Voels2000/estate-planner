@@ -30,6 +30,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const [form, setForm] = useState({
     firm_name: '',
@@ -80,12 +81,33 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong.'); setSaving(false); return }
-      router.push('/advisor-directory')
+      setSuccess(true)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setSaving(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <div className="text-5xl mb-4">✅</div>
+        <h1 className="text-2xl font-bold text-neutral-900">Listing Submitted</h1>
+        <p className="mt-3 text-neutral-500">
+          Your listing is pending admin review. You&apos;ll receive an email
+          at <strong>{form.email}</strong> once it&apos;s approved and live
+          in the MyWealthMaps advisor directory.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="mt-8 rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 transition"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    )
   }
 
   return (
