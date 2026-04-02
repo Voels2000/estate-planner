@@ -85,7 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
-      { href: '/referrals', label: 'Attorney Referrals', icon: '📝', consumerOnly: true },
+      { href: '/referrals', label: 'Request Attorney Introduction', icon: '📝', consumerOnly: true },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
