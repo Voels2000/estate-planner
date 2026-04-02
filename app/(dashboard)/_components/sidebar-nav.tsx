@@ -216,7 +216,16 @@ export function SidebarNav({
                     </div>
                   )}
                   {group.items.map((item) => {
+                    // Hide consumerOnly items from non-consumers
                     if (item.consumerOnly && role !== 'consumer') {
+                      return null
+                    }
+                    // Hide advisorOnly items from non-advisors entirely
+                    if (item.advisorOnly && !isAdvisor) {
+                      return null
+                    }
+                    // Hide tier-gated items consumer will never reach
+                    if (item.minTier && !isAdvisor && tier < item.minTier) {
                       return null
                     }
                     if (groupIsLocked) {
@@ -226,27 +235,6 @@ export function SidebarNav({
                           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-default select-none"
                         >
                           <span className="flex-1 truncate">{item.label}</span>
-                          {item.advisorOnly && (
-                            <span className="ml-auto shrink-0 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] font-medium text-blue-400">
-                              Advisor
-                            </span>
-                          )}
-                        </div>
-                      )
-                    }
-                    if (item.minTier && !isAdvisor && tier < item.minTier) {
-                      return null
-                    }
-                    if (item.advisorOnly && !isAdvisor) {
-                      return (
-                        <div
-                          key={item.href}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-default select-none"
-                        >
-                          <span className="flex-1 truncate">{item.label}</span>
-                          <span className="ml-auto shrink-0 rounded-full bg-blue-50 px-1.5 py-0 text-[10px] font-medium text-blue-500">
-                            Advisor
-                          </span>
                         </div>
                       )
                     }
