@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { AttorneySignOut } from './_components/attorney-sign-out'
 
 export default async function AttorneyLayout({
   children,
@@ -29,7 +30,10 @@ export default async function AttorneyLayout({
     <div className="min-h-screen bg-neutral-50">
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-neutral-200">
         <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
-        <span className="text-sm text-neutral-500">{user.email}</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-neutral-500">{user.email}</span>
+          <AttorneySignOut />
+        </div>
       </div>
       <main className="flex-1">
         {children}
