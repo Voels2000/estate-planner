@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -48,7 +49,8 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 })
     }
-    const { error } = await supabase
+    const admin = createAdminClient()
+    const { error } = await admin
       .from('attorney_listings')
       .delete()
       .eq('id', id)
