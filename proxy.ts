@@ -102,22 +102,29 @@ export async function proxy(request: NextRequest) {
   }
 
   // Role-based route guards
-  const { data: routeProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  // Only fetch role when the path actually needs it — avoids adding a DB call
+  // to every single request which can cause middleware timeouts.
+  const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
+  const isAttorneyBlockedPath = ATTORNEY_BLOCKED_PATHS.some((p) => pathname.startsWith(p))
 
-  const userRole = routeProfile?.role
+  if (isAttorneyPath || isAttorneyBlockedPath) {
+    const { data: routeProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-  // Attorneys can only access attorney routes — block dashboard/advisor/billing
-  if (userRole === 'attorney' && ATTORNEY_BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
-    return redirectPreservingCookies(request, '/attorney/dashboard', supabaseResponse)
-  }
+    const userRole = routeProfile?.role
 
-  // Non-attorneys cannot access attorney routes
-  if (userRole !== 'attorney' && ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
-    return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
+    // Attorneys can only access attorney routes — block dashboard/advisor/billing
+    if (userRole === 'attorney' && isAttorneyBlockedPath) {
+      return redirectPreservingCookies(request, '/attorney/dashboard', supabaseResponse)
+    }
+
+    // Non-attorneys cannot access attorney routes
+    if (userRole !== 'attorney' && isAttorneyPath) {
+      return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
+    }
   }
 
   if (MFA_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) {
