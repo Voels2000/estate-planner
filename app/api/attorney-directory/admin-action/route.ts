@@ -117,6 +117,15 @@ export async function POST(req: NextRequest) {
                   The attorney you nominated — <strong>${listing.firm_name}</strong> —
                   has been approved and is now live in the directory.
                 </p>
+                <p style="color:#374151;font-size:16px;line-height:1.6">
+                  Sign in to MyWealthMaps to view the directory and your referrals.
+                </p>
+                <div style="text-align:center;margin:32px 0">
+                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/login"
+                    style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
+                    Log In to MyWealthMaps
+                  </a>
+                </div>
               </div>
               <p style="color:#9ca3af;font-size:12px;text-align:center">Questions? Reply to this email.</p>
             </div>
