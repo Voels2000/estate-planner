@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
@@ -43,15 +42,6 @@ export default async function DashboardLayout({
 
   const isAdvisor = profile?.role === 'advisor'
   const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
-
-  // Attorneys belong in the attorney portal — redirect if they land anywhere else
-  if (isAttorney) {
-    const headersList = await headers()
-    const pathname = headersList.get('x-pathname') ?? ''
-    if (!pathname.startsWith('/attorney')) {
-      redirect('/attorney/dashboard')
-    }
-  }
 
   // Check if user is an advisor client
   let isAdvisorClient = false
