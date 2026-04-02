@@ -19,21 +19,30 @@ export default async function AttorneyDashboardPage() {
   const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
   if (!isAttorney) redirect('/dashboard')
 
-  // 3. Fetch all active clients
-  const { data: clients } = await supabase
-    .from('attorney_clients')
-    .select(`
-      id,
-      client_id,
-      status,
-      granted_at,
-      advisor_pdf_access
-    `)
-    .eq('attorney_id', user.id)
-    .in('status', ['active', 'accepted'])
-    .order('granted_at', { ascending: false })
+  // 3. Look up this attorney's listing by profile_id
+  const { data: attorneyListing } = await supabase
+    .from('attorney_listings')
+    .select('id')
+    .eq('profile_id', user.id)
+    .maybeSingle()
 
-  // 4. Fetch household details for each client
+  // 4. Fetch all active clients using the listing ID
+  const { data: clients } = attorneyListing
+    ? await supabase
+        .from('attorney_clients')
+        .select(`
+          id,
+          client_id,
+          status,
+          granted_at,
+          advisor_pdf_access
+        `)
+        .eq('attorney_id', attorneyListing.id)
+        .in('status', ['active', 'accepted'])
+        .order('granted_at', { ascending: false })
+    : { data: [] }
+
+  // 5. Fetch household details for each client
   const householdIds = (clients ?? []).map(c => c.client_id).filter(Boolean)
 
   const { data: households } = householdIds.length > 0
@@ -53,7 +62,7 @@ export default async function AttorneyDashboardPage() {
         .in('id', householdIds)
     : { data: [] }
 
-  // 5. Fetch owner profiles for each household
+  // 6. Fetch owner profiles for each household
   const ownerIds = (households ?? []).map(h => h.owner_id).filter(Boolean)
 
   const { data: ownerProfiles } = ownerIds.length > 0
@@ -63,7 +72,7 @@ export default async function AttorneyDashboardPage() {
         .in('id', ownerIds)
     : { data: [] }
 
-  // 6. Fetch document counts per household
+  // 7. Fetch document counts per household
   const { data: docCounts } = householdIds.length > 0
     ? await supabase
         .from('legal_documents')
@@ -73,7 +82,7 @@ export default async function AttorneyDashboardPage() {
         .eq('is_deleted', false)
     : { data: [] }
 
-  // 7. Shape data for client component
+  // 8. Shape data for client component
   const clientCards = (clients ?? []).map(client => {
     const household = (households ?? []).find(h => h.id === client.client_id)
     const owner = (ownerProfiles ?? []).find(p => p.id === household?.owner_id)
