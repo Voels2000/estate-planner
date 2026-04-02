@@ -34,6 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
       { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', consumerOnly: true },
+      { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
     ],
   },
   {
@@ -85,9 +86,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
-      { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
-      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
+      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', advisorOnly: true },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
   },
@@ -124,7 +124,13 @@ export function SidebarNav({
   useEffect(() => {
     setActivePath(pathname)
     const activeGroup = getActiveGroup()
-    setOpenGroups(prev => ({ ...prev, [activeGroup]: true }))
+    setOpenGroups(prev => ({
+      ...prev,
+      [activeGroup]: true,
+      // Keep Overview always open so Attorney Access and My Advisor
+      // remain visible regardless of which page the consumer is on
+      'Overview': true,
+    }))
   }, [pathname])
 
   function toggleGroup(label: string) {
