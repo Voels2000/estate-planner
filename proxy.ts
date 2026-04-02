@@ -18,8 +18,7 @@ const PUBLIC_PATHS = [
 ]
 
 const ATTORNEY_ONLY_PATHS = [
-  '/attorney/dashboard',
-  '/attorney/clients',
+  '/attorney',
 ]
 
 const ATTORNEY_BLOCKED_PATHS = [
@@ -129,7 +128,7 @@ export async function proxy(request: NextRequest) {
 
     // Attorneys can only access attorney routes — block dashboard/advisor/billing
     if (userRole === 'attorney' && isAttorneyBlockedPath) {
-      return redirectPreservingCookies(request, '/attorney/dashboard', supabaseResponse)
+      return redirectPreservingCookies(request, '/attorney', supabaseResponse)
     }
 
     // Non-attorneys cannot access attorney routes
