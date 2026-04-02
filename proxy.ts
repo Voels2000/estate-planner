@@ -18,7 +18,8 @@ const PUBLIC_PATHS = [
 ]
 
 const ATTORNEY_ONLY_PATHS = [
-  '/attorney',
+  '/attorney/',
+  '/attorney/clients',
 ]
 
 const ATTORNEY_BLOCKED_PATHS = [
