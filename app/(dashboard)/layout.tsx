@@ -60,6 +60,11 @@ export default async function DashboardLayout({
     redirect('/billing')
   }
 
+  // Attorneys have their own portal — redirect away from all dashboard routes
+  if (isAttorney) {
+    redirect('/attorney')
+  }
+
   // Get user tier for sidebar gating
   const access = { tier: (isAdvisor || isAdvisorClient) ? 3 : isAdmin ? 3 : (profile?.consumer_tier ?? 1) }
   const showBanner = !isAdmin && !isAdvisor && !isAdvisorClient && !isActive && trialActive

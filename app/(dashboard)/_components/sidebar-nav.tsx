@@ -85,7 +85,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
-      { href: '/referrals', label: 'Request Attorney Introduction', icon: '📝', consumerOnly: true },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import' },
@@ -172,7 +171,7 @@ export function SidebarNav({
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_GROUPS.map((group) => {
+        {!isAttorney && NAV_GROUPS.map((group) => {
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked = group.locked === true && !isAdvisor && (
