@@ -60,6 +60,13 @@ export async function GET(request: Request) {
     .eq('id', user.id)
     .single()
 
+  // Attorneys — no billing, no household. Route straight to attorney portal.
+  // Honor ?next param for deep linking (e.g. /attorney/dashboard?connection=pending)
+  if (profile?.role === 'attorney') {
+    const attorneyNext = next !== '/dashboard' ? next : '/attorney/dashboard'
+    return NextResponse.redirect(`${origin}${attorneyNext}`)
+  }
+
   // New advisors with no subscription yet — route to billing
   if (
     profile?.role === 'advisor' &&
@@ -76,7 +83,6 @@ export async function GET(request: Request) {
       .select('id')
       .eq('owner_id', user.id)
       .maybeSingle()
-
     if (!household) {
       return NextResponse.redirect(`${origin}/profile`)
     }

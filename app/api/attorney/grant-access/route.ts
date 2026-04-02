@@ -80,24 +80,47 @@ export async function POST(req: NextRequest) {
     .single()
 
   // ── 7. Send email to attorney (non-fatal) ───────────────────
+  // Check if attorney already has a platform account.
+  // New attorneys get an invite email with a signup link pre-filled with their role.
+  // Existing attorneys get a notification-only email — no magic link per security policy.
   if (attorneyListing?.email) {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: attorneyListing.email,
-          bcc: 'avoels@comcast.net',
-          subject: 'A client has granted you access on EstatePlanner',
-          html: `
-            <p>Hi ${attorneyListing.contact_name ?? 'there'},</p>
-            <p><strong>${consumerProfile?.full_name ?? 'A client'}</strong> has granted you
-            read-only access to their estate plan on EstatePlanner.</p>
-            <p>Log in to your attorney portal to view their information and upload documents.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/attorney">Go to Attorney Portal</a></p>
-          `,
-        }),
-      })
+      const { data: attorneyProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', attorneyListing.email)
+        .maybeSingle()
+
+      const hasAccount = !!attorneyProfile
+
+      if (hasAccount) {
+        // Existing attorney — notification only, login CTA
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: attorneyListing.email,
+            attorneyName: attorneyListing.contact_name ?? null,
+            consumerName: consumerProfile?.full_name ?? 'A client',
+          }),
+        })
+      } else {
+        // New attorney — invite with signup link pre-filled as attorney role.
+        // Connection token embeds the connection id so the portal pre-associates
+        // them to this consumer on first login.
+        const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?role=attorney&connectionToken=${connection.id}&email=${encodeURIComponent(attorneyListing.email)}`
+
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: attorneyListing.email,
+            attorneyName: attorneyListing.contact_name ?? null,
+            consumerName: consumerProfile?.full_name ?? 'A client',
+            signupUrl,
+          }),
+        })
+      }
     } catch (emailError) {
       console.error('grant-access email error:', emailError)
     }

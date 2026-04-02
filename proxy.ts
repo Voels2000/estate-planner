@@ -17,6 +17,17 @@ const PUBLIC_PATHS = [
   '/api/cron',
 ]
 
+const ATTORNEY_ONLY_PATHS = [
+  '/attorney',
+]
+
+const ATTORNEY_BLOCKED_PATHS = [
+  '/dashboard',
+  '/profile',
+  '/billing',
+  '/advisor',
+]
+
 const MFA_EXEMPT_PATHS = [
   '/settings/security',
   '/auth/mfa-challenge',
@@ -88,6 +99,25 @@ export async function proxy(request: NextRequest) {
 
   if (!termsProfile?.terms_accepted_at) {
     return redirectPreservingCookies(request, '/terms', supabaseResponse)
+  }
+
+  // Role-based route guards
+  const { data: routeProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const userRole = routeProfile?.role
+
+  // Attorneys can only access attorney routes — block dashboard/advisor/billing
+  if (userRole === 'attorney' && ATTORNEY_BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
+    return redirectPreservingCookies(request, '/attorney/dashboard', supabaseResponse)
+  }
+
+  // Non-attorneys cannot access attorney routes
+  if (userRole !== 'attorney' && ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
+    return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
   }
 
   if (MFA_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) {

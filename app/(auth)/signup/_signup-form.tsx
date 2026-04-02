@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 // FIX: canonical role values — 'advisor' not 'financial_advisor'
-type Role = 'consumer' | 'advisor'
+type Role = 'consumer' | 'advisor' | 'attorney'
 
 export function SignupForm() {
   const router = useRouter()
@@ -82,6 +82,8 @@ export function SignupForm() {
       setIsDone(true)
       if (role === 'advisor') {
         router.push('/billing')
+      } else if (role === 'attorney') {
+        router.push('/attorney')
       } else {
         router.push(redirectTo)
       }
@@ -142,11 +144,12 @@ export function SignupForm() {
 
           <div className="space-y-1.5">
             <p className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">Role</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {([
                 ['consumer', 'Consumer', 'Manage your own estate planning.'],
                 // FIX: value is now 'advisor' — matches canonical role in profiles table
                 ['advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
+                ['attorney', 'Attorney', 'Review and support client estate documents.'],
               ] as const).map(([val, label, desc]) => (
                 <button key={val} type="button" onClick={() => setRole(val)}
                   className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition ${
