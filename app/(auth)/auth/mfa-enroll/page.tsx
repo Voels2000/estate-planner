@@ -76,12 +76,26 @@ export default function MFAEnrollPage() {
       setEnrollSuccess(true)
 
       // Determine correct destination based on role
+      // Always read from profiles table — user_metadata.role may be stale
       const { data: { user: enrolledUser } } = await supabase.auth.getUser()
-      const role = enrolledUser?.user_metadata?.role ?? 'consumer'
+
+      const { data: enrolledProfile } = await supabase
+        .from('profiles')
+        .select('role, subscription_status')
+        .eq('id', enrolledUser!.id)
+        .single()
+
+      const role = enrolledProfile?.role ?? 'consumer'
 
       let destination = '/dashboard'
-      if (role === 'advisor') destination = '/billing'
-      else if (role === 'attorney') destination = '/attorney'
+      if (role === 'advisor') {
+        const hasSubscription =
+          enrolledProfile?.subscription_status === 'active' ||
+          enrolledProfile?.subscription_status === 'trialing'
+        destination = hasSubscription ? '/dashboard' : '/billing'
+      } else if (role === 'attorney') {
+        destination = '/attorney'
+      }
 
       setTimeout(() => {
         router.push(destination)
