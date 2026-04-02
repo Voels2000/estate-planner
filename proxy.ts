@@ -118,11 +118,12 @@ export async function proxy(request: NextRequest) {
   if (isAttorneyPath || isAttorneyBlockedPath) {
     const { data: routeProfile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_attorney')
       .eq('id', user.id)
       .single()
 
     const userRole = routeProfile?.role
+    const isAttorneyFlag = routeProfile?.is_attorney === true
     console.log('middleware role check:', { pathname, userRole, isAttorneyPath, isAttorneyBlockedPath })
 
     // Attorneys can only access attorney routes — block dashboard/advisor/billing
@@ -131,7 +132,8 @@ export async function proxy(request: NextRequest) {
     }
 
     // Non-attorneys cannot access attorney routes
-    if (userRole !== 'attorney' && isAttorneyPath) {
+    // Check both role and is_attorney flag to match page-level logic
+    if (userRole !== 'attorney' && !isAttorneyFlag && isAttorneyPath) {
       return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
     }
   }
