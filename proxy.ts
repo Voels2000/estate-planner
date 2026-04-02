@@ -115,6 +115,7 @@ export async function proxy(request: NextRequest) {
       .single()
 
     const userRole = routeProfile?.role
+    console.log('middleware role check:', { pathname, userRole, isAttorneyPath, isAttorneyBlockedPath })
 
     // Attorneys can only access attorney routes — block dashboard/advisor/billing
     if (userRole === 'attorney' && isAttorneyBlockedPath) {
