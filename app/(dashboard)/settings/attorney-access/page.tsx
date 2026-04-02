@@ -50,8 +50,8 @@ export default async function AttorneyAccessPage() {
     attorneyIds.length > 0
       ? await supabase
           .from('attorney_listings')
-          .select('attorney_id, contact_name, firm_name, email, state')
-          .in('attorney_id', attorneyIds)
+          .select('id, contact_name, firm_name, email, state')
+          .in('id', attorneyIds)
       : { data: [] }
 
   // ── Fetch advisor connection for PDF access toggle ─────────
@@ -64,7 +64,7 @@ export default async function AttorneyAccessPage() {
 
   // ── Shape data ─────────────────────────────────────────────
   const attorneyConnections = (connections ?? []).map((conn) => {
-    const listing = (attorneyListings ?? []).find((a) => a.attorney_id === conn.attorney_id)
+    const listing = (attorneyListings ?? []).find((a) => a.id === conn.attorney_id)
     return {
       connection_id: conn.id,
       attorney_id: conn.attorney_id,

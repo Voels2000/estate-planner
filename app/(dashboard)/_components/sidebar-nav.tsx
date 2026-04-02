@@ -217,7 +217,7 @@ export function SidebarNav({
                     </div>
                   )}
                   {group.items.map((item) => {
-                    if (item.consumerOnly && role === 'advisor') {
+                    if (item.consumerOnly && role !== 'consumer') {
                       return null
                     }
                     if (groupIsLocked) {
