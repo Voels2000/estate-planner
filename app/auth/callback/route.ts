@@ -123,7 +123,7 @@ export async function GET(request: Request) {
     console.error('attorney join notification error:', err)
   }
 
-    const attorneyNext = next !== '/dashboard' ? next : '/attorney/dashboard'
+    const attorneyNext = next !== '/dashboard' ? next : '/attorney'
     return NextResponse.redirect(`${origin}${attorneyNext}`)
   }
 
