@@ -47,6 +47,47 @@ export function AttorneyDirectoryClient({
   const [modalError, setModalError] = useState<string | null>(null)
   const [consentChecked, setConsentChecked] = useState(false)
 
+  // Request to Add state
+  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [requestName, setRequestName] = useState('')
+  const [requestFirm, setRequestFirm] = useState('')
+  const [requestEmail, setRequestEmail] = useState('')
+  const [requestNote, setRequestNote] = useState('')
+  const [requestSubmitting, setRequestSubmitting] = useState(false)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const [requestSent, setRequestSent] = useState(false)
+
+  async function submitRequestToAdd() {
+    if (!requestName || !requestFirm || !requestEmail) {
+      setRequestError('Name, firm, and email are required.')
+      return
+    }
+    setRequestSubmitting(true)
+    setRequestError(null)
+    try {
+      const res = await fetch('/api/attorney-directory/request-add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contact_name: requestName,
+          firm_name: requestFirm,
+          email: requestEmail,
+          note: requestNote,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRequestError(data.error ?? 'Something went wrong. Please try again.')
+        return
+      }
+      setRequestSent(true)
+    } catch {
+      setRequestError('Something went wrong. Please try again.')
+    } finally {
+      setRequestSubmitting(false)
+    }
+  }
+
   const isConsumer = userRole === 'consumer'
 
   const filtered = useMemo(() => {
@@ -129,12 +170,6 @@ export function AttorneyDirectoryClient({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Find an Estate Attorney</h1>
-          <p className="mt-1 text-sm text-neutral-500">Browse verified estate planning attorneys</p>
-        </div>
-      </div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Find an Estate Planning Attorney</h1>
         <p className="mt-2 text-neutral-600">
@@ -265,19 +300,124 @@ export function AttorneyDirectoryClient({
                           Request to Connect
                         </button>
                       )
-                    ) : (
-                      <Link
-                        href={`/referrals?attorneyId=${attorney.id}`}
-                        className="inline-flex justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition text-center"
-                      >
-                        Request referral
-                      </Link>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Request to Add section — consumers only */}
+      {isConsumer && (
+        <div className="mt-12 rounded-2xl bg-white border border-neutral-200 shadow-sm p-8">
+          {!requestSent ? (
+            <>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-1">
+                Don't see your attorney?
+              </h2>
+              <p className="text-sm text-neutral-500 mb-6">
+                Submit their details and we will send them an invitation to join the platform.
+                You will be notified by email and in-app once they sign up so you can connect.
+              </p>
+
+              {!showRequestForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowRequestForm(true)}
+                  className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition"
+                >
+                  + Request an attorney
+                </button>
+              ) : (
+                <div className="space-y-4 max-w-lg">
+                  {requestError && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                      {requestError}
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Attorney name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={requestName}
+                      onChange={e => setRequestName(e.target.value)}
+                      placeholder="Jane Smith"
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Firm name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={requestFirm}
+                      onChange={e => setRequestFirm(e.target.value)}
+                      placeholder="Smith & Associates"
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Attorney email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={requestEmail}
+                      onChange={e => setRequestEmail(e.target.value)}
+                      placeholder="jane@smithlaw.com"
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Optional note
+                    </label>
+                    <textarea
+                      value={requestNote}
+                      onChange={e => setRequestNote(e.target.value)}
+                      rows={3}
+                      placeholder="Any context you'd like to share with the attorney..."
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRequestForm(false)
+                        setRequestError(null)
+                      }}
+                      className="rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={submitRequestToAdd}
+                      disabled={requestSubmitting}
+                      className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {requestSubmitting ? 'Sending invitation…' : 'Send invitation'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-2xl mb-3">✅</p>
+              <p className="font-medium text-neutral-900">Invitation sent</p>
+              <p className="mt-1 text-sm text-neutral-500">
+                We have sent an invitation to the attorney. You will receive an email and
+                in-app notification as soon as they join the platform.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

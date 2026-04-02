@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -63,6 +64,65 @@ export async function GET(request: Request) {
   // Attorneys — no billing, no household. Route straight to attorney portal.
   // Honor ?next param for deep linking (e.g. /attorney/dashboard?connection=pending)
   if (profile?.role === 'attorney') {
+  
+  // Check if this attorney was requested by a consumer via the request-add flow.
+  // If so, activate their listing and notify the requesting consumer.
+  try {
+    const admin = createAdminClient()
+
+    const { data: pendingListing } = await admin
+      .from('attorney_listings')
+      .select('id, requested_by, contact_name')
+      .eq('email', user.email!)
+      .eq('is_active', false)
+      .not('requested_by', 'is', null)
+      .maybeSingle()
+
+    if (pendingListing?.requested_by) {
+      // Activate the listing now that the attorney has a platform account
+      await admin
+        .from('attorney_listings')
+        .update({ is_active: true, profile_id: user.id })
+        .eq('id', pendingListing.id)
+
+      // Fetch the requesting consumer's profile for notification
+      const { data: consumerProfile } = await admin
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', pendingListing.requested_by)
+        .single()
+
+      const attorneyName = pendingListing.contact_name ?? 'The attorney you requested'
+
+      // In-app notification to consumer
+      await admin.from('notifications').insert({
+        user_id: pendingListing.requested_by,
+        type: 'attorney_access_granted',
+        title: 'Your requested attorney has joined',
+        body: `${attorneyName} has joined the platform. You can now connect with them from the attorney directory.`,
+        delivery: 'in_app',
+        read: false,
+      })
+
+      // Email notification to consumer
+      if (consumerProfile?.email) {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: consumerProfile.email,
+            attorneyName,
+            consumerName: consumerProfile.full_name ?? 'there',
+            message: `${attorneyName} has joined the platform. Log in and visit the attorney directory to connect with them.`,
+          }),
+        })
+      }
+    }
+  } catch (err) {
+    // Non-fatal — attorney routing should never be blocked by notification failure
+    console.error('attorney join notification error:', err)
+  }
+
     const attorneyNext = next !== '/dashboard' ? next : '/attorney/dashboard'
     return NextResponse.redirect(`${origin}${attorneyNext}`)
   }
