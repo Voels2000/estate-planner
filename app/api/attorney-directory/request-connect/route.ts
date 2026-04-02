@@ -88,7 +88,8 @@ export async function POST(request: Request) {
 
   // 8. Fire email + notifications (fire-and-forget)
   const consumerLabel = profile.full_name?.trim() || profile.email || 'A potential client'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mywealthmaps.com'
   const claimUrl = `${appUrl}/claim-listing/${claimToken}`
 
   ;(async () => {

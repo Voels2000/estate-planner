@@ -56,7 +56,7 @@ export async function POST(req: Request) {
           <p style="color: #555;">We've sent your referral request to <strong>${attorneyFirmName}</strong>. They will reach out to you directly at <strong>${userEmail}</strong>.</p>
           ${note ? `<div style="background: #f5f5f5; border-radius: 8px; padding:16px; margin: 24px 0;"><p style="margin: 0; color: #555;"><strong>Your note:</strong> ${note}</p></div>` : ''}
           <p style="color: #555;">In the meantime, keep building your estate plan on My Wealth Maps.</p>
-          <a href="https://mywealthmaps.com/dashboard" style="display: inline-block; margin-top: 16px; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard" style="display: inline-block; margin-top: 16px; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
             Return to Dashboard
           </a>
           <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;" />

@@ -27,7 +27,14 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (householdError || !household) {
-    return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+    // Consumer must complete profile (household) setup before connecting; no household row for this user.
+    return NextResponse.json(
+      {
+        error:
+          'Household not found: no household record for this account. Complete your profile setup before connecting with an attorney.',
+      },
+      { status: 404 }
+    )
   }
 
   // ── 4. Check for existing active connection ─────────────────

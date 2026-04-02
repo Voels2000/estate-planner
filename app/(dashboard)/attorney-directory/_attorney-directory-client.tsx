@@ -129,17 +129,11 @@ export function AttorneyDirectoryClient({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Find an Estate Attorney</h1>
           <p className="mt-1 text-sm text-neutral-500">Browse verified estate planning attorneys</p>
         </div>
-        <Link
-          href="/attorney-directory/register"
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-        >
-          List Your Practice
-        </Link>
       </div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Find an Estate Planning Attorney</h1>
