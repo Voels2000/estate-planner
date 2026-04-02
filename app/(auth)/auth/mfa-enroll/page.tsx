@@ -74,10 +74,19 @@ export default function MFAEnrollPage() {
         return
       }
       setEnrollSuccess(true)
+
+      // Determine correct destination based on role
+      const { data: { user: enrolledUser } } = await supabase.auth.getUser()
+      const role = enrolledUser?.user_metadata?.role ?? 'consumer'
+
+      let destination = '/dashboard'
+      if (role === 'advisor') destination = '/billing'
+      else if (role === 'attorney') destination = '/attorney'
+
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push(destination)
         router.refresh()
-      }, 3000)
+      }, 2000)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -130,7 +139,7 @@ export default function MFAEnrollPage() {
 
         {enrollSuccess && (
           <div className="mt-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 border border-green-200">
-            ✅ Authenticator set up successfully! Redirecting to your dashboard…
+            ✅ Authenticator set up successfully! Redirecting…
           </div>
         )}
 
