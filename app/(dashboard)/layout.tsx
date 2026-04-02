@@ -55,7 +55,7 @@ export default async function DashboardLayout({
     isAdvisorClient = !!clientRow
   }
 
-  const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive
+  const hasAccess = isAdmin || isAdvisor || isAdvisorClient || isActive || trialActive || isAttorney
   if (!hasAccess) {
     redirect('/billing')
   }
