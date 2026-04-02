@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (householdError || !household) {
-    // Consumer must complete profile (household) setup before connecting; no household row for this user.
     return NextResponse.json(
       {
         error:
@@ -37,7 +36,21 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // ── 4. Check for existing active connection ─────────────────
+  // ── 4. Fetch attorney listing up front ─────────────────────
+  // attorney_id is attorney_listings.id (the listing PK).
+  // attorney_listings.attorney_id is null across all rows — never use it.
+  // profile_id is the FK to auth.users for the attorney's platform account.
+  const { data: attorneyListing, error: listingError } = await supabase
+    .from('attorney_listings')
+    .select('id, email, contact_name, profile_id')
+    .eq('id', attorney_id)
+    .single()
+
+  if (listingError || !attorneyListing) {
+    return NextResponse.json({ error: 'Attorney listing not found' }, { status: 404 })
+  }
+
+  // ── 5. Check for existing active connection ─────────────────
   const { data: existing } = await supabase
     .from('attorney_clients')
     .select('id, status')
@@ -53,13 +66,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // ── 5. Write the connection ─────────────────────────────────
+  // ── 6. Write the connection ─────────────────────────────────
   const now = new Date().toISOString()
 
   const { data: connection, error: insertError } = await supabase
     .from('attorney_clients')
     .insert({
-      attorney_id,
+      attorney_id,               // attorney_listings.id — correct FK per Sprint 38 locked decision
       client_id: household.id,
       status: 'active',
       granted_at: now,
@@ -73,32 +86,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create connection' }, { status: 500 })
   }
 
-  // ── 6. Get attorney listing and consumer profile ────────────
-  const { data: attorneyListing } = await supabase
-    .from('attorney_listings')
-    .select('email, contact_name')
-    .eq('attorney_id', attorney_id)
-    .single()
-
+  // ── 7. Get consumer profile ─────────────────────────────────
   const { data: consumerProfile } = await supabase
     .from('profiles')
     .select('full_name, email')
     .eq('id', user.id)
     .single()
 
-  // ── 7. Send email to attorney (non-fatal) ───────────────────
-  // Check if attorney already has a platform account.
-  // New attorneys get an invite email with a signup link pre-filled with their role.
-  // Existing attorneys get a notification-only email — no magic link per security policy.
-  if (attorneyListing?.email) {
+  // ── 8. Send email to attorney (non-fatal) ───────────────────
+  if (attorneyListing.email) {
     try {
-      const { data: attorneyProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', attorneyListing.email)
-        .maybeSingle()
-
-      const hasAccount = !!attorneyProfile
+      // profile_id is set if the attorney has a platform account; null if not yet signed up.
+      const hasAccount = !!attorneyListing.profile_id
 
       if (hasAccount) {
         // Existing attorney — notification only, login CTA
@@ -112,13 +111,8 @@ export async function POST(req: NextRequest) {
           }),
         })
       } else {
-        // New attorney — invite with signup link pre-filled as attorney role.
-        // Connection token embeds the connection id so the portal pre-associates
-        // them to this consumer on first login.
+        // New attorney — invite with signup link
         const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?role=attorney&connectionToken=${connection.id}&email=${encodeURIComponent(attorneyListing.email)}`
-        console.log('signupUrl:', signupUrl)
-        console.log('NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL)
-        console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL)
 
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-invite`, {
           method: 'POST',
@@ -136,21 +130,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── 8. Write in-app notification to attorney ────────────────
-  try {
-    await supabase.from('notifications').insert({
-      user_id: attorney_id,
-      type: 'attorney_access_granted',
-      title: 'New client access granted',
-      body: `${consumerProfile?.full_name ?? 'A client'} has granted you access to their estate plan.`,
-      delivery: 'in_app',
-      read: false,
-    })
-  } catch (notifyError) {
-    console.error('grant-access notification error:', notifyError)
+  // ── 9. Write in-app notification to attorney ────────────────
+  // Only send if the attorney has a platform account (profile_id exists).
+  // If no account yet, there is no user to notify in-app.
+  if (attorneyListing.profile_id) {
+    try {
+      await supabase.from('notifications').insert({
+        user_id: attorneyListing.profile_id,   // auth.users id, not listing id
+        type: 'attorney_access_granted',
+        title: 'New client access granted',
+        body: `${consumerProfile?.full_name ?? 'A client'} has granted you access to their estate plan.`,
+        delivery: 'in_app',
+        read: false,
+      })
+    } catch (notifyError) {
+      console.error('grant-access notification error:', notifyError)
+    }
   }
 
-  // ── 9. Return success ───────────────────────────────────────
+  // ── 10. Return success ──────────────────────────────────────
   return NextResponse.json({
     success: true,
     connection_id: connection.id,
