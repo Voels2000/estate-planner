@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -18,6 +19,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const admin = createAdminClient()
+
   // ── 2. Parse body ──────────────────────────────────────────
   const { listing_id, action } = await req.json()
 
@@ -29,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 3. Fetch listing + nominating advisor ──────────────────
-  const { data: listing } = await supabase
+  const { data: listing } = await admin
     .from('attorney_listings')
     .select('id, contact_name, firm_name, email, submitted_by')
     .eq('id', listing_id)
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   // Get nominating advisor email
   const { data: advisorProfile } = listing.submitted_by
-    ? await supabase
+    ? await admin
         .from('profiles')
         .select('full_name, email')
         .eq('id', listing.submitted_by)
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   // ── 4. Approve — set is_active + is_verified ───────────────
   if (action === 'approve') {
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from('attorney_listings')
       .update({ is_active: true, is_verified: true })
       .eq('id', listing_id)
@@ -116,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   // ── 5. Reject — hard delete the listing ───────────────────
   if (action === 'reject') {
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await admin
       .from('attorney_listings')
       .delete()
       .eq('id', listing_id)
