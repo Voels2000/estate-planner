@@ -109,6 +109,9 @@ export async function POST(req: NextRequest) {
         // Connection token embeds the connection id so the portal pre-associates
         // them to this consumer on first login.
         const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?role=attorney&connectionToken=${connection.id}&email=${encodeURIComponent(attorneyListing.email)}`
+        console.log('signupUrl:', signupUrl)
+        console.log('NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL)
+        console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL)
 
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-invite`, {
           method: 'POST',
