@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 
 export async function POST(req: Request) {
+  console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL)
+  console.log('NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL)
   try {
     const { email, attorneyName, consumerName } = await req.json()
 
