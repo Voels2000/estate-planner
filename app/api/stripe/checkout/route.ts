@@ -56,15 +56,25 @@ export async function POST(req: Request) {
       const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
       successUrl = `${baseUrl}${safePath}?success=true`
     } else {
-      const { data: household } = await supabase
-        .from('households')
-        .select('person1_name')
-        .eq('owner_id', user.id)
+      const { data: profileRole } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
         .single()
-      const isNewUser = !household?.person1_name
-      successUrl = isNewUser
-        ? `${baseUrl}/profile?success=true`
-        : `${baseUrl}/dashboard?success=true`
+
+      if (profileRole?.role === 'advisor') {
+        successUrl = `${baseUrl}/advisor?success=true`
+      } else {
+        const { data: household } = await supabase
+          .from('households')
+          .select('person1_name')
+          .eq('owner_id', user.id)
+          .single()
+        const isNewUser = !household?.person1_name
+        successUrl = isNewUser
+          ? `${baseUrl}/profile?success=true`
+          : `${baseUrl}/dashboard?success=true`
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
