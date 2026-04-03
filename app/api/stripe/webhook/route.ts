@@ -35,10 +35,8 @@ export async function POST(req: NextRequest) {
         if (userId) {
           const subId = session.subscription as string | null
           let renewalIso: string | null = null
-          let stripeSubId: string | null = null
           if (subId) {
             const sub = await stripe.subscriptions.retrieve(subId)
-            stripeSubId = sub.id
             renewalIso = new Date(sub.current_period_end * 1000).toISOString()
           }
           const { data, error } = await supabase
@@ -46,8 +44,7 @@ export async function POST(req: NextRequest) {
             .update({
               subscription_status: 'active',
               stripe_customer_id: session.customer as string,
-              ...(stripeSubId ? { stripe_subscription_id: stripeSubId } : {}),
-              ...(renewalIso ? { subscription_renewal_date: renewalIso } : {}),
+              ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
             })
             .eq('id', userId)
             .select()
@@ -79,8 +76,7 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: subscription.status,
-            subscription_renewal_date: renewalIso,
-            stripe_subscription_id: subscription.id,
+            subscription_period_end: renewalIso,
           })
           .eq('stripe_customer_id', customerId)
         console.log('Subscription updated for customer:', customerId)

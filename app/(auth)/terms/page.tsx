@@ -29,11 +29,9 @@ export default async function TermsPage({
         const admin = createAdminClient()
         const subId = session.subscription as string | null
         let renewalIso: string | null = null
-        let stripeSubId: string | null = null
 
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId)
-          stripeSubId = sub.id
           renewalIso = new Date(sub.current_period_end * 1000).toISOString()
         }
 
@@ -42,8 +40,7 @@ export default async function TermsPage({
           .update({
             subscription_status: 'active',
             stripe_customer_id: session.customer as string,
-            ...(stripeSubId ? { stripe_subscription_id: stripeSubId } : {}),
-            ...(renewalIso ? { subscription_renewal_date: renewalIso } : {}),
+            ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
           })
           .eq('id', user.id)
       }
