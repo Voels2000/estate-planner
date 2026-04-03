@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { AdvisorSignOut } from './_components/advisor-sign-out'
 
 export default async function AdvisorLayout({
   children,
@@ -12,11 +13,14 @@ export default async function AdvisorLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_superuser')
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'advisor') redirect('/dashboard')
+  const isAdvisor = profile?.role === 'advisor'
+  const isSuperuser = profile?.is_superuser === true
+
+  if (!isAdvisor && !isSuperuser) redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -27,9 +31,10 @@ export default async function AdvisorLayout({
             Advisor Portal
           </span>
         </div>
-        <a href="/dashboard" className="text-sm text-neutral-500 hover:text-neutral-700">
-          ← Back to App
-        </a>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-neutral-500">{user.email}</span>
+          <AdvisorSignOut />
+        </div>
       </nav>
       <main className="mx-auto max-w-7xl px-4 py-10">
         {children}
