@@ -71,6 +71,18 @@ export function BillingClient({
     } catch { setError('Something went wrong. Please try again.'); setLoadingPriceId(null) }
   }
 
+  async function handleCancelSubscription() {
+    if (!confirm('Are you sure you want to cancel? You will keep access until the end of your current billing period.')) return
+    setError(null)
+    setLoadingPriceId('cancel')
+    try {
+      const res = await fetch('/api/stripe/cancel', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Something went wrong.'); setLoadingPriceId(null); return }
+      window.location.href = '/billing?canceled=true'
+    } catch { setError('Something went wrong. Please try again.'); setLoadingPriceId(null) }
+  }
+
   function formatPrice(amount: number, currency: string, interval: string) {
     const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency', currency: currency.toUpperCase(),
@@ -190,13 +202,17 @@ export function BillingClient({
         </div>
 
         <div className="mt-8 text-center">
-          <button
-            onClick={handleManageSubscription}
-            disabled={loadingPriceId === 'portal'}
-            className="text-sm text-neutral-500 hover:text-neutral-700 underline-offset-4 hover:underline disabled:opacity-50"
-          >
-            {loadingPriceId === 'portal' ? 'Loading...' : 'Manage existing subscription'}
-          </button>
+          <div className="flex flex-col items-center gap-3">
+            {isActive && (
+              <button
+                onClick={handleCancelSubscription}
+                disabled={loadingPriceId === 'cancel'}
+                className="text-sm text-red-500 hover:text-red-700 underline-offset-4 hover:underline disabled:opacity-50"
+              >
+                {loadingPriceId === 'cancel' ? 'Canceling...' : 'Cancel subscription'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )
