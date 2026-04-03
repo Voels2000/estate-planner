@@ -8,7 +8,11 @@ type Section = {
   body:  string
 }
 
-export default function TermsClient() {
+type TermsClientProps = {
+  returnTo?: string
+}
+
+export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
   const router = useRouter()
   const [accepting, setAccepting]   = useState(false)
   const [error, setError]           = useState<string | null>(null)
@@ -42,7 +46,7 @@ export default function TermsClient() {
         setError('Something went wrong. Please try again.')
         return
       }
-      router.push('/dashboard')
+      router.push(returnTo)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {

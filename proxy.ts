@@ -98,17 +98,6 @@ export async function proxy(request: NextRequest) {
     return redirectPreservingCookies(request, '/confirm-email', supabaseResponse)
   }
 
-  // Block users who haven't accepted current T&C
-  const { data: termsProfile } = await supabase
-    .from('profiles')
-    .select('terms_accepted_at')
-    .eq('id', user.id)
-    .single()
-
-  if (!termsProfile?.terms_accepted_at) {
-    return redirectPreservingCookies(request, '/terms', supabaseResponse)
-  }
-
   // Advisor subscription gate — only fires when advisor hits a protected page
   // Scoped to /dashboard and /profile only to avoid slowing every request
   const isGatedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile')

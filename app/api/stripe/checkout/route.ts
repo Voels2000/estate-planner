@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         .single()
 
       if (profileRole?.role === 'advisor') {
-        successUrl = `${baseUrl}/advisor?success=true`
+        successUrl = `${baseUrl}/terms?returnTo=/advisor`
       } else {
         const { data: household } = await supabase
           .from('households')
@@ -72,8 +72,8 @@ export async function POST(req: Request) {
           .single()
         const isNewUser = !household?.person1_name
         successUrl = isNewUser
-          ? `${baseUrl}/profile?success=true`
-          : `${baseUrl}/dashboard?success=true`
+          ? `${baseUrl}/terms?returnTo=/profile`
+          : `${baseUrl}/terms?returnTo=/dashboard`
       }
     }
 

@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import TermsClient from './_terms-client'
+import { TermsClient } from './_terms-client'
 
-export default async function TermsPage() {
+export default async function TermsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -13,8 +17,11 @@ export default async function TermsPage() {
     .eq('id', user.id)
     .single()
 
-  // Already accepted — skip straight to dashboard
-  if (profile?.terms_accepted_at) redirect('/dashboard')
+  const { returnTo } = await searchParams
+  const safePath = returnTo?.startsWith('/') ? returnTo : '/dashboard'
 
-  return <TermsClient />
+  // Already accepted — skip straight to destination
+  if (profile?.terms_accepted_at) redirect(safePath)
+
+  return <TermsClient returnTo={safePath} />
 }
