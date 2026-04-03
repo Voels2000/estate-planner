@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
+        console.log('checkout.session.completed — userId:', userId)
+        console.log('checkout.session.completed — customer:', session.customer)
+        console.log('checkout.session.completed — subscription:', session.subscription)
         if (userId) {
           const subId = session.subscription as string | null
           let renewalIso: string | null = null
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
             stripeSubId = sub.id
             renewalIso = new Date(sub.current_period_end * 1000).toISOString()
           }
-          await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .update({
               subscription_status: 'active',
@@ -47,7 +50,12 @@ export async function POST(req: NextRequest) {
               ...(renewalIso ? { subscription_renewal_date: renewalIso } : {}),
             })
             .eq('id', userId)
+            .select()
+          console.log('Supabase update data:', JSON.stringify(data))
+          console.log('Supabase update error:', JSON.stringify(error))
           console.log('Subscription activated for user:', userId)
+        } else {
+          console.log('No userId in metadata — skipping update')
         }
         break
       }
