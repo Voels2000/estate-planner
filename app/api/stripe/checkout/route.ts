@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     if (returnTo) {
       // Sanitize — only allow relative paths starting with /
       const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
-      successUrl = `${baseUrl}${safePath}?success=true`
+      successUrl = `${baseUrl}${safePath}?success=true&session_id={CHECKOUT_SESSION_ID}`
     } else {
       const { data: profileRole } = await supabase
         .from('profiles')
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         .single()
 
       if (profileRole?.role === 'advisor') {
-        successUrl = `${baseUrl}/terms?returnTo=/advisor`
+        successUrl = `${baseUrl}/terms?returnTo=/advisor&session_id={CHECKOUT_SESSION_ID}`
       } else {
         const { data: household } = await supabase
           .from('households')
@@ -72,8 +72,8 @@ export async function POST(req: Request) {
           .single()
         const isNewUser = !household?.person1_name
         successUrl = isNewUser
-          ? `${baseUrl}/terms?returnTo=/profile`
-          : `${baseUrl}/terms?returnTo=/dashboard`
+          ? `${baseUrl}/terms?returnTo=/profile&session_id={CHECKOUT_SESSION_ID}`
+          : `${baseUrl}/terms?returnTo=/dashboard&session_id={CHECKOUT_SESSION_ID}`
       }
     }
 
