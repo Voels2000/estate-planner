@@ -127,12 +127,17 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}${attorneyNext}`)
   }
 
-  // New advisors with no subscription yet — route to billing
-  if (
-    profile?.role === 'advisor' &&
-    (!profile.subscription_status || profile.subscription_status === 'incomplete')
-  ) {
-    return NextResponse.redirect(`${origin}/billing`)
+  // Advisors — route based on subscription status
+  if (profile?.role === 'advisor') {
+    const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
+      profile.subscription_status ?? ''
+    )
+    if (!hasActiveSub) {
+      // No subscription yet — go to billing
+      return NextResponse.redirect(`${origin}/billing`)
+    }
+    // Has subscription — go to advisor portal
+    return NextResponse.redirect(`${origin}/advisor`)
   }
 
   // New consumers — no household row means profile setup is incomplete
