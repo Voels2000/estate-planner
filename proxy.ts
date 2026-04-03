@@ -109,6 +109,25 @@ export async function proxy(request: NextRequest) {
     return redirectPreservingCookies(request, '/terms', supabaseResponse)
   }
 
+  // Advisor subscription gate — only fires when advisor hits a protected page
+  // Scoped to /dashboard and /profile only to avoid slowing every request
+  const isGatedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile')
+
+  if (isGatedPath) {
+    const { data: subProfile } = await supabase
+      .from('profiles')
+      .select('role, subscription_status')
+      .eq('id', user.id)
+      .single()
+
+    const isAdvisor = subProfile?.role === 'advisor'
+    const hasActiveSub = subProfile?.subscription_status === 'active' || subProfile?.subscription_status === 'trialing'
+
+    if (isAdvisor && !hasActiveSub) {
+      return redirectPreservingCookies(request, '/billing', supabaseResponse)
+    }
+  }
+
   // Role-based route guards
   // Only fetch role when the path actually needs it — avoids adding a DB call
   // to every single request which can cause middleware timeouts.
