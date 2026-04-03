@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user, isSuperuser, isAdvisor } = await getAccessContext()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isSuperuser && !isAdvisor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createClient()
 
     const { invitedEmail } = await request.json()
 
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (!advisor || (advisor.role !== 'advisor' && advisor.role !== 'financial_advisor')) {
+    if (!advisor || (!isSuperuser && advisor.role !== 'advisor' && advisor.role !== 'financial_advisor')) {
       return NextResponse.json({ error: 'Only advisors can send invites' }, { status: 403 })
     }
 
@@ -96,6 +97,16 @@ export async function POST(request: Request) {
     if (emailError) {
       console.error('Resend error:', emailError)
       return NextResponse.json({ error: 'Invite created but email failed to send' }, { status: 500 })
+    }
+
+    if (isSuperuser) {
+      const admin = createAdminClient()
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/advisor/invite',
+        target_id: null,
+        action: 'invite',
+      })
     }
 
     return NextResponse.json({ success: true, message: `Invitation sent to ${invitedEmail}` })

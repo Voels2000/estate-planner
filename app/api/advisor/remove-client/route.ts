@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 
 export async function DELETE(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'advisor' && profile?.is_admin !== true) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const { user, isSuperuser, isAdvisor } = await getAccessContext()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isSuperuser && !isAdvisor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json() as { advisor_client_id?: string }
   if (!body.advisor_client_id) {
@@ -78,6 +66,15 @@ export async function DELETE(req: NextRequest) {
         console.error('remove-client notification:', err)
       }
     })()
+  }
+
+  if (isSuperuser) {
+    await admin.from('superuser_action_log').insert({
+      user_id: user.id,
+      endpoint: '/api/advisor/remove-client',
+      target_id: body.advisor_client_id,
+      action: 'remove-client',
+    })
   }
 
   return NextResponse.json({ success: true })

@@ -1,28 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
+  const { user, isSuperuser, isAdvisor } = await getAccessContext()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isSuperuser && !isAdvisor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // 1. Auth check
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // 2. Advisor check
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'advisor') {
+  if (!profile || (!isSuperuser && profile.role !== 'advisor')) {
     return NextResponse.json({ error: 'Advisor access required' }, { status: 403 })
   }
 
@@ -100,6 +98,15 @@ export async function POST(request: Request) {
       console.error('Invite email error:', err)
     }
   })()
+
+  if (isSuperuser) {
+    await admin.from('superuser_action_log').insert({
+      user_id: user.id,
+      endpoint: '/api/advisor/accept-request',
+      target_id: advisor_client_id,
+      action: 'accept-request',
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

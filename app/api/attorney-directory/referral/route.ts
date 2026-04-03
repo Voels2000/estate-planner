@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user, isSuperuser, isConsumer } = await getAccessContext()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isSuperuser && !isConsumer) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const {
       attorneyId,
@@ -65,6 +66,15 @@ export async function POST(req: Request) {
       `,
     })
 
+    if (isSuperuser) {
+      const admin = createAdminClient()
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/attorney-directory/referral',
+        target_id: attorneyId,
+        action: 'referral',
+      })
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Attorney referral email error:', error)

@@ -1,11 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import MyAdvisorClient from './_my-advisor-client'
 
 export default async function MyAdvisorPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isSuperuser } = await getAccessContext()
   if (!user) redirect('/login')
+  if (!isSuperuser) {
+    // consumer-only gate: none (nav hides for non-consumers; layout enforces access)
+  }
+
+  const supabase = await createClient()
 
   // Find active advisor connection
   const { data: connection } = await supabase

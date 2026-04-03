@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-  return profile?.role === 'admin' || profile?.is_admin === true
-}
+import { getAccessContext } from '@/lib/access/getAccessContext'
 
 export async function PATCH(req: Request) {
   try {
+    const { isAdmin, isSuperuser, user } = await getAccessContext()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const supabase = await createClient()
-    if (!await verifyAdmin(supabase)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
     const { id, field, value } = await req.json()
     if (!id || !field) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -32,6 +23,15 @@ export async function PATCH(req: Request) {
       .update({ [field]: value })
       .eq('id', id)
     if (error) throw error
+    if (isSuperuser) {
+      const admin = createAdminClient()
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/advisor-directory/admin',
+        target_id: id,
+        action: 'update',
+      })
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Admin advisor directory PATCH error:', error)
@@ -41,10 +41,10 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const supabase = await createClient()
-    if (!await verifyAdmin(supabase)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { isAdmin, isSuperuser, user } = await getAccessContext()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const { id } = await req.json()
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 })
@@ -55,6 +55,14 @@ export async function DELETE(req: Request) {
       .delete()
       .eq('id', id)
     if (error) throw error
+    if (isSuperuser) {
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/advisor-directory/admin',
+        target_id: id,
+        action: 'delete',
+      })
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Admin advisor directory DELETE error:', error)

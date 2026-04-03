@@ -100,6 +100,7 @@ export function SidebarNav({
   isAdvisor = false,
   isAdmin = false,
   isAttorney = false,
+  isSuperuser = false,
 }: {
   user: User
   role?: string
@@ -107,6 +108,7 @@ export function SidebarNav({
   isAdvisor?: boolean
   isAdmin?: boolean
   isAttorney?: boolean
+  isSuperuser?: boolean
 }) {
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
@@ -145,6 +147,7 @@ export function SidebarNav({
   }
 
   function isLocked(feature?: string): boolean {
+    if (isSuperuser) return false
     if (!feature) return false
     if (isAdvisor) return false
     const required = FEATURE_TIERS[feature] ?? 1
@@ -180,10 +183,12 @@ export function SidebarNav({
         {NAV_GROUPS.map((group) => {
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
-          const groupIsLocked = group.locked === true && !isAdvisor && (
-            (group.label === 'Retirement Planning' && tier < 2) ||
-            (group.label === 'Estate Planning' && tier < 3)
-          )
+          const groupIsLocked =
+            !isSuperuser &&
+            group.locked === true &&
+            !isAdvisor &&
+            ((group.label === 'Retirement Planning' && tier < 2) ||
+              (group.label === 'Estate Planning' && tier < 3))
 
           return (
             <div key={group.label}>
@@ -223,15 +228,20 @@ export function SidebarNav({
                   )}
                   {group.items.map((item) => {
                     // Hide consumerOnly items from non-consumers
-                    if (item.consumerOnly && role !== 'consumer') {
+                    if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
                     }
                     // Hide advisorOnly items from non-advisors entirely
-                    if (item.advisorOnly && !isAdvisor) {
+                    if (item.advisorOnly && !isAdvisor && !isSuperuser) {
                       return null
                     }
                     // Hide tier-gated items consumer will never reach
-                    if (item.minTier && !isAdvisor && tier < item.minTier) {
+                    if (
+                      item.minTier &&
+                      !isAdvisor &&
+                      !isSuperuser &&
+                      tier < item.minTier
+                    ) {
                       return null
                     }
                     if (groupIsLocked) {
@@ -275,7 +285,7 @@ export function SidebarNav({
         })}
 
         {/* Advisor Portal */}
-        {role === 'advisor' && (
+        {(role === 'advisor' || isSuperuser) && (
           <Link
             href="/advisor"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -289,7 +299,7 @@ export function SidebarNav({
         )}
 
         {/* Attorney Portal */}
-        {(role === 'attorney' || isAttorney) && (
+        {(role === 'attorney' || isAttorney || isSuperuser) && (
           <Link
             href="/attorney"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -303,7 +313,7 @@ export function SidebarNav({
         )}
 
         {/* Admin Portal */}
-        {(role === 'admin' || isAdmin) && (
+        {(role === 'admin' || isAdmin || isSuperuser) && (
           <Link
             href="/admin"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -317,7 +327,7 @@ export function SidebarNav({
         )}
 
         {/* Admin — Advisor Directory */}
-        {(role === 'admin' || isAdmin) && (
+        {(role === 'admin' || isAdmin || isSuperuser) && (
           <Link
             href="/admin/advisor-directory"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -330,7 +340,7 @@ export function SidebarNav({
           </Link>
         )}
 
-        {(role === 'admin' || isAdmin) && (
+        {(role === 'admin' || isAdmin || isSuperuser) && (
           <Link
             href="/admin/attorney-directory"
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${

@@ -1,24 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-
-  // ── 1. Auth + admin check ──────────────────────────────────
-  const { data: { user } } = await supabase.auth.getUser()
+  const { isAdmin, isSuperuser, user } = await getAccessContext()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin' && profile?.is_admin !== true) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const admin = createAdminClient()
 
@@ -137,6 +125,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (isSuperuser) {
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/attorney-directory/admin-action',
+        target_id: listing_id,
+        action: 'approve',
+      })
+    }
     return NextResponse.json({ success: true, action: 'approved' })
   }
 
@@ -210,6 +206,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (isSuperuser) {
+      await admin.from('superuser_action_log').insert({
+        user_id: user.id,
+        endpoint: '/api/attorney-directory/admin-action',
+        target_id: listing_id,
+        action: 'reject',
+      })
+    }
     return NextResponse.json({ success: true, action: 'rejected' })
   }
 

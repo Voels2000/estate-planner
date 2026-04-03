@@ -1,17 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
+  const { user, isSuperuser, isConsumer } = await getAccessContext()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isSuperuser && !isConsumer) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // ── 1. Auth check ──────────────────────────────────────────
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const supabase = await createClient()
 
   // ── 2. Parse body ──────────────────────────────────────────
   const { attorney_id } = await req.json()
@@ -149,6 +146,15 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 10. Return success ──────────────────────────────────────
+  if (isSuperuser) {
+    const admin = createAdminClient()
+    await admin.from('superuser_action_log').insert({
+      user_id: user.id,
+      endpoint: '/api/attorney/grant-access',
+      target_id: attorney_id,
+      action: 'grant-access',
+    })
+  }
   return NextResponse.json({
     success: true,
     connection_id: connection.id,

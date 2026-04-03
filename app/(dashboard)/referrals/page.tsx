@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { ReferralsClient } from './_referrals-client'
 
 type SearchParams = { attorneyId?: string | string[] }
@@ -9,9 +10,13 @@ export default async function ReferralsPage({
 }: {
   searchParams: Promise<SearchParams>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isSuperuser } = await getAccessContext()
   if (!user) redirect('/login')
+  if (!isSuperuser) {
+    // consumer-only gate: none (links are consumer-facing; layout enforces access)
+  }
+
+  const supabase = await createClient()
 
   const params = await searchParams
   const rawId = params.attorneyId

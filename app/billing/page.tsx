@@ -49,9 +49,9 @@ export default async function BillingPage() {
       .select('*')
       .eq('is_active', true)
       .order('display_order')
-    const currentTier = tiers?.find(
-      t => t.stripe_price_id === profile?.subscription_plan
-    ) ?? tiers?.[0] ?? null
+    const currentTier = isActive
+      ? (tiers?.find(t => t.stripe_price_id === profile?.subscription_plan) ?? null)
+      : null
     advisorTier = { tiers: tiers ?? [], currentTier }
     const { count } = await supabase
       .from('advisor_clients')

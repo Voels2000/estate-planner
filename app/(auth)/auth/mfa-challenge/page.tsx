@@ -52,26 +52,25 @@ export default function MFAChallengePage() {
         return
       }
 
-      // Role and subscription aware redirect
-      // Always read from profiles table — user_metadata.role may be stale
-      // (e.g. 'financial_advisor' for accounts created before role normalization)
       const { data: { user: verifiedUser } } = await supabase.auth.getUser()
-
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, subscription_status')
+        .select('role, is_superuser, subscription_status')
         .eq('id', verifiedUser!.id)
         .single()
 
-      const role = profile?.role ?? 'consumer'
+      const role = profile?.role ?? ''
+      const isSuperuser = profile?.is_superuser === true
+      const isAdvisor = isSuperuser || role === 'advisor'
+      const isAttorney = role === 'attorney'
+      const hasActiveSubscription =
+        profile?.subscription_status === 'active' ||
+        profile?.subscription_status === 'trialing'
 
-      if (role === 'attorney') {
+      if (isAttorney) {
         router.push('/attorney')
-      } else if (role === 'advisor') {
-        const hasSubscription =
-          profile?.subscription_status === 'active' ||
-          profile?.subscription_status === 'trialing'
-        router.push(hasSubscription ? '/dashboard' : '/billing')
+      } else if (isAdvisor && !hasActiveSubscription) {
+        router.push('/billing')
       } else {
         router.push('/dashboard')
       }

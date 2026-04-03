@@ -1,14 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { AttorneyAccessClient } from './_attorney-access-client'
 
 export default async function AttorneyAccessPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, isSuperuser } = await getAccessContext()
   if (!user) redirect('/login')
+
+  const supabase = await createClient()
 
   // ── Confirm caller is a consumer ───────────────────────────
   const { data: profile } = await supabase
@@ -17,7 +16,9 @@ export default async function AttorneyAccessPage() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'attorney') redirect('/attorney')
+  if (!isSuperuser) {
+    if (profile?.role === 'attorney') redirect('/attorney')
+  }
 
   // ── Get consumer's household ───────────────────────────────
   const { data: household } = await supabase

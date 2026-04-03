@@ -75,31 +75,32 @@ export default function MFAEnrollPage() {
       }
       setEnrollSuccess(true)
 
-      // Determine correct destination based on role
-      // Always read from profiles table — user_metadata.role may be stale
-      const { data: { user: enrolledUser } } = await supabase.auth.getUser()
-
-      const { data: enrolledProfile } = await supabase
-        .from('profiles')
-        .select('role, subscription_status')
-        .eq('id', enrolledUser!.id)
-        .single()
-
-      const role = enrolledProfile?.role ?? 'consumer'
-
-      let destination = '/dashboard'
-      if (role === 'advisor') {
-        const hasSubscription =
-          enrolledProfile?.subscription_status === 'active' ||
-          enrolledProfile?.subscription_status === 'trialing'
-        destination = hasSubscription ? '/dashboard' : '/billing'
-      } else if (role === 'attorney') {
-        destination = '/attorney'
-      }
-
       setTimeout(() => {
-        router.push(destination)
-        router.refresh()
+        void (async () => {
+          const { data: { user: enrolledUser } } = await supabase.auth.getUser()
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, is_superuser, subscription_status')
+            .eq('id', enrolledUser!.id)
+            .single()
+
+          const role = profile?.role ?? ''
+          const isSuperuser = profile?.is_superuser === true
+          const isAdvisor = isSuperuser || role === 'advisor'
+          const isAttorney = role === 'attorney'
+          const hasActiveSubscription =
+            profile?.subscription_status === 'active' ||
+            profile?.subscription_status === 'trialing'
+
+          if (isAttorney) {
+            router.push('/attorney')
+          } else if (isAdvisor && !hasActiveSubscription) {
+            router.push('/billing')
+          } else {
+            router.push('/dashboard')
+          }
+          router.refresh()
+        })()
       }, 2000)
     } catch {
       setError('Something went wrong. Please try again.')

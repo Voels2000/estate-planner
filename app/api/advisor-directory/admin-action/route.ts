@@ -1,25 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
 
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-  return profile?.role === 'admin' || profile?.is_admin === true
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
-    if (!await verifyAdmin(supabase)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { isAdmin, isSuperuser, user } = await getAccessContext()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { listing_id, action } = await req.json()
     if (!listing_id || !['approve', 'reject'].includes(action)) {
@@ -83,6 +71,14 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      if (isSuperuser) {
+        await admin.from('superuser_action_log').insert({
+          user_id: user.id,
+          endpoint: '/api/advisor-directory/admin-action',
+          target_id: listing_id,
+          action: 'approve',
+        })
+      }
       return NextResponse.json({ success: true, action: 'approved' })
     }
 
@@ -125,6 +121,14 @@ export async function POST(req: NextRequest) {
 
       if (deleteError) throw deleteError
 
+      if (isSuperuser) {
+        await admin.from('superuser_action_log').insert({
+          user_id: user.id,
+          endpoint: '/api/advisor-directory/admin-action',
+          target_id: listing_id,
+          action: 'reject',
+        })
+      }
       return NextResponse.json({ success: true, action: 'rejected' })
     }
 
