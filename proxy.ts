@@ -121,7 +121,7 @@ export async function proxy(request: NextRequest) {
       .single()
 
     const isAdvisor = subProfile?.role === 'advisor'
-    const hasActiveSub = subProfile?.subscription_status === 'active' || subProfile?.subscription_status === 'trialing'
+    const hasActiveSub = ['active', 'trialing', 'canceling'].includes(subProfile?.subscription_status ?? '')
 
     if (isAdvisor && !hasActiveSub) {
       return redirectPreservingCookies(request, '/billing', supabaseResponse)

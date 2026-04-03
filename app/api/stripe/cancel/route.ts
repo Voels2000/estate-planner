@@ -34,7 +34,7 @@ export async function POST() {
     // Update profile to reflect pending cancellation
     await supabase
       .from('profiles')
-      .update({ subscription_status: 'canceled' })
+      .update({ subscription_status: 'canceling' })
       .eq('id', user.id)
 
     return NextResponse.json({ success: true })
