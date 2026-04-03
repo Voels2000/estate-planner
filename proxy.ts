@@ -33,6 +33,9 @@ const MFA_EXEMPT_PATHS = [
   '/auth/mfa-challenge',
   '/auth/mfa-enroll',
   '/api/auth',
+  '/billing',
+  '/advisor',
+  '/terms',
 ]
 
 function redirectPreservingCookies(
