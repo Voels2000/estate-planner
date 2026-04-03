@@ -11,31 +11,11 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/confirm-email',
   '/terms',
-  '/api/terms',
-  '/api/stripe/webhook',
-  '/api/resend/inbound',
-  '/api/cron',
+  '/api/',
 ]
 
 const ATTORNEY_ONLY_PATHS = [
   '/attorney/',
-  '/attorney/clients',
-]
-
-const ATTORNEY_BLOCKED_PATHS = [
-  '/dashboard',
-  '/profile',
-  '/advisor',
-]
-
-const MFA_EXEMPT_PATHS = [
-  '/settings/security',
-  '/auth/mfa-challenge',
-  '/auth/mfa-enroll',
-  '/api/auth',
-  '/billing',
-  '/advisor',
-  '/terms',
 ]
 
 function redirectPreservingCookies(
@@ -53,6 +33,7 @@ function redirectPreservingCookies(
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Let public paths through with no checks
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next()
   }
@@ -86,97 +67,38 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  // Check 1 — must be logged in
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return redirectPreservingCookies(request, '/login', supabaseResponse)
   }
 
-  // FIX: block unconfirmed users from accessing the app.
-  // Supabase sets email_confirmed_at once the user clicks the confirmation link.
-  // Until then, redirect to the holding page regardless of auth state.
+  // Check 2 — must have confirmed email
   if (!user.email_confirmed_at) {
     return redirectPreservingCookies(request, '/confirm-email', supabaseResponse)
   }
 
-  // Advisor subscription gate — only fires when advisor hits a protected page
-  // Scoped to /dashboard and /profile only to avoid slowing every request
-  const isGatedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile')
-
-  if (isGatedPath) {
-    const { data: subProfile } = await supabase
-      .from('profiles')
-      .select('role, subscription_status')
-      .eq('id', user.id)
-      .single()
-
-    const isAdvisor = subProfile?.role === 'advisor'
-    const hasActiveSub = ['active', 'trialing', 'canceling'].includes(subProfile?.subscription_status ?? '')
-
-    if (isAdvisor && !hasActiveSub) {
-      return redirectPreservingCookies(request, '/billing', supabaseResponse)
-    }
-  }
-
-  // Role-based route guards
-  // Only fetch role when the path actually needs it — avoids adding a DB call
-  // to every single request which can cause middleware timeouts.
+  // Check 3 — attorney route guards only
   const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
-  const isAttorneyBlockedPath = ATTORNEY_BLOCKED_PATHS.some((p) => pathname.startsWith(p))
+  const isAdvisorPath = pathname.startsWith('/advisor')
 
-  if (isAttorneyPath || isAttorneyBlockedPath) {
-    const { data: routeProfile } = await supabase
+  if (isAttorneyPath || isAdvisorPath) {
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_attorney')
+      .select('role')
       .eq('id', user.id)
       .single()
 
-    const userRole = routeProfile?.role
-    const isAttorneyFlag = routeProfile?.is_attorney === true
-    console.log('middleware role check:', { pathname, userRole, isAttorneyPath, isAttorneyBlockedPath })
+    const role = profile?.role
 
-    // Attorneys can only access attorney routes — block dashboard/advisor/billing
-    if (userRole === 'attorney' && isAttorneyBlockedPath) {
+    // Attorneys can only access attorney routes
+    if (role === 'attorney' && isAdvisorPath) {
       return redirectPreservingCookies(request, '/attorney', supabaseResponse)
     }
 
     // Non-attorneys cannot access attorney routes
-    // Check both role and is_attorney flag to match page-level logic
-    if (userRole !== 'attorney' && !isAttorneyFlag && isAttorneyPath) {
+    if (role !== 'attorney' && isAttorneyPath) {
       return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
-    }
-  }
-
-  if (MFA_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) {
-    return supabaseResponse
-  }
-
-  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-
-  if (aal) {
-    const { currentLevel, nextLevel } = aal
-
-    if (nextLevel === 'aal2' && currentLevel !== 'aal2') {
-      return redirectPreservingCookies(
-        request,
-        '/auth/mfa-challenge',
-        supabaseResponse
-      )
-    }
-
-    if (nextLevel === 'aal1' && currentLevel === 'aal1') {
-      const { data: factors } = await supabase.auth.mfa.listFactors()
-      const hasEnrolled = factors?.totp && factors.totp.length > 0
-
-      if (!hasEnrolled) {
-        return redirectPreservingCookies(
-          request,
-          '/settings/security',
-          supabaseResponse
-        )
-      }
     }
   }
 
