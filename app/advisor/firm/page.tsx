@@ -64,6 +64,10 @@ export default async function AdvisorFirmPage() {
     .neq('status', 'removed')
     .order('joined_at', { ascending: true, nullsFirst: false })
 
+  if (error) {
+    console.error('firm_members query error:', JSON.stringify(error))
+  }
+
   let rosterError = false
   if (error) {
     console.error('Failed to load firm members', error)
