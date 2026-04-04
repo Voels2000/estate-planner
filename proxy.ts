@@ -72,17 +72,26 @@ export async function proxy(request: NextRequest) {
     return redirectPreservingCookies(request, '/login', supabaseResponse)
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, subscription_status')
+    .eq('id', user.id)
+    .single()
+
+  const subscription_status = profile?.subscription_status ?? null
+  const hasActiveSubscription = ['active', 'trialing', 'canceling'].includes(
+    subscription_status
+  )
+  const isAdvisor = profile?.role === 'advisor'
+  if (isAdvisor && !hasActiveSubscription) {
+    return redirectPreservingCookies(request, '/billing', supabaseResponse)
+  }
+
   // Check 2 — attorney route guards only
   const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
   const isAdvisorPath = pathname.startsWith('/advisor')
 
   if (isAttorneyPath || isAdvisorPath) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
     const role = profile?.role
 
     // Attorneys can only access attorney routes
