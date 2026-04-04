@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   }
 
   // Fetch profile and household to determine correct redirect
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('role, subscription_status, firm_id')
     .eq('id', user.id)
@@ -130,7 +130,30 @@ export async function GET(request: Request) {
 
   // Advisors — route based on subscription status
   if (profile?.role === 'advisor') {
-    if (!profile.firm_id) {
+    const inviteTokenCb = searchParams.get('invite_token')
+    const firmIdCb = searchParams.get('firm_id')
+    if (inviteTokenCb && firmIdCb) {
+      try {
+        await fetch(`${origin}/api/firm/join`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: request.headers.get('cookie') ?? '',
+          },
+          body: JSON.stringify({ invite_token: inviteTokenCb, firm_id: firmIdCb }),
+        })
+      } catch (err) {
+        console.error('firm join (callback):', err)
+      }
+      const { data: refreshed } = await supabase
+        .from('profiles')
+        .select('role, subscription_status, firm_id')
+        .eq('id', user.id)
+        .single()
+      if (refreshed) profile = refreshed
+    }
+
+    if (!profile?.firm_id) {
       try {
         const sb = await createClient()
         const email = user.email ?? ''

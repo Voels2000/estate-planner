@@ -25,6 +25,9 @@ type Props = {
   advisorClients: AdvisorClient[]
   netWorthMap: Record<string, number>
   advisorId: string
+  isFirmOwner?: boolean
+  firm_name?: string | null
+  firm_id?: string | null
 }
 
 const STATUS_OPTIONS = ['active', 'needs_review', 'at_risk', 'inactive']
@@ -57,6 +60,9 @@ export default function AdvisorClientPage({
   advisorClients,
   netWorthMap,
   advisorId,
+  isFirmOwner,
+  firm_name,
+  firm_id,
 }: Props) {
   const [clients, setClients] = useState(advisorClients)
   const [loading, setLoading] = useState<string | null>(null)
@@ -104,10 +110,16 @@ export default function AdvisorClientPage({
 
   async function handleStatusChange(clientRecordId: string, clientId: string | null, newStatus: string) {
     const supabase = createClient()
-    await supabase
+    const { error } = await supabase
       .from('advisor_clients')
       .update({ client_status: newStatus })
       .eq('id', clientRecordId)
+
+    if (error) {
+      console.error('Status update failed', error)
+      setError('Failed to update client status. Please refresh and try again.')
+      return
+    }
 
     setClients(prev =>
       prev.map(c => c.id === clientRecordId ? { ...c, client_status: newStatus } : c)
@@ -198,6 +210,8 @@ export default function AdvisorClientPage({
   const pendingClients = clients.filter(c => !c.accepted_at && c.status !== 'consumer_requested')
   const listedClients = clients.filter(c => c.status !== 'consumer_requested')
 
+  const showFirmBanner = firm_id != null && firm_id !== ''
+
   return (
     <div className="space-y-8">
       {/* Tier limit upgrade modal */}
@@ -249,6 +263,20 @@ export default function AdvisorClientPage({
           + Add Client
         </button>
       </div>
+
+      {showFirmBanner && isFirmOwner === true && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          🏢 {firm_name ?? 'Firm'} · Firm Owner · Manage your firm in{' '}
+          <a href="/advisor/firm" className="font-medium text-indigo-700 underline hover:text-indigo-900">
+            Firm Settings ⚙️
+          </a>
+        </div>
+      )}
+      {showFirmBanner && isFirmOwner === false && (
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800">
+          🏢 You are a member of a firm. Contact your firm owner for billing and settings.
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-neutral-200">

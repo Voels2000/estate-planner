@@ -32,11 +32,15 @@ export default async function ClientDetailPage({
   if (!link) redirect('/advisor')
 
   // Log this advisor access
-  supabase.from('advisor_access_log').insert({
-    advisor_id: user.id,
-    client_id: clientId,
-    page: 'client_detail'
-  })
+  try {
+    await supabase.from('advisor_access_log').insert({
+      advisor_id: user.id,
+      client_id: clientId,
+      page: 'client_detail',
+    })
+  } catch (e) {
+    console.error('Access log failed', e)
+  }
 
   // Fire-and-forget: notify client their advisor viewed their profile (service role RPC)
   after(() => {

@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { BillingClient } from './_billing-client'
+import { FirmBillingClient } from './_firm-billing-client'
 import Stripe from 'stripe'
 import { redirect } from 'next/navigation'
-import { TIER_FEATURES } from '@/lib/tiers'
+import {
+  TIER_FEATURES,
+  ADVISOR_FIRM_PRICE_IDS,
+  FIRM_PRICE_ID_TO_TIER,
+  ADVISOR_FIRM_SEAT_RATES,
+} from '@/lib/tiers'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 
 const CONSUMER_PRICE_IDS = [
   'price_1TILBRCaljka9gJt6dr44Znq', // Financial $9
@@ -11,10 +18,85 @@ const CONSUMER_PRICE_IDS = [
 ]
 
 export default async function BillingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const access = await getAccessContext()
+  if (!access.user) redirect('/login')
 
+  if (access.isAdvisor) {
+    if (!access.isFirmOwner) {
+      return (
+        <div className="mx-auto max-w-lg px-4 py-24 text-center">
+          <div className="mb-4 text-4xl">🏢</div>
+          <h1 className="text-2xl font-bold text-neutral-900">Billing</h1>
+          <p className="mt-4 text-neutral-600 leading-relaxed">
+            Your billing is managed by your firm owner. Contact your firm
+            administrator for billing questions.
+          </p>
+          <a
+            href="/dashboard"
+            className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          >
+            ← Back to Dashboard
+          </a>
+        </div>
+      )
+    }
+
+    if (!access.firm_id) {
+      return (
+        <div className="mx-auto max-w-lg px-4 py-24 text-center">
+          <div className="mb-4 text-4xl">⚠️</div>
+          <h1 className="text-2xl font-bold text-neutral-900">
+            Firm not linked
+          </h1>
+          <p className="mt-4 text-neutral-600">
+            Your account is not associated with a firm. Contact support if this
+            is unexpected.
+          </p>
+          <a
+            href="/dashboard"
+            className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          >
+            ← Back to Dashboard
+          </a>
+        </div>
+      )
+    }
+
+    const supabase = await createClient()
+    const { data: firmRow } = await supabase
+      .from('firms')
+      .select('stripe_customer_id, stripe_subscription_id, subscription_status')
+      .eq('id', access.firm_id)
+      .single()
+
+    type FirmTierKey = keyof typeof ADVISOR_FIRM_SEAT_RATES
+    const firmTierKey = (
+      access.firm_tier && access.firm_tier in ADVISOR_FIRM_SEAT_RATES
+        ? access.firm_tier
+        : 'starter'
+    ) as FirmTierKey
+    const firmCheckoutPriceId =
+      ADVISOR_FIRM_PRICE_IDS[firmTierKey as keyof typeof ADVISOR_FIRM_PRICE_IDS]
+    const checkoutTier =
+      FIRM_PRICE_ID_TO_TIER[firmCheckoutPriceId as keyof typeof FIRM_PRICE_ID_TO_TIER]
+    const perSeatRate = ADVISOR_FIRM_SEAT_RATES[firmTierKey]
+    const seatCount = access.seat_count ?? 0
+    const totalMonthly = perSeatRate * seatCount
+
+    return (
+      <FirmBillingClient
+        firmName={access.firm_name ?? 'Your firm'}
+        firmTierKey={checkoutTier ?? firmTierKey}
+        perSeatRate={perSeatRate}
+        seatCount={seatCount}
+        totalMonthly={totalMonthly}
+        subscriptionStatus={firmRow?.subscription_status ?? null}
+        firmCheckoutPriceId={firmCheckoutPriceId}
+      />
+    )
+  }
+
+  const supabase = await createClient()
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-02-24.acacia',
   })
@@ -22,53 +104,25 @@ export default async function BillingPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('subscription_status, subscription_plan, role')
-    .eq('id', user.id)
+    .eq('id', access.user.id)
     .single()
 
-  const isAdvisor = profile?.role === 'advisor'
   const isActive = profile?.subscription_status === 'active'
 
-  // Check if user is an advisor client
   let isAdvisorClient = false
-  if (!isAdvisor) {
-    const { data: clientRow } = await supabase
-      .from('advisor_clients')
-      .select('id')
-      .eq('client_id', user.id)
-      .eq('status', 'active')
-      .maybeSingle()
-    isAdvisorClient = !!clientRow
-  }
+  const { data: clientRow } = await supabase
+    .from('advisor_clients')
+    .select('id')
+    .eq('client_id', access.user.id)
+    .eq('status', 'active')
+    .maybeSingle()
+  isAdvisorClient = !!clientRow
 
-  // Fetch advisor tier info if applicable
-  let advisorTier = null
-  let advisorClientCount = 0
-  if (isAdvisor) {
-    const { data: tiers } = await supabase
-      .from('advisor_tiers')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order')
-    const currentTier = isActive
-      ? (tiers?.find(t => t.stripe_price_id === profile?.subscription_plan) ?? null)
-      : null
-    advisorTier = { tiers: tiers ?? [], currentTier }
-    const { count } = await supabase
-      .from('advisor_clients')
-      .select('id', { count: 'exact', head: true })
-      .eq('advisor_id', user.id)
-      .eq('status', 'active')
-      .not('client_id', 'is', null)
-    advisorClientCount = count ?? 0
-  }
+  const priceIdsToShow = isActive
+    ? CONSUMER_PRICE_IDS
+    : [CONSUMER_PRICE_IDS[0]]
 
-  const priceIdsToShow = isAdvisor
-    ? []
-    : isActive
-      ? CONSUMER_PRICE_IDS
-      : [CONSUMER_PRICE_IDS[0]] // Not yet active — show Tier 1 only
-
-  const plans = isAdvisor ? [] : await Promise.all(
+  const plans = await Promise.all(
     priceIdsToShow.map(async id => {
       const price = await stripe.prices.retrieve(id, { expand: ['product'] })
       const product = price.product as Stripe.Product
@@ -96,10 +150,7 @@ export default async function BillingPage() {
       plans={plans}
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
-      isAdvisor={isAdvisor}
       isAdvisorClient={isAdvisorClient}
-      advisorTier={advisorTier}
-      advisorClientCount={advisorClientCount}
     />
   )
 }

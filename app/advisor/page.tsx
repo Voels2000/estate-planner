@@ -1,9 +1,17 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import AdvisorClient from './_advisor-client'
 
 export default async function AdvisorPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const access = await getAccessContext()
+  const isFirmOwner = access.isFirmOwner
+  const firm_name = access.firm_name
+  const firm_id = access.firm_id
 
   // Fetch all clients linked to this advisor
   const { data: advisorClients } = await supabase
@@ -25,7 +33,7 @@ export default async function AdvisorPage() {
         created_at
       )
     `)
-    .eq('advisor_id', user!.id)
+    .eq('advisor_id', user.id)
     .neq('status', 'removed')
     .order('invited_at', { ascending: false })
 
@@ -74,7 +82,10 @@ export default async function AdvisorPage() {
         profiles: Array.isArray(ac.profiles) ? ac.profiles[0] ?? null : ac.profiles,
       }))}
       netWorthMap={netWorthMap}
-      advisorId={user!.id}
+      advisorId={user.id}
+      isFirmOwner={isFirmOwner}
+      firm_name={firm_name}
+      firm_id={firm_id}
     />
   )
 }

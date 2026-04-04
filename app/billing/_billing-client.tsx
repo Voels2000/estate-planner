@@ -1,12 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import type { AdvisorTier } from '@/lib/types'
-
-type AdvisorTierInfo = {
-  tiers: AdvisorTier[]
-  currentTier: AdvisorTier | null
-}
 
 type Plan = {
   priceId: string
@@ -23,20 +17,14 @@ type Props = {
   plans: Plan[]
   currentPlan: string | null
   subscriptionStatus: string | null
-  isAdvisor: boolean
   isAdvisorClient: boolean
-  advisorTier: AdvisorTierInfo | null
-  advisorClientCount: number
 }
 
 export function BillingClient({
   plans,
   currentPlan,
   subscriptionStatus,
-  isAdvisor,
   isAdvisorClient,
-  advisorTier,
-  advisorClientCount,
 }: Props) {
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -92,131 +80,6 @@ export function BillingClient({
   }
 
   const isActive = subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
-
-  // ── Advisor billing view ──────────────────────────────────────────────────
-  if (isAdvisor && advisorTier) {
-    const { tiers, currentTier } = advisorTier
-    const limit = currentTier?.client_limit ?? null
-    const atLimit = limit !== null && advisorClientCount >= limit
-    const usagePct = limit ? Math.min(100, Math.round((advisorClientCount / limit) * 100)) : 0
-
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="mb-6">
-          <a href="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
-            ← Back to Dashboard
-          </a>
-        </div>
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Advisor Billing</h1>
-          <p className="mt-2 text-neutral-600">Manage your advisor plan and client capacity.</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {/* Current usage card */}
-        <div className="mb-8 rounded-2xl bg-white border border-neutral-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-              Current Plan — {currentTier?.name ?? 'Advisor'}
-            </h2>
-            <span className="text-sm font-medium text-neutral-900">
-              ${currentTier?.price_monthly ?? 159}/month
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-neutral-600">Clients</span>
-              <span className={`font-medium ${atLimit ? 'text-red-600' : 'text-neutral-900'}`}>
-                {advisorClientCount} / {limit ?? '∞'}
-              </span>
-            </div>
-            {limit && (
-              <div className="w-full bg-neutral-100 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all ${atLimit ? 'bg-red-500' : 'bg-emerald-500'}`}
-                  style={{ width: `${usagePct}%` }}
-                />
-              </div>
-            )}
-            {atLimit && (
-              <p className="mt-2 text-xs text-red-600">
-                You've reached your client limit. Upgrade to add more clients.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Tier cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {tiers.map((tier) => {
-            const isCurrent = currentTier?.id === tier.id
-            const isPlaceholder = tier.stripe_price_id.startsWith('price_PLACEHOLDER')
-
-            return (
-              <div
-                key={tier.id}
-                className={`relative rounded-2xl p-6 shadow-sm ring-1 ${
-                  isCurrent
-                    ? 'bg-neutral-900 ring-neutral-900'
-                    : 'bg-white ring-neutral-200'
-                }`}
-              >
-                {isCurrent && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white">
-                    Current Plan
-                  </span>
-                )}
-                <h3 className={`font-semibold ${isCurrent ? 'text-white' : 'text-neutral-900'}`}>
-                  {tier.name}
-                </h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className={`text-3xl font-bold ${isCurrent ? 'text-white' : 'text-neutral-900'}`}>
-                    ${tier.price_monthly}
-                  </span>
-                  <span className={`text-sm ${isCurrent ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                    /month
-                  </span>
-                </div>
-                <p className={`mt-1 text-sm ${isCurrent ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  {tier.client_limit ? `Up to ${tier.client_limit} clients` : 'Unlimited clients'}
-                </p>
-                <button
-                  onClick={() => handleSubscribe(tier.stripe_price_id)}
-                  disabled={isCurrent || loadingPriceId === tier.stripe_price_id || isPlaceholder}
-                  className={`mt-6 w-full rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    isCurrent
-                      ? 'bg-white/20 text-white'
-                      : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                  }`}
-                >
-                  {isCurrent ? 'Current Plan' : isPlaceholder ? 'Coming Soon' : loadingPriceId === tier.stripe_price_id ? 'Redirecting...' : 'Upgrade'}
-                </button>
-              </div>
-            )
-          })}
-        </div>
-
-        <div className="mt-8 text-center">
-          <div className="flex flex-col items-center gap-3">
-            {isActive && (
-              <button
-                onClick={handleCancelSubscription}
-                disabled={loadingPriceId === 'cancel'}
-                className="text-sm text-red-500 hover:text-red-700 underline-offset-4 hover:underline disabled:opacity-50"
-              >
-                {loadingPriceId === 'cancel' ? 'Canceling...' : 'Cancel subscription'}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   if (isAdvisorClient) {
     return (

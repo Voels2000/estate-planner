@@ -13,7 +13,7 @@ export default async function AdvisorLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_superuser')
+    .select('role, is_superuser, firm_role')
     .eq('id', user.id)
     .single()
 
@@ -32,6 +32,14 @@ export default async function AdvisorLayout({
           </span>
         </div>
         <div className="flex items-center gap-4">
+          {profile?.firm_role === 'owner' && (
+            <a
+              href="/advisor/firm"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+            >
+              Firm Settings ⚙️
+            </a>
+          )}
           <span className="text-sm text-neutral-500">{user.email}</span>
           <AdvisorSignOut />
         </div>
