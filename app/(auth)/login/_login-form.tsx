@@ -34,9 +34,15 @@ export function LoginForm() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, subscription_status, firm_id, firm_role')
+        .select('role, subscription_status, firm_role, is_superuser')
         .eq('id', data.user.id)
         .single()
+
+      if (profile?.is_superuser) {
+        router.push('/dashboard')
+        router.refresh()
+        return
+      }
 
       if (profile?.role === 'attorney') {
         router.push('/attorney')
