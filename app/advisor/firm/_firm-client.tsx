@@ -157,6 +157,7 @@ export default function FirmClient({
       }
       setInviteSuccess(`Invite sent to ${trimmed} ✅`)
       setInviteEmail('')
+      router.refresh()
     } catch {
       setInviteError('Something went wrong.')
     } finally {

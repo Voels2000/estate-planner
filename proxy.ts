@@ -74,7 +74,7 @@ export async function proxy(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status')
+    .select('role, subscription_status, firm_role')
     .eq('id', user.id)
     .single()
 
@@ -83,7 +83,8 @@ export async function proxy(request: NextRequest) {
     subscription_status
   )
   const isAdvisor = profile?.role === 'advisor'
-  if (isAdvisor && !hasActiveSubscription) {
+  const isFirmMember = profile?.firm_role === 'member'
+  if (isAdvisor && !isFirmMember && !hasActiveSubscription) {
     return redirectPreservingCookies(request, '/billing', supabaseResponse)
   }
 

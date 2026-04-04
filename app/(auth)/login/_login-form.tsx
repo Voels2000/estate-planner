@@ -34,7 +34,7 @@ export function LoginForm() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, subscription_status, firm_id')
+        .select('role, subscription_status, firm_id, firm_role')
         .eq('id', data.user.id)
         .single()
 
@@ -42,15 +42,20 @@ export function LoginForm() {
         router.push('/attorney')
         router.refresh()
       } else if (profile?.role === 'advisor') {
-        const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
-          profile?.subscription_status ?? ''
-        )
-        if (hasActiveSub) {
+        if (profile?.firm_role === 'member') {
           router.push('/advisor')
           router.refresh()
         } else {
-          router.push('/billing')
-          router.refresh()
+          const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
+            profile?.subscription_status ?? ''
+          )
+          if (hasActiveSub) {
+            router.push('/advisor')
+            router.refresh()
+          } else {
+            router.push('/billing')
+            router.refresh()
+          }
         }
       } else {
         router.push(redirectTo)
