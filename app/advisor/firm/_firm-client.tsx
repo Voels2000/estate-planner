@@ -403,6 +403,10 @@ export default function FirmClient({
             disabled={inviteLoading}
             className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-50"
           />
+          <p className="text-sm text-neutral-500">
+            Enter an advisor's email address above to send them an invite. Each accepted invite
+            adds one seat to your firm subscription.
+          </p>
           <button
             type="button"
             onClick={() => void handleSendInvite()}
@@ -421,10 +425,6 @@ export default function FirmClient({
               {inviteError}
             </p>
           )}
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            Invited advisors will receive an email with a signup link. Each accepted invite adds one
-            seat to your firm subscription.
-          </p>
         </div>
       </section>
 

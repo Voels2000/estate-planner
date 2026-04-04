@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdvisorSignOut } from './_components/advisor-sign-out'
+import { AdvisorTabs } from './_components/advisor-tabs'
 
 export default async function AdvisorLayout({
   children,
@@ -44,6 +45,11 @@ export default async function AdvisorLayout({
           <AdvisorSignOut />
         </div>
       </nav>
+      <div className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 pt-2">
+          <AdvisorTabs showFirmSettingsTab={profile?.firm_role === 'owner'} />
+        </div>
+      </div>
       <main className="mx-auto max-w-7xl px-4 py-10">
         {children}
       </main>

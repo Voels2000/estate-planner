@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import FirmClient from './_firm-client'
 
@@ -44,7 +44,7 @@ export default async function AdvisorFirmPage() {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data: rawMembers, error } = await supabase
     .from('firm_members')
     .select(
