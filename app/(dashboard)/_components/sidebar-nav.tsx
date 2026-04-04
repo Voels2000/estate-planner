@@ -34,7 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
-      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', minTier: 2 },
+      { href: '/settings/attorney-access', label: 'My Attorney', icon: '⚖️', minTier: 2 },
     ],
   },
   {
@@ -86,7 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
-      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', advisorOnly: true },
+      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
   },
