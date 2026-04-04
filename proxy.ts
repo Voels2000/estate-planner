@@ -9,7 +9,6 @@ const PUBLIC_PATHS = [
   '/billing',
   '/forgot-password',
   '/reset-password',
-  '/confirm-email',
   '/terms',
   '/api/',
 ]
@@ -73,12 +72,7 @@ export async function proxy(request: NextRequest) {
     return redirectPreservingCookies(request, '/login', supabaseResponse)
   }
 
-  // Check 2 — must have confirmed email
-  if (!user.email_confirmed_at) {
-    return redirectPreservingCookies(request, '/confirm-email', supabaseResponse)
-  }
-
-  // Check 3 — attorney route guards only
+  // Check 2 — attorney route guards only
   const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
   const isAdvisorPath = pathname.startsWith('/advisor')
 

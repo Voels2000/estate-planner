@@ -67,18 +67,7 @@ export function SignupForm() {
         body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' })
       })
 
-      // FIX: check whether email confirmation is required before redirecting.
-      // If no session was returned, Supabase requires email confirmation first.
-      // Route to /confirm-email holding page instead of dashboard.
-      if (!data.session) {
-        setIsDone(true)
-        router.push('/confirm-email')
-        return
-      }
-
-      // Session exists — email confirmation is disabled or user is already confirmed.
-      // For new advisors without a subscription, route to billing.
-      // All others go to redirectTo (defaults to /dashboard).
+      // Route based on role after signup.
       setIsDone(true)
       if (role === 'advisor') {
         router.push('/billing')
