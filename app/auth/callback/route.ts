@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
   // Fetch profile and household to determine correct redirect
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status')
+    .select('role, subscription_status, firm_id')
     .eq('id', user.id)
     .single()
 
@@ -129,6 +130,49 @@ export async function GET(request: Request) {
 
   // Advisors — route based on subscription status
   if (profile?.role === 'advisor') {
+    if (!profile.firm_id) {
+      try {
+        const sb = await createClient()
+        const email = user.email ?? ''
+        const prefix = email.includes('@')
+          ? email.slice(0, email.indexOf('@')).trim()
+          : email.trim() || 'Advisor'
+        const defaultFirmName = `${prefix} Firm`
+
+        const { data: newFirm, error: firmError } = await sb
+          .from('firms')
+          .insert({
+            name: defaultFirmName,
+            owner_id: user.id,
+            tier: 'starter',
+            seat_count: 1,
+            subscription_status: null,
+          })
+          .select('id')
+          .single()
+
+        if (firmError) throw firmError
+        if (!newFirm?.id) throw new Error('firm insert returned no id')
+
+        const { error: memberError } = await sb.from('firm_members').insert({
+          firm_id: newFirm.id,
+          user_id: user.id,
+          firm_role: 'owner',
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        })
+        if (memberError) throw memberError
+
+        const { error: profileError } = await sb
+          .from('profiles')
+          .update({ firm_id: newFirm.id, firm_role: 'owner' })
+          .eq('id', user.id)
+        if (profileError) throw profileError
+      } catch (err) {
+        console.error('advisor firm bootstrap error:', err)
+      }
+    }
+
     const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
       profile.subscription_status ?? ''
     )

@@ -118,3 +118,21 @@ export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = {
   'price_1TILEXCaljka9gJtrHqnG3bl': 2,
   'price_1TILGOCaljka9gJtCDLiKFHp': 3,
 }
+
+export const ADVISOR_FIRM_PRICE_IDS = {
+  starter:    'price_1TIW5xCaljka9gJtTw9uF5E5',
+  growth:     'price_1TIW78Caljka9gJt8vlD9GnF',
+  enterprise: 'price_1TIW8gCaljka9gJtTfmEgO2C',
+}
+
+export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = {
+  'price_1TIW5xCaljka9gJtTw9uF5E5': 'starter',
+  'price_1TIW78Caljka9gJt8vlD9GnF': 'growth',
+  'price_1TIW8gCaljka9gJtTfmEgO2C': 'enterprise',
+}
+
+export const ADVISOR_FIRM_SEAT_RATES: Record<string, number> = {
+  starter:    149,
+  growth:     99,
+  enterprise: 75,
+}
