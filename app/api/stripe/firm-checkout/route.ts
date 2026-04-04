@@ -25,6 +25,14 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
     const priceId = typeof body.priceId === 'string' ? body.priceId : undefined
+
+    console.log('[firm-checkout] price validation', {
+      incomingPriceId: priceId,
+      advisorFirmPriceIds: ADVISOR_FIRM_PRICE_IDS,
+      allowedPriceIds: [...VALID_FIRM_PRICE_IDS],
+      isAllowed: priceId ? VALID_FIRM_PRICE_IDS.has(priceId) : false,
+    })
+
     if (!priceId || !VALID_FIRM_PRICE_IDS.has(priceId)) {
       return NextResponse.json({ error: 'Bad request' }, { status: 400 })
     }
@@ -75,6 +83,11 @@ export async function POST(req: Request) {
 
     const seatCount = Math.max(1, ctx.seat_count ?? 1)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+
+    console.log('[firm-checkout] stripe.checkout.sessions.create', {
+      lineItemPriceId: priceId,
+      seatCount,
+    })
 
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,

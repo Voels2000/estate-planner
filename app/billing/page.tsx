@@ -69,6 +69,13 @@ export default async function BillingPage() {
       .eq('id', access.firm_id)
       .single()
 
+    if (
+      firmRow?.subscription_status === 'active' ||
+      firmRow?.subscription_status === 'trialing'
+    ) {
+      redirect('/advisor')
+    }
+
     type FirmTierKey = keyof typeof ADVISOR_FIRM_SEAT_RATES
     const firmTierKey = (
       access.firm_tier && access.firm_tier in ADVISOR_FIRM_SEAT_RATES
