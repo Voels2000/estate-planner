@@ -30,9 +30,8 @@ export function FirmBillingClient({
   const [loadingSubscribe, setLoadingSubscribe] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isSubscribed =
+  const isActive =
     subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
-  const showSubscribe = !isSubscribed
 
   async function handleFirmCheckout() {
     setError(null)
@@ -130,13 +129,15 @@ export function FirmBillingClient({
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <a
-            href="/advisor/firm"
-            className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition-colors"
-          >
-            Manage Subscription
-          </a>
-          {showSubscribe && (
+          {isActive && (
+            <a
+              href="/advisor/firm"
+              className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition-colors"
+            >
+              Manage Subscription
+            </a>
+          )}
+          {!isActive && (
             <button
               type="button"
               onClick={handleFirmCheckout}
