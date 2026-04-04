@@ -6,9 +6,7 @@ import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
-  if (access.tier < 3) {
-    redirect('/billing?returnTo=/estate-tax')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const {
     data: { user },

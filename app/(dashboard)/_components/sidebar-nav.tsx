@@ -33,7 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
-      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', consumerOnly: true },
+      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', minTier: 2 },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
     ],
   },
@@ -84,7 +84,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Resources',
     icon: '📚',
     items: [
-      { href: '/advisor-directory', label: 'Find an Advisor', icon: '🔍' },
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', advisorOnly: true },
@@ -231,16 +230,25 @@ export function SidebarNav({
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
                     }
+                    // Attorney Access: consumer accounts only (no consumerOnly flag on item)
+                    if (
+                      item.href === '/settings/attorney-access' &&
+                      role !== 'consumer' &&
+                      !isSuperuser
+                    ) {
+                      return null
+                    }
                     // Hide advisorOnly items from non-advisors entirely
                     if (item.advisorOnly && !isAdvisor && !isSuperuser) {
                       return null
                     }
-                    // Hide tier-gated items consumer will never reach
+                    // Hide tier-gated items consumer will never reach (Attorney Access: shown, greyed + billing)
                     if (
                       item.minTier &&
                       !isAdvisor &&
                       !isSuperuser &&
-                      tier < item.minTier
+                      tier < item.minTier &&
+                      item.href !== '/settings/attorney-access'
                     ) {
                       return null
                     }
@@ -254,16 +262,24 @@ export function SidebarNav({
                         </div>
                       )
                     }
-                    const isActive = activePath === item.href
+                    const tierBelowMin =
+                      Boolean(item.minTier) &&
+                      !isAdvisor &&
+                      !isSuperuser &&
+                      tier < (item.minTier ?? 0)
+                    const attorneyTierGate =
+                      item.href === '/settings/attorney-access' && tierBelowMin
+                    const linkHref = attorneyTierGate ? '/billing' : item.href
+                    const isActive = activePath === item.href && !attorneyTierGate
                     const locked = isLocked(item.feature)
                     return (
                       <div key={item.href}>
                         <Link
-                          href={item.href}
+                          href={linkHref}
                           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                             isActive
                               ? 'bg-neutral-900 text-white'
-                              : locked
+                              : locked || attorneyTierGate
                                 ? 'text-neutral-400 hover:bg-neutral-50'
                                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
                           }`}
@@ -272,6 +288,11 @@ export function SidebarNav({
                           {locked && (
                             <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
                               🔒 {lockLabel(item.feature)}
+                            </span>
+                          )}
+                          {attorneyTierGate && item.minTier && (
+                            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
+                              🔒 {TIER_NAMES[item.minTier as 1 | 2 | 3]}
                             </span>
                           )}
                         </Link>

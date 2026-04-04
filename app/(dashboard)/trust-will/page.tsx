@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { getUserAccess } from '@/lib/get-user-access'
 import {
   getTrustWillRecommendations,
   getTrustWillChecklist,
@@ -13,8 +12,7 @@ export default async function TrustWillPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const access = await getUserAccess()
-  if (access.tier < 3 && !access.isAdvisor) redirect('/billing?returnTo=/trust-will')
+  // Former tier billing redirect removed — layout enforces subscription.
 
   const admin = createAdminClient()
 

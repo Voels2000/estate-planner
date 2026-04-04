@@ -1,13 +1,8 @@
-import { redirect } from 'next/navigation'
-import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { RmdClient } from './_rmd-client'
 
 export default async function RmdPage() {
-  const access = await getUserAccess()
-  if (access.tier < 2) {
-    redirect('/billing?returnTo=/rmd')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null

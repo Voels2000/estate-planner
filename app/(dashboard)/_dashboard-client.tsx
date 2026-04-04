@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import { FeedbackButton } from './_components/feedback-button'
 
@@ -22,10 +23,10 @@ type Props = {
   setupSteps: SetupStep[]
   completedSteps: number
   progressPct: number
-  readinessScore: number
-  hasProjection: boolean
   userId: string
   completionScore?: CompletionScore | null
+  consumerTier?: number
+  allocationContext: AssetAllocationContext
 }
 
 export function DashboardClient({
@@ -39,27 +40,15 @@ export function DashboardClient({
   setupSteps,
   completedSteps,
   progressPct,
-  readinessScore,
-  hasProjection,
   userId,
   completionScore,
+  consumerTier = 1,
+  allocationContext,
 }: Props) {
   const firstName = userName.split(' ')[0]
   const allDone = completedSteps === setupSteps.length
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
-  function readinessColor() {
-    if (readinessScore >= 75) return 'text-green-600'
-    if (readinessScore >= 50) return 'text-yellow-600'
-    return 'text-red-600'
-  }
-
-  function readinessLabel() {
-    if (readinessScore >= 75) return 'On Track'
-    if (readinessScore >= 50) return 'Needs Attention'
-    return 'At Risk'
-  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -179,30 +168,8 @@ export function DashboardClient({
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 flex flex-col items-center justify-center text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">Retirement Readiness</p>
-          <div className={`text-6xl font-bold ${readinessColor()}`}>{readinessScore}</div>
-          <div className={`text-sm font-semibold mt-1 ${readinessColor()}`}>{readinessLabel()}</div>
-          <p className="text-xs text-neutral-400 mt-2">out of 100</p>
-          {!hasProjection && (
-            <Link href="/projections" className="mt-4 text-xs text-indigo-600 hover:underline">
-              Run a projection to improve your score →
-            </Link>
-          )}
-        </div>
-
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <QuickAction href="/assets" icon="🏦" label="Add an asset" />
-            <QuickAction href="/liabilities" icon="💳" label="Add a liability" />
-            <QuickAction href="/income" icon="💰" label="Add income" />
-            <QuickAction href="/expenses" icon="💸" label="Add expense" />
-            <QuickAction href="/projections" icon="📈" label="Run projection" />
-            <QuickAction href="/scenarios" icon="🔮" label="Compare scenarios" />
-          </div>
-        </div>
+      <div className="mb-8">
+        <AssetAllocationSummary context={allocationContext} />
       </div>
 
       <FeedbackButton userId={userId} />
@@ -227,16 +194,6 @@ function SummaryCard({ label, value, sub, icon, highlight }: {
       }`}>{value}</p>
       <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
     </div>
-  )
-}
-
-function QuickAction({ href, icon, label }: { href: string; icon: string; label: string }) {
-  return (
-    <Link href={href}
-      className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition">
-      <span>{icon}</span>
-      <span className="font-medium">{label}</span>
-    </Link>
   )
 }
 

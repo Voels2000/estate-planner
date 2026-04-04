@@ -1,13 +1,9 @@
-import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ImportClient } from './_import-client'
 
 export default async function ImportPage() {
-  const access = await getUserAccess()
-  if (access.tier < 3) {
-    redirect('/billing?returnTo=/import')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

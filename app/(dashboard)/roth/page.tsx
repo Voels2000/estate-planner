@@ -1,4 +1,3 @@
-import { getUserAccess } from '@/lib/get-user-access'
 // app/(dashboard)/roth/page.tsx
 // Sprint 13 — Roth Optimizer page (server component)
 
@@ -35,10 +34,7 @@ function getStandardDeduction(fs: string): number {
 }
 
 export default async function RothPage() {
-  const access = await getUserAccess()
-  if (access.tier < 2) {
-    redirect('/billing?returnTo=/roth')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");

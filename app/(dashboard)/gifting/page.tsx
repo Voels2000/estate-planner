@@ -5,9 +5,7 @@ import GiftingDashboardClient from '@/components/GiftingDashboardClient'
 
 export default async function GiftingPage() {
   const access = await getUserAccess()
-  if (access.tier < 3) {
-    redirect('/billing?returnTo=/gifting')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

@@ -10,9 +10,7 @@ export const metadata = {
 
 export default async function AssetAllocationPage() {
   const access = await getUserAccess()
-  if (access.tier < 2) {
-    redirect('/billing?returnTo=/allocation')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
 
   const supabase = await createClient()
   const {

@@ -5,10 +5,7 @@ import IncapacityPlanningDashboard from '@/components/IncapacityPlanningDashboar
 
 export default async function IncapacityPage() {
   const access = await getUserAccess()
-
-  if (access.tier < 3) {
-    redirect('/billing?returnTo=/incapacity')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
 
   const supabase = await createClient()
   const {

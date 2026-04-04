@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { getUserAccess } from '@/lib/get-user-access'
 import { redirect } from 'next/navigation'
 import DomicileAnalysisClient from './_domicile-analysis-client'
 
@@ -14,16 +13,13 @@ export default async function DomicileAnalysisPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, consumer_tier')
+    .select('role')
     .eq('id', user.id)
     .single()
 
-  const access = await getUserAccess()
-  const isAdmin = profile?.role === 'admin'
   const isAdvisor = profile?.role === 'advisor'
-  if (!isAdmin && !isAdvisor && access.tier < 3) {
-    redirect('/billing?returnTo=/domicile-analysis')
-  }
+
+  // Former tier billing redirect removed — layout enforces subscription.
 
   const currentYear = new Date().getFullYear()
 

@@ -13,16 +13,13 @@ export default async function BusinessSuccessionPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, consumer_tier')
+    .select('role')
     .eq('id', user.id)
     .single();
 
   if (!profile) redirect('/login');
 
-  // Advisor-only for v1
-  if (profile.role !== 'advisor' && Number(profile.consumer_tier) < 3) {
-    redirect('/billing?returnTo=/business-succession');
-  }
+  // Former tier/advisor gate removed — dashboard layout enforces subscription; navigate freely.
 
   const { data: household } = await supabase
     .from('households')

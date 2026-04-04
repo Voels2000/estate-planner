@@ -1,14 +1,10 @@
-import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import CompleteClient from './_complete-client'
 
 export default async function CompletePage() {
-  const access = await getUserAccess()
-  if (access.tier < 3) {
-    redirect('/billing?returnTo=/complete')
-  }
+  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

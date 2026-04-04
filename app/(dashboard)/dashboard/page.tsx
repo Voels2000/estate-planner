@@ -1,3 +1,4 @@
+import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '../_dashboard-client'
@@ -41,7 +42,6 @@ export default async function DashboardPage() {
   }, 0)
   const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0)
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
-  const latestProjection = projections?.[0]?.summary ?? null
 
   const setupSteps = [
     { key: 'profile', label: 'Complete your profile', href: '/profile', done: !!(household?.person1_name && household?.person1_birth_year) },
@@ -56,20 +56,21 @@ export default async function DashboardPage() {
   const completedSteps = setupSteps.filter(s => s.done).length
   const progressPct = Math.round((completedSteps / setupSteps.length) * 100)
 
-  let readinessScore = 0
-  if (latestProjection) {
-    const summary = latestProjection as { funds_outlast?: boolean; at_retirement?: number; peak?: number }
-    if (summary.funds_outlast) readinessScore += 50
-    if ((summary.at_retirement ?? 0) > 500000) readinessScore += 25
-    if ((summary.peak ?? 0) > 1000000) readinessScore += 25
-  } else {
-    readinessScore = Math.round(progressPct * 0.4)
-  }
-
   const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
   const completionScore: CompletionScore | null = isConsumerTier2
     ? await getCompletionScore(user!.id)
     : null
+
+  const allocationContext: AssetAllocationContext = {
+    currentAge: profile?.current_age ?? null,
+    birthYear: household?.person1_birth_year ?? null,
+    riskTolerance: household?.risk_tolerance ?? profile?.risk_tolerance ?? null,
+    retirementAge: profile?.retirement_age ?? household?.person1_retirement_age ?? null,
+    maritalStatus: profile?.marital_status ?? null,
+    dependents: profile?.dependents ?? null,
+    hasSpouse: household?.has_spouse ?? null,
+    filingStatus: household?.filing_status != null ? String(household.filing_status) : null,
+  }
 
   return (
     <DashboardClient
@@ -83,10 +84,10 @@ export default async function DashboardPage() {
       setupSteps={setupSteps}
       completedSteps={completedSteps}
       progressPct={progressPct}
-      readinessScore={readinessScore}
-      hasProjection={!!latestProjection}
       userId={user!.id}
       completionScore={completionScore}
+      consumerTier={profile?.consumer_tier ?? 1}
+      allocationContext={allocationContext}
     />
   )
 }
