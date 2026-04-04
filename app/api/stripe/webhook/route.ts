@@ -69,6 +69,19 @@ export async function POST(req: NextRequest) {
             console.log('Firm Supabase update data:', JSON.stringify(data))
             console.log('Firm Supabase update error:', JSON.stringify(error))
             console.log('Firm subscription activated:', firmId)
+            const ownerId = data?.[0]?.owner_id as string | undefined
+            if (ownerId) {
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ subscription_status: 'active' })
+                .eq('id', ownerId)
+              if (profileError) {
+                console.error(
+                  'Failed to update firm owner profile subscription_status:',
+                  profileError
+                )
+              }
+            }
           } else {
             console.log('Firm checkout without subscription id — skipping firm update')
           }
@@ -112,11 +125,25 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const firmId = subscription.metadata?.firm_id
         if (firmId) {
-          await supabase
+          const { data: firmRows } = await supabase
             .from('firms')
             .update({ subscription_status: 'canceled' })
             .eq('id', firmId)
+            .select('owner_id')
           console.log('Firm subscription canceled:', firmId)
+          const ownerId = firmRows?.[0]?.owner_id as string | undefined
+          if (ownerId) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({ subscription_status: 'canceled' })
+              .eq('id', ownerId)
+            if (profileError) {
+              console.error(
+                'Failed to update firm owner profile subscription_status:',
+                profileError
+              )
+            }
+          }
           break
         }
         const customerId = subscription.customer as string
@@ -132,11 +159,25 @@ export async function POST(req: NextRequest) {
         const firmId = subscription.metadata?.firm_id
         if (firmId) {
           const mappedStatus = mapFirmSubscriptionStatus(subscription.status)
-          await supabase
+          const { data: firmRows } = await supabase
             .from('firms')
             .update({ subscription_status: mappedStatus })
             .eq('id', firmId)
+            .select('owner_id')
           console.log('Firm subscription updated:', firmId, mappedStatus)
+          const ownerId = firmRows?.[0]?.owner_id as string | undefined
+          if (ownerId) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({ subscription_status: mappedStatus })
+              .eq('id', ownerId)
+            if (profileError) {
+              console.error(
+                'Failed to update firm owner profile subscription_status:',
+                profileError
+              )
+            }
+          }
           break
         }
         const customerId = subscription.customer as string
