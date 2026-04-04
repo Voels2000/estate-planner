@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { PRICE_ID_TO_TIER } from '@/lib/tiers'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -35,15 +36,21 @@ export async function POST(req: NextRequest) {
         if (userId) {
           const subId = session.subscription as string | null
           let renewalIso: string | null = null
+          let priceId: string | null = null
+          let consumerTier: number | null = null
           if (subId) {
             const sub = await stripe.subscriptions.retrieve(subId)
             renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+            priceId = sub.items.data[0]?.price.id ?? null
+            consumerTier = priceId ? (PRICE_ID_TO_TIER[priceId] ?? null) : null
           }
           const { data, error } = await supabase
             .from('profiles')
             .update({
               subscription_status: 'active',
               stripe_customer_id: session.customer as string,
+              subscription_plan: priceId,
+              ...(consumerTier ? { consumer_tier: consumerTier } : {}),
               ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
             })
             .eq('id', userId)

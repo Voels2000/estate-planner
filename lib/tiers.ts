@@ -71,7 +71,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   roth:                  2,
   'monte-carlo':         2,
   import:                2,
-  insurance:             2,
+  insurance:             1,
   // Tier 3 — Estate Planning
   'estate-tax':          3,
   titling:               3,
@@ -110,4 +110,11 @@ export function hasFeatureAccess(
   const required = FEATURE_TIERS[feature] ?? 1
   if (isTrial) return required <= TRIAL_TIER
   return userTier >= required
+}
+
+// Price ID → tier number map — used in webhook and terms page
+export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = {
+  'price_1TD2SMCaljka9gJtsbsXsPjC': 1,
+  'price_1TD2TECaljka9gJtp8fpf3Yk': 2,
+  'price_1TD2WZCaljka9gJt5xUAnv4J': 3,
 }

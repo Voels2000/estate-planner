@@ -62,12 +62,16 @@ export default async function BillingPage() {
     advisorClientCount = count ?? 0
   }
 
-  // For consumers: show only Tier 1 if not yet active, all tiers if active (for upgrade)
+  const currentTierLevel = profile?.consumer_tier ?? 1
+  const hasUnlockedEstate = currentTierLevel >= 3
+
   const priceIdsToShow = isAdvisor
     ? []
     : isActive
-      ? CONSUMER_PRICE_IDS
-      : [CONSUMER_PRICE_IDS[0]]
+      ? hasUnlockedEstate
+        ? CONSUMER_PRICE_IDS // Tier 3 unlocked — show all three
+        : [CONSUMER_PRICE_IDS[0], CONSUMER_PRICE_IDS[1]] // Show Tier 1 + 2 only
+      : [CONSUMER_PRICE_IDS[0]] // Not yet active — show Tier 1 only
 
   const plans = isAdvisor ? [] : await Promise.all(
     priceIdsToShow.map(async id => {

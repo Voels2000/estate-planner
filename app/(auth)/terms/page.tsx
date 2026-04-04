@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Stripe from 'stripe'
 import { TermsClient } from './_terms-client'
+import { PRICE_ID_TO_TIER } from '@/lib/tiers'
 
 export default async function TermsPage({
   searchParams,
@@ -33,10 +34,13 @@ export default async function TermsPage({
         const admin = createAdminClient()
         const subId = session.subscription as string | null
         let renewalIso: string | null = null
-
+        let priceId: string | null = null
+        let consumerTier: number | null = null
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId)
           renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+          priceId = sub.items.data[0]?.price.id ?? null
+          consumerTier = priceId ? (PRICE_ID_TO_TIER[priceId] ?? null) : null
         }
 
         const { data, error } = await admin
@@ -44,6 +48,8 @@ export default async function TermsPage({
           .update({
             subscription_status: 'active',
             stripe_customer_id: session.customer as string,
+            subscription_plan: priceId,
+            ...(consumerTier ? { consumer_tier: consumerTier } : {}),
             ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
           })
           .eq('id', user.id)
