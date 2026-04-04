@@ -52,6 +52,56 @@ export function SignupForm() {
         return
       }
 
+      if (role === 'advisor' && data.user) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, firm_id')
+            .eq('id', data.user.id)
+            .maybeSingle()
+
+          if (profile?.role === 'advisor' && profile.firm_id == null) {
+            const userEmail = data.user.email ?? email
+            const prefix = userEmail.includes('@')
+              ? userEmail.slice(0, userEmail.indexOf('@')).trim()
+              : userEmail.trim() || 'Advisor'
+            const defaultFirmName = `${prefix} Firm`
+
+            const { data: newFirm, error: firmError } = await supabase
+              .from('firms')
+              .insert({
+                name: defaultFirmName,
+                owner_id: data.user.id,
+                tier: 'starter',
+                seat_count: 1,
+                subscription_status: null,
+              })
+              .select('id')
+              .single()
+
+            if (firmError) throw firmError
+            if (!newFirm?.id) throw new Error('firm insert returned no id')
+
+            const { error: memberError } = await supabase.from('firm_members').insert({
+              firm_id: newFirm.id,
+              user_id: data.user.id,
+              firm_role: 'owner',
+              status: 'active',
+              joined_at: new Date().toISOString(),
+            })
+            if (memberError) throw memberError
+
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({ firm_id: newFirm.id, firm_role: 'owner' })
+              .eq('id', data.user.id)
+            if (profileError) throw profileError
+          }
+        } catch (err) {
+          console.error('advisor firm bootstrap error:', err)
+        }
+      }
+
       // Auto-link to any advisor who invited this email
       await fetch('/api/advisor/link-pending', {
         method: 'POST',
