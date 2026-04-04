@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type SyntheticEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -72,9 +72,9 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
-      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax', advisorOnly: true },
-      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting', advisorOnly: true },
-      { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable', advisorOnly: true },
+      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
+      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
+      { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable' },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', minTier: 3 },
@@ -159,6 +159,11 @@ export function SidebarNav({
     return TIER_NAMES[required as 1 | 2 | 3]
   }
 
+  function blockLockedNavInteraction(e: SyntheticEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   return (
     <aside className="w-64 shrink-0 border-r border-neutral-200 bg-white flex flex-col">
       {/* Header */}
@@ -180,6 +185,9 @@ export function SidebarNav({
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
+          if (group.label === 'Resources' && role === 'consumer' && !isAdvisor) {
+            return null
+          }
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked =
@@ -193,15 +201,13 @@ export function SidebarNav({
             <div key={group.label}>
               <button
                 type="button"
-                onClick={() => {
-                  if (groupIsLocked) return
-                  toggleGroup(group.label)
-                }}
+                disabled={groupIsLocked}
+                onClick={() => toggleGroup(group.label)}
                 className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                   hasActive
                     ? 'text-neutral-900 bg-neutral-50'
                     : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'
-                } ${groupIsLocked ? 'cursor-not-allowed' : ''}`}
+                } ${groupIsLocked ? 'cursor-not-allowed' : ''} disabled:cursor-not-allowed disabled:opacity-100`}
               >
                 <span className="flex-1 text-left">{group.label}</span>
                 {groupIsLocked && (
@@ -260,6 +266,9 @@ export function SidebarNav({
                       return (
                         <div
                           key={item.href}
+                          role="presentation"
+                          onClick={blockLockedNavInteraction}
+                          onPointerDown={blockLockedNavInteraction}
                           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-not-allowed select-none"
                         >
                           <span className="flex-1 truncate">{item.label}</span>
@@ -287,7 +296,12 @@ export function SidebarNav({
                     return (
                       <div key={item.href}>
                         {greyedLeaf ? (
-                          <div className={`${leafClasses} cursor-not-allowed`}>
+                          <div
+                            role="presentation"
+                            onClick={blockLockedNavInteraction}
+                            onPointerDown={blockLockedNavInteraction}
+                            className={`${leafClasses} cursor-not-allowed`}
+                          >
                             <span className="flex-1 truncate">{item.label}</span>
                             {locked && (
                               <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">

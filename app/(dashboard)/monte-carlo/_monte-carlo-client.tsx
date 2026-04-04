@@ -82,7 +82,7 @@ const EMPTY_INPUTS: MonteCarloInputs = {
 
 function confidenceDot(c: Confidence | undefined) {
   if (c === 'profile')   return <span title="Pulled from your profile" className="text-green-500 text-xs ml-1">●</span>
-  if (c === 'estimated') return <span title="timated from your profile" className="text-amber-400 text-xs ml-1">●</span>
+  if (c === 'estimated') return <span title="Estimated from your profile" className="text-amber-400 text-xs ml-1">●</span>
   return <span title="Not found — please enter manually" className="text-red-400 text-xs ml-1">○</span>
 }
 
@@ -405,6 +405,7 @@ export function MonteCarloClient() {
           p2_social_security_monthly:  p.p2_social_security_monthly ?? prev.p2_social_security_monthly,
           p2_social_security_start_age: p.p2_social_security_start_age ?? prev.p2_social_security_start_age,
           current_portfolio:           p.current_portfolio        ?? prev.current_portfolio,
+          monthly_contribution:        p.monthly_contribution     ?? prev.monthly_contribution,
           stocks_pct:                  p.stocks_pct               ?? prev.stocks_pct,
           bonds_pct:                   p.bonds_pct                ?? prev.bonds_pct,
           cash_pct:                    p.cash_pct                 ?? prev.cash_pct,

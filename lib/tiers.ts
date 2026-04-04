@@ -30,6 +30,7 @@ export const TIER_FEATURES = {
     'Basic retirement projections',
     'Simple tax estimate',
     'Net worth dashboard',
+    'Insurance gap analysis',
   ],
   2: [
     'Everything in Financial',
@@ -38,7 +39,6 @@ export const TIER_FEATURES = {
     'Monte Carlo simulations',
     'Lifetime financial snapshot',
     'Data import (CSV/PDF/DOCX)',
-    'Insurance gap analysis',
   ],
   3: [
     'Everything in Retirement',
