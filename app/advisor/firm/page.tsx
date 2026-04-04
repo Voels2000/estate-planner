@@ -44,8 +44,8 @@ export default async function AdvisorFirmPage() {
     )
   }
 
-  const supabase = createAdminClient()
-  const { data: rawMembers, error } = await supabase
+  const adminClient = createAdminClient()
+  const { data: members, error } = await adminClient
     .from('firm_members')
     .select(
       `
@@ -70,9 +70,9 @@ export default async function AdvisorFirmPage() {
     rosterError = true
   }
 
-  const members: FirmMemberRow[] = rosterError
+  const memberRows: FirmMemberRow[] = rosterError
     ? []
-    : (rawMembers ?? []).map((row) => {
+    : (members ?? []).map((row) => {
     const prof = row.profiles as { email: string | null } | { email: string | null }[] | null
     const emailFromProfile = Array.isArray(prof) ? prof[0]?.email ?? null : prof?.email ?? null
     return {
@@ -90,7 +90,7 @@ export default async function AdvisorFirmPage() {
       firm_name={firmName ?? 'Firm'}
       firmTier={firmTier}
       seatCount={seatCount}
-      members={members}
+      members={memberRows}
       rosterError={rosterError}
     />
   )
