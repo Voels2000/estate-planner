@@ -62,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
+      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
     ],
   },
   {
@@ -86,7 +87,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
       { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
-      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
       { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
     ],
   },
