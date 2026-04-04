@@ -33,8 +33,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
-      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', minTier: 2 },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
+      { href: '/settings/attorney-access', label: 'Attorney Access', icon: '⚖️', minTier: 2 },
     ],
   },
   {
@@ -192,12 +192,16 @@ export function SidebarNav({
           return (
             <div key={group.label}>
               <button
-                onClick={() => toggleGroup(group.label)}
+                type="button"
+                onClick={() => {
+                  if (groupIsLocked) return
+                  toggleGroup(group.label)
+                }}
                 className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                   hasActive
                     ? 'text-neutral-900 bg-neutral-50'
                     : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'
-                }`}
+                } ${groupIsLocked ? 'cursor-not-allowed' : ''}`}
               >
                 <span className="flex-1 text-left">{group.label}</span>
                 {groupIsLocked && (
@@ -256,7 +260,7 @@ export function SidebarNav({
                       return (
                         <div
                           key={item.href}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-default select-none"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-not-allowed select-none"
                         >
                           <span className="flex-1 truncate">{item.label}</span>
                         </div>
@@ -272,30 +276,33 @@ export function SidebarNav({
                     const linkHref = attorneyTierGate ? '/billing' : item.href
                     const isActive = activePath === item.href && !attorneyTierGate
                     const locked = isLocked(item.feature)
+                    const greyedLeaf = locked || attorneyTierGate
+                    const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-neutral-900 text-white'
+                        : locked || attorneyTierGate
+                          ? 'text-neutral-400 hover:bg-neutral-50'
+                          : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    }`
                     return (
                       <div key={item.href}>
-                        <Link
-                          href={linkHref}
-                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                            isActive
-                              ? 'bg-neutral-900 text-white'
-                              : locked || attorneyTierGate
-                                ? 'text-neutral-400 hover:bg-neutral-50'
-                                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                          }`}
-                        >
-                          <span className="flex-1 truncate">{item.label}</span>
-                          {locked && (
-                            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
-                              🔒 {lockLabel(item.feature)}
-                            </span>
-                          )}
-                          {attorneyTierGate && item.minTier && (
-                            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
-                              🔒 {TIER_NAMES[item.minTier as 1 | 2 | 3]}
-                            </span>
-                          )}
-                        </Link>
+                        {greyedLeaf ? (
+                          <div className={`${leafClasses} cursor-not-allowed`}>
+                            <span className="flex-1 truncate">{item.label}</span>
+                            {locked && (
+                              <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
+                                🔒 {lockLabel(item.feature)}
+                              </span>
+                            )}
+                            {attorneyTierGate && (
+                              <span className="ml-auto shrink-0 text-amber-400 text-sm">🔒</span>
+                            )}
+                          </div>
+                        ) : (
+                          <Link href={linkHref} className={leafClasses}>
+                            <span className="flex-1 truncate">{item.label}</span>
+                          </Link>
+                        )}
                       </div>
                     )
                   })}
@@ -383,7 +390,7 @@ export function SidebarNav({
               : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
           }`}
         >
-          💳 Billing
+          💳 Manage Subscription
         </Link>
       </nav>
 

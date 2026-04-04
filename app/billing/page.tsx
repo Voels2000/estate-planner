@@ -21,7 +21,7 @@ export default async function BillingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, subscription_plan, role, consumer_tier')
+    .select('subscription_status, subscription_plan, role')
     .eq('id', user.id)
     .single()
 
@@ -62,15 +62,10 @@ export default async function BillingPage() {
     advisorClientCount = count ?? 0
   }
 
-  const currentTierLevel = profile?.consumer_tier ?? 1
-  const hasUnlockedEstate = currentTierLevel >= 3
-
   const priceIdsToShow = isAdvisor
     ? []
     : isActive
-      ? hasUnlockedEstate
-        ? CONSUMER_PRICE_IDS // Tier 3 unlocked — show all three
-        : [CONSUMER_PRICE_IDS[0], CONSUMER_PRICE_IDS[1]] // Show Tier 1 + 2 only
+      ? CONSUMER_PRICE_IDS
       : [CONSUMER_PRICE_IDS[0]] // Not yet active — show Tier 1 only
 
   const plans = isAdvisor ? [] : await Promise.all(
