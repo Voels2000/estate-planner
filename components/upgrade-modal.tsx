@@ -18,9 +18,9 @@ export function UpgradeModal({ requiredTier, currentTier, onClose }: Props) {
   const features = TIER_FEATURES[requiredTier]
 
   const PRICE_IDS: Record<number, string> = {
-    1: 'price_1TD2SMCaljka9gJtsbsXsPjC',
-    2: 'price_1TD2TECaljka9gJtp8fpf3Yk',
-    3: 'price_1TD2WZCaljka9gJt5xUAnv4J',
+    1: 'price_1TILBRCaljka9gJt6dr44Znq',
+    2: 'price_1TILEXCaljka9gJtrHqnG3bl',
+    3: 'price_1TILGOCaljka9gJtCDLiKFHp',
   }
 
   async function handleUpgrade() {

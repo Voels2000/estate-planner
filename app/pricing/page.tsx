@@ -5,7 +5,7 @@ import { TIER_FEATURES } from '@/lib/tiers'
 const CONSUMER_PLANS = [
   {
     id: 'financial',
-    priceId: 'price_1TD2SMCaljka9gJtsbsXsPjC',
+    priceId: 'price_1TILBRCaljka9gJt6dr44Znq',
     name: 'Financial',
     price: 9,
     description: 'Get organized and see your full financial picture.',
@@ -14,7 +14,7 @@ const CONSUMER_PLANS = [
   },
   {
     id: 'retirement',
-    priceId: 'price_1TD2TECaljka9gJtp8fpf3Yk',
+    priceId: 'price_1TILEXCaljka9gJtrHqnG3bl',
     name: 'Retirement',
     price: 19,
     description: 'Optimize your retirement with advanced planning tools.',
@@ -23,7 +23,7 @@ const CONSUMER_PLANS = [
   },
   {
     id: 'estate',
-    priceId: 'price_1TD2WZCaljka9gJt5xUAnv4J',
+    priceId: 'price_1TILGOCaljka9gJtCDLiKFHp',
     name: 'Estate',
     price: 34,
     description: 'Complete estate and advanced tax planning.',

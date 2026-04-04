@@ -10,7 +10,6 @@ type Role = 'consumer' | 'advisor' | 'attorney'
 export function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   const [fullName, setFullName] = useState('')
   const inviteEmail = searchParams.get('email') || ''
@@ -74,7 +73,9 @@ export function SignupForm() {
       } else if (role === 'attorney') {
         router.push('/attorney')
       } else {
-        router.push(redirectTo)
+        // New consumers always go to /profile first to set up household.
+        // redirectTo is only used for returning users coming via login.
+        router.push('/profile')
       }
       router.refresh()
     } catch {

@@ -5,9 +5,9 @@ import { redirect } from 'next/navigation'
 import { TIER_FEATURES } from '@/lib/tiers'
 
 const CONSUMER_PRICE_IDS = [
-  'price_1TD2SMCaljka9gJtsbsXsPjC', // Financial $9
-  'price_1TD2TECaljka9gJtp8fpf3Yk', // Retirement $19
-  'price_1TD2WZCaljka9gJt5xUAnv4J', // Estate $34
+  'price_1TILBRCaljka9gJt6dr44Znq', // Financial $9
+  'price_1TILEXCaljka9gJtrHqnG3bl', // Retirement $19
+  'price_1TILGOCaljka9gJtCDLiKFHp', // Estate $34
 ]
 
 export default async function BillingPage() {
@@ -78,9 +78,9 @@ export default async function BillingPage() {
       const price = await stripe.prices.retrieve(id, { expand: ['product'] })
       const product = price.product as Stripe.Product
       const tierMap: Record<string, 1 | 2 | 3> = {
-        'price_1TD2SMCaljka9gJtsbsXsPjC': 1,
-        'price_1TD2TECaljka9gJtp8fpf3Yk': 2,
-        'price_1TD2WZCaljka9gJt5xUAnv4J': 3,
+        'price_1TILBRCaljka9gJt6dr44Znq': 1,
+        'price_1TILEXCaljka9gJtrHqnG3bl': 2,
+        'price_1TILGOCaljka9gJtCDLiKFHp': 3,
       }
       const tier = tierMap[id] ?? 1
       return {

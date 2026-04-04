@@ -4,9 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 
 const PRICE_IDS: Record<string, string> = {
   // Consumer tiers
-  financial:  'price_1TD2SMCaljka9gJtsbsXsPjC',
-  retirement: 'price_1TD2TECaljka9gJtp8fpf3Yk',
-  estate:     'price_1TD2WZCaljka9gJt5xUAnv4J',
+  financial:  'price_1TILBRCaljka9gJt6dr44Znq',
+  retirement: 'price_1TILEXCaljka9gJtrHqnG3bl',
+  estate:     'price_1TILGOCaljka9gJtCDLiKFHp',
   // Advisor tiers
   advisor:           'price_1TAlRkCaljka9gJtL7jcTwWY',
   advisor_pro:       'price_1TBIjWCaljka9gJt5tAXddM7',

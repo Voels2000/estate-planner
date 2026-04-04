@@ -1,9 +1,9 @@
 // lib/tiers.ts
 // Single source of truth for consumer tier definitions and feature gating
 export const CONSUMER_PRICE_IDS = {
-  starter:    'price_1TD2SMCaljka9gJtsbsXsPjC',
-  retirement: 'price_1TD2TECaljka9gJtp8fpf3Yk',
-  estate:     'price_1TD2WZCaljka9gJt5xUAnv4J',
+  starter:    'price_1TILBRCaljka9gJt6dr44Znq',
+  retirement: 'price_1TILEXCaljka9gJtrHqnG3bl',
+  estate:     'price_1TILGOCaljka9gJtCDLiKFHp',
 } as const
 // Legacy $19 price maps to tier 2
 export const LEGACY_PRICE_ID = 'price_1TAlJjCaljka9gJthGTMogQb'
@@ -114,7 +114,7 @@ export function hasFeatureAccess(
 
 // Price ID → tier number map — used in webhook and terms page
 export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = {
-  'price_1TD2SMCaljka9gJtsbsXsPjC': 1,
-  'price_1TD2TECaljka9gJtp8fpf3Yk': 2,
-  'price_1TD2WZCaljka9gJt5xUAnv4J': 3,
+  'price_1TILBRCaljka9gJt6dr44Znq': 1,
+  'price_1TILEXCaljka9gJtrHqnG3bl': 2,
+  'price_1TILGOCaljka9gJtCDLiKFHp': 3,
 }
