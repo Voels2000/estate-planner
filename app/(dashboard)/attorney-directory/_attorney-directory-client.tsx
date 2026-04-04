@@ -431,7 +431,7 @@ export function AttorneyDirectoryClient({
             <p className="text-sm text-neutral-500 mb-4">
               You are about to grant <strong>{modalAttorney.firm_name}</strong> read-only
               access to your estate plan and document vault. You can revoke this access
-              at any time from <strong>Settings → Attorney Access</strong>.
+              at any time from <strong>Settings → My Attorney</strong>.
             </p>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-800 space-y-1">
               <p>⚖️ <strong>What this attorney will be able to do:</strong></p>

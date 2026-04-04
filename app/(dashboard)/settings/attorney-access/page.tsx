@@ -81,7 +81,7 @@ export default async function AttorneyAccessPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-1">Attorney Access</h1>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-1">My Attorney</h1>
       <p className="text-sm text-gray-500 mb-8">
         Manage which attorneys can view your estate plan and documents. You can revoke access at
         any time.

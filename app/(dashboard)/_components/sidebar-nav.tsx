@@ -30,8 +30,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Overview',
     icon: '🏠',
     items: [
-      { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
+      { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/settings/attorney-access', label: 'My Attorney', icon: '⚖️', minTier: 2 },
@@ -128,7 +128,7 @@ export function SidebarNav({
     setOpenGroups(prev => ({
       ...prev,
       [activeGroup]: true,
-      // Keep Overview always open so Attorney Access and My Advisor
+      // Keep Overview always open so My Attorney and My Advisor
       // remain visible regardless of which page the consumer is on
       'Overview': true,
     }))
@@ -240,7 +240,7 @@ export function SidebarNav({
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
                     }
-                    // Attorney Access: consumer accounts only (no consumerOnly flag on item)
+                    // My Attorney: consumer accounts only (no consumerOnly flag on item)
                     if (
                       item.href === '/settings/attorney-access' &&
                       role !== 'consumer' &&
@@ -252,7 +252,7 @@ export function SidebarNav({
                     if (item.advisorOnly && !isAdvisor && !isSuperuser) {
                       return null
                     }
-                    // Hide tier-gated items consumer will never reach (Attorney Access: shown, greyed + billing)
+                    // Hide tier-gated items consumer will never reach (My Attorney: shown, greyed + billing)
                     if (
                       item.minTier &&
                       !isAdvisor &&
