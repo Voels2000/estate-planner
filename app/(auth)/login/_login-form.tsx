@@ -21,7 +21,7 @@ export function LoginForm() {
 
     try {
       const supabase = createClient()
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -32,8 +32,30 @@ export function LoginForm() {
         return
       }
 
-      router.push(redirectTo)
-      router.refresh()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, subscription_status, firm_id')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.role === 'attorney') {
+        router.push('/attorney')
+        router.refresh()
+      } else if (profile?.role === 'advisor') {
+        const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
+          profile?.subscription_status ?? ''
+        )
+        if (hasActiveSub) {
+          router.push('/advisor')
+          router.refresh()
+        } else {
+          router.push('/billing')
+          router.refresh()
+        }
+      } else {
+        router.push(redirectTo)
+        router.refresh()
+      }
     } catch (err) {
       setError('Something went wrong. Please try again.')
       setIsSubmitting(false)
