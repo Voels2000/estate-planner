@@ -358,7 +358,7 @@ export default function FirmClient({
                   return (
                     <tr key={m.id} className="hover:bg-neutral-50 transition-colors">
                       <td className="px-6 py-4 font-medium text-neutral-900">
-                        {m.email ?? '—'}
+                        {m.display_email}
                       </td>
                       <td className="px-6 py-4">{roleBadge}</td>
                       <td className="px-6 py-4">{statusBadge}</td>

@@ -9,7 +9,7 @@ export type FirmMemberRow = {
   status: string
   invited_at: string | null
   joined_at: string | null
-  email: string | null
+  display_email: string
 }
 
 export default async function AdvisorFirmPage() {
@@ -47,19 +47,7 @@ export default async function AdvisorFirmPage() {
   const adminClient = createAdminClient()
   const { data: members, error } = await adminClient
     .from('firm_members')
-    .select(
-      `
-      id,
-      firm_role,
-      status,
-      invited_at,
-      joined_at,
-      invited_email,
-      profiles (
-        email
-      )
-    `,
-    )
+    .select('id, firm_role, status, invited_at, joined_at, user_id, invited_email')
     .eq('firm_id', firmId)
     .neq('status', 'removed')
     .order('joined_at', { ascending: true, nullsFirst: false })
@@ -74,20 +62,32 @@ export default async function AdvisorFirmPage() {
     rosterError = true
   }
 
-  const memberRows: FirmMemberRow[] = rosterError
-    ? []
-    : (members ?? []).map((row) => {
-    const prof = row.profiles as { email: string | null } | { email: string | null }[] | null
-    const emailFromProfile = Array.isArray(prof) ? prof[0]?.email ?? null : prof?.email ?? null
-    return {
-      id: row.id,
-      firm_role: row.firm_role,
-      status: row.status,
-      invited_at: row.invited_at,
-      joined_at: row.joined_at,
-      email: emailFromProfile ?? row.invited_email ?? null,
-    }
-  })
+  let memberRows: FirmMemberRow[] = []
+  if (!rosterError) {
+    const userIds = (members ?? [])
+      .map((m) => m.user_id)
+      .filter(Boolean) as string[]
+
+    const { data: profileRows } = userIds.length
+      ? await adminClient
+          .from('profiles')
+          .select('id, email')
+          .in('id', userIds)
+      : { data: [] }
+
+    const emailMap = Object.fromEntries(
+      (profileRows ?? []).map((p) => [p.id, p.email]),
+    )
+
+    memberRows = (members ?? []).map((m) => ({
+      id: m.id,
+      firm_role: m.firm_role,
+      status: m.status,
+      invited_at: m.invited_at,
+      joined_at: m.joined_at,
+      display_email: emailMap[m.user_id] ?? m.invited_email ?? 'Unknown',
+    }))
+  }
 
   return (
     <FirmClient
