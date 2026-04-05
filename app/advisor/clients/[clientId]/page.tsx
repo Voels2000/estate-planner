@@ -17,6 +17,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const ctx = await getAccessContext()
+  console.log('[client-view] ctx.user?.id:', ctx.user?.id)
+  console.log('[client-view] ctx.isAdvisor:', ctx.isAdvisor)
   if (!ctx.user) redirect('/login')
   if (!ctx.isAdvisor) redirect('/dashboard')
 
