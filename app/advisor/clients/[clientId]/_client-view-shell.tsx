@@ -1,22 +1,23 @@
 'use client'
-// app/advisor/clients/[clientId]/_client-view-shell.tsx
-// Tab shell — renders header + tab bar + active tab content
-
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import OverviewTab from './_tabs/OverviewTab'
 import EstateTab from './_tabs/EstateTab'
 import RetirementTab from './_tabs/RetirementTab'
+import TaxTab from './_tabs/TaxTab'
+import DomicileTab from './_tabs/DomicileTab'
 import DocumentsTab from './_tabs/DocumentsTab'
 import NotesTab from './_tabs/NotesTab'
 import { getComplexityStyle, getAge, formatCurrency } from './_utils'
 
 const TABS = [
-  { id: 'overview',    label: 'Overview',    icon: '◎' },
-  { id: 'estate',      label: 'Estate',      icon: '⬡' },
-  { id: 'retirement',  label: 'Retirement',  icon: '◷' },
-  { id: 'documents',   label: 'Documents',   icon: '⊞' },
-  { id: 'notes',       label: 'Notes',       icon: '✎', advisorOnly: true },
+  { id: 'overview',   label: 'Overview',   icon: '◎' },
+  { id: 'estate',     label: 'Estate',     icon: '⬡' },
+  { id: 'retirement', label: 'Retirement', icon: '◷' },
+  { id: 'tax',        label: 'Tax',        icon: '◆' },
+  { id: 'domicile',   label: 'Domicile',   icon: '⊙' },
+  { id: 'documents',  label: 'Documents',  icon: '⊞' },
+  { id: 'notes',      label: 'Notes',      icon: '✎', advisorOnly: true },
 ]
 
 export default function ClientViewShell(props: ClientViewShellProps) {
@@ -74,7 +75,6 @@ export default function ClientViewShell(props: ClientViewShellProps) {
               </div>
             </div>
 
-            {/* Complexity score badge */}
             <div className="text-right">
               <div className="text-3xl font-bold text-slate-800">{household.estate_complexity_score ?? '—'}</div>
               <div className="text-xs text-slate-400 uppercase tracking-wide">Complexity Score</div>
@@ -114,6 +114,8 @@ export default function ClientViewShell(props: ClientViewShellProps) {
         {tab === 'overview'   && <OverviewTab    {...props} />}
         {tab === 'estate'     && <EstateTab      {...props} />}
         {tab === 'retirement' && <RetirementTab  {...props} />}
+        {tab === 'tax'        && <TaxTab         {...props} />}
+        {tab === 'domicile'   && <DomicileTab    {...props} />}
         {tab === 'documents'  && <DocumentsTab   {...props} />}
         {tab === 'notes'      && <NotesTab       {...props} />}
       </div>
@@ -123,11 +125,11 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
 function formatFilingStatus(status: string | null) {
   const map: Record<string, string> = {
-    married_filing_jointly: 'Married Filing Jointly',
+    married_filing_jointly:    'Married Filing Jointly',
     married_filing_separately: 'Married Filing Separately',
-    single: 'Single',
-    head_of_household: 'Head of Household',
-    qualifying_widow: 'Qualifying Widow(er)',
+    single:                    'Single',
+    head_of_household:         'Head of Household',
+    qualifying_widow:          'Qualifying Widow(er)',
   }
   return status ? (map[status] ?? status) : '—'
 }
@@ -144,4 +146,6 @@ export interface ClientViewShellProps {
   estateDocuments: any[]
   legalDocuments: any[]
   notes: any[]
+  estateTax: any | null
+  domicileAnalysis: any | null
 }
