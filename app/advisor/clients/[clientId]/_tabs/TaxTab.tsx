@@ -106,7 +106,7 @@ export default function TaxTab({ estateTax, household }: ClientViewShellProps) {
             <WaterfallRow
               label="Marital Deduction"
               value={marital_deduction}
-              description="50% of gross estate (married filing jointly)"
+              description="Federal unlimited marital deduction — assets passing to surviving spouse (50% applied)"
               deduction
             />
             <WaterfallRow

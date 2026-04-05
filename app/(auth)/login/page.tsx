@@ -1,4 +1,6 @@
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { LoginForm } from './_login-form'
 
 function LoginFallback() {
@@ -17,7 +19,32 @@ function LoginFallback() {
   )
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, subscription_status, firm_role, is_superuser')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.is_superuser) redirect('/dashboard')
+
+    if (profile?.role === 'attorney') redirect('/attorney')
+
+    if (profile?.role === 'advisor') {
+      if (profile?.firm_role === 'member') redirect('/advisor')
+      const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
+        profile?.subscription_status ?? ''
+      )
+      redirect(hasActiveSub ? '/advisor' : '/billing')
+    }
+
+    redirect('/dashboard')
+  }
+
   return (
     <Suspense fallback={<LoginFallback />}>
       <LoginForm />
