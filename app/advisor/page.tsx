@@ -63,6 +63,17 @@ export default async function AdvisorPage() {
         .in('owner_id', clientIds)
     : { data: [] }
 
+  const { data: advisorHousehold } = await supabase
+    .from('households')
+    .select('person1_name, person1_birth_year')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
+  const showCompleteProfileBanner =
+    !advisorHousehold ||
+    !String(advisorHousehold.person1_name ?? '').trim() ||
+    !advisorHousehold.person1_birth_year
+
   // Calculate net worth per client
   const netWorthMap: Record<string, number> = {}
   for (const clientId of clientIds) {
@@ -86,6 +97,7 @@ export default async function AdvisorPage() {
       isFirmOwner={isFirmOwner}
       firm_name={firm_name}
       firm_id={firm_id}
+      showCompleteProfileBanner={showCompleteProfileBanner}
     />
   )
 }

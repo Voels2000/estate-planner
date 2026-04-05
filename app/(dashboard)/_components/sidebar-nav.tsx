@@ -100,6 +100,7 @@ export function SidebarNav({
   isAdmin = false,
   isAttorney = false,
   isSuperuser = false,
+  hasHousehold,
 }: {
   user: User
   role?: string
@@ -108,7 +109,9 @@ export function SidebarNav({
   isAdmin?: boolean
   isAttorney?: boolean
   isSuperuser?: boolean
+  hasHousehold?: boolean
 }) {
+  const isAdvisorWithNoHousehold = role === 'advisor' && !hasHousehold
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
   const router = useRouter()
@@ -279,6 +282,26 @@ export function SidebarNav({
                         </div>
                       )
                     }
+                    if (
+                      isAdvisorWithNoHousehold &&
+                      item.href !== '/profile'
+                    ) {
+                      return (
+                        <div key={item.href}>
+                          <Link
+                            href="#"
+                            tabIndex={-1}
+                            aria-disabled={true}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+                          >
+                            <span className="flex-1 truncate">{displayLabel}</span>
+                            <span className="shrink-0 text-sm" aria-hidden>
+                              🔒
+                            </span>
+                          </Link>
+                        </div>
+                      )
+                    }
                     const tierBelowMin =
                       Boolean(item.minTier) &&
                       !isAdvisor &&
@@ -331,85 +354,164 @@ export function SidebarNav({
         })}
 
         {/* Advisor Portal */}
-        {(role === 'advisor' || isSuperuser) && (
-          <Link
-            href="/advisor"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/advisor' || activePath.startsWith('/advisor/')
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
-            💼 Advisor Portal
-          </Link>
-        )}
+        {(role === 'advisor' || isSuperuser) &&
+          (isAdvisorWithNoHousehold ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">💼 Advisor Portal</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/advisor"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/advisor' || activePath.startsWith('/advisor/')
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              💼 Advisor Portal
+            </Link>
+          ))}
 
         {/* Attorney Portal */}
-        {(role === 'attorney' || isAttorney || isSuperuser) && (
-          <Link
-            href="/attorney"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/attorney' || activePath.startsWith('/attorney/')
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
-            ⚖️ Attorney Portal
-          </Link>
-        )}
+        {(role === 'attorney' || isAttorney || isSuperuser) &&
+          (isAdvisorWithNoHousehold ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">⚖️ Attorney Portal</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/attorney"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/attorney' || activePath.startsWith('/attorney/')
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              ⚖️ Attorney Portal
+            </Link>
+          ))}
 
         {/* Admin Portal */}
-        {(role === 'admin' || isAdmin || isSuperuser) && (
-          <Link
-            href="/admin"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/admin'
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
-            ⚙️ Admin Portal
-          </Link>
-        )}
+        {(role === 'admin' || isAdmin || isSuperuser) &&
+          (isAdvisorWithNoHousehold ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">⚙️ Admin Portal</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/admin'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              ⚙️ Admin Portal
+            </Link>
+          ))}
 
         {/* Admin — Advisor Directory */}
-        {(role === 'admin' || isAdmin || isSuperuser) && (
+        {(role === 'admin' || isAdmin || isSuperuser) &&
+          (isAdvisorWithNoHousehold ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">📋 Advisor Directory</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin/advisor-directory"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/admin/advisor-directory'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              📋 Advisor Directory
+            </Link>
+          ))}
+
+        {(role === 'admin' || isAdmin || isSuperuser) &&
+          (isAdvisorWithNoHousehold ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">⚖️ Attorney Directory</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin/attorney-directory"
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/admin/attorney-directory'
+                  ? 'bg-neutral-100 text-neutral-900'
+                  : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+              }`}
+            >
+              ⚖️ Attorney Directory
+            </Link>
+          ))}
+
+        {/* Billing */}
+        {isAdvisorWithNoHousehold ? (
           <Link
-            href="/admin/advisor-directory"
+            href="#"
+            tabIndex={-1}
+            aria-disabled={true}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+          >
+            <span className="flex-1 truncate">💳 Manage Subscription</span>
+            <span className="shrink-0 text-sm" aria-hidden>
+              🔒
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="/billing"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/admin/advisor-directory'
+              activePath === '/billing'
                 ? 'bg-neutral-900 text-white'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >
-            📋 Advisor Directory
+            💳 Manage Subscription
           </Link>
         )}
-
-        {(role === 'admin' || isAdmin || isSuperuser) && (
-          <Link
-            href="/admin/attorney-directory"
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/admin/attorney-directory'
-                ? 'bg-neutral-100 text-neutral-900'
-                : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-            }`}
-          >
-            ⚖️ Attorney Directory
-          </Link>
-        )}
-
-        {/* Billing */}
-        <Link
-          href="/billing"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-            activePath === '/billing'
-              ? 'bg-neutral-900 text-white'
-              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-          }`}
-        >
-          💳 Manage Subscription
-        </Link>
       </nav>
 
       {/* Sign out */}

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -28,6 +29,7 @@ type Props = {
   isFirmOwner?: boolean
   firm_name?: string | null
   firm_id?: string | null
+  showCompleteProfileBanner?: boolean
 }
 
 const STATUS_OPTIONS = ['active', 'needs_review', 'at_risk', 'inactive']
@@ -63,6 +65,7 @@ export default function AdvisorClientPage({
   isFirmOwner,
   firm_name,
   firm_id,
+  showCompleteProfileBanner = false,
 }: Props) {
   const [clients, setClients] = useState(advisorClients)
   const [loading, setLoading] = useState<string | null>(null)
@@ -263,6 +266,18 @@ export default function AdvisorClientPage({
           + Add Client
         </button>
       </div>
+
+      {showCompleteProfileBanner && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950">
+          Complete your household profile to use planning tools and estate data in My Estate Plan.{' '}
+          <Link
+            href="/profile"
+            className="font-semibold text-amber-800 underline hover:text-amber-900"
+          >
+            Complete Profile →
+          </Link>
+        </div>
+      )}
 
       {showFirmBanner && isFirmOwner === true && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">

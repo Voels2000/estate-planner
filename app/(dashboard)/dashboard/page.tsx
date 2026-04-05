@@ -61,6 +61,11 @@ export default async function DashboardPage() {
     ? await getCompletionScore(user!.id)
     : null
 
+  const showAdvisorProfileBanner =
+    profile?.role === 'advisor' &&
+    !!household &&
+    (!String(household.person1_name ?? '').trim() || !household.person1_birth_year)
+
   const allocationContext: AssetAllocationContext = {
     currentAge: profile?.current_age ?? null,
     birthYear: household?.person1_birth_year ?? null,
@@ -88,6 +93,7 @@ export default async function DashboardPage() {
       completionScore={completionScore}
       consumerTier={profile?.consumer_tier ?? 1}
       allocationContext={allocationContext}
+      showAdvisorProfileBanner={showAdvisorProfileBanner}
     />
   )
 }

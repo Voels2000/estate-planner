@@ -61,6 +61,7 @@ export default async function DashboardLayout({
           isAdmin={profileRow?.is_admin === true}
           isAttorney={isAttorneyRow}
           isSuperuser
+          hasHousehold={hasHousehold}
         />
         <div className="flex flex-1 flex-col overflow-y-auto">
           {profileRow?.role === 'advisor' && !hasHousehold && (
@@ -172,6 +173,7 @@ export default async function DashboardLayout({
         isAdvisor={isAdvisorResolved || isAdvisorClient}
         isAdmin={profileFull?.is_admin === true}
         isAttorney={isAttorneyResolved}
+        hasHousehold={hasHousehold}
       />
       <div className="flex flex-1 flex-col overflow-y-auto">
         {showBanner && (

@@ -27,6 +27,7 @@ type Props = {
   completionScore?: CompletionScore | null
   consumerTier?: number
   allocationContext: AssetAllocationContext
+  showAdvisorProfileBanner?: boolean
 }
 
 export function DashboardClient({
@@ -44,6 +45,7 @@ export function DashboardClient({
   completionScore,
   consumerTier = 1,
   allocationContext,
+  showAdvisorProfileBanner = false,
 }: Props) {
   const firstName = userName.split(' ')[0]
   const allDone = completedSteps === setupSteps.length
@@ -62,6 +64,18 @@ export function DashboardClient({
             : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
         </p>
       </div>
+
+      {showAdvisorProfileBanner && (
+        <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950">
+          Complete your profile before adding estate data.{' '}
+          <Link
+            href="/profile"
+            className="font-semibold text-amber-800 underline hover:text-amber-900"
+          >
+            Complete Profile →
+          </Link>
+        </div>
+      )}
 
       {!allDone && (
         <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
