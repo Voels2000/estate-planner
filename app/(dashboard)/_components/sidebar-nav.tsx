@@ -236,6 +236,10 @@ export function SidebarNav({
                     </div>
                   )}
                   {group.items.map((item) => {
+                    const displayLabel =
+                      item.href === '/dashboard' && isAdvisor
+                        ? 'My Estate Plan'
+                        : item.label
                     // Hide consumerOnly items from non-consumers
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
@@ -271,7 +275,7 @@ export function SidebarNav({
                           onPointerDown={blockLockedNavInteraction}
                           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-not-allowed select-none"
                         >
-                          <span className="flex-1 truncate">{item.label}</span>
+                          <span className="flex-1 truncate">{displayLabel}</span>
                         </div>
                       )
                     }
@@ -302,7 +306,7 @@ export function SidebarNav({
                             onPointerDown={blockLockedNavInteraction}
                             className={`${leafClasses} cursor-not-allowed`}
                           >
-                            <span className="flex-1 truncate">{item.label}</span>
+                            <span className="flex-1 truncate">{displayLabel}</span>
                             {locked && (
                               <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
                                 🔒 {lockLabel(item.feature)}
@@ -314,7 +318,7 @@ export function SidebarNav({
                           </div>
                         ) : (
                           <Link href={linkHref} className={leafClasses}>
-                            <span className="flex-1 truncate">{item.label}</span>
+                            <span className="flex-1 truncate">{displayLabel}</span>
                           </Link>
                         )}
                       </div>

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdvisorSignOut } from './_components/advisor-sign-out'
@@ -32,7 +33,13 @@ export default async function AdvisorLayout({
             Advisor Portal
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-emerald-800 hover:text-emerald-950 hover:underline"
+          >
+            📜 My Estate Plan
+          </Link>
           {profile?.firm_role === 'owner' && (
             <a
               href="/advisor/firm"
