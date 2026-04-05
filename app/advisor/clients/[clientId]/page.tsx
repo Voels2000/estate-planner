@@ -1,238 +1,125 @@
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { redirect } from 'next/navigation'
-import { after } from 'next/server'
-import NotesPanel from './NotesPanel'
-import BusinessSuccessionDashboard from '@/components/BusinessSuccessionDashboard'
+// app/advisor/clients/[clientId]/page.tsx
+// Server component — auth, access check, data fetch, tab dispatch
 
-function formatDollars(n: number) {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
+import ClientViewShell from './_client-view-shell'
+
+interface PageProps {
+  params: { clientId: string }
+  searchParams: { tab?: string }
 }
 
-export default async function ClientDetailPage({
-  params,
-}: {
-  params: Promise<{ clientId: string }>
-}) {
-  const { clientId } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+export default async function AdvisorClientPage({ params, searchParams }: PageProps) {
+  const { clientId } = params
+  const tab = searchParams.tab ?? 'overview'
 
-  // Verify this advisor is linked to this client
-  const { data: link } = await supabase
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  const ctx = await getAccessContext()
+  if (!ctx.user) redirect('/login')
+  if (!ctx.isAdvisor) redirect('/dashboard')
+
+  const supabase = createClient()
+
+  // ── Verify advisor→client link ──────────────────────────────────────────────
+  const { data: link, error: linkError } = await supabase
     .from('advisor_clients')
-    .select('id, client_status')
-    .eq('advisor_id', user.id)
+    .select('id, status, accepted_at, client_id')
+    .eq('advisor_id', ctx.user.id)
     .eq('client_id', clientId)
+    .eq('status', 'active')
     .single()
 
-  if (!link) redirect('/advisor')
+  if (linkError || !link) redirect('/advisor')
 
-  // Log this advisor access
+  // ── Household ───────────────────────────────────────────────────────────────
+  const { data: household } = await supabase
+    .from('households')
+    .select(`
+      id, owner_id, name,
+      person1_first_name, person1_last_name, person1_birth_year,
+      person1_retirement_age, person1_ss_claiming_age, person1_longevity_age,
+      has_spouse,
+      person2_first_name, person2_last_name, person2_birth_year,
+      person2_retirement_age, person2_ss_claiming_age, person2_longevity_age,
+      filing_status, state_primary,
+      risk_tolerance, target_stocks_pct, target_bonds_pct, target_cash_pct,
+      estate_complexity_score, estate_complexity_flag,
+      inflation_rate, growth_rate_accumulation, growth_rate_retirement,
+      person1_ss_benefit_62, person1_ss_benefit_67,
+      person2_ss_benefit_62, person2_ss_benefit_67,
+      last_recommendation_at, created_at, updated_at
+    `)
+    .eq('owner_id', clientId)
+    .single()
+
+  if (!household) redirect('/advisor')
+
+  // ── Assets ──────────────────────────────────────────────────────────────────
+  const { data: assets } = await supabase
+    .from('assets')
+    .select('id, name, asset_type, value, owner, institution, account_type, is_taxable, created_at')
+    .eq('owner_id', clientId)
+
+  // ── Real Estate ─────────────────────────────────────────────────────────────
+  const { data: realEstate } = await supabase
+    .from('real_estate')
+    .select('id, name, property_type, current_value, purchase_price, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, situs_state, owner')
+    .eq('owner_id', clientId)
+
+  // ── Beneficiaries ───────────────────────────────────────────────────────────
+  const { data: beneficiaries } = await supabase
+    .from('beneficiaries')
+    .select('id, name, relationship, allocation_pct, account_type, contingent, created_at')
+    .eq('owner_id', clientId)
+
+  // ── Estate Documents ────────────────────────────────────────────────────────
+  const { data: estateDocuments } = await supabase
+    .from('estate_documents')
+    .select('id, document_type, exists, confirmed_at, created_at')
+    .eq('owner_id', clientId)
+
+  // ── Legal Documents (vault) ─────────────────────────────────────────────────
+  const { data: legalDocuments } = await supabase
+    .from('legal_documents')
+    .select('id, document_type, file_name, uploader_role, version, is_current, created_at')
+    .eq('household_id', household.id)
+    .eq('is_current', true)
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: false })
+
+  // ── Advisor Notes (advisor-only, consumer never sees these) ─────────────────
+  const { data: notes } = await supabase
+    .from('advisor_notes')
+    .select('id, content, created_at, updated_at')
+    .eq('advisor_id', ctx.user.id)
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false })
+
+  // ── Log this access ─────────────────────────────────────────────────────────
   try {
     await supabase.from('advisor_access_log').insert({
-      advisor_id: user.id,
+      advisor_id: ctx.user.id,
       client_id: clientId,
-      page: 'client_detail',
+      accessed_at: new Date().toISOString(),
     })
   } catch (e) {
-    console.error('Access log failed', e)
+    console.error('[advisor-client-view] access log failed:', e)
   }
 
-  // Fire-and-forget: notify client their advisor viewed their profile (service role RPC)
-  after(() => {
-    const admin = createAdminClient()
-    ;(async () => {
-      try {
-        await admin.rpc('create_notification', {
-          p_user_id: clientId,
-          p_type: 'advisor_viewed',
-          p_title: 'Your advisor viewed your profile',
-          p_body: 'Your advisor reviewed your estate plan and profile.',
-          p_delivery: 'both',
-          p_metadata: {},
-          p_cooldown: '1 day',
-        })
-      } catch {}
-    })()
-  })
-
-  // Fetch client data (household first so we can use its id for projections)
-  const [
-    { data: profile },
-    { data: household },
-    { data: assets },
-    { data: liabilities },
-    { data: income },
-    { data: expenses },
-    { data: notes },
-    { data: businessInterests },
-  ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', clientId).single(),
-    supabase.from('households').select('*').eq('owner_id', clientId).single(),
-    supabase.from('assets').select('*').eq('owner_id', clientId),
-    supabase.from('liabilities').select('*').eq('owner_id', clientId),
-    supabase.from('income').select('*').eq('owner_id', clientId),
-    supabase.from('expenses').select('*').eq('owner_id', clientId),
-    supabase.from('advisor_notes')
-      .select('*')
-      .eq('advisor_id', user.id)
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false }),
-    supabase.from('business_interests')
-      .select('id')
-      .eq('owner_id', clientId)
-      .limit(1),
-  ])
-
-  const { data: projections } = household?.id
-    ? await supabase
-        .from('projections')
-        .select('scenario_name, summary, calculated_at')
-        .eq('household_id', household.id)
-        .order('calculated_at', { ascending: false })
-        .limit(5)
-    : { data: [] }
-
-  const totalAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
-  const totalLiabilities = (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
-  const netWorth = totalAssets - totalLiabilities
-  const totalIncome = (income ?? []).reduce((s, i) => s + Number(i.amount), 0)
-  const totalExpenses = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0)
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <a href="/advisor" className="text-sm text-neutral-500 hover:text-neutral-700">
-            ← Back to Clients
-          </a>
-          <h1 className="mt-2 text-2xl font-bold text-neutral-900">
-            {profile?.full_name ?? 'Client'}
-          </h1>
-          <p className="text-sm text-neutral-500">{profile?.email}</p>
-        </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-          link.client_status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-          link.client_status === 'needs_review' ? 'bg-amber-100 text-amber-700' :
-          link.client_status === 'at_risk' ? 'bg-red-100 text-red-700' :
-          'bg-neutral-100 text-neutral-500'
-        }`}>
-          {link.client_status ?? 'active'}
-        </span>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Net Worth" value={formatDollars(netWorth)}
-          highlight={netWorth >= 0 ? 'green' : 'red'} />
-        <StatCard label="Total Assets" value={formatDollars(totalAssets)} />
-        <StatCard label="Total Liabilities" value={formatDollars(totalLiabilities)} />
-        <StatCard label="Annual Income" value={formatDollars(totalIncome * 12)} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Saved Scenarios */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Saved Scenarios
-          </h2>
-          {!projections || projections.length === 0 ? (
-            <p className="text-sm text-neutral-400">No scenarios saved yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {projections.map((p) => (
-                <div key={p.calculated_at}
-                  className="flex items-center justify-between rounded-lg border border-neutral-100 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900">{p.scenario_name}</p>
-                    <p className="text-xs text-neutral-400">
-                      {new Date(p.calculated_at).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-neutral-900">
-                      {formatDollars(p.summary?.at_retirement ?? 0)}
-                    </p>
-                    <p className="text-xs text-neutral-400">at retirement</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Advisor Notes */}
-        <NotesPanel
-          advisorId={user.id}
-          clientId={clientId}
-          initialNotes={notes ?? []}
-        />
-      </div>
-
-      {/* Household details */}
-      {household && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Household Details
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <Detail label="Filing Status" value={household.filing_status?.replace(/_/g, ' ')} />
-            <Detail label="Primary State" value={household.state_primary} />
-            <Detail label="Retirement Age" value={household.person1_retirement_age} />
-            <Detail label="SS Claiming Age" value={household.person1_ss_claiming_age} />
-            <Detail label="Inflation Rate" value={`${household.inflation_rate}%`} />
-            <Detail label="Growth (Accumulation)" value={`${household.growth_rate_accumulation ?? 7}%`} />
-            <Detail label="Growth (Retirement)" value={`${household.growth_rate_retirement ?? 5}%`} />
-            <Detail label="Longevity Age" value={household.person1_longevity_age} />
-            <Detail label="Deduction Mode" value={household.deduction_mode} />
-            <Detail label="Has Spouse" value={household.has_spouse ? 'Yes' : 'No'} />
-          </div>
-        </div>
-      )}
-
-      {/* Business Succession */}
-      {household?.id && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-6">
-            Business Succession
-          </h2>
-          <BusinessSuccessionDashboard
-            householdId={household.id}
-            userRole="advisor"
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function StatCard({ label, value, highlight }: {
-  label: string; value: string; highlight?: 'green' | 'red'
-}) {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${
-        highlight === 'green' ? 'text-green-600' :
-        highlight === 'red' ? 'text-red-600' :
-        'text-neutral-900'
-      }`}>{value}</p>
-    </div>
-  )
-}
-
-function Detail({ label, value }: { label: string; value: any }) {
-  return (
-    <div>
-      <p className="text-xs text-neutral-400 uppercase tracking-wide">{label}</p>
-      <p className="mt-0.5 font-medium text-neutral-900 capitalize">{value ?? '—'}</p>
-    </div>
+    <ClientViewShell
+      tab={tab}
+      advisorId={ctx.user.id}
+      clientId={clientId}
+      household={household}
+      assets={assets ?? []}
+      realEstate={realEstate ?? []}
+      beneficiaries={beneficiaries ?? []}
+      estateDocuments={estateDocuments ?? []}
+      legalDocuments={legalDocuments ?? []}
+      notes={notes ?? []}
+    />
   )
 }
