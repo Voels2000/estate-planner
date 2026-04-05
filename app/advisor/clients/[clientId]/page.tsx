@@ -90,6 +90,30 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     .eq('client_id', clientId)
     .order('created_at', { ascending: false })
 
+  // ── Estate Tax RPC ────────────────────────────────────────────────────────
+  const { data: estateTaxRaw } = await supabase
+    .rpc('calculate_state_estate_tax', {
+      p_household_id: household.id,
+    })
+
+  const estateTax = estateTaxRaw ?? null
+
+  // ── Domicile Analysis ─────────────────────────────────────────────────────
+  const { data: domicileAnalysis } = await supabase
+    .from('domicile_analysis')
+    .select(`
+      id, claimed_domicile_state, states,
+      drivers_license_state, voter_registration_state,
+      vehicle_registration_state, primary_home_titled_state,
+      spouse_children_state, estate_docs_declare_state,
+      files_taxes_in_state, business_interests_state,
+      risk_score, risk_level, dominant_state,
+      conflict_states, recommendations,
+      created_at, updated_at
+    `)
+    .eq('household_id', household.id)
+    .single()
+
   try {
     await supabase.from('advisor_access_log').insert({
       advisor_id: user.id,
@@ -112,6 +136,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       estateDocuments={estateDocuments ?? []}
       legalDocuments={legalDocuments ?? []}
       notes={notes ?? []}
+      estateTax={estateTax}
+      domicileAnalysis={domicileAnalysis ?? null}
     />
   )
 }
