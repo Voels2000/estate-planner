@@ -10,28 +10,22 @@ interface PageProps {
 
 export default async function AdvisorClientPage({ params, searchParams }: PageProps) {
   const { clientId } = params
-  console.log('[client-view] raw clientId:', JSON.stringify(clientId))
   const tab = searchParams.tab ?? 'overview'
 
-  const ctx = await getAccessContext()
-  console.log('[client-view] ctx.user?.id:', ctx.user?.id)
-  console.log('[client-view] ctx.isAdvisor:', ctx.isAdvisor)
-
-  if (!ctx.user) redirect('/login')
-  if (!ctx.isAdvisor) redirect('/dashboard')
-
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const access = await getAccessContext()
+  if (!access.isAdvisor) redirect('/dashboard')
 
   const { data: link, error: linkError } = await supabase
     .from('advisor_clients')
     .select('id, status, accepted_at, client_id')
-    .eq('advisor_id', ctx.user.id)
+    .eq('advisor_id', user.id)
     .eq('client_id', clientId)
     .eq('status', 'active')
     .single()
-
-  console.log('[client-view] link:', JSON.stringify(link))
-  console.log('[client-view] linkError:', JSON.stringify(linkError))
 
   if (linkError || !link) redirect('/advisor')
 
@@ -54,8 +48,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     `)
     .eq('owner_id', clientId)
     .single()
-
-  console.log('[client-view] household:', household?.id ?? 'null')
 
   if (!household) redirect('/advisor')
 
@@ -90,13 +82,13 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const { data: notes } = await supabase
     .from('advisor_notes')
     .select('id, content, created_at, updated_at')
-    .eq('advisor_id', ctx.user.id)
+    .eq('advisor_id', user.id)
     .eq('client_id', clientId)
     .order('created_at', { ascending: false })
 
   try {
     await supabase.from('advisor_access_log').insert({
-      advisor_id: ctx.user.id,
+      advisor_id: user.id,
       client_id: clientId,
       accessed_at: new Date().toISOString(),
     })
@@ -107,7 +99,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   return (
     <ClientViewShell
       tab={tab}
-      advisorId={ctx.user.id}
+      advisorId={user.id}
       clientId={clientId}
       household={household}
       assets={assets ?? []}
