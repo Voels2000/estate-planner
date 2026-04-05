@@ -111,7 +111,7 @@ export function SidebarNav({
   isSuperuser?: boolean
   hasHousehold?: boolean
 }) {
-  const isAdvisorWithNoHousehold = role === 'advisor' && !hasHousehold
+  const isLockedUser = !hasHousehold
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
   const router = useRouter()
@@ -283,8 +283,9 @@ export function SidebarNav({
                       )
                     }
                     if (
-                      isAdvisorWithNoHousehold &&
-                      item.href !== '/profile'
+                      isLockedUser &&
+                      item.href !== '/profile' &&
+                      item.href !== '/dashboard'
                     ) {
                       return (
                         <div key={item.href}>
@@ -355,7 +356,7 @@ export function SidebarNav({
 
         {/* Advisor Portal */}
         {(role === 'advisor' || isSuperuser) &&
-          (isAdvisorWithNoHousehold ? (
+          (isLockedUser ? (
             <Link
               href="#"
               tabIndex={-1}
@@ -382,7 +383,7 @@ export function SidebarNav({
 
         {/* Attorney Portal */}
         {(role === 'attorney' || isAttorney || isSuperuser) &&
-          (isAdvisorWithNoHousehold ? (
+          (isLockedUser ? (
             <Link
               href="#"
               tabIndex={-1}
@@ -409,7 +410,7 @@ export function SidebarNav({
 
         {/* Admin Portal */}
         {(role === 'admin' || isAdmin || isSuperuser) &&
-          (isAdvisorWithNoHousehold ? (
+          (isLockedUser ? (
             <Link
               href="#"
               tabIndex={-1}
@@ -436,7 +437,7 @@ export function SidebarNav({
 
         {/* Admin — Advisor Directory */}
         {(role === 'admin' || isAdmin || isSuperuser) &&
-          (isAdvisorWithNoHousehold ? (
+          (isLockedUser ? (
             <Link
               href="#"
               tabIndex={-1}
@@ -462,7 +463,7 @@ export function SidebarNav({
           ))}
 
         {(role === 'admin' || isAdmin || isSuperuser) &&
-          (isAdvisorWithNoHousehold ? (
+          (isLockedUser ? (
             <Link
               href="#"
               tabIndex={-1}
@@ -488,7 +489,7 @@ export function SidebarNav({
           ))}
 
         {/* Billing */}
-        {isAdvisorWithNoHousehold ? (
+        {isLockedUser ? (
           <Link
             href="#"
             tabIndex={-1}

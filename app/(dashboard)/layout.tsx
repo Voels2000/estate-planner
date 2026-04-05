@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
@@ -64,17 +63,6 @@ export default async function DashboardLayout({
           hasHousehold={hasHousehold}
         />
         <div className="flex flex-1 flex-col overflow-y-auto">
-          {profileRow?.role === 'advisor' && !hasHousehold && (
-            <div className="w-full border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
-              Complete your profile before adding estate data{' '}
-              <Link
-                href="/profile"
-                className="font-semibold text-amber-800 underline hover:text-amber-900"
-              >
-                Complete Profile →
-              </Link>
-            </div>
-          )}
           <main className="flex-1">{children}</main>
         </div>
       </div>
@@ -182,17 +170,6 @@ export default async function DashboardLayout({
             minutesLeft={trialMinutesLeft}
             expiryTimestamp={trialExpiry!.getTime()}
           />
-        )}
-        {profileFull?.role === 'advisor' && !hasHousehold && (
-          <div className="w-full border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
-            Complete your profile before adding estate data{' '}
-            <Link
-              href="/profile"
-              className="font-semibold text-amber-800 underline hover:text-amber-900"
-            >
-              Complete Profile →
-            </Link>
-          </div>
         )}
         <main className="flex-1">
           {children}
