@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import {
   getTrustWillRecommendations,
   getTrustWillChecklist,
@@ -8,11 +10,23 @@ import {
 } from '@/lib/trust-will-rules'
 
 export default async function TrustWillPage() {
+  const access = await getUserAccess()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Former tier billing redirect removed — layout enforces subscription.
+  if (access.tier < 3) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Trust & Will</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Trust & Will"
+          valueProposition="Review your trust and will structure against your current estate complexity."
+        />
+      </div>
+    )
+  }
 
   const admin = createAdminClient()
 

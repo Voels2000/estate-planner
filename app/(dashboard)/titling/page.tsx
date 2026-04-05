@@ -1,12 +1,27 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import TitlingClient from './_titling-client'
 
 export default async function TitlingPage() {
-  // Former tier billing redirect removed — layout enforces subscription.
+  const access = await getUserAccess()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (access.tier < 3) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Asset Titling</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Asset Titling"
+          valueProposition="Review and optimize how assets are titled to avoid probate and tax exposure."
+        />
+      </div>
+    )
+  }
 
   const [
     { data: titlingCategories },

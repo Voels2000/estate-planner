@@ -1,14 +1,28 @@
 import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import GiftingDashboardClient from '@/components/GiftingDashboardClient'
 
 export default async function GiftingPage() {
   const access = await getUserAccess()
-  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (access.tier < 3) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Gifting Planner</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Gifting Planner"
+          valueProposition="Model annual and lifetime gifting strategies to reduce your taxable estate."
+        />
+      </div>
+    )
+  }
+
   const { data: householdRow } = await supabase
     .from('households')
     .select('id')

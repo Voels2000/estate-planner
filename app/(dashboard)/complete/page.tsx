@@ -1,13 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import CompleteClient from './_complete-client'
 
 export default async function CompletePage() {
-  // Former tier billing redirect removed — layout enforces subscription.
+  const access = await getUserAccess()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (access.tier < 3) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Complete Estate Plan</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Complete Estate Plan"
+          valueProposition="Get a full summary and action plan across every dimension of your estate."
+        />
+      </div>
+    )
+  }
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projection`, {
     headers: { cookie: (await cookies()).toString() },

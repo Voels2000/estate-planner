@@ -3,6 +3,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getUserAccess } from "@/lib/get-user-access";
+import UpgradeBanner from "@/app/(dashboard)/_components/UpgradeBanner";
 import { RothClient } from "./_roth-client";
 import { runRothOptimizer, FederalBracket } from "@/lib/calculations/roth-optimizer";
 
@@ -34,10 +36,23 @@ function getStandardDeduction(fs: string): number {
 }
 
 export default async function RothPage() {
-  // Former tier billing redirect removed — layout enforces subscription.
+  const access = await getUserAccess();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  if (access.tier < 2) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Roth Conversion</h1>
+        <UpgradeBanner
+          requiredTier={2}
+          moduleName="Roth Conversion"
+          valueProposition="Model Roth conversion scenarios and project long-term tax savings."
+        />
+      </div>
+    );
+  }
 
   const [{ data: hh }, { data: incomeRows }, { data: assetRows }] = await Promise.all([
     supabase.from("households").select("*").eq("owner_id", user.id).single(),

@@ -1,11 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { RmdClient } from './_rmd-client'
 
 export default async function RmdPage() {
-  // Former tier billing redirect removed — layout enforces subscription.
+  const access = await getUserAccess()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) redirect('/login')
+
+  if (access.tier < 2) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">RMD Planner</h1>
+        <UpgradeBanner
+          requiredTier={2}
+          moduleName="RMD Planner"
+          valueProposition="Plan required minimum distributions and minimize tax drag on retirement accounts."
+        />
+      </div>
+    )
+  }
 
   const [{ data: household }, { data: assets }] = await Promise.all([
     supabase.from('households')

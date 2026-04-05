@@ -2,16 +2,29 @@ import { getUserAccess } from '@/lib/get-user-access'
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
-  // Former tier billing redirect removed — layout enforces subscription.
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (access.tier < 3) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Estate Tax Planner</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Estate Tax Planner"
+          valueProposition="Calculate federal and state estate tax exposure and model reduction strategies."
+        />
+      </div>
+    )
+  }
 
   const [
     { data: realEstateRows },
@@ -65,25 +78,25 @@ export default async function EstateTaxPage() {
       .order('state', { ascending: true }),
   ])
 
-    return (
-      <>
-        {householdRow?.id && (
-          <EstatePlanningDashboard
-            householdId={householdRow.id as string}
-            userRole={access.isAdvisor ? 'advisor' : 'consumer'}
-            consumerTier={access.tier}
-          />
-        )}
-        <EstateTaxClient
-          realEstate={realEstateRows ?? []}
-          assets={assetsRows ?? []}
-          liabilities={liabilitiesRows ?? []}
-          trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
-          household={householdRow as Record<string, unknown> | null}
-          brackets={federalEstateTaxBracketsRows ?? []}
-          stateEstateTaxRules={stateEstateTaxRows ?? []}
-          stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+  return (
+    <>
+      {householdRow?.id && (
+        <EstatePlanningDashboard
+          householdId={householdRow.id as string}
+          userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+          consumerTier={access.tier}
         />
-      </>
-    )
+      )}
+      <EstateTaxClient
+        realEstate={realEstateRows ?? []}
+        assets={assetsRows ?? []}
+        liabilities={liabilitiesRows ?? []}
+        trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
+        household={householdRow as Record<string, unknown> | null}
+        brackets={federalEstateTaxBracketsRows ?? []}
+        stateEstateTaxRules={stateEstateTaxRows ?? []}
+        stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+      />
+    </>
+  )
 }
