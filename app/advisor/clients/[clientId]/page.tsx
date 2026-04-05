@@ -20,7 +20,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   if (!ctx.user) redirect('/login')
   if (!ctx.isAdvisor) redirect('/dashboard')
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // ── Verify advisor→client link ──────────────────────────────────────────────
   const { data: link, error: linkError } = await supabase
