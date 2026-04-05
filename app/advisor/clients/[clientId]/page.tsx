@@ -3,13 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
-  params: { clientId: string }
-  searchParams: { tab?: string }
+  params: Promise<{ clientId: string }>
+  searchParams: Promise<{ tab?: string }>
 }
 
 export default async function AdvisorClientPage({ params, searchParams }: PageProps) {
-  const { clientId } = params
-  const tab = searchParams.tab ?? 'overview'
+  const { clientId } = await params
+  const tab = (await searchParams).tab ?? 'overview'
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
