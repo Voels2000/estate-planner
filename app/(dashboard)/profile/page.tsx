@@ -215,6 +215,20 @@ export default function ProfilePage() {
           .from('households')
           .insert(householdData)
         if (error) throw error
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        // If advisor, grant Tier 3 access on first profile completion
+        if (profile?.role === 'advisor') {
+          await supabase
+            .from('profiles')
+            .update({ consumer_tier: 3 })
+            .eq('id', user.id)
+        }
       }
 
       // SS is handled entirely by the projection engine via households table.
