@@ -10,6 +10,7 @@ interface PageProps {
 
 export default async function AdvisorClientPage({ params, searchParams }: PageProps) {
   const { clientId } = params
+  console.log('[client-view] raw clientId:', JSON.stringify(clientId))
   const tab = searchParams.tab ?? 'overview'
 
   const ctx = await getAccessContext()
