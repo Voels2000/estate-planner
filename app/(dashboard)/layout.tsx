@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
@@ -41,6 +42,12 @@ export default async function DashboardLayout({
       .select('role, consumer_tier, is_admin, is_attorney')
       .eq('id', fullUser.id)
       .single()
+    const { data: householdRow } = await supabase
+      .from('households')
+      .select('id')
+      .eq('owner_id', fullUser.id)
+      .maybeSingle()
+    const hasHousehold = !!householdRow
     const isAttorneyRow =
       profileRow?.role === 'attorney' || profileRow?.is_attorney === true
     const tier = profileRow?.consumer_tier ?? profile?.consumer_tier ?? 3
@@ -56,6 +63,17 @@ export default async function DashboardLayout({
           isSuperuser
         />
         <div className="flex flex-1 flex-col overflow-y-auto">
+          {profileRow?.role === 'advisor' && !hasHousehold && (
+            <div className="w-full border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
+              Complete your profile before adding estate data{' '}
+              <Link
+                href="/profile"
+                className="font-semibold text-amber-800 underline hover:text-amber-900"
+              >
+                Complete Profile →
+              </Link>
+            </div>
+          )}
           <main className="flex-1">{children}</main>
         </div>
       </div>
@@ -75,6 +93,13 @@ export default async function DashboardLayout({
     .select('subscription_status, role, trial_started_at, consumer_tier, is_admin, is_attorney')
     .eq('id', sessionUser.id)
     .single()
+
+  const { data: householdRow } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', sessionUser.id)
+    .maybeSingle()
+  const hasHousehold = !!householdRow
 
   const isAdminResolved = profileFull?.role === 'admin' || profileFull?.is_admin === true
   const isActive = profileFull?.subscription_status === 'active'
@@ -155,6 +180,17 @@ export default async function DashboardLayout({
             minutesLeft={trialMinutesLeft}
             expiryTimestamp={trialExpiry!.getTime()}
           />
+        )}
+        {profileFull?.role === 'advisor' && !hasHousehold && (
+          <div className="w-full border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950">
+            Complete your profile before adding estate data{' '}
+            <Link
+              href="/profile"
+              className="font-semibold text-amber-800 underline hover:text-amber-900"
+            >
+              Complete Profile →
+            </Link>
+          </div>
         )}
         <main className="flex-1">
           {children}
