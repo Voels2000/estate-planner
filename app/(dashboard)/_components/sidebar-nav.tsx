@@ -100,7 +100,7 @@ export function SidebarNav({
   isAdmin = false,
   isAttorney = false,
   isSuperuser = false,
-  hasHousehold,
+  hasHousehold = false,
 }: {
   user: User
   role?: string
@@ -111,7 +111,7 @@ export function SidebarNav({
   isSuperuser?: boolean
   hasHousehold?: boolean
 }) {
-  const isLockedUser = !hasHousehold
+  const isLockedUser = hasHousehold === false
   const pathname = usePathname()
   const [activePath, setActivePath] = useState('')
   const router = useRouter()
