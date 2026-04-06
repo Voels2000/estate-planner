@@ -1,19 +1,31 @@
 'use client'
 
+import { useState } from 'react'
+
 export function AdvisorSignOut() {
+  const [isLoading, setIsLoading] = useState(false)
+
   async function handleSignOut() {
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    setIsLoading(true)
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      window.location.href = '/login'
+    } catch {
+      setIsLoading(false)
+    }
   }
 
   return (
     <button
-      onClick={handleSignOut}
-      className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
+      type="button"
+      onClick={() => void handleSignOut()}
+      disabled={isLoading}
+      className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      🚪 Sign out
+      {isLoading ? 'Signing out…' : '🚪 Sign out'}
     </button>
   )
 }

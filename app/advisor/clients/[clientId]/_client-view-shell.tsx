@@ -20,8 +20,20 @@ const TABS = [
   { id: 'notes',      label: 'Notes',      icon: '✎', advisorOnly: true },
 ]
 
+const CLIENT_STATUS_BADGE: Record<string, string> = {
+  active: 'bg-emerald-100 text-emerald-700',
+  needs_review: 'bg-amber-100 text-amber-700',
+  at_risk: 'bg-red-100 text-red-700',
+  inactive: 'bg-neutral-100 text-neutral-500',
+}
+
+function formatClientStatusLabel(status: string) {
+  return status.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
+}
+
 export default function ClientViewShell(props: ClientViewShellProps) {
-  const { tab, household } = props
+  const { tab, household, clientStatus: clientStatusProp } = props
+  const clientStatus = clientStatusProp ?? 'active'
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -57,8 +69,15 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
           <div className="flex items-start justify-between mb-5">
             <div>
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <h1 className="text-2xl font-semibold text-slate-900">{clientName}</h1>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    CLIENT_STATUS_BADGE[clientStatus] ?? 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {formatClientStatusLabel(clientStatus)}
+                </span>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${complexityBg} ${complexityColor}`}>
                   {complexity} Complexity
                 </span>
@@ -139,6 +158,7 @@ export interface ClientViewShellProps {
   tab: string
   advisorId: string
   clientId: string
+  clientStatus?: string | null
   household: any
   assets: any[]
   realEstate: any[]

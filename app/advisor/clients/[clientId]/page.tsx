@@ -25,7 +25,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   const { data: link, error: linkError } = await supabase
     .from('advisor_clients')
-    .select('id, status, accepted_at, client_id')
+    .select('id, status, accepted_at, client_id, client_status')
     .eq('advisor_id', user.id)
     .eq('client_id', clientId)
     .eq('status', 'active')
@@ -129,6 +129,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       tab={tab}
       advisorId={user.id}
       clientId={clientId}
+      clientStatus={link.client_status ?? 'active'}
       household={household}
       assets={assets ?? []}
       realEstate={realEstate ?? []}
