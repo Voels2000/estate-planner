@@ -44,7 +44,7 @@ export default async function DashboardLayout({
     const { data: householdRow } = await supabase
       .from('households')
       .select('id')
-      .eq('owner_id', fullUser.id)
+      .eq('owner_id', user.id)
       .maybeSingle()
     const hasHousehold = !!householdRow
     const isAttorneyRow =
@@ -86,8 +86,9 @@ export default async function DashboardLayout({
   const { data: householdRow } = await supabase
     .from('households')
     .select('id')
-    .eq('owner_id', sessionUser.id)
+    .eq('owner_id', user.id)
     .maybeSingle()
+  console.log('[layout] user.id:', user.id, 'householdRow:', householdRow)
   const hasHousehold = !!householdRow
 
   const isAdminResolved = profileFull?.role === 'admin' || profileFull?.is_admin === true
