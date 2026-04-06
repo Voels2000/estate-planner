@@ -212,7 +212,7 @@ export function SidebarNav({
                     : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'
                 } ${groupIsLocked ? 'cursor-not-allowed' : ''} disabled:cursor-not-allowed disabled:opacity-100`}
               >
-                <span className="flex-1 text-left">{group.label}</span>
+                <span className="flex-1 text-left text-neutral-900">{group.label}</span>
                 {groupIsLocked && (
                   <span className="text-amber-400 text-sm mr-1">🔒</span>
                 )}
