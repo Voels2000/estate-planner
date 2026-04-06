@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { AdvisorSignOut } from './_components/advisor-sign-out'
 import { AdvisorTabs } from './_components/advisor-tabs'
 
@@ -9,20 +9,10 @@ export default async function AdvisorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getAccessContext()
+  if (!ctx.user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_superuser, firm_role')
-    .eq('id', user.id)
-    .single()
-
-  const isAdvisor = profile?.role === 'advisor'
-  const isSuperuser = profile?.is_superuser === true
-
-  if (!isAdvisor && !isSuperuser) redirect('/dashboard')
+  if (!ctx.isAdvisor) redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -40,7 +30,7 @@ export default async function AdvisorLayout({
           >
             📜 My Estate Plan
           </Link>
-          {profile?.firm_role === 'owner' && (
+          {ctx.firm_role === 'owner' && (
             <a
               href="/advisor/firm"
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
@@ -48,13 +38,13 @@ export default async function AdvisorLayout({
               Firm Settings ⚙️
             </a>
           )}
-          <span className="text-sm text-neutral-500">{user.email}</span>
+          <span className="text-sm text-neutral-500">{ctx.user.email}</span>
           <AdvisorSignOut />
         </div>
       </nav>
       <div className="bg-white">
         <div className="mx-auto max-w-7xl px-4 pt-2">
-          <AdvisorTabs showFirmSettingsTab={profile?.firm_role === 'owner'} />
+          <AdvisorTabs showFirmSettingsTab={ctx.firm_role === 'owner'} />
         </div>
       </div>
       <main className="mx-auto max-w-7xl px-4 py-10">
