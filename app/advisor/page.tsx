@@ -45,9 +45,30 @@ export default async function AdvisorPage() {
   const { data: households } = clientIds.length > 0
     ? await supabase
         .from('households')
-        .select('owner_id')
+        .select('id, owner_id')
         .in('owner_id', clientIds)
     : { data: [] }
+
+  // Build household_id lookup: owner_id -> household_id
+  const ownerToHousehold: Record<string, string> = {}
+  for (const h of households ?? []) {
+    ownerToHousehold[h.owner_id] = h.id
+  }
+
+  // Fetch health scores
+  const householdIds = Object.values(ownerToHousehold)
+  const { data: healthScores } = householdIds.length > 0
+    ? await supabase
+        .from('estate_health_scores')
+        .select('household_id, score')
+        .in('household_id', householdIds)
+    : { data: [] }
+
+  const healthScoreMap: Record<string, number> = {}
+  for (const hs of healthScores ?? []) {
+    const ownerId = Object.entries(ownerToHousehold).find(([, hid]) => hid === hs.household_id)?.[0]
+    if (ownerId) healthScoreMap[ownerId] = hs.score
+  }
 
   const { data: assets } = clientIds.length > 0
     ? await supabase
@@ -86,6 +107,7 @@ export default async function AdvisorPage() {
       isFirmOwner={isFirmOwner}
       firm_name={firm_name}
       firm_id={firm_id}
+      healthScoreMap={healthScoreMap}
     />
   )
 }

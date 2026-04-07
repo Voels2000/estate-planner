@@ -235,7 +235,8 @@ export default function ProfilePage() {
       // No SS rows are written to the income table.
       setSuccess(true)
       setTimeout(() => {
-        router.push('/dashboard')
+        // New users go through estate health check before dashboard (Sprint 56)
+        router.push(householdId ? '/dashboard' : '/health-check')
         router.refresh()
       }, 1500)
     } catch (err) {

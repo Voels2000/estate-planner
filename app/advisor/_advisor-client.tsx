@@ -24,6 +24,7 @@ type AdvisorClient = {
 type Props = {
   advisorClients: AdvisorClient[]
   netWorthMap: Record<string, number>
+  healthScoreMap?: Record<string, number>
   advisorId: string
   isFirmOwner?: boolean
   firm_name?: string | null
@@ -60,11 +61,13 @@ function formatDate(d: string) {
 export default function AdvisorClientPage({
   advisorClients,
   netWorthMap,
+  healthScoreMap = {},
   advisorId,
   isFirmOwner,
   firm_name,
   firm_id,
 }: Props) {
+  void advisorId
   const [clients, setClients] = useState(advisorClients)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -376,6 +379,7 @@ export default function AdvisorClientPage({
                   <tr className="border-b border-neutral-200 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
                     <th className="px-6 py-3">Client</th>
                     <th className="px-6 py-3">Net Worth</th>
+                    <th className="px-6 py-3">Health Score</th>
                     <th className="px-6 py-3">Member Since</th>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3">Actions</th>
@@ -400,6 +404,21 @@ export default function AdvisorClientPage({
                         </td>
                         <td className="px-6 py-4 font-medium text-neutral-900">
                           {isPending ? '—' : formatDollars(netWorthMap[c.client_id ?? ''] ?? 0)}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isPending ? (
+                            '—'
+                          ) : (() => {
+                            const score = healthScoreMap[c.client_id ?? '']
+                            if (score == null) return <span className="text-xs text-neutral-400">Not computed</span>
+                            const color = score >= 75 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-red-600'
+                            const bg = score >= 75 ? 'bg-emerald-50' : score >= 50 ? 'bg-amber-50' : 'bg-red-50'
+                            return (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${color} ${bg}`}>
+                                {score}/100
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-neutral-500">
                           {c.profiles?.created_at ? formatDate(c.profiles.created_at) : '—'}

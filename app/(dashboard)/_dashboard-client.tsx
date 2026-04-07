@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import type { CompletionScore } from '@/lib/get-completion-score'
+import type { EstateHealthScore } from '@/lib/estate-health-score'
+import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
 
 type SetupStep = {
@@ -27,6 +29,8 @@ type Props = {
   completionScore?: CompletionScore | null
   consumerTier?: number
   allocationContext: AssetAllocationContext
+  estateHealthScore?: EstateHealthScore | null
+  isAdvisor?: boolean
 }
 
 export function DashboardClient({
@@ -44,7 +48,11 @@ export function DashboardClient({
   completionScore,
   consumerTier = 1,
   allocationContext,
+  estateHealthScore,
+  isAdvisor = false,
 }: Props) {
+  void consumerTier
+  void isAdvisor
   const firstName = userName.split(' ')[0]
   const allDone = completedSteps === setupSteps.length
   const hour = new Date().getHours()
@@ -62,6 +70,83 @@ export function DashboardClient({
             : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
         </p>
       </div>
+
+      {estateHealthScore && (
+        <div className={`mb-8 rounded-2xl border p-6 shadow-sm ${scoreBg(estateHealthScore.score)}`}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">Estate Readiness Score</p>
+              <div className="flex items-end gap-3">
+                <span className={`text-6xl font-bold ${scoreColor(estateHealthScore.score)}`}>{estateHealthScore.score}</span>
+                <span className="text-neutral-400 text-lg mb-1">/ 100</span>
+                <span className={`mb-2 text-sm font-semibold ${scoreColor(estateHealthScore.score)}`}>
+                  {scoreLabel(estateHealthScore.score)}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1">
+                Based on your documents, beneficiaries, titling, and estate exposure
+              </p>
+            </div>
+
+            <Link
+              href="/health-check"
+              className="shrink-0 rounded-lg bg-white border border-neutral-200 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition shadow-sm"
+            >
+              Update health check →
+            </Link>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {estateHealthScore.components.map((c) => (
+              <Link
+                key={c.key}
+                href={c.actionHref}
+                className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-neutral-600 truncate">{c.label}</span>
+                  <span
+                    className={`text-xs font-bold ml-2 shrink-0 ${
+                      c.status === 'good' ? 'text-emerald-600' : c.status === 'warning' ? 'text-amber-600' : 'text-red-600'
+                    }`}
+                  >
+                    {c.score}/{c.maxScore}
+                  </span>
+                </div>
+                <div className="w-full bg-neutral-100 rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all ${
+                      c.status === 'good' ? 'bg-emerald-500' : c.status === 'warning' ? 'bg-amber-400' : 'bg-red-400'
+                    }`}
+                    style={{ width: `${Math.round((c.score / c.maxScore) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-1.5 truncate">{c.actionLabel}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {estateHealthScore && estateHealthScore.score < 75 && (
+        <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">Cost of Waiting</p>
+              <p className="text-2xl font-bold text-neutral-900">-</p>
+              <p className="text-xs text-neutral-400 mt-1">
+                Estimated annual cost of delaying estate planning · wired to projection engine in Sprint 59
+              </p>
+            </div>
+            <Link
+              href="/estate-tax"
+              className="shrink-0 rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 transition"
+            >
+              Review estate tax →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {!allDone && (
         <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
@@ -124,7 +209,7 @@ export function DashboardClient({
         </div>
       )}
 
-      {/* Net worth banner */}
+      {/* Net worth banner - moved below score (Sprint 56) */}
       <div className="mb-6 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Net Worth</p>
         <div className="flex items-end gap-6 flex-wrap">

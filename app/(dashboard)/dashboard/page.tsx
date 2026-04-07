@@ -1,35 +1,26 @@
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
+import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '../_dashboard-client'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('*')
-    .eq('owner_id', user!.id)
-    .single()
+  const { data: household } = await supabase.from('households').select('*').eq('owner_id', user!.id).single()
 
-  const [
-    { data: profile },
-    { data: assets },
-    { data: liabilities },
-    { data: income },
-    { data: expenses },
-    { data: projections },
-  ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user!.id).single(),
-    supabase.from('assets').select('value').eq('owner_id', user!.id),
-    supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
-    supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id).neq('source', 'social_security'),
-    supabase.from('expenses').select('amount').eq('owner_id', user!.id),
-    household?.id
-      ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
-      : Promise.resolve({ data: [] }),
-  ])
+  const [{ data: profile }, { data: assets }, { data: liabilities }, { data: income }, { data: expenses }, { data: projections }] =
+    await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user!.id).single(),
+      supabase.from('assets').select('value').eq('owner_id', user!.id),
+      supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
+      supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id).neq('source', 'social_security'),
+      supabase.from('expenses').select('amount').eq('owner_id', user!.id),
+      household?.id ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1) : Promise.resolve({ data: [] }),
+    ])
 
   const totalAssets = (assets ?? []).reduce((sum, a) => sum + Number(a.value), 0)
   const totalLiabilities = (liabilities ?? []).reduce((sum, l) => sum + Number(l.balance), 0)
@@ -53,13 +44,14 @@ export default async function DashboardPage() {
     { key: 'scenarios', label: 'Compare scenarios', href: '/scenarios', done: false },
   ]
 
-  const completedSteps = setupSteps.filter(s => s.done).length
+  const completedSteps = setupSteps.filter((s) => s.done).length
   const progressPct = Math.round((completedSteps / setupSteps.length) * 100)
 
   const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
-  const completionScore: CompletionScore | null = isConsumerTier2
-    ? await getCompletionScore(user!.id)
-    : null
+  const completionScore: CompletionScore | null = isConsumerTier2 ? await getCompletionScore(user!.id) : null
+
+  // Compute estate health score for all users with a household (Sprint 56)
+  const estateHealthScore: EstateHealthScore | null = household?.id ? await computeEstateHealthScore(household.id, user!.id) : null
 
   const allocationContext: AssetAllocationContext = {
     currentAge: profile?.current_age ?? null,
@@ -88,6 +80,8 @@ export default async function DashboardPage() {
       completionScore={completionScore}
       consumerTier={profile?.consumer_tier ?? 1}
       allocationContext={allocationContext}
+      estateHealthScore={estateHealthScore}
+      isAdvisor={profile?.role === 'advisor'}
     />
   )
 }
