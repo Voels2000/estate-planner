@@ -95,12 +95,13 @@ export async function generateBaseCase(householdId: string): Promise<{
 
     // State estate tax rate - use flat approximation until RPC is wired
     // Sprint 59 locked decision: calls calculate_state_estate_tax for current year
-    const { data: stateEstateTax } = await admin
+    const { data: stateEstateTaxRaw } = await admin
       .rpc('calculate_state_estate_tax', { p_household_id: householdId })
       .maybeSingle()
 
-    const stateEstateTaxRate = stateEstateTax
-      ? (stateEstateTax.state_estate_tax ?? 0) /
+    const stateEstateTaxData = stateEstateTaxRaw as { state_estate_tax?: number } | null
+    const stateEstateTaxRate = stateEstateTaxData?.state_estate_tax
+      ? stateEstateTaxData.state_estate_tax /
         Math.max(1, projectionRows[projectionRows.length - 1]?.estate_incl_home ?? 1)
       : 0
 
