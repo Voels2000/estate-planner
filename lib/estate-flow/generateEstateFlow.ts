@@ -199,6 +199,18 @@ export async function generateEstateFlow(
       : Promise.resolve({ data: null, error: null }),
   ])
 
+  console.log('households error:', householdRes.error)
+  console.log('assets error:', assetsRes.error)
+  console.log('real_estate error:', realEstateRes.error)
+  console.log('digital_assets error:', digitalAssetsRes.error)
+  console.log('trusts error:', trustsRes.error)
+  console.log('insurance_policies error:', insuranceRes.error)
+  console.log('business_interests error:', businessRes.error)
+  console.log('asset_beneficiaries error:', beneficiariesRes.error)
+  console.log('estate_documents error:', estateDocsRes.error)
+  console.log('scenario error:', scenarioRes.error)
+  console.log('scenario data:', scenarioRes.data)
+
   const household = householdRes.data as RawHousehold | null
   const assets = (assetsRes.data ?? []) as RawAsset[]
   const realEstate = (realEstateRes.data ?? []) as RawRealEstate[]
