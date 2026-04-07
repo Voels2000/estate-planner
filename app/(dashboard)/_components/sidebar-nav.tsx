@@ -15,7 +15,7 @@ type NavItem = {
   feature?: string
   advisorOnly?: boolean
   consumerOnly?: boolean
-  minTier?: number          // optional minimum consumer tier (1|2|3)
+  minTier?: number
 }
 
 type NavGroup = {
@@ -52,19 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
-  {
-    label: 'Retirement Planning',
-    icon: '🏖️',
-    locked: true,
-    items: [
-      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
-      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
-      { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
-      { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
-      { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
-      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
-    ],
-  },
+  // Estate Planning moved above Retirement Planning per Sprint 55 tab reorder
   {
     label: 'Estate Planning',
     icon: '📜',
@@ -78,18 +66,26 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable' },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
-      { href: '/print', label: 'Export Estate Plan', icon: '📄', minTier: 3 },
+      // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
     ],
   },
   {
-    label: 'Resources',
-    icon: '📚',
+    label: 'Retirement Planning',
+    icon: '🏖️',
+    locked: true,
     items: [
-      { href: '/attorney-directory', label: 'Find an Attorney', icon: '⚖️' },
-      { href: '/list-your-practice', label: 'List Your Practice', icon: '📋', advisorOnly: true },
-      { href: '/print', label: 'Export Estate Plan', icon: '📄', advisorOnly: true },
+      { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
+      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
+      { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
+      { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
+      { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
+      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
     ],
   },
+  // Resources group removed entirely (Sprint 55).
+  // Find an Attorney, List Your Practice, and Export Estate Plan
+  // are now tabs in the Advisor Portal (/advisor). No resource menu
+  // exists in the consumer view or in the advisor's own estate dashboard.
 ]
 
 export function SidebarNav({
@@ -131,8 +127,6 @@ export function SidebarNav({
     setOpenGroups(prev => ({
       ...prev,
       [activeGroup]: true,
-      // Keep Overview always open so My Attorney and My Advisor
-      // remain visible regardless of which page the consumer is on
       'Overview': true,
     }))
   }, [pathname])
@@ -188,9 +182,6 @@ export function SidebarNav({
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
-          if (group.label === 'Resources' && role === 'consumer' && !isAdvisor) {
-            return null
-          }
           const isOpen = openGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked =
@@ -243,11 +234,9 @@ export function SidebarNav({
                       item.href === '/dashboard' && isAdvisor
                         ? 'My Estate Plan'
                         : item.label
-                    // Hide consumerOnly items from non-consumers
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
                     }
-                    // My Attorney: consumer accounts only (no consumerOnly flag on item)
                     if (
                       item.href === '/settings/attorney-access' &&
                       role !== 'consumer' &&
@@ -255,11 +244,9 @@ export function SidebarNav({
                     ) {
                       return null
                     }
-                    // Hide advisorOnly items from non-advisors entirely
                     if (item.advisorOnly && !isAdvisor && !isSuperuser) {
                       return null
                     }
-                    // Hide tier-gated items consumer will never reach (My Attorney: shown, greyed + billing)
                     if (
                       item.minTier &&
                       !isAdvisor &&
