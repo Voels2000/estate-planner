@@ -71,7 +71,9 @@ export default function AdvisorClientPage({
   const [isInviting, setIsInviting] = useState(false)
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'clients' | 'invite'>('clients')
+  type ActiveTab = 'clients' | 'invite' | 'find-attorney' | 'list-practice' | 'export'
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('clients')
   const [tierLimitModal, setTierLimitModal] = useState<{
     current_count: number
     max_clients: number
@@ -212,6 +214,13 @@ export default function AdvisorClientPage({
 
   const showFirmBanner = firm_id != null && firm_id !== ''
 
+  const tabClass = (id: ActiveTab) =>
+    `px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+      activeTab === id
+        ? 'border-b-2 border-neutral-900 text-neutral-900'
+        : 'text-neutral-500 hover:text-neutral-700'
+    }`
+
   return (
     <div className="space-y-8">
       {/* Tier limit upgrade modal */}
@@ -278,19 +287,18 @@ export default function AdvisorClientPage({
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200">
-        {(['clients', 'invite'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
-              activeTab === tab
-                ? 'border-b-2 border-neutral-900 text-neutral-900'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            {tab === 'clients' ? 'My Clients' : 'Add Client'}
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-neutral-200 overflow-x-auto">
+        {[
+          { id: 'clients' as const, label: 'My Clients', icon: '👥 ' },
+          { id: 'invite' as const, label: 'Add Client', icon: '✉️ ' },
+          { id: 'find-attorney' as const, label: 'Find an Attorney', icon: '⚖️ ' },
+          { id: 'list-practice' as const, label: 'List Your Practice', icon: '📋 ' },
+          { id: 'export' as const, label: 'Export Estate Plan', icon: '📄 ' },
+        ].map(({ id, label, icon }) => (
+          <button key={id} onClick={() => setActiveTab(id)} className={tabClass(id)}>
+            {icon}
+            {label}
           </button>
         ))}
       </div>
@@ -492,6 +500,66 @@ export default function AdvisorClientPage({
                 {inviteError}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Find an Attorney tab */}
+      {activeTab === 'find-attorney' && (
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Find an Attorney</h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Browse estate attorneys in our directory to refer clients or collaborate on cases.
+              </p>
+            </div>
+            <a
+              href="/attorney-directory"
+              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            >
+              ⚖️ Open Attorney Directory →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* List Your Practice tab */}
+      {activeTab === 'list-practice' && (
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">List Your Practice</h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Add or update your practice listing in the advisor directory so clients can find and connect with you.
+              </p>
+            </div>
+            <a
+              href="/list-your-practice"
+              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            >
+              📋 Manage Your Listing →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Export Estate Plan tab */}
+      {activeTab === 'export' && (
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Export Estate Plan</h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Generate a PDF or printable summary of your estate plan to share with clients or attorneys.
+              </p>
+            </div>
+            <a
+              href="/print"
+              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            >
+              📄 Open Export →
+            </a>
           </div>
         </div>
       )}
