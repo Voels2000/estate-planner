@@ -95,8 +95,8 @@ interface RawAsset {
 
 interface RawRealEstate {
   id: string
-  address: string
-  estimated_value: number
+  name: string
+  current_value: number
   titling_type?: string | null
   state?: string | null
 }
@@ -178,6 +178,11 @@ export async function generateEstateFlow(
     throw new Error(`Household ${householdId} not found`)
   }
 
+  const household = householdRes.data as RawHousehold | null
+  if (!household) throw new Error(`Household ${householdId} not found`)
+
+  const userId = household.owner_id
+
   // Fetch remaining data in parallel
   const [
     assetsRes,
@@ -190,13 +195,13 @@ export async function generateEstateFlow(
     estateDocsRes,
     scenarioRes,
   ] = await Promise.all([
-    supabase.from('assets').select('*').eq('owner_id', householdId),
-    supabase.from('real_estate').select('*').eq('owner_id', householdId),
+    supabase.from('assets').select('*').eq('owner_id', userId),
+    supabase.from('real_estate').select('*').eq('owner_id', userId),
     supabase.from('digital_assets').select('*').eq('household_id', householdId),
-    supabase.from('trusts').select('*').eq('owner_id', householdId),
-    supabase.from('insurance_policies').select('*').eq('user_id', householdRes.data.owner_id),
-    supabase.from('business_interests').select('*').eq('owner_id', householdId),
-    supabase.from('asset_beneficiaries').select('*').eq('owner_id', householdId),
+    supabase.from('trusts').select('*').eq('owner_id', userId),
+    supabase.from('insurance_policies').select('*').eq('owner_id', userId),
+    supabase.from('business_interests').select('*').eq('owner_id', userId),
+    supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
     scenarioId
       ? supabase.from('projection_scenarios').select('*').eq('id', scenarioId).single()
@@ -215,7 +220,6 @@ export async function generateEstateFlow(
   console.log('scenario error:', scenarioRes.error)
   console.log('scenario data:', scenarioRes.data)
 
-  const household = householdRes.data as RawHousehold | null
   const assets = (assetsRes.data ?? []) as RawAsset[]
   const realEstate = (realEstateRes.data ?? []) as RawRealEstate[]
   const digitalAssets = (digitalAssetsRes.data ?? []) as RawDigitalAsset[]
@@ -225,10 +229,6 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
   const scenario = scenarioRes.data
-
-  if (!household) {
-    throw new Error(`Household ${householdId} not found`)
-  }
 
   // Pull tax amounts from scenario
   const rawOutputs = scenario?.outputs_s1_first ?? scenario?.outputs ?? []
@@ -463,10 +463,10 @@ export async function generateEstateFlow(
       id: nodeId,
       type: 'real_estate',
       category: 'asset',
-      label: shortAddress(re.address),
-      technicalLabel: `${re.address} — ${fmt(re.estimated_value)}`,
-      value: re.estimated_value,
-      metadata: { address: re.address, titling_type: re.titling_type, state: re.state },
+      label: shortAddress(re.name),
+      technicalLabel: `${re.name} — ${fmt(re.current_value)}`,
+      value: re.current_value,
+      metadata: { name: re.name, titling_type: re.titling_type, state: re.state },
     })
 
     edges.push({
@@ -474,8 +474,8 @@ export async function generateEstateFlow(
       source: 'owner_p1',
       target: nodeId,
       type: 'owns',
-      label: fmt(re.estimated_value),
-      value: re.estimated_value,
+      label: fmt(re.current_value),
+      value: re.current_value,
       metadata: {},
     })
 
@@ -485,15 +485,15 @@ export async function generateEstateFlow(
         source: nodeId,
         target: trustNodeIds[0],
         type: 'transfers_to',
-        label: fmt(re.estimated_value),
-        value: re.estimated_value,
+        label: fmt(re.current_value),
+        value: re.current_value,
         metadata: {},
       })
-      trustAssetsValue += re.estimated_value
+      trustAssetsValue += re.current_value
     } else if (hasBene) {
       for (const bene of reBenes) {
         const beneNodeId = getOrCreateBeneNode(bene)
-        const transferAmt = Math.round((re.estimated_value * bene.allocation_pct) / 100)
+        const transferAmt = Math.round((re.current_value * bene.allocation_pct) / 100)
         edges.push({
           id: `e_bene_re_${re.id}_${bene.id}`,
           source: nodeId,
@@ -504,18 +504,18 @@ export async function generateEstateFlow(
           metadata: {},
         })
       }
-      directTransferValue += re.estimated_value
+      directTransferValue += re.current_value
     } else if (probateNodeId) {
       edges.push({
         id: `e_prob_re_${re.id}`,
         source: nodeId,
         target: probateNodeId,
         type: 'transfers_to',
-        label: fmt(re.estimated_value),
-        value: re.estimated_value,
+        label: fmt(re.current_value),
+        value: re.current_value,
         metadata: {},
       })
-      probateAssetsValue += re.estimated_value
+      probateAssetsValue += re.current_value
     }
   }
 
