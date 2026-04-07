@@ -147,7 +147,15 @@ export default function ClientViewShell(props: ClientViewShellProps) {
         {tab === 'domicile'   && <DomicileTab    {...props} />}
         {tab === 'documents'  && <DocumentsTab   {...props} />}
         {tab === 'notes'      && <NotesTab       {...props} />}
-        {tab === 'strategy'   && <StrategyTab    {...props} />}
+        {tab === 'strategy' && (
+          <StrategyTab
+            clientId={props.clientId}
+            householdId={props.household.id}
+            person1Name={props.household.person1_first_name ?? 'Person 1'}
+            person2Name={props.household.person2_first_name ?? null}
+            hasSpouse={props.household.has_spouse ?? false}
+          />
+        )}
       </div>
     </div>
   )
