@@ -51,9 +51,10 @@ function formatDollars(n: number) {
 }
 
 function formatDate(d: string) {
-  const date = new Date(d)
+  // Split the ISO string directly to avoid timezone-driven server/client mismatch
+  const [year, month, day] = d.slice(0, 10).split('-').map(Number)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`
+  return `${months[month - 1]} ${day}, ${year}`
 }
 
 export default function AdvisorClientPage({
