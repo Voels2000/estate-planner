@@ -38,6 +38,7 @@ type Props = {
   advisorId: string
   householdId: string
   scenarioId: string | null
+  household?: { base_case_scenario_id?: string | null } | null
   person1Name: string
   person2Name: string | null
   hasSpouse: boolean
@@ -54,6 +55,7 @@ export default function StrategyTab({
   advisorId,
   householdId,
   scenarioId,
+  household,
   person1Name,
   person2Name,
   hasSpouse,
@@ -121,6 +123,7 @@ export default function StrategyTab({
   const costOfInaction = currentSummary
     ? currentSummary.estate_tax_federal + currentSummary.estate_tax_state
     : 0
+  console.log('EstateFlowDiagram scenarioId:', household?.base_case_scenario_id)
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)
 
@@ -335,7 +338,7 @@ export default function StrategyTab({
         <h3 className="text-sm font-semibold text-slate-700 mb-4">Estate Flow Diagram</h3>
         <EstateFlowDiagram
           householdId={householdId}
-          scenarioId={scenarioId}
+          scenarioId={household?.base_case_scenario_id ?? scenarioId}
           advisorId={advisorId}
           isAdvisor
         />

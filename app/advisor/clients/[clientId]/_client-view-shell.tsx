@@ -153,6 +153,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
             advisorId={props.advisorId}
             householdId={props.household.id}
             scenarioId={props.household.base_case_scenario_id ?? null}
+            household={props.household}
             person1Name={props.household.person1_first_name ?? 'Person 1'}
             person2Name={props.household.person2_first_name ?? null}
             hasSpouse={props.household.has_spouse ?? false}

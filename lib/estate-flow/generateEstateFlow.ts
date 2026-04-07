@@ -212,16 +212,16 @@ export async function generateEstateFlow(
   }
 
   // Pull tax amounts from scenario
-  const outputs =
-    deathView === 'first_death'
-      ? (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
-      : (scenario?.outputs_s2_first ?? scenario?.outputs ?? [])
+  const rawOutputs = scenario?.outputs_s1_first ?? scenario?.outputs ?? []
+  const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
+  const lastOutput = outputs.length > 0 ? outputs[outputs.length - 1] : null
 
-  const lastOutput = outputs?.[outputs.length - 1]
-  const estateTaxFederal = lastOutput?.estate_tax_federal ?? 0
-  const estateTaxState = lastOutput?.estate_tax_state ?? 0
-  const netToHeirs = lastOutput?.net_to_heirs ?? 0
-  const grossEstate = lastOutput?.estate_incl_home ?? 0
+  console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)
+
+  const estateTaxFederal = Number(lastOutput?.estate_tax_federal ?? 0)
+  const estateTaxState = Number(lastOutput?.estate_tax_state ?? 0)
+  const netToHeirs = Number(lastOutput?.net_to_heirs ?? 0)
+  const grossEstate = Number(lastOutput?.estate_incl_home ?? 0)
 
   // Determine which documents exist
   const hasTrust = trusts.length > 0 ||
