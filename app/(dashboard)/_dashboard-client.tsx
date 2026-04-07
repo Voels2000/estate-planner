@@ -31,6 +31,7 @@ type Props = {
   consumerTier?: number
   allocationContext: AssetAllocationContext
   estateHealthScore?: EstateHealthScore | null
+  costOfWaiting?: number
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string
@@ -60,6 +61,7 @@ export function DashboardClient({
   consumerTier = 1,
   allocationContext,
   estateHealthScore,
+  costOfWaiting = 0,
   conflictReport,
   isAdvisor = false,
 }: Props) {
@@ -145,9 +147,15 @@ export function DashboardClient({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">Cost of Waiting</p>
-              <p className="text-2xl font-bold text-neutral-900">-</p>
+              <p className="text-2xl font-bold text-neutral-900">
+                {estateHealthScore && costOfWaiting > 0
+                  ? formatDollars(costOfWaiting)
+                  : '—'}
+              </p>
               <p className="text-xs text-neutral-400 mt-1">
-                Estimated annual cost of delaying estate planning · wired to projection engine in Sprint 59
+                {costOfWaiting > 0
+                  ? 'Difference in estate tax: current law vs sunset 2026'
+                  : 'Complete your estate strategy to see your cost of waiting'}
               </p>
             </div>
             <Link

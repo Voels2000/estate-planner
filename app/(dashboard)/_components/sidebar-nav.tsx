@@ -32,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
+      { href: '/my-estate-strategy', label: 'My Estate Strategy', icon: '📈' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/settings/attorney-access', label: 'My Attorney', icon: '⚖️', minTier: 2 },

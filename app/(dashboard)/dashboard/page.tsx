@@ -53,6 +53,33 @@ export default async function DashboardPage() {
 
   // Compute estate health score for all users with a household (Sprint 56)
   const estateHealthScore: EstateHealthScore | null = household?.id ? await computeEstateHealthScore(household.id, user!.id) : null
+  const { data: baseCaseScenario } = household?.base_case_scenario_id
+    ? await supabase
+      .from('projection_scenarios')
+      .select('outputs_s1_first, assumption_snapshot')
+      .eq('id', household.base_case_scenario_id)
+      .single()
+    : { data: null }
+
+  const baseCaseRows = baseCaseScenario?.outputs_s1_first ?? []
+  const finalRow = baseCaseRows[baseCaseRows.length - 1]
+  const grossAtDeath = finalRow?.estate_incl_home ?? 0
+
+  // Current law exemption from DB
+  const { data: taxConfig } = await supabase
+    .from('federal_tax_config')
+    .select('estate_exemption_individual, estate_top_rate_pct')
+    .eq('scenario_id', 'current_law_extended')
+    .single()
+
+  const exemption = taxConfig?.estate_exemption_individual ?? 13_610_000
+  const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
+  const sunsetExemption = 7_000_000
+  const costOfWaiting = Math.max(
+    0,
+    Math.round(Math.max(0, grossAtDeath - sunsetExemption) * topRate) -
+      Math.round(Math.max(0, grossAtDeath - exemption) * topRate),
+  )
   // Run conflict detector for all users with a household (Sprint 58)
   const conflictReport = household?.id ? await detectConflicts(household.id, user!.id) : null
 
@@ -84,6 +111,7 @@ export default async function DashboardPage() {
       consumerTier={profile?.consumer_tier ?? 1}
       allocationContext={allocationContext}
       estateHealthScore={estateHealthScore}
+      costOfWaiting={costOfWaiting}
       conflictReport={conflictReport}
       isAdvisor={profile?.role === 'advisor'}
     />

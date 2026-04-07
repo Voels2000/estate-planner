@@ -8,11 +8,12 @@ import TaxTab from './_tabs/TaxTab'
 import DomicileTab from './_tabs/DomicileTab'
 import DocumentsTab from './_tabs/DocumentsTab'
 import NotesTab from './_tabs/NotesTab'
+import StrategyTab from './_tabs/StrategyTab'
 import { getComplexityStyle, getAge, formatCurrency } from './_utils'
 
 const TABS = [
   { id: 'overview',   label: 'Overview',   icon: '◎' },
-  { id: 'strategy',   label: 'Strategy',   icon: '📈', comingSoon: true },
+  { id: 'strategy',   label: 'Strategy',   icon: '📈' },
   { id: 'tax',        label: 'Tax',        icon: '◆' },
   { id: 'domicile',   label: 'Domicile',   icon: '⊙' },
   { id: 'estate',     label: 'Estate',     icon: '⬡' },
@@ -146,13 +147,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
         {tab === 'domicile'   && <DomicileTab    {...props} />}
         {tab === 'documents'  && <DocumentsTab   {...props} />}
         {tab === 'notes'      && <NotesTab       {...props} />}
-        {tab === 'strategy'   && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="text-4xl mb-3">📈</div>
-            <p className="text-sm font-medium text-slate-600">Strategy Tab</p>
-            <p className="text-xs text-slate-400 mt-1">Coming in Sprint 59 — Projection Engine</p>
-          </div>
-        )}
+        {tab === 'strategy'   && <StrategyTab    {...props} />}
       </div>
     </div>
   )
