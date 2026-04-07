@@ -290,15 +290,15 @@ export default function AdvisorClientPage({
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-neutral-200 overflow-x-auto">
         {[
-          { id: 'clients' as const, label: 'My Clients', icon: '👥 ' },
-          { id: 'invite' as const, label: 'Add Client', icon: '✉️ ' },
-          { id: 'find-attorney' as const, label: 'Find an Attorney', icon: '⚖️ ' },
-          { id: 'list-practice' as const, label: 'List Your Practice', icon: '📋 ' },
-          { id: 'export' as const, label: 'Export Estate Plan', icon: '📄 ' },
+          { id: 'clients' as const, label: 'My Clients', icon: '👥' },
+          { id: 'invite' as const, label: 'Add Client', icon: '✉️' },
+          { id: 'find-attorney' as const, label: 'Find an Attorney', icon: '⚖️' },
+          { id: 'list-practice' as const, label: 'List Your Practice', icon: '📋' },
+          { id: 'export' as const, label: 'Export Estate Plan', icon: '📄' },
         ].map(({ id, label, icon }) => (
           <button key={id} onClick={() => setActiveTab(id)} className={tabClass(id)}>
-            {icon}
-            {label}
+            <span suppressHydrationWarning>{icon}</span>
+            {' '}{label}
           </button>
         ))}
       </div>
