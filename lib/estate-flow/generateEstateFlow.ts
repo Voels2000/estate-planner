@@ -172,9 +172,14 @@ export async function generateEstateFlow(
     supabase = createClient()
   }
 
-  // Fetch all data in parallel
+  const householdRes = await supabase.from('households').select('*').eq('id', householdId).single()
+
+  if (!householdRes.data) {
+    throw new Error(`Household ${householdId} not found`)
+  }
+
+  // Fetch remaining data in parallel
   const [
-    householdRes,
     assetsRes,
     realEstateRes,
     digitalAssetsRes,
@@ -185,12 +190,11 @@ export async function generateEstateFlow(
     estateDocsRes,
     scenarioRes,
   ] = await Promise.all([
-    supabase.from('households').select('*').eq('id', householdId).single(),
     supabase.from('assets').select('*').eq('owner_id', householdId),
     supabase.from('real_estate').select('*').eq('owner_id', householdId),
     supabase.from('digital_assets').select('*').eq('household_id', householdId),
     supabase.from('trusts').select('*').eq('owner_id', householdId),
-    supabase.from('insurance_policies').select('*').eq('owner_id', householdId),
+    supabase.from('insurance_policies').select('*').eq('user_id', householdRes.data.owner_id),
     supabase.from('business_interests').select('*').eq('owner_id', householdId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', householdId),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),

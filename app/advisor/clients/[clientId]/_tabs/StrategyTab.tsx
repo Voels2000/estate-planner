@@ -123,6 +123,8 @@ export default function StrategyTab({
   const costOfInaction = currentSummary
     ? currentSummary.estate_tax_federal + currentSummary.estate_tax_state
     : 0
+  console.log('StrategyTab household:', household)
+  console.log('StrategyTab base_case_scenario_id:', household?.base_case_scenario_id)
   console.log('EstateFlowDiagram scenarioId:', household?.base_case_scenario_id)
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)

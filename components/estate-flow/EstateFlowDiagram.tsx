@@ -247,6 +247,7 @@ export default function EstateFlowDiagram({
   const svgRef = useRef<SVGSVGElement>(null)
 
   const load = useCallback(async () => {
+    console.log('Load called with householdId:', householdId, 'scenarioId:', scenarioId)
     setLoading(true)
     setError(null)
     try {
