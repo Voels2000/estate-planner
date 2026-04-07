@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
 
 type Props = {
+  householdId: string
+  scenarioId: string | null
   household: {
     id: string
     person1_first_name: string | null
@@ -25,7 +28,7 @@ type Props = {
   } | null
 }
 
-export default function MyEstateStrategyClient({ household, scenario, taxConfig }: Props) {
+export default function MyEstateStrategyClient({ householdId, scenarioId, household, scenario, taxConfig }: Props) {
   const rows = scenario?.outputs_s1_first ?? []
   const snapshot = scenario?.assumption_snapshot
 
@@ -124,6 +127,10 @@ export default function MyEstateStrategyClient({ household, scenario, taxConfig 
               </div>
             </div>
           )}
+
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+            <ConsumerEstateFlowView householdId={householdId} scenarioId={scenarioId} />
+          </div>
 
           <DisclaimerBanner context="estate strategy" />
         </div>

@@ -38,6 +38,8 @@ export default async function MyEstateStrategyPage() {
 
   return (
     <MyEstateStrategyClient
+      householdId={household.id}
+      scenarioId={household.base_case_scenario_id}
       household={household}
       scenario={scenario}
       taxConfig={taxConfig}

@@ -107,6 +107,8 @@ export default async function DashboardPage() {
       completedSteps={completedSteps}
       progressPct={progressPct}
       userId={user!.id}
+      householdId={household?.id ?? null}
+      scenarioId={household?.base_case_scenario_id ?? null}
       completionScore={completionScore}
       consumerTier={profile?.consumer_tier ?? 1}
       allocationContext={allocationContext}

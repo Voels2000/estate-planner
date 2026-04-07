@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency } from '../_utils'
+import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -34,7 +35,9 @@ type ScenarioSummary = {
 
 type Props = {
   clientId: string
+  advisorId: string
   householdId: string
+  scenarioId: string | null
   person1Name: string
   person2Name: string | null
   hasSpouse: boolean
@@ -46,7 +49,15 @@ const SCENARIO_LABELS: Record<ScenarioId, string> = {
   legislative_change: 'Legislative Change',
 }
 
-export default function StrategyTab({ clientId, householdId, person1Name, person2Name, hasSpouse }: Props) {
+export default function StrategyTab({
+  clientId,
+  advisorId,
+  householdId,
+  scenarioId,
+  person1Name,
+  person2Name,
+  hasSpouse,
+}: Props) {
   const [activeScenario, setActiveScenario] = useState<ScenarioId>('current_law_extended')
   const [activeSequence, setActiveSequence] = useState<DeathSequence>('S1_first')
   const [rows, setRows] = useState<EstateTaxRow[]>([])
@@ -318,6 +329,16 @@ export default function StrategyTab({ clientId, householdId, person1Name, person
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <h3 className="text-sm font-semibold text-slate-700 mb-4">Estate Flow Diagram</h3>
+        <EstateFlowDiagram
+          householdId={householdId}
+          scenarioId={scenarioId}
+          advisorId={advisorId}
+          isAdvisor
+        />
       </div>
 
       <DisclaimerBanner context="estate projection" />
