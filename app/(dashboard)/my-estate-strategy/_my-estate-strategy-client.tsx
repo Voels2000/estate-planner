@@ -34,7 +34,7 @@ export default function MyEstateStrategyClient({ household, scenario, taxConfig 
     snapshot?.person1_retirement_age && r.age_person1 >= snapshot.person1_retirement_age
   )
 
-  const grossAtRetirement = retirementRow?.estate_incl_home ?? 0
+  const grossAtRetirement = (retirementRow?.estate_incl_home ?? 0) > 0 ? retirementRow!.estate_incl_home : grossAtDeath
   const grossAtDeath = finalRow?.estate_incl_home ?? 0
   const exemption = taxConfig?.estate_exemption_individual ?? 13_610_000
   const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
