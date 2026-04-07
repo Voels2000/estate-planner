@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('owner_id', user.id)
       .single(),
-    supabase.from('assets').select('id, type, value, owner').eq('owner_id', user.id),
+    supabase.from('assets').select('id, type, value, owner, cost_basis, basis_date, titling, liquidity').eq('owner_id', user.id),
     supabase.from('liabilities').select('id, type, balance, monthly_payment, interest_rate, owner').eq('owner_id', user.id),
     supabase.from('income').select('id, source, amount, start_year, end_year, inflation_adjust, ss_person').eq('owner_id', user.id),
     supabase.from('expenses').select('id, category, amount, start_year, end_year, inflation_adjust, owner').eq('owner_id', user.id),

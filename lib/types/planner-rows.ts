@@ -9,6 +9,10 @@ export type AssetRowSelect = {
   type: string
   value: number
   owner: string
+  cost_basis?: number | null
+  basis_date?: string | null
+  titling?: string | null
+  liquidity?: string | null
 }
 
 /** Row shape when selecting: id, type, balance, monthly_payment, interest_rate, owner */

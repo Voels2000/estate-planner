@@ -1,4 +1,5 @@
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
+import { detectConflicts } from '@/lib/conflict-detector'
 import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import { createClient } from '@/lib/supabase/server'
@@ -52,6 +53,8 @@ export default async function DashboardPage() {
 
   // Compute estate health score for all users with a household (Sprint 56)
   const estateHealthScore: EstateHealthScore | null = household?.id ? await computeEstateHealthScore(household.id, user!.id) : null
+  // Run conflict detector for all users with a household (Sprint 58)
+  const conflictReport = household?.id ? await detectConflicts(household.id, user!.id) : null
 
   const allocationContext: AssetAllocationContext = {
     currentAge: profile?.current_age ?? null,
@@ -81,6 +84,7 @@ export default async function DashboardPage() {
       consumerTier={profile?.consumer_tier ?? 1}
       allocationContext={allocationContext}
       estateHealthScore={estateHealthScore}
+      conflictReport={conflictReport}
       isAdvisor={profile?.role === 'advisor'}
     />
   )

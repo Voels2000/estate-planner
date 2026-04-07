@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
+import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
@@ -30,6 +31,16 @@ type Props = {
   consumerTier?: number
   allocationContext: AssetAllocationContext
   estateHealthScore?: EstateHealthScore | null
+  conflictReport?: {
+    conflicts: Array<{
+      conflict_type: string
+      severity: string
+      description: string
+      recommended_action: string
+    }>
+    critical: number
+    warnings: number
+  } | null
   isAdvisor?: boolean
 }
 
@@ -49,6 +60,7 @@ export function DashboardClient({
   consumerTier = 1,
   allocationContext,
   estateHealthScore,
+  conflictReport,
   isAdvisor = false,
 }: Props) {
   void consumerTier
@@ -144,6 +156,57 @@ export function DashboardClient({
             >
               Review estate tax →
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* -- Action Items - conflict alerts (Sprint 58) ---------------------- */}
+      {conflictReport && conflictReport.conflicts.length > 0 && (
+        <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-neutral-900">Action Items</h2>
+              {conflictReport.critical > 0 && (
+                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                  {conflictReport.critical} critical
+                </span>
+              )}
+              {conflictReport.warnings > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                  {conflictReport.warnings} warning{conflictReport.warnings !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <Link href="/titling" className="text-xs text-indigo-600 font-medium hover:underline">
+              Review in Titling & Beneficiaries →
+            </Link>
+          </div>
+          <div className="divide-y divide-neutral-50">
+            {conflictReport.conflicts.slice(0, 5).map((c, i) => (
+              <div key={i} className="px-6 py-4 flex items-start gap-4">
+                <span
+                  className={`mt-0.5 shrink-0 text-lg ${
+                    c.severity === 'critical' ? 'text-red-500' : c.severity === 'warning' ? 'text-amber-500' : 'text-blue-400'
+                  }`}
+                >
+                  {c.severity === 'critical' ? '⚠' : c.severity === 'warning' ? '○' : 'ℹ'}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm text-neutral-800">{c.description}</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">{c.recommended_action}</p>
+                </div>
+              </div>
+            ))}
+            {conflictReport.conflicts.length > 5 && (
+              <div className="px-6 py-3 text-center">
+                <Link href="/titling" className="text-xs text-indigo-600 hover:underline">
+                  View all {conflictReport.conflicts.length} items →
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className="px-6 py-3 border-t border-neutral-100">
+            <DisclaimerBanner context="conflict analysis" />
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
 import ClientViewShell from './_client-view-shell'
 
@@ -114,6 +115,14 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     .eq('household_id', household.id)
     .single()
 
+  // Run conflict detector for advisor view (Sprint 58)
+  let conflictReport = null
+  try {
+    conflictReport = await detectConflicts(household.id, clientId)
+  } catch (e) {
+    console.error('[advisor-client-view] conflict detection failed:', e)
+  }
+
   try {
     await supabase.from('advisor_access_log').insert({
       advisor_id: user.id,
@@ -139,6 +148,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       notes={notes ?? []}
       estateTax={estateTax}
       domicileAnalysis={domicileAnalysis ?? null}
+      conflictReport={conflictReport}
     />
   )
 }

@@ -44,7 +44,7 @@ export default async function TitlingPage() {
       .single(),
     supabase
       .from('assets')
-      .select('id, name, type, value, owner')
+      .select('id, name, type, value, owner, cost_basis, basis_date, titling, liquidity')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     supabase

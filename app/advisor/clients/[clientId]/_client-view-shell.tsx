@@ -184,4 +184,16 @@ export interface ClientViewShellProps {
   notes: any[]
   estateTax: any | null
   domicileAnalysis: any | null
+  conflictReport?: {
+    conflicts: Array<{
+      conflict_type: string
+      severity: 'critical' | 'warning' | 'info'
+      description: string
+      recommended_action: string
+      asset_id: string | null
+      real_estate_id: string | null
+    }>
+    critical: number
+    warnings: number
+  } | null
 }

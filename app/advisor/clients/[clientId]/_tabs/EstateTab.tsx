@@ -3,6 +3,7 @@
 // Estate planning view — documents, beneficiaries, titling, accounts
 
 import { ClientViewShellProps } from '../_client-view-shell'
+import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency, formatDate } from '../_utils'
 
 const ESTATE_DOC_TYPES = [
@@ -14,7 +15,14 @@ const ESTATE_DOC_TYPES = [
   { type: 'living_will',       label: 'Living Will',               critical: false },
 ]
 
-export default function EstateTab({ household, assets, realEstate, beneficiaries, estateDocuments }: ClientViewShellProps) {
+export default function EstateTab({
+  household,
+  assets,
+  realEstate,
+  beneficiaries,
+  estateDocuments,
+  conflictReport,
+}: ClientViewShellProps) {
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   const retirementAssets = (assets ?? []).filter(a =>
@@ -111,6 +119,62 @@ export default function EstateTab({ household, assets, realEstate, beneficiaries
           </div>
         </div>
       </div>
+
+      {/* -- Conflict Detector Panel (Sprint 58) -- */}
+      {conflictReport && conflictReport.conflicts.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-slate-700">Estate Conflicts</h3>
+              {conflictReport.critical > 0 && (
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                  {conflictReport.critical} critical
+                </span>
+              )}
+              {conflictReport.warnings > 0 && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                  {conflictReport.warnings} warning{conflictReport.warnings !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-5 py-3">Severity</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Issue</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Recommended Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {conflictReport.conflicts.map((c, i) => (
+                  <tr key={i} className="hover:bg-slate-50">
+                    <td className="px-5 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          c.severity === 'critical'
+                            ? 'bg-red-100 text-red-700'
+                            : c.severity === 'warning'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
+                        {c.severity}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-slate-700 max-w-xs">{c.description}</td>
+                    <td className="py-3 pr-5 text-slate-500 text-xs max-w-xs">{c.recommended_action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-slate-100">
+            <DisclaimerBanner context="conflict analysis" />
+          </div>
+        </div>
+      )}
 
       {/* ── Real Estate & Titling ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
