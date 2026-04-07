@@ -475,6 +475,32 @@ export function SidebarNav({
             </Link>
           ))}
 
+        {/* Export Estate Plan */}
+        {isLockedUser ? (
+          <Link
+            href="#"
+            tabIndex={-1}
+            aria-disabled={true}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+          >
+            <span className="flex-1 truncate">📄 Export Estate Plan</span>
+            <span className="shrink-0 text-sm" aria-hidden>
+              🔒
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="/print"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activePath === '/print'
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`}
+          >
+            📄 Export Estate Plan
+          </Link>
+        )}
+
         {/* Billing */}
         {isLockedUser ? (
           <Link
