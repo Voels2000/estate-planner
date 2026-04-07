@@ -5,10 +5,11 @@
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Plain-English flow card ──────────────────────────────────────────────────
 
@@ -141,16 +142,17 @@ interface Props {
 }
 
 export default function ConsumerEstateFlowView({ householdId, scenarioId }: Props) {
+  const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
-    generateEstateFlow(householdId, scenarioId, 'first_death')
+    generateEstateFlow(householdId, scenarioId, 'first_death', supabase)
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [householdId, scenarioId])
+  }, [householdId, scenarioId, supabase])
 
   if (loading) {
     return (

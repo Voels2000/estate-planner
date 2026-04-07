@@ -5,11 +5,12 @@
 
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { saveEstateFlowSnapshot, generateShareLink, loadSnapshotHistory } from '@/lib/estate-flow/snapshotFlow'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 
@@ -232,6 +233,7 @@ export default function EstateFlowDiagram({
   isAdvisor = false,
   onShareLinkGenerated,
 }: Props) {
+  const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -248,7 +250,7 @@ export default function EstateFlowDiagram({
     setLoading(true)
     setError(null)
     try {
-      const g = await generateEstateFlow(householdId, scenarioId, deathView)
+      const g = await generateEstateFlow(householdId, scenarioId, deathView, supabase)
       setGraph(g)
 
       // Auto-save snapshot
@@ -260,7 +262,7 @@ export default function EstateFlowDiagram({
     } finally {
       setLoading(false)
     }
-  }, [householdId, scenarioId, deathView])
+  }, [householdId, scenarioId, deathView, supabase])
 
   useEffect(() => { load() }, [load])
 

@@ -166,8 +166,11 @@ export async function generateEstateFlow(
   householdId: string,
   scenarioId: string | null,
   deathView: DeathView = 'first_death',
+  supabase?: ReturnType<typeof createClient>,
 ): Promise<EstateFlowGraph> {
-  const supabase = createClient()
+  if (!supabase) {
+    supabase = createClient()
+  }
 
   // Fetch all data in parallel
   const [

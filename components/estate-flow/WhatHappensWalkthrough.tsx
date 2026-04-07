@@ -5,10 +5,11 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import type { EstateFlowGraph } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Screen definitions ───────────────────────────────────────────────────────
 
@@ -295,16 +296,17 @@ interface Props {
 }
 
 export default function WhatHappensWalkthrough({ householdId, scenarioId, onComplete }: Props) {
+  const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentStep, setCurrentStep] = useState(0)
 
   useEffect(() => {
-    generateEstateFlow(householdId, scenarioId, 'first_death')
+    generateEstateFlow(householdId, scenarioId, 'first_death', supabase)
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [householdId, scenarioId])
+  }, [householdId, scenarioId, supabase])
 
   if (loading) {
     return (
