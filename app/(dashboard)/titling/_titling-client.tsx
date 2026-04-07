@@ -12,6 +12,10 @@ type Asset = {
   type: string
   value: number
   owner: string | null
+  cost_basis?: number | null
+  basis_date?: string | null
+  titling?: string | null
+  liquidity?: string | null
 }
 
 type RealEstateItem = {
@@ -77,6 +81,26 @@ const TITLE_TYPES = [
   { value: 'tod_pod',            label: 'TOD / POD' },
   { value: 'trust_owned',        label: 'Trust Owned' },
   { value: 'corporate',          label: 'Corporate / LLC' },
+]
+
+const TITLING_OPTIONS = [
+  { value: '', label: 'Not set' },
+  { value: 'individual_p1', label: 'Individual (Person 1)' },
+  { value: 'individual_p2', label: 'Individual (Person 2)' },
+  { value: 'joint_tenants', label: 'Joint Tenants (JTWROS)' },
+  { value: 'tenants_in_common', label: 'Tenants in Common' },
+  { value: 'trust', label: 'Trust' },
+  { value: 'entity', label: 'Entity (LLC/Corp)' },
+  { value: 'pod', label: 'POD / Transfer on Death' },
+  { value: 'tod', label: 'TOD (Securities)' },
+]
+
+const LIQUIDITY_OPTIONS = [
+  { value: '', label: 'Not set' },
+  { value: 'liquid', label: 'Liquid (immediate access)' },
+  { value: 'semi_liquid', label: 'Semi-liquid (30-90 days)' },
+  { value: 'illiquid', label: 'Illiquid (real estate, private)' },
+  { value: 'long', label: 'Long-term locked (pension, annuity)' },
 ]
 
 const RELATIONSHIPS = [
@@ -183,6 +207,7 @@ export default function TitlingClient({
     id: string
     name: string
     existing: AssetTitling | RealEstateTitling | null
+    asset: Asset | null
   } | null>(null)
 
   const [beneficiaryModal, setBeneficiaryModal] = useState<{
@@ -314,6 +339,7 @@ export default function TitlingClient({
                 onEditTitling={() => setTitlingModal({
                   kind: 'asset', id: asset.id, name: asset.name,
                   existing: getTitlingFor('asset', asset.id) as AssetTitling | null,
+                  asset,
                 })}
                 onAddBeneficiary={(type) => setBeneficiaryModal({
                   kind: 'asset', id: asset.id, name: asset.name, existing: null, beneficiaryType: type,
@@ -349,6 +375,7 @@ export default function TitlingClient({
                 onEditTitling={() => setTitlingModal({
                   kind: 're', id: re.id, name: re.name,
                   existing: getTitlingFor('re', re.id) as RealEstateTitling | null,
+                  asset: null,
                 })}
                 onAddBeneficiary={(type) => setBeneficiaryModal({
                   kind: 're', id: re.id, name: re.name, existing: null, beneficiaryType: type,
@@ -371,6 +398,7 @@ export default function TitlingClient({
           id={titlingModal.id}
           name={titlingModal.name}
           existing={titlingModal.existing}
+          asset={titlingModal.asset}
           onClose={() => setTitlingModal(null)}
           onSave={async () => { setTitlingModal(null); await reloadData() }}
         />
@@ -573,16 +601,23 @@ function BeneficiarySection({
 // ─── Titling Modal ────────────────────────────────────────────────────────────
 
 function TitlingModal({
-  kind, id, name, existing, onClose, onSave,
+  kind, id, name, existing, asset, onClose, onSave,
 }: {
   kind: 'asset' | 're'
   id: string
   name: string
   existing: AssetTitling | RealEstateTitling | null
+  asset: Asset | null
   onClose: () => void
   onSave: () => void
 }) {
   const [titleType, setTitleType] = useState(existing?.title_type ?? 'sole')
+  const [assetTitling, setAssetTitling] = useState(asset?.titling ?? '')
+  const [liquidity, setLiquidity] = useState(asset?.liquidity ?? '')
+  const [costBasis, setCostBasis] = useState(
+    asset?.cost_basis == null ? '' : String(asset.cost_basis)
+  )
+  const [basisDate, setBasisDate] = useState(asset?.basis_date ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -615,6 +650,24 @@ function TitlingModal({
         })
         if (error) throw error
       }
+
+      if (kind === 'asset') {
+        const parsedCostBasis = costBasis.trim() === '' ? null : Number(costBasis)
+        if (parsedCostBasis !== null && Number.isNaN(parsedCostBasis)) {
+          throw new Error('Cost basis must be a valid number.')
+        }
+        const { error: assetError } = await supabase
+          .from('assets')
+          .update({
+            titling: assetTitling || null,
+            liquidity: liquidity || null,
+            cost_basis: parsedCostBasis,
+            basis_date: basisDate || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+        if (assetError) throw assetError
+      }
       onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))
@@ -633,6 +686,61 @@ function TitlingModal({
           </select>
           <p className="mt-1 text-xs text-neutral-400">{getTitleDescription(titleType)}</p>
         </div>
+        {kind === 'asset' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Titling</label>
+              <select
+                value={assetTitling}
+                onChange={e => setAssetTitling(e.target.value)}
+                className={inputClass}
+              >
+                {TITLING_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Liquidity</label>
+              <select
+                value={liquidity}
+                onChange={e => setLiquidity(e.target.value)}
+                className={inputClass}
+              >
+                {LIQUIDITY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Basis</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={costBasis}
+                  onChange={e => setCostBasis(e.target.value)}
+                  className={inputClass}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Basis Date</label>
+                <input
+                  type="date"
+                  value={basisDate}
+                  onChange={e => setBasisDate(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </>
+        )}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Notes <span className="font-normal text-neutral-400">(optional)</span>
