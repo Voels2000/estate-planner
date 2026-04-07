@@ -45,6 +45,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       person2_retirement_age, person2_ss_claiming_age, person2_longevity_age,
       filing_status, state_primary,
       risk_tolerance, target_stocks_pct, target_bonds_pct, target_cash_pct,
+      base_case_scenario_id,
       estate_complexity_score, estate_complexity_flag,
       inflation_rate, growth_rate_accumulation, growth_rate_retirement,
       person1_ss_benefit_62, person1_ss_benefit_67,
