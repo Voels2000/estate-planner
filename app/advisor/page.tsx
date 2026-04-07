@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
-import AdvisorClient from './_advisor-client'
+import dynamic from 'next/dynamic'
+
+const AdvisorClient = dynamic(() => import('./_advisor-client'), { ssr: false })
 
 export default async function AdvisorPage() {
   const supabase = await createClient()
