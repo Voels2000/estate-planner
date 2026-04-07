@@ -11,7 +11,7 @@ import NotesTab from './_tabs/NotesTab'
 import StrategyTab from './_tabs/StrategyTab'
 import { getComplexityStyle, getAge, formatCurrency } from './_utils'
 
-const TABS = [
+const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; comingSoon?: boolean }[] = [
   { id: 'overview',   label: 'Overview',   icon: '◎' },
   { id: 'strategy',   label: 'Strategy',   icon: '📈' },
   { id: 'tax',        label: 'Tax',        icon: '◆' },
