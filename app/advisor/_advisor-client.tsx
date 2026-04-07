@@ -130,6 +130,7 @@ export default function AdvisorClientPage({
   }
 
   async function handleRemoveClient(advisorClientId: string) {
+    if (typeof window === 'undefined') return
     if (!confirm('Remove this client? If billing was transferred their tier will be reverted.')) return
     setLoading(`${advisorClientId}-remove`)
     setError(null)
@@ -187,6 +188,7 @@ export default function AdvisorClientPage({
   }
 
   async function handleDeclineRequest(advisorClientId: string) {
+    if (typeof window === 'undefined') return
     if (!confirm('Decline this connection request?')) return
     setLoading(`${advisorClientId}-decline`)
     setError(null)
