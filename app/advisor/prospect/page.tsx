@@ -153,16 +153,13 @@ export default function ProspectModePage() {
   const handlePrint = () => window.print()
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <div style={{ background: 'red', color: 'white', padding: '4px 8px', fontSize: '12px' }}>
-        DEBUG v3 - click test
-      </div>
+    <div className="max-w-4xl mx-auto px-4 py-10" style={{ paddingTop: '80px' }}>
       {/* Header */}
       <div className="mb-8">
         <a href="/advisor" className="text-sm text-indigo-600 hover:underline">
           ← Advisor Portal
         </a>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">Prospect Mode v3</h1>
+        <h1 className="mt-2 text-2xl font-bold text-neutral-900">Prospect Mode</h1>
         <p className="text-sm text-neutral-500 mt-1">
           Generate an Estate Planning Opportunity Summary for a prospect — no account required.
           No prospect data is stored.
