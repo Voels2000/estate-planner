@@ -3,7 +3,7 @@
 // No authentication required. Renders estate structure only — no financial account values.
 // 90-day expiry enforced server-side.
 
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import SharePageClient from './SharePageClient'
 
@@ -15,7 +15,7 @@ export default async function EstateFlowSharePage({ params }: Props) {
   const { token } = params
 
   // Use service role or anon key — this is a public page
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Load share link
   const { data: link, error } = await supabase
