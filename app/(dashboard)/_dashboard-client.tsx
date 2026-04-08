@@ -10,6 +10,7 @@ import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
+import SunsetAlert from '@/components/consumer/SunsetAlert'
 
 type SetupStep = {
   key: string
@@ -48,6 +49,13 @@ type Props = {
     warnings: number
   } | null
   isAdvisor?: boolean
+  sunsetAlert?: {
+    currentFederalTax: number
+    sunsetFederalTax: number
+    stateTax: number
+    stateCode?: string
+    householdName?: string
+  }
 }
 
 export function DashboardClient({
@@ -71,6 +79,7 @@ export function DashboardClient({
   costOfWaiting = 0,
   conflictReport,
   isAdvisor = false,
+  sunsetAlert,
 }: Props) {
   void consumerTier
   void isAdvisor
@@ -96,6 +105,18 @@ export function DashboardClient({
             : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
         </p>
       </div>
+
+      {sunsetAlert && (
+        <div className="mb-8">
+          <SunsetAlert
+            currentFederalTax={sunsetAlert.currentFederalTax}
+            sunsetFederalTax={sunsetAlert.sunsetFederalTax}
+            stateTax={sunsetAlert.stateTax}
+            stateCode={sunsetAlert.stateCode}
+            householdName={sunsetAlert.householdName}
+          />
+        </div>
+      )}
 
       {estateHealthScore && (
         <div className={`mb-8 rounded-2xl border p-6 shadow-sm ${scoreBg(estateHealthScore.score)}`}>

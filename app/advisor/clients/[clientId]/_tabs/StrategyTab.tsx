@@ -8,6 +8,8 @@ import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
+import StateTaxPanel from '@/components/advisor/StateTaxPanel'
+import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -69,6 +71,10 @@ export default function StrategyTab({
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [strategyMeta, setStrategyMeta] = useState<{
+    federalExemption: number
+    statePrimary: string | null
+  } | null>(null)
 
   useEffect(() => {
     loadScenario()
@@ -86,6 +92,7 @@ export default function StrategyTab({
         if (data.error === 'no_scenario') {
           setRows([])
           setSummaries([])
+          setStrategyMeta(null)
           setIsLoading(false)
           return
         }
@@ -94,6 +101,11 @@ export default function StrategyTab({
       const data = await res.json()
       setRows(data.rows ?? [])
       setSummaries(data.summaries ?? [])
+      setStrategyMeta(
+        typeof data.federalExemption === 'number'
+          ? { federalExemption: data.federalExemption, statePrimary: data.statePrimary ?? null }
+          : null,
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load strategy data')
     } finally {
@@ -125,9 +137,6 @@ export default function StrategyTab({
   const costOfInaction = currentSummary
     ? currentSummary.estate_tax_federal + currentSummary.estate_tax_state
     : 0
-  console.log('StrategyTab household:', household)
-  console.log('StrategyTab base_case_scenario_id:', household?.base_case_scenario_id)
-  console.log('EstateFlowDiagram scenarioId:', household?.base_case_scenario_id)
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)
   const clientName = hasSpouse
@@ -259,6 +268,25 @@ export default function StrategyTab({
           highlight="amber"
         />
       </div>
+
+      {/* ── State estate tax (Sprint 64) ── */}
+      {strategyMeta && currentSummary && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-slate-700">State Estate Tax</h3>
+          <StateTaxPanel
+            grossEstate={currentSummary.gross_estate}
+            stateCode={parseStateTaxCode(strategyMeta.statePrimary)}
+            federalExemption={strategyMeta.federalExemption}
+            dsue={rows[rows.length - 1]?.dsue_available ?? 0}
+            projectionYears={(() => {
+              const ys = Array.from(new Set(rows.map(r => r.year)))
+                .filter(y => y >= 2025 && y <= 2035)
+                .slice(0, 8)
+              return ys.length > 0 ? ys : undefined
+            })()}
+          />
+        </div>
+      )}
 
       {/* ── Estate growth line chart ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">

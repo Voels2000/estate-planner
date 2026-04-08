@@ -3,6 +3,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const US_STATE_CODES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC',
+] as const
+
+const SITUS_ASSET_TYPES: { value: string; label: string }[] = [
+  { value: 'real_estate', label: 'Real estate' },
+  { value: 'financial_account', label: 'Financial account' },
+  { value: 'business_interest', label: 'Business interest' },
+  { value: 'tangible_personal_property', label: 'Tangible personal property' },
+  { value: 'intangible', label: 'Intangible' },
+  { value: 'other', label: 'Other' },
+]
+
 type AssetType = { value: string; label: string }
 type Asset = {
   id: string
@@ -15,6 +31,8 @@ type Asset = {
   details: Record<string, unknown> | null
   created_at: string
   updated_at: string
+  situs_state?: string | null
+  situs_asset_type?: string | null
 }
 
 export default function AssetsPage() {
@@ -158,6 +176,8 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
   const [type, setType] = useState(editAsset?.type ?? assetTypes[0]?.value ?? '')
   const [name, setName] = useState(editAsset?.name ?? '')
   const [value, setValue] = useState(editAsset?.value?.toString() ?? '')
+  const [situsState, setSitusState] = useState(editAsset?.situs_state ?? '')
+  const [situsAssetType, setSitusAssetType] = useState(editAsset?.situs_asset_type ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -171,16 +191,35 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const situsPayload = {
+        situs_state: situsState.trim() || null,
+        situs_asset_type: situsAssetType.trim() || null,
+      }
+
       if (editAsset) {
         const { error } = await supabase
           .from('assets')
-          .update({ owner: owner, type, name, value: parseFloat(value), updated_at: new Date().toISOString() })
+          .update({
+            owner: owner,
+            type,
+            name,
+            value: parseFloat(value),
+            ...situsPayload,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', editAsset.id)
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('assets')
-          .insert({ owner_id: user.id, owner: owner, type, name, value: parseFloat(value) })
+          .insert({
+            owner_id: user.id,
+            owner: owner,
+            type,
+            name,
+            value: parseFloat(value),
+            ...situsPayload,
+          })
         if (error) throw error
       }
       onSave()
@@ -193,7 +232,7 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
           <h2 className="text-base font-semibold text-neutral-900">{editAsset ? 'Edit Asset' : 'Add Asset'}</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
@@ -223,6 +262,38 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
             <label className="block text-sm font-medium text-neutral-700 mb-1">Current Value ($)</label>
             <input type="number" min="0" step="0.01" required value={value}
               onChange={(e) => setValue(e.target.value)} className={inputClass} placeholder="0.00" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Situs state (optional)</label>
+            <select
+              value={situsState}
+              onChange={(e) => setSitusState(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">— Not specified —</option>
+              {US_STATE_CODES.map((code) => (
+                <option key={code} value={code}>{code}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-neutral-500">
+              Legal location of the asset (e.g. real estate in NY). Used for multi-state estate tax calculations.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Situs asset type (optional)</label>
+            <select
+              value={situsAssetType}
+              onChange={(e) => setSitusAssetType(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">— Not specified —</option>
+              {SITUS_ASSET_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-neutral-500">
+              Used for multi-state estate tax calculations.
+            </p>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}

@@ -2,6 +2,9 @@ import type { AssetAllocationContext } from '@/components/AssetAllocationSummary
 import { detectConflicts } from '@/lib/conflict-detector'
 import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
+import { computeEstateTaxProjection } from '@/lib/calculations/estate-tax-projection'
+import type { YearRow } from '@/lib/calculations/projection-complete'
+import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '../_dashboard-client'
 
@@ -65,6 +68,33 @@ export default async function DashboardPage() {
   const finalRow = baseCaseRows[baseCaseRows.length - 1]
   const grossAtDeath = finalRow?.estate_incl_home ?? 0
 
+  const { data: sunsetTaxConfig } = await supabase
+    .from('federal_tax_config')
+    .select('*')
+    .eq('scenario_id', 'sunset_2026')
+    .eq('is_active', true)
+    .maybeSingle()
+
+  let sunsetFederalTax = 0
+  if (household && baseCaseRows.length > 0 && sunsetTaxConfig) {
+    const filingStatus =
+      household.filing_status === 'mfj' || household.filing_status === 'married_filing_jointly'
+        ? 'mfj'
+        : 'single'
+    const { s1_first } = computeEstateTaxProjection(
+      baseCaseRows as YearRow[],
+      sunsetTaxConfig,
+      filingStatus,
+      household.has_spouse ?? false,
+      household.person1_birth_year ?? 1960,
+      household.person1_longevity_age ?? 90,
+      household.person2_birth_year ?? null,
+      household.person2_longevity_age ?? null,
+      0,
+    )
+    sunsetFederalTax = s1_first.estate_tax_federal
+  }
+
   // Current law exemption from DB
   const { data: taxConfig } = await supabase
     .from('federal_tax_config')
@@ -75,6 +105,21 @@ export default async function DashboardPage() {
   const exemption = taxConfig?.estate_exemption_individual ?? 13_610_000
   const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
   const sunsetExemption = 7_000_000
+
+  const alertYear = finalRow?.year ?? currentYear
+  const { stateTax: sunsetAlertStateTax } = household
+    ? calculateStateEstateTax({
+        grossEstate: grossAtDeath,
+        stateCode: parseStateTaxCode(household.state_primary),
+        year: alertYear,
+        federalExemption: exemption,
+      })
+    : { stateTax: 0 }
+
+  const sunsetAlertHouseholdName =
+    [household?.person1_first_name, household?.person1_last_name].filter(Boolean).join(' ').trim() ||
+    (typeof household?.person1_name === 'string' ? household.person1_name.trim() : '') ||
+    undefined
   const costOfWaiting = Math.max(
     0,
     Math.round(Math.max(0, grossAtDeath - sunsetExemption) * topRate) -
@@ -116,6 +161,13 @@ export default async function DashboardPage() {
       costOfWaiting={costOfWaiting}
       conflictReport={conflictReport}
       isAdvisor={profile?.role === 'advisor'}
+      sunsetAlert={{
+        currentFederalTax: finalRow?.estate_tax_federal ?? 0,
+        sunsetFederalTax,
+        stateTax: sunsetAlertStateTax,
+        stateCode: household?.state_primary ?? undefined,
+        householdName: sunsetAlertHouseholdName,
+      }}
     />
   )
 }

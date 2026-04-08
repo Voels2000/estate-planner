@@ -114,5 +114,10 @@ export async function GET(request: NextRequest) {
 
   const rows = sequenceParam === 'S2_first' ? s2_first?.rows ?? [] : s1_first.rows
 
-  return NextResponse.json({ rows, summaries })
+  return NextResponse.json({
+    rows,
+    summaries,
+    federalExemption: activeConfig.estate_exemption_individual,
+    statePrimary: household.state_primary,
+  })
 }
