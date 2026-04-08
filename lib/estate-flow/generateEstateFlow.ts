@@ -184,6 +184,22 @@ export async function generateEstateFlow(
 
   const userId = household.owner_id
 
+  const scenarioMetaPromise = scenarioId
+    ? supabase
+        .from('projection_scenarios')
+        .select('id, label, status, calculated_at, outputs, outputs_s1_first')
+        .eq('id', scenarioId)
+        .single()
+    : Promise.resolve({ data: null, error: null })
+
+  const scenarioS2Promise = scenarioId
+    ? supabase
+        .from('projection_scenarios')
+        .select('id, outputs_s2_first')
+        .eq('id', scenarioId)
+        .single()
+    : Promise.resolve({ data: null, error: null })
+
   // Fetch remaining data in parallel
   const [
     assetsRes,
@@ -194,7 +210,8 @@ export async function generateEstateFlow(
     businessRes,
     beneficiariesRes,
     estateDocsRes,
-    scenarioRes,
+    scenarioMetaRes,
+    scenarioS2Res,
   ] = await Promise.all([
     supabase.from('assets').select('*').eq('owner_id', userId),
     supabase.from('real_estate').select('*').eq('owner_id', userId),
@@ -205,13 +222,8 @@ export async function generateEstateFlow(
     supabase.from('business_interests').select('*').eq('owner_id', userId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
-    scenarioId
-      ? supabase
-          .from('projection_scenarios')
-          .select('id, label, outputs, outputs_s1_first, outputs_s2_first, status, calculated_at')
-          .eq('id', scenarioId)
-          .single()
-      : Promise.resolve({ data: null, error: null }),
+    scenarioMetaPromise,
+    scenarioS2Promise,
   ])
 
   console.log('households error:', householdRes.error)
@@ -222,8 +234,9 @@ export async function generateEstateFlow(
   console.log('business_interests error:', businessRes.error)
   console.log('asset_beneficiaries error:', beneficiariesRes.error)
   console.log('estate_documents error:', estateDocsRes.error)
-  console.log('scenario error:', scenarioRes.error)
-  console.log('scenario data:', scenarioRes.data)
+  console.log('scenario meta error:', scenarioMetaRes.error)
+  console.log('scenario s2 error:', scenarioS2Res.error)
+  console.log('scenario meta data:', scenarioMetaRes.data)
 
   const assets = (assetsRes.data ?? []) as RawAsset[]
   const realEstate = (realEstateRes.data ?? []) as RawRealEstate[]
@@ -233,7 +246,9 @@ export async function generateEstateFlow(
   const businesses = (businessRes.data ?? []) as RawBusiness[]
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
-  const scenario = scenarioRes.data
+  const scenario = scenarioMetaRes.data
+    ? { ...scenarioMetaRes.data, outputs_s2_first: scenarioS2Res.data?.outputs_s2_first ?? null }
+    : null
   console.log('scenario keys:', Object.keys(scenario ?? {}))
   console.log('s2_first length:', scenario?.outputs_s2_first?.length)
 
