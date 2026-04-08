@@ -270,7 +270,7 @@ export default function EstateFlowDiagram({
   const svgRef = useRef<SVGSVGElement>(null)
 
   const load = useCallback(async () => {
-    console.log('Load called with householdId:', householdId, 'scenarioId:', scenarioId, 'deathView:', deathView)
+    console.log('Load called with deathView:', deathView)
     setLoading(true)
     setError(null)
     try {
@@ -345,7 +345,10 @@ export default function EstateFlowDiagram({
               {(['first_death', 'second_death'] as DeathView[]).map(v => (
                 <button
                   key={v}
-                  onClick={() => setDeathView(v)}
+                  onClick={() => {
+                    console.log('Toggle clicked:', v)
+                    setDeathView(v)
+                  }}
                   className={`px-3 py-1.5 transition-colors ${
                     deathView === v
                       ? 'bg-blue-600 text-white'
