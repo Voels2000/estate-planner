@@ -15,6 +15,7 @@ const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string
 
 interface Props {
   householdId: string
+  userId: string
   onSaved?: () => void
 }
 
@@ -31,7 +32,7 @@ const BLANK = {
   executor_notes: '',
 }
 
-export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) {
+export default function DigitalAssetIntakeForm({ householdId, userId, onSaved }: Props) {
   const [form, setForm] = useState(BLANK)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -48,6 +49,7 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
     const supabase = createClient()
     const { error } = await supabase.from('digital_assets').insert({
       household_id: householdId,
+      owner_id: userId,
       asset_type: form.asset_type,
       platform: form.platform,
       description: form.description,
