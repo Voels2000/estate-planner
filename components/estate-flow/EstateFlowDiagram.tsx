@@ -46,10 +46,13 @@ interface PositionedNode extends FlowNode {
   height: number
 }
 
-function layoutNodes(nodes: FlowNode[], edges: FlowEdge[]): PositionedNode[] {
-  const NODE_W = 180
+function layoutNodes(
+  nodes: FlowNode[],
+  edges: FlowEdge[],
+): { positioned: PositionedNode[]; svgWidth: number } {
+  const NODE_W = 160
   const NODE_H = 60
-  const H_GAP = 40
+  const H_GAP = 24
   const V_GAP = 80
 
   // Group nodes into layers by category
@@ -65,9 +68,12 @@ function layoutNodes(nodes: FlowNode[], edges: FlowEdge[]): PositionedNode[] {
     layers[node.category]?.push(node)
   }
 
+  // Calculate SVG width dynamically based on the widest layer
+  const maxLayerCount = Math.max(...Object.values(layers).map(l => l.length))
+  const SVG_W = Math.max(900, maxLayerCount * (NODE_W + H_GAP) + H_GAP * 2)
+
   const layerOrder = ['owner', 'asset', 'vehicle', 'tax', 'recipient']
   const positioned: PositionedNode[] = []
-  const SVG_W = 1100
 
   let y = 60
   for (const layerKey of layerOrder) {
@@ -84,7 +90,7 @@ function layoutNodes(nodes: FlowNode[], edges: FlowEdge[]): PositionedNode[] {
     y += NODE_H + V_GAP
   }
 
-  return positioned
+  return { positioned, svgWidth: SVG_W }
 }
 
 // ─── SVG helpers ──────────────────────────────────────────────────────────────
@@ -301,12 +307,11 @@ export default function EstateFlowDiagram({
     )
   }
 
-  const positioned = layoutNodes(graph.nodes, graph.edges)
+  const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes, graph.edges)
   const nodeMap = new Map(positioned.map(n => [n.id, n]))
 
   // SVG viewport
   const maxY = Math.max(...positioned.map(n => n.y + n.height)) + 80
-  const SVG_W = 1100
   const SVG_H = Math.max(maxY, 400)
 
   return (
@@ -438,15 +443,14 @@ export default function EstateFlowDiagram({
       </div>
 
       {/* SVG Diagram */}
-      <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm print:shadow-none w-full">
+      <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm print:shadow-none">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          width="100%"
-          height="100%"
-          style={{ minWidth: SVG_W, minHeight: SVG_H }}
-          preserveAspectRatio="xMidYMid meet"
+          width={SVG_W}
+          height={SVG_H}
           className="block"
+          style={{ minWidth: SVG_W }}
           role="img"
           aria-label="Estate flow diagram"
         >
