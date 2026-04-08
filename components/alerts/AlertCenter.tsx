@@ -104,6 +104,11 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   const [alerts, setAlerts] = useState<HouseholdAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [evaluating, setEvaluating] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const load = useCallback(async () => {
     const data = await loadHouseholdAlerts(householdId)
@@ -127,6 +132,8 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   const handleDismissed = (id: string) => {
     setAlerts(prev => prev.filter(a => a.id !== id))
   }
+
+  if (!mounted) return null
 
   if (loading || evaluating) {
     return (

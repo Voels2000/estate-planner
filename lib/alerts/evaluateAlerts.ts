@@ -70,14 +70,26 @@ export async function evaluateAlerts(
     assetsRes,
     estateDocsRes,
     beneficiariesRes,
-    domicileRes,
   ] = await Promise.all([
     supabase.from('households').select('*').eq('id', householdId).single(),
     supabase.from('assets').select('*').eq('owner_id', userId),
     supabase.from('estate_documents').select('*').eq('household_id', householdId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
-    supabase.from('domicile_analysis').select('*').eq('owner_id', userId).maybeSingle(),
   ])
+
+  let domicileRes = await supabase
+    .from('domicile_analysis')
+    .select('*')
+    .eq('household_id', householdId)
+    .maybeSingle()
+
+  if (domicileRes.error) {
+    domicileRes = await supabase
+      .from('domicile_analysis')
+      .select('*')
+      .eq('owner_id', householdId)
+      .maybeSingle()
+  }
 
   const household = householdRes.data
   const assets = assetsRes.data ?? []
@@ -106,7 +118,7 @@ export async function evaluateAlerts(
         const description = fillTemplate(rule.body_template, evaluation.context)
 
         // Upsert alert via security definer function
-        await supabase.rpc('upsert_household_alert', {
+        const { error: upsertError } = await supabase.rpc('upsert_household_alert', {
           p_household_id: householdId,
           p_rule_id: rule.id,
           p_alert_type: rule.alert_type,
@@ -117,6 +129,7 @@ export async function evaluateAlerts(
           p_action_label: rule.link_path ? 'Review now' : null,
           p_context_data: evaluation.context,
         })
+        if (upsertError) console.error('upsert_household_alert error:', upsertError)
         result.triggered++
       } else {
         // Resolve any existing alert for this rule
