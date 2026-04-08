@@ -345,7 +345,7 @@ export default function EstateFlowDiagram({
     <div className="space-y-4">
       {/* Controls */}
       {isAdvisor && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3" style={{ position: 'relative', zIndex: 10 }}>
           {/* Only show death sequence toggle for married households */}
           {graph?.summary && (graph.nodes.some(n => n.id === 'owner_p2') || hasSpouse) && (
             <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
@@ -493,7 +493,7 @@ export default function EstateFlowDiagram({
       {/* SVG Diagram */}
       <div
         className="border border-gray-200 rounded-xl bg-white shadow-sm print:shadow-none w-full overflow-x-auto"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={{ position: 'relative', zIndex: 1, WebkitOverflowScrolling: 'touch' }}
       >
         <svg
           ref={svgRef}
