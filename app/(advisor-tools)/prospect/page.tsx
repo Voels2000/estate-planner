@@ -1,4 +1,5 @@
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { ProspectSelects } from './_prospect-selects'
 
 const ASSET_MIDPOINTS: Record<string, number> = {
   sm: 3_000_000, md: 10_000_000, lg: 22_500_000, xl: 40_000_000,
@@ -76,39 +77,11 @@ export default async function ProspectPage({ searchParams }: Props) {
         <form method="GET" className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 space-y-5">
           <h2 className="text-sm font-semibold text-neutral-900">Prospect Profile</h2>
 
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1.5">State</label>
-            <select name="state" className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
-              {US_STATES.map(s => <option key={s} value={s} selected={s === state}>{s}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
-            <select name="range" className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
-              <option value="sm" selected={range === 'sm'}>$1M - $5M</option>
-              <option value="md" selected={range === 'md'}>$5M - $15M</option>
-              <option value="lg" selected={range === 'lg'}>$15M - $30M</option>
-              <option value="xl" selected={range === 'xl'}>$30M+</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1.5">Marital status</label>
-            <select name="marital" className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
-              <option value="single" selected={marital === 'single'}>Single</option>
-              <option value="married" selected={marital === 'married'}>Married</option>
-            </select>
-          </div>
+          <ProspectSelects state={state} range={range} marital={marital} age={age} usStates={US_STATES} />
 
           <div className="flex items-center gap-3">
             <input type="checkbox" name="biz" value="1" id="biz" defaultChecked={businessOwner} className="w-4 h-4 rounded border-neutral-300" />
             <label htmlFor="biz" className="text-sm text-neutral-700">Business owner</label>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1.5">Age: {age}</label>
-            <input type="range" name="age" min="35" max="85" defaultValue={age.toString()} className="w-full" />
           </div>
 
           <button type="submit" className="w-full py-2.5 bg-neutral-900 text-white text-sm font-medium rounded-xl hover:bg-neutral-800 transition">
