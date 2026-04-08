@@ -317,27 +317,33 @@ export async function generateEstateFlow(
 
   // ── 1. Owner node(s) ────────────────────────────────────────────────────────
   const person1Name = household.person1_name ?? 'Person 1'
+  const person2Name = household.person2_name ?? 'Spouse'
+
+  // For first_death: person1 is the deceased, person2 is surviving spouse
+  // For second_death: person2 is the deceased, person1 is the surviving spouse
+  const deceasedName = deathView === 'first_death' ? person1Name : person2Name
+  const survivorName = deathView === 'first_death' ? person2Name : person1Name
+
   nodes.push({
     id: 'owner_p1',
     type: 'person',
     category: 'owner',
-    label: person1Name,
-    technicalLabel: `${person1Name} (Estate Owner)`,
+    label: deceasedName,
+    technicalLabel: `${deceasedName} (Deceased)`,
     value: grossEstate,
-    metadata: { death_view: deathView },
+    metadata: { death_view: deathView, role: 'deceased' },
   })
 
-  const hasSpouse = household.has_spouse && household.person2_name
-  if (hasSpouse && deathView === 'second_death') {
-    const person2Name = household.person2_name ?? 'Spouse'
+  const hasSpouse = Boolean(household.has_spouse)
+  if (hasSpouse) {
     nodes.push({
       id: 'owner_p2',
       type: 'person',
       category: 'owner',
-      label: person2Name,
-      technicalLabel: `${person2Name} (Surviving Spouse)`,
-      value: grossEstate,
-      metadata: {},
+      label: survivorName,
+      technicalLabel: `${survivorName} (Surviving Spouse)`,
+      value: 0,
+      metadata: { role: 'surviving_spouse' },
     })
   }
 
