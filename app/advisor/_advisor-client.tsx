@@ -275,12 +275,6 @@ export default function AdvisorClientPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <a
-            href="/advisor/prospect"
-            className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition"
-          >
-            Prospect Mode
-          </a>
           <button
             onClick={() => setActiveTab('invite')}
             className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
