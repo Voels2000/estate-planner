@@ -108,6 +108,7 @@ export default async function AdvisorPage() {
       firm_name={firm_name}
       firm_id={firm_id}
       healthScoreMap={healthScoreMap}
+      householdIdMap={ownerToHousehold}
     />
   )
 }

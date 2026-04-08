@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 
 type AdvisorClient = {
   id: string
@@ -25,6 +26,7 @@ type Props = {
   advisorClients: AdvisorClient[]
   netWorthMap: Record<string, number>
   healthScoreMap?: Record<string, number>
+  householdIdMap?: Record<string, string>
   advisorId: string
   isFirmOwner?: boolean
   firm_name?: string | null
@@ -62,6 +64,7 @@ export default function AdvisorClientPage({
   advisorClients,
   netWorthMap,
   healthScoreMap = {},
+  householdIdMap = {},
   advisorId,
   isFirmOwner,
   firm_name,
@@ -380,6 +383,7 @@ export default function AdvisorClientPage({
                     <th className="px-6 py-3">Client</th>
                     <th className="px-6 py-3">Net Worth</th>
                     <th className="px-6 py-3">Health Score</th>
+                    <th className="px-6 py-3">Alerts</th>
                     <th className="px-6 py-3">Member Since</th>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3">Actions</th>
@@ -419,6 +423,13 @@ export default function AdvisorClientPage({
                               </span>
                             )
                           })()}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isPending || !c.client_id || !householdIdMap[c.client_id] ? (
+                            '—'
+                          ) : (
+                            <AdvisorAlertBadge householdId={householdIdMap[c.client_id]} />
+                          )}
                         </td>
                         <td className="px-6 py-4 text-neutral-500">
                           {c.profiles?.created_at ? formatDate(c.profiles.created_at) : '—'}

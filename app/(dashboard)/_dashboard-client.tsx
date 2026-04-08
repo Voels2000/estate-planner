@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import WhatHappensWalkthrough from '@/components/estate-flow/WhatHappensWalkthrough'
+import AlertCenter from '@/components/alerts/AlertCenter'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
@@ -173,6 +174,14 @@ export function DashboardClient({
             </Link>
           </div>
         </div>
+      )}
+
+      {householdId && userId && (
+        <AlertCenter
+          householdId={householdId}
+          userId={userId}
+          runEvaluation={true}
+        />
       )}
 
       {/* -- Action Items - conflict alerts (Sprint 58) ---------------------- */}
