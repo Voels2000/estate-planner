@@ -268,6 +268,7 @@ export default function EstateFlowDiagram({
   const [snapshotId, setSnapshotId] = useState<string | null>(null)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [shareLoading, setShareLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [annotation, setAnnotation] = useState('')
   const [showAnnotation, setShowAnnotation] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -399,10 +400,28 @@ export default function EstateFlowDiagram({
             onClick={e => (e.target as HTMLInputElement).select()}
           />
           <button
-            onClick={() => navigator.clipboard.writeText(shareUrl)}
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(shareUrl)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              } catch {
+                // Fallback for browsers that block clipboard API
+                const el = document.createElement('textarea')
+                el.value = shareUrl
+                el.style.position = 'fixed'
+                el.style.opacity = '0'
+                document.body.appendChild(el)
+                el.select()
+                document.execCommand('copy')
+                document.body.removeChild(el)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }
+            }}
             className="text-blue-600 hover:text-blue-800 text-xs font-medium"
           >
-            Copy
+            {copied ? '✓ Copied' : 'Copy'}
           </button>
         </div>
       )}
