@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +39,7 @@ export function LoginForm() {
         .single()
 
       if (profile?.is_superuser) {
-        router.push('/dashboard')
+        router.push(redirectTo)
         router.refresh()
         return
       }

@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/terms',
   '/api/',
+  '/share/',
 ]
 
 const ATTORNEY_ONLY_PATHS = [
@@ -69,7 +70,13 @@ export async function proxy(request: NextRequest) {
   // Check 1 — must be logged in
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return redirectPreservingCookies(request, '/login', supabaseResponse)
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirectTo', pathname)
+    const redirect = NextResponse.redirect(loginUrl)
+    for (const c of supabaseResponse.cookies.getAll()) {
+      redirect.cookies.set(c.name, c.value)
+    }
+    return redirect
   }
 
   const { data: profile } = await supabase
