@@ -193,11 +193,7 @@ export async function generateEstateFlow(
     : Promise.resolve({ data: null, error: null })
 
   const scenarioS2Promise = scenarioId
-    ? supabase
-        .from('projection_scenarios')
-        .select('id, outputs_s2_first')
-        .eq('id', scenarioId)
-        .single()
+    ? supabase.rpc('get_scenario_s2_outputs', { p_scenario_id: scenarioId })
     : Promise.resolve({ data: null, error: null })
 
   // Fetch remaining data in parallel
@@ -247,10 +243,14 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
   const scenario = scenarioMetaRes.data
-    ? { ...scenarioMetaRes.data, outputs_s2_first: scenarioS2Res.data?.outputs_s2_first ?? null }
+    ? {
+        ...scenarioMetaRes.data,
+        outputs_s2_first: scenarioS2Res.data ?? null,
+      }
     : null
   console.log('scenario keys:', Object.keys(scenario ?? {}))
   console.log('s2_first length:', scenario?.outputs_s2_first?.length)
+  console.log('s2 via RPC length:', Array.isArray(scenarioS2Res.data) ? scenarioS2Res.data.length : 'not array')
 
   // Pull tax amounts from scenario
   const rawOutputs = deathView === 'second_death'

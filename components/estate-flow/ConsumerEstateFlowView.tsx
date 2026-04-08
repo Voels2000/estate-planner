@@ -8,7 +8,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Plain-English flow card ──────────────────────────────────────────────────
@@ -265,8 +264,6 @@ export default function ConsumerEstateFlowView({ householdId, scenarioId }: Prop
           <div className="text-base font-semibold text-amber-800">{fmt(graph.summary.probate_assets_value)}</div>
         </div>
       </div>
-
-      <DisclaimerBanner />
     </div>
   )
 }
