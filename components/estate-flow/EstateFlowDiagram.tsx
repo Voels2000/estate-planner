@@ -442,9 +442,9 @@ export default function EstateFlowDiagram({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          width="100%"
+          width={SVG_W}
           height={SVG_H}
-          className="block"
+          className="block min-w-[1100px]"
           role="img"
           aria-label="Estate flow diagram"
         >
