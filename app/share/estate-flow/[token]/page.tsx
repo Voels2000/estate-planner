@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation'
 import SharePageClient from './SharePageClient'
 
 interface Props {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
 export default async function EstateFlowSharePage({ params }: Props) {
-  const { token } = params
+  const { token } = await params
 
   console.log('Share page loaded, token:', token)
 
