@@ -143,6 +143,9 @@ export default function ProspectModePage() {
   const [calculated, setCalculated] = useState(false)
 
   const handleCalculate = () => {
+    console.log('Calculate clicked, inputs.assetRange:', inputs.assetRange)
+    console.log('ASSET_MIDPOINTS keys:', Object.keys(ASSET_MIDPOINTS))
+    console.log('Lookup result:', ASSET_MIDPOINTS[inputs.assetRange])
     setResult(calculateProspectResult(inputs))
     setCalculated(true)
   }
@@ -190,7 +193,10 @@ export default function ProspectModePage() {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setInputs(p => ({ ...p, assetRange: r }))}
+                  onClick={() => {
+                    console.log('Asset range clicked:', r)
+                    setInputs(p => ({ ...p, assetRange: r }))
+                  }}
                   className={`px-3 py-2 rounded-lg border text-sm font-medium transition ${
                     inputs.assetRange === r
                       ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
