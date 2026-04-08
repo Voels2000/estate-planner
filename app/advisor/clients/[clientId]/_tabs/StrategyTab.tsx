@@ -269,8 +269,12 @@ export default function StrategyTab({
         />
       </div>
 
-      {/* Debug - remove after Sprint 64 */}
-      {console.log('StateTaxPanel gate:', { strategyMeta, currentSummary: currentSummary?.gross_estate })}
+      {strategyMeta === null && (
+        <div className="text-xs text-red-500">DEBUG: strategyMeta is null</div>
+      )}
+      {currentSummary === undefined && (
+        <div className="text-xs text-red-500">DEBUG: currentSummary is undefined</div>
+      )}
 
       {/* ── State estate tax (Sprint 64) ── */}
       {strategyMeta && currentSummary && (
