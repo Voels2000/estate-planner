@@ -98,12 +98,13 @@ export async function proxy(request: NextRequest) {
   // Check 2 — attorney route guards only
   const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
   const isAdvisorPath = pathname.startsWith('/advisor')
+  const isAdvisorToolPath = pathname.startsWith('/prospect')
 
-  if (isAttorneyPath || isAdvisorPath) {
+  if (isAttorneyPath || isAdvisorPath || isAdvisorToolPath) {
     const role = profile?.role
 
     // Attorneys can only access attorney routes
-    if (role === 'attorney' && isAdvisorPath) {
+    if (role === 'attorney' && (isAdvisorPath || isAdvisorToolPath)) {
       return redirectPreservingCookies(request, '/attorney', supabaseResponse)
     }
 
