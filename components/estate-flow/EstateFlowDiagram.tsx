@@ -288,7 +288,9 @@ export default function EstateFlowDiagram({
     }
   }, [householdId, scenarioId, deathView, supabase])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [householdId, scenarioId, deathView])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return
