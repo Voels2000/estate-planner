@@ -1,7 +1,8 @@
 // lib/estate-flow/generateEstateFlow.ts
 // Sprint 60 — Estate Flow Visualizer engine
 // Produces a structured node/edge graph consumed by the diagram renderer.
-// Reads from: assets, real_estate, digital_assets, trusts, insurance_policies,
+// Reads from: assets, real_estate, digital_assets, trusts,
+//             (insurance skipped — no client table in env),
 //             business_interests, asset_beneficiaries, estate_documents,
 //             households, projection_scenarios
 
@@ -199,7 +200,8 @@ export async function generateEstateFlow(
     supabase.from('real_estate').select('*').eq('owner_id', userId),
     supabase.from('digital_assets').select('*').eq('household_id', householdId),
     supabase.from('trusts').select('*').eq('owner_id', userId),
-    supabase.from('insurance_policies').select('*').eq('owner_id', userId),
+    // insurance_policies table not present — skip
+    Promise.resolve({ data: [], error: null }),
     supabase.from('business_interests').select('*').eq('owner_id', userId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
@@ -217,7 +219,6 @@ export async function generateEstateFlow(
   console.log('real_estate error:', realEstateRes.error)
   console.log('digital_assets error:', digitalAssetsRes.error)
   console.log('trusts error:', trustsRes.error)
-  console.log('insurance_policies error:', insuranceRes.error)
   console.log('business_interests error:', businessRes.error)
   console.log('asset_beneficiaries error:', beneficiariesRes.error)
   console.log('estate_documents error:', estateDocsRes.error)
@@ -233,13 +234,16 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
   const scenario = scenarioRes.data
-
-  console.log('scenario keys:', scenario ? Object.keys(scenario) : 'null')
+  console.log('scenario keys:', Object.keys(scenario ?? {}))
   console.log('s2_first length:', scenario?.outputs_s2_first?.length)
 
   // Pull tax amounts from scenario
-  const rawOutputs = scenario?.outputs_s1_first ?? scenario?.outputs ?? []
+  const rawOutputs = deathView === 'second_death'
+    ? (scenario?.outputs_s2_first ?? scenario?.outputs ?? [])
+    : (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
   const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
+
+  console.log('deathView:', deathView, 'rawOutputs length:', rawOutputs?.length)
   const lastOutput = outputs.length > 0 ? outputs[outputs.length - 1] : null
 
   console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)
