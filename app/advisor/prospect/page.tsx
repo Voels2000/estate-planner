@@ -10,7 +10,7 @@ import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type AssetRange = '$1M–$5M' | '$5M–$15M' | '$15M–$30M' | '$30M+'
+type AssetRange = '$1M-$5M' | '$5M-$15M' | '$15M-$30M' | '$30M+'
 type MaritalStatus = 'single' | 'married'
 
 interface ProspectInputs {
@@ -50,9 +50,9 @@ const STATE_TOP_RATES: Record<string, number> = {
 // ─── Asset range midpoints ────────────────────────────────────────────────────
 
 const ASSET_MIDPOINTS: Record<AssetRange, number> = {
-  '$1M–$5M': 3_000_000,
-  '$5M–$15M': 10_000_000,
-  '$15M–$30M': 22_500_000,
+  '$1M-$5M': 3_000_000,
+  '$5M-$15M': 10_000_000,
+  '$15M-$30M': 22_500_000,
   '$30M+': 40_000_000,
 }
 
@@ -134,7 +134,7 @@ const US_STATES = [
 export default function ProspectModePage() {
   const [inputs, setInputs] = useState<ProspectInputs>({
     state: 'CA',
-    assetRange: '$5M–$15M',
+    assetRange: '$5M-$15M',
     maritalStatus: 'married',
     businessOwner: false,
     approximateAge: 55,
@@ -186,7 +186,7 @@ export default function ProspectModePage() {
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
             <div className="grid grid-cols-2 gap-2">
-              {(['$1M–$5M', '$5M–$15M', '$15M–$30M', '$30M+'] as AssetRange[]).map(r => (
+              {(['$1M-$5M', '$5M-$15M', '$15M-$30M', '$30M+'] as AssetRange[]).map(r => (
                 <button
                   key={r}
                   type="button"
