@@ -254,7 +254,7 @@ export async function generateEstateFlow(
 
   // Pull tax amounts from scenario
   const rawOutputs = deathView === 'second_death'
-    ? (scenario?.outputs_s2_first ?? scenario?.outputs ?? [])
+    ? (scenario?.outputs_s2_first ?? scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
     : (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
   const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
 

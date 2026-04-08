@@ -9,7 +9,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { saveEstateFlowSnapshot, generateShareLink, loadSnapshotHistory } from '@/lib/estate-flow/snapshotFlow'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Color palette ────────────────────────────────────────────────────────────
@@ -327,6 +326,7 @@ export default function EstateFlowDiagram({
 
   const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes, graph.edges)
   const nodeMap = new Map(positioned.map(n => [n.id, n]))
+  const hasSpouse = graph.nodes.some(n => n.id === 'owner_p2')
 
   // SVG viewport
   const maxY = Math.max(...positioned.map(n => n.y + n.height)) + 80
@@ -337,22 +337,24 @@ export default function EstateFlowDiagram({
       {/* Controls */}
       {isAdvisor && (
         <div className="flex flex-wrap items-center gap-3">
-          {/* Death view toggle */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-            {(['first_death', 'second_death'] as DeathView[]).map(v => (
-              <button
-                key={v}
-                onClick={() => setDeathView(v)}
-                className={`px-3 py-1.5 transition-colors ${
-                  deathView === v
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {v === 'first_death' ? 'First death' : 'Second death'}
-              </button>
-            ))}
-          </div>
+          {/* Only show death sequence toggle for married households */}
+          {graph?.summary && (graph.nodes.some(n => n.id === 'owner_p2') || hasSpouse) && (
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+              {(['first_death', 'second_death'] as DeathView[]).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setDeathView(v)}
+                  className={`px-3 py-1.5 transition-colors ${
+                    deathView === v
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {v === 'first_death' ? 'First death' : 'Second death'}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Labels toggle */}
           <button
@@ -512,8 +514,6 @@ export default function EstateFlowDiagram({
         {deathView === 'first_death' ? 'First death view' : 'Second death view'} ·{' '}
         Generated {new Date(graph.generated_at).toLocaleDateString()}
       </p>
-
-      <DisclaimerBanner />
     </div>
   )
 }
