@@ -40,7 +40,7 @@ export default async function DigitalAssetsPage() {
         </div>
 
         <DigitalAssetList assets={assets ?? []} householdId={household.id} />
-        <DigitalAssetIntakeForm householdId={household.id} userId={user.id} />
+        <DigitalAssetIntakeForm householdId={household.id} />
       </main>
     </div>
   )

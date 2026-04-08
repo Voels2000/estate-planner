@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createDigitalAsset } from '@/app/actions/beneficiary-grant-actions'
 import type { DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string }[] = [
@@ -15,7 +15,6 @@ const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string
 
 interface Props {
   householdId: string
-  userId: string
   onSaved?: () => void
 }
 
@@ -32,7 +31,7 @@ const BLANK = {
   executor_notes: '',
 }
 
-export default function DigitalAssetIntakeForm({ householdId, userId, onSaved }: Props) {
+export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) {
   const [form, setForm] = useState(BLANK)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -46,13 +45,11 @@ export default function DigitalAssetIntakeForm({ householdId, userId, onSaved }:
     setSaving(true)
     setMessage(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.from('digital_assets').insert({
+    const result = await createDigitalAsset({
       household_id: householdId,
-      owner_id: userId,
       asset_type: form.asset_type,
       platform: form.platform,
-      description: form.description,
+      description: form.description || null,
       estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
       wallet_address: form.wallet_address || null,
       account_username: form.account_username || null,
@@ -64,8 +61,8 @@ export default function DigitalAssetIntakeForm({ householdId, userId, onSaved }:
 
     setSaving(false)
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.error ?? 'Failed to save digital asset.' })
     } else {
       setMessage({ type: 'success', text: 'Digital asset saved.' })
       setForm(BLANK)
