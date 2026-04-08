@@ -103,7 +103,7 @@ async function sendGrantInviteEmail(grant: BeneficiaryAccessGrant): Promise<void
 
   try {
     await resend.emails.send({
-      from: 'EstatePlanner <noreply@rolobe.resend.app>',
+      from: 'EstatePlanner <noreply@mywealthmaps.com>',
       to: grant.grantee_email,
       subject: 'Your estate plan access has been shared with you',
       html: `
