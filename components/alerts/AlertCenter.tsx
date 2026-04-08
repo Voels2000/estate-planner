@@ -104,11 +104,6 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   const [alerts, setAlerts] = useState<HouseholdAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [evaluating, setEvaluating] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const load = useCallback(async () => {
     const data = await loadHouseholdAlerts(householdId)
@@ -133,22 +128,7 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
     setAlerts(prev => prev.filter(a => a.id !== id))
   }
 
-  if (!mounted) return null
-
-  if (loading || evaluating) {
-    return (
-      <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-        <div className="flex items-center gap-2 text-sm text-neutral-400">
-          <div className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-400 rounded-full animate-spin" />
-          {evaluating ? 'Checking your estate plan…' : 'Loading alerts…'}
-        </div>
-      </div>
-    )
-  }
-
   console.log('AlertCenter state:', { loading, evaluating, alertCount: alerts.length, alerts })
-
-  if (alerts.length === 0) return null
 
   // Group by severity
   const highAlerts = alerts.filter(a => a.severity === 'high')
@@ -159,47 +139,58 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   const highCount = highAlerts.length
 
   return (
-    <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-neutral-900">Estate Planning Alerts</h2>
-          {highCount > 0 && (
-            <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-              {highCount} high priority
-            </span>
-          )}
-          {highCount === 0 && totalCount > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-              {totalCount} item{totalCount !== 1 ? 's' : ''}
-            </span>
-          )}
+    <div suppressHydrationWarning>
+      {loading || evaluating ? (
+        <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 text-sm text-neutral-400">
+            <div className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-400 rounded-full animate-spin" />
+            {evaluating ? 'Checking your estate plan…' : 'Loading alerts…'}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="text-xs text-neutral-400 hover:text-neutral-600"
-        >
-          Refresh
-        </button>
-      </div>
+      ) : alerts.length === 0 ? null : (
+        <div className="mb-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-neutral-900">Estate Planning Alerts</h2>
+              {highCount > 0 && (
+                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                  {highCount} high priority
+                </span>
+              )}
+              {highCount === 0 && totalCount > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                  {totalCount} item{totalCount !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={load}
+              className="text-xs text-neutral-400 hover:text-neutral-600"
+            >
+              Refresh
+            </button>
+          </div>
 
-      {/* Alerts */}
-      <div className="p-4 space-y-3">
-        {[...highAlerts, ...mediumAlerts, ...lowAlerts].map(alert => (
-          <AlertCard
-            key={alert.id}
-            alert={alert}
-            userId={userId}
-            onDismissed={handleDismissed}
-          />
-        ))}
-      </div>
+          {/* Alerts */}
+          <div className="p-4 space-y-3">
+            {[...highAlerts, ...mediumAlerts, ...lowAlerts].map(alert => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                userId={userId}
+                onDismissed={handleDismissed}
+              />
+            ))}
+          </div>
 
-      {/* Footer */}
-      <div className="px-6 py-3 border-t border-neutral-100 text-xs text-neutral-400">
-        High and warning alerts cannot be dismissed — they resolve automatically when the underlying issue is corrected.
-      </div>
+          {/* Footer */}
+          <div className="px-6 py-3 border-t border-neutral-100 text-xs text-neutral-400">
+            High and warning alerts cannot be dismissed — they resolve automatically when the underlying issue is corrected.
+          </div>
+        </div>
+      )}
     </div>
   )
 }
