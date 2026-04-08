@@ -438,13 +438,15 @@ export default function EstateFlowDiagram({
       </div>
 
       {/* SVG Diagram */}
-      <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm print:shadow-none">
+      <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm print:shadow-none w-full">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          width={SVG_W}
-          height={SVG_H}
-          className="block min-w-[1100px]"
+          width="100%"
+          height="100%"
+          style={{ minWidth: SVG_W, minHeight: SVG_H }}
+          preserveAspectRatio="xMidYMid meet"
+          className="block"
           role="img"
           aria-label="Estate flow diagram"
         >
