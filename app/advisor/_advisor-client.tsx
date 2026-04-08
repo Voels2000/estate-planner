@@ -274,12 +274,20 @@ export default function AdvisorClientPage({
             {incomingRequests.length > 0 ? ` · ${incomingRequests.length} incoming request${incomingRequests.length !== 1 ? 's' : ''}` : ''}
           </p>
         </div>
-        <button
-          onClick={() => setActiveTab('invite')}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-        >
-          + Add Client
-        </button>
+        <div className="flex items-center gap-3">
+          <a
+            href="/advisor/prospect"
+            className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition"
+          >
+            Prospect Mode
+          </a>
+          <button
+            onClick={() => setActiveTab('invite')}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+          >
+            + Add Client
+          </button>
+        </div>
       </div>
 
       {showFirmBanner && isFirmOwner === true && (
@@ -309,6 +317,13 @@ export default function AdvisorClientPage({
             {' '}{label}
           </button>
         ))}
+        <a
+          href="/advisor/analytics"
+          className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-700 whitespace-nowrap"
+        >
+          <span suppressHydrationWarning>📊</span>
+          {' '}Analytics
+        </a>
       </div>
 
       {/* Clients Tab */}

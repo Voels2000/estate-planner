@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
+import MeetingPrep from '@/components/advisor/MeetingPrep'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -128,6 +129,9 @@ export default function StrategyTab({
   console.log('EstateFlowDiagram scenarioId:', household?.base_case_scenario_id)
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)
+  const clientName = hasSpouse
+    ? `${person1Name} & ${person2Name ?? 'Spouse'}`
+    : person1Name
 
   if (isLoading) {
     return (
@@ -204,13 +208,20 @@ export default function StrategyTab({
             </button>
           </div>
         )}
-        <button
-          onClick={handleGenerateBaseCase}
-          disabled={isGenerating}
-          className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium hover:bg-slate-200 disabled:opacity-50 transition"
-        >
-          {isGenerating ? 'Recalculating...' : '↻ Recalculate'}
-        </button>
+        <div className="flex items-center gap-2">
+          <MeetingPrep
+            clientId={clientId}
+            householdId={householdId}
+            clientName={clientName}
+          />
+          <button
+            onClick={handleGenerateBaseCase}
+            disabled={isGenerating}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium hover:bg-slate-200 disabled:opacity-50 transition"
+          >
+            {isGenerating ? 'Recalculating...' : '↻ Recalculate'}
+          </button>
+        </div>
       </div>
 
       {error && (
