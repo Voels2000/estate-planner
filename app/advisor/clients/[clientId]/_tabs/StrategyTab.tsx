@@ -340,15 +340,13 @@ export default function StrategyTab({
         <div className="px-5 pt-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-4">Estate Flow Diagram</h3>
         </div>
-        <div className="-mx-4 sm:-mx-6 lg:-mx-8 px-0 overflow-x-auto pb-5">
-          <div className="min-w-[1100px] px-4">
-            <EstateFlowDiagram
-              householdId={householdId}
-              scenarioId={household?.base_case_scenario_id ?? null}
-              advisorId={advisorId}
-              isAdvisor={true}
-            />
-          </div>
+        <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] px-6 overflow-x-auto pb-5">
+          <EstateFlowDiagram
+            householdId={householdId}
+            scenarioId={household?.base_case_scenario_id ?? null}
+            advisorId={advisorId}
+            isAdvisor={true}
+          />
         </div>
       </div>
 
