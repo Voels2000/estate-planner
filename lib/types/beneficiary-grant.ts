@@ -46,11 +46,11 @@ export interface CreateGrantPayload {
 
 // Digital Asset types (extends Sprint 57 digital_assets table)
 export type DigitalAssetType =
-  | 'crypto'
+  | 'cryptocurrency'
   | 'nft'
-  | 'online_account'
+  | 'financial_account'
   | 'domain'
-  | 'digital_media'
+  | 'streaming'
 
 export interface DigitalAsset {
   id: string

@@ -4,19 +4,19 @@
 import type { DigitalAsset, DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPE_LABELS: Record<DigitalAssetType, string> = {
-  crypto: 'Cryptocurrency',
-  nft: 'NFT / Digital Collectible',
-  online_account: 'Online Account',
+  cryptocurrency: 'Cryptocurrency',
+  nft: 'NFT / Digital Art',
+  financial_account: 'Online Account',
   domain: 'Domain Name',
-  digital_media: 'Digital Media / Subscriptions',
+  streaming: 'Digital Media',
 }
 
 const ASSET_TYPE_ICONS: Record<DigitalAssetType, string> = {
-  crypto: 'BTC',
+  cryptocurrency: 'BTC',
   nft: 'ART',
-  online_account: 'ACC',
+  financial_account: 'ACC',
   domain: 'WEB',
-  digital_media: 'MED',
+  streaming: 'MED',
 }
 
 interface Props {

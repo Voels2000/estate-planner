@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import type { DigitalAsset, DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPE_ICONS: Record<DigitalAssetType, string> = {
-  crypto: 'BTC',
+  cryptocurrency: 'BTC',
   nft: 'ART',
-  online_account: 'ACC',
+  financial_account: 'ACC',
   domain: 'WEB',
-  digital_media: 'MED',
+  streaming: 'MED',
 }
 
 interface Props {

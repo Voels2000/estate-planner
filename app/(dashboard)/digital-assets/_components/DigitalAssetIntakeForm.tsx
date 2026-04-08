@@ -6,11 +6,11 @@ import { createDigitalAsset } from '@/app/actions/beneficiary-grant-actions'
 import type { DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string }[] = [
-  { value: 'crypto', label: 'Cryptocurrency', description: 'Bitcoin, Ethereum, other tokens' },
-  { value: 'nft', label: 'NFT / Digital Collectible', description: 'Non-fungible tokens, digital art' },
-  { value: 'online_account', label: 'Online Account', description: 'Bank, brokerage, email, social media' },
+  { value: 'cryptocurrency', label: 'Cryptocurrency', description: 'Bitcoin, Ethereum, other tokens' },
+  { value: 'nft', label: 'NFT / Digital Art', description: 'Non-fungible tokens, digital collectibles' },
+  { value: 'financial_account', label: 'Online Account', description: 'Bank, brokerage, email, social media' },
   { value: 'domain', label: 'Domain Name', description: 'Registered web domains' },
-  { value: 'digital_media', label: 'Digital Media', description: 'Streaming subscriptions, purchased media' },
+  { value: 'streaming', label: 'Digital Media', description: 'Streaming subscriptions, purchased media' },
 ]
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
 }
 
 const BLANK = {
-  asset_type: 'crypto' as DigitalAssetType,
+  asset_type: 'cryptocurrency' as DigitalAssetType,
   platform: '',
   description: '',
   estimated_value: '',
@@ -101,7 +101,9 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
           value={form.platform}
           onChange={(e) => update('platform', e.target.value)}
           placeholder={
-            form.asset_type === 'crypto' ? 'e.g. Coinbase, Ledger wallet' : 'e.g. Chase, Gmail, GoDaddy'
+            form.asset_type === 'cryptocurrency'
+              ? 'e.g. Coinbase, Ledger wallet'
+              : 'e.g. Chase, Gmail, GoDaddy'
           }
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -129,7 +131,7 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
         />
       </Field>
 
-      {form.asset_type === 'crypto' && (
+      {form.asset_type === 'cryptocurrency' && (
         <Field label="Wallet Address / Identifier">
           <input
             value={form.wallet_address}
@@ -140,7 +142,7 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
         </Field>
       )}
 
-      {(form.asset_type === 'online_account' || form.asset_type === 'domain') && (
+      {(form.asset_type === 'financial_account' || form.asset_type === 'domain') && (
         <Field label="Username / Account ID">
           <input
             value={form.account_username}
