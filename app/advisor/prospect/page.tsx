@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -132,20 +132,32 @@ const US_STATES = [
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ProspectModePage() {
-  const [inputs, setInputs] = useState<ProspectInputs>({
-    state: 'CA',
-    assetRange: '$5M-$15M',
-    maritalStatus: 'married',
-    businessOwner: false,
-    approximateAge: 55,
-  })
+  const assetRangeRef = useRef<HTMLSelectElement>(null)
   const [result, setResult] = useState<ProspectResult | null>(null)
+  const [calculatedInputs, setCalculatedInputs] = useState<ProspectInputs | null>(null)
   const [calculated, setCalculated] = useState(false)
 
   const handleCalculate = () => {
-    console.log('Calculate clicked, inputs.assetRange:', inputs.assetRange)
-    console.log('ASSET_MIDPOINTS keys:', Object.keys(ASSET_MIDPOINTS))
-    console.log('Lookup result:', ASSET_MIDPOINTS[inputs.assetRange])
+    const assetRange = (assetRangeRef.current?.value ??
+      (document.getElementById('assetRange') as HTMLSelectElement).value) as AssetRange
+    const maritalStatus = (document.getElementById('maritalStatus') as HTMLSelectElement).value as MaritalStatus
+    const businessOwner = (document.getElementById('businessOwner') as HTMLInputElement).checked
+    const state = (document.getElementById('state') as HTMLSelectElement).value
+    const age = parseInt((document.getElementById('age') as HTMLInputElement).value)
+
+    console.log('Calculate clicked:', { assetRange, maritalStatus, state })
+
+    const amount = ASSET_MIDPOINTS[assetRange]
+    console.log('Asset midpoint:', amount)
+
+    const inputs: ProspectInputs = {
+      assetRange,
+      maritalStatus,
+      businessOwner,
+      state,
+      approximateAge: age,
+    }
+    setCalculatedInputs(inputs)
     setResult(calculateProspectResult(inputs))
     setCalculated(true)
   }
@@ -175,8 +187,8 @@ export default function ProspectModePage() {
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">State</label>
             <select
-              value={inputs.state}
-              onChange={e => setInputs(p => ({ ...p, state: e.target.value }))}
+              defaultValue="CA"
+              id="state"
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
             >
               {US_STATES.map(s => (
@@ -189,11 +201,9 @@ export default function ProspectModePage() {
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
             <select
-              value={inputs.assetRange}
-              onChange={e => {
-                console.log('Asset range changed:', e.target.value)
-                setInputs(p => ({ ...p, assetRange: e.target.value as AssetRange }))
-              }}
+              defaultValue="$5M-$15M"
+              id="assetRange"
+              ref={assetRangeRef}
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
             >
               <option value="$1M-$5M">$1M – $5M</option>
@@ -207,8 +217,8 @@ export default function ProspectModePage() {
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Marital status</label>
             <select
-              value={inputs.maritalStatus}
-              onChange={e => setInputs(p => ({ ...p, maritalStatus: e.target.value as MaritalStatus }))}
+              defaultValue="married"
+              id="maritalStatus"
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
             >
               <option value="single">Single</option>
@@ -221,8 +231,7 @@ export default function ProspectModePage() {
             <input
               type="checkbox"
               id="businessOwner"
-              checked={inputs.businessOwner}
-              onChange={e => setInputs(p => ({ ...p, businessOwner: e.target.checked }))}
+              defaultChecked={false}
               className="w-4 h-4 rounded border-neutral-300 text-indigo-600"
             />
             <label htmlFor="businessOwner" className="text-sm text-neutral-700">Business owner</label>
@@ -231,14 +240,14 @@ export default function ProspectModePage() {
           {/* Age */}
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">
-              Approximate age: {inputs.approximateAge}
+              Approximate age
             </label>
             <input
               type="range"
+              id="age"
               min="35"
               max="85"
-              value={inputs.approximateAge}
-              onChange={e => setInputs(p => ({ ...p, approximateAge: parseInt(e.target.value) }))}
+              defaultValue="55"
               className="w-full"
             />
             <div className="flex justify-between text-xs text-neutral-400 mt-1">
@@ -289,7 +298,7 @@ export default function ProspectModePage() {
                 )}
                 {result.state_tax_estimate > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">{inputs.state} state estate tax</span>
+                    <span className="text-neutral-600">{calculatedInputs?.state ?? 'Selected'} state estate tax</span>
                     <span className="font-semibold text-amber-700">{fmt(result.state_tax_estimate)}</span>
                   </div>
                 )}
