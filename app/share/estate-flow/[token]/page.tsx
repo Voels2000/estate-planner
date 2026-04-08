@@ -7,55 +7,40 @@ interface Props {
 }
 
 export default async function EstateFlowSharePage({ params }: Props) {
+  const supabase = await createClient()
   const { token } = await params
 
-  console.log('Share page loaded, token:', token)
+  // Single RPC that validates the link and returns snapshot data
+  const { data: flowData, error } = await supabase
+    .rpc('get_snapshot_for_share_link', { p_token: token })
 
-  const supabase = await createClient()
+  console.log('RPC result:', JSON.stringify({ hasData: !!flowData, error }))
 
-  const { data: link, error } = await supabase
+  if (error || !flowData) return notFound()
+
+  // Still fetch household name for display
+  const { data: linkRow } = await supabase
     .from('estate_flow_share_links')
-    .select('*')
+    .select('household_id, expires_at, is_revoked')
     .eq('token', token)
     .single()
 
-  console.log('Link query result:', JSON.stringify({ link: !!link, error }))
-
-  if (error || !link) {
-    console.log('Not found — returning 404')
-    return notFound()
-  }
-
-  if (link.is_revoked) {
-    return <ExpiredPage message="This estate planning summary is no longer available." />
-  }
-
-  if (new Date(link.expires_at) < new Date()) {
+  if (!linkRow || linkRow.is_revoked) return notFound()
+  if (new Date(linkRow.expires_at) < new Date()) {
     return <ExpiredPage message="This link has expired." />
   }
-
-  // Fetch snapshot separately
-  const { data: snapshot, error: snapError } = await supabase
-    .from('estate_flow_snapshots')
-    .select('flow_data')
-    .eq('id', link.snapshot_id)
-    .single()
-
-  console.log('Snapshot query result:', JSON.stringify({ snapshot: !!snapshot, snapError }))
-
-  if (!snapshot) return notFound()
 
   const { data: household } = await supabase
     .from('households')
     .select('name, person1_name')
-    .eq('id', link.household_id)
+    .eq('id', linkRow.household_id)
     .single()
 
   return (
     <SharePageClient
-      flowData={snapshot.flow_data}
+      flowData={flowData}
       householdName={household?.person1_name ?? household?.name ?? 'Estate Plan'}
-      expiresAt={link.expires_at}
+      expiresAt={linkRow.expires_at}
       token={token}
     />
   )
