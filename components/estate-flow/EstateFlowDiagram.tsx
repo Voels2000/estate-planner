@@ -256,6 +256,7 @@ export default function EstateFlowDiagram({
   isAdvisor = false,
   onShareLinkGenerated,
 }: Props) {
+  console.log('isAdvisor prop:', isAdvisor)
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
@@ -348,22 +349,38 @@ export default function EstateFlowDiagram({
           {/* Only show death sequence toggle for married households */}
           {graph?.summary && (graph.nodes.some(n => n.id === 'owner_p2') || hasSpouse) && (
             <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-              {(['first_death', 'second_death'] as DeathView[]).map(v => (
-                <button
-                  key={v}
-                  onClick={() => {
-                    console.log('Toggle clicked:', v)
-                    setDeathView(v)
-                  }}
-                  className={`px-3 py-1.5 transition-colors ${
-                    deathView === v
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {v === 'first_death' ? 'First death' : 'Second death'}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  console.log('FIRST DEATH CLICKED')
+                  setDeathView('first_death')
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: deathView === 'first_death' ? '#2563EB' : '#fff',
+                  color: deathView === 'first_death' ? '#fff' : '#374151',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Michael dies first
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  console.log('SECOND DEATH CLICKED')
+                  setDeathView('second_death')
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: deathView === 'second_death' ? '#2563EB' : '#fff',
+                  color: deathView === 'second_death' ? '#fff' : '#374151',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Sarah dies first
+              </button>
             </div>
           )}
 
