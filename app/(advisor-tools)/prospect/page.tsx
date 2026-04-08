@@ -84,9 +84,6 @@ export default async function ProspectPage({ searchParams }: Props) {
             <label htmlFor="biz" className="text-sm text-neutral-700">Business owner</label>
           </div>
 
-          <button type="submit" className="w-full py-2.5 bg-neutral-900 text-white text-sm font-medium rounded-xl hover:bg-neutral-800 transition">
-            Generate Summary
-          </button>
         </form>
 
         {result && (
