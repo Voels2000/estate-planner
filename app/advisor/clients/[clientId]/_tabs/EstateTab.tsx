@@ -5,6 +5,7 @@
 import { ClientViewShellProps } from '../_client-view-shell'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency, formatDate } from '../_utils'
+import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 
 const ESTATE_DOC_TYPES = [
   { type: 'will',              label: 'Last Will & Testament',     critical: true },
@@ -275,6 +276,8 @@ export default function EstateTab({
           </div>
         )}
       </div>
+
+      <BeneficiaryGrantPanel householdId={household.id} />
 
     </div>
   )

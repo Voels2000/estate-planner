@@ -60,6 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
     locked: true,
     items: [
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
+      { href: '/digital-assets', label: 'Digital Assets', icon: '🔑' },
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },

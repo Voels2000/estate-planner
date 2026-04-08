@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/terms',
   '/api/',
   '/share/',
+  '/beneficiary/',
 ]
 
 const ATTORNEY_ONLY_PATHS = [
