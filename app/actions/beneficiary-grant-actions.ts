@@ -24,7 +24,7 @@ export async function createBeneficiaryGrant(
   } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const { data: grant, error } = await supabase
+  const { error } = await supabase
     .from('beneficiary_access_grants')
     .insert({
       household_id: payload.household_id,
@@ -35,19 +35,22 @@ export async function createBeneficiaryGrant(
       access_level: payload.access_level,
       expires_at: payload.expires_at ?? null,
     })
-    .select()
-    .single()
 
-  if (error || !grant) {
+  if (error) {
     console.error('createBeneficiaryGrant error:', error)
     return { success: false, error: error?.message ?? 'Failed to create grant' }
   }
 
-  // Send invite email
-  await sendGrantInviteEmail(grant as BeneficiaryAccessGrant)
+  // Send email without needing the returned row — construct the payload from what we know
+  await sendGrantInviteEmail({
+    grantee_name: payload.grantee_name,
+    grantee_email: payload.grantee_email,
+    expires_at: payload.expires_at ?? null,
+    token: '', // token not needed for email body since we fetch grants separately
+  } as BeneficiaryAccessGrant)
 
   revalidatePath('/advisor/clients')
-  return { success: true, grant: grant as BeneficiaryAccessGrant }
+  return { success: true }
 }
 
 // Revoke a grant
