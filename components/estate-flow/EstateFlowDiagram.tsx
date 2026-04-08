@@ -68,26 +68,44 @@ function layoutNodes(
     layers[node.category]?.push(node)
   }
 
-  // Calculate SVG width dynamically based on the widest layer
-  const maxLayerCount = Math.max(...Object.values(layers).map(l => l.length))
-  const SVG_W = Math.max(900, maxLayerCount * (NODE_W + H_GAP) + H_GAP * 2)
-
   const layerOrder = ['owner', 'asset', 'vehicle', 'tax', 'recipient']
+  const MAX_PER_ROW = 6 // wrap after this many nodes in a layer
+
+  let maxRowW = 0
+  for (const layerKey of layerOrder) {
+    const layer = layers[layerKey]
+    if (!layer || layer.length === 0) continue
+    for (let i = 0; i < layer.length; i += MAX_PER_ROW) {
+      const row = layer.slice(i, i + MAX_PER_ROW)
+      const rowW = row.length * NODE_W + (row.length - 1) * H_GAP
+      maxRowW = Math.max(maxRowW, rowW)
+    }
+  }
+  const SVG_W = Math.max(900, maxRowW + H_GAP * 2)
+
   const positioned: PositionedNode[] = []
+  const SVG_W_USED = SVG_W
 
   let y = 60
   for (const layerKey of layerOrder) {
     const layer = layers[layerKey]
     if (!layer || layer.length === 0) continue
 
-    const totalW = layer.length * NODE_W + (layer.length - 1) * H_GAP
-    let x = (SVG_W - totalW) / 2
-
-    for (const node of layer) {
-      positioned.push({ ...node, x, y, width: NODE_W, height: NODE_H })
-      x += NODE_W + H_GAP
+    const rows: FlowNode[][] = []
+    for (let i = 0; i < layer.length; i += MAX_PER_ROW) {
+      rows.push(layer.slice(i, i + MAX_PER_ROW))
     }
-    y += NODE_H + V_GAP
+
+    for (const row of rows) {
+      const totalW = row.length * NODE_W + (row.length - 1) * H_GAP
+      let x = (SVG_W_USED - totalW) / 2
+
+      for (const node of row) {
+        positioned.push({ ...node, x, y, width: NODE_W, height: NODE_H })
+        x += NODE_W + H_GAP
+      }
+      y += NODE_H + V_GAP
+    }
   }
 
   return { positioned, svgWidth: SVG_W }
@@ -443,14 +461,22 @@ export default function EstateFlowDiagram({
       </div>
 
       {/* SVG Diagram */}
-      <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm print:shadow-none">
+      <div
+        className="border border-gray-200 rounded-xl bg-white shadow-sm print:shadow-none w-full overflow-x-auto"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         <svg
           ref={svgRef}
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          width={SVG_W}
-          height={SVG_H}
+          width="100%"
+          height="100%"
+          style={{
+            minWidth: Math.min(SVG_W, 600),
+            minHeight: SVG_H,
+            maxWidth: '100%',
+          }}
+          preserveAspectRatio="xMidYMid meet"
           className="block"
-          style={{ minWidth: SVG_W }}
           role="img"
           aria-label="Estate flow diagram"
         >
