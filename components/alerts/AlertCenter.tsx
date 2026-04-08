@@ -139,6 +139,8 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
     )
   }
 
+  console.log('AlertCenter state:', { loading, evaluating, alertCount: alerts.length, alerts })
+
   if (alerts.length === 0) return null
 
   // Group by severity
@@ -167,6 +169,7 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
           )}
         </div>
         <button
+          type="button"
           onClick={load}
           className="text-xs text-neutral-400 hover:text-neutral-600"
         >
