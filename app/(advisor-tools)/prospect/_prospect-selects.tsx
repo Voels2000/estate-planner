@@ -27,6 +27,11 @@ export function ProspectSelects({
   const ageHiddenRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    if (stateHiddenRef.current) stateHiddenRef.current.value = state
+    if (rangeHiddenRef.current) rangeHiddenRef.current.value = range
+    if (maritalHiddenRef.current) maritalHiddenRef.current.value = marital
+    if (ageHiddenRef.current) ageHiddenRef.current.value = String(age)
+
     const stateEl = stateRef.current
     const rangeEl = rangeRef.current
     const maritalEl = maritalRef.current
@@ -63,10 +68,10 @@ export function ProspectSelects({
 
   return (
     <>
-      <input ref={stateHiddenRef} type="hidden" name="state" defaultValue={state} />
-      <input ref={rangeHiddenRef} type="hidden" name="range" defaultValue={range} />
-      <input ref={maritalHiddenRef} type="hidden" name="marital" defaultValue={marital} />
-      <input ref={ageHiddenRef} type="hidden" name="age" defaultValue={age} />
+      <input ref={stateHiddenRef} type="hidden" name="state" />
+      <input ref={rangeHiddenRef} type="hidden" name="range" />
+      <input ref={maritalHiddenRef} type="hidden" name="marital" />
+      <input ref={ageHiddenRef} type="hidden" name="age" />
 
       <div>
         <label className="block text-xs font-medium text-neutral-600 mb-1.5">State</label>
