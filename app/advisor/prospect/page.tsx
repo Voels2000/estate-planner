@@ -102,7 +102,8 @@ export default function ProspectModePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto" style={{ minHeight: '150vh' }}>
+      <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-neutral-900">Prospect Mode</h1>
         <p className="text-sm text-neutral-500 mt-1">Generate an Estate Planning Opportunity Summary. No data is stored.</p>
@@ -224,6 +225,7 @@ export default function ProspectModePage() {
             <DisclaimerBanner context="prospect analysis" />
           </div>
         )}
+      </div>
       </div>
     </div>
   )

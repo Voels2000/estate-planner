@@ -47,7 +47,7 @@ export default async function AdvisorLayout({
           <AdvisorTabs showFirmSettingsTab={ctx.firm_role === 'owner'} />
         </div>
       </div>
-      <main className="mx-auto max-w-7xl px-4 pt-4 pb-10">
+      <main className="mx-auto max-w-7xl px-4 pt-4 pb-10" style={{ overflowY: 'auto' }}>
         {children}
       </main>
     </div>
