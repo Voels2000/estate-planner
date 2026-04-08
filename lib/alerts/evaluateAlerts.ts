@@ -129,7 +129,19 @@ export async function evaluateAlerts(
           p_action_label: rule.link_path ? 'Review now' : null,
           p_context_data: evaluation.context,
         })
-        if (upsertError) console.error('upsert_household_alert error:', upsertError)
+        if (upsertError) {
+          console.error('upsert_household_alert error details:', JSON.stringify(upsertError))
+          console.error('upsert params:', JSON.stringify({
+            p_household_id: householdId,
+            p_rule_id: rule.id,
+            p_alert_type: rule.alert_type,
+            p_severity: rule.severity,
+            p_title: rule.title,
+            p_description: description.substring(0, 50),
+            p_action_href: rule.link_path,
+            p_context_data: evaluation.context,
+          }))
+        }
         result.triggered++
       } else {
         // Resolve any existing alert for this rule
