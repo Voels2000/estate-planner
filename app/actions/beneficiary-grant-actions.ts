@@ -19,35 +19,40 @@ export async function createBeneficiaryGrant(
 ): Promise<{ success: boolean; grant?: BeneficiaryAccessGrant; error?: string }> {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const { error } = await supabase
+  // Insert without reading back (avoids RLS block on household_id check)
+  const { error: insertError } = await supabase
     .from('beneficiary_access_grants')
     .insert({
-      household_id: payload.household_id,
+      household_id:       payload.household_id,
       granted_by_user_id: user.id,
-      grantee_email: payload.grantee_email,
-      grantee_name: payload.grantee_name,
-      relationship: payload.relationship,
-      access_level: payload.access_level,
-      expires_at: payload.expires_at ?? null,
+      grantee_email:      payload.grantee_email,
+      grantee_name:       payload.grantee_name,
+      relationship:       payload.relationship,
+      access_level:       payload.access_level,
+      expires_at:         payload.expires_at ?? null,
     })
 
-  if (error) {
-    console.error('createBeneficiaryGrant error:', error)
-    return { success: false, error: error?.message ?? 'Failed to create grant' }
+  if (insertError) {
+    console.error('createBeneficiaryGrant error:', insertError)
+    return { success: false, error: insertError.message }
   }
 
-  // Send email without needing the returned row — construct the payload from what we know
-  await sendGrantInviteEmail({
-    grantee_name: payload.grantee_name,
-    grantee_email: payload.grantee_email,
-    expires_at: payload.expires_at ?? null,
-    token: '', // token not needed for email body since we fetch grants separately
-  } as BeneficiaryAccessGrant)
+  // Fetch the grant back using granted_by_user_id (covered by SELECT policy)
+  const { data: grant } = await supabase
+    .from('beneficiary_access_grants')
+    .select('*')
+    .eq('granted_by_user_id', user.id)
+    .eq('grantee_email', payload.grantee_email)
+    .order('granted_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (grant) {
+    await sendGrantInviteEmail(grant as BeneficiaryAccessGrant)
+  }
 
   revalidatePath('/advisor/clients')
   return { success: true }
