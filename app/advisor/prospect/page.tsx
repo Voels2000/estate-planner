@@ -61,7 +61,7 @@ const ASSET_MIDPOINTS: Record<AssetRange, number> = {
 function calculateProspectResult(inputs: ProspectInputs): ProspectResult {
   const assets = ASSET_MIDPOINTS[inputs.assetRange]
   const exemptionCurrent = inputs.maritalStatus === 'married' ? 27_220_000 : 13_610_000
-  const exemptionSunset = inputs.maritalStatus === 'married' ? 14_400_000 : 7_200_000
+  const exemptionSunset = inputs.maritalStatus === 'married' ? 7_200_000 * 2 : 7_200_000
   const topRate = 0.40
 
   // Federal tax current
@@ -71,6 +71,7 @@ function calculateProspectResult(inputs: ProspectInputs): ProspectResult {
   // Federal tax sunset
   const taxableSunset = Math.max(0, assets - exemptionSunset)
   const federalTaxSunset = Math.round(taxableSunset * topRate)
+  console.log('Prospect calc:', { assets, exemptionCurrent, exemptionSunset, taxableSunset, federalTaxSunset })
 
   const sunsetDelta = federalTaxSunset - federalTaxCurrent
 
