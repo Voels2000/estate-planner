@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -76,14 +76,18 @@ export function DashboardClient({
   void isAdvisor
   const firstName = userName.split(' ')[0]
   const allDone = completedSteps === setupSteps.length
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const [greeting, setGreeting] = useState('Good morning')
   const [showWalkthrough, setShowWalkthrough] = useState(false)
+
+  useEffect(() => {
+    const hour = new Date().getHours()
+    setGreeting(hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening')
+  }, [])
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">
+        <h1 className="text-2xl font-bold text-neutral-900" suppressHydrationWarning>
           {greeting}, {firstName} 👋
         </h1>
         <p className="mt-1 text-sm text-neutral-600">
