@@ -701,6 +701,47 @@ export async function generateEstateFlow(
     }
   }
 
+  // ── 10b. Post-process beneficiaries: death sequence ───────────────────────
+  // Relabel surviving spouse beneficiary based on death sequence.
+  // When person1 dies first: person2 is survivor — she/he appears as recipient.
+  // When person2 dies first: person1 is survivor — he/she appears as recipient.
+  // Remove the deceased person from the beneficiary recipient layer.
+  const deceasedNameNormalized = deceasedName.toLowerCase().trim()
+  const survivorNameNormalized = survivorName.toLowerCase().trim()
+
+  const deceasedBeneNodeIds = new Set<string>()
+  for (const [name, nodeId] of [...beneNodeMap.entries()]) {
+    if (name === deceasedNameNormalized) {
+      deceasedBeneNodeIds.add(nodeId)
+      beneNodeMap.delete(name)
+    }
+  }
+  for (const nodeId of deceasedBeneNodeIds) {
+    const idx = nodes.findIndex(n => n.id === nodeId)
+    if (idx !== -1) nodes.splice(idx, 1)
+  }
+  for (let i = edges.length - 1; i >= 0; i--) {
+    if (deceasedBeneNodeIds.has(edges[i].target)) edges.splice(i, 1)
+  }
+
+  if (hasSpouse) {
+    const spousePlaceholderKeys = new Set(['spouse', 'surviving spouse'])
+    for (const [key, nodeId] of [...beneNodeMap.entries()]) {
+      const shouldRelabel = key === survivorNameNormalized || spousePlaceholderKeys.has(key)
+      if (!shouldRelabel) continue
+      const node = nodes.find(n => n.id === nodeId)
+      if (node?.type !== 'beneficiary') continue
+      const rel = node.metadata.relationship
+      const relStr = typeof rel === 'string' && rel ? rel : 'Spouse'
+      node.label = survivorName
+      node.technicalLabel = `${survivorName} (${relStr})`
+      if (key !== survivorNameNormalized) {
+        beneNodeMap.delete(key)
+        if (!beneNodeMap.has(survivorNameNormalized)) beneNodeMap.set(survivorNameNormalized, nodeId)
+      }
+    }
+  }
+
   // ── 11. Probate → beneficiaries (via will) ────────────────────────────────
   if (probateNodeId && hasWill && beneNodeMap.size > 0) {
     // For each unique beneficiary already on the graph, route probate to them
