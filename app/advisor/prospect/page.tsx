@@ -116,7 +116,9 @@ export default function ProspectModePage() {
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">State</label>
-            <select value={state} onChange={e => setState(e.target.value)}
+            <select value={state}
+              onChange={e => setState(e.target.value)}
+              onInput={e => setState((e.target as HTMLSelectElement).value)}
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
               {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -124,7 +126,9 @@ export default function ProspectModePage() {
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
-            <select value={assetRange} onChange={e => setAssetRange(e.target.value as AssetRange)}
+            <select value={assetRange}
+              onChange={e => setAssetRange(e.target.value as AssetRange)}
+              onInput={e => setAssetRange((e.target as HTMLSelectElement).value as AssetRange)}
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
               {(Object.keys(ASSET_LABELS) as AssetRange[]).map(k => (
                 <option key={k} value={k}>{ASSET_LABELS[k]}</option>
@@ -134,7 +138,9 @@ export default function ProspectModePage() {
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Marital status</label>
-            <select value={maritalStatus} onChange={e => setMaritalStatus(e.target.value as MaritalStatus)}
+            <select value={maritalStatus}
+              onChange={e => setMaritalStatus(e.target.value as MaritalStatus)}
+              onInput={e => setMaritalStatus((e.target as HTMLSelectElement).value as MaritalStatus)}
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm">
               <option value="single">Single</option>
               <option value="married">Married</option>
@@ -144,6 +150,7 @@ export default function ProspectModePage() {
           <div className="flex items-center gap-3">
             <input type="checkbox" id="biz" checked={businessOwner}
               onChange={e => setBusinessOwner(e.target.checked)}
+              onInput={e => setBusinessOwner((e.target as HTMLInputElement).checked)}
               className="w-4 h-4 rounded border-neutral-300" />
             <label htmlFor="biz" className="text-sm text-neutral-700">Business owner</label>
           </div>
@@ -152,6 +159,7 @@ export default function ProspectModePage() {
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Age: {age}</label>
             <input type="range" min="35" max="85" value={age}
               onChange={e => setAge(parseInt(e.target.value))}
+              onInput={e => setAge(parseInt((e.target as HTMLInputElement).value))}
               className="w-full" />
           </div>
 
