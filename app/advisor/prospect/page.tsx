@@ -153,7 +153,7 @@ export default function ProspectModePage() {
   const handlePrint = () => window.print()
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10" style={{ paddingTop: '80px' }}>
+    <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="mb-8">
         <a href="/advisor" className="text-sm text-indigo-600 hover:underline">

@@ -12,6 +12,10 @@ export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
   const clientsActive = pathname === '/advisor' || pathname === '/advisor/'
   const firmActive =
     pathname === '/advisor/firm' || pathname.startsWith('/advisor/firm/')
+  const analyticsActive =
+    pathname === '/advisor/analytics' || pathname.startsWith('/advisor/analytics')
+  const prospectActive =
+    pathname === '/advisor/prospect' || pathname.startsWith('/advisor/prospect')
 
   const tabClass = (active: boolean) =>
     [
@@ -34,6 +38,12 @@ export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
           ⚙️ Firm Settings
         </Link>
       )}
+      <Link href="/advisor/analytics" className={tabClass(analyticsActive)}>
+        📊 Analytics
+      </Link>
+      <Link href="/advisor/prospect" className={tabClass(prospectActive)}>
+        🔍 Prospect Mode
+      </Link>
     </nav>
   )
 }
