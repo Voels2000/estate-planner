@@ -19,7 +19,7 @@ export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
 
   const tabClass = (active: boolean) =>
     [
-      'inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium -mb-px transition-colors',
+      'inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-sm font-medium -mb-px transition-colors',
       active
         ? 'border-indigo-600 text-indigo-700'
         : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900',

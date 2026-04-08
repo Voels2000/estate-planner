@@ -16,7 +16,7 @@ export default async function AdvisorLayout({
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <nav className="bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+      <nav className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
           <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
@@ -47,7 +47,7 @@ export default async function AdvisorLayout({
           <AdvisorTabs showFirmSettingsTab={ctx.firm_role === 'owner'} />
         </div>
       </div>
-      <main className="mx-auto max-w-7xl px-4 py-10">
+      <main className="mx-auto max-w-7xl px-4 pt-4 pb-10">
         {children}
       </main>
     </div>
