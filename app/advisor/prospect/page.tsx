@@ -190,21 +190,21 @@ export default function ProspectModePage() {
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
             <div className="grid grid-cols-2 gap-2">
               {(['$1M-$5M', '$5M-$15M', '$15M-$30M', '$30M+'] as AssetRange[]).map(r => (
-                <button
+                <div
                   key={r}
-                  type="button"
                   onClick={() => {
-                    console.log('Asset range clicked:', r)
+                    console.log('Asset range div clicked:', r)
                     setInputs(p => ({ ...p, assetRange: r }))
                   }}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition ${
+                  style={{ cursor: 'pointer' }}
+                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition select-none ${
                     inputs.assetRange === r
                       ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
                       : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
                   {r}
-                </button>
+                </div>
               ))}
             </div>
           </div>
