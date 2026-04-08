@@ -204,7 +204,11 @@ export async function generateEstateFlow(
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
     scenarioId
-      ? supabase.from('projection_scenarios').select('*').eq('id', scenarioId).single()
+      ? supabase
+          .from('projection_scenarios')
+          .select('id, label, outputs, outputs_s1_first, outputs_s2_first, status, calculated_at')
+          .eq('id', scenarioId)
+          .single()
       : Promise.resolve({ data: null, error: null }),
   ])
 
@@ -229,6 +233,9 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
   const scenario = scenarioRes.data
+
+  console.log('scenario keys:', scenario ? Object.keys(scenario) : 'null')
+  console.log('s2_first length:', scenario?.outputs_s2_first?.length)
 
   // Pull tax amounts from scenario
   const rawOutputs = scenario?.outputs_s1_first ?? scenario?.outputs ?? []
