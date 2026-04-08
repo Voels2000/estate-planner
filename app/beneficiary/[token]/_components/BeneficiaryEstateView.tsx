@@ -22,6 +22,7 @@ export default function BeneficiaryEstateView({
   householdId,
   granteeRelationship,
   accessLevel,
+  token,
 }: Props) {
   const [loading, setLoading] = useState(true)
   const [estateSnapshot, setEstateSnapshot] = useState<Record<string, unknown> | null>(null)
@@ -33,14 +34,13 @@ export default function BeneficiaryEstateView({
       setLoading(true)
       const supabase = createClient()
 
-      const { data: snapshots } = await supabase
-        .from('estate_flow_snapshots')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('created_at', { ascending: false })
-        .limit(1)
+      const { data: snapshot } = await supabase.rpc('get_snapshot_for_beneficiary', {
+        p_token: token,
+      })
 
-      if (snapshots?.[0]) setEstateSnapshot(snapshots[0] as Record<string, unknown>)
+      if (snapshot && !(snapshot as { error?: unknown }).error) {
+        setEstateSnapshot(snapshot as Record<string, unknown>)
+      }
 
       if (granteeRelationship === 'executor' || accessLevel === 'full') {
         const { data: assets } = await supabase
@@ -54,7 +54,7 @@ export default function BeneficiaryEstateView({
       setLoading(false)
     }
     load()
-  }, [householdId, granteeRelationship, accessLevel])
+  }, [householdId, granteeRelationship, accessLevel, token])
 
   if (loading) {
     return (
