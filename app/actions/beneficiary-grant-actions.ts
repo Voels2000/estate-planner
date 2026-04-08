@@ -98,6 +98,7 @@ export async function getGrantsForHousehold(
 
 // Email helper
 async function sendGrantInviteEmail(grant: BeneficiaryAccessGrant): Promise<void> {
+  console.log('sendGrantInviteEmail called for:', grant.grantee_email, 'token:', grant.token)
   const viewUrl = `${APP_URL}/beneficiary/${grant.token}`
 
   try {
