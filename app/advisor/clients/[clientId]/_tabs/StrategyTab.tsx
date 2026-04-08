@@ -7,6 +7,7 @@ import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
+import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -358,6 +359,19 @@ export default function StrategyTab({
             advisorId={advisorId}
             isAdvisor={true}
             deathView={activeSequence === 'S1_first' ? 'first_death' : 'second_death'}
+          />
+        </div>
+      </div>
+
+      {/* Charitable Impact Calculator */}
+      <div className="bg-white rounded-xl border border-slate-200">
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-700">Charitable Impact Calculator</h3>
+        </div>
+        <div className="p-5">
+          <CharitableImpactCalculator
+            householdId={householdId}
+            isAdvisor={true}
           />
         </div>
       </div>

@@ -324,6 +324,13 @@ export default function AdvisorClientPage({
           <span suppressHydrationWarning>📊</span>
           {' '}Analytics
         </a>
+        <a
+          href="/advisor/prospect"
+          className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-700 whitespace-nowrap"
+        >
+          <span suppressHydrationWarning>🔍</span>
+          {' '}Prospect Mode
+        </a>
       </div>
 
       {/* Clients Tab */}
