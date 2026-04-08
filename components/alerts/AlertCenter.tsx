@@ -113,13 +113,20 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   useEffect(() => {
     async function init() {
       setLoading(true)
-      if (runEvaluation) {
-        setEvaluating(true)
-        await evaluateAlerts(householdId, userId)
+      try {
+        if (runEvaluation) {
+          setEvaluating(true)
+          const result = await evaluateAlerts(householdId, userId)
+          console.log('Evaluation result:', result)
+          setEvaluating(false)
+        }
+        await load()
+      } catch (e) {
+        console.error('AlertCenter init error:', e)
+      } finally {
         setEvaluating(false)
+        setLoading(false)
       }
-      await load()
-      setLoading(false)
     }
     init()
   }, [householdId, userId, runEvaluation, load])

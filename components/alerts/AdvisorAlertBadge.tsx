@@ -23,8 +23,8 @@ export function AdvisorAlertBadge({ householdId, onClick }: BadgeProps) {
     loadHouseholdAlerts(householdId).then(alerts => {
       console.log('AdvisorAlertBadge alerts:', alerts.length, alerts)
       setCounts({
-        high: alerts.filter(a => a.severity === 'high').length,
-        medium: alerts.filter(a => a.severity === 'medium').length,
+        high: alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length,
+        medium: alerts.filter(a => a.severity === 'medium' || a.severity === 'warning').length,
       })
     }).catch(err => {
       console.error('AdvisorAlertBadge error:', err)
