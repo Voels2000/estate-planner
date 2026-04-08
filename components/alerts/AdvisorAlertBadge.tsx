@@ -19,11 +19,15 @@ export function AdvisorAlertBadge({ householdId, onClick }: BadgeProps) {
   const [counts, setCounts] = useState<{ high: number; medium: number } | null>(null)
 
   useEffect(() => {
+    console.log('AdvisorAlertBadge loading for householdId:', householdId)
     loadHouseholdAlerts(householdId).then(alerts => {
+      console.log('AdvisorAlertBadge alerts:', alerts.length, alerts)
       setCounts({
         high: alerts.filter(a => a.severity === 'high').length,
         medium: alerts.filter(a => a.severity === 'medium').length,
       })
+    }).catch(err => {
+      console.error('AdvisorAlertBadge error:', err)
     })
   }, [householdId])
 
