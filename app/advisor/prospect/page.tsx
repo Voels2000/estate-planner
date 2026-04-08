@@ -188,46 +188,32 @@ export default function ProspectModePage() {
           {/* Asset range */}
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Approximate total assets</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['$1M-$5M', '$5M-$15M', '$15M-$30M', '$30M+'] as AssetRange[]).map(r => (
-                <div
-                  key={r}
-                  onClick={() => {
-                    console.log('Asset range div clicked:', r)
-                    setInputs(p => ({ ...p, assetRange: r }))
-                  }}
-                  style={{ cursor: 'pointer' }}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition select-none ${
-                    inputs.assetRange === r
-                      ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
-                      : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {r}
-                </div>
-              ))}
-            </div>
+            <select
+              value={inputs.assetRange}
+              onChange={e => {
+                console.log('Asset range changed:', e.target.value)
+                setInputs(p => ({ ...p, assetRange: e.target.value as AssetRange }))
+              }}
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
+            >
+              <option value="$1M-$5M">$1M – $5M</option>
+              <option value="$5M-$15M">$5M – $15M</option>
+              <option value="$15M-$30M">$15M – $30M</option>
+              <option value="$30M+">$30M+</option>
+            </select>
           </div>
 
           {/* Marital status */}
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1.5">Marital status</label>
-            <div className="flex gap-2">
-              {(['single', 'married'] as MaritalStatus[]).map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setInputs(p => ({ ...p, maritalStatus: s }))}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition capitalize ${
-                    inputs.maritalStatus === s
-                      ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
-                      : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <select
+              value={inputs.maritalStatus}
+              onChange={e => setInputs(p => ({ ...p, maritalStatus: e.target.value as MaritalStatus }))}
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
+            >
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+            </select>
           </div>
 
           {/* Business owner */}
