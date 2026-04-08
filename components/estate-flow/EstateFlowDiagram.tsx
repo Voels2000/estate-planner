@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { saveEstateFlowSnapshot, generateShareLink, loadSnapshotHistory } from '@/lib/estate-flow/snapshotFlow'
@@ -269,28 +269,34 @@ export default function EstateFlowDiagram({
   const [showAnnotation, setShowAnnotation] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
 
-  const load = useCallback(async () => {
-    console.log('Load called with deathView:', deathView)
-    setLoading(true)
-    setError(null)
-    try {
-      const g = await generateEstateFlow(householdId, scenarioId, deathView, supabase)
-      setGraph(g)
+  useEffect(() => {
+    let cancelled = false
 
-      // Auto-save snapshot
-      const snap = await saveEstateFlowSnapshot(g)
-      if (snap) setSnapshotId(snap.id)
-    } catch (e) {
-      setError('Could not load estate flow data.')
-      console.error(e)
-    } finally {
-      setLoading(false)
+    async function fetchGraph() {
+      setLoading(true)
+      setError(null)
+      console.log('fetchGraph called with deathView:', deathView)
+      try {
+        const g = await generateEstateFlow(householdId, scenarioId, deathView, supabase)
+        if (!cancelled) {
+          setGraph(g)
+          const snap = await saveEstateFlowSnapshot(g)
+          if (snap && !cancelled) setSnapshotId(snap.id)
+        }
+      } catch (e) {
+        if (!cancelled) setError('Could not load estate flow data.')
+        console.error(e)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchGraph()
+
+    return () => {
+      cancelled = true
     }
   }, [householdId, scenarioId, deathView, supabase])
-
-  useEffect(() => {
-    load()
-  }, [householdId, scenarioId, deathView])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return
