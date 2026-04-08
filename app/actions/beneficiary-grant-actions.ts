@@ -121,6 +121,7 @@ export async function createDigitalAsset(
     .insert({
       ...payload,
       owner_id: user.id,
+      name: payload.platform,
     })
 
   if (error) {
