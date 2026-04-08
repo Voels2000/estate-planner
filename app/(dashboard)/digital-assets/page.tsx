@@ -13,18 +13,18 @@ export default async function DigitalAssetsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
 
-  const { data: member } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
+  const { data: household } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', user.id)
     .single()
 
-  if (!member) redirect('/onboarding')
+  if (!household) redirect('/onboarding')
 
   const { data: assets } = await supabase
     .from('digital_assets')
     .select('*')
-    .eq('household_id', member.household_id)
+    .eq('household_id', household.id)
     .order('created_at', { ascending: false })
 
   return (
@@ -39,8 +39,8 @@ export default async function DigitalAssetsPage() {
           </p>
         </div>
 
-        <DigitalAssetList assets={assets ?? []} householdId={member.household_id} />
-        <DigitalAssetIntakeForm householdId={member.household_id} />
+        <DigitalAssetList assets={assets ?? []} householdId={household.id} />
+        <DigitalAssetIntakeForm householdId={household.id} />
       </main>
     </div>
   )
