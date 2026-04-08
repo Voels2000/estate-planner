@@ -15,7 +15,6 @@ export function ProspectSelects({
   age: number
   usStates: string[]
 }) {
-  const formRef = useRef<HTMLFormElement>(null)
   const stateRef = useRef<HTMLSelectElement>(null)
   const rangeRef = useRef<HTMLSelectElement>(null)
   const maritalRef = useRef<HTMLSelectElement>(null)
@@ -68,15 +67,8 @@ export function ProspectSelects({
   }, [])
 
   const handleSubmit = () => {
-    if (stateHiddenRef.current && stateRef.current) stateHiddenRef.current.value = stateRef.current.value
-    if (rangeHiddenRef.current && rangeRef.current) rangeHiddenRef.current.value = rangeRef.current.value
-    if (maritalHiddenRef.current && maritalRef.current) maritalHiddenRef.current.value = maritalRef.current.value
-    if (ageHiddenRef.current && ageRef.current) ageHiddenRef.current.value = ageRef.current.value
-
     const form = stateRef.current?.closest('form')
-    if (!form) return
-    formRef.current = form
-    formRef.current.submit()
+    if (form) form.submit()
   }
 
   return (
