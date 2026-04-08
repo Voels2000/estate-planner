@@ -246,6 +246,7 @@ interface Props {
   scenarioId: string | null
   advisorId?: string
   isAdvisor?: boolean
+  deathView?: DeathView
   onShareLinkGenerated?: (url: string) => void
 }
 
@@ -254,6 +255,7 @@ export default function EstateFlowDiagram({
   scenarioId,
   advisorId,
   isAdvisor = false,
+  deathView,
   onShareLinkGenerated,
 }: Props) {
   console.log('isAdvisor prop:', isAdvisor)
@@ -261,7 +263,7 @@ export default function EstateFlowDiagram({
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [deathView, setDeathView] = useState<DeathView>('first_death')
+  const [internalDeathView, setInternalDeathView] = useState<DeathView>(deathView ?? 'first_death')
   const [showLabels, setShowLabels] = useState(true)
   const [snapshotId, setSnapshotId] = useState<string | null>(null)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
@@ -271,14 +273,18 @@ export default function EstateFlowDiagram({
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
+    if (deathView) setInternalDeathView(deathView)
+  }, [deathView])
+
+  useEffect(() => {
     let cancelled = false
 
     async function fetchGraph() {
       setLoading(true)
       setError(null)
-      console.log('fetchGraph called with deathView:', deathView)
+      console.log('fetchGraph called with deathView:', internalDeathView)
       try {
-        const g = await generateEstateFlow(householdId, scenarioId, deathView, supabase)
+        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase)
         if (!cancelled) {
           setGraph(g)
           const snap = await saveEstateFlowSnapshot(g)
@@ -297,7 +303,7 @@ export default function EstateFlowDiagram({
     return () => {
       cancelled = true
     }
-  }, [householdId, scenarioId, deathView, supabase])
+  }, [householdId, scenarioId, internalDeathView, supabase])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return
@@ -335,7 +341,6 @@ export default function EstateFlowDiagram({
 
   const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes, graph.edges)
   const nodeMap = new Map(positioned.map(n => [n.id, n]))
-  const hasSpouse = graph.nodes.some(n => n.id === 'owner_p2')
 
   // SVG viewport
   const maxY = Math.max(...positioned.map(n => n.y + n.height)) + 80
@@ -346,44 +351,6 @@ export default function EstateFlowDiagram({
       {/* Controls */}
       {isAdvisor && (
         <div className="flex flex-wrap items-center gap-3" style={{ position: 'relative', zIndex: 10 }}>
-          {/* Only show death sequence toggle for married households */}
-          {graph?.summary && (graph.nodes.some(n => n.id === 'owner_p2') || hasSpouse) && (
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  console.log('FIRST DEATH CLICKED')
-                  setDeathView('first_death')
-                }}
-                style={{
-                  padding: '8px 16px',
-                  background: deathView === 'first_death' ? '#2563EB' : '#fff',
-                  color: deathView === 'first_death' ? '#fff' : '#374151',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                Michael dies first
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  console.log('SECOND DEATH CLICKED')
-                  setDeathView('second_death')
-                }}
-                style={{
-                  padding: '8px 16px',
-                  background: deathView === 'second_death' ? '#2563EB' : '#fff',
-                  color: deathView === 'second_death' ? '#fff' : '#374151',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                Sarah dies first
-              </button>
-            </div>
-          )}
-
           {/* Labels toggle */}
           <button
             onClick={() => setShowLabels(l => !l)}
@@ -539,7 +506,7 @@ export default function EstateFlowDiagram({
 
       {/* Death view label */}
       <p className="text-center text-xs text-gray-400">
-        {deathView === 'first_death' ? 'First death view' : 'Second death view'} ·{' '}
+        {internalDeathView === 'first_death' ? 'First death view' : 'Second death view'} ·{' '}
         Generated {new Date(graph.generated_at).toLocaleDateString()}
       </p>
     </div>

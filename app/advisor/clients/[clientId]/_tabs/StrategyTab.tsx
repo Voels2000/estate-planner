@@ -340,12 +340,13 @@ export default function StrategyTab({
         <div className="px-5 pt-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-4">Estate Flow Diagram</h3>
         </div>
-        <div className="w-full overflow-x-auto -mx-6 px-6 pb-5">
+        <div className="w-full overflow-x-auto px-6 pb-5">
           <EstateFlowDiagram
             householdId={householdId}
             scenarioId={household?.base_case_scenario_id ?? null}
             advisorId={advisorId}
             isAdvisor={true}
+            deathView={activeSequence === 'S1_first' ? 'first_death' : 'second_death'}
           />
         </div>
       </div>
