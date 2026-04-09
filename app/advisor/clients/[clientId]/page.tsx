@@ -116,6 +116,12 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     .eq('household_id', household.id)
     .single()
 
+  const { data: domicileSchedule } = await supabase
+    .from('domicile_schedule')
+    .select('*')
+    .eq('household_id', household.id)
+    .order('effective_year', { ascending: true })
+
   // Run conflict detector for advisor view (Sprint 58)
   let conflictReport = null
   try {
@@ -149,6 +155,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       notes={notes ?? []}
       estateTax={estateTax}
       domicileAnalysis={domicileAnalysis ?? null}
+      domicileSchedule={domicileSchedule ?? null}
       conflictReport={conflictReport}
     />
   )

@@ -1,4 +1,5 @@
 'use client'
+import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import OverviewTab from './_tabs/OverviewTab'
@@ -190,6 +191,7 @@ export interface ClientViewShellProps {
   notes: any[]
   estateTax: any | null
   domicileAnalysis: any | null
+  domicileSchedule: DomicileScheduleRow[] | null
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string

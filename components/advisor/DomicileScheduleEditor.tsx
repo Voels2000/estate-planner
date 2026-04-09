@@ -38,6 +38,7 @@ interface Props {
   currentState:        string
   grossEstateByYear:   Record<number, number>
   federalExemption?:   number
+  initialSchedule:     DomicileScheduleRow[]
 }
 
 export default function DomicileScheduleEditor({
@@ -46,9 +47,9 @@ export default function DomicileScheduleEditor({
   currentState,
   grossEstateByYear,
   federalExemption,
+  initialSchedule,
 }: Props) {
-  const [schedule, setSchedule]           = useState<DomicileScheduleRow[]>([])
-  const [loading, setLoading]             = useState(true)
+  const [schedule, setSchedule]           = useState<DomicileScheduleRow[]>(initialSchedule ?? [])
   const [saving, setSaving]               = useState(false)
   const [breakeven, setBreakeven]         = useState<MoveBreakevenResult | null>(null)
   const [checklist, setChecklist]         = useState<ChecklistDbRow[]>([])
@@ -61,20 +62,7 @@ export default function DomicileScheduleEditor({
 
   const supabase = createClient()
 
-  useEffect(() => { loadSchedule() }, [householdId])
   useEffect(() => { loadChecklist() }, [householdId])
-
-  async function loadSchedule() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('domicile_schedule')
-      .select('*')
-      .eq('household_id', householdId)
-      .order('effective_year', { ascending: true })
-    setSchedule((data ?? []) as DomicileScheduleRow[])
-    console.log('schedule state set to:', data, 'length:', data?.length)
-    setLoading(false)
-  }
 
   async function loadChecklist() {
     const { data: analysis } = await supabase
@@ -102,28 +90,42 @@ export default function DomicileScheduleEditor({
   async function addRow() {
     if (!newState) return
     setSaving(true)
-    await supabase.from('domicile_schedule').upsert({
-      household_id:   householdId,
-      effective_year: newYear,
-      state_code:     newState,
-      is_established: newEstablished,
-    }, { onConflict: 'household_id,effective_year' })
-    await loadSchedule()
+    const { data } = await supabase
+      .from('domicile_schedule')
+      .upsert({
+        household_id:   householdId,
+        effective_year: newYear,
+        state_code:     newState,
+        is_established: newEstablished,
+      }, { onConflict: 'household_id,effective_year' })
+      .select()
+    if (data?.length) {
+      const inserted = data[0] as DomicileScheduleRow
+      setSchedule(prev => {
+        const withoutYear = prev.filter(r => r.effective_year !== inserted.effective_year)
+        return [...withoutYear, inserted].sort((a, b) => a.effective_year - b.effective_year)
+      })
+    }
     setNewState('')
     setSaving(false)
   }
 
   async function toggleEstablished(row: DomicileScheduleRow) {
-    await supabase
+    const next = !row.is_established
+    const { error } = await supabase
       .from('domicile_schedule')
-      .update({ is_established: !row.is_established })
+      .update({ is_established: next })
       .eq('id', row.id!)
-    await loadSchedule()
+    if (error) return
+    setSchedule(prev =>
+      prev.map(r => (r.id === row.id ? { ...r, is_established: next } : r))
+    )
   }
 
   async function deleteRow(id: string) {
-    await supabase.from('domicile_schedule').delete().eq('id', id)
-    await loadSchedule()
+    const { error } = await supabase.from('domicile_schedule').delete().eq('id', id)
+    if (error) return
+    setSchedule(prev => prev.filter(r => r.id !== id))
   }
 
   async function toggleChecklistItem(itemId: string, completed: boolean) {
@@ -236,13 +238,8 @@ export default function DomicileScheduleEditor({
       {/* Schedule tab */}
       {activeTab === 'schedule' && (
         <div className="space-y-3">
-          {loading ? (
-            <div className="h-20 bg-slate-50 rounded animate-pulse" />
-          ) : schedule.length === 0 ? (
-            <>
-              {console.log('rendering schedule, length:', schedule.length)}
-              <p className="text-sm text-slate-400">No domicile schedule entries yet.</p>
-            </>
+          {schedule.length === 0 ? (
+            <p className="text-sm text-slate-400">No domicile schedule entries yet.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>

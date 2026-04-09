@@ -11,7 +11,12 @@ import { ClientViewShellProps } from '../_client-view-shell'
 /** Sprint 66: align with combined federal/state waterfall when available */
 const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
 
-export default function DomicileTab({ domicileAnalysis, household, clientId }: ClientViewShellProps) {
+export default function DomicileTab({
+  domicileAnalysis,
+  household,
+  clientId,
+  domicileSchedule,
+}: ClientViewShellProps) {
 
   if (!domicileAnalysis) {
     return (
@@ -246,6 +251,7 @@ export default function DomicileTab({ domicileAnalysis, household, clientId }: C
           currentState={claimed_domicile_state ?? 'WA'}
           grossEstateByYear={{}}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
+          initialSchedule={domicileSchedule ?? []}
         />
       </div>
     </div>
