@@ -95,7 +95,6 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
           person1BirthYear={person1BirthYear}
           lawScenario={lawScenario}
           supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
-          supabaseAnonKey={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''}
         />
       </section>
     </div>

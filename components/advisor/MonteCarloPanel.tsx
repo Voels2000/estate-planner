@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { createClient } from '@/lib/supabase/client'
 
 interface MonteCarloResult {
   p10_estate: number
@@ -47,7 +48,6 @@ interface MonteCarloProps {
   person1BirthYear: number
   lawScenario: 'current_law' | 'sunset' | 'no_exemption'
   supabaseUrl: string
-  supabaseAnonKey: string
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -62,7 +62,6 @@ export default function MonteCarloPanel({
   person1BirthYear,
   lawScenario,
   supabaseUrl,
-  supabaseAnonKey,
 }: MonteCarloProps) {
   const [result, setResult] = useState<MonteCarloResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -79,8 +78,7 @@ export default function MonteCarloPanel({
     setError(null)
     try {
       // Get auth token from Supabase session
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
+      const supabase = createClient()
       const {
         data: { session },
       } = await supabase.auth.getSession()
