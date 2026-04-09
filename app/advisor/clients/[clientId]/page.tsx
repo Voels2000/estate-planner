@@ -123,6 +123,18 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     ? {
         gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
         federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000),
+        estimated_federal_tax: Number(
+          latestOutput?.estate_tax_federal ??
+          latestOutput?.federal_tax ??
+          latestOutput?.federal_estate_tax ??
+          0
+        ),
+        estimated_state_tax: Number(
+          latestOutput?.estate_tax_state ??
+          latestOutput?.state_tax ??
+          latestOutput?.state_estate_tax ??
+          0
+        ),
         law_scenario: (scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law') as 'current_law' | 'sunset' | 'no_exemption',
       }
     : null
