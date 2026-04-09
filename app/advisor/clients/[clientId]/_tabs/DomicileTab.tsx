@@ -16,6 +16,7 @@ export default function DomicileTab({
   household,
   clientId,
   domicileSchedule,
+  domicileChecklist,
 }: ClientViewShellProps) {
 
   if (!domicileAnalysis) {
@@ -247,11 +248,11 @@ export default function DomicileTab({
         />
         <DomicileScheduleEditor
           householdId={household.id}
-          clientId={clientId}
           currentState={claimed_domicile_state ?? 'WA'}
           grossEstateByYear={{}}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           initialSchedule={domicileSchedule ?? []}
+          initialChecklist={domicileChecklist ?? []}
         />
       </div>
     </div>

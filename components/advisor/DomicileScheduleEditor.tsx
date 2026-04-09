@@ -3,11 +3,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  seedDomicileChecklist,
+  toggleChecklistItem as toggleChecklistItemAction,
+} from '@/app/actions/domicile-actions'
 import {
   getDomicileForYear,
   calculateMoveBreakeven,
-  getChecklistForState,
   type DomicileScheduleRow,
   type MoveBreakevenResult,
 } from '@/lib/projection/domicileEngine'
@@ -33,26 +37,26 @@ type ChecklistDbRow = {
 
 interface Props {
   householdId:       string
-  /** Household owner (client) user id — used for checklist rows and RLS */
-  clientId:            string
   currentState:        string
   grossEstateByYear:   Record<number, number>
   federalExemption?:   number
   initialSchedule:     DomicileScheduleRow[]
+  initialChecklist:    ChecklistDbRow[]
 }
 
 export default function DomicileScheduleEditor({
   householdId,
-  clientId,
   currentState,
   grossEstateByYear,
   federalExemption,
   initialSchedule,
+  initialChecklist,
 }: Props) {
+  const router = useRouter()
   const [schedule, setSchedule]           = useState<DomicileScheduleRow[]>(initialSchedule ?? [])
   const [saving, setSaving]               = useState(false)
   const [breakeven, setBreakeven]         = useState<MoveBreakevenResult | null>(null)
-  const [checklist, setChecklist]         = useState<ChecklistDbRow[]>([])
+  const [checklist, setChecklist]         = useState<ChecklistDbRow[]>(initialChecklist ?? [])
   const [activeTab, setActiveTab]         = useState<'schedule' | 'breakeven' | 'checklist'>('schedule')
 
   // New row form
@@ -62,30 +66,9 @@ export default function DomicileScheduleEditor({
 
   const supabase = createClient()
 
-  useEffect(() => { loadChecklist() }, [householdId])
-
-  async function loadChecklist() {
-    const { data: analysis } = await supabase
-      .from('domicile_analysis')
-      .select('id')
-      .eq('household_id', householdId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (!analysis?.id) {
-      setChecklist([])
-      return
-    }
-
-    const { data } = await supabase
-      .from('domicile_checklist_items')
-      .select('*')
-      .eq('analysis_id', analysis.id)
-      .order('priority', { ascending: false })
-
-    setChecklist((data ?? []) as ChecklistDbRow[])
-  }
+  useEffect(() => {
+    setChecklist(initialChecklist ?? [])
+  }, [initialChecklist])
 
   async function addRow() {
     if (!newState) return
@@ -129,11 +112,8 @@ export default function DomicileScheduleEditor({
   }
 
   async function toggleChecklistItem(itemId: string, completed: boolean) {
-    await supabase
-      .from('domicile_checklist_items')
-      .update({ completed: !completed, completed_at: !completed ? new Date().toISOString() : null })
-      .eq('id', itemId)
-    await loadChecklist()
+    const res = await toggleChecklistItemAction(itemId, completed)
+    if (res.success) router.refresh()
   }
 
   function runBreakeven() {
@@ -152,39 +132,10 @@ export default function DomicileScheduleEditor({
     setActiveTab('breakeven')
   }
 
-  // Seed checklist for a new state
   async function seedChecklist(toState: string) {
-    const items = getChecklistForState(toState)
-    if (!clientId) return
-
-    // Get the analysis_id from domicile_analysis for this household
-    const { data: analysis } = await supabase
-      .from('domicile_analysis')
-      .select('id')
-      .eq('household_id', householdId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (!analysis) return
-
-    const rows = items.map(item => ({
-      analysis_id: analysis.id,
-      user_id:     clientId,
-      category:    item.category,
-      item_key:    item.item_key,
-      label:       item.label,
-      description: item.description,
-      priority:    item.priority,
-      completed:   false,
-    }))
-
-    await supabase
-      .from('domicile_checklist_items')
-      .upsert(rows, { onConflict: 'analysis_id,item_key' })
-      .select()
-
-    await loadChecklist()
+    const res = await seedDomicileChecklist(householdId, toState)
+    if (!res.success) return
+    router.refresh()
     setActiveTab('checklist')
   }
 

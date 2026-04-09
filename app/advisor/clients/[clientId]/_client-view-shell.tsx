@@ -192,6 +192,7 @@ export interface ClientViewShellProps {
   estateTax: any | null
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
+  domicileChecklist: any[]
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string
