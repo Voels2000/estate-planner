@@ -110,6 +110,11 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
         />
       </section>
 
+      {/* Temp debug — remove after fix */}
+      <pre className="text-xs bg-gray-100 p-2 rounded mb-4">
+        state_primary: {JSON.stringify(household?.state_primary)}
+      </pre>
+
       {household?.state_primary === 'NY' && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">NY Cliff Analysis</h2>
