@@ -36,6 +36,8 @@ export type YearRow = {
   assets_roth: number
   assets_taxable: number
   assets_total: number
+  /** Pooled / joint-only total (excludes person1 + person2 explicitly owned) */
+  assets_pooled_total: number
   // Assets — Person 1
   assets_p1_tax_deferred: number
   assets_p1_roth: number
@@ -141,6 +143,13 @@ export type CompleteProjectionInput = {
   }[]
   // State income tax rates from DB — replaces hardcoded STATE_RATES
   state_income_tax_rates?: StateIncomeTaxRate[]
+  businesses?: Array<{
+    id: string
+    name: string
+    estimated_value: number
+    ownership_pct?: number
+    owner?: string
+  }>
   // Optional overrides — used by Scenarios page to test alternate states / growth rates
   overrides?: {
     state_primary?: string | null
@@ -341,10 +350,52 @@ function isRetired(birthYear: number | null, retirementAge: number | null, year:
   return year >= birthYear + retirementAge
 }
 
-// ─── Asset type classification ─────────────────────────────────────────────────
+// ─── Asset / liability type normalization ────────────────────────────────────
 
-const TAX_DEFERRED_TYPES = ['traditional_ira', '401k', 'traditional_401k', '403b', 'traditional_403b', '457', 'sep_ira', 'simple_ira', 'pension']
-const ROTH_TYPES         = ['roth_ira', 'roth_401k']
+const MORTGAGE_TYPES = new Set([
+  'mortgage',
+  'home_mortgage',
+  'primary_mortgage',
+  'heloc',
+  'home_equity',
+])
+
+const DEFERRED_TYPES = new Set([
+  '401k',
+  '403b',
+  'ira',
+  'traditional_ira',
+  'retirement_account',
+  'pension',
+  'sep_ira',
+  'simple_ira',
+  'traditional_401k',
+  'traditional_403b',
+  '457',
+  'sep',
+])
+
+const ROTH_TYPE_SET = new Set(['roth', 'roth_ira', 'roth_401k', 'roth_403b'])
+
+function normalizeLiabilityType(type: string | undefined): string {
+  return (type?.toLowerCase().replace(/-/g, '_') ?? '').trim()
+}
+
+function isMortgageType(type: string | undefined): boolean {
+  return MORTGAGE_TYPES.has(normalizeLiabilityType(type))
+}
+
+function normalizeAssetType(type: string | undefined): string {
+  return (type?.toLowerCase().replace(/-/g, '_') ?? '').trim()
+}
+
+function isTaxDeferredAssetType(type: string | undefined): boolean {
+  return DEFERRED_TYPES.has(normalizeAssetType(type))
+}
+
+function isRothAssetType(type: string | undefined): boolean {
+  return ROTH_TYPE_SET.has(normalizeAssetType(type))
+}
 
 type AssetBucket = { taxDeferred: number; roth: number; taxable: number }
 
@@ -361,9 +412,9 @@ function classifyAssets(
       })
     : []
   return {
-    taxDeferred: matched.filter(a => TAX_DEFERRED_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
-    roth:        matched.filter(a => ROTH_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
-    taxable:     matched.filter(a => !TAX_DEFERRED_TYPES.includes(a.type) && !ROTH_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    taxDeferred: matched.filter(a => isTaxDeferredAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    roth:        matched.filter(a => isRothAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    taxable:     matched.filter(a => !isTaxDeferredAssetType(a.type) && !isRothAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
   }
 }
 
@@ -379,9 +430,9 @@ function classifyPooledAssets(
     return !isP1 && !isP2
   })
   return {
-    taxDeferred: pooled.filter(a => TAX_DEFERRED_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
-    roth:        pooled.filter(a => ROTH_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
-    taxable:     pooled.filter(a => !TAX_DEFERRED_TYPES.includes(a.type) && !ROTH_TYPES.includes(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    taxDeferred: pooled.filter(a => isTaxDeferredAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    roth:        pooled.filter(a => isRothAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
+    taxable:     pooled.filter(a => !isTaxDeferredAssetType(a.type) && !isRothAssetType(a.type)).reduce((s, a) => s + (a.value ?? 0), 0),
   }
 }
 
@@ -438,6 +489,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const dbStateRates       = input.state_income_tax_rates
   const overrides          = input.overrides ?? {}
   const currentYear        = new Date().getFullYear()
+  const businessesInput    = input.businesses ?? []
+  const baseBusinessValue  = businessesInput.reduce(
+    (sum, b) => sum + Number(b.estimated_value ?? 0) * ((b.ownership_pct ?? 100) / 100),
+    0,
+  )
 
   const p1Name      = household.person1_name ?? ''
   const p2Name      = household.has_spouse ? (household.person2_name ?? null) : null
@@ -470,13 +526,13 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   let re_other   = realEstateInput.filter(r => !r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
 
   // ── Starting liabilities ─────────────────────────────────────────────────────
-  let mortgageBalance = liabilities.filter(l => l.type === 'mortgage').reduce((s, l) => s + (l.balance ?? 0), 0)
-  let otherDebt       = liabilities.filter(l => l.type !== 'mortgage').reduce((s, l) => s + (l.balance ?? 0), 0)
+  let mortgageBalance = liabilities.filter(l => isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
+  let otherDebt       = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
 
-  const annualMortgagePayment  = liabilities.filter(l => l.type === 'mortgage').reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
-  const annualOtherDebtPayment = liabilities.filter(l => l.type !== 'mortgage').reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
+  const annualMortgagePayment  = liabilities.filter(l => isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
+  const annualOtherDebtPayment = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
   const avgMortgageRate = (() => {
-    const mortgages = liabilities.filter(l => l.type === 'mortgage')
+    const mortgages = liabilities.filter(l => isMortgageType(l.type))
     return mortgages.length > 0
       ? mortgages.reduce((s, l) => s + (l.interest_rate ?? 0), 0) / mortgages.length / 100
       : 0
@@ -495,6 +551,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   for (let year = currentYear; year <= endYear; year++) {
     const yearsFromNow    = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
+    const businessValue   = Math.round(baseBusinessValue * inflationFactor)
 
     const age1 = year - p1Birth
     const age2 = household.has_spouse && household.person2_birth_year
@@ -647,10 +704,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const poolTotal = bucketTotal(poolBucket)
     const assets_total = p1Total + p2Total + poolTotal
 
-    const net_worth = assets_total + re_total - liabilities_total
+    const net_worth = assets_total + re_total + businessValue - liabilities_total
 
-    const estate_excl_home = assets_total + re_other - liabilities_total
-    const estate_incl_home = assets_total + re_total - liabilities_total
+    const estate_excl_home = assets_total + re_other + businessValue - liabilities_total
+    const estate_incl_home = assets_total + re_total + businessValue - liabilities_total
 
     rows.push({
       year,
@@ -684,7 +741,8 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       assets_tax_deferred: poolBucket.taxDeferred,
       assets_roth:         poolBucket.roth,
       assets_taxable:      poolBucket.taxable,
-      assets_total:        poolTotal,
+      assets_total:        assets_total,
+      assets_pooled_total: poolTotal,
       assets_p1_tax_deferred: p1Bucket.taxDeferred,
       assets_p1_roth:         p1Bucket.roth,
       assets_p1_taxable:      p1Bucket.taxable,

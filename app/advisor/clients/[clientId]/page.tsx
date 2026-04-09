@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
+import type { PDFReportData } from '@/lib/export/generatePDFReport'
+import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -121,6 +123,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   const scenarioForStrategy = scenario
     ? {
+        id: scenario.id,
         gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
         federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000),
         annual_rmd: Number(latestOutput?.income_rmd ?? 0),
@@ -140,6 +143,112 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         law_scenario: (scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law') as 'current_law' | 'sunset' | 'no_exemption',
       }
     : null
+
+  const { data: scenarioHistoryRows } = await supabase
+    .from('projection_scenarios')
+    .select('id, label, version, scenario_type, calculated_at, assumption_snapshot')
+    .eq('household_id', household.id)
+    .eq('status', 'saved')
+    .order('version', { ascending: false })
+    .limit(10)
+
+  const scenarioHistory = (scenarioHistoryRows ?? []).map((s) => {
+    const snap = s.assumption_snapshot as { total_assets?: number } | null
+    return {
+      id: s.id,
+      label: s.label ?? '',
+      version: s.version ?? 0,
+      scenario_type: s.scenario_type ?? '',
+      calculated_at: s.calculated_at ?? '',
+      gross_estate: typeof snap?.total_assets === 'number' ? snap.total_assets : undefined,
+    }
+  })
+
+  const exportClientName = household.has_spouse
+    ? `${household.person1_first_name} & ${household.person2_first_name} ${household.person1_last_name}`
+    : `${household.person1_first_name} ${household.person1_last_name}`
+
+  const reportDateStr = new Date().toLocaleDateString()
+  const grossForExport = Number(latestOutput?.estate_incl_home ?? 0)
+  const fedTaxExport = Number(
+    latestOutput?.estate_tax_federal ?? latestOutput?.federal_tax ?? latestOutput?.federal_estate_tax ?? 0,
+  )
+  const stTaxExport = Number(
+    latestOutput?.estate_tax_state ?? latestOutput?.state_tax ?? latestOutput?.state_estate_tax ?? 0,
+  )
+  const exemptionExport = Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000)
+  const lawScenarioExport = scenarioForStrategy?.law_scenario ?? 'current_law'
+
+  const projectionRowsForExcel: Array<Record<string, number | string>> = scenarioOutputs.map((row) => {
+    const out: Record<string, number | string> = {}
+    for (const [k, v] of Object.entries(row)) {
+      if (typeof v === 'number') out[k] = v
+      else if (typeof v === 'string') out[k] = v
+      else if (v == null) out[k] = ''
+      else out[k] = JSON.stringify(v)
+    }
+    return out
+  })
+
+  const exportPdfData: PDFReportData = {
+    householdId: household.id,
+    clientName: exportClientName,
+    person1Name: `${household.person1_first_name} ${household.person1_last_name}`,
+    person2Name: household.has_spouse
+      ? `${household.person2_first_name} ${household.person2_last_name}`
+      : undefined,
+    advisorName: 'Your Advisor',
+    firmName: 'MyWealthMaps',
+    reportDate: reportDateStr,
+    grossEstate: grossForExport,
+    netWorth: Number(latestOutput?.net_worth ?? grossForExport),
+    liquidAssets: 0,
+    illiquidAssets: grossForExport,
+    assetBreakdown: [],
+    federalTax: fedTaxExport,
+    stateTax: stTaxExport,
+    federalExemption: exemptionExport,
+    lawScenario: lawScenarioExport,
+    healthScore: 0,
+    healthComponents: [],
+    activeStrategies: [],
+    actionItems: [],
+  }
+
+  const exportExcelData: ExcelExportData = {
+    household: {
+      name: exportClientName,
+      person1Name: `${household.person1_first_name} ${household.person1_last_name}`,
+      person2Name: household.has_spouse
+        ? `${household.person2_first_name} ${household.person2_last_name}`
+        : undefined,
+      state: household.state_primary ?? '',
+      filingStatus: household.filing_status ?? '',
+      person1BirthYear: household.person1_birth_year ?? 1960,
+      person2BirthYear: household.person2_birth_year ?? undefined,
+    },
+    assumptions: {
+      grossEstate: grossForExport,
+      federalExemption: exemptionExport,
+      inflationRate: (Number(household.inflation_rate) || 2.5) / 100,
+      growthRateAccumulation: (Number(household.growth_rate_accumulation) || 7) / 100,
+      growthRateRetirement: (Number(household.growth_rate_retirement) || 5) / 100,
+      lawScenario: lawScenarioExport,
+      reportDate: reportDateStr,
+    },
+    projectionRows: projectionRowsForExcel,
+    taxScenarios: [
+      {
+        scenario: 'Base case (current law)',
+        exemption: exemptionExport,
+        federalTax: fedTaxExport,
+        stateTax: stTaxExport,
+        totalTax: fedTaxExport + stTaxExport,
+        netToHeirs: Number(latestOutput?.net_to_heirs ?? 0),
+      },
+    ],
+    strategies: [],
+  }
 
   // ── Domicile Analysis ─────────────────────────────────────────────────────
   const { data: domicileAnalysis } = await supabase
@@ -218,6 +327,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       notes={notes ?? []}
       estateTax={estateTax}
       scenario={scenarioForStrategy}
+      scenarioHistory={scenarioHistory}
+      exportPdfData={exportPdfData}
+      exportExcelData={exportExcelData}
       domicileAnalysis={domicileAnalysis ?? null}
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}

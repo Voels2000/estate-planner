@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
+import ExportPanel from '@/components/advisor/ExportPanel'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 function getClientName(household: ClientViewShellProps['household']) {
@@ -12,7 +13,13 @@ function getClientName(household: ClientViewShellProps['household']) {
   return `${household?.person1_first_name ?? ''} ${household?.person1_last_name ?? ''}`.trim() || 'Client'
 }
 
-export default function MeetingPrepTab({ clientId, household }: ClientViewShellProps) {
+export default function MeetingPrepTab({
+  clientId,
+  household,
+  scenarioHistory = [],
+  exportPdfData,
+  exportExcelData,
+}: ClientViewShellProps) {
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
@@ -43,6 +50,8 @@ export default function MeetingPrepTab({ clientId, household }: ClientViewShellP
     }
   }
 
+  const clientName = getClientName(household)
+
   return (
     <div className="space-y-8">
       <DisclaimerBanner />
@@ -52,6 +61,26 @@ export default function MeetingPrepTab({ clientId, household }: ClientViewShellP
         <p className="text-sm text-gray-500 mb-6">
           Review health score changes, open alerts, and estate snapshot before your client meeting.
         </p>
+        <MeetingPrep
+          clientId={clientId}
+          householdId={household.id}
+          clientName={clientName}
+        />
+      </section>
+
+      {exportPdfData && exportExcelData && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Export & Reports</h2>
+          <ExportPanel
+            clientName={clientName}
+            pdfData={exportPdfData}
+            excelData={exportExcelData}
+            scenarioHistory={scenarioHistory}
+          />
+        </section>
+      )}
+
+      <section>
         <div className="mb-4">
           <button
             type="button"
@@ -68,11 +97,6 @@ export default function MeetingPrepTab({ clientId, household }: ClientViewShellP
           {recalcSuccess && <p className="mt-2 text-sm text-green-700">{recalcSuccess}</p>}
           {recalcError && <p className="mt-2 text-sm text-red-700">{recalcError}</p>}
         </div>
-        <MeetingPrep
-          clientId={clientId}
-          householdId={household.id}
-          clientName={getClientName(household)}
-        />
       </section>
     </div>
   )

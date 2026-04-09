@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     { data: irmaa_brackets },
     { data: real_estate },
     { data: state_income_tax_rates },
+    { data: business_interests },
   ] = await Promise.all([
     supabase
       .from('households')
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
         person1_ss_claiming_age, person1_longevity_age, person1_ss_benefit_62, person1_ss_benefit_67,
         has_spouse, person2_name, person2_birth_year, person2_retirement_age,
         person2_ss_claiming_age, person2_longevity_age, person2_ss_benefit_62, person2_ss_benefit_67,
-        filing_status, state_primary, inflation_rate,
+        filing_status, state_primary, state_secondary, inflation_rate,
         growth_rate_accumulation, growth_rate_retirement
       `)
       .eq('owner_id', user.id)
@@ -56,6 +57,10 @@ export async function GET(request: NextRequest) {
     supabase.from('real_estate').select('id, name, current_value, is_primary_residence, owner').eq('owner_id', user.id),
     // Fetch state income tax rates from DB — no hardcoding
     supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),
+    supabase
+      .from('business_interests')
+      .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
+      .eq('owner_id', user.id),
   ])
 
   if (!household) {
@@ -71,6 +76,17 @@ export async function GET(request: NextRequest) {
     irmaa_brackets:           irmaa_brackets ?? [],
     real_estate:             (real_estate   ?? []) as { id: string; name: string; current_value: number; is_primary_residence: boolean; owner: string }[],
     state_income_tax_rates:   state_income_tax_rates ?? [],
+    businesses: (business_interests ?? []).map((b) => ({
+      id: b.id as string,
+      name: (b as { entity_name?: string }).entity_name ?? 'Business',
+      estimated_value: Number(
+        (b as { fmv_estimated?: number; total_entity_value?: number }).fmv_estimated ??
+          (b as { total_entity_value?: number }).total_entity_value ??
+          0,
+      ),
+      ownership_pct: (b as { ownership_pct?: number }).ownership_pct ?? undefined,
+      owner: (b as { owner?: string }).owner ?? undefined,
+    })),
     overrides: Object.keys(overrides).length > 0 ? overrides as never : undefined,
   })
 

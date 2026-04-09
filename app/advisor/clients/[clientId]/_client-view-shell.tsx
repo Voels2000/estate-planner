@@ -1,6 +1,8 @@
 'use client'
 import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
+import type { PDFReportData } from '@/lib/export/generatePDFReport'
+import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import OverviewTab from './_tabs/OverviewTab'
@@ -184,6 +186,7 @@ export interface ClientViewShellProps {
   notes: any[]
   estateTax: any | null
   scenario?: {
+    id?: string
     gross_estate?: number
     federal_exemption?: number
     annual_rmd?: number
@@ -192,6 +195,16 @@ export interface ClientViewShellProps {
     estimated_state_tax?: number
     law_scenario?: 'current_law' | 'sunset' | 'no_exemption'
   } | null
+  scenarioHistory?: Array<{
+    id: string
+    label: string
+    version: number
+    scenario_type: string
+    calculated_at: string
+    gross_estate?: number
+  }>
+  exportPdfData?: PDFReportData
+  exportExcelData?: ExcelExportData
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
   domicileChecklist: any[]

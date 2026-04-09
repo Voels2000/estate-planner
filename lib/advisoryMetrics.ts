@@ -238,34 +238,48 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
       : 'Model a Credit Shelter Trust in the strategy panels to calculate the crossover year.',
   })
 
-  // Sunset urgency engine
-  const sunsetDate = new Date(`${sunsetYear}-12-31`)
+  // Sunset urgency — statutory sunset is Dec 31 of sunsetYear (TCJA individual exemption)
+  const sunsetDate = new Date(`${sunsetYear}-12-31T23:59:59`)
   const today = new Date()
-  const daysRemaining = Math.max(
-    0,
-    Math.floor((sunsetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
-  )
-  const urgencyLevel = (daysRemaining < 180
-    ? 'critical'
-    : daysRemaining < 365
-      ? 'high'
-      : daysRemaining < 730
-        ? 'medium'
-        : 'low') as 'low' | 'medium' | 'high' | 'critical'
+  const isPastSunset = today.getTime() > sunsetDate.getTime()
+  const daysRemaining = isPastSunset
+    ? 0
+    : Math.max(
+        0,
+        Math.floor((sunsetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+      )
+
+  let urgencyLevel: 'low' | 'medium' | 'high' | 'critical'
+  if (isPastSunset && sunsetExposure > 0) {
+    urgencyLevel = 'critical'
+  } else if (daysRemaining < 180) {
+    urgencyLevel = 'critical'
+  } else if (daysRemaining < 365) {
+    urgencyLevel = 'high'
+  } else if (daysRemaining < 730) {
+    urgencyLevel = 'medium'
+  } else {
+    urgencyLevel = 'low'
+  }
+
+  const sunsetDateLabel = sunsetDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
 
   const sunsetUrgency = {
     daysRemaining,
-    sunsetDate: sunsetDate.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }),
+    sunsetDate: sunsetDateLabel,
     exposureAtSunset: sunsetExposure,
     urgencyLevel,
-    message:
-      sunsetExposure > 0
-        ? `${daysRemaining} days until exemption sunset. This household faces $${Math.round(sunsetExposure).toLocaleString()} in additional estate tax if the exemption reverts.`
-        : `${daysRemaining} days until exemption sunset. This estate is currently below both current law and sunset exemption thresholds.`,
+    message: isPastSunset
+      ? sunsetExposure > 0
+        ? `The federal estate tax exemption sunset occurred December 31, ${sunsetYear}. This household faces an estimated $${Math.round(sunsetExposure).toLocaleString()} in additional estate tax if exemptions revert toward pre-TCJA levels.`
+        : `The federal estate tax exemption sunset occurred December 31, ${sunsetYear}. This estate is currently below typical post-sunset exemption thresholds in modeled scenarios.`
+      : sunsetExposure > 0
+        ? `${daysRemaining} days until exemption sunset (${sunsetDateLabel}). This household faces $${Math.round(sunsetExposure).toLocaleString()} in additional estate tax if the exemption reverts.`
+        : `${daysRemaining} days until exemption sunset (${sunsetDateLabel}). This estate is currently below both current law and sunset exemption thresholds.`,
   }
 
   return { metrics, sunsetUrgency }

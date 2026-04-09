@@ -165,7 +165,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         {monteCarloOpen && (
           <MonteCarloPanel
             householdId={household.id}
-            scenarioId={undefined}
+            scenarioId={scenario?.id ?? undefined}
             grossEstate={grossEstate}
             federalExemption={federalExemption}
             estimatedStateTax={estimatedStateTax}

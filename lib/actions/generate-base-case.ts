@@ -48,6 +48,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       { data: real_estate },
       { data: state_income_tax_rates },
       { data: taxConfigs },
+      { data: business_interests },
     ] = await Promise.all([
       admin
         .from('assets')
@@ -79,6 +80,10 @@ export async function generateBaseCase(householdId: string): Promise<{
         .select('state_code, rate_pct, tax_year')
         .order('tax_year', { ascending: false }),
       admin.from('federal_tax_config').select('*').eq('is_active', true),
+      admin
+        .from('business_interests')
+        .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
+        .eq('owner_id', clientOwnerId),
     ])
 
     // Run income projection engine
@@ -97,6 +102,17 @@ export async function generateBaseCase(householdId: string): Promise<{
         owner: string
       }[],
       state_income_tax_rates: state_income_tax_rates ?? [],
+      businesses: (business_interests ?? []).map((b) => ({
+        id: b.id as string,
+        name: (b as { entity_name?: string }).entity_name ?? 'Business',
+        estimated_value: Number(
+          (b as { fmv_estimated?: number; total_entity_value?: number }).fmv_estimated ??
+            (b as { total_entity_value?: number }).total_entity_value ??
+            0,
+        ),
+        ownership_pct: (b as { ownership_pct?: number }).ownership_pct ?? undefined,
+        owner: (b as { owner?: string }).owner ?? undefined,
+      })),
     })
 
     // State estate tax rate - use flat approximation until RPC is wired
