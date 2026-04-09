@@ -189,10 +189,14 @@ serve(async (req) => {
       })
     }
 
+    // Create a user-scoped client to validate the JWT
+    const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    })
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+    } = await userSupabase.auth.getUser()
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
