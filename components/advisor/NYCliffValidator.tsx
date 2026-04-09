@@ -13,6 +13,7 @@ function fmt(n: number) {
 
 export default function NYCliffValidator({ year, dbExemptions }: Props) {
   const results = validateNYCliffCases(year, dbExemptions)
+  console.log('NYCliffValidator:', { year, dbExemptions: dbExemptions?.length, results: results.length, firstResult: results[0] })
   const allPassed = results.every(r => r.passed)
 
   return (
