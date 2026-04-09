@@ -299,11 +299,6 @@ export default function DomicileScheduleEditor({
           {checklist.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-sm text-slate-400 mb-2">No checklist items yet.</p>
-              <p className="text-xs text-red-500">
-                DEBUG: checklist={checklist.length} schedule={schedule.length}
-                currentState={currentState}
-                found={schedule.find(r => r.state_code !== currentState)?.state_code ?? 'none'}
-              </p>
               <button
                 onClick={() => {
                   console.log('SEED BUTTON CLICKED')
