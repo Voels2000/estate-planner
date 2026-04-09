@@ -123,7 +123,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     ? {
         gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
         federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000),
-        law_scenario: (scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law') as const,
+        law_scenario: (scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law') as 'current_law' | 'sunset' | 'no_exemption',
       }
     : null
 
