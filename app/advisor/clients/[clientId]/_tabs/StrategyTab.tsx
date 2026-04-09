@@ -3,12 +3,14 @@
 // Sprint 59 — StrategyTab base case view
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
+import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
@@ -75,10 +77,54 @@ export default function StrategyTab({
     federalExemption: number
     statePrimary: string | null
   } | null>(null)
+  const [domicileTransition, setDomicileTransition] = useState<{
+    fromState: string
+    toState: string
+    year: number
+  } | undefined>(undefined)
 
   useEffect(() => {
     loadScenario()
   }, [clientId, activeScenario, activeSequence])
+
+  useEffect(() => {
+    let cancelled = false
+    const primary = (strategyMeta?.statePrimary ?? 'WA').trim().toUpperCase()
+
+    async function loadDomicileNote() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('domicile_schedule')
+        .select('effective_year, state_code')
+        .eq('household_id', householdId)
+        .order('effective_year', { ascending: true })
+
+      if (cancelled) return
+
+      const nowYear = new Date().getFullYear()
+      const row = (data ?? []).find(
+        r =>
+          r.effective_year >= nowYear &&
+          String(r.state_code).trim().toUpperCase() !== primary,
+      )
+
+      if (row) {
+        setDomicileTransition({
+          fromState: primary,
+          toState: String(row.state_code).trim().toUpperCase(),
+          year: row.effective_year,
+        })
+      } else {
+        setDomicileTransition(undefined)
+      }
+    }
+
+    if (householdId && strategyMeta) loadDomicileNote()
+
+    return () => {
+      cancelled = true
+    }
+  }, [householdId, strategyMeta])
 
   async function loadScenario() {
     setIsLoading(true)
@@ -139,6 +185,9 @@ export default function StrategyTab({
     : 0
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)
+  const grossEstateByYear = Object.fromEntries(
+    rows.map(r => [r.year, r.estate_incl_home ?? 0]),
+  )
   const clientName = hasSpouse
     ? `${person1Name} & ${person2Name ?? 'Spouse'}`
     : person1Name
@@ -304,6 +353,16 @@ export default function StrategyTab({
         </div>
       )}
 
+      {strategyMeta && (
+        <DomicileScheduleEditor
+          householdId={householdId}
+          clientId={clientId}
+          currentState={strategyMeta.statePrimary ?? 'WA'}
+          grossEstateByYear={grossEstateByYear}
+          federalExemption={strategyMeta.federalExemption}
+        />
+      )}
+
       {/* ── Estate growth line chart ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h3 className="text-sm font-semibold text-slate-700 mb-4">
@@ -403,6 +462,7 @@ export default function StrategyTab({
             advisorId={advisorId}
             isAdvisor={true}
             deathView={activeSequence === 'S1_first' ? 'first_death' : 'second_death'}
+            domicileTransition={domicileTransition}
           />
         </div>
       </div>

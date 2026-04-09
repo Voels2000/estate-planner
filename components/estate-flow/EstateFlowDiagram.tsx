@@ -241,12 +241,20 @@ function Legend() {
 
 // ─── Main diagram component ───────────────────────────────────────────────────
 
+export type DomicileTransitionNote = {
+  fromState: string
+  toState: string
+  year: number
+}
+
 interface Props {
   householdId: string
   scenarioId: string | null
   advisorId?: string
   isAdvisor?: boolean
   deathView?: DeathView
+  /** Planned domicile change from StrategyTab / domicile_schedule */
+  domicileTransition?: DomicileTransitionNote
   onShareLinkGenerated?: (url: string) => void
 }
 
@@ -256,6 +264,7 @@ export default function EstateFlowDiagram({
   advisorId,
   isAdvisor = false,
   deathView,
+  domicileTransition,
   onShareLinkGenerated,
 }: Props) {
   console.log('isAdvisor prop:', isAdvisor)
@@ -522,6 +531,13 @@ export default function EstateFlowDiagram({
           )}
         </svg>
       </div>
+
+      {domicileTransition && (
+        <p className="text-sm text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+          Planned domicile change: {domicileTransition.fromState} → {domicileTransition.toState} in{' '}
+          {domicileTransition.year}. Tax treatment will shift at transition.
+        </p>
+      )}
 
       {/* Death view label */}
       <p className="text-center text-xs text-gray-400">
