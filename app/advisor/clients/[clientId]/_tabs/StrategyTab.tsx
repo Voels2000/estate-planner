@@ -7,6 +7,7 @@ import StrategyOverlay from '@/components/advisor/StrategyOverlay'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
+import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 
 type StrategyLawScenario = 'current_law' | 'sunset' | 'no_exemption'
 
@@ -79,6 +80,23 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Charitable Planning</h2>
         <CharitableImpactCalculator householdId={household.id} isAdvisor />
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Monte Carlo — Probabilistic Estate Tax Range
+        </h2>
+        <MonteCarloPanel
+          householdId={household.id}
+          scenarioId={scenario?.id ?? undefined}
+          grossEstate={grossEstate}
+          federalExemption={federalExemption}
+          estimatedStateTax={estimatedStateTax}
+          person1BirthYear={person1BirthYear}
+          lawScenario={lawScenario}
+          supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
+          supabaseAnonKey={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''}
+        />
       </section>
     </div>
   )
