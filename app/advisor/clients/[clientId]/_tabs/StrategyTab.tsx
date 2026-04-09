@@ -276,6 +276,15 @@ export default function StrategyTab({
         <div className="text-xs text-red-500">DEBUG: currentSummary is undefined</div>
       )}
 
+      {summaries.length === 0 && (
+        <div className="text-xs text-red-500">DEBUG: summaries empty</div>
+      )}
+      {summaries.length > 0 && !currentSummary && (
+        <div className="text-xs text-red-500">
+          DEBUG: no match for {activeScenario} in [{summaries.map(s => s.scenario_id).join(', ')}]
+        </div>
+      )}
+
       {/* ── State estate tax (Sprint 64) ── */}
       {strategyMeta && currentSummary && (
         <div className="space-y-2">
