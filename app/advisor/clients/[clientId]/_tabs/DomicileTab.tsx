@@ -3,9 +3,15 @@
 // Domicile risk analysis — read-only advisor view
 // Data comes from domicile_analysis table, pre-scored by calculate_domicile_risk() RPC
 
+import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
+import StateTaxPanel from '@/components/advisor/StateTaxPanel'
+import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
 
-export default function DomicileTab({ domicileAnalysis, household }: ClientViewShellProps) {
+/** Sprint 66: align with combined federal/state waterfall when available */
+const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
+
+export default function DomicileTab({ domicileAnalysis, household, clientId }: ClientViewShellProps) {
 
   if (!domicileAnalysis) {
     return (
@@ -44,6 +50,11 @@ export default function DomicileTab({ domicileAnalysis, household }: ClientViewS
   const recs: string[] = recommendations ?? []
 
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
+
+  const grossEstateForStateTax =
+    (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
+    (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
+    0
 
   const factors = [
     { label: "Driver's License",       value: drivers_license_state,      weight: 15 },
@@ -220,6 +231,22 @@ export default function DomicileTab({ domicileAnalysis, household }: ClientViewS
             </div>
           )}
         </div>
+      </div>
+
+      {/* Sprint 66: wire grossEstate / grossEstateByYear from projection waterfall */}
+      <div className="space-y-6">
+        <StateTaxPanel
+          grossEstate={grossEstateForStateTax}
+          stateCode={parseStateTaxCode(claimed_domicile_state ?? 'WA')}
+          federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
+        />
+        <DomicileScheduleEditor
+          householdId={household.id}
+          clientId={clientId}
+          currentState={claimed_domicile_state ?? 'WA'}
+          grossEstateByYear={{}}
+          federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
+        />
       </div>
     </div>
   )

@@ -9,9 +9,6 @@ import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
-import StateTaxPanel from '@/components/advisor/StateTaxPanel'
-import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
-import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -185,9 +182,6 @@ export default function StrategyTab({
     : 0
 
   const peak = Math.max(...rows.map(r => r.estate_incl_home), 1)
-  const grossEstateByYear = Object.fromEntries(
-    rows.map(r => [r.year, r.estate_incl_home ?? 0]),
-  )
   const clientName = hasSpouse
     ? `${person1Name} & ${person2Name ?? 'Spouse'}`
     : person1Name
@@ -332,35 +326,6 @@ export default function StrategyTab({
         <div className="text-xs text-red-500">
           DEBUG: no match for {activeScenario} in [{summaries.map(s => s.scenario_id).join(', ')}]
         </div>
-      )}
-
-      {/* ── State estate tax (Sprint 64) ── */}
-      {strategyMeta && currentSummary && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-slate-700">State Estate Tax</h3>
-          <StateTaxPanel
-            grossEstate={currentSummary.gross_estate}
-            stateCode={parseStateTaxCode(strategyMeta.statePrimary)}
-            federalExemption={strategyMeta.federalExemption}
-            dsue={rows[rows.length - 1]?.dsue_available ?? 0}
-            projectionYears={(() => {
-              const ys = Array.from(new Set(rows.map(r => r.year)))
-                .filter(y => y >= 2025 && y <= 2035)
-                .slice(0, 8)
-              return ys.length > 0 ? ys : undefined
-            })()}
-          />
-        </div>
-      )}
-
-      {strategyMeta && (
-        <DomicileScheduleEditor
-          householdId={householdId}
-          clientId={clientId}
-          currentState={strategyMeta.statePrimary ?? 'WA'}
-          grossEstateByYear={grossEstateByYear}
-          federalExemption={strategyMeta.federalExemption}
-        />
       )}
 
       {/* ── Estate growth line chart ── */}
