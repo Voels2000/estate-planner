@@ -110,10 +110,12 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
         />
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">NY Cliff Analysis</h2>
-        <NYCliffValidator year={currentYear} dbExemptions={stateExemptions} />
-      </section>
+      {household?.state_primary === 'NY' && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">NY Cliff Analysis</h2>
+          <NYCliffValidator year={currentYear} dbExemptions={stateExemptions} />
+        </section>
+      )}
     </div>
   )
 }
