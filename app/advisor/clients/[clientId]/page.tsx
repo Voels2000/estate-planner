@@ -116,7 +116,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       ? scenario.outputs_s1_first
       : (Array.isArray(scenario?.outputs) ? scenario.outputs : [])
   ) as Array<Record<string, unknown>>
-  const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[scenarioOutputs.length - 1] : null
+  const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[0] : null
   const assumptionSnapshot = (scenario?.assumption_snapshot ?? {}) as Record<string, unknown>
 
   const scenarioForStrategy = scenario
