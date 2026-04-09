@@ -15,7 +15,6 @@ import {
 } from '@/lib/strategy/validateComposability'
 
 interface CompositeOverlayProps {
-  householdId: string
   grossEstate: number
   federalExemption: number
   estimatedFederalTax: number
@@ -35,10 +34,8 @@ function calcTax(estate: number, exemption: number, lawScenario: string): number
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
-const fmtK = (n: number) => `$${Math.round(n / 1000)}K`
 
 export default function CompositeOverlay({
-  householdId,
   grossEstate,
   federalExemption,
   estimatedFederalTax,
@@ -177,7 +174,8 @@ export default function CompositeOverlay({
           <div className="flex justify-between text-xs text-gray-500 mb-1">
             <span>Estate Tax ({lawScenario.replace('_', ' ')})</span>
             <span className="text-red-600">
-              Baseline: {fmt(baselineTax)} → With strategies: {fmt(strategyTax)}
+              Scenario est.: {fmt(estimatedFederalTax)} · Model baseline: {fmt(baselineTax)} → With
+              strategies: {fmt(strategyTax)}
             </span>
           </div>
           <div className="h-5 bg-gray-100 rounded-full overflow-hidden relative">

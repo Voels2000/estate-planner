@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
 
 type Props = {
@@ -127,8 +126,6 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
           </div>
         </div>
       )}
-
-      <DisclaimerBanner context="estate strategy" /> {/* always last, always renders */}
     </div>
   )
 }

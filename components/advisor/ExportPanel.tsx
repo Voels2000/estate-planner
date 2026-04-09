@@ -1,201 +1,355 @@
 'use client'
 
-// Sprint 73 — ExportPanel
-// Advisor-facing export UI in StrategyTab or Meeting Prep tab
-// PDF generation via browser print (window.print on hidden iframe)
-// Excel generation via SheetJS (client-side, no server needed)
-// Scenario version history table
-
 import { useState } from 'react'
-import { buildExcelWorkbook, ExcelExportData } from '@/lib/export/generateExcelExport'
-import { generatePDFHTML, PDFReportData, determinePDFPages } from '@/lib/export/generatePDFReport'
+import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import type {
+  ActionItem,
+  MonteCarloSummary,
+  ScenarioVersion,
+} from '@/lib/export-wiring'
+
+export interface ExportProjectionRow {
+  year: number
+  age_p1: number
+  age_p2: number | null
+  gross_estate: number
+  federal_tax: number
+  state_tax: number
+  net_to_heirs: number
+}
+
+export interface TaxSummaryExport {
+  federal_tax_current: number
+  federal_tax_sunset: number
+  state_tax: number
+  state_name: string
+}
 
 interface ExportPanelProps {
-  clientName: string
-  pdfData: PDFReportData
-  excelData: ExcelExportData
-  scenarioHistory?: Array<{
-    id: string
-    label: string
-    version: number
-    scenario_type: string
-    calculated_at: string
-    gross_estate?: number
-  }>
+  householdId: string
+  scenarioId: string
+  advisorName: string
+  healthScore: number | null
+  liquidAssets: number
+  activeStrategies: string[]
+  actionItems: ActionItem[]
+  projectionData: ExportProjectionRow[]
+  taxSummary: TaxSummaryExport | null
+  monteCarloRun: boolean
+  monteCarloResults: MonteCarloSummary | null
+  liquidityShortfall: boolean
+  scenarioHistory: ScenarioVersion[]
+}
+
+function fmt(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
 }
 
 export default function ExportPanel({
-  clientName,
-  pdfData,
-  excelData,
-  scenarioHistory = [],
+  householdId,
+  scenarioId,
+  advisorName,
+  healthScore,
+  liquidAssets,
+  activeStrategies,
+  actionItems,
+  projectionData,
+  taxSummary,
+  monteCarloRun,
+  monteCarloResults,
+  liquidityShortfall,
+  scenarioHistory,
 }: ExportPanelProps) {
-  const [pdfLoading, setPdfLoading] = useState(false)
-  const [excelLoading, setExcelLoading] = useState(false)
-  const [pdfSuccess, setPdfSuccess] = useState(false)
-  const [excelSuccess, setExcelSuccess] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
-  const includedPages = determinePDFPages(pdfData)
+  const handlePdfExport = () => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
 
-  const handlePDFExport = async () => {
-    setPdfLoading(true)
-    setPdfSuccess(false)
-    try {
-      const html = generatePDFHTML(pdfData)
+    const pages: string[] = []
 
-      // Open in new window for browser print
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        alert('Please allow popups to generate the PDF report.')
-        return
-      }
-      printWindow.document.write(html)
-      printWindow.document.close()
-      printWindow.focus()
+    pages.push(`
+      <div class="page">
+        <h1>Estate Planning Report</h1>
+        <p class="subtitle">Prepared by ${advisorName || 'Your Advisor'}</p>
+        <p class="date">Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        ${healthScore !== null ? `<div class="score-box"><span class="score-label">Plan Health Score</span><span class="score-value">${healthScore}/100</span></div>` : ''}
+        <p class="disclaimer">This report is for informational purposes only and does not constitute legal, tax, or financial advice. Projections are estimates based on current law and assumptions that may change.</p>
+      </div>
+    `)
 
-      // Trigger print after content loads
-      setTimeout(() => {
-        printWindow.print()
-        setPdfSuccess(true)
-      }, 500)
-    } catch (err) {
-      console.error('PDF export error:', err)
-    } finally {
-      setPdfLoading(false)
+    if (projectionData.length > 0) {
+      pages.push(`
+        <div class="page">
+          <h2>Estate Snapshot</h2>
+          <table>
+            <thead><tr><th>Year</th><th>Age (P1)</th><th>Gross Estate</th><th>Federal Tax</th><th>State Tax</th><th>Net to Heirs</th></tr></thead>
+            <tbody>
+              ${projectionData
+                .map(
+                  (r) => `
+                <tr>
+                  <td>${r.year}</td>
+                  <td>${r.age_p1}</td>
+                  <td>${fmt(r.gross_estate)}</td>
+                  <td>${fmt(r.federal_tax)}</td>
+                  <td>${fmt(r.state_tax)}</td>
+                  <td>${fmt(r.net_to_heirs)}</td>
+                </tr>`,
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>
+      `)
     }
+
+    if (taxSummary) {
+      pages.push(`
+        <div class="page">
+          <h2>Tax Analysis</h2>
+          <div class="metric-grid">
+            <div class="metric"><span class="label">Federal Tax - Current Law</span><span class="value">${fmt(taxSummary.federal_tax_current)}</span></div>
+            <div class="metric"><span class="label">Federal Tax - Sunset Scenario</span><span class="value">${fmt(taxSummary.federal_tax_sunset)}</span></div>
+            <div class="metric"><span class="label">${taxSummary.state_name} State Tax</span><span class="value">${fmt(taxSummary.state_tax)}</span></div>
+          </div>
+        </div>
+      `)
+    }
+
+    if (activeStrategies.length > 0) {
+      pages.push(`
+        <div class="page">
+          <h2>Strategy Summary</h2>
+          <ul>
+            ${activeStrategies.map((s) => `<li>${s}</li>`).join('')}
+          </ul>
+        </div>
+      `)
+    }
+
+    if (monteCarloRun && monteCarloResults) {
+      pages.push(`
+        <div class="page">
+          <h2>Monte Carlo Analysis (${monteCarloResults.paths.toLocaleString()} paths)</h2>
+          <div class="metric-grid">
+            <div class="metric"><span class="label">P10 (Pessimistic)</span><span class="value">${fmt(monteCarloResults.p10)}</span></div>
+            <div class="metric"><span class="label">P50 (Base Case)</span><span class="value">${fmt(monteCarloResults.p50)}</span></div>
+            <div class="metric"><span class="label">P90 (Optimistic)</span><span class="value">${fmt(monteCarloResults.p90)}</span></div>
+          </div>
+        </div>
+      `)
+    }
+
+    if (liquidityShortfall) {
+      pages.push(`
+        <div class="page">
+          <h2>Liquidity Analysis</h2>
+          <p class="alert-box">Liquidity shortfall identified. Liquid assets (${fmt(liquidAssets)}) may be insufficient to cover projected estate taxes without forced asset sales.</p>
+        </div>
+      `)
+    }
+
+    if (actionItems.length > 0) {
+      pages.push(`
+        <div class="page">
+          <h2>Action Items</h2>
+          <ul class="action-list">
+            ${actionItems
+              .map(
+                (a) => `
+              <li class="action-${a.severity}">
+                <span class="badge">${a.severity.toUpperCase()}</span>
+                ${a.message}
+              </li>`,
+              )
+              .join('')}
+          </ul>
+        </div>
+      `)
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Estate Planning Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 0; }
+          .page { page-break-after: always; padding: 60px; min-height: 100vh; box-sizing: border-box; }
+          h1 { font-size: 32px; color: #1a1a2e; margin-bottom: 8px; }
+          h2 { font-size: 24px; color: #1a1a2e; border-bottom: 2px solid #d4af37; padding-bottom: 8px; }
+          .subtitle { font-size: 18px; color: #555; margin: 4px 0; }
+          .date { font-size: 14px; color: #888; }
+          .score-box { display: flex; gap: 16px; align-items: center; margin: 32px 0; background: #f8f4e8; padding: 24px; border-radius: 8px; }
+          .score-label { font-size: 18px; font-weight: bold; }
+          .score-value { font-size: 48px; font-weight: bold; color: #d4af37; }
+          .disclaimer { font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 16px; margin-top: 32px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th { background: #1a1a2e; color: white; padding: 10px; text-align: left; font-size: 12px; }
+          td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 12px; }
+          tr:nth-child(even) td { background: #f9f9f9; }
+          .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; }
+          .metric { background: #f8f4e8; padding: 20px; border-radius: 8px; }
+          .metric .label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+          .metric .value { display: block; font-size: 24px; font-weight: bold; color: #1a1a2e; }
+          .alert-box { background: #fff3cd; border: 1px solid #ffc107; padding: 16px; border-radius: 8px; }
+          .action-list { list-style: none; padding: 0; }
+          .action-list li { padding: 12px 16px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; background: #f9f9f9; }
+          .badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; background: #eee; white-space: nowrap; }
+          .action-critical .badge { background: #fee2e2; color: #dc2626; }
+          .action-warning .badge { background: #fef3c7; color: #d97706; }
+          .action-high .badge { background: #fef3c7; color: #d97706; }
+          .action-medium .badge { background: #fef3c7; color: #d97706; }
+          .action-low .badge { background: #dbeafe; color: #2563eb; }
+          .action-info .badge { background: #dbeafe; color: #2563eb; }
+          @media print { .page { page-break-after: always; } }
+        </style>
+      </head>
+      <body>${pages.join('')}</body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
   }
 
   const handleExcelExport = async () => {
-    setExcelLoading(true)
-    setExcelSuccess(false)
+    setExporting(true)
     try {
-      // Dynamically import SheetJS to avoid bundle size impact
       const XLSX = await import('xlsx')
 
-      const { sheets } = buildExcelWorkbook(excelData)
       const wb = XLSX.utils.book_new()
 
-      for (const [sheetName, rows] of Object.entries(sheets)) {
-        const ws = XLSX.utils.aoa_to_sheet(rows as unknown[][])
+      const assumptions = [
+        ['EstatePlanner - Export'],
+        ['Generated', new Date().toISOString()],
+        ['Advisor', advisorName || ''],
+        ['Scenario ID', scenarioId],
+        ['Household ID', householdId],
+        ['Health Score', healthScore ?? ''],
+        ['Liquid Assets', liquidAssets],
+        ['Active Strategies', activeStrategies.join('; ')],
+      ]
+      wb.SheetNames.push('Assumptions')
+      wb.Sheets['Assumptions'] = XLSX.utils.aoa_to_sheet(assumptions)
 
-        // Column widths
-        ws['!cols'] = Array(10).fill({ wch: 20 })
+      const projHeaders = ['Year', 'Age P1', 'Age P2', 'Gross Estate', 'Federal Tax', 'State Tax', 'Net to Heirs']
+      const projRows = projectionData.map((r) => [
+        r.year,
+        r.age_p1,
+        r.age_p2 ?? '',
+        r.gross_estate,
+        r.federal_tax,
+        r.state_tax,
+        r.net_to_heirs,
+      ])
+      wb.SheetNames.push('Projection')
+      wb.Sheets['Projection'] = XLSX.utils.aoa_to_sheet([projHeaders, ...projRows])
 
-        XLSX.utils.book_append_sheet(wb, ws, sheetName)
+      const taxRows: (string | number)[][] = [['Metric', 'Value']]
+      if (taxSummary) {
+        taxRows.push(['Federal Tax - Current Law', taxSummary.federal_tax_current])
+        taxRows.push(['Federal Tax - Sunset', taxSummary.federal_tax_sunset])
+        taxRows.push([`${taxSummary.state_name} State Tax`, taxSummary.state_tax])
+      }
+      wb.SheetNames.push('Tax Analysis')
+      wb.Sheets['Tax Analysis'] = XLSX.utils.aoa_to_sheet(taxRows)
+
+      const stratRows = [['Strategy'], ...activeStrategies.map((s) => [s])]
+      wb.SheetNames.push('Strategies')
+      wb.Sheets['Strategies'] = XLSX.utils.aoa_to_sheet(stratRows)
+
+      if (monteCarloRun && monteCarloResults) {
+        const mcRows = [
+          ['Metric', 'Value'],
+          ['Paths', monteCarloResults.paths],
+          ['P10 (Pessimistic)', monteCarloResults.p10],
+          ['P50 (Base Case)', monteCarloResults.p50],
+          ['P90 (Optimistic)', monteCarloResults.p90],
+        ]
+        wb.SheetNames.push('Monte Carlo')
+        wb.Sheets['Monte Carlo'] = XLSX.utils.aoa_to_sheet(mcRows)
       }
 
-      // Download
-      const filename = `${clientName.replace(/\s+/g, '_')}_EstatePlan_${new Date().toISOString().split('T')[0]}.xlsx`
-      XLSX.writeFile(wb, filename)
-      setExcelSuccess(true)
-    } catch (err) {
-      console.error('Excel export error:', err)
+      XLSX.writeFile(wb, `EstatePlan_Export_${new Date().toISOString().split('T')[0]}.xlsx`)
     } finally {
-      setExcelLoading(false)
+      setExporting(false)
     }
   }
 
-  const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
-
   return (
     <div className="space-y-6">
-
-      {/* Export buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        {/* PDF Export */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-800 mb-1">
-            📄 Advisor PDF Report
-          </h4>
-          <p className="text-xs text-gray-500 mb-3">
-            {includedPages.length}-page report including{' '}
-            {includedPages.includes('monte_carlo') ? 'Monte Carlo analysis, ' : ''}
-            {includedPages.includes('strategy_summary') ? 'strategy summary, ' : ''}
-            tax analysis, and action items.
-          </p>
-          <div className="text-xs text-gray-400 mb-3">
-            Pages: {includedPages.map(p => p.replace('_', ' ')).join(' · ')}
-          </div>
-          <button
-            onClick={handlePDFExport}
-            disabled={pdfLoading}
-            className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              pdfLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {pdfLoading ? 'Generating...' : 'Export PDF Report'}
-          </button>
-          {pdfSuccess && (
-            <p className="text-xs text-green-600 mt-2">
-              ✓ Report opened in new tab — use browser Print to save as PDF
-            </p>
-          )}
-        </div>
-
-        {/* Excel Export */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-800 mb-1">
-            📊 Excel Export
-          </h4>
-          <p className="text-xs text-gray-500 mb-3">
-            Workbook with Assumptions, Projection, Tax Analysis, Strategies
-            {excelData.monteCarlo ? ', and Monte Carlo' : ''} sheets.
-            Values only — no formulas.
-          </p>
-          <div className="text-xs text-gray-400 mb-3">
-            Sheets: {['Assumptions', 'Projection', 'Tax Analysis', 'Strategies', ...(excelData.monteCarlo ? ['Monte Carlo'] : [])].join(' · ')}
-          </div>
-          <button
-            onClick={handleExcelExport}
-            disabled={excelLoading}
-            className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              excelLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-          >
-            {excelLoading ? 'Generating...' : 'Export Excel Workbook'}
-          </button>
-          {excelSuccess && (
-            <p className="text-xs text-green-600 mt-2">
-              ✓ Excel file downloaded
-            </p>
-          )}
-        </div>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handlePdfExport}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1a1a2e] text-white rounded-lg hover:bg-[#2d2d4e] transition-colors text-sm font-medium"
+        >
+          Export PDF Report
+        </button>
+        <button
+          type="button"
+          onClick={handleExcelExport}
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 transition-colors text-sm font-medium disabled:opacity-50"
+        >
+          {exporting ? 'Exporting...' : 'Export Excel (.xlsx)'}
+        </button>
       </div>
 
-      {/* Scenario Version History */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">PDF will include</p>
+        <ul className="text-sm text-slate-700 space-y-1">
+          <li>Cover page {advisorName ? `(Advisor: ${advisorName})` : ''}</li>
+          <li>Estate snapshot ({projectionData.length} projection years)</li>
+          <li>{taxSummary ? 'Tax analysis' : 'Tax analysis (no tax data)'}</li>
+          <li>
+            {activeStrategies.length > 0 ? 'Strategy summary' : 'Strategy summary (no active strategies)'} (
+            {activeStrategies.length} strategies)
+          </li>
+          <li>
+            {monteCarloRun && monteCarloResults ? 'Monte Carlo' : 'Monte Carlo (not yet run)'}
+          </li>
+          <li>
+            {liquidityShortfall ? 'Liquidity analysis' : 'Liquidity analysis (no shortfall detected)'}
+          </li>
+          <li>
+            {actionItems.length > 0 ? 'Action items' : 'Action items (no open alerts)'} ({actionItems.length}{' '}
+            items)
+          </li>
+        </ul>
+      </div>
+
       {scenarioHistory.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-800 mb-3">
-            Scenario Version History
-          </h4>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">Label</th>
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">Type</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-600">Version</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-600">Estate</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-600">Calculated</th>
+          <h3 className="text-sm font-semibold text-slate-700 mb-2">Scenario Version History</h3>
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500">Date</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500">Label</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">Gross Estate</th>
                 </tr>
               </thead>
               <tbody>
-                {scenarioHistory.map((s) => (
-                  <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-3 text-gray-700">{s.label}</td>
-                    <td className="py-2 px-3 text-gray-500 text-xs">{s.scenario_type}</td>
-                    <td className="py-2 px-3 text-right text-gray-500">v{s.version}</td>
-                    <td className="py-2 px-3 text-right">
-                      {s.gross_estate ? fmt(s.gross_estate) : '—'}
+                {scenarioHistory.map((v, i) => (
+                  <tr key={v.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td className="px-4 py-2 text-slate-600">
+                      {v.created_at
+                        ? new Date(v.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : '-'}
                     </td>
-                    <td className="py-2 px-3 text-right text-gray-400 text-xs">
-                      {new Date(s.calculated_at).toLocaleDateString()}
-                    </td>
+                    <td className="px-4 py-2 text-slate-800">{v.label || 'Base Case'}</td>
+                    <td className="px-4 py-2 text-right text-slate-800">{fmt(v.gross_estate)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -203,6 +357,8 @@ export default function ExportPanel({
           </div>
         </div>
       )}
+
+      <DisclaimerBanner />
     </div>
   )
 }

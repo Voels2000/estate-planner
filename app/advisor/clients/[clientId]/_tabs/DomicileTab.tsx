@@ -20,6 +20,7 @@ export default function DomicileTab({
   domicileSchedule,
   domicileChecklist,
   stateExemptions,
+  projectionRowsDomicile = [],
 }: ClientViewShellProps) {
 
   if (!domicileAnalysis) {
@@ -61,9 +62,14 @@ export default function DomicileTab({
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
 
   const grossEstateForStateTax =
+    (projectionRowsDomicile.length > 0 ? projectionRowsDomicile[0]?.gross_estate : undefined) ??
     (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
     (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
     0
+
+  const grossEstateByYear = Object.fromEntries(
+    projectionRowsDomicile.map((r) => [r.year, r.gross_estate]),
+  )
 
   const factors = [
     { label: "Driver's License",       value: drivers_license_state,      weight: 15 },
@@ -242,7 +248,7 @@ export default function DomicileTab({
         </div>
       </div>
 
-      {/* Sprint 66: wire grossEstate / grossEstateByYear from projection waterfall */}
+      {/* Sprint 74: projection-backed gross estate; NY cliff first, then tax panels, then schedule */}
       <div className="space-y-6">
         {household?.state_primary === 'NY' && (
           <NYCliffValidator
@@ -256,18 +262,18 @@ export default function DomicileTab({
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           dbExemptions={stateExemptions}
         />
+        <InheritanceTaxWaterfall
+          inheritanceAmount={grossEstateForStateTax}
+          year={new Date().getFullYear() + 1}
+        />
         <DomicileScheduleEditor
           householdId={household.id}
           currentState={claimed_domicile_state ?? 'WA'}
-          grossEstateByYear={{}}
+          grossEstateByYear={grossEstateByYear}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           initialSchedule={domicileSchedule ?? []}
           initialChecklist={domicileChecklist ?? []}
           dbExemptions={stateExemptions}
-        />
-        <InheritanceTaxWaterfall
-          inheritanceAmount={grossEstateForStateTax}
-          year={new Date().getFullYear() + 1}
         />
       </div>
     </div>

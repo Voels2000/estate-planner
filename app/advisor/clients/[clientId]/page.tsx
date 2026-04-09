@@ -4,7 +4,30 @@ import { createClient } from '@/lib/supabase/server'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
+import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
+import {
+  fetchActiveStrategies,
+  fetchActionItems,
+  fetchAdvisorDisplayName,
+  fetchHealthScore,
+  fetchLiquidAssets,
+  fetchMonteCarloSummary,
+  fetchScenarioHistoryForExport,
+} from '@/lib/export-wiring'
+import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import ClientViewShell from './_client-view-shell'
+
+function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
+  return rows.map((r) => ({
+    year: Number(r.year ?? 0),
+    age_p1: Number(r.age_person1 ?? r.age_p1 ?? 0),
+    age_p2: r.age_person2 != null ? Number(r.age_person2) : null,
+    gross_estate: Number(r.estate_incl_home ?? r.gross_estate ?? 0),
+    federal_tax: Number(r.estate_tax_federal ?? r.federal_tax ?? r.estate_tax_fed ?? 0),
+    state_tax: Number(r.estate_tax_state ?? r.state_tax ?? 0),
+    net_to_heirs: Number(r.net_to_heirs ?? 0),
+  }))
+}
 
 interface PageProps {
   params: Promise<{ clientId: string }>
@@ -60,63 +83,141 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   if (!household) redirect('/advisor')
 
-  const { data: assets } = await supabase
-    .from('assets')
-    .select('id, name, asset_type, value, owner, institution, account_type, is_taxable, created_at')
-    .eq('owner_id', clientId)
+  const scenarioId = household.base_case_scenario_id
 
-  const { data: realEstate } = await supabase
-    .from('real_estate')
-    .select('id, name, property_type, current_value, purchase_price, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, situs_state, owner')
-    .eq('owner_id', clientId)
+  const currentYear = new Date().getFullYear()
+  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
+  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
 
-  const { data: beneficiaries } = await supabase
-    .from('beneficiaries')
-    .select('id, name, relationship, allocation_pct, account_type, contingent, created_at')
-    .eq('owner_id', clientId)
-
-  const { data: estateDocuments } = await supabase
-    .from('estate_documents')
-    .select('id, document_type, exists, confirmed_at, created_at')
-    .eq('owner_id', clientId)
-
-  const { data: legalDocuments } = await supabase
-    .from('legal_documents')
-    .select('id, document_type, file_name, uploader_role, version, is_current, created_at')
-    .eq('household_id', household.id)
-    .eq('is_current', true)
-    .eq('is_deleted', false)
-    .order('created_at', { ascending: false })
-
-  const { data: notes } = await supabase
-    .from('advisor_notes')
-    .select('id, content, created_at, updated_at')
-    .eq('advisor_id', user.id)
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false })
-
-  // ── Estate Tax RPC ────────────────────────────────────────────────────────
-  const { data: estateTaxRaw } = await supabase
-    .rpc('calculate_state_estate_tax', {
-      p_household_id: household.id,
-    })
-
-  const estateTax = estateTaxRaw ?? null
-
-  const scenario = household.base_case_scenario_id
-    ? (
-        await supabase
+  const [
+    assetsResult,
+    realEstateResult,
+    beneficiariesResult,
+    estateDocumentsResult,
+    legalDocumentsResult,
+    notesResult,
+    estateTaxResult,
+    scenarioResult,
+    domicileAnalysisResult,
+    domicileScheduleResult,
+    stateExemptionsResult,
+    healthScore,
+    liquidAssets,
+    activeStrategies,
+    actionItems,
+    advisorDisplayName,
+    monteCarloResults,
+    scenarioHistoryForExport,
+    beneficiaryGrantsResult,
+    conflictReport,
+  ] = await Promise.all([
+    supabase
+      .from('assets')
+      .select('id, name, asset_type, value, owner, institution, account_type, is_taxable, created_at')
+      .eq('owner_id', clientId),
+    supabase
+      .from('real_estate')
+      .select('id, name, property_type, current_value, purchase_price, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, situs_state, owner')
+      .eq('owner_id', clientId),
+    supabase
+      .from('beneficiaries')
+      .select('id, name, relationship, allocation_pct, account_type, contingent, created_at')
+      .eq('owner_id', clientId),
+    supabase
+      .from('estate_documents')
+      .select('id, document_type, exists, confirmed_at, created_at')
+      .eq('owner_id', clientId),
+    supabase
+      .from('legal_documents')
+      .select('id, document_type, file_name, uploader_role, version, is_current, created_at')
+      .eq('household_id', household.id)
+      .eq('is_current', true)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('advisor_notes')
+      .select('id, content, created_at, updated_at')
+      .eq('advisor_id', user.id)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false }),
+    supabase.rpc('calculate_state_estate_tax', { p_household_id: household.id }),
+    scenarioId
+      ? supabase
           .from('projection_scenarios')
           .select('id, scenario_type, outputs, outputs_s1_first, assumption_snapshot')
-          .eq('id', household.base_case_scenario_id)
+          .eq('id', scenarioId)
           .single()
-      ).data
-    : null
+      : Promise.resolve({ data: null, error: null }),
+    supabase
+      .from('domicile_analysis')
+      .select(`
+      id, claimed_domicile_state, states,
+      drivers_license_state, voter_registration_state,
+      vehicle_registration_state, primary_home_titled_state,
+      spouse_children_state, estate_docs_declare_state,
+      files_taxes_in_state, business_interests_state,
+      risk_score, risk_level, dominant_state,
+      conflict_states, recommendations,
+      created_at, updated_at
+    `)
+      .eq('household_id', household.id)
+      .maybeSingle(),
+    supabase
+      .from('domicile_schedule')
+      .select('*')
+      .eq('household_id', household.id)
+      .order('effective_year', { ascending: true }),
+    supabase.rpc('get_state_exemptions', {
+      p_states: statesToFetch,
+      p_years: projectionYears,
+    }),
+    fetchHealthScore(household.id),
+    fetchLiquidAssets(clientId),
+    fetchActiveStrategies(household.id),
+    fetchActionItems(household.id),
+    fetchAdvisorDisplayName(user.id),
+    scenarioId ? fetchMonteCarloSummary(scenarioId) : Promise.resolve(null),
+    fetchScenarioHistoryForExport(household.id),
+    supabase
+      .from('beneficiary_access_grants')
+      .select('*')
+      .eq('household_id', household.id)
+      .order('granted_at', { ascending: false }),
+    detectConflicts(household.id, clientId).catch((e) => {
+      console.error('[advisor-client-view] conflict detection failed:', e)
+      return null
+    }),
+  ])
+
+  const assets = assetsResult.data
+  const realEstate = realEstateResult.data
+  const beneficiaries = beneficiariesResult.data
+  const estateDocuments = estateDocumentsResult.data
+  const legalDocuments = legalDocumentsResult.data
+  const notes = notesResult.data
+  const estateTax = estateTaxResult.data ?? null
+  const scenario = scenarioResult.data ?? null
+  const domicileAnalysis = domicileAnalysisResult.data ?? null
+  const domicileSchedule = domicileScheduleResult.data
+  const stateExemptions = (stateExemptionsResult.data ?? []) as DbStateExemption[]
+  const beneficiaryGrants = (beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[]
+
+  const domicileChecklist = domicileAnalysis?.id
+    ? (
+        await supabase
+          .from('domicile_checklist_items')
+          .select('*')
+          .eq('analysis_id', domicileAnalysis.id)
+          .order('priority', { ascending: false })
+      ).data ?? []
+    : []
 
   const scenarioOutputs = (
-    Array.isArray(scenario?.outputs_s1_first) && scenario.outputs_s1_first.length > 0
+    scenario && Array.isArray(scenario.outputs_s1_first) && scenario.outputs_s1_first.length > 0
       ? scenario.outputs_s1_first
-      : (Array.isArray(scenario?.outputs) ? scenario.outputs : [])
+      : scenario && Array.isArray(scenario.outputs)
+        ? scenario.outputs
+        : []
   ) as Array<Record<string, unknown>>
   const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[0] : null
   const assumptionSnapshot = (scenario?.assumption_snapshot ?? {}) as Record<string, unknown>
@@ -144,25 +245,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       }
     : null
 
-  const { data: scenarioHistoryRows } = await supabase
-    .from('projection_scenarios')
-    .select('id, label, version, scenario_type, calculated_at, assumption_snapshot')
-    .eq('household_id', household.id)
-    .eq('status', 'saved')
-    .order('version', { ascending: false })
-    .limit(10)
-
-  const scenarioHistory = (scenarioHistoryRows ?? []).map((s) => {
-    const snap = s.assumption_snapshot as { total_assets?: number } | null
-    return {
-      id: s.id,
-      label: s.label ?? '',
-      version: s.version ?? 0,
-      scenario_type: s.scenario_type ?? '',
-      calculated_at: s.calculated_at ?? '',
-      gross_estate: typeof snap?.total_assets === 'number' ? snap.total_assets : undefined,
-    }
-  })
+  const projectionRowsDomicile = scenarioOutputs.map((r) => ({
+    year: Number(r.year ?? 0),
+    gross_estate: Number(r.estate_incl_home ?? r.gross_estate ?? 0),
+  }))
 
   const exportClientName = household.has_spouse
     ? `${household.person1_first_name} & ${household.person2_first_name} ${household.person1_last_name}`
@@ -190,6 +276,40 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     return out
   })
 
+  const taxSummaryForExport: TaxSummaryExport | null = latestOutput
+    ? {
+        federal_tax_current: fedTaxExport,
+        federal_tax_sunset: Number(
+          latestOutput.estate_tax_federal_sunset ??
+            latestOutput.federal_tax_sunset ??
+            fedTaxExport,
+        ),
+        state_tax: stTaxExport,
+        state_name: String(household.state_primary ?? 'State'),
+      }
+    : null
+
+  const liquidityShortfall =
+    !!taxSummaryForExport &&
+    liquidAssets > 0 &&
+    liquidAssets < taxSummaryForExport.federal_tax_current + taxSummaryForExport.state_tax
+
+  const exportPanelProps = {
+    householdId: household.id,
+    scenarioId: scenarioId ?? '',
+    advisorName: advisorDisplayName,
+    healthScore,
+    liquidAssets,
+    activeStrategies,
+    actionItems,
+    projectionData: mapScenarioRowsForExport(scenarioOutputs),
+    taxSummary: taxSummaryForExport,
+    monteCarloRun: monteCarloResults !== null,
+    monteCarloResults,
+    liquidityShortfall,
+    scenarioHistory: scenarioHistoryForExport,
+  }
+
   const exportPdfData: PDFReportData = {
     householdId: household.id,
     clientName: exportClientName,
@@ -197,22 +317,31 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     person2Name: household.has_spouse
       ? `${household.person2_first_name} ${household.person2_last_name}`
       : undefined,
-    advisorName: 'Your Advisor',
+    advisorName: advisorDisplayName || 'Your Advisor',
     firmName: 'MyWealthMaps',
     reportDate: reportDateStr,
     grossEstate: grossForExport,
     netWorth: Number(latestOutput?.net_worth ?? grossForExport),
-    liquidAssets: 0,
-    illiquidAssets: grossForExport,
+    liquidAssets,
+    illiquidAssets: Math.max(0, grossForExport - liquidAssets),
     assetBreakdown: [],
     federalTax: fedTaxExport,
     stateTax: stTaxExport,
     federalExemption: exemptionExport,
     lawScenario: lawScenarioExport,
-    healthScore: 0,
+    healthScore: healthScore ?? 0,
     healthComponents: [],
-    activeStrategies: [],
-    actionItems: [],
+    activeStrategies: activeStrategies.map((name) => ({
+      name,
+      estateReduction: 0,
+      taxSavings: 0,
+      notes: '',
+    })),
+    actionItems: actionItems.map((a) => ({
+      severity: a.severity,
+      title: a.message,
+      body: a.message,
+    })),
   }
 
   const exportExcelData: ExcelExportData = {
@@ -250,58 +379,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     strategies: [],
   }
 
-  // ── Domicile Analysis ─────────────────────────────────────────────────────
-  const { data: domicileAnalysis } = await supabase
-    .from('domicile_analysis')
-    .select(`
-      id, claimed_domicile_state, states,
-      drivers_license_state, voter_registration_state,
-      vehicle_registration_state, primary_home_titled_state,
-      spouse_children_state, estate_docs_declare_state,
-      files_taxes_in_state, business_interests_state,
-      risk_score, risk_level, dominant_state,
-      conflict_states, recommendations,
-      created_at, updated_at
-    `)
-    .eq('household_id', household.id)
-    .single()
-
-  const currentYear = new Date().getFullYear()
-  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
-  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
-
-  const { data: stateExemptionsRaw } = await supabase.rpc('get_state_exemptions', {
-    p_states: statesToFetch,
-    p_years: projectionYears,
-  })
-
-  const stateExemptions = (stateExemptionsRaw ?? []) as DbStateExemption[]
-
-  const { data: domicileSchedule } = await supabase
-    .from('domicile_schedule')
-    .select('*')
-    .eq('household_id', household.id)
-    .order('effective_year', { ascending: true })
-
-  const domicileChecklist =
-    domicileAnalysis?.id
-      ? (
-          await supabase
-            .from('domicile_checklist_items')
-            .select('*')
-            .eq('analysis_id', domicileAnalysis.id)
-            .order('priority', { ascending: false })
-        ).data ?? []
-      : []
-
-  // Run conflict detector for advisor view (Sprint 58)
-  let conflictReport = null
-  try {
-    conflictReport = await detectConflicts(household.id, clientId)
-  } catch (e) {
-    console.error('[advisor-client-view] conflict detection failed:', e)
-  }
-
   try {
     await supabase.from('advisor_access_log').insert({
       advisor_id: user.id,
@@ -327,9 +404,12 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       notes={notes ?? []}
       estateTax={estateTax}
       scenario={scenarioForStrategy}
-      scenarioHistory={scenarioHistory}
+      scenarioHistory={scenarioHistoryForExport}
       exportPdfData={exportPdfData}
       exportExcelData={exportExcelData}
+      exportPanelProps={exportPanelProps}
+      projectionRowsDomicile={projectionRowsDomicile}
+      beneficiaryGrants={beneficiaryGrants}
       domicileAnalysis={domicileAnalysis ?? null}
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}

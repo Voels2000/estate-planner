@@ -3,6 +3,9 @@ import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
+import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
+import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
+import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import OverviewTab from './_tabs/OverviewTab'
@@ -195,16 +198,26 @@ export interface ClientViewShellProps {
     estimated_state_tax?: number
     law_scenario?: 'current_law' | 'sunset' | 'no_exemption'
   } | null
-  scenarioHistory?: Array<{
-    id: string
-    label: string
-    version: number
-    scenario_type: string
-    calculated_at: string
-    gross_estate?: number
-  }>
+  scenarioHistory?: ScenarioVersion[]
   exportPdfData?: PDFReportData
   exportExcelData?: ExcelExportData
+  exportPanelProps?: {
+    householdId: string
+    scenarioId: string
+    advisorName: string
+    healthScore: number | null
+    liquidAssets: number
+    activeStrategies: string[]
+    actionItems: ActionItem[]
+    projectionData: ExportProjectionRow[]
+    taxSummary: TaxSummaryExport | null
+    monteCarloRun: boolean
+    monteCarloResults: MonteCarloSummary | null
+    liquidityShortfall: boolean
+    scenarioHistory: ScenarioVersion[]
+  }
+  projectionRowsDomicile?: Array<{ year: number; gross_estate: number }>
+  beneficiaryGrants?: BeneficiaryAccessGrant[]
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
   domicileChecklist: any[]

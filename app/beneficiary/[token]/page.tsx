@@ -4,7 +4,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import BeneficiaryEstateView from './_components/BeneficiaryEstateView'
-import type { BeneficiaryGrantTokenPayload } from '@/lib/types/beneficiary-grant'
+import type { BeneficiaryGrantTokenPayload, DigitalAsset } from '@/lib/types/beneficiary-grant'
 
 interface PageProps {
   params: Promise<{ token: string }>
@@ -38,6 +38,27 @@ export default async function BeneficiaryTokenPage({ params }: PageProps) {
 
   const grant = grantPayload as BeneficiaryGrantTokenPayload
 
+  const { data: snapshotRaw } = await supabase.rpc('get_snapshot_for_beneficiary', {
+    p_token: token,
+  })
+  const snapshotError =
+    snapshotRaw && typeof snapshotRaw === 'object' && 'error' in snapshotRaw
+      ? (snapshotRaw as { error?: string }).error
+      : undefined
+  const initialSnapshot =
+    snapshotRaw && !snapshotError && typeof snapshotRaw === 'object'
+      ? (snapshotRaw as Record<string, unknown>)
+      : null
+
+  let initialDigitalAssets: DigitalAsset[] = []
+  if (grant.relationship === 'executor' || grant.access_level === 'full') {
+    const { data: digitalRows } = await supabase
+      .from('digital_assets')
+      .select('id, household_id, asset_type, platform, description, estimated_value, executor_notes')
+      .eq('household_id', grant.household_id)
+    initialDigitalAssets = (digitalRows ?? []) as DigitalAsset[]
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DisclaimerBanner />
@@ -58,13 +79,12 @@ export default async function BeneficiaryTokenPage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* Main content — client component handles data fetching with household_id */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         <BeneficiaryEstateView
-          householdId={grant.household_id}
           granteeRelationship={grant.relationship}
           accessLevel={grant.access_level}
-          token={token}
+          initialSnapshot={initialSnapshot}
+          initialDigitalAssets={initialDigitalAssets}
         />
       </main>
     </div>

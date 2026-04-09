@@ -1,8 +1,7 @@
 // Sprint 63 - Client component for beneficiary portal view
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import EstateFlowDiagram from '@/lib/components/EstateFlowDiagram'
 import DigitalAssetSummary from './DigitalAssetSummary'
 import type {
@@ -12,62 +11,27 @@ import type {
 } from '@/lib/types/beneficiary-grant'
 
 interface Props {
-  householdId: string
   granteeRelationship: BeneficiaryRelationship
   accessLevel: AccessLevel
-  token: string
+  initialSnapshot: Record<string, unknown> | null
+  initialDigitalAssets: DigitalAsset[]
 }
 
 export default function BeneficiaryEstateView({
-  householdId,
   granteeRelationship,
   accessLevel,
-  token,
+  initialSnapshot,
+  initialDigitalAssets,
 }: Props) {
-  const [loading, setLoading] = useState(true)
-  const [estateSnapshot, setEstateSnapshot] = useState<Record<string, unknown> | null>(null)
-  const [digitalAssets, setDigitalAssets] = useState<DigitalAsset[]>([])
+  const [digitalAssets] = useState<DigitalAsset[]>(initialDigitalAssets)
   const [activeTab, setActiveTab] = useState<'overview' | 'digital'>('overview')
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const supabase = createClient()
-
-      const { data: snapshot } = await supabase.rpc('get_snapshot_for_beneficiary', {
-        p_token: token,
-      })
-
-      if (snapshot && !(snapshot as { error?: unknown }).error) {
-        setEstateSnapshot(snapshot as Record<string, unknown>)
-      }
-
-      if (granteeRelationship === 'executor' || accessLevel === 'full') {
-        const { data: assets } = await supabase
-          .from('digital_assets')
-          .select('id, household_id, asset_type, platform, description, estimated_value, executor_notes')
-          .eq('household_id', householdId)
-
-        setDigitalAssets((assets ?? []) as DigitalAsset[])
-      }
-
-      setLoading(false)
-    }
-    load()
-  }, [householdId, granteeRelationship, accessLevel, token])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-      </div>
-    )
-  }
+  const estateSnapshot = initialSnapshot
 
   const tabs = [
-    { id: 'overview', label: 'Estate Overview' },
+    { id: 'overview' as const, label: 'Estate Overview' },
     ...(granteeRelationship === 'executor' || accessLevel === 'full'
-      ? [{ id: 'digital', label: 'Digital Assets' }]
+      ? [{ id: 'digital' as const, label: 'Digital Assets' }]
       : []),
   ] as { id: 'overview' | 'digital'; label: string }[]
 
@@ -90,6 +54,7 @@ export default function BeneficiaryEstateView({
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id

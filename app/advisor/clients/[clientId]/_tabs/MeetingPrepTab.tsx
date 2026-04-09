@@ -13,13 +13,7 @@ function getClientName(household: ClientViewShellProps['household']) {
   return `${household?.person1_first_name ?? ''} ${household?.person1_last_name ?? ''}`.trim() || 'Client'
 }
 
-export default function MeetingPrepTab({
-  clientId,
-  household,
-  scenarioHistory = [],
-  exportPdfData,
-  exportExcelData,
-}: ClientViewShellProps) {
+export default function MeetingPrepTab({ clientId, household, exportPanelProps }: ClientViewShellProps) {
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
@@ -68,15 +62,10 @@ export default function MeetingPrepTab({
         />
       </section>
 
-      {exportPdfData && exportExcelData && (
+      {exportPanelProps && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Export & Reports</h2>
-          <ExportPanel
-            clientName={clientName}
-            pdfData={exportPdfData}
-            excelData={exportExcelData}
-            scenarioHistory={scenarioHistory}
-          />
+          <ExportPanel {...exportPanelProps} />
         </section>
       )}
 

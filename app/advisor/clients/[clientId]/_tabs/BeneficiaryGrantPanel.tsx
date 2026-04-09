@@ -29,10 +29,11 @@ const APP_URL =
 
 interface Props {
   householdId: string
+  initialGrants: BeneficiaryAccessGrant[]
 }
 
-export default function BeneficiaryGrantPanel({ householdId }: Props) {
-  const [grants, setGrants] = useState<BeneficiaryAccessGrant[]>([])
+export default function BeneficiaryGrantPanel({ householdId, initialGrants }: Props) {
+  const [grants, setGrants] = useState<BeneficiaryAccessGrant[]>(initialGrants)
   const [showForm, setShowForm] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState({
@@ -46,6 +47,11 @@ export default function BeneficiaryGrantPanel({ householdId }: Props) {
   const [reloadTick, setReloadTick] = useState(0)
 
   useEffect(() => {
+    setGrants(initialGrants)
+  }, [initialGrants])
+
+  useEffect(() => {
+    if (reloadTick === 0) return
     let active = true
     getGrantsForHousehold(householdId).then((data) => {
       if (active) setGrants(data)

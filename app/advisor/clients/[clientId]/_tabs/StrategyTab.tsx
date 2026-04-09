@@ -141,7 +141,6 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         </div>
         {compositeOpen && (
           <CompositeOverlay
-            householdId={household.id}
             grossEstate={grossEstate}
             federalExemption={federalExemption}
             estimatedFederalTax={estimatedFederalTax}

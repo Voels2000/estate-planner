@@ -27,6 +27,7 @@ export default function EstateTab({
   beneficiaries,
   estateDocuments,
   conflictReport,
+  beneficiaryGrants = [],
 }: ClientViewShellProps) {
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
@@ -345,7 +346,7 @@ export default function EstateTab({
         )}
       </div>
 
-      <BeneficiaryGrantPanel householdId={household.id} />
+      <BeneficiaryGrantPanel householdId={household.id} initialGrants={beneficiaryGrants} />
 
     </div>
   )

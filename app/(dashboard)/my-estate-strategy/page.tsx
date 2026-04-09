@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
 
 export default async function MyEstateStrategyPage() {
@@ -37,11 +38,16 @@ export default async function MyEstateStrategyPage() {
     .single()
 
   return (
-    <MyEstateStrategyClient
-      householdId={household.id}
-      scenarioId={household.base_case_scenario_id}
-      scenario={scenario}
-      taxConfig={taxConfig}
-    />
+    <div className="min-h-screen">
+      <MyEstateStrategyClient
+        householdId={household.id}
+        scenarioId={household.base_case_scenario_id}
+        scenario={scenario}
+        taxConfig={taxConfig}
+      />
+      <div className="max-w-3xl mx-auto px-4 pb-12">
+        <DisclaimerBanner context="estate strategy" />
+      </div>
+    </div>
   )
 }
