@@ -1,5 +1,6 @@
 'use client'
 import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
+import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import OverviewTab from './_tabs/OverviewTab'
@@ -158,6 +159,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
             person1Name={props.household.person1_first_name ?? 'Person 1'}
             person2Name={props.household.person2_first_name ?? null}
             hasSpouse={props.household.has_spouse ?? false}
+            stateExemptions={props.stateExemptions ?? []}
           />
         )}
       </div>
@@ -193,6 +195,7 @@ export interface ClientViewShellProps {
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
   domicileChecklist: any[]
+  stateExemptions: DbStateExemption[]
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string

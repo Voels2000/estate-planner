@@ -15,7 +15,7 @@ import {
   type DomicileScheduleRow,
   type MoveBreakevenResult,
 } from '@/lib/projection/domicileEngine'
-import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
+import { parseStateTaxCode, type DbStateExemption } from '@/lib/projection/stateRegistry'
 import MoveBreakevenPanel from './MoveBreakevenPanel'
 
 const STATE_OPTIONS = [
@@ -40,6 +40,7 @@ interface Props {
   currentState:        string
   grossEstateByYear:   Record<number, number>
   federalExemption?:   number
+  dbExemptions?:       DbStateExemption[]
   initialSchedule:     DomicileScheduleRow[]
   initialChecklist:    ChecklistDbRow[]
 }
@@ -49,6 +50,7 @@ export default function DomicileScheduleEditor({
   currentState,
   grossEstateByYear,
   federalExemption,
+  dbExemptions,
   initialSchedule,
   initialChecklist,
 }: Props) {
@@ -154,6 +156,7 @@ export default function DomicileScheduleEditor({
       toState:         parseStateTaxCode(transition.state_code),
       transitionYear:  transition.effective_year,
       federalExemption,
+      dbExemptions,
     })
     setBreakeven(result)
     setActiveTab('breakeven')

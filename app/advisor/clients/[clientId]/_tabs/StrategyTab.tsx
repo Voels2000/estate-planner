@@ -9,6 +9,8 @@ import { formatCurrency } from '../_utils'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
+import FederalStateWaterfall from '@/components/advisor/FederalStateWaterfall'
+import { parseStateTaxCode, type DbStateExemption } from '@/lib/projection/stateRegistry'
 
 type ScenarioId = 'current_law_extended' | 'sunset_2026' | 'legislative_change'
 type DeathSequence = 'S1_first' | 'S2_first'
@@ -45,6 +47,7 @@ type Props = {
   person1Name: string
   person2Name: string | null
   hasSpouse: boolean
+  stateExemptions: DbStateExemption[]
 }
 
 const SCENARIO_LABELS: Record<ScenarioId, string> = {
@@ -62,6 +65,7 @@ export default function StrategyTab({
   person1Name,
   person2Name,
   hasSpouse,
+  stateExemptions,
 }: Props) {
   const [activeScenario, setActiveScenario] = useState<ScenarioId>('current_law_extended')
   const [activeSequence, setActiveSequence] = useState<DeathSequence>('S1_first')
@@ -311,6 +315,16 @@ export default function StrategyTab({
           highlight="amber"
         />
       </div>
+
+      <FederalStateWaterfall
+        grossEstate={currentSummary?.gross_estate ?? 0}
+        federalTax={currentSummary?.estate_tax_federal ?? 0}
+        federalExemption={strategyMeta?.federalExemption ?? 13610000}
+        stateCode={parseStateTaxCode(strategyMeta?.statePrimary ?? 'WA')}
+        year={new Date().getFullYear() + 1}
+        dbExemptions={stateExemptions}
+        scenarioLabel={SCENARIO_LABELS[activeScenario]}
+      />
 
       {strategyMeta === null && (
         <div className="text-xs text-red-500">DEBUG: strategyMeta is null</div>

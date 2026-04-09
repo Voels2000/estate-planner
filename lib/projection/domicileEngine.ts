@@ -2,6 +2,7 @@
 
 import {
   calculateStateEstateTax,
+  type DbStateExemption,
   type StateTaxCode,
 } from './stateRegistry'
 
@@ -97,6 +98,7 @@ export function calculateMoveBreakeven(params: {
   transitionYear:     number
   federalExemption?:  number
   dsue?:              number
+  dbExemptions?:      DbStateExemption[]
   estimatedMoveCost?: number
   deathYear?:         number
 }): MoveBreakevenResult {
@@ -107,6 +109,7 @@ export function calculateMoveBreakeven(params: {
     transitionYear,
     federalExemption,
     dsue = 0,
+    dbExemptions,
     estimatedMoveCost = 25_000,
   } = params
 
@@ -125,6 +128,7 @@ export function calculateMoveBreakeven(params: {
       year,
       federalExemption,
       dsue,
+      dbExemptions,
     })
 
     // What would tax have been without moving?
@@ -134,6 +138,7 @@ export function calculateMoveBreakeven(params: {
       year,
       federalExemption,
       dsue,
+      dbExemptions,
     })
 
     const annualSaving = noMoveTax.stateTax - taxResult.stateTax

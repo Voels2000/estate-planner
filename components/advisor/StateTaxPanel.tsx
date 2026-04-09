@@ -5,7 +5,10 @@
 import {
   getStateExemptionForYear,
   calculateStateEstateTax,
-  STATE_REGISTRY,
+  STATE_HAS_ESTATE_TAX,
+  STATE_NAMES_MAP,
+  STATE_SPECIAL_RULES,
+  type DbStateExemption,
   type StateTaxCode,
 } from '@/lib/projection/stateRegistry'
 
@@ -15,6 +18,7 @@ interface Props {
   projectionYears?: number[]
   federalExemption?: number
   dsue?:            number
+  dbExemptions?:    DbStateExemption[]
 }
 
 const DEFAULT_YEARS = [2025, 2026, 2027, 2028, 2029, 2030]
@@ -34,16 +38,17 @@ export default function StateTaxPanel({
   projectionYears = DEFAULT_YEARS,
   federalExemption,
   dsue = 0,
+  dbExemptions,
 }: Props) {
-  const ruleset   = STATE_REGISTRY[stateCode]
-  const hasStateTax = ruleset?.hasEstateTax ?? false
+  const hasStateTax = Boolean(STATE_HAS_ESTATE_TAX[stateCode])
+  const stateName = STATE_NAMES_MAP[stateCode] ?? stateCode
 
   if (!hasStateTax) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h3 className="text-sm font-semibold text-slate-700 mb-2">State Estate Tax</h3>
         <div className="bg-emerald-50 rounded-lg p-4 text-center">
-          <p className="text-emerald-800 font-semibold">{ruleset?.name ?? stateCode} has no state estate tax.</p>
+          <p className="text-emerald-800 font-semibold">{stateName} has no state estate tax.</p>
           <p className="text-emerald-600 text-sm mt-1">$0 state estate tax liability in all projection years.</p>
         </div>
       </div>
@@ -51,19 +56,19 @@ export default function StateTaxPanel({
   }
 
   const rows = projectionYears.map(year => {
-    const result = calculateStateEstateTax({ grossEstate, stateCode, year, federalExemption, dsue })
-    const exemption = getStateExemptionForYear(stateCode, year, federalExemption)
+    const result = calculateStateEstateTax({ grossEstate, stateCode, year, federalExemption, dsue, dbExemptions })
+    const exemption = getStateExemptionForYear(stateCode, year, federalExemption, dbExemptions)
     return { year, exemption, ...result }
   })
 
-  const specialRules = ruleset?.specialRules ?? []
+  const specialRules = STATE_SPECIAL_RULES[stateCode] ?? []
   const hasNyCliff   = rows.some(r => r.nyCliffTriggered)
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700">
-          {ruleset?.name ?? stateCode} State Estate Tax
+          {stateName} State Estate Tax
         </h3>
         <div className="flex gap-2 flex-wrap justify-end">
           {specialRules.includes('no_portability') && (

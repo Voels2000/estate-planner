@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
+import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -116,6 +117,17 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     .eq('household_id', household.id)
     .single()
 
+  const currentYear = new Date().getFullYear()
+  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
+  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
+
+  const { data: stateExemptionsRaw } = await supabase.rpc('get_state_exemptions', {
+    p_states: statesToFetch,
+    p_years: projectionYears,
+  })
+
+  const stateExemptions = (stateExemptionsRaw ?? []) as DbStateExemption[]
+
   const { data: domicileSchedule } = await supabase
     .from('domicile_schedule')
     .select('*')
@@ -168,6 +180,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       domicileAnalysis={domicileAnalysis ?? null}
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}
+      stateExemptions={stateExemptions}
       conflictReport={conflictReport}
     />
   )
