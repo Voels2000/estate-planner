@@ -72,6 +72,7 @@ export default function DomicileScheduleEditor({
       .eq('household_id', householdId)
       .order('effective_year', { ascending: true })
     setSchedule((data ?? []) as DomicileScheduleRow[])
+    console.log('schedule state set to:', data, 'length:', data?.length)
     setLoading(false)
   }
 
@@ -238,7 +239,10 @@ export default function DomicileScheduleEditor({
           {loading ? (
             <div className="h-20 bg-slate-50 rounded animate-pulse" />
           ) : schedule.length === 0 ? (
-            <p className="text-sm text-slate-400">No domicile schedule entries yet.</p>
+            <>
+              {console.log('rendering schedule, length:', schedule.length)}
+              <p className="text-sm text-slate-400">No domicile schedule entries yet.</p>
+            </>
           ) : (
             <table className="w-full text-sm">
               <thead>
