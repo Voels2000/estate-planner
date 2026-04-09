@@ -299,16 +299,27 @@ export default function DomicileScheduleEditor({
           {checklist.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-sm text-slate-400 mb-2">No checklist items yet.</p>
-              {schedule.find(r => r.state_code !== currentState) && (
-                <button
-                  onClick={() => seedChecklist(schedule.find(r => r.state_code !== currentState)!.state_code)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Seed establishment checklist
-                </button>
-              )}
+              <p className="text-xs text-red-500">
+                DEBUG: checklist={checklist.length} schedule={schedule.length}
+                currentState={currentState}
+                found={schedule.find(r => r.state_code !== currentState)?.state_code ?? 'none'}
+              </p>
+              <button
+                onClick={() => {
+                  console.log('SEED BUTTON CLICKED')
+                  const found = schedule.find(r => r.state_code !== currentState)
+                  console.log('found state:', found?.state_code)
+                  if (found) seedChecklist(found.state_code)
+                }}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Seed establishment checklist
+              </button>
             </div>
           ) : (
+            <p className="text-xs text-red-500">DEBUG: checklist has {checklist.length} items</p>
+          )}
+          {checklist.length > 0 && (
             <>
               {criticalIncomplete > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-800">
