@@ -5,7 +5,6 @@
 
 import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
 import InheritanceTaxWaterfall from '@/components/advisor/InheritanceTaxWaterfall'
-import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
@@ -250,12 +249,6 @@ export default function DomicileTab({
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           dbExemptions={stateExemptions}
         />
-        {parseStateTaxCode(claimed_domicile_state ?? '') === 'NY' && (
-          <NYCliffValidator
-            year={new Date().getFullYear() + 1}
-            dbExemptions={stateExemptions}
-          />
-        )}
         <DomicileScheduleEditor
           householdId={household.id}
           currentState={claimed_domicile_state ?? 'WA'}
