@@ -272,11 +272,6 @@ export function DashboardClient({
               Start the walkthrough to see how your estate transfers to your heirs.
             </div>
           )}
-          {conflictReport && conflictReport.conflicts.length > 0 && (
-            <div className="px-6 py-3 border-t border-neutral-100">
-              <DisclaimerBanner context="conflict analysis" />
-            </div>
-          )}
         </div>
       )}
 
@@ -408,6 +403,10 @@ export function DashboardClient({
       </div>
 
       <FeedbackButton userId={userId} />
+
+      <div className="mt-8">
+        <DisclaimerBanner />
+      </div>
     </div>
   )
 }
