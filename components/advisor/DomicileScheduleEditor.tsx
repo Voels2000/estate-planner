@@ -111,9 +111,36 @@ export default function DomicileScheduleEditor({
     setSchedule(prev => prev.filter(r => r.id !== id))
   }
 
-  async function toggleChecklistItem(itemId: string, completed: boolean) {
+  async function handleToggleChecklist(itemId: string, completed: boolean) {
+    // Optimistically update local state immediately
+    setChecklist(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? {
+              ...item,
+              completed: !completed,
+              completed_at: !completed ? new Date().toISOString() : null,
+            }
+          : item
+      )
+    )
+
+    // Sync to server in background
     const res = await toggleChecklistItemAction(itemId, completed)
-    if (res.success) router.refresh()
+    if (!res.success) {
+      // Revert on failure
+      setChecklist(prev =>
+        prev.map(item =>
+          item.id === itemId
+            ? {
+                ...item,
+                completed,
+                completed_at: completed ? new Date().toISOString() : null,
+              }
+            : item
+        )
+      )
+    }
   }
 
   function runBreakeven() {
@@ -347,7 +374,7 @@ export default function DomicileScheduleEditor({
                         }`}
                       >
                         <button
-                          onClick={() => toggleChecklistItem(item.id, Boolean(item.completed))}
+                          onClick={() => handleToggleChecklist(item.id, Boolean(item.completed))}
                           className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
                             item.completed
                               ? 'bg-emerald-500 border-emerald-500 text-white'
