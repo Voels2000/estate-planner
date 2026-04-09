@@ -2,7 +2,7 @@
 
 // Sprint 67 — Strategy Overlay UI
 // Side-by-side comparison of base case vs strategy scenarios
-// Renders in StrategyTab alongside CharitableImpactCalculator
+// Renders in StrategyTab
 // Net-to-heirs table at mortality ages 75, 80, 85, 90
 
 import { useState } from 'react'

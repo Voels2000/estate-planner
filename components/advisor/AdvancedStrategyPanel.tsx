@@ -2,7 +2,7 @@
 
 // Sprint 69 — AdvancedStrategyPanel
 // Adds GRAT, CRT/CLAT/DAF, Liquidity Analysis, and Roth Conversion panels to StrategyTab
-// Rendered below SLATILITPanel and above CharitableImpactCalculator
+// Rendered below SLATILITPanel in StrategyTab
 
 import { useState } from 'react'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'

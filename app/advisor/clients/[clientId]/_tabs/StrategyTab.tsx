@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'
 import StrategyOverlay from '@/components/advisor/StrategyOverlay'
@@ -29,12 +28,26 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
 
+  if (!grossEstate) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3" />
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+          ))}
+        </div>
+        <div className="h-48 bg-gray-200 rounded-lg" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-10">
       <DisclaimerBanner />
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics Dashboard</h2>
         <AdvisoryMetricsDashboard
           householdId={household.id}
           grossEstate={grossEstate}
@@ -137,11 +150,6 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
             lawScenario={lawScenario}
           />
         )}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Charitable Planning</h2>
-        <CharitableImpactCalculator householdId={household.id} isAdvisor />
       </section>
 
       <section>

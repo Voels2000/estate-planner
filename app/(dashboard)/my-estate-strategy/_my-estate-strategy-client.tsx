@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
+import CharitableImpactCalculator from '@/components/advisor/CharitableImpactCalculator'
 
 type Props = {
   householdId: string
@@ -51,6 +53,8 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, househ
   const costOfWaiting = Math.max(0, estimatedFederalTaxSunset - estimatedFederalTax)
 
   const hasScenario = rows.length > 0
+
+  const [charitableExpanded, setCharitableExpanded] = useState(false)
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -135,6 +139,26 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, househ
           <DisclaimerBanner context="estate strategy" />
         </div>
       )}
+
+      <section className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-neutral-900">
+            Charitable Planning — What If I Gave?
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCharitableExpanded((o) => !o)}
+            className="text-sm text-neutral-500 hover:text-neutral-700 flex items-center gap-1"
+          >
+            {charitableExpanded ? '▲ Collapse' : '▼ Explore'}
+          </button>
+        </div>
+        {charitableExpanded && (
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+            <CharitableImpactCalculator householdId={householdId} />
+          </div>
+        )}
+      </section>
     </div>
   )
 }
