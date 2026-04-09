@@ -63,6 +63,7 @@ export default function MonteCarloPanel({
   lawScenario,
   supabaseUrl,
 }: MonteCarloProps) {
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
   const [result, setResult] = useState<MonteCarloResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -93,6 +94,7 @@ export default function MonteCarloPanel({
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseAnonKey,
         },
         body: JSON.stringify({
           householdId,
