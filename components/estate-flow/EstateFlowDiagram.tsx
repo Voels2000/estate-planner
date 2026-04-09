@@ -253,6 +253,7 @@ interface Props {
   advisorId?: string
   isAdvisor?: boolean
   deathView?: DeathView
+  hasCSTStrategy?: boolean
   /** Planned domicile change from StrategyTab / domicile_schedule */
   domicileTransition?: DomicileTransitionNote
   onShareLinkGenerated?: (url: string) => void
@@ -264,9 +265,11 @@ export default function EstateFlowDiagram({
   advisorId,
   isAdvisor = false,
   deathView,
+  hasCSTStrategy = false,
   domicileTransition,
   onShareLinkGenerated,
 }: Props) {
+  void hasCSTStrategy
   console.log('isAdvisor prop:', isAdvisor)
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)

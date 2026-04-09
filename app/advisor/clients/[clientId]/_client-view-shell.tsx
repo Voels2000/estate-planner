@@ -183,6 +183,11 @@ export interface ClientViewShellProps {
   legalDocuments: any[]
   notes: any[]
   estateTax: any | null
+  scenario?: {
+    gross_estate?: number
+    federal_exemption?: number
+    law_scenario?: 'current_law' | 'sunset' | 'no_exemption'
+  } | null
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
   domicileChecklist: any[]

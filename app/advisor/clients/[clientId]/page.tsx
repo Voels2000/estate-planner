@@ -101,6 +101,32 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   const estateTax = estateTaxRaw ?? null
 
+  const scenario = household.base_case_scenario_id
+    ? (
+        await supabase
+          .from('projection_scenarios')
+          .select('id, scenario_type, outputs, outputs_s1_first, assumption_snapshot')
+          .eq('id', household.base_case_scenario_id)
+          .single()
+      ).data
+    : null
+
+  const scenarioOutputs = (
+    Array.isArray(scenario?.outputs_s1_first) && scenario.outputs_s1_first.length > 0
+      ? scenario.outputs_s1_first
+      : (Array.isArray(scenario?.outputs) ? scenario.outputs : [])
+  ) as Array<Record<string, unknown>>
+  const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[scenarioOutputs.length - 1] : null
+  const assumptionSnapshot = (scenario?.assumption_snapshot ?? {}) as Record<string, unknown>
+
+  const scenarioForStrategy = scenario
+    ? {
+        gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
+        federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000),
+        law_scenario: scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law' as const,
+      }
+    : null
+
   // ── Domicile Analysis ─────────────────────────────────────────────────────
   const { data: domicileAnalysis } = await supabase
     .from('domicile_analysis')
@@ -177,6 +203,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       legalDocuments={legalDocuments ?? []}
       notes={notes ?? []}
       estateTax={estateTax}
+      scenario={scenarioForStrategy}
       domicileAnalysis={domicileAnalysis ?? null}
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}

@@ -168,6 +168,7 @@ export async function generateEstateFlow(
   scenarioId: string | null,
   deathView: DeathView = 'first_death',
   supabase?: ReturnType<typeof createClient>,
+  hasCSTStrategy = false,
 ): Promise<EstateFlowGraph> {
   if (!supabase) {
     supabase = createClient()
@@ -294,6 +295,7 @@ export async function generateEstateFlow(
 
   const nodes: FlowNode[] = []
   const edges: FlowEdge[] = []
+  let bypassTrustNodeId: string | null = null
 
   // Unique beneficiary node registry (to avoid duplicates)
   const beneNodeMap = new Map<string, string>() // name → node id
@@ -347,6 +349,36 @@ export async function generateEstateFlow(
     })
   }
 
+  if (bypassTrustNodeId) {
+    const cstFundingAmount = grossEstate * 0.5
+    const spouseRemainder = Math.max(0, grossEstate - cstFundingAmount)
+
+    const bypassNode = nodes.find((n) => n.id === bypassTrustNodeId)
+    if (bypassNode) bypassNode.value = cstFundingAmount
+
+    edges.push({
+      id: 'e_cst_funding',
+      source: 'owner_p1',
+      target: bypassTrustNodeId,
+      type: 'transfers_to',
+      label: `${fmt(cstFundingAmount)} (up to exemption)`,
+      value: cstFundingAmount,
+      metadata: { strategy: 'credit_shelter_trust' },
+    })
+
+    if (hasSpouse) {
+      edges.push({
+        id: 'e_cst_spouse_remainder',
+        source: 'owner_p1',
+        target: 'owner_p2',
+        type: 'transfers_to',
+        label: `${fmt(spouseRemainder)} to surviving spouse`,
+        value: spouseRemainder,
+        metadata: { strategy: 'credit_shelter_trust' },
+      })
+    }
+  }
+
   // ── 2. Trust nodes ───────────────────────────────────────────────────────────
   const trustNodeIds: string[] = []
   for (const t of trusts) {
@@ -375,6 +407,19 @@ export async function generateEstateFlow(
       technicalLabel: 'Probate Estate',
       value: 0,
       metadata: { has_will: hasWill },
+    })
+  }
+
+  if (hasCSTStrategy) {
+    bypassTrustNodeId = 'trust_bypass'
+    nodes.push({
+      id: bypassTrustNodeId,
+      type: 'trust',
+      category: 'vehicle',
+      label: 'Bypass Trust',
+      technicalLabel: 'Credit Shelter Trust (Bypass Trust)',
+      value: 0,
+      metadata: { strategy: 'credit_shelter_trust' },
     })
   }
 
@@ -697,6 +742,19 @@ export async function generateEstateFlow(
         label: `${bene.allocation_pct}% per trust terms`,
         value: Math.round((trustAssetsValue * bene.allocation_pct) / 100),
         metadata: { distribution_age: bene.distribution_age, conditions: bene.incentive_conditions },
+      })
+    }
+
+    if (bypassTrustNodeId) {
+      const beneNodeId = getOrCreateBeneNode(bene)
+      edges.push({
+        id: `e_cst_dist_${bene.id}`,
+        source: bypassTrustNodeId,
+        target: beneNodeId,
+        type: 'distributes_to',
+        label: `${bene.allocation_pct}% per CST terms`,
+        value: Math.round((grossEstate * 0.5 * bene.allocation_pct) / 100),
+        metadata: { strategy: 'credit_shelter_trust' },
       })
     }
   }

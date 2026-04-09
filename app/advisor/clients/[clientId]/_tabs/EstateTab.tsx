@@ -76,6 +76,7 @@ export default function EstateTab({
           advisorId={advisorId}
           isAdvisor={true}
           deathView={deathView}
+          hasCSTStrategy={false}
         />
       </section>
 
