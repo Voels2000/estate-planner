@@ -5,6 +5,7 @@
 
 import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
 import InheritanceTaxWaterfall from '@/components/advisor/InheritanceTaxWaterfall'
+import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
@@ -60,9 +61,11 @@ export default function DomicileTab({
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
 
   const grossEstateForStateTax =
-    (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
-    (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
-    0
+    parseStateTaxCode(claimed_domicile_state ?? '') === 'NY'
+      ? 8_000_000 // temp for NY cliff validation
+      : (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
+        (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
+        0
 
   const factors = [
     { label: "Driver's License",       value: drivers_license_state,      weight: 15 },
@@ -243,6 +246,12 @@ export default function DomicileTab({
 
       {/* Sprint 66: wire grossEstate / grossEstateByYear from projection waterfall */}
       <div className="space-y-6">
+        {parseStateTaxCode(claimed_domicile_state ?? '') === 'NY' && (
+          <NYCliffValidator
+            year={new Date().getFullYear() + 1}
+            dbExemptions={stateExemptions}
+          />
+        )}
         <StateTaxPanel
           grossEstate={grossEstateForStateTax}
           stateCode={parseStateTaxCode(claimed_domicile_state ?? 'WA')}
