@@ -133,11 +133,24 @@ export default function DomicileScheduleEditor({
   }
 
   async function seedChecklist(toState: string) {
+    const found = schedule.find(r => r.state_code !== currentState)
+    if (!found) return
     const res = await seedDomicileChecklist(householdId, toState)
-    console.log('seedChecklist result:', res, 'householdId:', householdId, 'toState:', toState)
-    if (!res.success) return
-    router.refresh()
+    if (!res.success) {
+      console.error('seed failed:', res.error)
+      return
+    }
+    // Optimistically populate checklist from engine data
+    const { getChecklistForState } = await import('@/lib/projection/domicileEngine')
+    const items = getChecklistForState(toState)
+    setChecklist(items.map((item, i) => ({
+      id: `temp-${i}`,
+      ...item,
+      completed: false,
+      completed_at: null
+    })))
     setActiveTab('checklist')
+    router.refresh()
   }
 
   const tabs = [
@@ -300,12 +313,7 @@ export default function DomicileScheduleEditor({
             <div className="text-center py-6">
               <p className="text-sm text-slate-400 mb-2">No checklist items yet.</p>
               <button
-                onClick={() => {
-                  console.log('SEED BUTTON CLICKED')
-                  const found = schedule.find(r => r.state_code !== currentState)
-                  console.log('found state:', found?.state_code)
-                  if (found) seedChecklist(found.state_code)
-                }}
+                onClick={() => seedChecklist(schedule.find(r => r.state_code !== currentState)!.state_code)}
                 className="text-sm text-blue-600 hover:underline"
               >
                 Seed establishment checklist
