@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 type Answer = 'yes' | 'no' | null
 
@@ -187,6 +188,10 @@ export default function HealthCheckPage() {
         >
           Skip for now
         </button>
+
+        <div className="mt-8">
+          <DisclaimerBanner context="estate health check" />
+        </div>
       </div>
     </div>
   )

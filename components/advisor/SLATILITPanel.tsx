@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { applySLAT, SLATConfig } from '@/lib/strategy/applySLAT'
 import { applyILIT, ILITConfig } from '@/lib/strategy/applyILIT'
 import { applyIncomeTaxDrag } from '@/lib/strategy/applyGSTandIncomeTaxDrag'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { createClient } from '@/lib/supabase/client'
 
 interface SLATILITPanelProps {
@@ -391,8 +390,6 @@ export default function SLATILITPanel({
           )}
         </div>
       )}
-
-      <DisclaimerBanner />
     </div>
   )
 }

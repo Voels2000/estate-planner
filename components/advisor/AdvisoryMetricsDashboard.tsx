@@ -7,7 +7,6 @@
 
 import { useMemo } from 'react'
 import { calculateAdvisoryMetrics, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 interface AdvisoryMetricsDashboardProps {
   householdId: string
@@ -195,8 +194,6 @@ export default function AdvisoryMetricsDashboard({
           ))}
         </div>
       </div>
-
-      <DisclaimerBanner />
     </div>
   )
 }

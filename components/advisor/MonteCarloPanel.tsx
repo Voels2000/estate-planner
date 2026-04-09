@@ -6,7 +6,6 @@
 // Lives in StrategyTab below CompositeOverlay
 
 import { useState } from 'react'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { createClient } from '@/lib/supabase/client'
 
 interface MonteCarloResult {
@@ -390,8 +389,6 @@ export default function MonteCarloPanel({
           </div>
         </div>
       )}
-
-      <DisclaimerBanner />
     </div>
   )
 }

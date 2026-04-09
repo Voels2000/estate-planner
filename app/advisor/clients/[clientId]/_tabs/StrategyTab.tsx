@@ -44,8 +44,6 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
 
   return (
     <div className="space-y-10">
-      <DisclaimerBanner />
-
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics Dashboard</h2>
         <AdvisoryMetricsDashboard
@@ -177,6 +175,8 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
           />
         )}
       </section>
+
+      <DisclaimerBanner />
     </div>
   )
 }

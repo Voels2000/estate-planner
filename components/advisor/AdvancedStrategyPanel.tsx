@@ -9,7 +9,6 @@ import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
 import { modelRothConversion, RothConversionConfig } from '@/lib/strategy/modelRothConversion'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 type AdvancedPanel = 'grat' | 'crt' | 'clat' | 'daf' | 'liquidity' | 'roth' | null
 
@@ -478,8 +477,6 @@ export default function AdvancedStrategyPanel({
           )}
         </div>
       )}
-
-      <DisclaimerBanner />
     </div>
   )
 }

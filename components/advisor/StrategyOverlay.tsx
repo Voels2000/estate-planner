@@ -6,7 +6,6 @@
 // Net-to-heirs table at mortality ages 75, 80, 85, 90
 
 import { useState } from 'react'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyGiftingProgram'
 import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditShelterTrust'
 import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
@@ -349,8 +348,6 @@ export default function StrategyOverlay({
           Projected at {(growthRate * 100).toFixed(0)}% annual growth. All figures rounded to nearest $1K.
         </p>
       </div>
-
-      <DisclaimerBanner />
     </div>
   )
 }

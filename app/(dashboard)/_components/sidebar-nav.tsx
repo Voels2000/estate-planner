@@ -65,7 +65,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
-      { href: '/charitable', label: 'Charitable Giving', icon: '🤝', feature: 'charitable' },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
       // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)

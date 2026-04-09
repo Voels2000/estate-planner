@@ -13,7 +13,6 @@ import {
   build100MArchetype,
   StrategyLayer,
 } from '@/lib/strategy/validateComposability'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 interface CompositeOverlayProps {
   householdId: string
@@ -237,8 +236,6 @@ export default function CompositeOverlay({
           {note}
         </div>
       ))}
-
-      <DisclaimerBanner />
     </div>
   )
 }

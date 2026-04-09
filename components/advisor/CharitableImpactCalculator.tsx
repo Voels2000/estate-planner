@@ -9,8 +9,6 @@
 import React, { useState } from 'react'
 import type { GiftType, CharitableImpactResult } from '@/lib/analytics/bookOfBusiness'
 import { calculateCharitableImpact } from '@/lib/analytics/bookOfBusiness'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
@@ -204,8 +202,6 @@ export default function CharitableImpactCalculator({
               </div>
             </div>
           )}
-
-          <DisclaimerBanner context="charitable planning" />
         </div>
       )}
     </div>
