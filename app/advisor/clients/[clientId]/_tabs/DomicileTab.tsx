@@ -61,11 +61,9 @@ export default function DomicileTab({
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
 
   const grossEstateForStateTax =
-    parseStateTaxCode(claimed_domicile_state ?? '') === 'NY'
-      ? 8_000_000 // temp for NY cliff validation
-      : (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
-        (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
-        0
+    (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
+    (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
+    0
 
   const factors = [
     { label: "Driver's License",       value: drivers_license_state,      weight: 15 },
