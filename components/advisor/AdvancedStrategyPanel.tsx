@@ -390,6 +390,10 @@ export default function AdvancedStrategyPanel({
               <label htmlFor="ilit2035" className="text-sm text-gray-600">ILIT §2035 flag active (exclude from liquidity)</label>
             </div>
           </div>
+          {/* Temp debug */}
+          <pre className="text-xs bg-gray-100 p-2 rounded">
+            federalTax: {JSON.stringify(estimatedFederalTax)} | stateTax: {JSON.stringify(estimatedStateTax)}
+          </pre>
           {liquidityResult && (
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm"><span className="text-gray-600">Total Tax Burden</span><span className="font-medium text-red-600">{fmt(liquidityResult.totalTaxBurden)}</span></div>
