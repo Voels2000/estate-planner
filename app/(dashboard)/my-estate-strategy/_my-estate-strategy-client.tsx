@@ -128,7 +128,7 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
         </div>
       )}
 
-      <DisclaimerBanner context="estate strategy" />
+      <DisclaimerBanner context="estate strategy" /> {/* always last, always renders */}
     </div>
   )
 }
