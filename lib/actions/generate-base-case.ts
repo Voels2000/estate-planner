@@ -28,9 +28,18 @@ export async function generateBaseCase(householdId: string): Promise<{
     } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    // Fetch all required data in parallel
+    const { data: household } = await admin
+      .from('households')
+      .select('*')
+      .eq('id', householdId)
+      .single()
+
+    if (!household) return { error: 'Household not found' }
+
+    const clientOwnerId = household.owner_id
+
+    // Fetch all other required data in parallel
     const [
-      { data: household },
       { data: assets },
       { data: liabilities },
       { data: income },
@@ -40,23 +49,22 @@ export async function generateBaseCase(householdId: string): Promise<{
       { data: state_income_tax_rates },
       { data: taxConfigs },
     ] = await Promise.all([
-      admin.from('households').select('*').eq('id', householdId).single(),
       admin
         .from('assets')
         .select('id, type, value, owner, cost_basis, basis_date, titling, liquidity')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
       admin
         .from('liabilities')
         .select('id, type, balance, monthly_payment, interest_rate, owner')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
       admin
         .from('income')
         .select('id, source, amount, start_year, end_year, inflation_adjust, ss_person')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
       admin
         .from('expenses')
         .select('id, category, amount, start_year, end_year, inflation_adjust, owner')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
       admin
         .from('irmaa_brackets')
         .select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status')
@@ -65,15 +73,13 @@ export async function generateBaseCase(householdId: string): Promise<{
       admin
         .from('real_estate')
         .select('id, name, current_value, is_primary_residence, owner')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
       admin
         .from('state_income_tax_rates')
         .select('state_code, rate_pct, tax_year')
         .order('tax_year', { ascending: false }),
       admin.from('federal_tax_config').select('*').eq('is_active', true),
     ])
-
-    if (!household) return { error: 'Household not found' }
 
     // Run income projection engine
     const projectionRows = computeCompleteProjection({
