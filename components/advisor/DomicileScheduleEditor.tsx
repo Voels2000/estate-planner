@@ -67,7 +67,7 @@ export default function DomicileScheduleEditor({
   const supabase = createClient()
 
   useEffect(() => {
-    setChecklist(initialChecklist ?? [])
+    setChecklist(initialChecklist)
   }, [initialChecklist])
 
   async function addRow() {

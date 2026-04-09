@@ -42,7 +42,7 @@ export async function seedDomicileChecklist(
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath('/advisor/clients')
+  revalidatePath('/advisor/clients', 'layout')
   return { success: true }
 }
 
@@ -65,6 +65,6 @@ export async function toggleChecklistItem(
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath('/advisor/clients')
+  revalidatePath('/advisor/clients', 'layout')
   return { success: true }
 }
