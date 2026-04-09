@@ -2,12 +2,13 @@
 // app/advisor/clients/[clientId]/_tabs/EstateTab.tsx
 // Estate planning view — documents, beneficiaries, titling, accounts
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency, formatDate } from '../_utils'
 import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
+import { createClient } from '@/lib/supabase/client'
 
 const ESTATE_DOC_TYPES = [
   { type: 'will',              label: 'Last Will & Testament',     critical: true },
@@ -28,6 +29,7 @@ export default function EstateTab({
   conflictReport,
 }: ClientViewShellProps) {
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
+  const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   const retirementAssets = (assets ?? []).filter(a =>
@@ -38,6 +40,30 @@ export default function EstateTab({
 
   const totalRE       = (realEstate ?? []).reduce((s, r) => s + (r.current_value   ?? 0), 0)
   const totalMortgage = (realEstate ?? []).reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
+
+  useEffect(() => {
+    let mounted = true
+    const supabase = createClient()
+
+    const fetchHasCSTStrategy = async () => {
+      const { data } = await supabase
+        .from('strategy_configs')
+        .select('id')
+        .eq('household_id', household.id)
+        .eq('strategy_type', 'credit_shelter_trust')
+        .eq('is_active', true)
+        .limit(1)
+
+      if (!mounted) return
+      setHasCSTStrategy((data?.length ?? 0) > 0)
+    }
+
+    fetchHasCSTStrategy()
+
+    return () => {
+      mounted = false
+    }
+  }, [household.id])
 
   return (
     <div className="space-y-6">
@@ -76,7 +102,7 @@ export default function EstateTab({
           advisorId={advisorId}
           isAdvisor={true}
           deathView={deathView}
-          hasCSTStrategy={false}
+          hasCSTStrategy={hasCSTStrategy}
         />
       </section>
 

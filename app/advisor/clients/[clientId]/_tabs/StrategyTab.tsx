@@ -6,6 +6,7 @@ import { ClientViewShellProps } from '../_client-view-shell'
 import StrategyOverlay from '@/components/advisor/StrategyOverlay'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
+import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 
 type StrategyLawScenario = 'current_law' | 'sunset' | 'no_exemption'
 
@@ -17,9 +18,8 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const lawScenario = (scenario?.law_scenario as StrategyLawScenario | undefined) ?? 'current_law'
   const person1BirthYear = household?.person1_birth_year ?? 1960
   const person2BirthYear = household?.person2_birth_year ?? undefined
-  // TODO Sprint 69 follow-up: wire annualRMD and preIRABalance from RetirementTab projection data
-  const annualRMD = 0
-  const preIRABalance = 0
+  const annualRMD = Number(scenario?.annual_rmd ?? 0)
+  const preIRABalance = Number(scenario?.pre_ira_balance ?? 0)
 
   return (
     <div className="space-y-10">
@@ -62,6 +62,17 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
           person1BirthYear={person1BirthYear}
           annualRMD={annualRMD}
           preIRABalance={preIRABalance}
+        />
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Combined Strategy View</h2>
+        <CompositeOverlay
+          householdId={household.id}
+          grossEstate={grossEstate}
+          federalExemption={federalExemption}
+          estimatedFederalTax={estimatedFederalTax}
+          lawScenario={lawScenario}
         />
       </section>
 

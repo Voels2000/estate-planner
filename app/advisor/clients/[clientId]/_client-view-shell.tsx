@@ -186,6 +186,8 @@ export interface ClientViewShellProps {
   scenario?: {
     gross_estate?: number
     federal_exemption?: number
+    annual_rmd?: number
+    pre_ira_balance?: number
     estimated_federal_tax?: number
     estimated_state_tax?: number
     law_scenario?: 'current_law' | 'sunset' | 'no_exemption'
