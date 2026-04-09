@@ -244,7 +244,7 @@ export default function DomicileTab({
 
       {/* Sprint 66: wire grossEstate / grossEstateByYear from projection waterfall */}
       <div className="space-y-6">
-        {parseStateTaxCode(claimed_domicile_state ?? '') === 'NY' && (
+        {household?.state_primary === 'NY' && (
           <NYCliffValidator
             year={new Date().getFullYear() + 1}
             dbExemptions={stateExemptions}
