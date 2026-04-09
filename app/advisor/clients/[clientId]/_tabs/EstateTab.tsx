@@ -2,10 +2,12 @@
 // app/advisor/clients/[clientId]/_tabs/EstateTab.tsx
 // Estate planning view — documents, beneficiaries, titling, accounts
 
+import { useState } from 'react'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency, formatDate } from '../_utils'
 import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
+import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 
 const ESTATE_DOC_TYPES = [
   { type: 'will',              label: 'Last Will & Testament',     critical: true },
@@ -17,6 +19,7 @@ const ESTATE_DOC_TYPES = [
 ]
 
 export default function EstateTab({
+  advisorId,
   household,
   assets,
   realEstate,
@@ -24,6 +27,7 @@ export default function EstateTab({
   estateDocuments,
   conflictReport,
 }: ClientViewShellProps) {
+  const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   const retirementAssets = (assets ?? []).filter(a =>
@@ -37,6 +41,43 @@ export default function EstateTab({
 
   return (
     <div className="space-y-6">
+      <DisclaimerBanner />
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Estate Flow</h2>
+          <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden text-sm">
+            <button
+              onClick={() => setDeathView('first_death')}
+              className={`px-4 py-2 transition-colors ${
+                deathView === 'first_death'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Spouse 1 First
+            </button>
+            <button
+              onClick={() => setDeathView('second_death')}
+              className={`px-4 py-2 transition-colors border-l border-gray-200 ${
+                deathView === 'second_death'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Spouse 2 First
+            </button>
+          </div>
+        </div>
+
+        <EstateFlowDiagram
+          householdId={household.id}
+          scenarioId={household.base_case_scenario_id ?? null}
+          advisorId={advisorId}
+          isAdvisor={true}
+          deathView={deathView}
+        />
+      </section>
 
       <div className="grid grid-cols-2 gap-6">
 

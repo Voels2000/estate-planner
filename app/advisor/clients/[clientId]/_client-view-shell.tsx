@@ -11,6 +11,7 @@ import DomicileTab from './_tabs/DomicileTab'
 import DocumentsTab from './_tabs/DocumentsTab'
 import NotesTab from './_tabs/NotesTab'
 import StrategyTab from './_tabs/StrategyTab'
+import MeetingPrepTab from './_tabs/MeetingPrepTab'
 import { getComplexityStyle, getAge, formatCurrency } from './_utils'
 
 const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; comingSoon?: boolean }[] = [
@@ -22,6 +23,7 @@ const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; co
   { id: 'retirement', label: 'Retirement', icon: '◷' },
   { id: 'documents',  label: 'Documents',  icon: '⊞' },
   { id: 'notes',      label: 'Notes',      icon: '✎', advisorOnly: true },
+  { id: 'meeting-prep', label: 'Meeting Prep', icon: '📋' },
 ]
 
 const CLIENT_STATUS_BADGE: Record<string, string> = {
@@ -149,19 +151,8 @@ export default function ClientViewShell(props: ClientViewShellProps) {
         {tab === 'domicile'   && <DomicileTab    {...props} />}
         {tab === 'documents'  && <DocumentsTab   {...props} />}
         {tab === 'notes'      && <NotesTab       {...props} />}
-        {tab === 'strategy' && (
-          <StrategyTab
-            clientId={props.clientId}
-            advisorId={props.advisorId}
-            householdId={props.household.id}
-            scenarioId={props.household.base_case_scenario_id ?? null}
-            household={props.household}
-            person1Name={props.household.person1_first_name ?? 'Person 1'}
-            person2Name={props.household.person2_first_name ?? null}
-            hasSpouse={props.household.has_spouse ?? false}
-            stateExemptions={props.stateExemptions ?? []}
-          />
-        )}
+        {tab === 'strategy'   && <StrategyTab    {...props} />}
+        {tab === 'meeting-prep' && <MeetingPrepTab {...props} />}
       </div>
     </div>
   )
