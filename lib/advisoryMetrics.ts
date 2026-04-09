@@ -245,8 +245,13 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
     0,
     Math.floor((sunsetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
   )
-  const urgencyLevel =
-    daysRemaining < 180 ? 'critical' : daysRemaining < 365 ? 'high' : daysRemaining < 730 ? 'medium' : 'low'
+  const urgencyLevel = (daysRemaining < 180
+    ? 'critical'
+    : daysRemaining < 365
+      ? 'high'
+      : daysRemaining < 730
+        ? 'medium'
+        : 'low') as 'low' | 'medium' | 'high' | 'critical'
 
   const sunsetUrgency = {
     daysRemaining,
