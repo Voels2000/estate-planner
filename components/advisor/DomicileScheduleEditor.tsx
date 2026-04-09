@@ -319,9 +319,7 @@ export default function DomicileScheduleEditor({
                 Seed establishment checklist
               </button>
             </div>
-          ) : (
-            <p className="text-xs text-red-500">DEBUG: checklist has {checklist.length} items</p>
-          )}
+          ) : null}
           {checklist.length > 0 && (
             <>
               {criticalIncomplete > 0 && (
