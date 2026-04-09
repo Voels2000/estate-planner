@@ -123,7 +123,13 @@ export default function AdvancedStrategyPanel({
   const crtResult = activePanel === 'crt' ? applyCRT(crtConfig) : null
   const clatResult = activePanel === 'clat' ? applyCLAT(clatConfig) : null
   const dafResult = activePanel === 'daf' ? applyDAF(dafConfig) : null
-  const liquidityResult = activePanel === 'liquidity' ? analyzeLiquidity(liquidityConfig) : null
+  const liquidityResult = activePanel === 'liquidity'
+    ? analyzeLiquidity({
+        ...liquidityConfig,
+        estimatedFederalTax,
+        estimatedStateTax,
+      })
+    : null
   const rothResult = activePanel === 'roth' ? modelRothConversion(rothConfig) : null
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -398,12 +404,19 @@ export default function AdvancedStrategyPanel({
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm"><span className="text-gray-600">Total Tax Burden</span><span className="font-medium text-red-600">{fmt(liquidityResult.totalTaxBurden)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-600">Total Liquidity</span><span className="font-medium">{fmt(liquidityResult.totalLiquidity)}</span></div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Coverage Ratio</span>
-                <span className={`font-medium ${liquidityResult.coverageRatio >= 1 ? 'text-green-700' : 'text-red-600'}`}>
-                  {liquidityResult.coverageRatio === 999 ? 'N/A' : `${liquidityResult.coverageRatio.toFixed(2)}x`}
-                </span>
-              </div>
+              {liquidityResult.totalTaxBurden === 0 ? (
+                <div className="bg-blue-50 border border-blue-100 rounded p-3 text-xs text-blue-800">
+                  No estate tax projected under the current scenario. Switch to the Sunset scenario
+                  in the Tax tab to model liquidity under a taxable estate.
+                </div>
+              ) : (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Coverage Ratio</span>
+                  <span className={`font-medium ${liquidityResult.coverageRatio >= 1 ? 'text-green-700' : 'text-red-600'}`}>
+                    {liquidityResult.coverageRatio.toFixed(2)}x
+                  </span>
+                </div>
+              )}
               {liquidityResult.hasLiquidityShortfall && (
                 <div className="flex justify-between text-sm font-semibold">
                   <span className="text-red-600">Shortfall</span>
