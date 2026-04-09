@@ -134,6 +134,7 @@ export default function DomicileScheduleEditor({
 
   async function seedChecklist(toState: string) {
     const res = await seedDomicileChecklist(householdId, toState)
+    console.log('seedChecklist result:', res, 'householdId:', householdId, 'toState:', toState)
     if (!res.success) return
     router.refresh()
     setActiveTab('checklist')
