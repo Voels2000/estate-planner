@@ -153,6 +153,7 @@ export type CompleteProjectionInput = {
     id: string
     name: string
     estimated_value: number
+    owner_estimated_value?: number
     ownership_pct?: number
     owner?: string
   }>
@@ -534,7 +535,12 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const currentYear        = new Date().getFullYear()
   const businessesInput    = input.businesses ?? []
   const baseBusinessValue  = businessesInput.reduce(
-    (sum, b) => sum + Number(b.estimated_value ?? 0) * ((b.ownership_pct ?? 100) / 100),
+    (sum, b) =>
+      sum +
+      Number(
+        b.owner_estimated_value ??
+          (Number(b.estimated_value ?? 0) * ((b.ownership_pct ?? 100) / 100)),
+      ),
     0,
   )
 

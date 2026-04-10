@@ -101,6 +101,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
+    businessesResult,
     stateExemptionsResult,
     healthScore,
     liquidAssets,
@@ -168,6 +169,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .select('*')
       .eq('household_id', household.id)
       .order('effective_year', { ascending: true }),
+    supabase
+      .from('businesses')
+      .select('id, name, entity_type, ownership_pct, estimated_value, owner_estimated_value, valuation_method, has_buy_sell_agreement, buy_sell_funded, has_key_person_insurance, succession_plan')
+      .eq('owner_id', clientId),
     supabase.rpc('get_state_exemptions', {
       p_states: statesToFetch,
       p_years: projectionYears,
@@ -200,6 +205,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const scenario = scenarioResult.data ?? null
   const domicileAnalysis = domicileAnalysisResult.data ?? null
   const domicileSchedule = domicileScheduleResult.data
+  const businesses = businessesResult.data ?? []
   const stateExemptions = (stateExemptionsResult.data ?? []) as DbStateExemption[]
   const beneficiaryGrants = (beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[]
 
@@ -399,6 +405,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       household={household}
       assets={assets ?? []}
       realEstate={realEstate ?? []}
+      businesses={businesses}
       beneficiaries={beneficiaries ?? []}
       estateDocuments={estateDocuments ?? []}
       legalDocuments={legalDocuments ?? []}

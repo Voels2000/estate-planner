@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { fetchTitlingTypes } from '@/lib/ref-data-fetchers'
 import RealEstateClient from './_real-estate-client'
 
 export default async function RealEstatePage() {
@@ -25,9 +26,10 @@ export default async function RealEstatePage() {
     )
   }
 
-  const [{ data: properties }, { data: household }] = await Promise.all([
+  const [{ data: properties }, { data: household }, titlingTypes] = await Promise.all([
     supabase.from('real_estate').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
     supabase.from('households').select('person1_name, person2_name, filing_status').eq('owner_id', user.id).single(),
+    fetchTitlingTypes(),
   ])
 
   return (
@@ -36,6 +38,7 @@ export default async function RealEstatePage() {
       person1Name={household?.person1_name ?? 'Person 1'}
       person2Name={household?.person2_name ?? 'Person 2'}
       filingStatus={household?.filing_status ?? 'single'}
+      titlingTypes={titlingTypes}
     />
   )
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { RefOption } from '@/lib/ref-data-fetchers'
 
 /** Matches `real_estate` table columns */
 export type RealEstate = {
@@ -21,6 +22,8 @@ export type RealEstate = {
   is_primary_residence: boolean
   years_lived_in: number | null
   owner: string
+  titling?: string | null
+  situs_state?: string | null
   created_at: string
   updated_at: string
 }
@@ -31,6 +34,22 @@ const PROPERTY_TYPE_LABELS: Record<RealEstate['property_type'], string> = {
   vacation: 'Vacation',
   commercial: 'Commercial',
 }
+
+const US_STATES = [
+  { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' }, { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' }, { value: 'CT', label: 'Connecticut' }, { value: 'DE', label: 'Delaware' },
+  { value: 'FL', label: 'Florida' }, { value: 'GA', label: 'Georgia' }, { value: 'HI', label: 'Hawaii' }, { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' }, { value: 'IN', label: 'Indiana' }, { value: 'IA', label: 'Iowa' }, { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' }, { value: 'LA', label: 'Louisiana' }, { value: 'ME', label: 'Maine' }, { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' }, { value: 'MI', label: 'Michigan' }, { value: 'MN', label: 'Minnesota' }, { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' }, { value: 'MT', label: 'Montana' }, { value: 'NE', label: 'Nebraska' }, { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' }, { value: 'NJ', label: 'New Jersey' }, { value: 'NM', label: 'New Mexico' }, { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' }, { value: 'ND', label: 'North Dakota' }, { value: 'OH', label: 'Ohio' }, { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' }, { value: 'PA', label: 'Pennsylvania' }, { value: 'RI', label: 'Rhode Island' }, { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' }, { value: 'TN', label: 'Tennessee' }, { value: 'TX', label: 'Texas' }, { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' }, { value: 'VA', label: 'Virginia' }, { value: 'WA', label: 'Washington' }, { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' }, { value: 'DC', label: 'District of Columbia' },
+]
 
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
@@ -126,6 +145,7 @@ type RealEstateClientProps = {
   person2Name: string
   /** Filing status short code from households table: mfj | mfs | hoh | qw | single */
   filingStatus: string
+  titlingTypes: RefOption[]
 }
 
 export default function RealEstateClient({
@@ -133,6 +153,7 @@ export default function RealEstateClient({
   person1Name,
   person2Name,
   filingStatus,
+  titlingTypes,
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
@@ -361,6 +382,7 @@ export default function RealEstateClient({
           editRow={editRow}
           person1Name={person1Name}
           person2Name={person2Name}
+          titlingTypes={titlingTypes}
           onClose={() => {
             setShowModal(false)
             setEditRow(null)
@@ -381,12 +403,14 @@ function RealEstateModal({
   editRow,
   person1Name,
   person2Name,
+  titlingTypes,
   onClose,
   onSave,
 }: {
   editRow: RealEstate | null
   person1Name: string
   person2Name: string
+  titlingTypes: RefOption[]
   onClose: () => void
   onSave: () => void
 }) {
@@ -410,6 +434,8 @@ function RealEstateModal({
   const [isPrimaryResidence, setIsPrimaryResidence] = useState(editRow?.is_primary_residence ?? false)
   const [yearsLivedIn, setYearsLivedIn] = useState(editRow?.years_lived_in?.toString() ?? '')
   const [owner, setOwner] = useState(editRow?.owner ?? 'person1')
+  const [titling, setTitling] = useState(editRow?.titling ?? '')
+  const [situsState, setSitusState] = useState(editRow?.situs_state ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -439,6 +465,8 @@ function RealEstateModal({
         is_primary_residence: isPrimaryResidence,
         years_lived_in: yearsLivedIn === '' ? null : parseInt(yearsLivedIn, 10),
         owner,
+        titling: titling || null,
+        situs_state: situsState || null,
         updated_at: new Date().toISOString(),
       }
 
@@ -500,6 +528,34 @@ function RealEstateModal({
               <option value="vacation">Vacation</option>
               <option value="commercial">Commercial</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Titling / Ownership</label>
+            <select value={titling} onChange={(e) => setTitling(e.target.value)} className={inputClass}>
+              <option value="">Select titling...</option>
+              {titlingTypes
+                .filter((t) => (t.description ?? '').toLowerCase().includes('real_estate') || !(t.description ?? '').toLowerCase().includes('assets'))
+                .map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+            </select>
+            <p className="mt-1 text-xs text-neutral-500">
+              How is this property legally titled? Critical for estate planning and probate avoidance.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">State Where Property is Located</label>
+            <select value={situsState} onChange={(e) => setSitusState(e.target.value)} className={inputClass}>
+              <option value="">Select state...</option>
+              {US_STATES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-neutral-500">
+              The state where the property is physically located. Used for state estate tax calculation.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

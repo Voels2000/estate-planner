@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { RefOption } from '@/lib/ref-data-fetchers'
 
 const US_STATE_CODES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -33,6 +34,14 @@ type Asset = {
   updated_at: string
   situs_state?: string | null
   situs_asset_type?: string | null
+  cost_basis?: number | null
+  basis_date?: string | null
+  liquidity?: string | null
+  titling?: string | null
+  institution?: string | null
+  account_last4?: string | null
+  face_value?: number | null
+  is_ilit?: boolean | null
 }
 
 export default function AssetsPage() {
@@ -40,6 +49,8 @@ export default function AssetsPage() {
   const [person2Name, setPerson2Name] = useState('Person 2')
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([])
+  const [liquidityTypes, setLiquidityTypes] = useState<RefOption[]>([])
+  const [titlingTypes, setTitlingTypes] = useState<RefOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editAsset, setEditAsset] = useState<Asset | null>(null)
@@ -53,15 +64,25 @@ export default function AssetsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [{ data: assetsData, error: assetsError }, { data: typesData }, { data: household }] = await Promise.all([
+    const [
+      { data: assetsData, error: assetsError },
+      { data: typesData },
+      { data: liquidityData },
+      { data: titlingData },
+      { data: household },
+    ] = await Promise.all([
       supabase.from('assets').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
       supabase.from('asset_types').select('value, label').order('sort_order'),
+      supabase.from('ref_liquidity_types').select('value, label, description').eq('is_active', true).order('sort_order'),
+      supabase.from('ref_titling_types').select('value, label, description').eq('is_active', true).order('sort_order'),
       supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     ])
 
     if (assetsError) setError(assetsError.message)
     else setAssets(assetsData ?? [])
     setAssetTypes(typesData ?? [])
+    setLiquidityTypes(liquidityData ?? [])
+    setTitlingTypes(titlingData ?? [])
     if (household?.person1_name) setPerson1Name(household.person1_name)
     if (household?.person2_name) setPerson2Name(household.person2_name)
     setIsLoading(false)
@@ -156,6 +177,8 @@ export default function AssetsPage() {
           assetTypes={assetTypes}
           person1Name={person1Name}
           person2Name={person2Name}
+          liquidityTypes={liquidityTypes}
+          titlingTypes={titlingTypes}
           onClose={() => { setShowModal(false); setEditAsset(null) }}
           onSave={() => { setShowModal(false); setEditAsset(null); loadData() }}
         />
@@ -164,11 +187,13 @@ export default function AssetsPage() {
   )
 }
 
-function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, onSave }: {
+function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidityTypes, titlingTypes, onClose, onSave }: {
   editAsset: Asset | null
   assetTypes: AssetType[]
   person1Name: string
   person2Name: string
+  liquidityTypes: RefOption[]
+  titlingTypes: RefOption[]
   onClose: () => void
   onSave: () => void
 }) {
@@ -176,6 +201,14 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
   const [type, setType] = useState(editAsset?.type ?? assetTypes[0]?.value ?? '')
   const [name, setName] = useState(editAsset?.name ?? '')
   const [value, setValue] = useState(editAsset?.value?.toString() ?? '')
+  const [institution, setInstitution] = useState(editAsset?.institution ?? '')
+  const [accountLast4, setAccountLast4] = useState(editAsset?.account_last4 ?? '')
+  const [costBasis, setCostBasis] = useState(editAsset?.cost_basis?.toString() ?? '')
+  const [basisDate, setBasisDate] = useState(editAsset?.basis_date ?? '')
+  const [liquidity, setLiquidity] = useState(editAsset?.liquidity ?? '')
+  const [titling, setTitling] = useState(editAsset?.titling ?? '')
+  const [faceValue, setFaceValue] = useState(editAsset?.face_value?.toString() ?? '')
+  const [isIlit, setIsIlit] = useState(editAsset?.is_ilit ?? false)
   const [situsState, setSitusState] = useState(editAsset?.situs_state ?? '')
   const [situsAssetType, setSitusAssetType] = useState(editAsset?.situs_asset_type ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -204,6 +237,14 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
             type,
             name,
             value: parseFloat(value),
+            cost_basis: costBasis ? parseFloat(costBasis) : null,
+            basis_date: basisDate || null,
+            liquidity: liquidity || null,
+            titling: titling || null,
+            institution: institution || null,
+            account_last4: accountLast4 || null,
+            face_value: faceValue ? parseFloat(faceValue) : null,
+            is_ilit: isIlit,
             ...situsPayload,
             updated_at: new Date().toISOString(),
           })
@@ -218,6 +259,14 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
             type,
             name,
             value: parseFloat(value),
+            cost_basis: costBasis ? parseFloat(costBasis) : null,
+            basis_date: basisDate || null,
+            liquidity: liquidity || null,
+            titling: titling || null,
+            institution: institution || null,
+            account_last4: accountLast4 || null,
+            face_value: faceValue ? parseFloat(faceValue) : null,
+            is_ilit: isIlit,
             ...situsPayload,
           })
         if (error) throw error
@@ -258,11 +307,75 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, onClose, 
             <input type="text" required value={name} onChange={(e) => setName(e.target.value)}
               className={inputClass} placeholder="e.g. Primary Home, Fidelity 401k" />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Institution / Custodian</label>
+              <input type="text" value={institution} onChange={(e) => setInstitution(e.target.value)} className={inputClass} placeholder="e.g. Fidelity, Vanguard, Chase" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Account Last 4 Digits</label>
+              <input type="text" maxLength={4} value={accountLast4} onChange={(e) => setAccountLast4(e.target.value)} className={inputClass} placeholder="e.g. 4821" />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Current Value ($)</label>
             <input type="number" min="0" step="0.01" required value={value}
               onChange={(e) => setValue(e.target.value)} className={inputClass} placeholder="0.00" />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Basis</label>
+              <input type="number" min="0" step="0.01" value={costBasis} onChange={(e) => setCostBasis(e.target.value)} className={inputClass} />
+              <p className="mt-1 text-xs text-neutral-500">Original purchase price or tax basis. Used for capital gains calculation.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Basis Date</label>
+              <input type="date" value={basisDate} onChange={(e) => setBasisDate(e.target.value)} className={inputClass} />
+              <p className="mt-1 text-xs text-neutral-500">Date the asset was acquired at this basis.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Liquidity</label>
+              <select value={liquidity} onChange={(e) => setLiquidity(e.target.value)} className={inputClass}>
+                <option value="">Select liquidity...</option>
+                {liquidityTypes.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-neutral-500">How quickly can this asset be converted to cash?</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Titling / Ownership</label>
+              <select value={titling} onChange={(e) => setTitling(e.target.value)} className={inputClass}>
+                <option value="">Select titling...</option>
+                {titlingTypes
+                  .filter((t) => (t.description ?? '').toLowerCase().includes('assets') || !(t.description ?? '').toLowerCase().includes('real_estate'))
+                  .map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+              </select>
+              <p className="mt-1 text-xs text-neutral-500">How is this asset legally owned? Affects estate planning and probate.</p>
+            </div>
+          </div>
+          {type === 'life_insurance' && (
+            <div className="rounded-lg border border-neutral-200 p-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Death Benefit / Face Value</label>
+                <input type="number" min="0" step="0.01" value={faceValue} onChange={(e) => setFaceValue(e.target.value)} className={inputClass} />
+                <p className="mt-1 text-xs text-neutral-500">Total death benefit paid to beneficiaries. May differ from cash value.</p>
+              </div>
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked={isIlit} onChange={(e) => setIsIlit(e.target.checked)} className="mt-1 h-4 w-4 rounded border-neutral-300" />
+                <span className="text-sm text-neutral-700">
+                  Held in an Irrevocable Life Insurance Trust (ILIT)
+                  <span className="block text-xs text-neutral-500 mt-0.5">
+                    If held in an ILIT, the death benefit is excluded from your taxable estate.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Situs state (optional)</label>
             <select

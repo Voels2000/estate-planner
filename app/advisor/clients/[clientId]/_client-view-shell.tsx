@@ -220,6 +220,19 @@ export interface ClientViewShellProps {
   household: any
   assets: any[]
   realEstate: any[]
+  businesses?: Array<{
+    id: string
+    name: string
+    entity_type: string | null
+    ownership_pct: number | null
+    estimated_value: number | null
+    owner_estimated_value: number | null
+    valuation_method: string | null
+    has_buy_sell_agreement: boolean
+    buy_sell_funded: boolean
+    has_key_person_insurance: boolean
+    succession_plan: string | null
+  }>
   beneficiaries: any[]
   estateDocuments: any[]
   legalDocuments: any[]
