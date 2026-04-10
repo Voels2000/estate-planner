@@ -32,9 +32,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/dashboard', label: 'My Estate Plan', icon: '📊', feature: 'dashboard' },
-      { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
-      { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
-      { href: '/settings/attorney-access', label: 'My Attorney', icon: '⚖️', minTier: 2 },
     ],
   },
   {
@@ -472,6 +469,78 @@ export function SidebarNav({
             </Link>
           ))}
 
+        {/* My Advisor (consumer) */}
+        {(role === 'consumer' || isSuperuser) &&
+          (isLockedUser ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">👤 My Advisor</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/my-advisor"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/my-advisor'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              👤 My Advisor
+            </Link>
+          ))}
+
+        {/* My Attorney (consumer, tier 2+) */}
+        {(role === 'consumer' || isSuperuser) &&
+          (isLockedUser ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">⚖️ My Attorney</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (() => {
+            const tierBelowMin =
+              !isAdvisor && !isSuperuser && tier < 2
+            const attorneyTierGate = tierBelowMin
+            const linkHref = attorneyTierGate ? '/billing' : '/settings/attorney-access'
+            const isActive =
+              activePath === '/settings/attorney-access' && !attorneyTierGate
+            const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-neutral-900 text-white'
+                : attorneyTierGate
+                  ? 'text-neutral-400 hover:bg-neutral-50'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`
+            return attorneyTierGate ? (
+              <div
+                role="presentation"
+                onClick={blockLockedNavInteraction}
+                onPointerDown={blockLockedNavInteraction}
+                className={`${leafClasses} cursor-not-allowed`}
+              >
+                <span className="flex-1 truncate">⚖️ My Attorney</span>
+                <span className="ml-auto shrink-0 text-amber-400 text-sm">🔒</span>
+              </div>
+            ) : (
+              <Link href={linkHref} className={leafClasses}>
+                <span className="flex-1 truncate">⚖️ My Attorney</span>
+              </Link>
+            )
+          })())}
+
         {/* Export Estate Plan */}
         {isLockedUser ? (
           <Link
@@ -495,6 +564,44 @@ export function SidebarNav({
             }`}
           >
             📄 Export Estate Plan
+          </Link>
+        )}
+
+        {/* Security */}
+        {isLockedUser ? (
+          <Link
+            href="#"
+            tabIndex={-1}
+            aria-disabled={true}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+          >
+            <span className="flex-1 truncate">🔐 Security</span>
+            <span className="shrink-0 text-sm" aria-hidden>
+              🔒
+            </span>
+          </Link>
+        ) : isLocked('profile') ? (
+          <div
+            role="presentation"
+            onClick={blockLockedNavInteraction}
+            onPointerDown={blockLockedNavInteraction}
+            className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-50"
+          >
+            <span className="flex-1 truncate">🔐 Security</span>
+            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
+              🔒 {lockLabel('profile')}
+            </span>
+          </div>
+        ) : (
+          <Link
+            href="/settings/security"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activePath === '/settings/security'
+                ? 'bg-neutral-900 text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`}
+          >
+            🔐 Security
           </Link>
         )}
 
