@@ -73,13 +73,13 @@ export async function GET() {
     }
 
     const p1BirthYear = household.person1_birth_year      ?? 1960
-    const p1PIA       = household.person1_ss_benefit_67   ?? 0
+    const p1PIA       = household.person1_ss_pia ?? household.person1_ss_benefit_67 ?? 0
     const p1ClaimAge  = household.person1_ss_claiming_age ?? 67
     const p1Longevity = household.person1_longevity_age   ?? 90
     const p1Name      = household.person1_first_name ?? household.person1_name?.split(' ')[0] ?? 'Person 1'
 
     const p2BirthYear = household.person2_birth_year      ?? null
-    const p2PIA       = household.person2_ss_benefit_67   ?? 0
+    const p2PIA       = household.person2_ss_pia ?? household.person2_ss_benefit_67 ?? 0
     const p2ClaimAge  = household.person2_ss_claiming_age ?? 67
     const p2Longevity = household.person2_longevity_age   ?? 90
     const p2Name      = household.person2_first_name ?? household.person2_name?.split(' ')[0] ?? 'Person 2'

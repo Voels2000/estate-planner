@@ -2,6 +2,7 @@
 // app/advisor/clients/[clientId]/_tabs/RetirementTab.tsx
 // Retirement planning view — SS optimization, RMD, allocation, planning inputs
 
+import { getSsBenefitFromPia, getFraFromBirthYear } from '@/lib/calculations/projection-complete'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { formatCurrency, getAge } from '../_utils'
 
@@ -9,6 +10,22 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
   const currentYear = new Date().getFullYear()
   const p1Age = getAge(household.person1_birth_year, currentYear) ?? 0
   const p2Age = household.has_spouse ? (getAge(household.person2_birth_year, currentYear) ?? 0) : null
+
+  const pia1 = household.person1_ss_pia ?? 0
+  const claimAge1 = household.person1_ss_claiming_age ?? 67
+  const birthYear1 = household.person1_birth_year ?? 1960
+  const fra1 = getFraFromBirthYear(birthYear1)
+  const computedSS1Annual = getSsBenefitFromPia(pia1, claimAge1, birthYear1)
+  const computedSS1Monthly = Math.round(computedSS1Annual / 12)
+  const ssAdjustment1 = pia1 > 0 ? (computedSS1Monthly - pia1) / pia1 : 0
+
+  const pia2 = household.person2_ss_pia ?? 0
+  const claimAge2 = household.person2_ss_claiming_age ?? 67
+  const birthYear2 = household.person2_birth_year ?? 1960
+  const fra2 = getFraFromBirthYear(birthYear2)
+  const computedSS2Annual = household.has_spouse ? getSsBenefitFromPia(pia2, claimAge2, birthYear2) : 0
+  const computedSS2Monthly = Math.round(computedSS2Annual / 12)
+  const ssAdjustment2 = pia2 > 0 ? (computedSS2Monthly - pia2) / pia2 : 0
 
   const accountType = (a: { type?: string | null; account_type?: string | null }) =>
     (a.type ?? a.account_type ?? '').toLowerCase()
@@ -27,18 +44,6 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
   const p1YearsToRMD = Math.max(0, rmdAge - p1Age)
   const p2YearsToRMD = p2Age !== null ? Math.max(0, rmdAge - p2Age) : null
   const hasRMDExposure = totalTraditional > 0 && (p1YearsToRMD <= 10 || (p2YearsToRMD !== null && p2YearsToRMD <= 10))
-
-  // ── SS optimization flags ─────────────────────────────────────────────────
-  const p1SSAge      = household.person1_ss_claiming_age
-  const p2SSAge      = household.person2_ss_claiming_age
-  const p1SSBenefit67 = household.person1_ss_benefit_67
-  const p1SSBenefit62 = household.person1_ss_benefit_62
-  const p2SSBenefit67 = household.person2_ss_benefit_67
-  const p2SSBenefit62 = household.person2_ss_benefit_62
-
-  const p1SSEarlyVsOptimal = p1SSBenefit67 && p1SSBenefit62
-    ? ((p1SSBenefit67 - p1SSBenefit62) / p1SSBenefit62 * 100).toFixed(0)
-    : null
 
   // ── Roth conversion opportunity ───────────────────────────────────────────
   const rothPct = totalRetirement > 0 ? (totalRoth / totalRetirement) * 100 : 0
@@ -70,46 +75,24 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
       <div className="grid grid-cols-2 gap-6">
 
         {/* ── Social Security ── */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Social Security Strategy</h3>
-
-          <div className="space-y-4">
-            <SSPersonCard
-              name={household.person1_first_name}
-              age={p1Age}
-              claimingAge={p1SSAge}
-              benefit62={p1SSBenefit62}
-              benefit67={p1SSBenefit67}
-              delta={p1SSEarlyVsOptimal}
+        <div className="space-y-4">
+          <SsPiaCard
+            title={household.person1_first_name}
+            pia={pia1}
+            claimingAge={household.person1_ss_claiming_age}
+            computedMonthly={computedSS1Monthly}
+            ssAdjustment={ssAdjustment1}
+            fra={fra1}
+          />
+          {household.has_spouse && (
+            <SsPiaCard
+              title={household.person2_first_name}
+              pia={pia2}
+              claimingAge={household.person2_ss_claiming_age}
+              computedMonthly={computedSS2Monthly}
+              ssAdjustment={ssAdjustment2}
+              fra={fra2}
             />
-            {household.has_spouse && (
-              <SSPersonCard
-                name={household.person2_first_name}
-                age={p2Age!}
-                claimingAge={p2SSAge}
-                benefit62={p2SSBenefit62}
-                benefit67={p2SSBenefit67}
-                delta={null}
-              />
-            )}
-          </div>
-
-          {p1SSAge && p1SSAge < 67 && (
-            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-              <p className="text-xs font-medium text-amber-800">Early Claiming Alert</p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {household.person1_first_name} is set to claim at {p1SSAge}. Delaying to 67 increases monthly benefit
-                {p1SSEarlyVsOptimal ? ` by ~${p1SSEarlyVsOptimal}%` : ''}. Discuss break-even analysis.
-              </p>
-            </div>
-          )}
-          {!p1SSAge && p1Age >= 55 && (
-            <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-xs font-medium text-slate-700">Claiming Strategy Not Set</p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {household.person1_first_name} is {p1Age} — within 10 years of eligibility. Document claiming strategy.
-              </p>
-            </div>
           )}
         </div>
 
@@ -178,6 +161,68 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
   )
 }
 
+function SsPiaCard({
+  title,
+  pia,
+  claimingAge,
+  computedMonthly,
+  ssAdjustment,
+  fra,
+}: {
+  title: string
+  pia: number
+  claimingAge: number | null
+  computedMonthly: number
+  ssAdjustment: number
+  fra: number
+}) {
+  const claim = claimingAge ?? null
+  const showEarlyWarning = pia > 0 && claim != null && claim < fra
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <h3 className="text-sm font-semibold text-slate-700 mb-4">
+        Social Security — {title}
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <p className="text-xs text-slate-400 mb-1">PIA (FRA Amount)</p>
+          <p className="text-lg font-bold text-slate-800">
+            {formatCurrency(pia)}/mo
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-400 mb-1">Claiming Age</p>
+          <p className="text-lg font-bold text-slate-800">
+            {claimingAge ?? '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-400 mb-1">Projected Monthly at Claim Age</p>
+          <p className="text-lg font-bold text-indigo-700">
+            {formatCurrency(computedMonthly)}/mo
+          </p>
+          {ssAdjustment !== 0 && (
+            <p className={`text-xs mt-0.5 ${ssAdjustment < 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {ssAdjustment < 0 ? '▼' : '▲'} {Math.abs(Math.round(ssAdjustment * 100))}% vs FRA
+            </p>
+          )}
+        </div>
+      </div>
+      {showEarlyWarning && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-800">
+            ⚠ Claiming at {claim} reduces benefit by{' '}
+            {Math.abs(Math.round(ssAdjustment * 100))}% vs waiting until FRA.
+            Consider delaying to age 70 for maximum benefit (+
+            {Math.round((70 - fra) * 8)}%).
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function RetirementStat({ label, value, sub, highlight }: {
@@ -188,43 +233,6 @@ function RetirementStat({ label, value, sub, highlight }: {
       <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{label}</p>
       <p className={`text-2xl font-bold ${highlight ? 'text-amber-800' : 'text-slate-900'}`}>{value}</p>
       <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
-    </div>
-  )
-}
-
-function SSPersonCard({ name, age, claimingAge, benefit62, benefit67, delta }: {
-  name: string; age: number; claimingAge: number | null
-  benefit62: number | null; benefit67: number | null; delta: string | null
-}) {
-  return (
-    <div className="p-3 bg-slate-50 rounded-lg">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <span className="text-sm font-semibold text-slate-800">{name}</span>
-          <span className="text-xs text-slate-400 ml-2">Age {age}</span>
-        </div>
-        <div className="text-right">
-          {claimingAge ? (
-            <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-              claimingAge >= 67 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-            }`}>
-              Claiming at {claimingAge}
-            </span>
-          ) : (
-            <span className="text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded">Not set</span>
-          )}
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <p className="text-slate-400 mb-0.5">At 62</p>
-          <p className="font-semibold text-slate-700">{benefit62 ? formatCurrency(benefit62) + '/mo' : '—'}</p>
-        </div>
-        <div>
-          <p className="text-slate-400 mb-0.5">At 67 (FRA)</p>
-          <p className="font-semibold text-slate-700">{benefit67 ? formatCurrency(benefit67) + '/mo' : '—'}</p>
-        </div>
-      </div>
     </div>
   )
 }

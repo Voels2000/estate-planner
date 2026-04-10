@@ -79,16 +79,22 @@ export type CompleteProjectionInput = {
     person1_retirement_age: number | null
     person1_ss_claiming_age: number | null
     person1_longevity_age: number | null
-    person1_ss_benefit_62: number | null
-    person1_ss_benefit_67: number | null
+    person1_ss_pia?: number | null
+    /** @deprecated Prefer person1_ss_pia — kept for legacy rows without PIA */
+    person1_ss_benefit_62?: number | null
+    /** @deprecated Prefer person1_ss_pia */
+    person1_ss_benefit_67?: number | null
     has_spouse: boolean
     person2_name: string | null
     person2_birth_year: number | null
     person2_retirement_age: number | null
     person2_ss_claiming_age: number | null
     person2_longevity_age: number | null
-    person2_ss_benefit_62: number | null
-    person2_ss_benefit_67: number | null
+    person2_ss_pia?: number | null
+    /** @deprecated Prefer person2_ss_pia */
+    person2_ss_benefit_62?: number | null
+    /** @deprecated Prefer person2_ss_pia */
+    person2_ss_benefit_67?: number | null
     filing_status: string
     state_primary: string | null
     state_secondary?: string | null
@@ -323,6 +329,43 @@ function calcIrmaa(
 }
 
 // ─── Social Security ───────────────────────────────────────────────────────────
+
+/** Full Retirement Age (years) from birth year — SSA rules. */
+export function getFraFromBirthYear(birthYear: number): number {
+  if (birthYear <= 1954) return 66
+  if (birthYear >= 1960) return 67
+  const extraMonths = (birthYear - 1954) * 2
+  return 66 + extraMonths / 12
+}
+
+/**
+ * Annual SS benefit from monthly PIA (FRA-equivalent) and claiming age.
+ */
+export function getSsBenefitFromPia(
+  pia: number,
+  claimAge: number,
+  birthYear: number,
+): number {
+  if (!pia || pia <= 0) return 0
+
+  const fra = getFraFromBirthYear(birthYear)
+  const monthsFromFra = Math.round((claimAge - fra) * 12)
+
+  let adjustmentFactor = 1.0
+
+  if (monthsFromFra < 0) {
+    const earlyMonths = Math.abs(monthsFromFra)
+    const first36 = Math.min(earlyMonths, 36)
+    const beyond36 = Math.max(0, earlyMonths - 36)
+    adjustmentFactor = 1 - (first36 * (5 / 9)) / 100 - (beyond36 * (5 / 12)) / 100
+  } else if (monthsFromFra > 0) {
+    const delayedYears = Math.min(monthsFromFra / 12, 70 - fra)
+    adjustmentFactor = 1 + delayedYears * 0.08
+  }
+
+  const monthlyBenefit = Math.round(pia * adjustmentFactor)
+  return monthlyBenefit * 12
+}
 
 function getSsBenefit(
   birthYear: number | null,
@@ -595,14 +638,38 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const income_other  = income_other_p1 + income_other_p2 + income_other_pooled
 
     // ── Social Security ────────────────────────────────────────────────────────
-    const income_ss_person1 = getSsBenefit(
-      household.person1_birth_year, p1SsClaimingAge,
-      household.person1_ss_benefit_62, household.person1_ss_benefit_67, year
-    )
-    const income_ss_person2 = household.has_spouse ? getSsBenefit(
-      household.person2_birth_year, p2SsClaimingAge,
-      household.person2_ss_benefit_62, household.person2_ss_benefit_67, year
-    ) : 0
+    const income_ss_person1 = (() => {
+      if (!household.person1_birth_year || !p1SsClaimingAge) return 0
+      if (year < household.person1_birth_year + p1SsClaimingAge) return 0
+      const pia = household.person1_ss_pia
+      if (pia != null && pia > 0) {
+        return getSsBenefitFromPia(pia, p1SsClaimingAge, household.person1_birth_year)
+      }
+      return getSsBenefit(
+        household.person1_birth_year,
+        p1SsClaimingAge,
+        household.person1_ss_benefit_62 ?? null,
+        household.person1_ss_benefit_67 ?? null,
+        year,
+      )
+    })()
+    const income_ss_person2 = household.has_spouse
+      ? (() => {
+          if (!household.person2_birth_year || !p2SsClaimingAge) return 0
+          if (year < household.person2_birth_year + p2SsClaimingAge) return 0
+          const pia = household.person2_ss_pia
+          if (pia != null && pia > 0) {
+            return getSsBenefitFromPia(pia, p2SsClaimingAge, household.person2_birth_year)
+          }
+          return getSsBenefit(
+            household.person2_birth_year,
+            p2SsClaimingAge,
+            household.person2_ss_benefit_62 ?? null,
+            household.person2_ss_benefit_67 ?? null,
+            year,
+          )
+        })()
+      : 0
 
     // ── RMD ────────────────────────────────────────────────────────────────────
     const p2Age = household.has_spouse && household.person2_birth_year

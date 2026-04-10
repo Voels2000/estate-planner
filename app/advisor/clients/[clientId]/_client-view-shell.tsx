@@ -7,7 +7,8 @@ import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
+import { TabSkeleton, StrategyTabSkeleton, DomicileTabSkeleton } from '@/components/ui/TabSkeleton'
 import OverviewTab from './_tabs/OverviewTab'
 import EstateTab from './_tabs/EstateTab'
 import RetirementTab from './_tabs/RetirementTab'
@@ -54,6 +55,30 @@ export default function ClientViewShell(props: ClientViewShellProps) {
     params.set('tab', t)
     router.push(`${pathname}?${params.toString()}`)
   }, [pathname, router, searchParams])
+
+  const [, startTransition] = useTransition()
+  const [pendingTab, setPendingTab] = useState<string | null>(null)
+
+  const handleTabClick = useCallback(
+    (id: string) => {
+      const t = TABS.find(x => x.id === id)
+      if (!t || t.comingSoon) return
+      if (id === tab) return
+      setPendingTab(id)
+      startTransition(() => {
+        setTab(id)
+      })
+    },
+    [tab, setTab],
+  )
+
+  useEffect(() => {
+    if (pendingTab !== null && pendingTab === tab) {
+      setPendingTab(null)
+    }
+  }, [tab, pendingTab])
+
+  const navigatingTo = pendingTab !== null && pendingTab !== tab ? pendingTab : null
 
   const { complexity, complexityColor, complexityBg } = getComplexityStyle(household.estate_complexity_flag)
   const currentYear = new Date().getFullYear()
@@ -116,16 +141,17 @@ export default function ClientViewShell(props: ClientViewShellProps) {
             {TABS.map(t => (
               <button
                 key={t.id}
-                onClick={() => !t.comingSoon && setTab(t.id)}
+                onClick={() => !t.comingSoon && handleTabClick(t.id)}
                 disabled={t.comingSoon}
                 className={`
-                  flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                  flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150
                   ${tab === t.id
                     ? 'border-indigo-600 text-indigo-600'
                     : t.comingSoon
                       ? 'border-transparent text-slate-300 cursor-not-allowed'
                       : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                   }
+                  ${pendingTab === t.id ? 'opacity-70 ring-2 ring-indigo-300 ring-offset-1 rounded-sm' : ''}
                   ${t.advisorOnly ? 'ml-auto' : ''}
                 `}
               >
@@ -149,15 +175,26 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
       {/* ── Tab content ── */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {tab === 'overview'   && <OverviewTab    {...props} />}
-        {tab === 'estate'     && <EstateTab      {...props} />}
-        {tab === 'retirement' && <RetirementTab  {...props} />}
-        {tab === 'tax'        && <TaxTab         {...props} />}
-        {tab === 'domicile'   && <DomicileTab    {...props} />}
-        {tab === 'documents'  && <DocumentsTab   {...props} />}
-        {tab === 'notes'      && <NotesTab       {...props} />}
-        {tab === 'strategy'   && <StrategyTab    {...props} />}
-        {tab === 'meeting-prep' && <MeetingPrepTab {...props} />}
+        {navigatingTo === 'strategy' && <StrategyTabSkeleton />}
+        {navigatingTo === 'domicile' && <DomicileTabSkeleton />}
+        {navigatingTo === 'tax' && <TabSkeleton rows={3} />}
+        {navigatingTo === 'estate' && <TabSkeleton rows={4} />}
+        {navigatingTo === 'retirement' && <TabSkeleton rows={3} />}
+        {navigatingTo === 'meeting-prep' && <TabSkeleton rows={2} showHeader={false} />}
+
+        {!navigatingTo && (
+          <>
+            {tab === 'overview'   && <OverviewTab    {...props} />}
+            {tab === 'estate'     && <EstateTab      {...props} />}
+            {tab === 'retirement' && <RetirementTab  {...props} />}
+            {tab === 'tax'        && <TaxTab         {...props} />}
+            {tab === 'domicile'   && <DomicileTab    {...props} />}
+            {tab === 'documents'  && <DocumentsTab   {...props} />}
+            {tab === 'notes'      && <NotesTab       {...props} />}
+            {tab === 'strategy'   && <StrategyTab    {...props} />}
+            {tab === 'meeting-prep' && <MeetingPrepTab {...props} />}
+          </>
+        )}
       </div>
     </div>
   )

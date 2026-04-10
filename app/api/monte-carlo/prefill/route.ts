@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserAccess } from '@/lib/get-user-access'
+import { getSsBenefitFromPia } from '@/lib/calculations/projection-complete'
 
 /** Income rows that represent salary / earned income — excluded from "other" retirement income prefill. */
 const EARNED_INCOME_SOURCES = new Set(['salary', 'employment', 'self_employment'])
@@ -65,7 +66,7 @@ export async function GET() {
     admin
       .from('households')
       .select(
-        'person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_benefit_67, person1_ss_claiming_age, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation, risk_tolerance, target_stocks_pct, target_bonds_pct, target_cash_pct'
+        'person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_pia, person1_ss_benefit_67, person1_ss_claiming_age, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_pia, person2_ss_benefit_67, person2_ss_claiming_age, has_spouse, inflation_rate, growth_rate_accumulation, risk_tolerance, target_stocks_pct, target_bonds_pct, target_cash_pct'
       )
       .eq('owner_id', user.id)
       .single(),
@@ -86,7 +87,14 @@ export async function GET() {
   const life_expectancy = household?.person1_longevity_age ?? null
   const inflation_rate = household?.inflation_rate ?? null
   const social_security_start_age = household?.person1_ss_claiming_age ?? null
-  const social_security_monthly = household?.person1_ss_benefit_67 ?? null
+  const social_security_monthly = (() => {
+    const pia = household?.person1_ss_pia ?? household?.person1_ss_benefit_67 ?? null
+    if (pia == null) return null
+    const claimAge = household?.person1_ss_claiming_age ?? 67
+    const birthYear = household?.person1_birth_year ?? 1960
+    const annual = getSsBenefitFromPia(Number(pia), claimAge, birthYear)
+    return Math.round(annual / 12)
+  })()
 
   // Person 2
   const has_spouse = household?.has_spouse ?? false
@@ -95,7 +103,15 @@ export async function GET() {
   const p2_retirement_age = household?.person2_retirement_age ?? null
   const p2_life_expectancy = household?.person2_longevity_age ?? null
   const p2_social_security_start_age = household?.person2_ss_claiming_age ?? null
-  const p2_social_security_monthly = household?.person2_ss_benefit_67 ?? null
+  const p2_social_security_monthly = (() => {
+    if (!household?.has_spouse) return null
+    const pia = household?.person2_ss_pia ?? household?.person2_ss_benefit_67 ?? null
+    if (pia == null) return null
+    const claimAge = household?.person2_ss_claiming_age ?? 67
+    const birthYear = household?.person2_birth_year ?? 1960
+    const annual = getSsBenefitFromPia(Number(pia), claimAge, birthYear)
+    return Math.round(annual / 12)
+  })()
 
   // Portfolio — retirement accounts only (current savings estimate)
   const current_portfolio = sumRetirementAccountValue(assets ?? [])

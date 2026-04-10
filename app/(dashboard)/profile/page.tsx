@@ -20,20 +20,6 @@ const US_STATES = [
   'VA','WA','WV','WI','WY','DC'
 ]
 
-function calcSSBenefit(benefit62: string, benefit67: string, claimAge: string): number | null {
-  const b62 = parseFloat(benefit62)
-  const b67 = parseFloat(benefit67)
-  const age = parseInt(claimAge)
-  if (!b67 || !age) return null
-  if (age <= 62) return b62 || b67 * 0.7
-  if (age === 67) return b67
-  if (age < 67) {
-    const slope = (b67 - (b62 || b67 * 0.7)) / (67 - 62)
-    return (b62 || b67 * 0.7) + slope * (age - 62)
-  }
-  return b67 * (1 + 0.08 * (age - 67))
-}
-
 export default function ProfilePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -51,8 +37,7 @@ export default function ProfilePage() {
   const [person1RetirementAge, setPerson1RetirementAge] = useState('')
   const [person1SSClaimingAge, setPerson1SSClaimingAge] = useState('')
   const [person1LongevityAge, setPerson1LongevityAge] = useState('')
-  const [person1SSBenefit62, setPerson1SSBenefit62] = useState('')
-  const [person1SSBenefit67, setPerson1SSBenefit67] = useState('')
+  const [person1SSPia, setPerson1SSPia] = useState('')
 
   const [hasSpouse, setHasSpouse] = useState(false)
   const [person2Name, setPerson2Name] = useState('')
@@ -60,8 +45,7 @@ export default function ProfilePage() {
   const [person2RetirementAge, setPerson2RetirementAge] = useState('')
   const [person2SSClaimingAge, setPerson2SSClaimingAge] = useState('')
   const [person2LongevityAge, setPerson2LongevityAge] = useState('')
-  const [person2SSBenefit62, setPerson2SSBenefit62] = useState('')
-  const [person2SSBenefit67, setPerson2SSBenefit67] = useState('')
+  const [person2SSPia, setPerson2SSPia] = useState('')
 
   // FIX 1: filing_status stored as plain text in state — no enum casting needed.
   // The prior bug was that `filing_status` on the households table may be a Postgres
@@ -113,16 +97,14 @@ export default function ProfilePage() {
         setPerson1RetirementAge(household.person1_retirement_age?.toString() ?? '')
         setPerson1SSClaimingAge(household.person1_ss_claiming_age?.toString() ?? '')
         setPerson1LongevityAge(household.person1_longevity_age?.toString() ?? '')
-        setPerson1SSBenefit62(household.person1_ss_benefit_62?.toString() ?? '')
-        setPerson1SSBenefit67(household.person1_ss_benefit_67?.toString() ?? '')
+        setPerson1SSPia(household.person1_ss_pia?.toString() ?? '')
         setHasSpouse(household.has_spouse ?? false)
         setPerson2Name(household.person2_name ?? '')
         setPerson2BirthYear(household.person2_birth_year?.toString() ?? '')
         setPerson2RetirementAge(household.person2_retirement_age?.toString() ?? '')
         setPerson2SSClaimingAge(household.person2_ss_claiming_age?.toString() ?? '')
         setPerson2LongevityAge(household.person2_longevity_age?.toString() ?? '')
-        setPerson2SSBenefit62(household.person2_ss_benefit_62?.toString() ?? '')
-        setPerson2SSBenefit67(household.person2_ss_benefit_67?.toString() ?? '')
+        setPerson2SSPia(household.person2_ss_pia?.toString() ?? '')
         // FIX 1: Ensure filing_status always resolves to a valid string.
         // If the DB returns null or an unexpected value, fall back to 'single'.
         const fs = household.filing_status
@@ -180,8 +162,7 @@ export default function ProfilePage() {
         person1_retirement_age: parseInt(person1RetirementAge) || null,
         person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
         person1_longevity_age: parseInt(person1LongevityAge) || null,
-        person1_ss_benefit_62: parseFloat(person1SSBenefit62) || null,
-        person1_ss_benefit_67: parseFloat(person1SSBenefit67) || null,
+        person1_ss_pia: person1SSPia.trim() !== '' ? Number(person1SSPia) : null,
         has_spouse: hasSpouse,
         person2_name: hasSpouse ? person2Name : null,
         person2_first_name: hasSpouse ? (person2Name.trim().split(' ')[0] || null) : null,
@@ -190,8 +171,7 @@ export default function ProfilePage() {
         person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
         person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
         person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
-        person2_ss_benefit_62: hasSpouse ? parseFloat(person2SSBenefit62) || null : null,
-        person2_ss_benefit_67: hasSpouse ? parseFloat(person2SSBenefit67) || null : null,
+        person2_ss_pia: hasSpouse && person2SSPia.trim() !== '' ? Number(person2SSPia) : null,
         filing_status: filingStatus,  // plain string — Supabase coerces to enum safely
         state_primary: statePrimary || null,
         state_compare: stateCompare || null,
@@ -317,16 +297,27 @@ export default function ProfilePage() {
                 onChange={(e) => setPerson1LongevityAge(e.target.value)}
                 className={inputClass} placeholder="90" />
             </Field>
-            <Field label="SS Monthly Benefit at Age 62 (from SS statement)">
-              <input type="number" min="0" value={person1SSBenefit62}
-                onChange={(e) => setPerson1SSBenefit62(e.target.value)}
-                className={inputClass} placeholder="e.g. 1800" />
-            </Field>
-            <Field label="SS Monthly Benefit at Age 67 (from SS statement)">
-              <input type="number" min="0" value={person1SSBenefit67}
-                onChange={(e) => setPerson1SSBenefit67(e.target.value)}
-                className={inputClass} placeholder="e.g. 2400" />
-            </Field>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Your Monthly SS Benefit at Full Retirement Age (PIA)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={person1SSPia}
+                  onChange={(e) => setPerson1SSPia(e.target.value)}
+                  className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g. 2400"
+                />
+              </div>
+              <p className="text-xs text-neutral-400 mt-1">
+                Enter your PIA — the monthly amount you&apos;d receive if you claim at your Full Retirement Age.
+                Find this on your Social Security statement at ssa.gov/myaccount.
+                The projection adjusts this amount based on your chosen claiming age.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -366,16 +357,25 @@ export default function ProfilePage() {
                   onChange={(e) => setPerson2LongevityAge(e.target.value)}
                   className={inputClass} placeholder="88" />
               </Field>
-              <Field label="Spouse SS Monthly Benefit at Age 62">
-                <input type="number" min="0" value={person2SSBenefit62}
-                  onChange={(e) => setPerson2SSBenefit62(e.target.value)}
-                  className={inputClass} placeholder="e.g. 1400" />
-              </Field>
-              <Field label="Spouse SS Monthly Benefit at Age 67">
-                <input type="number" min="0" value={person2SSBenefit67}
-                  onChange={(e) => setPerson2SSBenefit67(e.target.value)}
-                  className={inputClass} placeholder="e.g. 1900" />
-              </Field>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Spouse Monthly SS Benefit at Full Retirement Age (PIA)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={person2SSPia}
+                    onChange={(e) => setPerson2SSPia(e.target.value)}
+                    className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. 1800"
+                  />
+                </div>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Spouse&apos;s PIA — the monthly amount at their Full Retirement Age.
+                </p>
+              </div>
             </div>
           )}
         </section>

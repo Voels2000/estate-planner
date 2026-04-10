@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
       .from('households')
       .select(`
         id, owner_id, person1_name, person1_birth_year, person1_retirement_age,
-        person1_ss_claiming_age, person1_longevity_age, person1_ss_benefit_62, person1_ss_benefit_67,
+        person1_ss_claiming_age, person1_longevity_age, person1_ss_pia,
         has_spouse, person2_name, person2_birth_year, person2_retirement_age,
-        person2_ss_claiming_age, person2_longevity_age, person2_ss_benefit_62, person2_ss_benefit_67,
+        person2_ss_claiming_age, person2_longevity_age, person2_ss_pia,
         filing_status, state_primary, state_secondary, inflation_rate,
         growth_rate_accumulation, growth_rate_retirement
       `)

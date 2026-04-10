@@ -19,15 +19,26 @@ export type CompletionScore = {
 function socialSecurityReviewed(h: {
   person1_ss_claiming_age: number | null
   person2_ss_claiming_age: number | null
+  person1_ss_pia: number | null
+  person2_ss_pia: number | null
   person1_ss_benefit_67: number | null
   person2_ss_benefit_67: number | null
   has_spouse: boolean | null
 } | null): boolean {
   if (!h) return false
-  if (h.person1_ss_claiming_age != null || (h.person1_ss_benefit_67 != null && h.person1_ss_benefit_67 > 0)) {
+  if (
+    h.person1_ss_claiming_age != null ||
+    h.person1_ss_pia != null ||
+    (h.person1_ss_benefit_67 != null && h.person1_ss_benefit_67 > 0)
+  ) {
     return true
   }
-  if (h.has_spouse && (h.person2_ss_claiming_age != null || (h.person2_ss_benefit_67 != null && h.person2_ss_benefit_67 > 0))) {
+  if (
+    h.has_spouse &&
+    (h.person2_ss_claiming_age != null ||
+      h.person2_ss_pia != null ||
+      (h.person2_ss_benefit_67 != null && h.person2_ss_benefit_67 > 0))
+  ) {
     return true
   }
   return false
@@ -54,7 +65,7 @@ export async function getCompletionScore(userId: string): Promise<CompletionScor
       .or('type.ilike.%retirement%,type.ilike.%ira%,type.ilike.%401k%,type.ilike.%403b%,type.ilike.%roth%'),
     admin.from('insurance_policies').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     admin.from('households')
-      .select('person1_ss_claiming_age, person2_ss_claiming_age, person1_ss_benefit_67, person2_ss_benefit_67, has_spouse')
+      .select('person1_ss_claiming_age, person2_ss_claiming_age, person1_ss_pia, person2_ss_pia, person1_ss_benefit_67, person2_ss_benefit_67, has_spouse')
       .eq('owner_id', userId)
       .maybeSingle(),
   ])

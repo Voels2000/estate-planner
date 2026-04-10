@@ -75,6 +75,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       estate_complexity_score, estate_complexity_flag,
       inflation_rate, growth_rate_accumulation, growth_rate_retirement,
       person1_ss_benefit_62, person1_ss_benefit_67,
+      person1_ss_pia, person2_ss_pia,
       person2_ss_benefit_62, person2_ss_benefit_67,
       last_recommendation_at, created_at, updated_at
     `)
