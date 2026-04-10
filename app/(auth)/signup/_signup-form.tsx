@@ -238,9 +238,14 @@ export function SignupForm() {
               type="email"
               autoComplete="email"
               required
+              readOnly={hasAdvisorInvite}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className={`block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 ${
+                hasAdvisorInvite
+                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400'
+                  : 'bg-white dark:bg-zinc-950'
+              }`}
               placeholder="you@example.com"
             />
           </div>
