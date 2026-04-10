@@ -46,8 +46,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/allocation', label: 'Asset Allocation', icon: '📐', feature: 'allocation' },
       { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
       { href: '/businesses', label: 'Business Interests', icon: '🏢', feature: 'businesses' },
+      { href: '/insurance', label: 'Insurance Policies', icon: '🛡️', feature: 'insurance' },
       { href: '/scenarios', label: 'Scenarios', icon: '🔮', feature: 'scenarios' },
-      { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
   // Retirement Planning before Estate Planning (Sprint 55)

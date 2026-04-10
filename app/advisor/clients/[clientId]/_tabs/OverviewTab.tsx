@@ -8,7 +8,7 @@ import {
   computeGaps, severityBadge, severityDot, type Gap
 } from '../_utils'
 
-export default function OverviewTab({ household, assets, realEstate, businesses, beneficiaries, estateDocuments }: ClientViewShellProps) {
+export default function OverviewTab({ household, assets, realEstate, businesses, insurancePolicies, beneficiaries, estateDocuments }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
   // ── Net worth calc ───────────────────────────────────────────────────────
@@ -16,11 +16,15 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
     (s, b) => s + (b.owner_estimated_value ?? b.estimated_value ?? 0),
     0,
   )
+  const totalInsuranceEstate = (insurancePolicies ?? [])
+    .filter(p => !p.is_ilit && p.death_benefit)
+    .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
 
   const totalAssets = [
     ...(assets ?? []).map(a => a.value ?? 0),
     ...(realEstate ?? []).map(r => r.current_value ?? 0),
     totalBusinessValue,
+    totalInsuranceEstate,
   ].reduce((s, v) => s + v, 0)
 
   const totalLiabilities = [
@@ -31,7 +35,7 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
   const assetPct = totalAssets > 0 ? Math.round((totalAssets / (totalAssets + totalLiabilities)) * 100) : 100
 
   // ── Asset breakdown ──────────────────────────────────────────────────────
-  const assetGroups = groupAssets(assets ?? [], realEstate ?? [], totalBusinessValue)
+  const assetGroups = groupAssets(assets ?? [], realEstate ?? [], totalBusinessValue, totalInsuranceEstate)
 
   // ── Gap analysis ─────────────────────────────────────────────────────────
   const gaps = computeGaps({ household, assets, realEstate, beneficiaries, estateDocuments })
@@ -176,6 +180,42 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
               </div>
             </div>
           )}
+
+          {insurancePolicies && insurancePolicies.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">Insurance Policies</h3>
+              <div className="space-y-3">
+                {insurancePolicies.map((p) => (
+                  <div key={p.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {p.policy_name || p.provider || 'Insurance Policy'}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">{p.insurance_type ?? 'Policy'}</p>
+                      <div className="flex gap-2 mt-1.5">
+                        {p.is_ilit ? (
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">✓ ILIT</span>
+                        ) : p.death_benefit ? (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">⚠ Not in ILIT</span>
+                        ) : null}
+                        {p.is_employer_provided && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Employer</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {p.death_benefit && (
+                        <>
+                          <p className="text-sm font-semibold text-slate-800">{formatCurrency(p.death_benefit, true)}</p>
+                          <p className="text-xs text-slate-400">Death benefit</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Gap analysis panel ── */}
@@ -294,7 +334,7 @@ function formatFilingStatus(status: string | null) {
   return status ? (map[status] ?? status) : '—'
 }
 
-function groupAssets(assets: any[], realEstate: any[], totalBusinessValue: number) {
+function groupAssets(assets: any[], realEstate: any[], totalBusinessValue: number, totalInsuranceEstate: number) {
   const groups: { label: string; value: number; color: string }[] = []
 
   const RETIREMENT_TYPES = ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension', 'retirement_account']
@@ -319,6 +359,7 @@ function groupAssets(assets: any[], realEstate: any[], totalBusinessValue: numbe
 
   if (reValue > 0)    groups.push({ label: 'Real Estate',      value: reValue,   color: 'bg-teal-500' })
   if (totalBusinessValue > 0) groups.push({ label: 'Business Interests', value: totalBusinessValue, color: 'bg-orange-500' })
+  if (totalInsuranceEstate > 0) groups.push({ label: 'Life Insurance (Estate)', value: totalInsuranceEstate, color: 'bg-rose-400' })
   if (retirement > 0) groups.push({ label: 'Retirement Accts', value: retirement, color: 'bg-indigo-500' })
   if (brokerage > 0)  groups.push({ label: 'Brokerage',        value: brokerage,  color: 'bg-violet-400' })
   if (cash > 0)       groups.push({ label: 'Cash & Equiv.',    value: cash,       color: 'bg-emerald-400' })

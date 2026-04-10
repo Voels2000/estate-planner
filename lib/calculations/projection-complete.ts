@@ -157,6 +157,12 @@ export type CompleteProjectionInput = {
     ownership_pct?: number
     owner?: string
   }>
+  insurance_policies?: Array<{
+    death_benefit: number | null
+    cash_value: number | null
+    is_ilit: boolean
+    is_employer_provided: boolean
+  }>
   // Optional overrides — used by Scenarios page to test alternate states / growth rates
   overrides?: {
     state_primary?: string | null
@@ -534,6 +540,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const overrides          = input.overrides ?? {}
   const currentYear        = new Date().getFullYear()
   const businessesInput    = input.businesses ?? []
+  const insurancePoliciesInput = input.insurance_policies ?? []
   const baseBusinessValue  = businessesInput.reduce(
     (sum, b) =>
       sum +
@@ -601,6 +608,9 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const yearsFromNow    = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
     const businessValue   = Math.round(baseBusinessValue * inflationFactor)
+    const insuranceEstate = insurancePoliciesInput
+      .filter(p => !p.is_ilit && p.death_benefit)
+      .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
 
     const age1 = year - p1Birth
     const age2 = household.has_spouse && household.person2_birth_year
@@ -777,10 +787,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const poolTotal = bucketTotal(poolBucket)
     const assets_total = p1Total + p2Total + poolTotal
 
-    const net_worth = assets_total + re_total + businessValue - liabilities_total
+    const net_worth = assets_total + re_total + businessValue + insuranceEstate - liabilities_total
 
-    const estate_excl_home = assets_total + re_other + businessValue - liabilities_total
-    const estate_incl_home = assets_total + re_total + businessValue - liabilities_total
+    const estate_excl_home = assets_total + re_other + businessValue + insuranceEstate - liabilities_total
+    const estate_incl_home = assets_total + re_total + businessValue + insuranceEstate - liabilities_total
 
     rows.push({
       year,

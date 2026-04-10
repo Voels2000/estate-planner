@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     { data: real_estate },
     { data: state_income_tax_rates },
     { data: business_interests },
+    { data: insurance_policies },
   ] = await Promise.all([
     supabase
       .from('households')
@@ -61,6 +62,10 @@ export async function GET(request: NextRequest) {
       .from('business_interests')
       .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
       .eq('owner_id', user.id),
+    supabase
+      .from('insurance_policies')
+      .select('death_benefit, cash_value, is_ilit, is_employer_provided')
+      .eq('user_id', user.id),
   ])
 
   if (!household) {
@@ -86,6 +91,12 @@ export async function GET(request: NextRequest) {
       ),
       ownership_pct: (b as { ownership_pct?: number }).ownership_pct ?? undefined,
       owner: (b as { owner?: string }).owner ?? undefined,
+    })),
+    insurance_policies: (insurance_policies ?? []).map((p) => ({
+      death_benefit: Number((p as { death_benefit?: number | null }).death_benefit ?? 0) || null,
+      cash_value: Number((p as { cash_value?: number | null }).cash_value ?? 0) || null,
+      is_ilit: Boolean((p as { is_ilit?: boolean }).is_ilit),
+      is_employer_provided: Boolean((p as { is_employer_provided?: boolean }).is_employer_provided),
     })),
     overrides: Object.keys(overrides).length > 0 ? overrides as never : undefined,
   })

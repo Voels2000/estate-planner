@@ -49,6 +49,8 @@ type CategoryTable =
   | 'ref_liquidity_types'
   | 'ref_valuation_methods'
   | 'ref_succession_plans'
+  | 'ref_property_types'
+  | 'ref_insurance_types'
 
 type TitlingCategory = {
   value: string
@@ -83,6 +85,8 @@ type Props = {
   refLiquidityTypes: CategoryItem[]
   refValuationMethods: CategoryItem[]
   refSuccessionPlans: CategoryItem[]
+  refPropertyTypes: CategoryItem[]
+  refInsuranceTypes: CategoryItem[]
   titlingCategories: TitlingCategory[]
   termsVersion:  string
   termsSections: { title: string; body: string }[]
@@ -101,6 +105,8 @@ export function AdminClient({
   refLiquidityTypes: initialRefLiquidityTypes,
   refValuationMethods: initialRefValuationMethods,
   refSuccessionPlans: initialRefSuccessionPlans,
+  refPropertyTypes: initialRefPropertyTypes,
+  refInsuranceTypes: initialRefInsuranceTypes,
   titlingCategories: initialTitlingCategories,
   termsVersion,
   termsSections,
@@ -129,6 +135,8 @@ export function AdminClient({
     ref_liquidity_types: initialRefLiquidityTypes,
     ref_valuation_methods: initialRefValuationMethods,
     ref_succession_plans: initialRefSuccessionPlans,
+    ref_property_types: initialRefPropertyTypes,
+    ref_insurance_types: initialRefInsuranceTypes,
   })
   const [savingCategory, setSavingCategory] = useState<string | null>(null)
   const [savedCategory, setSavedCategory] = useState<string | null>(null)
@@ -321,6 +329,8 @@ export function AdminClient({
         { table: 'ref_liquidity_types',  label: 'Liquidity Types',  description: 'Liquidity classification for assets' },
         { table: 'ref_valuation_methods', label: 'Valuation Methods', description: 'Business valuation method options' },
         { table: 'ref_succession_plans', label: 'Succession Plans', description: 'Business succession plan options' },
+        { table: 'ref_property_types', label: 'Property Types', description: 'Real estate property type options shown in the real estate form.' },
+        { table: 'ref_insurance_types', label: 'Insurance Types', description: 'Insurance policy type options shown in the insurance form.' },
       ],
     },
   ]

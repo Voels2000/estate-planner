@@ -82,6 +82,16 @@ export default async function AdminPage() {
     .from('ref_succession_plans')
     .select('value, label, sort_order, is_active')
     .order('sort_order')
+  
+  const { data: refPropertyTypes } = await supabase
+    .from('ref_property_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: refInsuranceTypes } = await supabase
+    .from('ref_insurance_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
 
   const { data: titlingCategories } = await supabase
     .from('titling_asset_categories')
@@ -142,6 +152,8 @@ export default async function AdminPage() {
       refLiquidityTypes={refLiquidityTypes ?? []}
       refValuationMethods={refValuationMethods ?? []}
       refSuccessionPlans={refSuccessionPlans ?? []}
+      refPropertyTypes={refPropertyTypes ?? []}
+      refInsuranceTypes={refInsuranceTypes ?? []}
       titlingCategories={titlingCategories ?? []}
       termsVersion={termsVersion}
       termsSections={termsSections}

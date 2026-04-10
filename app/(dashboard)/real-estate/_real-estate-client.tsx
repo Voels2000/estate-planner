@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { RefSelect } from '@/components/ui/RefSelect'
 import type { RefOption } from '@/lib/ref-data-fetchers'
 
 /** Matches `real_estate` table columns */
@@ -10,7 +11,7 @@ export type RealEstate = {
   id: string
   owner_id: string
   name: string
-  property_type: 'primary_residence' | 'rental' | 'vacation' | 'commercial'
+  property_type: string
   current_value: number
   purchase_price: number | null
   purchase_year: number | null
@@ -146,6 +147,7 @@ type RealEstateClientProps = {
   /** Filing status short code from households table: mfj | mfs | hoh | qw | single */
   filingStatus: string
   titlingTypes: RefOption[]
+  propertyTypes: RefOption[]
 }
 
 export default function RealEstateClient({
@@ -154,6 +156,7 @@ export default function RealEstateClient({
   person2Name,
   filingStatus,
   titlingTypes,
+  propertyTypes,
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
@@ -375,6 +378,7 @@ export default function RealEstateClient({
           person1Name={person1Name}
           person2Name={person2Name}
           titlingTypes={titlingTypes}
+          propertyTypes={propertyTypes}
           onClose={() => {
             setShowModal(false)
             setEditRow(null)
@@ -396,6 +400,7 @@ function RealEstateModal({
   person1Name,
   person2Name,
   titlingTypes,
+  propertyTypes,
   onClose,
   onSave,
 }: {
@@ -403,12 +408,13 @@ function RealEstateModal({
   person1Name: string
   person2Name: string
   titlingTypes: RefOption[]
+  propertyTypes: RefOption[]
   onClose: () => void
   onSave: () => void
 }) {
   const currentYear = new Date().getFullYear()
   const [name, setName] = useState(editRow?.name ?? '')
-  const [propertyType, setPropertyType] = useState<RealEstate['property_type']>(
+  const [propertyType, setPropertyType] = useState(
     editRow?.property_type ?? 'primary_residence',
   )
   const [currentValue, setCurrentValue] = useState(editRow?.current_value?.toString() ?? '')
@@ -508,19 +514,15 @@ function RealEstateModal({
               placeholder="e.g. Main Street home"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Property type</label>
-            <select
-              value={propertyType}
-              onChange={(e) => setPropertyType(e.target.value as RealEstate['property_type'])}
-              className={inputClass}
-            >
-              <option value="primary_residence">Primary residence</option>
-              <option value="rental">Rental</option>
-              <option value="vacation">Vacation</option>
-              <option value="commercial">Commercial</option>
-            </select>
-          </div>
+          <RefSelect
+            name="property_type"
+            label="Property Type"
+            options={propertyTypes}
+            defaultValue={propertyType}
+            required
+            placeholder="Select property type..."
+            onChange={(e) => setPropertyType(e.target.value)}
+          />
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Titling / Ownership</label>
             <select value={titling} onChange={(e) => setTitling(e.target.value)} className={inputClass}>

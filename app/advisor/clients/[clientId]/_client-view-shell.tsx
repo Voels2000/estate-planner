@@ -233,6 +233,17 @@ export interface ClientViewShellProps {
     has_key_person_insurance: boolean
     succession_plan: string | null
   }>
+  insurancePolicies?: Array<{
+    id: string
+    insurance_type: string | null
+    provider: string | null
+    policy_name: string | null
+    death_benefit: number | null
+    cash_value: number | null
+    annual_premium: number | null
+    is_ilit: boolean
+    is_employer_provided: boolean
+  }>
   beneficiaries: any[]
   estateDocuments: any[]
   legalDocuments: any[]
