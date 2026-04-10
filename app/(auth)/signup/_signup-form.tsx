@@ -150,15 +150,7 @@ export function SignupForm() {
 
       if (signInError) {
         console.error('Sign-in after signup failed:', signInError.message)
-        // Still attempt link — non-fatal
       }
-
-      // Auto-link to any advisor who invited this email
-      await fetch('/api/advisor/link-pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteToken: advisorInviteToken }),
-      })
 
       // Fire welcome email
       await fetch('/api/email/welcome', {
@@ -167,17 +159,17 @@ export function SignupForm() {
         body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' }),
       })
 
-      // Route based on role after signup.
+      // Route: advisor invite → invite accept (linking/billing); otherwise by role.
       setIsDone(true)
-      if (effectiveRole === 'advisor' && hasFirmInvite) {
+      if (advisorInviteToken) {
+        router.push(`/invite/${advisorInviteToken}`)
+      } else if (effectiveRole === 'advisor' && hasFirmInvite) {
         router.push('/advisor')
       } else if (effectiveRole === 'advisor') {
         router.push('/billing')
       } else if (effectiveRole === 'attorney') {
         router.push('/attorney')
       } else {
-        // New consumers always go to /profile first to set up household.
-        // Advisor-invited clients skip /billing (advisor_managed after link-pending).
         router.push('/profile')
       }
       router.refresh()
