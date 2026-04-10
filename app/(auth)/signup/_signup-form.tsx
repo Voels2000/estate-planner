@@ -143,6 +143,16 @@ export function SignupForm() {
           })
       }
 
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        console.error('Sign-in after signup failed:', signInError.message)
+        // Still attempt link — non-fatal
+      }
+
       // Auto-link to any advisor who invited this email
       await fetch('/api/advisor/link-pending', {
         method: 'POST',
