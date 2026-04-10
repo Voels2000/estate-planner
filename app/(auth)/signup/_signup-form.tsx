@@ -62,6 +62,8 @@ export function SignupForm() {
         },
       })
 
+      console.log('signUp response:', JSON.stringify({ data, error: signUpError }))
+
       if (signUpError) {
         setError(signUpError.message)
         setIsSubmitting(false)
@@ -148,8 +150,12 @@ export function SignupForm() {
         password,
       })
 
+      console.log('signIn response:', JSON.stringify({ error: signInError }))
+
       if (signInError) {
-        console.error('Sign-in after signup failed:', signInError.message)
+        setError('Account created but sign-in failed: ' + signInError.message)
+        setIsSubmitting(false)
+        return
       }
 
       // Fire welcome email
