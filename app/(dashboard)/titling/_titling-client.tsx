@@ -50,6 +50,7 @@ type Beneficiary = {
   email: string | null
   phone: string | null
   allocation_pct: number
+  is_gst_skip?: boolean
 }
 
 type TitlingCategory = {
@@ -227,7 +228,7 @@ export default function TitlingClient({
     const [{ data: at }, { data: rt }, { data: bens }] = await Promise.all([
       supabase.from('asset_titling').select('id, asset_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('real_estate_titling').select('id, real_estate_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct').eq('owner_id', user.id).order('created_at', { ascending: true }),
+      supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip').eq('owner_id', user.id).order('created_at', { ascending: true }),
     ])
     setAssetTitling(at ?? [])
     setRealEstateTitling(rt ?? [])
@@ -355,7 +356,7 @@ export default function TitlingClient({
       )}
 
       {/* Real Estate tab */}
-      {activeTab === 'realestate' && (
+      {activeTab === 'real_estate' && (
         <div className="space-y-4">
           {realEstate.length === 0 ? (
             <EmptyState icon="🏠" message="No properties found" sub="Add properties on the Real Estate page first" href="/real-estate" />
@@ -566,7 +567,12 @@ function BeneficiarySection({
           {bens.map(ben => (
             <div key={ben.id} className="flex items-center justify-between rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
               <div>
-                <p className="text-sm font-medium text-neutral-900">{ben.full_name}</p>
+                <p className="text-sm font-medium text-neutral-900">
+                  {ben.full_name}
+                  {ben.is_gst_skip && (
+                    <span className="text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5 ml-1">GST Skip</span>
+                  )}
+                </p>
                 <p className="text-xs text-neutral-400 mt-0.5">
                   {ben.relationship && <span>{ben.relationship}</span>}
                   {ben.relationship && (ben.email || ben.phone) && <span> · </span>}
@@ -780,6 +786,7 @@ function BeneficiaryModal({
   const [relationship, setRelationship] = useState(existing?.relationship ?? '')
   const [email, setEmail] = useState(existing?.email ?? '')
   const [phone, setPhone] = useState(existing?.phone ?? '')
+  const [isGstSkip, setIsGstSkip] = useState(existing?.is_gst_skip ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -822,6 +829,7 @@ function BeneficiaryModal({
         email: email.trim() || null,
         phone: phone.trim() || null,
         allocation_pct: pct,
+        is_gst_skip: isGstSkip,
         updated_at: new Date().toISOString(),
       }
       if (existing) {
@@ -851,11 +859,23 @@ function BeneficiaryModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
         <div>
-          <label className="block text-sm font-medm text-neutral-700 mb-1">Type</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
           <select value={beneficiaryType} onChange={e => setBeneficiaryType(e.target.value as 'primary' | 'contingent')} className={inputClass}>
             <option value="primary">Primary</option>
             <option value="contingent">Contingent</option>
           </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="gst_skip"
+            checked={isGstSkip}
+            onChange={e => setIsGstSkip(e.target.checked)}
+            className="rounded border-neutral-300"
+          />
+          <label htmlFor="gst_skip" className="text-sm text-neutral-700">
+            GST Skip Person (grandchild or skip generation)
+          </label>
         </div>
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">Full Name</label>

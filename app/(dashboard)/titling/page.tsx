@@ -62,7 +62,7 @@ export default async function TitlingPage() {
       .eq('owner_id', user.id),
     supabase
       .from('asset_beneficiaries')
-      .select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct')
+      .select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true }),
   ])
