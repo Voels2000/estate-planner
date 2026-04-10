@@ -31,8 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: '🏠',
     items: [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
-      { href: '/dashboard', label: 'Dashboard', icon: '📊', feature: 'dashboard' },
-      { href: '/my-estate-strategy', label: 'My Estate Strategy', icon: '📈' },
+      { href: '/dashboard', label: 'My Estate Plan', icon: '📊', feature: 'dashboard' },
       { href: '/settings/security', label: 'Security', icon: '🔐', feature: 'profile' },
       { href: '/my-advisor', label: 'My Advisor', icon: '👤', consumerOnly: true },
       { href: '/settings/attorney-access', label: 'My Attorney', icon: '⚖️', minTier: 2 },
@@ -53,23 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/insurance', label: 'Insurance Gap Analysis', icon: '🛡️', feature: 'insurance' },
     ],
   },
-  // Estate Planning moved above Retirement Planning per Sprint 55 tab reorder
-  {
-    label: 'Estate Planning',
-    icon: '📜',
-    locked: true,
-    items: [
-      { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
-      { href: '/digital-assets', label: 'Digital Assets', icon: '🔑' },
-      { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
-      { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
-      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
-      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
-      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
-      { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
-      // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
-    ],
-  },
+  // Retirement Planning before Estate Planning (Sprint 55)
   {
     label: 'Retirement Planning',
     icon: '🏖️',
@@ -81,6 +64,23 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
       { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
+    ],
+  },
+  {
+    label: 'Estate Planning',
+    icon: '📜',
+    locked: true,
+    items: [
+      { href: '/my-estate-strategy', label: 'My Estate Strategy', icon: '📈' },
+      { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
+      { href: '/digital-assets', label: 'Digital Assets', icon: '🔑' },
+      { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
+      { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
+      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
+      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
+      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
+      { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
+      // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
     ],
   },
   // Resources group removed entirely (Sprint 55).
@@ -231,10 +231,6 @@ export function SidebarNav({
                     </div>
                   )}
                   {group.items.map((item) => {
-                    const displayLabel =
-                      item.href === '/dashboard' && isAdvisor
-                        ? 'My Estate Plan'
-                        : item.label
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {
                       return null
                     }
@@ -266,7 +262,7 @@ export function SidebarNav({
                           onPointerDown={blockLockedNavInteraction}
                           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-not-allowed select-none"
                         >
-                          <span className="flex-1 truncate">{displayLabel}</span>
+                          <span className="flex-1 truncate">{item.label}</span>
                         </div>
                       )
                     }
@@ -283,7 +279,7 @@ export function SidebarNav({
                             aria-disabled={true}
                             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
                           >
-                            <span className="flex-1 truncate">{displayLabel}</span>
+                            <span className="flex-1 truncate">{item.label}</span>
                             <span className="shrink-0 text-sm" aria-hidden>
                               🔒
                             </span>
@@ -318,7 +314,7 @@ export function SidebarNav({
                             onPointerDown={blockLockedNavInteraction}
                             className={`${leafClasses} cursor-not-allowed`}
                           >
-                            <span className="flex-1 truncate">{displayLabel}</span>
+                            <span className="flex-1 truncate">{item.label}</span>
                             {locked && (
                               <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
                                 🔒 {lockLabel(item.feature)}
@@ -330,7 +326,7 @@ export function SidebarNav({
                           </div>
                         ) : (
                           <Link href={linkHref} className={leafClasses}>
-                            <span className="flex-1 truncate">{displayLabel}</span>
+                            <span className="flex-1 truncate">{item.label}</span>
                           </Link>
                         )}
                       </div>
