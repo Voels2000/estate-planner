@@ -417,32 +417,6 @@ export function SidebarNav({
             </Link>
           ))}
 
-        {(role === 'admin' || isAdmin || isSuperuser) &&
-          (isLockedUser ? (
-            <Link
-              href="#"
-              tabIndex={-1}
-              aria-disabled={true}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
-            >
-              <span className="flex-1 truncate">📋 Reference Data</span>
-              <span className="shrink-0 text-sm" aria-hidden>
-                🔒
-              </span>
-            </Link>
-          ) : (
-            <Link
-              href="/admin/reference-data"
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/admin/reference-data'
-                  ? 'bg-neutral-100 text-neutral-900'
-                  : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-              }`}
-            >
-              📋 Reference Data
-            </Link>
-          ))}
-
         {/* Admin — Advisor Directory */}
         {(role === 'admin' || isAdmin || isSuperuser) &&
           (isLockedUser ? (

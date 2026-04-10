@@ -40,7 +40,15 @@ type CategoryItem = {
   is_active: boolean
 }
 
-type CategoryTable = 'asset_types' | 'liability_types' | 'income_types' | 'expense_types'
+type CategoryTable =
+  | 'asset_types'
+  | 'liability_types'
+  | 'income_types'
+  | 'expense_types'
+  | 'ref_titling_types'
+  | 'ref_liquidity_types'
+  | 'ref_valuation_methods'
+  | 'ref_succession_plans'
 
 type TitlingCategory = {
   value: string
@@ -71,6 +79,10 @@ type Props = {
   liabilityTypes: CategoryItem[]
   incomeTypes: CategoryItem[]
   expenseTypes: CategoryItem[]
+  refTitlingTypes: CategoryItem[]
+  refLiquidityTypes: CategoryItem[]
+  refValuationMethods: CategoryItem[]
+  refSuccessionPlans: CategoryItem[]
   titlingCategories: TitlingCategory[]
   termsVersion:  string
   termsSections: { title: string; body: string }[]
@@ -85,6 +97,10 @@ export function AdminClient({
   liabilityTypes: initialLiabilityTypes,
   incomeTypes: initialIncomeTypes,
   expenseTypes: initialExpenseTypes,
+  refTitlingTypes: initialRefTitlingTypes,
+  refLiquidityTypes: initialRefLiquidityTypes,
+  refValuationMethods: initialRefValuationMethods,
+  refSuccessionPlans: initialRefSuccessionPlans,
   titlingCategories: initialTitlingCategories,
   termsVersion,
   termsSections,
@@ -109,6 +125,10 @@ export function AdminClient({
     liability_types: initialLiabilityTypes,
     income_types: initialIncomeTypes,
     expense_types: initialExpenseTypes,
+    ref_titling_types: initialRefTitlingTypes,
+    ref_liquidity_types: initialRefLiquidityTypes,
+    ref_valuation_methods: initialRefValuationMethods,
+    ref_succession_plans: initialRefSuccessionPlans,
   })
   const [savingCategory, setSavingCategory] = useState<string | null>(null)
   const [savedCategory, setSavedCategory] = useState<string | null>(null)
@@ -282,11 +302,27 @@ export function AdminClient({
     { key: 'debug',      label: 'Debug',           icon: '🐛' },
   ]
 
-  const CATEGORY_SECTIONS: { table: CategoryTable; label: string; description: string }[] = [
-    { table: 'asset_types',     label: 'Asset Types',         description: 'Categories shown in the asset owner dropdown.' },
-    { table: 'liability_types', label: 'Liability Types',     description: 'Categories shown in the liabilities dropdown.' },
-    { table: 'income_types',    label: 'Income Types',        description: 'Categories shown in the income source dropdown.' },
-    { table: 'expense_types',   label: 'Expense Categories',  description: 'Categories shown in the expenses dropdown.' },
+  const CATEGORY_SECTIONS: {
+    title?: string
+    items: { table: CategoryTable; label: string; description: string }[]
+  }[] = [
+    {
+      items: [
+        { table: 'asset_types',     label: 'Asset Types',         description: 'Categories shown in the asset owner dropdown.' },
+        { table: 'liability_types', label: 'Liability Types',     description: 'Categories shown in the liabilities dropdown.' },
+        { table: 'income_types',    label: 'Income Types',        description: 'Categories shown in the income source dropdown.' },
+        { table: 'expense_types',   label: 'Expense Categories',  description: 'Categories shown in the expenses dropdown.' },
+      ],
+    },
+    {
+      title: 'Estate Planning Reference Data',
+      items: [
+        { table: 'ref_titling_types',    label: 'Titling Types',    description: 'Ownership titling options for assets and real estate' },
+        { table: 'ref_liquidity_types',  label: 'Liquidity Types',  description: 'Liquidity classification for assets' },
+        { table: 'ref_valuation_methods', label: 'Valuation Methods', description: 'Business valuation method options' },
+        { table: 'ref_succession_plans', label: 'Succession Plans', description: 'Business succession plan options' },
+      ],
+    },
   ]
 
   const CONFIG_LABELS: Record<string, { label: string; description: string; type: 'number' | 'text' }> = {
@@ -492,8 +528,15 @@ export function AdminClient({
       {activeTab === 'categories' && (
         <div className="space-y-8">
           {categoryError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{categoryError}</p>}
-          {CATEGORY_SECTIONS.map(({ table, label, description }) => (
-            <div key={table} className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+          {CATEGORY_SECTIONS.map((section, sectionIndex) => (
+            <div key={section.title ?? `section-${sectionIndex}`} className="space-y-6">
+              {section.title && (
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+                  {section.title}
+                </h2>
+              )}
+              {section.items.map(({ table, label, description }) => (
+                <div key={table} className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-base font-semibold text-neutral-900">{label}</h2>
                 <button onClick={() => { setAddingTo(table); setNewLabel(''); setNewValue('') }}
@@ -572,6 +615,8 @@ export function AdminClient({
                   <p className="text-sm text-neutral-400 py-4 text-center">No categories yet. Add one above.</p>
                 )}
               </div>
+            </div>
+              ))}
             </div>
           ))}
 

@@ -63,6 +63,26 @@ export default async function AdminPage() {
     .select('value, label, sort_order, is_active')
     .order('sort_order')
 
+  const { data: refTitlingTypes } = await supabase
+    .from('ref_titling_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: refLiquidityTypes } = await supabase
+    .from('ref_liquidity_types')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: refValuationMethods } = await supabase
+    .from('ref_valuation_methods')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
+  const { data: refSuccessionPlans } = await supabase
+    .from('ref_succession_plans')
+    .select('value, label, sort_order, is_active')
+    .order('sort_order')
+
   const { data: titlingCategories } = await supabase
     .from('titling_asset_categories')
     .select('value, label, icon, sort_order, is_active')
@@ -118,6 +138,10 @@ export default async function AdminPage() {
       liabilityTypes={liabilityTypes ?? []}
       incomeTypes={incomeTypes ?? []}
       expenseTypes={expenseTypes ?? []}
+      refTitlingTypes={refTitlingTypes ?? []}
+      refLiquidityTypes={refLiquidityTypes ?? []}
+      refValuationMethods={refValuationMethods ?? []}
+      refSuccessionPlans={refSuccessionPlans ?? []}
       titlingCategories={titlingCategories ?? []}
       termsVersion={termsVersion}
       termsSections={termsSections}
