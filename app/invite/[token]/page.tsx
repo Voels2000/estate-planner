@@ -32,14 +32,14 @@ export default async function InvitePage({ params }: Props) {
 
   const advisorName = advisorProfile?.full_name?.trim() || advisorProfile?.email || 'Your advisor'
 
-  // 3. If not logged in — redirect to signup with invite preserved
-  // FIX: /signup not /auth/signup
+  // 3. If not logged in OR logged-in user is not the invited person
+  // redirect to signup — do NOT sign them out
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!user || user.email?.toLowerCase() !== invite.invited_email?.toLowerCase()) {
     redirect(`/signup?invite=${token}&email=${encodeURIComponent(invite.invited_email ?? '')}`)
   }
 
-  // 4. Render consent gate — no mutations happen until user clicks Accept
+  // 4. Consent gate — correct person is logged in; no mutations until user clicks Accept
   return (
     <InviteClient
       token={token}
