@@ -1,21 +1,26 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { RefSelect, CurrencyInput, ToggleField } from '@/components/ui/RefSelect'
-import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
+import type { RefOption } from '@/lib/ref-data-fetchers'
+
+interface InsuranceTypeOption extends RefOption {
+  has_death_benefit: boolean
+  has_cash_value: boolean
+  has_ilit_option: boolean
+}
 
 interface InsurancePolicy {
   id: string
   insurance_type: string | null
-  policy_subtype: string | null
-  provider: string | null
   policy_name: string | null
+  provider: string | null
   policy_number: string | null
-  coverage_amount: number | null
   death_benefit: number | null
   cash_value: number | null
-  monthly_premium: number | null
+  coverage_amount: number | null
   annual_premium: number | null
+  monthly_premium: number | null
   term_years: number | null
   expiration_date: string | null
   is_employer_provided: boolean
@@ -38,27 +43,17 @@ export default function InsuranceFormClient({
   policies,
   insuranceTypes,
 }: InsuranceFormClientProps) {
-  const [mounted, setMounted] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<InsurancePolicy | null>(null)
   const [saving, setSaving] = useState(false)
-  const [selectedType, setSelectedType] = useState<string>('')
+  const [selectedType, setSelectedType] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
 
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
-
-  const selectedTypeData = insuranceTypes.find(t => t.value === selectedType)
+  const selectedTypeData = insuranceTypes.find((t) => t.value === selectedType)
   const showDeathBenefit = selectedTypeData?.has_death_benefit ?? false
   const showCashValue = selectedTypeData?.has_cash_value ?? false
   const showIlit = selectedTypeData?.has_ilit_option ?? false
   const showTermYears = selectedType === 'term_life'
-
-  const handleEdit = (policy: InsurancePolicy) => {
-    setEditing(policy)
-    setSelectedType(policy.insurance_type ?? '')
-    setShowForm(true)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,20 +62,20 @@ export default function InsuranceFormClient({
     const data = new FormData(form)
 
     const payload: Record<string, unknown> = {
-      insurance_type: data.get('insurance_type') as string || null,
-      provider: data.get('provider') as string || null,
-      policy_name: data.get('policy_name') as string || null,
-      policy_number: data.get('policy_number') as string || null,
-      coverage_amount: data.get('coverage_amount') ? Number(data.get('coverage_amount')) : null,
+      insurance_type: (data.get('insurance_type') as string) || null,
+      policy_name: (data.get('policy_name') as string) || null,
+      provider: (data.get('provider') as string) || null,
+      policy_number: (data.get('policy_number') as string) || null,
       death_benefit: data.get('death_benefit') ? Number(data.get('death_benefit')) : null,
       cash_value: data.get('cash_value') ? Number(data.get('cash_value')) : null,
+      coverage_amount: data.get('coverage_amount') ? Number(data.get('coverage_amount')) : null,
       annual_premium: data.get('annual_premium') ? Number(data.get('annual_premium')) : null,
       monthly_premium: data.get('monthly_premium') ? Number(data.get('monthly_premium')) : null,
       term_years: data.get('term_years') ? Number(data.get('term_years')) : null,
-      expiration_date: data.get('expiration_date') as string || null,
+      expiration_date: (data.get('expiration_date') as string) || null,
       is_employer_provided: data.get('is_employer_provided') === 'true',
       is_ilit: data.get('is_ilit') === 'true',
-      notes: data.get('notes') as string || null,
+      notes: (data.get('notes') as string) || null,
     }
 
     const url = editing ? `/api/insurance/${editing.id}` : '/api/insurance'
@@ -117,7 +112,11 @@ export default function InsuranceFormClient({
           </p>
         </div>
         <button
-          onClick={() => { setEditing(null); setSelectedType(''); setShowForm(true) }}
+          onClick={() => {
+            setEditing(null)
+            setSelectedType('')
+            setShowForm(true)
+          }}
           className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
         >
           + Add Policy
@@ -128,9 +127,15 @@ export default function InsuranceFormClient({
         <div className="text-center py-16 border-2 border-dashed border-neutral-200 rounded-2xl">
           <p className="text-4xl mb-3">🛡️</p>
           <p className="text-sm font-medium text-neutral-600">No insurance policies added yet</p>
-          <p className="text-xs text-neutral-400 mt-1">Add life insurance, annuities, LTC, or disability coverage</p>
+          <p className="text-xs text-neutral-400 mt-1">
+            Add life insurance, annuities, LTC, or disability coverage
+          </p>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditing(null)
+              setSelectedType('')
+              setShowForm(true)
+            }}
             className="mt-4 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
           >
             Add your first policy
@@ -139,55 +144,68 @@ export default function InsuranceFormClient({
       )}
 
       <div className="space-y-4 mb-6">
-        {policies.map((p) => {
-          const typeLabel = insuranceTypes.find(t => t.value === p.insurance_type)?.label ?? p.insurance_type ?? 'Insurance'
-          const primaryValue = p.death_benefit ?? p.coverage_amount ?? 0
-
-          return (
-            <div key={p.id} className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-neutral-900">{p.policy_name || p.provider || 'Insurance Policy'}</h3>
-                    <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
-                    {p.is_ilit && (
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✓ ILIT</span>
-                    )}
-                    {!p.is_ilit && (p.insurance_type?.includes('life') || p.insurance_type === 'survivorship_life') && (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⚠ Not in ILIT</span>
-                    )}
+        {policies.map((p) => (
+          <div key={p.id} className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="font-semibold text-neutral-900">
+                    {p.policy_name || p.provider || 'Insurance Policy'}
+                  </h3>
+                  {p.insurance_type && (
+                    <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">
+                      {insuranceTypes.find((t) => t.value === p.insurance_type)?.label ?? p.insurance_type}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div>
+                    <p className="text-xs text-neutral-400">Coverage</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {p.death_benefit
+                        ? fmt(p.death_benefit)
+                        : p.coverage_amount
+                          ? fmt(p.coverage_amount)
+                          : '—'}
+                    </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mt-3">
-                    {primaryValue > 0 && (
-                      <div>
-                        <p className="text-xs text-neutral-400">{p.death_benefit ? 'Death Benefit' : 'Coverage'}</p>
-                        <p className="text-sm font-semibold text-neutral-800">{fmt(primaryValue)}</p>
-                      </div>
-                    )}
-                    {p.cash_value != null && p.cash_value > 0 && (
-                      <div>
-                        <p className="text-xs text-neutral-400">Cash Value</p>
-                        <p className="text-sm font-semibold text-neutral-800">{fmt(p.cash_value)}</p>
-                      </div>
-                    )}
-                    {p.annual_premium != null && p.annual_premium > 0 && (
-                      <div>
-                        <p className="text-xs text-neutral-400">Annual Premium</p>
-                        <p className="text-sm font-semibold text-neutral-800">{fmt(p.annual_premium)}</p>
-                      </div>
-                    )}
-                    {p.provider && (
-                      <div>
-                        <p className="text-xs text-neutral-400">Provider</p>
-                        <p className="text-sm font-semibold text-neutral-800">{p.provider}</p>
-                      </div>
-                    )}
+                  <div>
+                    <p className="text-xs text-neutral-400">Cash Value</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {p.cash_value ? fmt(p.cash_value) : '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-400">Annual Premium</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {p.annual_premium ? fmt(p.annual_premium) : '—'}
+                    </p>
                   </div>
                 </div>
+                <div className="flex gap-4 mt-3">
+                  {p.is_employer_provided ? (
+                    <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      ✓ Employer provided
+                    </span>
+                  ) : (
+                    <span className="text-xs text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full">
+                      Individual policy
+                    </span>
+                  )}
+                  {p.is_ilit && (
+                    <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      ✓ ILIT
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-3 mt-3 pt-3 border-t border-neutral-100">
+              <div className="flex gap-2 shrink-0">
                 <button
-                  onClick={() => handleEdit(p)}
+                  onClick={() => {
+                    setEditing(p)
+                    setSelectedType(p.insurance_type ?? '')
+                    setShowForm(true)
+                  }}
                   className="text-xs text-indigo-600 hover:underline font-medium"
                 >
                   Edit
@@ -200,8 +218,8 @@ export default function InsuranceFormClient({
                 </button>
               </div>
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
 
       {showForm && (
@@ -218,15 +236,12 @@ export default function InsuranceFormClient({
               defaultValue={editing?.insurance_type}
               required
               placeholder="Select insurance type..."
-              helpText="Select the type of policy to show relevant fields."
               onChange={(e) => setSelectedType(e.target.value)}
             />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
-                  Policy Name / Description
-                </label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
                 <input
                   type="text"
                   name="policy_name"
@@ -236,7 +251,7 @@ export default function InsuranceFormClient({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Insurance Provider</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Provider</label>
                 <input
                   type="text"
                   name="provider"
@@ -260,14 +275,14 @@ export default function InsuranceFormClient({
               </div>
               {showTermYears && (
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Term Length (years)</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Term Years</label>
                   <input
                     type="number"
                     name="term_years"
                     defaultValue={editing?.term_years ?? ''}
-                    placeholder="e.g. 20"
                     min="1"
                     max="40"
+                    placeholder="e.g. 20"
                     className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -277,18 +292,16 @@ export default function InsuranceFormClient({
             {showDeathBenefit && (
               <CurrencyInput
                 name="death_benefit"
-                label="Death Benefit / Face Value"
+                label="Death Benefit"
                 defaultValue={editing?.death_benefit}
-                helpText="Total amount paid to beneficiaries upon death."
               />
             )}
 
             {showCashValue && (
               <CurrencyInput
                 name="cash_value"
-                label="Current Cash Value"
+                label="Cash Value"
                 defaultValue={editing?.cash_value}
-                helpText="Current accumulated cash value of the policy."
               />
             )}
 
@@ -310,12 +323,11 @@ export default function InsuranceFormClient({
                 name="monthly_premium"
                 label="Monthly Premium"
                 defaultValue={editing?.monthly_premium}
-                helpText="Leave blank if entering annual premium."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Expiration / Maturity Date</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Expiration Date</label>
               <input
                 type="date"
                 name="expiration_date"
@@ -327,16 +339,14 @@ export default function InsuranceFormClient({
             <div className="border-t border-neutral-100 pt-5 space-y-4">
               <ToggleField
                 name="is_employer_provided"
-                label="Employer-provided policy"
+                label="Employer-provided"
                 defaultChecked={editing?.is_employer_provided ?? false}
-                helpText="Group life or disability coverage through your employer."
               />
               {showIlit && (
                 <ToggleField
                   name="is_ilit"
-                  label="Held in an Irrevocable Life Insurance Trust (ILIT)"
+                  label="Held in ILIT"
                   defaultChecked={editing?.is_ilit ?? false}
-                  helpText="If held in an ILIT, the death benefit is excluded from your taxable estate. Without an ILIT, the full death benefit may be included."
                 />
               )}
             </div>
@@ -346,8 +356,8 @@ export default function InsuranceFormClient({
               <textarea
                 name="notes"
                 defaultValue={editing?.notes ?? ''}
-                rows={2}
-                placeholder="Any additional details..."
+                rows={3}
+                placeholder="Any additional policy context..."
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -362,7 +372,11 @@ export default function InsuranceFormClient({
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setEditing(null); setSelectedType('') }}
+                onClick={() => {
+                  setShowForm(false)
+                  setEditing(null)
+                  setSelectedType('')
+                }}
                 className="px-5 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded-lg hover:bg-neutral-50 transition"
               >
                 Cancel
