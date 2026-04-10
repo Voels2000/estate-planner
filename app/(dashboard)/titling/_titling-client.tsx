@@ -26,6 +26,20 @@ type RealEstateItem = {
   owner: string | null
 }
 
+type InsurancePolicyRow = {
+  id: string
+  policy_name: string | null
+  insurance_type: string | null
+  death_benefit: number | null
+}
+
+type BusinessRow = {
+  id: string
+  name: string
+  estimated_value: number | null
+  entity_type: string | null
+}
+
 type AssetTitling = {
   id: string
   asset_id: string
@@ -40,10 +54,26 @@ type RealEstateTitling = {
   notes: string | null
 }
 
+type InsurancePolicyTitling = {
+  id: string
+  insurance_policy_id: string
+  title_type: string
+  notes: string | null
+}
+
+type BusinessTitlingRow = {
+  id: string
+  business_id: string
+  title_type: string
+  notes: string | null
+}
+
 type Beneficiary = {
   id: string
   asset_id: string | null
   real_estate_id: string | null
+  insurance_policy_id: string | null
+  business_id: string | null
   beneficiary_type: 'primary' | 'contingent'
   full_name: string
   relationship: string | null
@@ -67,10 +97,18 @@ type TitlingClientProps = {
   initialAssetTitling: AssetTitling[]
   initialRealEstateTitling: RealEstateTitling[]
   initialBeneficiaries: Beneficiary[]
+  initialInsurance: InsurancePolicyRow[]
+  initialBusinesses: BusinessRow[]
+  initialInsurancePolicyTitling: InsurancePolicyTitling[]
+  initialBusinessTitling: BusinessTitlingRow[]
   person1Name: string
   person2Name: string
   categories: TitlingCategory[]
 }
+
+type TitlingKind = 'asset' | 're' | 'insurance' | 'business'
+
+type AnyTitling = AssetTitling | RealEstateTitling | InsurancePolicyTitling | BusinessTitlingRow
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -128,48 +166,85 @@ function ownerLabel(owner: string | null, p1: string, p2: string) {
 
 // ─── Warning helpers ──────────────────────────────────────────────────────────
 
+function benForItem(
+  item: { id: string; kind: TitlingKind },
+  b: Beneficiary
+): boolean {
+  if (item.kind === 'asset') return b.asset_id === item.id
+  if (item.kind === 're') return b.real_estate_id === item.id
+  if (item.kind === 'insurance') return b.insurance_policy_id === item.id
+  return b.business_id === item.id
+}
+
 function getTitlingWarnings(
   assets: Asset[],
   realEstate: RealEstateItem[],
+  insurance: InsurancePolicyRow[],
+  businesses: BusinessRow[],
   assetTitling: AssetTitling[],
   realEstateTitling: RealEstateTitling[],
+  insurancePolicyTitling: InsurancePolicyTitling[],
+  businessTitling: BusinessTitlingRow[],
   beneficiaries: Beneficiary[]
 ): string[] {
   const warnings: string[] = []
 
-  // Assets missing titling
   const untitledAssets = assets.filter(a => !assetTitling.find(t => t.asset_id === a.id))
   if (untitledAssets.length > 0) {
     warnings.push(`${untitledAssets.length} asset(s) have no title type set`)
   }
 
-  // Real estate missing titling
   const untitledRE = realEstate.filter(r => !realEstateTitling.find(t => t.real_estate_id === r.id))
   if (untitledRE.length > 0) {
     warnings.push(`${untitledRE.length} property(ies) have no title type set`)
   }
 
-  // Assets missing primary beneficiary (excluding joint/community property which pass by title)
-  const needsBeneficiary = assets.filter(a => {
+  const untitledIns = insurance.filter(p => !insurancePolicyTitling.find(t => t.insurance_policy_id === p.id))
+  if (untitledIns.length > 0) {
+    warnings.push(`${untitledIns.length} insurance policy/policies have no title type set`)
+  }
+
+  const untitledBiz = businesses.filter(b => !businessTitling.find(t => t.business_id === b.id))
+  if (untitledBiz.length > 0) {
+    warnings.push(`${untitledBiz.length} business interest(s) have no title type set`)
+  }
+
+  const needsBeneficiaryAssets = assets.filter(a => {
     const titling = assetTitling.find(t => t.asset_id === a.id)
     if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
     return !beneficiaries.find(b => b.asset_id === a.id && b.beneficiary_type === 'primary')
   })
-  if (needsBeneficiary.length > 0) {
-    warnings.push(`${needsBeneficiary.length} asset(s) have no primary beneficiary`)
+  if (needsBeneficiaryAssets.length > 0) {
+    warnings.push(`${needsBeneficiaryAssets.length} asset(s) have no primary beneficiary`)
   }
 
-  // Beneficiary allocations not summing to 100%
-  const allAssetIds = [
+  const needsBenIns = insurance.filter(p => {
+    const titling = insurancePolicyTitling.find(t => t.insurance_policy_id === p.id)
+    if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
+    return !beneficiaries.find(b => b.insurance_policy_id === p.id && b.beneficiary_type === 'primary')
+  })
+  if (needsBenIns.length > 0) {
+    warnings.push(`${needsBenIns.length} insurance policy/policies have no primary beneficiary`)
+  }
+
+  const needsBenBiz = businesses.filter(biz => {
+    const titling = businessTitling.find(t => t.business_id === biz.id)
+    if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
+    return !beneficiaries.find(b => b.business_id === biz.id && b.beneficiary_type === 'primary')
+  })
+  if (needsBenBiz.length > 0) {
+    warnings.push(`${needsBenBiz.length} business interest(s) have no primary beneficiary`)
+  }
+
+  const allItems: { id: string; kind: TitlingKind }[] = [
     ...assets.map(a => ({ id: a.id, kind: 'asset' as const })),
     ...realEstate.map(r => ({ id: r.id, kind: 're' as const })),
+    ...insurance.map(p => ({ id: p.id, kind: 'insurance' as const })),
+    ...businesses.map(b => ({ id: b.id, kind: 'business' as const })),
   ]
-  for (const item of allAssetIds) {
+  for (const item of allItems) {
     for (const btype of ['primary', 'contingent'] as const) {
-      const bens = beneficiaries.filter(b =>
-        b.beneficiary_type === btype &&
-        (item.kind === 'asset' ? b.asset_id === item.id : b.real_estate_id === item.id)
-      )
+      const bens = beneficiaries.filter(b => b.beneficiary_type === btype && benForItem(item, b))
       if (bens.length === 0) continue
       const total = bens.reduce((s, b) => s + Number(b.allocation_pct), 0)
       if (Math.abs(total - 100) > 0.01) {
@@ -179,7 +254,7 @@ function getTitlingWarnings(
     }
   }
 
-  return [...new Set(warnings)] // dedupe
+  return [...new Set(warnings)]
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -190,6 +265,10 @@ export default function TitlingClient({
   initialAssetTitling,
   initialRealEstateTitling,
   initialBeneficiaries,
+  initialInsurance,
+  initialBusinesses,
+  initialInsurancePolicyTitling,
+  initialBusinessTitling,
   person1Name,
   person2Name,
   categories,
@@ -197,41 +276,65 @@ export default function TitlingClient({
   const router = useRouter()
   const [assets] = useState<Asset[]>(initialAssets)
   const [realEstate] = useState<RealEstateItem[]>(initialRealEstate)
+  const [insurance] = useState<InsurancePolicyRow[]>(initialInsurance)
+  const [businesses] = useState<BusinessRow[]>(initialBusinesses)
   const [assetTitling, setAssetTitling] = useState<AssetTitling[]>(initialAssetTitling)
   const [realEstateTitling, setRealEstateTitling] = useState<RealEstateTitling[]>(initialRealEstateTitling)
+  const [insurancePolicyTitling, setInsurancePolicyTitling] = useState<InsurancePolicyTitling[]>(initialInsurancePolicyTitling)
+  const [businessTitling, setBusinessTitling] = useState<BusinessTitlingRow[]>(initialBusinessTitling)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(initialBeneficiaries)
   const [activeTab, setActiveTab] = useState<string>('assets')
 
   // Modal state
   const [titlingModal, setTitlingModal] = useState<{
-    kind: 'asset' | 're'
+    kind: TitlingKind
     id: string
     name: string
-    existing: AssetTitling | RealEstateTitling | null
+    existing: AnyTitling | null
     asset: Asset | null
   } | null>(null)
 
   const [beneficiaryModal, setBeneficiaryModal] = useState<{
-    kind: 'asset' | 're'
+    kind: TitlingKind
     id: string
     name: string
     existing: Beneficiary | null
     beneficiaryType: 'primary' | 'contingent'
   } | null>(null)
 
-  const warnings = getTitlingWarnings(assets, realEstate, assetTitling, realEstateTitling, beneficiaries)
+  const warnings = getTitlingWarnings(
+    assets,
+    realEstate,
+    insurance,
+    businesses,
+    assetTitling,
+    realEstateTitling,
+    insurancePolicyTitling,
+    businessTitling,
+    beneficiaries
+  )
 
   async function reloadData() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const [{ data: at }, { data: rt }, { data: bens }] = await Promise.all([
+    const [
+      { data: at },
+      { data: rt },
+      { data: it },
+      { data: bt },
+      { data: bens },
+    ] = await Promise.all([
       supabase.from('asset_titling').select('id, asset_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('real_estate_titling').select('id, real_estate_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip').eq('owner_id', user.id).order('created_at', { ascending: true }),
+      supabase.from('insurance_policy_titling').select('id, insurance_policy_id, title_type, notes').eq('owner_id', user.id),
+      supabase.from('business_titling').select('id, business_id, title_type, notes').eq('owner_id', user.id),
+      supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, insurance_policy_id, business_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip').eq('owner_id', user.id).order('created_at', { ascending: true }),
     ])
     setAssetTitling(at ?? [])
     setRealEstateTitling(rt ?? [])
+    setInsurancePolicyTitling(it ?? [])
+    setBusinessTitling(bt ?? [])
     setBeneficiaries(bens ?? [])
     router.refresh()
   }
@@ -242,22 +345,31 @@ export default function TitlingClient({
     await reloadData()
   }
 
-  function getBeneficiariesFor(kind: 'asset' | 're', id: string, type: 'primary' | 'contingent') {
-    return beneficiaries.filter(b =>
-      b.beneficiary_type === type &&
-      (kind === 'asset' ? b.asset_id === id : b.real_estate_id === id)
-    )
+  function getBeneficiariesFor(kind: TitlingKind, id: string, type: 'primary' | 'contingent') {
+    return beneficiaries.filter(b => {
+      if (b.beneficiary_type !== type) return false
+      if (kind === 'asset') return b.asset_id === id
+      if (kind === 're') return b.real_estate_id === id
+      if (kind === 'insurance') return b.insurance_policy_id === id
+      return b.business_id === id
+    })
   }
 
-  function getTitlingFor(kind: 'asset' | 're', id: string) {
+  function getTitlingFor(kind: TitlingKind, id: string): AnyTitling | null {
     if (kind === 'asset') return assetTitling.find(t => t.asset_id === id) ?? null
-    return realEstateTitling.find(t => t.real_estate_id === id) ?? null
+    if (kind === 're') return realEstateTitling.find(t => t.real_estate_id === id) ?? null
+    if (kind === 'insurance') return insurancePolicyTitling.find(t => t.insurance_policy_id === id) ?? null
+    return businessTitling.find(t => t.business_id === id) ?? null
   }
 
   // Build tabs dynamically from DB categories
-  // 'assets' and 'real_estate' are wired — others show Coming Soon
-  const WIRED = ['assets', 'real_estate']
-  const tabCounts: Record<string, number> = { assets: assets.length, real_estate: realEstate.length }
+  const WIRED = ['assets', 'real_estate', 'insurance', 'business']
+  const tabCounts: Record<string, number> = {
+    assets: assets.length,
+    real_estate: realEstate.length,
+    insurance: insurance.length,
+    business: businesses.length,
+  }
   const tabs = categories.map(c => ({
     key: c.value,
     label: c.label,
@@ -392,6 +504,82 @@ export default function TitlingClient({
         </div>
       )}
 
+      {/* Insurance tab */}
+      {activeTab === 'insurance' && (
+        <div className="space-y-4">
+          {insurance.length === 0 ? (
+            <EmptyState icon="🛡️" message="No insurance policies found" sub="Add life, annuity, LTC, or disability coverage on the Insurance page first" href="/insurance" />
+          ) : (
+            insurance.map(pol => {
+              const displayName = pol.policy_name?.trim() || 'Insurance policy'
+              const sub = (pol.insurance_type ?? 'policy').replace(/_/g, ' ')
+              return (
+                <AssetTitlingCard
+                  key={pol.id}
+                  kind="insurance"
+                  id={pol.id}
+                  name={displayName}
+                  subtitle={sub}
+                  value={pol.death_benefit ?? 0}
+                  ownerLabel="—"
+                  titling={getTitlingFor('insurance', pol.id)}
+                  primaryBens={getBeneficiariesFor('insurance', pol.id, 'primary')}
+                  contingentBens={getBeneficiariesFor('insurance', pol.id, 'contingent')}
+                  onEditTitling={() => setTitlingModal({
+                    kind: 'insurance', id: pol.id, name: displayName,
+                    existing: getTitlingFor('insurance', pol.id),
+                    asset: null,
+                  })}
+                  onAddBeneficiary={(type) => setBeneficiaryModal({
+                    kind: 'insurance', id: pol.id, name: displayName, existing: null, beneficiaryType: type,
+                  })}
+                  onEditBeneficiary={(ben) => setBeneficiaryModal({
+                    kind: 'insurance', id: pol.id, name: displayName, existing: ben, beneficiaryType: ben.beneficiary_type,
+                  })}
+                  onDeleteBeneficiary={handleDeleteBeneficiary}
+                />
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* Business tab */}
+      {activeTab === 'business' && (
+        <div className="space-y-4">
+          {businesses.length === 0 ? (
+            <EmptyState icon="🏢" message="No business interests found" sub="Add closely-held interests on the Businesses page first" href="/businesses" />
+          ) : (
+            businesses.map(biz => (
+              <AssetTitlingCard
+                key={biz.id}
+                kind="business"
+                id={biz.id}
+                name={biz.name}
+                subtitle={(biz.entity_type ?? 'entity').replace(/_/g, ' ')}
+                value={biz.estimated_value ?? 0}
+                ownerLabel="—"
+                titling={getTitlingFor('business', biz.id)}
+                primaryBens={getBeneficiariesFor('business', biz.id, 'primary')}
+                contingentBens={getBeneficiariesFor('business', biz.id, 'contingent')}
+                onEditTitling={() => setTitlingModal({
+                  kind: 'business', id: biz.id, name: biz.name,
+                  existing: getTitlingFor('business', biz.id),
+                  asset: null,
+                })}
+                onAddBeneficiary={(type) => setBeneficiaryModal({
+                  kind: 'business', id: biz.id, name: biz.name, existing: null, beneficiaryType: type,
+                })}
+                onEditBeneficiary={(ben) => setBeneficiaryModal({
+                  kind: 'business', id: biz.id, name: biz.name, existing: ben, beneficiaryType: ben.beneficiary_type,
+                })}
+                onDeleteBeneficiary={handleDeleteBeneficiary}
+              />
+            ))
+          )}
+        </div>
+      )}
+
       {/* Titling Modal */}
       {titlingModal && (
         <TitlingModal
@@ -414,9 +602,7 @@ export default function TitlingClient({
           existing={beneficiaryModal.existing}
           defaultType={beneficiaryModal.beneficiaryType}
           allBeneficiariesForItem={beneficiaries.filter(b =>
-            (beneficiaryModal.kind === 'asset'
-              ? b.asset_id === beneficiaryModal.id
-              : b.real_estate_id === beneficiaryModal.id) &&
+            benForItem({ id: beneficiaryModal.id, kind: beneficiaryModal.kind }, b) &&
             b.id !== beneficiaryModal.existing?.id
           )}
           onClose={() => setBeneficiaryModal(null)}
@@ -430,17 +616,17 @@ export default function TitlingClient({
 // ─── Asset / RE card ──────────────────────────────────────────────────────────
 
 function AssetTitlingCard({
-  kind, id, name, subtitle, value, ownerLabel, titling,
+  kind: _kind, id, name, subtitle, value, ownerLabel, titling,
   primaryBens, contingentBens,
   onEditTitling, onAddBeneficiary, onEditBeneficiary, onDeleteBeneficiary,
 }: {
-  kind: 'asset' | 're'
+  kind: TitlingKind
   id: string
   name: string
   subtitle: string
   value: number
   ownerLabel: string
-  titling: AssetTitling | RealEstateTitling | null
+  titling: AnyTitling | null
   primaryBens: Beneficiary[]
   contingentBens: Beneficiary[]
   onEditTitling: () => void
@@ -609,10 +795,10 @@ function BeneficiarySection({
 function TitlingModal({
   kind, id, name, existing, asset, onClose, onSave,
 }: {
-  kind: 'asset' | 're'
+  kind: TitlingKind
   id: string
   name: string
-  existing: AssetTitling | RealEstateTitling | null
+  existing: AnyTitling | null
   asset: Asset | null
   onClose: () => void
   onSave: () => void
@@ -637,8 +823,16 @@ function TitlingModal({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const table = kind === 'asset' ? 'asset_titling' : 'real_estate_titling'
-      const fkCol = kind === 'asset' ? 'asset_id' : 'real_estate_id'
+      const table =
+        kind === 'asset' ? 'asset_titling'
+        : kind === 're' ? 'real_estate_titling'
+          : kind === 'insurance' ? 'insurance_policy_titling'
+            : 'business_titling'
+      const fkCol =
+        kind === 'asset' ? 'asset_id'
+        : kind === 're' ? 'real_estate_id'
+          : kind === 'insurance' ? 'insurance_policy_id'
+            : 'business_id'
       const payload = {
         title_type: titleType,
         notes: notes.trim() || null,
@@ -770,7 +964,7 @@ function TitlingModal({
 function BeneficiaryModal({
   kind, id, name, existing, defaultType, allBeneficiariesForItem, onClose, onSave,
 }: {
-  kind: 'asset' | 're'
+  kind: TitlingKind
   id: string
   name: string
   existing: Beneficiary | null
@@ -841,6 +1035,8 @@ function BeneficiaryModal({
           owner_id: user.id,
           asset_id: kind === 'asset' ? id : null,
           real_estate_id: kind === 're' ? id : null,
+          insurance_policy_id: kind === 'insurance' ? id : null,
+          business_id: kind === 'business' ? id : null,
         })
         if (error) throw error
       }

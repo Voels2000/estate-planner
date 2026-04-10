@@ -4,6 +4,9 @@ import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import TitlingClient from './_titling-client'
 
+// Exclude P&C lines — same as app/(dashboard)/insurance/page.tsx
+const PC_INSURANCE_TYPES = ['auto', 'homeowners', 'renters', 'umbrella', 'flood', 'earthquake', 'valuables', 'commercial', 'other']
+
 export default async function TitlingPage() {
   const access = await getUserAccess()
   const supabase = await createClient()
@@ -31,6 +34,10 @@ export default async function TitlingPage() {
     { data: assetTitling },
     { data: realEstateTitling },
     { data: beneficiaries },
+    { data: insurance },
+    { data: businesses },
+    { data: insurancePolicyTitling },
+    { data: businessTitling },
   ] = await Promise.all([
     supabase
       .from('titling_asset_categories')
@@ -62,9 +69,28 @@ export default async function TitlingPage() {
       .eq('owner_id', user.id),
     supabase
       .from('asset_beneficiaries')
-      .select('id, asset_id, real_estate_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip')
+      .select('id, asset_id, real_estate_id, insurance_policy_id, business_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true }),
+    supabase
+      .from('insurance_policies')
+      .select('id, policy_name, insurance_type, death_benefit')
+      .eq('user_id', user.id)
+      .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('businesses')
+      .select('id, name, estimated_value, entity_type')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('insurance_policy_titling')
+      .select('id, insurance_policy_id, title_type, notes')
+      .eq('owner_id', user.id),
+    supabase
+      .from('business_titling')
+      .select('id, business_id, title_type, notes')
+      .eq('owner_id', user.id),
   ])
 
   return (
@@ -75,6 +101,10 @@ export default async function TitlingPage() {
       initialAssetTitling={assetTitling ?? []}
       initialRealEstateTitling={realEstateTitling ?? []}
       initialBeneficiaries={beneficiaries ?? []}
+      initialInsurance={insurance ?? []}
+      initialBusinesses={businesses ?? []}
+      initialInsurancePolicyTitling={insurancePolicyTitling ?? []}
+      initialBusinessTitling={businessTitling ?? []}
       person1Name={household?.person1_name ?? 'Person 1'}
       person2Name={household?.person2_name ?? 'Person 2'}
     />
