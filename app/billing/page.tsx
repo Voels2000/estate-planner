@@ -114,9 +114,27 @@ export default async function BillingPage() {
     .eq('id', access.user.id)
     .single()
 
-  const isActive = profile?.subscription_status === 'active'
+  const isAdvisorManaged =
+    profile?.subscription_status === 'advisor_managed' ||
+    profile?.subscription_plan === 'advisor_managed'
 
-  const isAdvisorManagedPlan = profile?.subscription_status === 'advisor_managed'
+  if (isAdvisorManaged) {
+    return (
+      <div className="max-w-2xl mx-auto mt-16 px-6">
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-6 py-5">
+          <h2 className="text-lg font-semibold text-blue-900 mb-1">
+            Your plan is managed by your advisor
+          </h2>
+          <p className="text-sm text-blue-700">
+            No payment required. Your advisor covers access to MyWealthMaps on
+            your behalf. Contact your advisor if you have billing questions.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const isActive = profile?.subscription_status === 'active'
 
   const { data: clientRow } = await supabase
     .from('advisor_clients')
@@ -124,7 +142,7 @@ export default async function BillingPage() {
     .eq('client_id', access.user.id)
     .in('status', ['active', 'accepted'])
     .maybeSingle()
-  const isAdvisorClient = isAdvisorManagedPlan || !!clientRow
+  const isAdvisorClient = !!clientRow
 
   const priceIdsToShow = isActive
     ? CONSUMER_PRICE_IDS
