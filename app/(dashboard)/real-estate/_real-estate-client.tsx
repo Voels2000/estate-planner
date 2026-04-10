@@ -293,7 +293,9 @@ export default function RealEstateClient({
                 const gain = taxableGain(row, filingStatus)
                 return (
                   <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">{row.name}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">
+                      <div className="min-w-0 truncate">{row.name}</div>
+                    </td>
                     <td className="px-4 py-3 text-sm text-neutral-500">
                       {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
                     </td>
@@ -330,7 +332,7 @@ export default function RealEstateClient({
                     <td className="px-4 py-3 text-sm text-neutral-500">{ownerLabel(row.owner ?? 'person1')}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       {confirmDeleteId === row.id ? (
-                        <span className="inline-flex items-center gap-2 text-sm">
+                        <span className="inline-flex shrink-0 items-center gap-2 text-sm">
                           <span className="text-neutral-500">Delete?</span>
                           <button
                             type="button"
@@ -348,7 +350,7 @@ export default function RealEstateClient({
                           </button>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="inline-flex shrink-0 items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                           <button
                             type="button"
                             onClick={() => {
