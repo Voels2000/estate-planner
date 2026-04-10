@@ -113,7 +113,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   ] = await Promise.all([
     supabase
       .from('assets')
-      .select('id, name, asset_type, value, owner, institution, account_type, is_taxable, created_at')
+      .select('id, name, type, value, owner, cost_basis, titling, liquidity, situs_state, created_at')
       .eq('owner_id', clientId),
     supabase
       .from('real_estate')

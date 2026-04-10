@@ -120,9 +120,10 @@ export function computeGaps(params: {
   }
 
   // ── Beneficiary gaps ──────────────────────────────────────────────────────
-  const retirementAssets = (assets ?? []).filter(a =>
-    ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(a.account_type?.toLowerCase() ?? '')
-  )
+  const retirementAssets = (assets ?? []).filter(a => {
+    const t = ((a as { type?: string; account_type?: string }).type ?? a.account_type ?? '').toLowerCase()
+    return ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(t)
+  })
 
   if (retirementAssets.length > 0 && (beneficiaries ?? []).length === 0) {
     gaps.push({

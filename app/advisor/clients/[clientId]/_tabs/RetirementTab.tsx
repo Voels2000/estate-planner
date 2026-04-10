@@ -10,12 +10,15 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
   const p1Age = getAge(household.person1_birth_year, currentYear) ?? 0
   const p2Age = household.has_spouse ? (getAge(household.person2_birth_year, currentYear) ?? 0) : null
 
+  const accountType = (a: { type?: string | null; account_type?: string | null }) =>
+    (a.type ?? a.account_type ?? '').toLowerCase()
+
   const retirementAssets = (assets ?? []).filter(a =>
-    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(a.account_type?.toLowerCase() ?? '')
+    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(accountType(a))
   )
   const totalRetirement   = retirementAssets.reduce((s, a) => s + (a.value ?? 0), 0)
-  const traditionalAssets = retirementAssets.filter(a => a.account_type?.toLowerCase() !== 'roth_ira')
-  const rothAssets        = retirementAssets.filter(a => a.account_type?.toLowerCase() === 'roth_ira')
+  const traditionalAssets = retirementAssets.filter(a => accountType(a) !== 'roth_ira')
+  const rothAssets        = retirementAssets.filter(a => accountType(a) === 'roth_ira')
   const totalTraditional  = traditionalAssets.reduce((s, a) => s + (a.value ?? 0), 0)
   const totalRoth         = rothAssets.reduce((s, a) => s + (a.value ?? 0), 0)
 
@@ -122,7 +125,7 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
               rmdAge={rmdAge}
               traditionalBalance={
                 retirementAssets
-                  .filter(a => a.owner === 'person1' && a.account_type?.toLowerCase() !== 'roth_ira')
+                  .filter(a => a.owner === 'person1' && accountType(a) !== 'roth_ira')
                   .reduce((s, a) => s + (a.value ?? 0), 0)
               }
             />
@@ -134,7 +137,7 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
                 rmdAge={rmdAge}
                 traditionalBalance={
                   retirementAssets
-                    .filter(a => a.owner === 'person2' && a.account_type?.toLowerCase() !== 'roth_ira')
+                    .filter(a => a.owner === 'person2' && accountType(a) !== 'roth_ira')
                     .reduce((s, a) => s + (a.value ?? 0), 0)
                 }
               />

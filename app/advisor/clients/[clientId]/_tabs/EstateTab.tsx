@@ -33,8 +33,11 @@ export default function EstateTab({
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
+  const assetAccountType = (a: { type?: string | null; account_type?: string | null }) =>
+    (a.type ?? a.account_type ?? '').toLowerCase()
+
   const retirementAssets = (assets ?? []).filter(a =>
-    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(a.account_type?.toLowerCase() ?? '')
+    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(assetAccountType(a))
   )
   const primaryBeneficiaries   = (beneficiaries ?? []).filter(b => !b.contingent)
   const contingentBeneficiaries = (beneficiaries ?? []).filter(b =>  b.contingent)
@@ -318,9 +321,9 @@ export default function EstateTab({
                   <th className="text-left text-xs font-semibold text-slate-500 pb-2">Account</th>
                   <th className="text-left text-xs font-semibold text-slate-500 pb-2">Type</th>
                   <th className="text-left text-xs font-semibold text-slate-500 pb-2">Owner</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Institution</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Titling</th>
                   <th className="text-right text-xs font-semibold text-slate-500 pb-2">Value</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Tax</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Liquidity</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -328,14 +331,16 @@ export default function EstateTab({
                   <tr key={a.id} className="hover:bg-slate-50">
                     <td className="py-2.5 font-medium text-slate-800">{a.name}</td>
                     <td className="py-2.5">
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase">{a.account_type ?? a.asset_type ?? '—'}</span>
+                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase">
+                        {a.type ?? a.account_type ?? a.asset_type ?? '—'}
+                      </span>
                     </td>
                     <td className="py-2.5 text-slate-500">{formatOwner(a.owner, household)}</td>
-                    <td className="py-2.5 text-slate-500">{a.institution ?? '—'}</td>
+                    <td className="py-2.5 text-slate-500">{a.titling ?? a.institution ?? '—'}</td>
                     <td className="py-2.5 text-right font-medium text-slate-800">{formatCurrency(a.value)}</td>
                     <td className="py-2.5 pl-4">
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${a.is_taxable ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                        {a.is_taxable ? 'Taxable' : 'Tax-adv.'}
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                        {a.liquidity ?? '—'}
                       </span>
                     </td>
                   </tr>
