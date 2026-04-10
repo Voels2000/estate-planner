@@ -1,29 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 
-interface InsurancePolicy {
+interface PCPolicy {
   id: string
   insurance_type: string | null
   provider: string | null
   policy_name: string | null
   policy_number: string | null
   coverage_amount: number | null
-  death_benefit: number | null
-  cash_value: number | null
+  deductible: number | null
   monthly_premium: number | null
   annual_premium: number | null
-  term_years: number | null
   expiration_date: string | null
-  is_employer_provided: boolean
-  is_ilit: boolean
   notes: string | null
 }
 
+interface PCInsuranceType {
+  value: string
+  label: string
+  description?: string | null
+}
+
 interface Props {
-  policies: InsurancePolicy[]
-  insuranceTypes: InsuranceTypeOption[]
+  policies: PCPolicy[]
+  pcInsuranceTypes: PCInsuranceType[]
 }
 
 function fmt(n: number) {
@@ -32,36 +33,26 @@ function fmt(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-const EMPTY: Partial<InsurancePolicy> = {
+const EMPTY: Partial<PCPolicy> = {
   insurance_type: null,
   provider: null,
   policy_name: null,
   policy_number: null,
   coverage_amount: null,
-  death_benefit: null,
-  cash_value: null,
+  deductible: null,
   monthly_premium: null,
   annual_premium: null,
-  term_years: null,
   expiration_date: null,
-  is_employer_provided: false,
-  is_ilit: false,
   notes: null,
 }
 
-export default function InsuranceFormClient({ policies, insuranceTypes }: Props) {
+export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Props) {
   const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState<InsurancePolicy | null>(null)
-  const [form, setForm] = useState<Partial<InsurancePolicy>>(EMPTY)
+  const [editing, setEditing] = useState<PCPolicy | null>(null)
+  const [form, setForm] = useState<Partial<PCPolicy>>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  const selectedTypeData = insuranceTypes.find(t => t.value === form.insurance_type)
-  const showDeathBenefit = selectedTypeData?.has_death_benefit ?? false
-  const showCashValue = selectedTypeData?.has_cash_value ?? false
-  const showIlit = selectedTypeData?.has_ilit_option ?? false
-  const showTermYears = form.insurance_type === 'term_life'
 
   const openAdd = () => {
     setEditing(null)
@@ -70,7 +61,7 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
     setShowModal(true)
   }
 
-  const openEdit = (policy: InsurancePolicy) => {
+  const openEdit = (policy: PCPolicy) => {
     setEditing(policy)
     setForm({ ...policy })
     setSaveError(null)
@@ -119,9 +110,9 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Life & Estate Insurance</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Property & Casualty Insurance</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Life insurance, annuities, long-term care, and disability coverage.
+            Auto, home, renters, umbrella, and other P&C coverage.
           </p>
         </div>
         <button
@@ -135,9 +126,9 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
       {/* Empty state */}
       {policies.length === 0 && (
         <div className="text-center py-16 border-2 border-dashed border-neutral-200 rounded-2xl">
-          <p className="text-4xl mb-3">🛡️</p>
-          <p className="text-sm font-medium text-neutral-600">No policies added yet</p>
-          <p className="text-xs text-neutral-400 mt-1">Add life insurance, annuities, LTC, or disability coverage</p>
+          <p className="text-4xl mb-3">🏠</p>
+          <p className="text-sm font-medium text-neutral-600">No P&C policies added yet</p>
+          <p className="text-xs text-neutral-400 mt-1">Add auto, home, renters, umbrella, or other coverage</p>
           <button
             onClick={openAdd}
             className="mt-4 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
@@ -150,34 +141,27 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
       {/* Policy list */}
       <div className="space-y-4">
         {policies.map((p) => {
-          const typeLabel = insuranceTypes.find(t => t.value === p.insurance_type)?.label ?? p.insurance_type ?? 'Insurance'
-          const primaryValue = p.death_benefit ?? p.coverage_amount ?? 0
+          const typeLabel = pcInsuranceTypes.find(t => t.value === p.insurance_type)?.label ?? p.insurance_type ?? 'Policy'
 
           return (
             <div key={p.id} className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-neutral-900">{p.policy_name || p.provider || 'Insurance Policy'}</h3>
+                    <h3 className="font-semibold text-neutral-900">{p.policy_name || p.provider || 'Policy'}</h3>
                     <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
-                    {p.is_ilit && (
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✓ ILIT</span>
-                    )}
-                    {!p.is_ilit && (p.insurance_type?.includes('life') || p.insurance_type === 'survivorship_life') && (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⚠ Not in ILIT</span>
-                    )}
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-3">
-                    {primaryValue > 0 && (
+                    {p.coverage_amount != null && p.coverage_amount > 0 && (
                       <div>
-                        <p className="text-xs text-neutral-400">{p.death_benefit ? 'Death Benefit' : 'Coverage'}</p>
-                        <p className="text-sm font-semibold text-neutral-800">{fmt(primaryValue)}</p>
+                        <p className="text-xs text-neutral-400">Coverage</p>
+                        <p className="text-sm font-semibold text-neutral-800">{fmt(p.coverage_amount)}</p>
                       </div>
                     )}
-                    {p.cash_value != null && p.cash_value > 0 && (
+                    {p.deductible != null && p.deductible > 0 && (
                       <div>
-                        <p className="text-xs text-neutral-400">Cash Value</p>
-                        <p className="text-sm font-semibold text-neutral-800">{fmt(p.cash_value)}</p>
+                        <p className="text-xs text-neutral-400">Deductible</p>
+                        <p className="text-sm font-semibold text-neutral-800">{fmt(p.deductible)}</p>
                       </div>
                     )}
                     {p.annual_premium != null && p.annual_premium > 0 && (
@@ -196,17 +180,9 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
                 </div>
                 {/* Edit/Delete - top right */}
                 <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={() => openEdit(p)}
-                    className="text-xs text-indigo-600 hover:underline font-medium"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    disabled={deletingId === p.id}
-                    className="text-xs text-red-500 hover:underline font-medium disabled:opacity-50"
-                  >
+                  <button onClick={() => openEdit(p)} className="text-xs text-indigo-600 hover:underline font-medium">Edit</button>
+                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id}
+                    className="text-xs text-red-500 hover:underline font-medium disabled:opacity-50">
                     {deletingId === p.id ? '...' : 'Delete'}
                   </button>
                 </div>
@@ -222,22 +198,20 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-neutral-900">
-                {editing ? 'Edit Policy' : 'Add Insurance Policy'}
+                {editing ? 'Edit Policy' : 'Add P&C Policy'}
               </h2>
               <button onClick={closeModal} className="text-neutral-400 hover:text-neutral-600 text-xl leading-none">×</button>
             </div>
 
             <div className="p-6 space-y-4">
-              {/* Insurance type */}
+              {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Insurance Type <span className="text-red-500">*</span></label>
-                <select
-                  value={form.insurance_type ?? ''}
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Type <span className="text-red-500">*</span></label>
+                <select value={form.insurance_type ?? ''}
                   onChange={e => setForm(f => ({ ...f, insurance_type: e.target.value || null }))}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                >
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                   <option value="">Select type...</option>
-                  {insuranceTypes.map(t => (
+                  {pcInsuranceTypes.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
@@ -247,12 +221,12 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
                   <input type="text" value={form.policy_name ?? ''} onChange={e => setForm(f => ({ ...f, policy_name: e.target.value || null }))}
-                    placeholder="e.g. 20-Year Term" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. Home Policy" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Provider</label>
                   <input type="text" value={form.provider ?? ''} onChange={e => setForm(f => ({ ...f, provider: e.target.value || null }))}
-                    placeholder="e.g. Northwestern Mutual" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. State Farm" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               </div>
 
@@ -262,38 +236,7 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
                   placeholder="Optional" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
 
-              {showTermYears && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Term Length (years)</label>
-                  <input type="number" value={form.term_years ?? ''} onChange={e => setForm(f => ({ ...f, term_years: e.target.value ? Number(e.target.value) : null }))}
-                    placeholder="e.g. 20" min="1" max="40" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-              )}
-
-              {showDeathBenefit && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Death Benefit / Face Value</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
-                    <input type="number" value={form.death_benefit ?? ''} onChange={e => setForm(f => ({ ...f, death_benefit: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
-                  <p className="text-xs text-neutral-400 mt-1">Total amount paid to beneficiaries upon death.</p>
-                </div>
-              )}
-
-              {showCashValue && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Current Cash Value</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
-                    <input type="number" value={form.cash_value ?? ''} onChange={e => setForm(f => ({ ...f, cash_value: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
-                </div>
-              )}
-
-              {!showDeathBenefit && (
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Coverage Amount</label>
                   <div className="relative">
@@ -302,7 +245,15 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
                       placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Deductible</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
+                    <input type="number" value={form.deductible ?? ''} onChange={e => setForm(f => ({ ...f, deductible: e.target.value ? Number(e.target.value) : null }))}
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -324,29 +275,9 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Expiration / Maturity Date</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Renewal / Expiration Date</label>
                 <input type="date" value={form.expiration_date ?? ''} onChange={e => setForm(f => ({ ...f, expiration_date: e.target.value || null }))}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-
-              <div className="border-t border-neutral-100 pt-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="is_employer_provided" checked={form.is_employer_provided ?? false}
-                    onChange={e => setForm(f => ({ ...f, is_employer_provided: e.target.checked }))}
-                    className="h-4 w-4 rounded border-neutral-300 text-indigo-600" />
-                  <label htmlFor="is_employer_provided" className="text-sm text-neutral-700 cursor-pointer">Employer-provided policy</label>
-                </div>
-                {showIlit && (
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" id="is_ilit" checked={form.is_ilit ?? false}
-                      onChange={e => setForm(f => ({ ...f, is_ilit: e.target.checked }))}
-                      className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-indigo-600" />
-                    <div>
-                      <label htmlFor="is_ilit" className="text-sm font-medium text-neutral-700 cursor-pointer">Held in an ILIT</label>
-                      <p className="text-xs text-neutral-400 mt-0.5">If held in an Irrevocable Life Insurance Trust, the death benefit is excluded from your taxable estate.</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div>

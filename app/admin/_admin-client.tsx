@@ -51,6 +51,7 @@ type CategoryTable =
   | 'ref_succession_plans'
   | 'ref_property_types'
   | 'ref_insurance_types'
+  | 'ref_pc_insurance_types'
 
 type TitlingCategory = {
   value: string
@@ -87,6 +88,7 @@ type Props = {
   refSuccessionPlans: CategoryItem[]
   refPropertyTypes: CategoryItem[]
   refInsuranceTypes: CategoryItem[]
+  refPcInsuranceTypes: CategoryItem[]
   titlingCategories: TitlingCategory[]
   termsVersion:  string
   termsSections: { title: string; body: string }[]
@@ -107,6 +109,7 @@ export function AdminClient({
   refSuccessionPlans: initialRefSuccessionPlans,
   refPropertyTypes: initialRefPropertyTypes,
   refInsuranceTypes: initialRefInsuranceTypes,
+  refPcInsuranceTypes: initialRefPcInsuranceTypes,
   titlingCategories: initialTitlingCategories,
   termsVersion,
   termsSections,
@@ -137,6 +140,7 @@ export function AdminClient({
     ref_succession_plans: initialRefSuccessionPlans,
     ref_property_types: initialRefPropertyTypes,
     ref_insurance_types: initialRefInsuranceTypes,
+    ref_pc_insurance_types: initialRefPcInsuranceTypes,
   })
   const [savingCategory, setSavingCategory] = useState<string | null>(null)
   const [savedCategory, setSavedCategory] = useState<string | null>(null)
@@ -331,6 +335,7 @@ export function AdminClient({
         { table: 'ref_succession_plans', label: 'Succession Plans', description: 'Business succession plan options' },
         { table: 'ref_property_types', label: 'Property Types', description: 'Real estate property type options shown in the real estate form.' },
         { table: 'ref_insurance_types', label: 'Insurance Types', description: 'Insurance policy type options shown in the insurance form.' },
+        { table: 'ref_pc_insurance_types', label: 'P&C Insurance Types', description: 'Property and casualty insurance type options.' },
       ],
     },
   ]

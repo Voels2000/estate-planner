@@ -12,6 +12,12 @@ export interface InsuranceTypeOption extends RefOption {
   has_ilit_option: boolean
 }
 
+export interface PCInsuranceTypeOption {
+  value: string
+  label: string
+  description?: string | null
+}
+
 export async function fetchTitlingTypes(): Promise<RefOption[]> {
   const supabase = await createClient()
   const { data } = await supabase
@@ -90,6 +96,16 @@ export async function fetchInsuranceTypes(): Promise<InsuranceTypeOption[]> {
     .eq('is_active', true)
     .order('sort_order')
   return (data ?? []) as InsuranceTypeOption[]
+}
+
+export async function fetchPCInsuranceTypes(): Promise<PCInsuranceTypeOption[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('ref_pc_insurance_types')
+    .select('value, label, description')
+    .eq('is_active', true)
+    .order('sort_order')
+  return data ?? []
 }
 
 export async function fetchAllRefData() {
