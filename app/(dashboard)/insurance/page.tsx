@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { fetchInsuranceTypes } from '@/lib/ref-data-fetchers'
+import { Suspense } from 'react'
 import InsuranceFormClient from './_insurance-form-client'
 
 export default async function InsurancePage() {
@@ -18,9 +19,11 @@ export default async function InsurancePage() {
   ])
 
   return (
-    <InsuranceFormClient
-      policies={policies ?? []}
-      insuranceTypes={insuranceTypes}
-    />
+    <Suspense fallback={<div className="p-8 text-neutral-400">Loading...</div>}>
+      <InsuranceFormClient
+        policies={policies ?? []}
+        insuranceTypes={insuranceTypes}
+      />
+    </Suspense>
   )
 }

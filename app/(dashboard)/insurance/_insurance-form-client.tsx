@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { RefSelect, CurrencyInput, ToggleField } from '@/components/ui/RefSelect'
 import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 
@@ -38,11 +38,15 @@ export default function InsuranceFormClient({
   policies,
   insuranceTypes,
 }: InsuranceFormClientProps) {
+  const [mounted, setMounted] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<InsurancePolicy | null>(null)
   const [saving, setSaving] = useState(false)
   const [selectedType, setSelectedType] = useState<string>('')
   const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
 
   const selectedTypeData = insuranceTypes.find(t => t.value === selectedType)
   const showDeathBenefit = selectedTypeData?.has_death_benefit ?? false
