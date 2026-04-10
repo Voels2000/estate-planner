@@ -116,14 +116,15 @@ export default async function BillingPage() {
 
   const isActive = profile?.subscription_status === 'active'
 
-  let isAdvisorClient = false
+  const isAdvisorManagedPlan = profile?.subscription_status === 'advisor_managed'
+
   const { data: clientRow } = await supabase
     .from('advisor_clients')
     .select('id')
     .eq('client_id', access.user.id)
-    .eq('status', 'active')
+    .in('status', ['active', 'accepted'])
     .maybeSingle()
-  isAdvisorClient = !!clientRow
+  const isAdvisorClient = isAdvisorManagedPlan || !!clientRow
 
   const priceIdsToShow = isActive
     ? CONSUMER_PRICE_IDS

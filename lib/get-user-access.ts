@@ -31,6 +31,7 @@ export async function getUserAccess(): Promise<UserAccess> {
   const subscriptionStatus = profile?.subscription_status ?? null
   const isTrial = subscriptionStatus === 'trialing'
   const isActive = subscriptionStatus === 'active' || isTrial
+  const isAdvisorManaged = subscriptionStatus === 'advisor_managed'
 
   let isAdvisorClient = false
   if (!isAdvisor) {
@@ -38,12 +39,12 @@ export async function getUserAccess(): Promise<UserAccess> {
       .from('advisor_clients')
       .select('id')
       .eq('client_id', user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'accepted'])
       .maybeSingle()
     isAdvisorClient = !!clientRow
   }
 
-  if (isAdvisor || isAdvisorClient) {
+  if (isAdvisor || isAdvisorClient || isAdvisorManaged) {
     return { tier: 3, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
   }
 

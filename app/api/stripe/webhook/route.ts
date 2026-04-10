@@ -181,6 +181,19 @@ export async function POST(req: NextRequest) {
           break
         }
         const customerId = subscription.customer as string
+        const { data: managedRows } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .eq('subscription_status', 'advisor_managed')
+          .limit(1)
+        if (managedRows?.length) {
+          console.log(
+            'Skipping consumer subscription update — advisor_managed:',
+            customerId,
+          )
+          break
+        }
         const renewalIso = new Date(
           subscription.current_period_end * 1000
         ).toISOString()

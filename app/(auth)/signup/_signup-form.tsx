@@ -14,13 +14,16 @@ export function SignupForm() {
   const [fullName, setFullName] = useState('')
   const inviteEmail = searchParams.get('email') || ''
   const advisorInviteToken = searchParams.get('invite') || ''
+  const hasAdvisorInvite = advisorInviteToken !== ''
   const firmInviteToken = searchParams.get('invite_token')?.trim() ?? ''
   const firmIdParam = searchParams.get('firm_id')?.trim() ?? ''
   const hasFirmInvite = firmInviteToken !== '' && firmIdParam !== ''
 
   const [email, setEmail] = useState(inviteEmail)
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<Role>(hasFirmInvite ? 'advisor' : 'consumer')
+  const [role, setRole] = useState<Role>(
+    hasFirmInvite && !hasAdvisorInvite ? 'advisor' : 'consumer',
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +42,7 @@ export function SignupForm() {
 
     try {
       const supabase = createClient()
+      const effectiveRole: Role = hasAdvisorInvite ? 'consumer' : role
 
       const callbackUrl =
         typeof window !== 'undefined'
@@ -53,7 +57,7 @@ export function SignupForm() {
         email,
         password,
         options: {
-          data: { full_name: fullName, role },
+          data: { full_name: fullName, role: effectiveRole },
           emailRedirectTo: callbackUrl,
         },
       })
@@ -70,7 +74,7 @@ export function SignupForm() {
         return
       }
 
-      if (role === 'advisor' && data.user && !hasFirmInvite) {
+      if (effectiveRole === 'advisor' && data.user && !hasFirmInvite) {
         try {
           const { data: profile } = await supabase
             .from('profiles')
@@ -155,15 +159,15 @@ export function SignupForm() {
 
       // Route based on role after signup.
       setIsDone(true)
-      if (role === 'advisor' && hasFirmInvite) {
+      if (effectiveRole === 'advisor' && hasFirmInvite) {
         router.push('/advisor')
-      } else if (role === 'advisor') {
+      } else if (effectiveRole === 'advisor') {
         router.push('/billing')
-      } else if (role === 'attorney') {
+      } else if (effectiveRole === 'attorney') {
         router.push('/attorney')
       } else {
         // New consumers always go to /profile first to set up household.
-        // redirectTo is only used for returning users coming via login.
+        // Advisor-invited clients skip /billing (advisor_managed after link-pending).
         router.push('/profile')
       }
       router.refresh()
@@ -195,6 +199,13 @@ export function SignupForm() {
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Get started with your estate planning workspace.
         </p>
+
+        {hasAdvisorInvite && (
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
+            👋 Your financial advisor has invited you to MyWealthMaps. Create your account to get
+            started — no subscription required.
+          </div>
+        )}
 
         {hasFirmInvite && (
           <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-200">
@@ -251,43 +262,49 @@ export function SignupForm() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <p className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">Role</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  ['consumer', 'Consumer', 'Manage your own estate planning.'],
-                  // FIX: value is now 'advisor' — matches canonical role in profiles table
-                  ['advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
-                  ['attorney', 'Attorney', 'Review and support client estate documents.'],
-                ] as const
-              ).map(([val, label, desc]) => {
-                const locked = hasFirmInvite
-                const isSelected = role === val
-                const isDisabled = locked && val !== 'advisor'
-                return (
-                  <button
-                    key={val}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => {
-                      if (!locked) setRole(val)
-                    }}
-                    className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition ${
-                      isDisabled ? 'cursor-not-allowed opacity-50' : ''
-                    } ${
-                      isSelected
-                        ? 'border-zinc-900 bg-zinc-900 text-zinc-50 dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                        : 'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
-                    }`}
-                  >
-                    <span className="font-medium">{label}</span>
-                    <span className="mt-0.5 text-xs opacity-70">{desc}</span>
-                  </button>
-                )
-              })}
+          {hasAdvisorInvite ? (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              You&apos;re signing up as a client. Your advisor will manage your access.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              <p className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">Role</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ['consumer', 'Consumer', 'Manage your own estate planning.'],
+                    // FIX: value is now 'advisor' — matches canonical role in profiles table
+                    ['advisor', 'Financial Advisor', 'Support clients with their estate plans.'],
+                    ['attorney', 'Attorney', 'Review and support client estate documents.'],
+                  ] as const
+                ).map(([val, label, desc]) => {
+                  const locked = hasFirmInvite
+                  const isSelected = role === val
+                  const isDisabled = locked && val !== 'advisor'
+                  return (
+                    <button
+                      key={val}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => {
+                        if (!locked) setRole(val)
+                      }}
+                      className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition ${
+                        isDisabled ? 'cursor-not-allowed opacity-50' : ''
+                      } ${
+                        isSelected
+                          ? 'border-zinc-900 bg-zinc-900 text-zinc-50 dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
+                          : 'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
+                      }`}
+                    >
+                      <span className="font-medium">{label}</span>
+                      <span className="mt-0.5 text-xs opacity-70">{desc}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 

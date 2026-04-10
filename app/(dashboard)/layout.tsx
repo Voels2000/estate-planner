@@ -93,6 +93,8 @@ export default async function DashboardLayout({
 
   const isAdminResolved = profileFull?.role === 'admin' || profileFull?.is_admin === true
   const isActive = profileFull?.subscription_status === 'active'
+  const isAdvisorManagedProfile =
+    profileFull?.subscription_status === 'advisor_managed'
 
   // Check trial status
   const trialStarted = profileFull?.trial_started_at
@@ -121,7 +123,7 @@ export default async function DashboardLayout({
       .from('advisor_clients')
       .select('id')
       .eq('client_id', sessionUser.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'accepted'])
       .maybeSingle()
     isAdvisorClient = !!clientRow
   }
@@ -130,6 +132,7 @@ export default async function DashboardLayout({
     isAdminResolved ||
     isAdvisorResolved ||
     isAdvisorClient ||
+    isAdvisorManagedProfile ||
     isActive ||
     trialActive ||
     isAttorneyResolved
@@ -140,7 +143,7 @@ export default async function DashboardLayout({
   // Get user tier for sidebar gating
   const access = {
     tier:
-      isAdvisorResolved || isAdvisorClient
+      isAdvisorResolved || isAdvisorClient || isAdvisorManagedProfile
         ? 3
         : isAdminResolved
           ? 3
@@ -150,6 +153,7 @@ export default async function DashboardLayout({
     !isAdminResolved &&
     !isAdvisorResolved &&
     !isAdvisorClient &&
+    !isAdvisorManagedProfile &&
     !isActive &&
     trialActive
 

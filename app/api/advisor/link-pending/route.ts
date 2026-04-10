@@ -28,28 +28,68 @@ export async function POST() {
       return NextResponse.json({ linked: false, reason: 'expired' })
     }
 
-    // Link the new user to their advisor
-    const { error } = await supabase
+    const admin = createAdminClient()
+
+    const { data: consumerProfile, error: profileFetchError } = await admin
+      .from('profiles')
+      .select('consumer_tier, subscription_period_end, role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileFetchError) {
+      console.error('Link-pending profile fetch:', profileFetchError)
+      return NextResponse.json({ error: 'Failed to load profile' }, { status: 500 })
+    }
+
+    const previousTier = consumerProfile?.consumer_tier ?? 1
+    const cancelAt = consumerProfile?.subscription_period_end ?? null
+
+    const { error: linkError } = await admin
       .from('advisor_clients')
       .update({
         client_id: user.id,
         status: 'accepted',
-        accepted_at: new Date().toISOString()
+        accepted_at: new Date().toISOString(),
+        billing_transferred: true,
+        billing_transferred_at: new Date().toISOString(),
+        previous_consumer_tier: previousTier,
+        consumer_subscription_cancel_at: cancelAt,
       })
       .eq('id', invite.id)
 
-    if (error) {
-      console.error('Link error:', error)
+    if (linkError) {
+      console.error('Link error:', linkError)
       return NextResponse.json({ error: 'Failed to link invite' }, { status: 500 })
+    }
+
+    const isConsumerInvitee =
+      consumerProfile?.role === 'consumer' || consumerProfile?.role == null
+
+    if (isConsumerInvitee) {
+      const { error: profileUpdateError } = await admin
+        .from('profiles')
+        .update({
+          subscription_status: 'advisor_managed',
+          subscription_plan: 'advisor_managed',
+        })
+        .eq('id', user.id)
+
+      if (profileUpdateError) {
+        console.error('Link-pending profile update:', profileUpdateError)
+        return NextResponse.json(
+          { error: 'Failed to update subscription state' },
+          { status: 500 },
+        )
+      }
     }
 
     const advisorId = invite.advisor_id
     const clientId = user.id
     after(() => {
-      const admin = createAdminClient()
+      const adminAfter = createAdminClient()
       ;(async () => {
         try {
-          await admin.rpc('create_notification', {
+          await adminAfter.rpc('create_notification', {
             p_user_id: advisorId,
             p_type: 'client_accepted_invite',
             p_title: 'A client accepted your invitation',

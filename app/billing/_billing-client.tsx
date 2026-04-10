@@ -85,9 +85,9 @@ export function BillingClient({
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
         <div className="mb-4 text-4xl">🎉</div>
-        <h1 className="text-2xl font-bold text-neutral-900">You're all set</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">You&apos;re all set</h1>
         <p className="mt-3 text-neutral-600">
-          Your access to Estate Planner is managed by your advisor. There's nothing to do here.
+          Your plan is managed by your advisor. There&apos;s nothing to do here.
         </p>
         <a href="/dashboard" className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
           ← Back to Dashboard
