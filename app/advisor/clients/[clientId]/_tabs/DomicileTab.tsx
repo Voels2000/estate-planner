@@ -62,13 +62,14 @@ export default function DomicileTab({
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
 
   const grossEstateForStateTax =
-    (projectionRowsDomicile.length > 0 ? projectionRowsDomicile[0]?.gross_estate : undefined) ??
+    (projectionRowsDomicile.length > 0
+      ? (projectionRowsDomicile[0]?.estate_incl_home ?? projectionRowsDomicile[0]?.gross_estate)
+      : undefined) ??
     (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
-    (typeof household?.gross_estate === 'number' ? household.gross_estate : undefined) ??
     0
 
   const grossEstateByYear = Object.fromEntries(
-    projectionRowsDomicile.map((r) => [r.year, r.gross_estate]),
+    projectionRowsDomicile.map((r) => [r.year, r.estate_incl_home ?? r.gross_estate ?? 0]),
   )
 
   const factors = [

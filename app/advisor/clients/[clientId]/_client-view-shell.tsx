@@ -216,7 +216,7 @@ export interface ClientViewShellProps {
     liquidityShortfall: boolean
     scenarioHistory: ScenarioVersion[]
   }
-  projectionRowsDomicile?: Array<{ year: number; gross_estate: number }>
+  projectionRowsDomicile?: Array<{ year: number; gross_estate: number; estate_incl_home?: number }>
   beneficiaryGrants?: BeneficiaryAccessGrant[]
   domicileAnalysis: any | null
   domicileSchedule: DomicileScheduleRow[] | null
