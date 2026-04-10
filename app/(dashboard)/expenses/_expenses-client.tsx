@@ -34,6 +34,8 @@ type ExpensesClientProps = {
   person2Name: string
 }
 
+const STORAGE_KEY = 'ep_expenses_groups'
+
 export default function ExpensesClient({
   initialExpenses,
   expenseTypes,
@@ -45,7 +47,14 @@ export default function ExpensesClient({
   const [showModal, setShowModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
   const [error, setError] = useState<string | null>(null)
 
   const totalAnnual = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
@@ -101,9 +110,20 @@ export default function ExpensesClient({
   })
 
   useEffect(() => {
-    const allOpen: Record<string, boolean> = {}
-    groupKeys.forEach((k) => { allOpen[k] = true })
-    setOpenGroups(allOpen)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups))
+    } catch {}
+  }, [openGroups])
+
+  useEffect(() => {
+    const hasSaved = (() => {
+      try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
+    })()
+    if (!hasSaved && expenses.length > 0) {
+      const allOpen: Record<string, boolean> = {}
+      groupKeys.forEach((k) => { allOpen[k] = true })
+      setOpenGroups(allOpen)
+    }
   }, [expenses.length])
 
   return (

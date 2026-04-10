@@ -18,6 +18,8 @@ type Liability = {
   updated_at: string
 }
 
+const STORAGE_KEY = 'ep_liabilities_groups'
+
 export default function LiabilitiesPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
@@ -27,7 +29,14 @@ export default function LiabilitiesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editLiability, setEditLiability] = useState<Liability | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
   const [error, setError] = useState<string | null>(null)
 
   const totalBalance = liabilities.reduce((sum, l) => sum + Number(l.balance), 0)
@@ -80,9 +89,20 @@ export default function LiabilitiesPage() {
   })
 
   useEffect(() => {
-    const allOpen: Record<string, boolean> = {}
-    groupKeys.forEach((k) => { allOpen[k] = true })
-    setOpenGroups(allOpen)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups))
+    } catch {}
+  }, [openGroups])
+
+  useEffect(() => {
+    const hasSaved = (() => {
+      try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
+    })()
+    if (!hasSaved && liabilities.length > 0) {
+      const allOpen: Record<string, boolean> = {}
+      groupKeys.forEach((k) => { allOpen[k] = true })
+      setOpenGroups(allOpen)
+    }
   }, [liabilities.length])
 
   if (isLoading) {

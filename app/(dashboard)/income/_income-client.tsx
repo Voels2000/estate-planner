@@ -29,6 +29,8 @@ type Props = {
   incomeTypes: IncomeType[]
 }
 
+const STORAGE_KEY = 'ep_income_groups'
+
 const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
 function sourceLabel(value: string, types: IncomeType[]) {
@@ -47,7 +49,14 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   const [editRow, setEditRow]                 = useState<IncomeRow | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [error, setError]                     = useState<string | null>(null)
-  const [openGroups, setOpenGroups]           = useState<Record<string, boolean>>({})
+  const [openGroups, setOpenGroups]           = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
 
   const totalAnnual = income.reduce((sum, i) => sum + Number(i.amount), 0)
 
@@ -77,9 +86,20 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   })
 
   useEffect(() => {
-    const allOpen: Record<string, boolean> = {}
-    groupKeys.forEach((k) => { allOpen[k] = true })
-    setOpenGroups(allOpen)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups))
+    } catch {}
+  }, [openGroups])
+
+  useEffect(() => {
+    const hasSaved = (() => {
+      try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
+    })()
+    if (!hasSaved && income.length > 0) {
+      const allOpen: Record<string, boolean> = {}
+      groupKeys.forEach((k) => { allOpen[k] = true })
+      setOpenGroups(allOpen)
+    }
   }, [income.length])
 
   async function handleDelete(id: string) {

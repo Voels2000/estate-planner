@@ -44,6 +44,8 @@ type Asset = {
   is_ilit?: boolean | null
 }
 
+const STORAGE_KEY = 'ep_assets_groups'
+
 export default function AssetsPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
@@ -55,7 +57,14 @@ export default function AssetsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editAsset, setEditAsset] = useState<Asset | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
   const [error, setError] = useState<string | null>(null)
 
   const totalValue = assets.reduce((sum, a) => sum + Number(a.value), 0)
@@ -117,9 +126,20 @@ export default function AssetsPage() {
   })
 
   useEffect(() => {
-    const allOpen: Record<string, boolean> = {}
-    groupKeys.forEach((k) => { allOpen[k] = true })
-    setOpenGroups(allOpen)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups))
+    } catch {}
+  }, [openGroups])
+
+  useEffect(() => {
+    const hasSaved = (() => {
+      try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
+    })()
+    if (!hasSaved && assets.length > 0) {
+      const allOpen: Record<string, boolean> = {}
+      groupKeys.forEach((k) => { allOpen[k] = true })
+      setOpenGroups(allOpen)
+    }
   }, [assets.length])
 
   if (isLoading) {
