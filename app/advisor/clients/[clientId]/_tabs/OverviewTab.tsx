@@ -257,17 +257,33 @@ function formatFilingStatus(status: string | null) {
 function groupAssets(assets: any[], realEstate: any[]) {
   const groups: { label: string; value: number; color: string }[] = []
 
-  const retirement = assets.filter(a => ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(a.account_type?.toLowerCase() ?? '')).reduce((s, a) => s + (a.value ?? 0), 0)
-  const brokerage = assets.filter(a => ['brokerage','taxable'].includes(a.account_type?.toLowerCase() ?? '')).reduce((s, a) => s + (a.value ?? 0), 0)
-  const cash = assets.filter(a => ['checking','savings','money_market','cd'].includes(a.account_type?.toLowerCase() ?? '')).reduce((s, a) => s + (a.value ?? 0), 0)
-  const other = assets.filter(a => !['401k','ira','roth_ira','sep_ira','403b','457','pension','brokerage','taxable','checking','savings','money_market','cd'].includes(a.account_type?.toLowerCase() ?? '')).reduce((s, a) => s + (a.value ?? 0), 0)
+  const RETIREMENT_TYPES = ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension', 'retirement_account']
+  const BROKERAGE_TYPES  = ['brokerage', 'taxable']
+  const CASH_TYPES       = ['checking', 'savings', 'money_market', 'cd', 'cash']
+  const INSURANCE_TYPES  = ['life_insurance', 'annuity']
+  const EDUCATION_TYPES  = ['education_savings', '529']
+
+  const getType = (a: any) => (a.type ?? a.account_type ?? '').toLowerCase()
+
+  const retirement  = assets.filter(a => RETIREMENT_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
+  const brokerage   = assets.filter(a => BROKERAGE_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
+  const cash        = assets.filter(a => CASH_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
+  const insurance   = assets.filter(a => INSURANCE_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
+  const education   = assets.filter(a => EDUCATION_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
+  const other       = assets.filter(a => {
+    const t = getType(a)
+    return ![...RETIREMENT_TYPES, ...BROKERAGE_TYPES, ...CASH_TYPES, ...INSURANCE_TYPES, ...EDUCATION_TYPES].includes(t)
+  }).reduce((s, a) => s + (a.value ?? 0), 0)
+
   const reValue = realEstate.reduce((s, r) => s + (r.current_value ?? 0), 0)
 
-  if (reValue > 0)     groups.push({ label: 'Real Estate',      value: reValue,    color: 'bg-teal-500' })
-  if (retirement > 0)  groups.push({ label: 'Retirement Accts', value: retirement, color: 'bg-indigo-500' })
-  if (brokerage > 0)   groups.push({ label: 'Brokerage',        value: brokerage,  color: 'bg-violet-400' })
-  if (cash > 0)        groups.push({ label: 'Cash & Equiv.',    value: cash,       color: 'bg-emerald-400' })
-  if (other > 0)       groups.push({ label: 'Other Assets',     value: other,      color: 'bg-slate-400' })
+  if (reValue > 0)    groups.push({ label: 'Real Estate',      value: reValue,   color: 'bg-teal-500' })
+  if (retirement > 0) groups.push({ label: 'Retirement Accts', value: retirement, color: 'bg-indigo-500' })
+  if (brokerage > 0)  groups.push({ label: 'Brokerage',        value: brokerage,  color: 'bg-violet-400' })
+  if (cash > 0)       groups.push({ label: 'Cash & Equiv.',    value: cash,       color: 'bg-emerald-400' })
+  if (insurance > 0)  groups.push({ label: 'Life Insurance',   value: insurance,  color: 'bg-rose-400' })
+  if (education > 0)  groups.push({ label: 'Education (529)',  value: education,  color: 'bg-amber-400' })
+  if (other > 0)      groups.push({ label: 'Other Assets',     value: other,      color: 'bg-slate-400' })
 
   return groups.sort((a, b) => b.value - a.value)
 }
