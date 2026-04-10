@@ -262,120 +262,110 @@ export default function RealEstateClient({
           <p className="text-xs text-neutral-400 mt-1">Add your first property to track equity and sale plans</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {[
-                  'Name',
-                  'Type',
-                  'Value',
-                  'Mortgage',
-                  'Equity',
-                  'Sec. 121 Excl.',
-                  'Est. Taxable Gain',
-                  'Sale year',
-                  'Owner',
-                  '',
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {rows.map((row) => {
-                const excl = section121Exclusion(row, filingStatus)
-                const gain = taxableGain(row, filingStatus)
-                return (
-                  <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">
-                      <div className="min-w-0 truncate">{row.name}</div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">
-                      {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
-                      {formatDollars(num(row.current_value))}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">
-                      {formatDollars(num(row.mortgage_balance))}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-neutral-900 whitespace-nowrap">
-                      {formatDollars(equity(row))}
-                    </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                      {excl > 0 ? (
-                        <span className="text-green-600 font-medium">{formatDollars(excl)}</span>
-                      ) : (
-                        <span className="text-neutral-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                      {row.purchase_price != null ? (
-                        gain > 0 ? (
-                          <span className="text-amber-600 font-medium">{formatDollars(gain)}</span>
+        <div className="space-y-3">
+          {rows.map((row) => {
+            const excl = section121Exclusion(row, filingStatus)
+            const gain = taxableGain(row, filingStatus)
+            return (
+              <div key={row.id} className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-neutral-900 truncate">{row.name}</h3>
+                      <span className="text-xs text-neutral-500">
+                        {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Value:</span>{' '}
+                        <span className="font-medium text-neutral-900">{formatDollars(num(row.current_value))}</span>
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Mortgage:</span>{' '}
+                        <span className="font-medium text-neutral-900">{formatDollars(num(row.mortgage_balance))}</span>
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Equity:</span>{' '}
+                        <span className="font-medium text-neutral-900">{formatDollars(equity(row))}</span>
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Sec. 121 Excl.:</span>{' '}
+                        {excl > 0 ? (
+                          <span className="font-medium text-green-600">{formatDollars(excl)}</span>
                         ) : (
-                          <span className="text-green-600 font-medium">$0 (fully excluded)</span>
-                        )
-                      ) : (
-                        <span className="text-neutral-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">
-                      {row.planned_sale_year != null ? row.planned_sale_year : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{ownerLabel(row.owner ?? 'person1')}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {confirmDeleteId === row.id ? (
-                        <span className="inline-flex shrink-0 items-center gap-2 text-sm">
-                          <span className="text-neutral-500">Delete?</span>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(row.id)}
-                            className="text-red-600 font-medium hover:text-red-800"
-                          >
-                            Yes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="text-neutral-400 hover:text-neutral-600"
-                          >
-                            No
-                          </button>
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Est. Taxable Gain:</span>{' '}
+                        {row.purchase_price != null ? (
+                          gain > 0 ? (
+                            <span className="font-medium text-amber-600">{formatDollars(gain)}</span>
+                          ) : (
+                            <span className="font-medium text-green-600">$0 (fully excluded)</span>
+                          )
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Sale year:</span>{' '}
+                        <span className="font-medium text-neutral-900">
+                          {row.planned_sale_year != null ? row.planned_sale_year : '—'}
                         </span>
-                      ) : (
-                        <span className="inline-flex shrink-0 items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditRow(row)
-                              setShowModal(true)
-                            }}
-                            className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteId(row.id)}
-                            className="text-sm text-red-500 font-medium hover:text-red-700"
-                          >
-                            Delete
-                          </button>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        <span className="text-neutral-500">Owner:</span>{' '}
+                        <span className="font-medium text-neutral-900">{ownerLabel(row.owner ?? 'person1')}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-3 pt-3 border-t border-neutral-100">
+                  {confirmDeleteId === row.id ? (
+                    <>
+                      <span className="text-xs text-neutral-500 font-medium">Delete?</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(row.id)}
+                        className="text-xs text-red-600 hover:underline font-medium"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-xs text-neutral-500 hover:underline font-medium"
+                      >
+                        No
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditRow(row)
+                          setShowModal(true)
+                        }}
+                        className="text-xs text-indigo-600 hover:underline font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(row.id)}
+                        className="text-xs text-red-500 hover:underline font-medium"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
