@@ -38,6 +38,15 @@ function isGrandchildRelationship(rel: string): boolean {
   return /grand|grandchild|grandson|granddaughter/.test(r)
 }
 
+/** Lowercase relationship values that show GST / skip-generation options (matches DB free text case-insensitively). */
+const GST_SKIP_RELATIONSHIPS = ['grandchild'] as const
+
+function showGstOptionForRelationship(rel: string): boolean {
+  const normalized = rel.trim().toLowerCase()
+  if ((GST_SKIP_RELATIONSHIPS as readonly string[]).includes(normalized)) return true
+  return isGrandchildRelationship(rel)
+}
+
 type Props = {
   householdId: string
   person1Name: string | null
@@ -69,6 +78,7 @@ export default function MyFamilyClient({
   const [notes, setNotes] = useState('')
 
   const relationshipEffective = relationship === 'Custom' ? relationshipCustom.trim() : relationship
+  const showGstOption = showGstOptionForRelationship(relationshipEffective)
 
   const grouped = useMemo(() => {
     const map: Record<FamilyGroup, HouseholdPersonRow[]> = {
@@ -199,7 +209,11 @@ export default function MyFamilyClient({
           </p>
           {ownerNames.length > 0 && (
             <p className="mt-2 text-xs text-neutral-500">
-              Household: {ownerNames.join(' · ')} (not listed here — edit Profile if needed)
+              Household: {ownerNames.join(' · ')} (not listed here —{' '}
+              <a href="/profile" className="text-xs text-indigo-600 hover:underline">
+                Edit in Profile →
+              </a>
+              )
             </p>
           )}
         </div>
@@ -230,7 +244,9 @@ export default function MyFamilyClient({
                       <p className="font-medium text-neutral-900">{row.full_name}</p>
                       <p className="text-sm text-neutral-600">
                         {row.relationship}
-                        {row.is_gst_skip ? ' · GST skip' : ''}
+                        {row.is_gst_skip
+                          ? ' · Grandchild or younger generation (affects inheritance tax)'
+                          : ''}
                         {!row.is_beneficiary ? ' · Not in flow as beneficiary' : ''}
                       </p>
                       {row.date_of_birth && (
@@ -335,14 +351,23 @@ export default function MyFamilyClient({
                 />
                 Include as beneficiary in estate flow
               </label>
-              {isGrandchildRelationship(relationshipEffective) && (
+              {showGstOption && (
+                <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-900">
+                  <p>
+                    This person is two or more generations below you — a grandchild, great-grandchild, or
+                    similar. This affects how gifts and inheritance are taxed. Your advisor can explain the
+                    implications.
+                  </p>
+                </div>
+              )}
+              {showGstOption && (
                 <label className="flex items-center gap-2 text-sm text-neutral-800">
                   <input
                     type="checkbox"
                     checked={isGstSkip}
                     onChange={e => setIsGstSkip(e.target.checked)}
                   />
-                  GST skip person (suggested for grandchildren)
+                  Grandchild or younger generation (affects inheritance tax)
                 </label>
               )}
               <div>
