@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -45,6 +45,7 @@ export default function ExpensesClient({
   const [showModal, setShowModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
   const totalAnnual = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
@@ -82,6 +83,29 @@ export default function ExpensesClient({
     return person1Name
   }
 
+  function categoryLabel(value: string) {
+    return expenseTypes.find((t) => t.value === value)?.label ?? value
+  }
+
+  const grouped = expenses.reduce<Record<string, Expense[]>>((acc, expense) => {
+    const key = expense.category || 'other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(expense)
+    return acc
+  }, {})
+
+  const groupKeys = Object.keys(grouped).sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b)))
+
+  groupKeys.forEach((key) => {
+    grouped[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+  })
+
+  useEffect(() => {
+    const allOpen: Record<string, boolean> = {}
+    groupKeys.forEach((k) => { allOpen[k] = true })
+    setOpenGroups(allOpen)
+  }, [expenses.length])
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -111,77 +135,97 @@ export default function ExpensesClient({
           <p className="text-xs text-neutral-400 mt-1">Add your first expense to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name / Category', 'Type', 'Owner', 'Annual Amount', 'Start → End', 'Inflation Adj.', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {expenses.map((expense) => (
-                <tr key={expense.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(expense)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {expenseTypes.find((t) => t.value === expense.category)?.label ?? expense.category}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(expense)}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
-                    {formatDollars(Number(expense.amount))}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap">
-                    {expense.start_year ?? '—'} → {expense.end_year ? expense.end_year : 'Ongoing'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {expense.inflation_adjust ? '✓' : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {confirmDeleteId === expense.id ? (
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className="text-neutral-500">Delete?</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(expense.id)}
-                          className="text-red-600 font-medium hover:text-red-800"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="text-neutral-400 hover:text-neutral-600"
-                        >
-                          No
-                        </button>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => { setEditExpense(expense); setShowModal(true) }}
-                          className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(expense.id)}
-                          className="text-sm text-red-500 font-medium hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {groupKeys.map((groupKey) => {
+            const groupItems = grouped[groupKey]
+            const groupLabel = categoryLabel(groupKey)
+            const groupTotal = groupItems.reduce((s, item) => s + Number(item.amount), 0)
+            const isOpen = openGroups[groupKey] ?? true
+
+            return (
+              <div key={groupKey} className="mb-4">
+                <button
+                  onClick={() => setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-neutral-100 transition mb-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                    <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
+                      {groupItems.length}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-900">{formatDollars(groupTotal)}</span>
+                </button>
+
+                {isOpen && (
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto">
+                    <table className="min-w-full divide-y divide-neutral-100">
+                      <tbody className="divide-y divide-neutral-100">
+                        {groupItems.map((expense) => (
+                          <tr key={expense.id} className="group hover:bg-neutral-50 transition-colors">
+                            <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(expense)}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {categoryLabel(expense.category)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(expense)}</td>
+                            <td className="px-4 py-3 text-sm font-semibold text-neutral-900 whitespace-nowrap">
+                              {formatDollars(Number(expense.amount))}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap">
+                              {expense.start_year ?? '—'} → {expense.end_year ? expense.end_year : 'Ongoing'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {expense.inflation_adjust ? '✓' : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              {confirmDeleteId === expense.id ? (
+                                <span className="inline-flex items-center gap-2 text-sm">
+                                  <span className="text-neutral-500">Delete?</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(expense.id)}
+                                    className="text-red-600 font-medium hover:text-red-800"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="text-neutral-400 hover:text-neutral-600"
+                                  >
+                                    No
+                                  </button>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditExpense(expense); setShowModal(true) }}
+                                    className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(expense.id)}
+                                    className="text-sm text-red-500 font-medium hover:text-red-700"
+                                  >
+                                    Delete
+                                  </button>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </>
       )}
 
       {showModal && (

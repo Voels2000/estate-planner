@@ -27,6 +27,7 @@ export default function LiabilitiesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editLiability, setEditLiability] = useState<Liability | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
   const totalBalance = liabilities.reduce((sum, l) => sum + Number(l.balance), 0)
@@ -65,6 +66,25 @@ export default function LiabilitiesPage() {
     return liabilityTypes.find(t => t.value === type)?.label ?? type
   }
 
+  const grouped = liabilities.reduce<Record<string, Liability[]>>((acc, liability) => {
+    const key = liability.type || 'other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(liability)
+    return acc
+  }, {})
+
+  const groupKeys = Object.keys(grouped).sort((a, b) => getTypeLabel(a).localeCompare(getTypeLabel(b)))
+
+  groupKeys.forEach((key) => {
+    grouped[key].sort((a, b) => a.name.localeCompare(b.name))
+  })
+
+  useEffect(() => {
+    const allOpen: Record<string, boolean> = {}
+    groupKeys.forEach((k) => { allOpen[k] = true })
+    setOpenGroups(allOpen)
+  }, [liabilities.length])
+
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>
   }
@@ -102,58 +122,71 @@ export default function LiabilitiesPage() {
           <p className="text-xs text-neutral-400 mt-1">Add mortgages, loans and other debts to complete your net worth</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name', 'Type', 'Owner', 'Balance', 'Interest Rate', 'Monthly Payment', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {liabilities.map(liability => (
-                <tr key={liability.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{liability.name}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(liability.type)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {(liability.owner ?? 'person1') === 'person1' ? person1Name : (liability.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-red-600">{formatDollars(Number(liability.balance))}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {liability.interest_rate ? `${liability.interest_rate}%` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {liability.monthly_payment ? formatDollars(Number(liability.monthly_payment)) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {confirmDeleteId === liability.id ? (
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className="text-neutral-500">Delete?</span>
-                        <button onClick={() => handleDelete(liability.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditLiability(liability); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
-                        <button onClick={() => setConfirmDeleteId(liability.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-neutral-50 border-t-2 border-neutral-200">
-              <tr>
-                <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-neutral-900">Total</td>
-                <td className="px-4 py-3 text-sm font-bold text-red-600">{formatDollars(totalBalance)}</td>
-                <td className="px-4 py-3" />
-                <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(totalMonthly)}</td>
-                <td className="px-4 py-3" />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <>
+          {groupKeys.map((groupKey) => {
+            const groupItems = grouped[groupKey]
+            const groupLabel = getTypeLabel(groupKey)
+            const groupTotal = groupItems.reduce((s, item) => s + Number(item.balance), 0)
+            const isOpen = openGroups[groupKey] ?? true
+
+            return (
+              <div key={groupKey} className="mb-4">
+                <button
+                  onClick={() => setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-neutral-100 transition mb-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                    <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
+                      {groupItems.length}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-red-600">{formatDollars(groupTotal)}</span>
+                </button>
+
+                {isOpen && (
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                    <table className="min-w-full divide-y divide-neutral-100">
+                      <tbody className="divide-y divide-neutral-100">
+                        {groupItems.map((liability) => (
+                          <tr key={liability.id} className="group hover:bg-neutral-50 transition-colors">
+                            <td className="px-4 py-3 text-sm font-medium text-neutral-900">{liability.name}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(liability.type)}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {(liability.owner ?? 'person1') === 'person1' ? person1Name : (liability.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-red-600">{formatDollars(Number(liability.balance))}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {liability.interest_rate ? `${liability.interest_rate}%` : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {liability.monthly_payment ? formatDollars(Number(liability.monthly_payment)) : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {confirmDeleteId === liability.id ? (
+                                <span className="inline-flex items-center gap-2 text-sm">
+                                  <span className="text-neutral-500">Delete?</span>
+                                  <button onClick={() => handleDelete(liability.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
+                                  <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => { setEditLiability(liability); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                                  <button onClick={() => setConfirmDeleteId(liability.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </>
       )}
 
       {showModal && (

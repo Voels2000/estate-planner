@@ -55,6 +55,7 @@ export default function AssetsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editAsset, setEditAsset] = useState<Asset | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
   const totalValue = assets.reduce((sum, a) => sum + Number(a.value), 0)
@@ -102,6 +103,25 @@ export default function AssetsPage() {
     return assetTypes.find((t) => t.value === type)?.label ?? type
   }
 
+  const grouped = assets.reduce<Record<string, Asset[]>>((acc, asset) => {
+    const key = asset.type || 'other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(asset)
+    return acc
+  }, {})
+
+  const groupKeys = Object.keys(grouped).sort((a, b) => getTypeLabel(a).localeCompare(getTypeLabel(b)))
+
+  groupKeys.forEach((key) => {
+    grouped[key].sort((a, b) => a.name.localeCompare(b.name))
+  })
+
+  useEffect(() => {
+    const allOpen: Record<string, boolean> = {}
+    groupKeys.forEach((k) => { allOpen[k] = true })
+    setOpenGroups(allOpen)
+  }, [assets.length])
+
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>
   }
@@ -132,43 +152,63 @@ export default function AssetsPage() {
           <p className="text-xs text-neutral-400 mt-1">Add your first asset to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name', 'Type', 'Owner', 'Value', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {assets.map((asset) => (
-                <tr key={asset.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{asset.name}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(asset.type)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {(asset.owner ?? 'person1') === 'person1' ? person1Name : (asset.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(asset.value))}</td>
-                  <td className="px-4 py-3 text-right">
-                    {confirmDeleteId === asset.id ? (
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className="text-neutral-500">Delete?</span>
-                        <button onClick={() => handleDelete(asset.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditAsset(asset); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
-                        <button onClick={() => setConfirmDeleteId(asset.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        groupKeys.map((groupKey) => {
+          const groupItems = grouped[groupKey]
+          const groupLabel = getTypeLabel(groupKey)
+          const groupTotal = groupItems.reduce((s, item) => s + Number(item.value), 0)
+          const isOpen = openGroups[groupKey] ?? true
+
+          return (
+            <div key={groupKey} className="mb-4">
+              <button
+                onClick={() => setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-neutral-100 transition mb-1"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                  <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                  <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
+                    {groupItems.length}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold text-neutral-900">{formatDollars(groupTotal)}</span>
+              </button>
+
+              {isOpen && (
+                <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                  <table className="min-w-full divide-y divide-neutral-100">
+                    <tbody className="divide-y divide-neutral-100">
+                      {groupItems.map((asset) => (
+                        <tr key={asset.id} className="group hover:bg-neutral-50 transition-colors">
+                          <td className="px-4 py-3 text-sm font-medium text-neutral-900">{asset.name}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(asset.type)}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-500">
+                            {(asset.owner ?? 'person1') === 'person1' ? person1Name : (asset.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(asset.value))}</td>
+                          <td className="px-4 py-3 text-right">
+                            {confirmDeleteId === asset.id ? (
+                              <span className="inline-flex items-center gap-2 text-sm">
+                                <span className="text-neutral-500">Delete?</span>
+                                <button onClick={() => handleDelete(asset.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
+                                <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => { setEditAsset(asset); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                                <button onClick={() => setConfirmDeleteId(asset.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )
+        })
       )}
 
       {showModal && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addIncome, updateIncome, deleteIncome } from './actions'
 
@@ -47,6 +47,7 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   const [editRow, setEditRow]                 = useState<IncomeRow | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [error, setError]                     = useState<string | null>(null)
+  const [openGroups, setOpenGroups]           = useState<Record<string, boolean>>({})
 
   const totalAnnual = income.reduce((sum, i) => sum + Number(i.amount), 0)
 
@@ -61,6 +62,25 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
     if (row.name && row.name.trim()) return row.name.trim()
     return sourceLabel(row.source, incomeTypes)
   }
+
+  const grouped = income.reduce<Record<string, IncomeRow[]>>((acc, row) => {
+    const key = row.source || 'other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(row)
+    return acc
+  }, {})
+
+  const groupKeys = Object.keys(grouped).sort((a, b) => sourceLabel(a, incomeTypes).localeCompare(sourceLabel(b, incomeTypes)))
+
+  groupKeys.forEach((key) => {
+    grouped[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+  })
+
+  useEffect(() => {
+    const allOpen: Record<string, boolean> = {}
+    groupKeys.forEach((k) => { allOpen[k] = true })
+    setOpenGroups(allOpen)
+  }, [income.length])
 
   async function handleDelete(id: string) {
     try {
@@ -106,45 +126,67 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
           <p className="text-xs text-neutral-400 mt-1">Add your first income source to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadowm overflow-hidden">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name / Source', 'Type', 'Owner', 'Annual Amount', 'Start to End', 'Inflation Adj.', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {income.map((row) => (
-                <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(row)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{sourceLabel(row.source, incomeTypes)}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(row)}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(row.amount))}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {row.start_year ?? '—'} to {row.end_year ? row.end_year : 'Ongoing'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{row.inflation_adjust ? '✓' : '—'}</td>
-                  <td className="px-4 py-3 text-right">
-                    {confirmDeleteId === row.id ? (
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span className="text-neutral-500">Delete?</span>
-                        <button onClick={() => handleDelete(row.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
-                  <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(row)} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
-                        <button onClick={() => setConfirmDeleteId(row.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {groupKeys.map((groupKey) => {
+            const groupItems = grouped[groupKey]
+            const groupLabel = sourceLabel(groupKey, incomeTypes)
+            const groupTotal = groupItems.reduce((s, item) => s + Number(item.amount), 0)
+            const isOpen = openGroups[groupKey] ?? true
+
+            return (
+              <div key={groupKey} className="mb-4">
+                <button
+                  onClick={() => setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl hover:bg-neutral-100 transition mb-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                    <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
+                      {groupItems.length}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-900">{formatDollars(groupTotal)}</span>
+                </button>
+
+                {isOpen && (
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                    <table className="min-w-full divide-y divide-neutral-100">
+                      <tbody className="divide-y divide-neutral-100">
+                        {groupItems.map((row) => (
+                          <tr key={row.id} className="group hover:bg-neutral-50 transition-colors">
+                            <td className="px-4 py-3 text-sm font-medium text-neutral-900">{getDisplayName(row)}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">{sourceLabel(row.source, incomeTypes)}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">{getOwnerLabel(row)}</td>
+                            <td className="px-4 py-3 text-sm font-semibold text-neutral-900">{formatDollars(Number(row.amount))}</td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">
+                              {row.start_year ?? '—'} to {row.end_year ? row.end_year : 'Ongoing'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-neutral-500">{row.inflation_adjust ? '✓' : '—'}</td>
+                            <td className="px-4 py-3 text-right">
+                              {confirmDeleteId === row.id ? (
+                                <span className="inline-flex items-center gap-2 text-sm">
+                                  <span className="text-neutral-500">Delete?</span>
+                                  <button onClick={() => handleDelete(row.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
+                                  <button onClick={() => setConfirmDeleteId(null)} className="text-neutral-400 hover:text-neutral-600">No</button>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => openEdit(row)} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                                  <button onClick={() => setConfirmDeleteId(row.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </>
       )}
 
       {modalOpen && (
