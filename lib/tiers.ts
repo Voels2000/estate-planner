@@ -80,6 +80,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   gifting:               3,
   charitable:            3,
   'business-succession': 3,
+  'my-family':           3,
 }
 // Free trial gets tier 2 access
 export const TRIAL_TIER = 2

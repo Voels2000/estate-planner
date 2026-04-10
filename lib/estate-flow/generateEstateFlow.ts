@@ -4,7 +4,7 @@
 // Reads from: assets, real_estate, digital_assets, trusts,
 //             (insurance skipped — no client table in env),
 //             business_interests, asset_beneficiaries, estate_documents,
-//             households, projection_scenarios
+//             households, projection_scenarios, household_people
 
 import { createClient } from '@/lib/supabase/client'
 
@@ -146,6 +146,16 @@ interface RawBeneficiary {
   incentive_conditions: string | null
 }
 
+interface RawHouseholdPerson {
+  id: string
+  full_name: string
+  relationship: string
+  date_of_birth: string | null
+  is_gst_skip: boolean
+  is_beneficiary: boolean
+  notes: string | null
+}
+
 interface RawEstateDocs {
   doc_type: string
   status: string
@@ -206,6 +216,7 @@ export async function generateEstateFlow(
     insuranceRes,
     businessRes,
     beneficiariesRes,
+    householdPeopleRes,
     estateDocsRes,
     scenarioMetaRes,
     scenarioS2Res,
@@ -218,6 +229,11 @@ export async function generateEstateFlow(
     Promise.resolve({ data: [], error: null }),
     supabase.from('business_interests').select('*').eq('owner_id', userId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
+    supabase
+      .from('household_people')
+      .select('id, full_name, relationship, date_of_birth, is_gst_skip, is_beneficiary, notes')
+      .eq('household_id', householdId)
+      .eq('is_beneficiary', true),
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
     scenarioMetaPromise,
     scenarioS2Promise,
@@ -230,6 +246,7 @@ export async function generateEstateFlow(
   console.log('trusts error:', trustsRes.error)
   console.log('business_interests error:', businessRes.error)
   console.log('asset_beneficiaries error:', beneficiariesRes.error)
+  console.log('household_people error:', householdPeopleRes.error)
   console.log('estate_documents error:', estateDocsRes.error)
   console.log('scenario meta error:', scenarioMetaRes.error)
   console.log('scenario s2 error:', scenarioS2Res.error)
@@ -242,6 +259,7 @@ export async function generateEstateFlow(
   const insurance = (insuranceRes.data ?? []) as RawInsurance[]
   const businesses = (businessRes.data ?? []) as RawBusiness[]
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
+  const householdPeople = (householdPeopleRes.data ?? []) as RawHouseholdPerson[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
   const scenario = scenarioMetaRes.data
     ? {
@@ -757,6 +775,39 @@ export async function generateEstateFlow(
         metadata: { strategy: 'credit_shelter_trust' },
       })
     }
+  }
+
+  // ── 10a. Household people → beneficiary nodes
+  for (const person of householdPeople) {
+    const key = person.full_name.toLowerCase().trim()
+    const isOwner =
+      key === (household.person1_name ?? '').toLowerCase().trim() ||
+      key === (household.person2_name ?? '').toLowerCase().trim()
+    if (isOwner) continue
+    if (beneNodeMap.has(key)) {
+      const existingNodeId = beneNodeMap.get(key)!
+      const existingNode = nodes.find(n => n.id === existingNodeId)
+      if (existingNode && person.is_gst_skip) {
+        existingNode.metadata = { ...existingNode.metadata, is_gst_skip: true }
+      }
+      continue
+    }
+    const nodeId = `person_${person.id}`
+    nodes.push({
+      id: nodeId,
+      type: 'beneficiary',
+      category: 'recipient',
+      label: person.full_name,
+      technicalLabel: `${person.full_name} (${person.relationship}${person.is_gst_skip ? ' — GST Skip' : ''})`,
+      value: 0,
+      metadata: {
+        relationship: person.relationship,
+        is_gst_skip: person.is_gst_skip,
+        date_of_birth: person.date_of_birth,
+        source: 'household_people',
+      },
+    })
+    beneNodeMap.set(key, nodeId)
   }
 
   // ── 10b. Post-process beneficiaries: death sequence ───────────────────────
