@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { RefSelect } from '@/components/ui/RefSelect'
@@ -437,6 +437,14 @@ function RealEstateModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (propertyType === 'primary_residence') {
+      setIsPrimaryResidence(true)
+    } else if (propertyType !== 'primary_residence') {
+      setIsPrimaryResidence(false)
+    }
+  }, [propertyType])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
@@ -654,18 +662,24 @@ function RealEstateModal({
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="isPrimaryResidence"
-              type="checkbox"
-              checked={isPrimaryResidence}
-              onChange={(e) => setIsPrimaryResidence(e.target.checked)}
-              className="h-4 w-4 rounded border-neutral-300"
-            />
-            <label htmlFor="isPrimaryResidence" className="text-sm text-neutral-700">
-              Is primary residence
-            </label>
-          </div>
+          {propertyType === 'primary_residence' ? (
+            <p className="text-xs text-neutral-500">
+              ✓ Automatically set as primary residence
+            </p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                id="isPrimaryResidence"
+                type="checkbox"
+                checked={isPrimaryResidence}
+                onChange={(e) => setIsPrimaryResidence(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300"
+              />
+              <label htmlFor="isPrimaryResidence" className="text-sm text-neutral-700">
+                Is primary residence
+              </label>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               Years lived in
