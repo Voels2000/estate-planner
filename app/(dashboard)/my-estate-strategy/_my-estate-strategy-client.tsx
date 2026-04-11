@@ -32,12 +32,14 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
 
   const grossAtDeath = finalRow?.estate_incl_home ?? 0
   const grossAtRetirement = (retirementRow?.estate_incl_home ?? 0) > 0 ? retirementRow!.estate_incl_home : grossAtDeath
-  const exemption = taxConfig?.estate_exemption_individual ?? 13_610_000
+  const hasSpouse = snapshot?.has_spouse ?? false
+  const exemption = hasSpouse
+    ? (taxConfig?.estate_exemption_married ?? 27_220_000)
+    : (taxConfig?.estate_exemption_individual ?? 13_610_000)
   const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
   const taxableEstate = Math.max(0, grossAtDeath - exemption)
   const estimatedFederalTax = Math.round(taxableEstate * topRate)
-
-  const sunsetExemption = 7_000_000
+  const sunsetExemption = hasSpouse ? 14_000_000 : 7_000_000
   const taxableEstateSunset = Math.max(0, grossAtDeath - sunsetExemption)
   const estimatedFederalTaxSunset = Math.round(taxableEstateSunset * topRate)
 
