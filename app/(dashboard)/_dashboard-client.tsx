@@ -32,6 +32,7 @@ type Props = {
   progressPct: number
   userId: string
   householdId?: string | null
+  hasBaseCase?: boolean
   scenarioId?: string | null
   completionScore?: CompletionScore | null
   consumerTier?: number
@@ -71,6 +72,7 @@ export function DashboardClient({
   progressPct,
   userId,
   householdId = null,
+  hasBaseCase = true,
   scenarioId = null,
   completionScore,
   consumerTier = 1,
@@ -87,6 +89,27 @@ export function DashboardClient({
   const allDone = completedSteps === setupSteps.length
   const [greeting, setGreeting] = useState('Good morning')
   const [showWalkthrough, setShowWalkthrough] = useState(false)
+  const [generating, setGenerating] = useState(false)
+
+  async function handleGenerateBaseCase() {
+    if (!householdId) return
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/consumer/generate-base-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        window.location.reload()
+      } else {
+        alert('Failed to generate: ' + data.error)
+      }
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -105,6 +128,24 @@ export function DashboardClient({
             : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
         </p>
       </div>
+
+      {!hasBaseCase && householdId && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 mb-6">
+          <h3 className="text-sm font-semibold text-blue-900 mb-1">Generate Your Estate Plan</h3>
+          <p className="text-xs text-blue-700 mb-3">
+            You have entered your data. Generate your estate plan to see your tax exposure, estate flow, and planning
+            gaps.
+          </p>
+          <button
+            type="button"
+            onClick={handleGenerateBaseCase}
+            disabled={generating}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {generating ? 'Generating…' : 'Generate My Estate Plan'}
+          </button>
+        </div>
+      )}
 
       {sunsetAlert && (
         <div className="mb-8">

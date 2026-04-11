@@ -153,6 +153,7 @@ export default async function DashboardPage() {
       progressPct={progressPct}
       userId={user!.id}
       householdId={household?.id ?? null}
+      hasBaseCase={!!household?.base_case_scenario_id}
       scenarioId={household?.base_case_scenario_id ?? null}
       completionScore={completionScore}
       consumerTier={profile?.consumer_tier ?? 1}
