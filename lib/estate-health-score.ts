@@ -16,6 +16,27 @@ export type EstateHealthScore = {
   computedAt: string
 }
 
+function normalizeName(s: string | null | undefined): string {
+  return (s ?? '').toLowerCase().trim().replace(/\s+/g, ' ')
+}
+
+function isPrimaryBeneficiaryRow(b: {
+  contingent?: boolean | null
+  beneficiary_type?: string | null
+}): boolean {
+  if (b.beneficiary_type === 'contingent') return false
+  if (b.beneficiary_type === 'primary') return true
+  return b.contingent !== true
+}
+
+function isContingencyBeneficiaryRow(b: {
+  contingent?: boolean | null
+  beneficiary_type?: string | null
+}): boolean {
+  if (b.beneficiary_type === 'contingent') return true
+  return b.contingent === true
+}
+
 export async function computeEstateHealthScore(
   householdId: string,
   ownerId: string,
@@ -26,13 +47,17 @@ export async function computeEstateHealthScore(
     { data: household },
     { data: healthCheck },
     { data: assets },
-    { data: beneficiaries },
+    { data: assetBenes },
     { data: estateDocuments },
     { data: domicile },
+    { data: householdPeople },
+    { data: assetTitlingRows },
   ] = await Promise.all([
     admin
       .from('households')
-      .select('has_spouse, state_primary, person1_birth_year, person2_birth_year, filing_status')
+      .select(
+        'has_spouse, state_primary, person1_birth_year, person2_birth_year, filing_status, base_case_scenario_id, person1_name, person2_name',
+      )
       .eq('id', householdId)
       .single(),
     admin
@@ -40,10 +65,15 @@ export async function computeEstateHealthScore(
       .select('has_will, has_trust, has_poa, has_hcd, beneficiaries_current')
       .eq('household_id', householdId)
       .maybeSingle(),
-    admin.from('assets').select('id, value, owner').eq('owner_id', ownerId),
-    admin.from('beneficiaries').select('id, allocation_pct, contingent').eq('owner_id', ownerId),
+    admin.from('assets').select('id, value, owner, titling').eq('owner_id', ownerId),
+    admin
+      .from('asset_beneficiaries')
+      .select('id, asset_id, allocation_pct, contingent, beneficiary_type, full_name')
+      .eq('owner_id', ownerId),
     admin.from('estate_documents').select('document_type, exists').eq('owner_id', ownerId),
     admin.from('domicile_analysis').select('risk_score, risk_level').eq('household_id', householdId).maybeSingle(),
+    admin.from('household_people').select('full_name').eq('household_id', householdId),
+    admin.from('asset_titling').select('asset_id, title_type').eq('owner_id', ownerId),
   ])
 
   const components: HealthScoreComponent[] = []
@@ -79,13 +109,63 @@ export async function computeEstateHealthScore(
     actionHref: '/incapacity',
   })
 
-  const primaryBenes = (beneficiaries ?? []).filter((b) => !b.contingent)
-  const contingentBenes = (beneficiaries ?? []).filter((b) => b.contingent)
-  const primaryTotal = primaryBenes.reduce((s, b) => s + (b.allocation_pct ?? 0), 0)
+  const benes = assetBenes ?? []
+  const rosterNames = new Set<string>()
+  for (const p of householdPeople ?? []) {
+    const n = normalizeName(p.full_name)
+    if (n) rosterNames.add(n)
+  }
+  for (const n of [household?.person1_name, household?.person2_name]) {
+    const x = normalizeName(n as string | undefined)
+    if (x) rosterNames.add(x)
+  }
+
+  const assetList = assets ?? []
+  const assetTitlingByAssetId = new Map<string, { title_type: string }>()
+  for (const row of assetTitlingRows ?? []) {
+    const aid = row.asset_id as string | undefined
+    if (aid) assetTitlingByAssetId.set(aid, { title_type: String(row.title_type ?? '') })
+  }
+
+  let primaryNamesOk = true
+  if (rosterNames.size > 0) {
+    const primaryRows = benes.filter((b) => b.asset_id && isPrimaryBeneficiaryRow(b))
+    if (primaryRows.length > 0) {
+      primaryNamesOk = primaryRows.every((b) => rosterNames.has(normalizeName(b.full_name as string)))
+    }
+  }
+
+  let anyPrimary = false
+  let allPrimaryComplete = true
+  let allHaveContingent = true
+
+  for (const asset of assetList) {
+    const forAsset = benes.filter((b) => b.asset_id === asset.id)
+    const primaries = forAsset.filter(isPrimaryBeneficiaryRow)
+    const primarySum = primaries.reduce((s, b) => s + Number(b.allocation_pct ?? 0), 0)
+    const primaryOk = primaries.length > 0 && Math.abs(primarySum - 100) <= 0.5
+    if (primaries.length > 0) anyPrimary = true
+    allPrimaryComplete = allPrimaryComplete && primaryOk
+
+    const contingentRows = forAsset.filter(isContingencyBeneficiaryRow)
+    const hasContingentForAsset = contingentRows.length > 0
+    allHaveContingent = allHaveContingent && (!primaryOk || hasContingentForAsset)
+  }
+
   const hasBeneficiaries =
-    healthCheck?.beneficiaries_current === true || (primaryBenes.length > 0 && Math.round(primaryTotal) === 100)
-  const hasContingent = contingentBenes.length > 0
-  const beneScore = hasBeneficiaries && hasContingent ? 20 : hasBeneficiaries ? 13 : primaryBenes.length > 0 ? 6 : 0
+    healthCheck?.beneficiaries_current === true ||
+    (assetList.length > 0 && allPrimaryComplete) ||
+    (assetList.length === 0 && anyPrimary)
+  const hasContingent =
+    healthCheck?.beneficiaries_current === true ||
+    (assetList.length > 0 ? allHaveContingent : hasBeneficiaries)
+
+  let beneScore = 0
+  if (hasBeneficiaries && hasContingent && primaryNamesOk) beneScore = 20
+  else if (hasBeneficiaries) beneScore = 13
+  else if (anyPrimary) beneScore = 6
+  else beneScore = 0
+
   components.push({
     key: 'beneficiaries',
     label: 'Beneficiary Designations',
@@ -96,15 +176,29 @@ export async function computeEstateHealthScore(
     actionHref: '/titling',
   })
 
-  const totalAssets = (assets ?? []).length
-  const titlingScore = totalAssets >= 3 ? 15 : totalAssets >= 1 ? 8 : 0
+  let titlingScore = 0
+  if (assetList.length > 0) {
+    let documented = 0
+    let anyTrustOwned = false
+    for (const a of assetList) {
+      const row = assetTitlingByAssetId.get(a.id)
+      const col = (a.titling as string | null | undefined)?.trim()
+      const documentedHere = Boolean(row?.title_type) || Boolean(col)
+      if (documentedHere) documented++
+      const trustHere =
+        a.titling === 'trust_owned' || (row?.title_type ?? '') === 'trust_owned'
+      if (trustHere) anyTrustOwned = true
+    }
+    const ratio = documented / assetList.length
+    titlingScore = Math.min(15, Math.round(ratio * 12) + (anyTrustOwned ? 3 : 0))
+  }
   components.push({
     key: 'titling',
     label: 'Asset Titling',
     score: titlingScore,
     maxScore: 15,
     status: titlingScore >= 15 ? 'good' : titlingScore >= 8 ? 'warning' : 'critical',
-    actionLabel: titlingScore >= 15 ? 'Assets documented' : 'Document your assets',
+    actionLabel: titlingScore >= 15 ? 'Titling coverage strong' : 'Document asset titling',
     actionHref: '/assets',
   })
 
@@ -131,17 +225,30 @@ export async function computeEstateHealthScore(
     actionHref: '/domicile-analysis',
   })
 
-  const totalAssetValue = (assets ?? []).reduce((s, a) => s + Number(a.value ?? 0), 0)
-  const hasEstateTaxAwareness = totalAssetValue > 0
-  const estateTaxScore =
-    totalAssetValue >= 1_000_000 ? (hasEstateTaxAwareness ? 10 : 0) : totalAssetValue > 0 ? 15 : 5
+  const totalAssetValue = assetList.reduce((s, a) => s + Number(a.value ?? 0), 0)
+  const hasBaseCase = Boolean(household?.base_case_scenario_id)
+
+  let estateTaxScore: number
+  if (hasBaseCase) {
+    estateTaxScore = 15
+  } else if (totalAssetValue >= 1_000_000) {
+    estateTaxScore = 3
+  } else if (totalAssetValue >= 250_000) {
+    estateTaxScore = 8
+  } else if (totalAssetValue > 0) {
+    estateTaxScore = 12
+  } else {
+    estateTaxScore = 5
+  }
+
   components.push({
     key: 'estate_tax',
     label: 'Estate Tax Awareness',
     score: estateTaxScore,
     maxScore: 15,
-    status: estateTaxScore >= 15 ? 'good' : estateTaxScore >= 10 ? 'warning' : 'critical',
-    actionLabel: estateTaxScore >= 15 ? 'Estate tax reviewed' : 'Review estate tax exposure',
+    status:
+      estateTaxScore >= 13 ? 'good' : estateTaxScore >= 8 ? 'warning' : 'critical',
+    actionLabel: hasBaseCase ? 'Base case on file' : 'Review estate tax exposure',
     actionHref: '/estate-tax',
   })
 
