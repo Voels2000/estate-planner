@@ -97,6 +97,33 @@ export function grossEstateFromRow(row: AnnualOutput | undefined | null): number
   return Number(row.estate_incl_home ?? 0)
 }
 
+/**
+ * Ownership-weighted business value from `businesses` and legacy `business_interests`.
+ * Mirrors the merge in `lib/actions/generate-base-case.ts` (both tables, `ownership_pct` on each row).
+ */
+export function computeBusinessOwnershipValue(
+  businesses: { estimated_value?: unknown; ownership_pct?: unknown }[],
+  businessInterests: {
+    fmv_estimated?: unknown
+    total_entity_value?: unknown
+    ownership_pct?: unknown
+  }[],
+): number {
+  const modern = (businesses ?? []).reduce(
+    (s, b) =>
+      s + Number(b.estimated_value ?? 0) * (Number(b.ownership_pct ?? 100) / 100),
+    0,
+  )
+  const legacy = (businessInterests ?? []).reduce((s, b) => {
+    const base = Number(
+      b.fmv_estimated ?? b.total_entity_value ?? 0,
+    )
+    const pct = Number(b.ownership_pct ?? 100) / 100
+    return s + base * pct
+  }, 0)
+  return modern + legacy
+}
+
 export function computeColumnTaxes(params: {
   grossEstate: number
   calendarYear: number

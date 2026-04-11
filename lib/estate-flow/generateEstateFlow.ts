@@ -3,11 +3,13 @@
 // Produces a structured node/edge graph consumed by the diagram renderer.
 // Reads from: assets, real_estate, digital_assets, trusts,
 //             (insurance skipped — no client table in env),
-//             business_interests, asset_beneficiaries, estate_documents,
+//             businesses + business_interests (merged via computeBusinessOwnershipValue),
+//             asset_beneficiaries, estate_documents,
 //             households, projection_scenarios, household_people
 
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
 
@@ -126,11 +128,23 @@ interface RawInsurance {
   owner?: string
 }
 
-interface RawBusiness {
+/** Modern `businesses` table */
+interface RawModernBusiness {
   id: string
-  name?: string
-  entity_type?: string
-  estimated_value?: number
+  name?: string | null
+  entity_type?: string | null
+  estimated_value?: number | null
+  ownership_pct?: number | null
+}
+
+/** Legacy `business_interests` table */
+interface RawLegacyBusinessInterest {
+  id: string
+  entity_name?: string | null
+  entity_type?: string | null
+  fmv_estimated?: number | null
+  total_entity_value?: number | null
+  ownership_pct?: number | null
 }
 
 interface RawBeneficiary {
@@ -180,6 +194,8 @@ export async function generateEstateFlow(
   deathView: DeathView = 'first_death',
   supabase?: ReturnType<typeof createClient>,
   hasCSTStrategy = false,
+  /** When set, replaces projection end-state `estate_incl_home` for summary and owner-node gross (today's live estate). */
+  grossEstateOverride?: number | null,
 ): Promise<EstateFlowGraph> {
   if (!supabase) {
     supabase = createClient()
@@ -215,7 +231,8 @@ export async function generateEstateFlow(
     digitalAssetsRes,
     trustsRes,
     insuranceRes,
-    businessRes,
+    businessesRes,
+    businessInterestsRes,
     beneficiariesRes,
     householdPeopleRes,
     estateDocsRes,
@@ -228,6 +245,7 @@ export async function generateEstateFlow(
     supabase.from('trusts').select('*').eq('owner_id', userId),
     // insurance_policies table not present — skip
     Promise.resolve({ data: [], error: null }),
+    supabase.from('businesses').select('*').eq('owner_id', userId),
     supabase.from('business_interests').select('*').eq('owner_id', userId),
     supabase.from('asset_beneficiaries').select('*').eq('owner_id', userId),
     supabase
@@ -245,7 +263,8 @@ export async function generateEstateFlow(
   console.log('real_estate error:', realEstateRes.error)
   console.log('digital_assets error:', digitalAssetsRes.error)
   console.log('trusts error:', trustsRes.error)
-  console.log('business_interests error:', businessRes.error)
+  console.log('businesses error:', businessesRes.error)
+  console.log('business_interests error:', businessInterestsRes.error)
   console.log('asset_beneficiaries error:', beneficiariesRes.error)
   console.log('household_people error:', householdPeopleRes.error)
   console.log('estate_documents error:', estateDocsRes.error)
@@ -258,7 +277,8 @@ export async function generateEstateFlow(
   const digitalAssets = (digitalAssetsRes.data ?? []) as RawDigitalAsset[]
   const trusts = (trustsRes.data ?? []) as RawTrust[]
   const insurance = (insuranceRes.data ?? []) as RawInsurance[]
-  const businesses = (businessRes.data ?? []) as RawBusiness[]
+  const modernBusinesses = (businessesRes.data ?? []) as RawModernBusiness[]
+  const legacyBusinessInterests = (businessInterestsRes.data ?? []) as RawLegacyBusinessInterest[]
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const householdPeople = (householdPeopleRes.data ?? []) as RawHouseholdPerson[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
@@ -286,14 +306,18 @@ export async function generateEstateFlow(
   const estateTaxFederal = Number(lastOutput?.estate_tax_federal ?? 0)
   const estateTaxState = Number(lastOutput?.estate_tax_state ?? 0)
   const netToHeirs = Number(lastOutput?.net_to_heirs ?? 0)
-  const grossEstate = Number(lastOutput?.estate_incl_home ?? 0)
+  const grossEstateFromProjection = Number(lastOutput?.estate_incl_home ?? 0)
+  const grossEstate =
+    grossEstateOverride != null && !Number.isNaN(Number(grossEstateOverride))
+      ? Number(grossEstateOverride)
+      : grossEstateFromProjection
 
   // Determine which documents exist
   const hasTrust = trusts.length > 0 ||
     estateDocs.some(d => ['revocable_trust', 'irrevocable_trust'].includes(d.doc_type) && d.status !== 'none')
   const hasWill = estateDocs.some(d => d.doc_type === 'will' && d.status !== 'none')
   const hasInsurance = insurance.length > 0
-  const hasBusiness = businesses.length > 0
+  const hasBusiness = modernBusinesses.length > 0 || legacyBusinessInterests.length > 0
   const hasDigital = digitalAssets.length > 0
 
   // Build beneficiary lookup by asset/real_estate id
@@ -692,52 +716,60 @@ export async function generateEstateFlow(
     }
   }
 
-  // ── 9. Business interests ─────────────────────────────────────────────────
-  for (const biz of businesses) {
-    const nodeId = `biz_${biz.id}`
-    const val = biz.estimated_value ?? 0
+  // ── 9. Business interests (modern `businesses` + legacy `business_interests`) ─
+  const businessRowCount = modernBusinesses.length + legacyBusinessInterests.length
+  const businessOwnershipTotal = computeBusinessOwnershipValue(
+    modernBusinesses,
+    legacyBusinessInterests,
+  )
+  if (businessRowCount > 0) {
+    const nodeId = 'business_interests_group'
+    const countLabel = businessRowCount === 1 ? 'Business interest' : `Business interests (${businessRowCount})`
     nodes.push({
       id: nodeId,
       type: 'business',
       category: 'asset',
-      label: biz.name ?? 'Business interest',
-      technicalLabel: `${biz.name ?? 'Business'} (${biz.entity_type ?? ''}) — ${fmt(val)}`,
-      value: val,
-      metadata: { entity_type: biz.entity_type },
+      label: countLabel,
+      technicalLabel: `Business — ${fmtCurrencyFull(businessOwnershipTotal)}`,
+      value: businessOwnershipTotal,
+      metadata: {
+        total: businessOwnershipTotal,
+        modern_count: modernBusinesses.length,
+        legacy_count: legacyBusinessInterests.length,
+      },
     })
 
     edges.push({
-      id: `e_own_biz_${biz.id}`,
+      id: 'e_own_business_group',
       source: 'owner_p1',
       target: nodeId,
       type: 'owns',
-      label: fmt(val),
-      value: val,
+      label: fmtCurrencyFull(businessOwnershipTotal),
+      value: businessOwnershipTotal,
       metadata: {},
     })
 
-    // Business interests typically flow to trust or probate
     if (trustNodeIds.length > 0) {
       edges.push({
-        id: `e_trust_biz_${biz.id}`,
+        id: 'e_trust_business_group',
         source: nodeId,
         target: trustNodeIds[0],
         type: 'transfers_to',
-        label: fmt(val),
-        value: val,
+        label: fmtCurrencyFull(businessOwnershipTotal),
+        value: businessOwnershipTotal,
         metadata: {},
       })
     } else if (probateNodeId) {
       edges.push({
-        id: `e_prob_biz_${biz.id}`,
+        id: 'e_prob_business_group',
         source: nodeId,
         target: probateNodeId,
         type: 'transfers_to',
-        label: fmt(val),
-        value: val,
+        label: fmtCurrencyFull(businessOwnershipTotal),
+        value: businessOwnershipTotal,
         metadata: {},
       })
-      probateAssetsValue += val
+      probateAssetsValue += businessOwnershipTotal
     }
   }
 
@@ -943,6 +975,15 @@ function fmt(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
   if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
   return `$${n.toLocaleString()}`
+}
+
+/** Full USD with grouping, e.g. $1,234,567 — used for business interest totals */
+function fmtCurrencyFull(n: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
 }
 
 function shortAddress(address: string): string {

@@ -151,6 +151,7 @@ export default function EstateTaxClient({
   brackets: bracketRows,
   stateEstateTaxRules: stateEstateTaxRows,
   stateInheritanceTaxRules: stateInheritanceTaxRuleRows,
+  primaryResidenceValue,
 }: {
   assets: Record<string, unknown>[]
   liabilities: Record<string, unknown>[]
@@ -160,6 +161,8 @@ export default function EstateTaxClient({
   brackets: Record<string, unknown>[]
   stateEstateTaxRules: Record<string, unknown>[]
   stateInheritanceTaxRules: Record<string, unknown>[]
+  /** Sum of FMV for `real_estate.is_primary_residence`; omit UI when null */
+  primaryResidenceValue: number | null
 }) {
   const router = useRouter()
   const [trusts, setTrusts] = useState<EstateTaxTrustRow[]>(initialTrusts)
@@ -406,6 +409,24 @@ export default function EstateTaxClient({
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           {error}
         </p>
+      )}
+
+      {primaryResidenceValue != null && primaryResidenceValue > 0 && (
+        <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-4 text-sm text-neutral-700">
+          <p className="font-semibold text-neutral-900">
+            ℹ️ Primary Residence &amp; Married Couples
+          </p>
+          <p className="mt-2 leading-relaxed">
+            Your primary residence (est. {formatDollars(primaryResidenceValue)}) is excluded from this
+            first-death estimate. For married couples, the residence typically passes to the surviving
+            spouse tax-free at first death via the marital deduction.
+          </p>
+          <p className="mt-2 leading-relaxed">
+            At second death, the residence is fully included in the surviving spouse&apos;s taxable
+            estate — which can significantly increase tax exposure. Your estate attorney can help
+            structure ownership to minimize this impact.
+          </p>
+        </div>
       )}
 
       {/* ── Federal summary cards ── */}

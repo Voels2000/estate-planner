@@ -78,6 +78,18 @@ export default async function EstateTaxPage() {
       .order('state', { ascending: true }),
   ])
 
+  const primaryResidenceValue = (() => {
+    const rows = (realEstateRows ?? []).filter(
+      (r) => (r as { is_primary_residence?: boolean }).is_primary_residence === true,
+    )
+    if (rows.length === 0) return null as number | null
+    const sum = rows.reduce(
+      (s, r) => s + Number((r as { current_value?: unknown }).current_value ?? 0),
+      0,
+    )
+    return sum > 0 ? sum : null
+  })()
+
   return (
     <>
       {householdRow?.id && (
@@ -96,6 +108,7 @@ export default async function EstateTaxPage() {
         brackets={federalEstateTaxBracketsRows ?? []}
         stateEstateTaxRules={stateEstateTaxRows ?? []}
         stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+        primaryResidenceValue={primaryResidenceValue}
       />
     </>
   )

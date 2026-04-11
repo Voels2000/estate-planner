@@ -10,6 +10,7 @@ import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-s
 import { computeEstateTaxProjection } from '@/lib/calculations/estate-tax-projection'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
+import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { createClient } from '@/lib/supabase/server'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { DashboardClient } from '../_dashboard-client'
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
     { data: projections },
     { data: realEstate },
     { data: businesses },
+    { data: businessInterests },
     { data: insurance },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
@@ -64,6 +66,10 @@ export default async function DashboardPage() {
       : Promise.resolve({ data: [] }),
     supabase.from('real_estate').select('current_value, mortgage_balance, titling').eq('owner_id', user!.id),
     supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', user!.id),
+    supabase
+      .from('business_interests')
+      .select('fmv_estimated, total_entity_value, ownership_pct')
+      .eq('owner_id', user!.id),
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
   ])
 
@@ -72,9 +78,7 @@ export default async function DashboardPage() {
   const realEstateEquity = (realEstate ?? []).reduce(
     (s, r) => s + Number(r.current_value) - Number(r.mortgage_balance ?? 0), 0,
   )
-  const businessValue = (businesses ?? []).reduce((s, b) =>
-    s + Number(b.estimated_value) * (Number(b.ownership_pct ?? 100) / 100), 0,
-  )
+  const businessValue = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
   const insuranceValue = (insurance ?? [])
     .filter(p => !p.is_ilit)
     .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)

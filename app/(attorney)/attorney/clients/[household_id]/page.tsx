@@ -63,6 +63,18 @@ export default async function AttorneyClientPage({
     supabase.from('state_inheritance_tax_rules').select('*').order('tax_year', { ascending: false }).order('state', { ascending: true }),
   ])
 
+  const primaryResidenceValue = (() => {
+    const rows = (realEstateRows ?? []).filter(
+      (r) => (r as { is_primary_residence?: boolean }).is_primary_residence === true,
+    )
+    if (rows.length === 0) return null as number | null
+    const sum = rows.reduce(
+      (s, r) => s + Number((r as { current_value?: unknown }).current_value ?? 0),
+      0,
+    )
+    return sum > 0 ? sum : null
+  })()
+
   const { data: documents } = await supabase
     .from('legal_documents')
     .select('id, document_type, file_name, version, is_current, uploader_role, created_at')
@@ -118,6 +130,7 @@ export default async function AttorneyClientPage({
           brackets={federalEstateTaxBracketsRows ?? []}
           stateEstateTaxRules={stateEstateTaxRows ?? []}
           stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+          primaryResidenceValue={primaryResidenceValue}
         />
       </div>
 

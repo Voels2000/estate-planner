@@ -20,7 +20,18 @@ interface FlowStep {
   highlight?: boolean
 }
 
-function buildFlowSteps(graph: EstateFlowGraph): FlowStep[] {
+function fmtHeirsCurrency(n: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
+}
+
+function buildFlowSteps(
+  graph: EstateFlowGraph,
+  heirsToday: { gross: number; totalTax: number; asOfLabel: string } | null,
+): FlowStep[] {
   const steps: FlowStep[] = []
   const s = graph.summary
 
@@ -82,13 +93,21 @@ function buildFlowSteps(graph: EstateFlowGraph): FlowStep[] {
     })
   }
 
-  // Step 6: what heirs receive
-  if (s.net_to_heirs > 0) {
+  // Step 6: what heirs receive (today's estate minus today's tax — not projection net_to_heirs)
+  const heirsReceive =
+    heirsToday != null
+      ? Math.max(0, heirsToday.gross - heirsToday.totalTax)
+      : s.net_to_heirs
+  if (heirsReceive > 0) {
+    const valueStr = fmtHeirsCurrency(heirsReceive)
     steps.push({
       icon: '💚',
-      title: 'What your heirs receive',
-      body: `After all taxes, your heirs are estimated to receive ${fmt(s.net_to_heirs)}. Your advisor can show you planning strategies to increase this amount.`,
-      value: fmt(s.net_to_heirs),
+      title: 'What your heirs receive (estimated)',
+      body:
+        heirsToday != null
+          ? `What your heirs receive (estimated): ${valueStr}\n\nBased on your estate as of ${heirsToday.asOfLabel}.\n\nYour advisor can show you planning strategies to increase this amount.`
+          : `After all taxes, your heirs are estimated to receive ${fmt(heirsReceive)}. Your advisor can show you planning strategies to increase this amount.`,
+      value: heirsToday != null ? valueStr : fmt(heirsReceive),
     })
   }
 
@@ -127,7 +146,9 @@ function ConsumerNodePill({ node }: { node: FlowNode }) {
         {node.label}
       </span>
       {node.value > 0 && (
-        <span className={`text-xs ${c.text} opacity-70 mt-0.5`}>{fmt(node.value)}</span>
+        <span className={`text-xs ${c.text} opacity-70 mt-0.5`}>
+          {node.type === 'business' ? fmtHeirsCurrency(node.value) : fmt(node.value)}
+        </span>
       )}
     </div>
   )
@@ -138,20 +159,32 @@ function ConsumerNodePill({ node }: { node: FlowNode }) {
 interface Props {
   householdId: string
   scenarioId: string | null
+  /** Today's live estate size (same as My Estate Strategy "Today" column), not projection at-death. */
+  todayGrossEstate: number
+  /** Total tax from My Estate Strategy "Today" column (federal + state snapshot). */
+  todayTotalTaxLiability: number
+  /** e.g. "April 2026" — shown with heirs receive */
+  estateAsOfLabel: string
 }
 
-export default function ConsumerEstateFlowView({ householdId, scenarioId }: Props) {
+export default function ConsumerEstateFlowView({
+  householdId,
+  scenarioId,
+  todayGrossEstate,
+  todayTotalTaxLiability,
+  estateAsOfLabel,
+}: Props) {
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
-    generateEstateFlow(householdId, scenarioId, 'first_death', supabase)
+    generateEstateFlow(householdId, scenarioId, 'first_death', supabase, false, todayGrossEstate)
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [householdId, scenarioId, supabase])
+  }, [householdId, scenarioId, supabase, todayGrossEstate])
 
   if (loading) {
     return (
@@ -169,7 +202,11 @@ export default function ConsumerEstateFlowView({ householdId, scenarioId }: Prop
     )
   }
 
-  const steps = buildFlowSteps(graph)
+  const steps = buildFlowSteps(graph, {
+    gross: todayGrossEstate,
+    totalTax: todayTotalTaxLiability,
+    asOfLabel: estateAsOfLabel,
+  })
 
   // Simplified visual: show owner → assets → vehicles → recipients in rows
   const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
@@ -243,7 +280,9 @@ export default function ConsumerEstateFlowView({ householdId, scenarioId }: Prop
                     )}
                   </div>
                   {activeStep === i && (
-                    <p className="text-sm text-gray-600 mt-2 leading-relaxed">{step.body}</p>
+                    <p className="text-sm text-gray-600 mt-2 leading-relaxed whitespace-pre-line">
+                      {step.body}
+                    </p>
                   )}
                 </div>
                 <span className="text-gray-400 text-sm">{activeStep === i ? '▲' : '▼'}</span>

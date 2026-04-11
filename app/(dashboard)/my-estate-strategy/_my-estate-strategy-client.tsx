@@ -19,6 +19,10 @@ type Props = {
     calculatedAt: string | null
   }
   horizons: Horizons
+  /** e.g. "April 2026" — matches My Estate Strategy "Today" column */
+  estateAsOfLabel: string
+  /** Sum of primary residence FMV; only non-null when married + primary home exists */
+  primaryResidenceValue: number | null
 }
 
 export default function MyEstateStrategyClient({
@@ -26,6 +30,8 @@ export default function MyEstateStrategyClient({
   scenarioId,
   scenarioMeta,
   horizons,
+  estateAsOfLabel,
+  primaryResidenceValue,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -135,6 +141,14 @@ export default function MyEstateStrategyClient({
                     <MetricRow label="Federal tax estimate" value={fmtEst(col.federalTaxEstimate)} />
                     <div className="my-3 border-t border-neutral-200" />
                     <MetricRow label="State exposure" value={fmtEst(col.stateExposure)} />
+                    {col === atDeath &&
+                      primaryResidenceValue != null &&
+                      primaryResidenceValue > 0 && (
+                        <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+                          ℹ️ This estimate reflects the surviving spouse&apos;s estate at second death
+                          and includes the primary residence (est. {fmtEst(primaryResidenceValue)}).
+                        </p>
+                      )}
                     <MetricRow
                       label="Est. total tax liability"
                       value={fmtEst(col.totalTaxLiability)}
@@ -157,7 +171,13 @@ export default function MyEstateStrategyClient({
 
       {hasBaseCase && (
         <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <ConsumerEstateFlowView householdId={householdId} scenarioId={scenarioId} />
+          <ConsumerEstateFlowView
+            householdId={householdId}
+            scenarioId={scenarioId}
+            todayGrossEstate={today.grossEstate ?? 0}
+            todayTotalTaxLiability={today.totalTaxLiability ?? 0}
+            estateAsOfLabel={estateAsOfLabel}
+          />
         </div>
       )}
     </div>
