@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 
@@ -399,6 +400,14 @@ export default function ScenariosPage() {
           </div>
         </div>
       )}
+
+      <p className="mt-8 text-sm text-muted-foreground max-w-3xl">
+        Disclaimer: Scenario projections model income tax and investment growth only. They do not model estate tax, state estate tax, property tax, sales tax, or other non-income taxes. For a full estate tax analysis, see{' '}
+        <Link href="/my-estate-strategy" className="underline underline-offset-2 hover:text-foreground">
+          My Estate Strategy
+        </Link>
+        .
+      </p>
     </div>
   )
 }

@@ -38,17 +38,17 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Financial Planning',
     icon: '💰',
     items: [
-      { href: '/assets', label: 'Assets', icon: '🏦', feature: 'assets' },
-      { href: '/liabilities', label: 'Liabilities', icon: '💳', feature: 'liabilities' },
       { href: '/income', label: 'Income', icon: '💰', feature: 'income' },
       { href: '/expenses', label: 'Expenses', icon: '💸', feature: 'expenses' },
-      { href: '/projections', label: 'Projections', icon: '📈', feature: 'projections' },
-      { href: '/allocation', label: 'Asset Allocation', icon: '📐', feature: 'allocation' },
+      { href: '/assets', label: 'Assets', icon: '🏦', feature: 'assets' },
       { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
-      { href: '/digital-assets', label: 'Digital Assets', icon: '🔑' },
       { href: '/businesses', label: 'Business Interests', icon: '🏢', feature: 'businesses' },
+      { href: '/digital-assets', label: 'Digital Assets', icon: '🔑' },
+      { href: '/liabilities', label: 'Liabilities', icon: '💳', feature: 'liabilities' },
       { href: '/insurance', label: 'Life & Estate Insurance', icon: '🛡️', feature: 'insurance' },
       { href: '/property-casualty', label: 'Property & Casualty', icon: '🏠', feature: 'insurance' },
+      { href: '/allocation', label: 'Asset Allocation', icon: '📐', feature: 'allocation' },
+      { href: '/projections', label: 'Projections', icon: '📈', feature: 'projections' },
       { href: '/scenarios', label: 'Scenarios', icon: '🔮', feature: 'scenarios' },
     ],
   },
@@ -59,11 +59,10 @@ const NAV_GROUPS: NavGroup[] = [
     locked: true,
     items: [
       { href: '/social-security', label: 'Social Security', icon: '🏛️', feature: 'social-security' },
-      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
       { href: '/rmd', label: 'RMD Calculator', icon: '📋', feature: 'rmd' },
       { href: '/roth', label: 'Roth Conversion', icon: '🔄', feature: 'roth' },
+      { href: '/complete', label: 'Lifetime Snapshot', icon: '📊', feature: 'complete' },
       { href: '/monte-carlo', label: 'Monte Carlo', icon: '📊', feature: 'monte-carlo' },
-      { href: '/import', label: 'Import Data', icon: '📥', feature: 'import', minTier: 2 },
     ],
   },
   {
@@ -73,12 +72,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/my-family', label: 'My Family', icon: '👨‍👩‍👧‍👦', feature: 'my-family' },
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
-      { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
-      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
-      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
+      { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
+      { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
+      { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
       { href: '/my-estate-strategy', label: 'My Estate Strategy', icon: '📈' },
       // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
     ],
@@ -569,6 +568,45 @@ export function SidebarNav({
             📄 Export Estate Plan
           </Link>
         )}
+
+        {/* Import Data (tier 2+; was under Retirement Planning) */}
+        {(isAdvisor || isSuperuser || tier >= 2) &&
+          (isLockedUser ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">📥 Import Data</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : isLocked('import') ? (
+            <div
+              role="presentation"
+              onClick={blockLockedNavInteraction}
+              onPointerDown={blockLockedNavInteraction}
+              className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-50"
+            >
+              <span className="flex-1 truncate">📥 Import Data</span>
+              <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
+                🔒 {lockLabel('import')}
+              </span>
+            </div>
+          ) : (
+            <Link
+              href="/import"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/import'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              📥 Import Data
+            </Link>
+          ))}
 
         {/* Security */}
         {isLockedUser ? (
