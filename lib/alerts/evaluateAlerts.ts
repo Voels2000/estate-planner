@@ -182,126 +182,6 @@ export async function evaluateAlerts(
   return result
 }
 
-/** Sprint 81 — Consumer estate-planning alerts (string rule ids; no DB rows). */
-const SUNSET_ESTATE_THRESHOLD = 7_000_000
-const ILIT_GAP_DOLLARS = 250_000
-const LARGE_ESTATE_NO_TRUST_THRESHOLD = 1_000_000
-
-interface EstateAlertContext {
-  household: Record<string, unknown>
-  assets: Record<string, unknown>[]
-  insurancePolicies: { death_benefit?: number | null; is_ilit?: boolean | null }[]
-  realEstateRows: { current_value?: number | null }[]
-  estateHealthCheck: { has_trust?: boolean | null } | null
-}
-
-async function evaluateEstateAlerts(
-  supabase: ReturnType<typeof createClient>,
-  householdId: string,
-  ctx: EstateAlertContext,
-): Promise<{ triggered: number; resolved: number }> {
-  let triggered = 0
-  let resolved = 0
-
-  const grossEstate =
-    ctx.assets.reduce((s, a) => s + Number(a.value ?? 0), 0) +
-    ctx.realEstateRows.reduce((s, r) => s + Number(r.current_value ?? 0), 0)
-
-  const lifeInsuranceOutsideIlit = ctx.insurancePolicies
-    .filter((p) => !p.is_ilit)
-    .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
-
-  const hasTrustOnFile = ctx.estateHealthCheck?.has_trust === true
-
-  const hasGiftingProgram = Boolean(
-    (ctx.household as { has_gifting_program?: boolean }).has_gifting_program,
-  )
-  const baseCaseId = (ctx.household as { base_case_scenario_id?: string | null }).base_case_scenario_id
-
-  const hasEnteredAssets =
-    ctx.assets.length > 0 || ctx.realEstateRows.length > 0
-
-  const rules: {
-    id: string
-    fire: boolean
-    alertType: 'info' | 'warning' | 'action_required'
-    severity: 'low' | 'medium' | 'high'
-    title: string
-    description: string
-    linkPath: string | null
-    context: Record<string, unknown>
-  }[] = [
-    {
-      id: 'estate_ilit_gap',
-      fire: lifeInsuranceOutsideIlit > ILIT_GAP_DOLLARS,
-      alertType: lifeInsuranceOutsideIlit > 1_000_000 ? 'action_required' : 'warning',
-      severity: lifeInsuranceOutsideIlit > 1_000_000 ? 'high' : 'medium',
-      title: 'Life insurance outside an ILIT',
-      description: `$${Math.round(lifeInsuranceOutsideIlit).toLocaleString()} in life insurance death benefit appears outside an irrevocable life insurance trust (ILIT). Consider whether an ILIT would reduce estate tax exposure.`,
-      linkPath: '/insurance',
-      context: { lifeInsuranceOutsideIlit },
-    },
-    {
-      id: 'estate_gifting_gap',
-      fire: grossEstate > SUNSET_ESTATE_THRESHOLD && !hasGiftingProgram,
-      alertType: 'warning',
-      severity: 'medium',
-      title: 'No annual gifting program',
-      description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, above the typical sunset planning threshold, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
-      linkPath: '/my-estate-strategy',
-      context: { grossEstate, sunsetThreshold: SUNSET_ESTATE_THRESHOLD },
-    },
-    {
-      id: 'estate_large_no_trust',
-      fire: grossEstate >= LARGE_ESTATE_NO_TRUST_THRESHOLD && !hasTrustOnFile,
-      alertType: 'action_required',
-      severity: 'high',
-      title: 'Large estate without a trust',
-      description:
-        'Your estate is $1M or more and no revocable trust is on file. Consider whether a trust would help avoid probate and align with your distribution goals.',
-      linkPath: '/trust-will',
-      context: { grossEstate },
-    },
-    {
-      id: 'estate_no_base_case',
-      fire: hasEnteredAssets && !baseCaseId,
-      alertType: 'action_required',
-      severity: 'medium',
-      title: 'Generate your base-case estate projection',
-      description:
-        'You have entered assets, but no base-case projection has been generated yet. Run a base case to see estate tax exposure and planning gaps.',
-      linkPath: '/my-estate-strategy',
-      context: { hasEnteredAssets },
-    },
-  ]
-
-  for (const r of rules) {
-    if (r.fire) {
-      const { error: upsertError } = await supabase.rpc('upsert_household_alert', {
-        p_household_id: householdId,
-        p_rule_id: r.id,
-        p_alert_type: r.alertType,
-        p_severity: r.severity,
-        p_title: r.title,
-        p_description: r.description,
-        p_action_href: r.linkPath,
-        p_action_label: r.linkPath ? 'Review now' : null,
-        p_context_data: r.context,
-      })
-      if (!upsertError) triggered++
-      else console.error('upsert_household_alert (estate):', upsertError)
-    } else {
-      await supabase.rpc('resolve_household_alert', {
-        p_household_id: householdId,
-        p_rule_id: r.id,
-      })
-      resolved++
-    }
-  }
-
-  return { triggered, resolved }
-}
-
 // ─── Rule evaluator ───────────────────────────────────────────────────────────
 
 interface HouseholdData {
@@ -634,6 +514,126 @@ function fillTemplate(
     const val = context[key]
     return val !== undefined && val !== null ? String(val) : `{${key}}`
   })
+}
+
+/** Sprint 81 — Consumer estate-planning alerts (string rule ids; no DB rows). Runs after DB alert_rules. */
+const SUNSET_ESTATE_THRESHOLD = 7_000_000
+const ILIT_GAP_DOLLARS = 250_000
+const LARGE_ESTATE_NO_TRUST_THRESHOLD = 1_000_000
+
+interface EstateAlertContext {
+  household: Record<string, unknown>
+  assets: Record<string, unknown>[]
+  insurancePolicies: { death_benefit?: number | null; is_ilit?: boolean | null }[]
+  realEstateRows: { current_value?: number | null }[]
+  estateHealthCheck: { has_trust?: boolean | null } | null
+}
+
+async function evaluateEstateAlerts(
+  supabase: ReturnType<typeof createClient>,
+  householdId: string,
+  ctx: EstateAlertContext,
+): Promise<{ triggered: number; resolved: number }> {
+  let triggered = 0
+  let resolved = 0
+
+  const grossEstate =
+    ctx.assets.reduce((s, a) => s + Number(a.value ?? 0), 0) +
+    ctx.realEstateRows.reduce((s, r) => s + Number(r.current_value ?? 0), 0)
+
+  const lifeInsuranceOutsideIlit = ctx.insurancePolicies
+    .filter((p) => !p.is_ilit)
+    .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
+
+  const hasTrustOnFile = ctx.estateHealthCheck?.has_trust === true
+
+  const hasGiftingProgram = Boolean(
+    (ctx.household as { has_gifting_program?: boolean }).has_gifting_program,
+  )
+  const baseCaseId = (ctx.household as { base_case_scenario_id?: string | null }).base_case_scenario_id
+
+  const hasEnteredAssets =
+    ctx.assets.length > 0 || ctx.realEstateRows.length > 0
+
+  const rules: {
+    id: string
+    fire: boolean
+    alertType: 'info' | 'warning' | 'action_required'
+    severity: 'low' | 'medium' | 'high'
+    title: string
+    description: string
+    linkPath: string | null
+    context: Record<string, unknown>
+  }[] = [
+    {
+      id: 'estate_ilit_gap',
+      fire: lifeInsuranceOutsideIlit > ILIT_GAP_DOLLARS,
+      alertType: lifeInsuranceOutsideIlit > 1_000_000 ? 'action_required' : 'warning',
+      severity: lifeInsuranceOutsideIlit > 1_000_000 ? 'high' : 'medium',
+      title: 'Life insurance outside an ILIT',
+      description: `$${Math.round(lifeInsuranceOutsideIlit).toLocaleString()} in life insurance death benefit appears outside an irrevocable life insurance trust (ILIT). Consider whether an ILIT would reduce estate tax exposure.`,
+      linkPath: '/insurance',
+      context: { lifeInsuranceOutsideIlit },
+    },
+    {
+      id: 'estate_gifting_gap',
+      fire: grossEstate > SUNSET_ESTATE_THRESHOLD && !hasGiftingProgram,
+      alertType: 'warning',
+      severity: 'medium',
+      title: 'No annual gifting program',
+      description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, above the typical sunset planning threshold, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
+      linkPath: '/my-estate-strategy',
+      context: { grossEstate, sunsetThreshold: SUNSET_ESTATE_THRESHOLD },
+    },
+    {
+      id: 'estate_large_no_trust',
+      fire: grossEstate >= LARGE_ESTATE_NO_TRUST_THRESHOLD && !hasTrustOnFile,
+      alertType: 'action_required',
+      severity: 'high',
+      title: 'Large estate without a trust',
+      description:
+        'Your estate is $1M or more and no revocable trust is on file. Consider whether a trust would help avoid probate and align with your distribution goals.',
+      linkPath: '/trust-will',
+      context: { grossEstate },
+    },
+    {
+      id: 'estate_no_base_case',
+      fire: hasEnteredAssets && !baseCaseId,
+      alertType: 'action_required',
+      severity: 'medium',
+      title: 'Generate your base-case estate projection',
+      description:
+        'You have entered assets, but no base-case projection has been generated yet. Run a base case to see estate tax exposure and planning gaps.',
+      linkPath: '/my-estate-strategy',
+      context: { hasEnteredAssets },
+    },
+  ]
+
+  for (const r of rules) {
+    if (r.fire) {
+      const { error: upsertError } = await supabase.rpc('upsert_household_alert', {
+        p_household_id: householdId,
+        p_rule_id: r.id,
+        p_alert_type: r.alertType,
+        p_severity: r.severity,
+        p_title: r.title,
+        p_description: r.description,
+        p_action_href: r.linkPath,
+        p_action_label: r.linkPath ? 'Review now' : null,
+        p_context_data: r.context,
+      })
+      if (!upsertError) triggered++
+      else console.error('upsert_household_alert (estate):', upsertError)
+    } else {
+      await supabase.rpc('resolve_household_alert', {
+        p_household_id: householdId,
+        p_rule_id: r.id,
+      })
+      resolved++
+    }
+  }
+
+  return { triggered, resolved }
 }
 
 // ─── Load active alerts for a household ──────────────────────────────────────
