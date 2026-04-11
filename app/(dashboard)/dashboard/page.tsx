@@ -24,14 +24,14 @@ export default async function DashboardPage() {
       supabase.from('income').select('amount, start_year, end_year').eq('owner_id', user!.id).neq('source', 'social_security'),
       supabase.from('expenses').select('amount').eq('owner_id', user!.id),
       household?.id ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1) : Promise.resolve({ data: [] }),
-      supabase.from('real_estate').select('current_value').eq('owner_id', user!.id),
+      supabase.from('real_estate').select('current_value, mortgage_balance').eq('owner_id', user!.id),
       supabase.from('businesses').select('estimated_value').eq('owner_id', user!.id),
       supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
     ])
 
   const totalAssets =
     (assets ?? []).reduce((sum, a) => sum + Number(a.value), 0) +
-    (realEstate ?? []).reduce((sum, r) => sum + Number(r.current_value), 0) +
+    (realEstate ?? []).reduce((sum, r) => sum + Number(r.current_value) - Number(r.mortgage_balance ?? 0), 0) +
     (businesses ?? []).reduce((sum, b) => sum + Number(b.estimated_value), 0) +
     (insurance ?? []).filter(p => !p.is_ilit).reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0)
   const totalLiabilities = (liabilities ?? []).reduce((sum, l) => sum + Number(l.balance), 0)
