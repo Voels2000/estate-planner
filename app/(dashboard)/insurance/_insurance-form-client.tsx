@@ -8,6 +8,7 @@ interface InsurancePolicy {
   insurance_type: string | null
   provider: string | null
   policy_name: string | null
+  owner: string | null
   policy_number: string | null
   coverage_amount: number | null
   death_benefit: number | null
@@ -24,6 +25,9 @@ interface InsurancePolicy {
 interface Props {
   policies: InsurancePolicy[]
   insuranceTypes: InsuranceTypeOption[]
+  person1Name: string
+  person2Name: string | null
+  hasSpouse: boolean
 }
 
 function fmt(n: number) {
@@ -36,6 +40,7 @@ const EMPTY: Partial<InsurancePolicy> = {
   insurance_type: null,
   provider: null,
   policy_name: null,
+  owner: null,
   policy_number: null,
   coverage_amount: null,
   death_benefit: null,
@@ -49,7 +54,26 @@ const EMPTY: Partial<InsurancePolicy> = {
   notes: null,
 }
 
-export default function InsuranceFormClient({ policies, insuranceTypes }: Props) {
+function displayPolicyOwner(
+  owner: string | null | undefined,
+  person1Name: string,
+  person2Name: string | null,
+): string | null {
+  if (!owner) return null
+  if (owner === 'person1') return person1Name
+  if (owner === 'person2') return person2Name ?? 'Person 2'
+  if (owner === 'trust') return 'Trust'
+  if (owner === 'other') return 'Other'
+  return owner
+}
+
+export default function InsuranceFormClient({
+  policies,
+  insuranceTypes,
+  person1Name,
+  person2Name,
+  hasSpouse,
+}: Props) {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<InsurancePolicy | null>(null)
   const [form, setForm] = useState<Partial<InsurancePolicy>>(EMPTY)
@@ -62,6 +86,7 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
   const showCashValue = selectedTypeData?.has_cash_value ?? false
   const showIlit = selectedTypeData?.has_ilit_option ?? false
   const showTermYears = form.insurance_type === 'term_life'
+  const showPerson2Option = Boolean(hasSpouse && person2Name?.trim())
 
   const openAdd = () => {
     setEditing(null)
@@ -90,10 +115,14 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
     try {
       const url = editing ? `/api/insurance/${editing.id}` : '/api/insurance'
       const method = editing ? 'PATCH' : 'POST'
+      const payload = {
+        ...form,
+        owner: form.owner?.trim() ? form.owner : null,
+      }
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (data.error) { setSaveError(data.error); return }
@@ -152,13 +181,19 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
         {policies.map((p) => {
           const typeLabel = insuranceTypes.find(t => t.value === p.insurance_type)?.label ?? p.insurance_type ?? 'Insurance'
           const primaryValue = p.death_benefit ?? p.coverage_amount ?? 0
+          const ownerLabel = displayPolicyOwner(p.owner, person1Name, person2Name)
 
           return (
             <div key={p.id} className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-neutral-900">{p.policy_name || p.provider || 'Insurance Policy'}</h3>
+                    <h3 className="font-semibold text-neutral-900">
+                      {p.policy_name || p.provider || 'Insurance Policy'}
+                      {ownerLabel && (
+                        <span className="text-neutral-500 font-normal"> · {ownerLabel}</span>
+                      )}
+                    </h3>
                     <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
                     {p.is_ilit && (
                       <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✓ ILIT</span>
@@ -243,11 +278,32 @@ export default function InsuranceFormClient({ policies, insuranceTypes }: Props)
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
-                  <input type="text" value={form.policy_name ?? ''} onChange={e => setForm(f => ({ ...f, policy_name: e.target.value || null }))}
-                    placeholder="e.g. 20-Year Term" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <div className="grid grid-cols-2 gap-3 items-start">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
+                    <input type="text" value={form.policy_name ?? ''} onChange={e => setForm(f => ({ ...f, policy_name: e.target.value || null }))}
+                      placeholder="e.g. 20-Year Term" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Owner</label>
+                    <select
+                      value={form.owner ?? ''}
+                      onChange={e => setForm(f => ({ ...f, owner: e.target.value || null }))}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    >
+                      <option value="">Select owner...</option>
+                      <option value="person1">{person1Name}</option>
+                      {showPerson2Option && (
+                        <option value="person2">{person2Name}</option>
+                      )}
+                      {form.owner === 'person2' && !showPerson2Option && (
+                        <option value="person2">{person2Name ?? 'Person 2'}</option>
+                      )}
+                      <option value="trust">Trust</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Provider</label>

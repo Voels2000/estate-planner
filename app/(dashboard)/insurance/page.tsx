@@ -12,7 +12,7 @@ export default async function InsurancePage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: policies }, insuranceTypes] = await Promise.all([
+  const [{ data: policies }, insuranceTypes, { data: household }] = await Promise.all([
     supabase
       .from('insurance_policies')
       .select('*')
@@ -20,12 +20,20 @@ export default async function InsurancePage() {
       .not('insurance_type', 'in', `(${PC_TYPE_VALUES.join(',')})`)
       .order('created_at', { ascending: false }),
     fetchInsuranceTypes(),
+    supabase
+      .from('households')
+      .select('person1_name, person2_name, has_spouse')
+      .eq('owner_id', user.id)
+      .maybeSingle(),
   ])
 
   return (
     <InsuranceFormClient
       policies={policies ?? []}
       insuranceTypes={insuranceTypes}
+      person1Name={household?.person1_name ?? 'Person 1'}
+      person2Name={household?.person2_name ?? null}
+      hasSpouse={household?.has_spouse ?? false}
     />
   )
 }
