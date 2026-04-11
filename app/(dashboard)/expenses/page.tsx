@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import ExpensesClient from './_expenses-client'
 
 export default async function ExpensesPage() {
@@ -32,8 +33,8 @@ export default async function ExpensesPage() {
     <ExpensesClient
       initialExpenses={expenses ?? []}
       expenseTypes={expenseTypes ?? []}
-      person1Name={household?.person1_name ?? 'Person 1'}
-      person2Name={household?.person2_name ?? 'Person 2'}
+      person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
+      person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
     />
   )
 }

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import MyFamilyClient from './_my-family-client'
@@ -48,8 +49,8 @@ export default async function MyFamilyPage() {
   return (
     <MyFamilyClient
       householdId={household.id}
-      person1Name={household.person1_name}
-      person2Name={household.person2_name}
+      person1Name={household.person1_name != null ? displayPersonFirstName(household.person1_name) : null}
+      person2Name={household.person2_name != null ? displayPersonFirstName(household.person2_name) : null}
       hasSpouse={household.has_spouse === true}
       initialPeople={householdPeople ?? []}
     />

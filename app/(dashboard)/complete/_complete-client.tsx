@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { YearRow } from '@/lib/calculations/projection-complete'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
@@ -9,11 +10,6 @@ function fmt(n: number) {
   if (n >= 1_000_000)  return `$${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000)      return `$${Math.round(n / 1_000)}K`
   return `$${Math.round(n).toLocaleString()}`
-}
-
-function firstNameOnly(fullName: string | null | undefined): string {
-  if (!fullName) return ''
-  return fullName.trim().split(' ')[0]
 }
 
 // ─── Summary Card ─────────────────────────────────────────────────────────────
@@ -74,8 +70,8 @@ export default function CompleteClient({
   person2Name: string | null
   hasSpouse: boolean
 }) {
-  const p1 = firstNameOnly(person1Name)
-  const p2 = hasSpouse ? firstNameOnly(person2Name) : null
+  const p1 = displayPersonFirstName(person1Name)
+  const p2 = hasSpouse ? displayPersonFirstName(person2Name) : null
 
   // ── Pagination ─────────────────────────────────────────────────────────────
   const PAGE_SIZE = 10

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 
 type Household = {
@@ -280,8 +281,8 @@ export default function ScenariosPage() {
             </button>
           </div>
           <div className="space-y-2 text-sm text-neutral-600">
-            <p><span className="font-medium text-neutral-800">{household.person1_name ?? 'Person 1'}</span> retires at {household.person1_retirement_age}, SS at {household.person1_ss_claiming_age}</p>
-            {household.has_spouse && <p><span className="font-medium text-neutral-800">{household.person2_name ?? 'Person 2'}</span> retires at {household.person2_retirement_age ?? '—'}, SS at {household.person2_ss_claiming_age ?? '—'}</p>}
+            <p><span className="font-medium text-neutral-800">{displayPersonFirstName(household.person1_name, 'Person 1')}</span> retires at {household.person1_retirement_age}, SS at {household.person1_ss_claiming_age}</p>
+            {household.has_spouse && <p><span className="font-medium text-neutral-800">{displayPersonFirstName(household.person2_name, 'Person 2')}</span> retires at {household.person2_retirement_age ?? '—'}, SS at {household.person2_ss_claiming_age ?? '—'}</p>}
             <p>State: <span className="font-medium text-neutral-800">{household.state_primary || 'None'}</span></p>
             <p>Growth: <span className="font-medium text-neutral-800">{household.growth_rate_accumulation}% / {household.growth_rate_retirement}%</span></p>
           </div>
@@ -450,13 +451,13 @@ function ScenarioEditor({
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">{household.person1_name ?? 'Person 1'} Retire Age</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">{displayPersonFirstName(household.person1_name, 'Person 1')} Retire Age</label>
             <input type="number" min={50} max={80} value={scenario.person1_retirement_age}
               onChange={e => onChange({ ...scenario, person1_retirement_age: Number(e.target.value) })}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">{household.person1_name ?? 'Person 1'} SS Age</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">{displayPersonFirstName(household.person1_name, 'Person 1')} SS Age</label>
             <input type="number" min={62} max={70} value={scenario.person1_ss_claiming_age}
               onChange={e => onChange({ ...scenario, person1_ss_claiming_age: Number(e.target.value) })}
               className={inputClass} />
@@ -466,13 +467,13 @@ function ScenarioEditor({
         {household.has_spouse && (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">{household.person2_name ?? 'Person 2'} Retire Age</label>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">{displayPersonFirstName(household.person2_name, 'Person 2')} Retire Age</label>
               <input type="number" min={50} max={80} value={scenario.person2_retirement_age ?? 65}
                 onChange={e => onChange({ ...scenario, person2_retirement_age: Number(e.target.value) })}
                 className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">{household.person2_name ?? 'Person 2'} SS Age</label>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">{displayPersonFirstName(household.person2_name, 'Person 2')} SS Age</label>
               <input type="number" min={62} max={70} value={scenario.person2_ss_claiming_age ?? 67}
                 onChange={e => onChange({ ...scenario, person2_ss_claiming_age: Number(e.target.value) })}
                 className={inputClass} />

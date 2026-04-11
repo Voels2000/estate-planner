@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
@@ -326,9 +327,13 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const exportPdfData: PDFReportData = {
     householdId: household.id,
     clientName: exportClientName,
-    person1Name: `${household.person1_first_name} ${household.person1_last_name}`,
+    person1Name: displayPersonFirstName(
+      [household.person1_first_name, household.person1_last_name].filter(Boolean).join(' ').trim() || null,
+    ),
     person2Name: household.has_spouse
-      ? `${household.person2_first_name} ${household.person2_last_name}`
+      ? displayPersonFirstName(
+          [household.person2_first_name, household.person2_last_name].filter(Boolean).join(' ').trim() || null,
+        )
       : undefined,
     advisorName: advisorDisplayName || 'Your Advisor',
     firmName: 'MyWealthMaps',
@@ -360,9 +365,13 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const exportExcelData: ExcelExportData = {
     household: {
       name: exportClientName,
-      person1Name: `${household.person1_first_name} ${household.person1_last_name}`,
+      person1Name: displayPersonFirstName(
+        [household.person1_first_name, household.person1_last_name].filter(Boolean).join(' ').trim() || null,
+      ),
       person2Name: household.has_spouse
-        ? `${household.person2_first_name} ${household.person2_last_name}`
+        ? displayPersonFirstName(
+            [household.person2_first_name, household.person2_last_name].filter(Boolean).join(' ').trim() || null,
+          )
         : undefined,
       state: household.state_primary ?? '',
       filingStatus: household.filing_status ?? '',

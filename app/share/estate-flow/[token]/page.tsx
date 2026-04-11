@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import SharePageClient from './SharePageClient'
 
 interface Props {
@@ -39,7 +40,9 @@ export default async function EstateFlowSharePage({ params }: Props) {
   return (
     <SharePageClient
       flowData={flowData}
-      householdName={household?.person1_name ?? household?.name ?? 'Estate Plan'}
+      householdName={
+        displayPersonFirstName(household?.person1_name) || household?.name || 'Estate Plan'
+      }
       expiresAt={linkRow.expires_at}
       token={token}
     />

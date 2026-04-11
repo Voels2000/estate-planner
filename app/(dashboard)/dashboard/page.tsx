@@ -6,6 +6,7 @@ import { computeEstateTaxProjection } from '@/lib/calculations/estate-tax-projec
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { createClient } from '@/lib/supabase/server'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { DashboardClient } from '../_dashboard-client'
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
@@ -246,12 +247,12 @@ export default async function DashboardPage() {
   const hasRetirementInputs = !!(p1RetirementAge || p1SSPia || p2SSPia)
 
   const retirementSnapshot = hasRetirementInputs ? {
-    p1Name: household?.person1_name ?? null,
+    p1Name: household?.person1_name != null ? displayPersonFirstName(household.person1_name) : null,
     p1RetirementAge,
     p1SSClaimingAge,
     p1MonthlyBenefit,
     p1BirthYear,
-    p2Name: hasSpouse ? (household?.person2_name ?? null) : null,
+    p2Name: hasSpouse && household?.person2_name != null ? displayPersonFirstName(household.person2_name) : null,
     p2RetirementAge: hasSpouse ? p2RetirementAge : null,
     p2SSClaimingAge: hasSpouse ? p2SSClaimingAge2 : null,
     p2MonthlyBenefit: hasSpouse ? p2MonthlyBenefit : null,

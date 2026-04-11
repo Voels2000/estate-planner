@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
 type ProjectionYear = {
   age: number
@@ -160,8 +161,8 @@ export default function ProjectionsPage() {
   const avgRetirementTax = retirementRows.length > 0
     ? Math.round(retirementRows.reduce((s, r) => s + r.taxes, 0) / retirementRows.length)
     : 0
-  const p1 = household.person1_name?.split(' ')[0] ?? 'Person 1'
-  const p2 = household.has_spouse ? (household.person2_name?.split(' ')[0] ?? 'Person 2') : null
+  const p1 = displayPersonFirstName(household.person1_name, 'Person 1')
+  const p2 = household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">

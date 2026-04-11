@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, Fragment } from 'react'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
 type Household = {
   id: string
@@ -127,8 +128,8 @@ export function RmdClient({ household, assets }: { household: Household | null; 
   useEffect(() => {
     if (!household) return
     const growthRate = (household.growth_rate_retirement ?? 5) / 100
-    const p1Name = household.person1_name?.split(' ')[0] ?? 'Person 1'
-    const p2Name = household.has_spouse ? (household.person2_name?.split(' ')[0] ?? 'Person 2') : null
+    const p1Name = displayPersonFirstName(household.person1_name, 'Person 1')
+    const p2Name = household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
     const p1Assets = assets.filter(a => { const o = a.owner?.trim().toLowerCase() ?? ''; return o === 'person1' || o === p1Name.toLowerCase() || o === household.person1_name?.trim().toLowerCase() })
     const p2Assets = household.has_spouse ? assets.filter(a => { const o = a.owner?.trim().toLowerCase() ?? ''; return o === 'person2' || o === p2Name?.toLowerCase() || o === household.person2_name?.trim().toLowerCase() }) : []
     const pooledAssets = assets.filter(a => !p1Assets.includes(a) && !p2Assets.includes(a))
@@ -175,8 +176,8 @@ export function RmdClient({ household, assets }: { household: Household | null; 
   )
 
   const currentYear = new Date().getFullYear()
-  const p1Name = household.person1_name?.split(' ')[0] ?? 'Person 1'
-  const p2Name = household.has_spouse ? (household.person2_name?.split(' ')[0] ?? 'Person 2') : null
+  const p1Name = displayPersonFirstName(household.person1_name, 'Person 1')
+  const p2Name = household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
   const p1StartAge = rmdStartAge(household.person1_birth_year)
   const p2StartAge = household.person2_birth_year ? rmdStartAge(household.person2_birth_year) : null
   const currentRow = rows.find(r => r.year === currentYear)

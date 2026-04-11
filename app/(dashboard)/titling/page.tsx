@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import TitlingClient from './_titling-client'
@@ -105,8 +106,8 @@ export default async function TitlingPage() {
       initialBusinesses={businesses ?? []}
       initialInsurancePolicyTitling={insurancePolicyTitling ?? []}
       initialBusinessTitling={businessTitling ?? []}
-      person1Name={household?.person1_name ?? 'Person 1'}
-      person2Name={household?.person2_name ?? 'Person 2'}
+      person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
+      person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
     />
   )
 }

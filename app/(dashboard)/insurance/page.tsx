@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { fetchInsuranceTypes } from '@/lib/ref-data-fetchers'
 import InsuranceFormClient from './_insurance-form-client'
 
@@ -31,8 +32,8 @@ export default async function InsurancePage() {
     <InsuranceFormClient
       policies={policies ?? []}
       insuranceTypes={insuranceTypes}
-      person1Name={household?.person1_name ?? 'Person 1'}
-      person2Name={household?.person2_name ?? null}
+      person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
+      person2Name={household?.person2_name != null ? displayPersonFirstName(household.person2_name, 'Person 2') : null}
       hasSpouse={household?.has_spouse ?? false}
     />
   )

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { fetchPropertyTypes, fetchTitlingTypes } from '@/lib/ref-data-fetchers'
@@ -36,8 +37,8 @@ export default async function RealEstatePage() {
   return (
     <RealEstateClient
       initialProperties={properties ?? []}
-      person1Name={household?.person1_name ?? 'Person 1'}
-      person2Name={household?.person2_name ?? 'Person 2'}
+      person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
+      person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
       filingStatus={household?.filing_status ?? 'single'}
       titlingTypes={titlingTypes}
       propertyTypes={propertyTypes}

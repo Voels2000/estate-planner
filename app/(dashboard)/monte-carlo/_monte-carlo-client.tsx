@@ -6,6 +6,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts'
 import { formatCurrency } from '@/lib/insurance'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { MonteCarloInputs, YearlyDataPoint } from '@/lib/monte-carlo'
 
 interface SavedRun {
@@ -413,8 +414,8 @@ export function MonteCarloClient() {
           annual_spending:             p.annual_spending          ?? prev.annual_spending,
           survivor_spending_pct:       p.survivor_spending_pct    ?? prev.survivor_spending_pct,
         }))
-        if (prefillData.person1_name) setP1Name(prefillData.person1_name)
-        if (prefillData.person2_name) setP2Name(prefillData.person2_name)
+        if (prefillData.person1_name) setP1Name(displayPersonFirstName(prefillData.person1_name, 'Person 1'))
+        if (prefillData.person2_name) setP2Name(displayPersonFirstName(prefillData.person2_name, 'Person 2'))
         setConfidence(prefillData.confidence ?? {})
         setSummary(prefillData.summary ?? null)
       }

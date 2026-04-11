@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { RefOption } from '@/lib/ref-data-fetchers'
 
 const US_STATE_CODES = [
@@ -93,8 +94,8 @@ export default function AssetsPage() {
     setAssetTypes(typesData ?? [])
     setLiquidityTypes(liquidityData ?? [])
     setTitlingTypes(titlingData ?? [])
-    if (household?.person1_name) setPerson1Name(household.person1_name)
-    if (household?.person2_name) setPerson2Name(household.person2_name)
+    if (household?.person1_name) setPerson1Name(displayPersonFirstName(household.person1_name, 'Person 1'))
+    if (household?.person2_name) setPerson2Name(displayPersonFirstName(household.person2_name, 'Person 2'))
     setIsLoading(false)
   }, [])
 

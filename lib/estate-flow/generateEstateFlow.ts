@@ -7,6 +7,7 @@
 //             households, projection_scenarios, household_people
 
 import { createClient } from '@/lib/supabase/client'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
 
@@ -336,8 +337,8 @@ export async function generateEstateFlow(
   }
 
   // ── 1. Owner node(s) ────────────────────────────────────────────────────────
-  const person1Name = household.person1_name ?? 'Person 1'
-  const person2Name = household.person2_name ?? 'Spouse'
+  const person1Name = displayPersonFirstName(household.person1_name, 'Person 1')
+  const person2Name = displayPersonFirstName(household.person2_name, 'Spouse')
 
   // For first_death: person1 is the deceased, person2 is surviving spouse
   // For second_death: person2 is the deceased, person1 is the surviving spouse

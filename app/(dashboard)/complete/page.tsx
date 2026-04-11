@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getUserAccess } from '@/lib/get-user-access'
@@ -52,8 +53,10 @@ export default async function CompletePage() {
   return (
     <CompleteClient
       rows={rows}
-      person1Name={household.person1_name ?? 'Person 1'}
-      person2Name={household.has_spouse ? (household.person2_name ?? 'Person 2') : null}
+      person1Name={displayPersonFirstName(household.person1_name, 'Person 1')}
+      person2Name={
+        household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
+      }
       hasSpouse={household.has_spouse ?? false}
     />
   )
