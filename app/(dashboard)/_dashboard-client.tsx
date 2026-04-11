@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -23,29 +23,25 @@ type SetupStep = {
 }
 
 type RetirementSnapshot = {
-  // Person 1
   p1Name: string | null
   p1RetirementAge: number | null
   p1SSClaimingAge: number | null
   p1MonthlyBenefit: number | null
   p1BirthYear: number | null
-  // Person 2
   p2Name: string | null
   p2RetirementAge: number | null
   p2SSClaimingAge: number | null
   p2MonthlyBenefit: number | null
   hasSpouse: boolean
-  // Combined
   yearsToRetirement: number | null
   combinedSSMonthly: number | null
   projectedAnnualIncome: number | null
   projectedAnnualExpenses: number | null
-  projectedIncomeGap: number | null // positive = surplus, negative = shortfall
+  projectedIncomeGap: number | null
 }
 
 type Props = {
   userName: string
-  // Financial Summary
   totalAssets: number
   totalLiabilities: number
   netWorth: number
@@ -58,10 +54,10 @@ type Props = {
   totalIncome: number
   totalExpenses: number
   savingsRate: number
+  currentYearNet: number       // totalIncome (all sources incl SS) - totalExpenses
+  annualSSFromPIA: number      // SS component for display breakdown
   allocationContext: AssetAllocationContext
-  // Retirement Summary
   retirementSnapshot: RetirementSnapshot | null
-  // Estate Summary
   estateHealthScore?: EstateHealthScore | null
   conflictReport?: {
     conflicts: Array<{
@@ -77,7 +73,6 @@ type Props = {
   sunsetFederalTax: number
   stateTax: number
   stateCode?: string
-  // Setup / meta
   setupSteps: SetupStep[]
   completedSteps: number
   progressPct: number
@@ -88,6 +83,35 @@ type Props = {
   completionScore?: CompletionScore | null
   consumerTier?: number
   isAdvisor?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// localStorage keys for section open/close state
+// ---------------------------------------------------------------------------
+
+const SECTION_KEYS = {
+  financial: 'dashboard_section_financial',
+  retirement: 'dashboard_section_retirement',
+  estate: 'dashboard_section_estate',
+} as const
+
+function readSectionState(key: string, defaultOpen: boolean): boolean {
+  if (typeof window === 'undefined') return defaultOpen
+  try {
+    const val = localStorage.getItem(key)
+    if (val === null) return defaultOpen
+    return val === 'true'
+  } catch {
+    return defaultOpen
+  }
+}
+
+function writeSectionState(key: string, open: boolean) {
+  try {
+    localStorage.setItem(key, String(open))
+  } catch {
+    // ignore — storage may be unavailable
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -119,8 +143,6 @@ function hasRetirementData(props: Props) {
   return !!(s.p1RetirementAge || s.p1MonthlyBenefit || s.p2MonthlyBenefit)
 }
 
-// Estate summary shows when household has assets — no base case required for score/alerts.
-// Tax panel only shows when base case exists.
 function hasEstateData(props: Props) {
   return props.totalAssets > 0
 }
@@ -177,23 +199,35 @@ function StatBox({ label, value, sub, highlight }: {
   )
 }
 
-function CollapsibleSection({ title, subtitle, badge, defaultOpen, locked, lockedMessage, lockedHref, lockedHrefLabel, children }: {
+// CollapsibleSection — persists open/close state to localStorage
+function CollapsibleSection({ title, subtitle, badge, defaultOpen, storageKey, locked, lockedMessage, lockedHref, lockedHrefLabel, children }: {
   title: string
   subtitle?: string
-  badge?: ReactNode
+  badge?: React.ReactNode
   defaultOpen: boolean
+  storageKey?: string       // if provided, persists state to localStorage
   locked?: boolean
   lockedMessage?: string
   lockedHref?: string
   lockedHrefLabel?: string
-  children: ReactNode
+  children: React.ReactNode
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  // Initialize from localStorage if key provided, else use default
+  const [open, setOpen] = useState(() =>
+    storageKey ? readSectionState(storageKey, defaultOpen) : defaultOpen
+  )
+
+  function toggle() {
+    const next = !open
+    setOpen(next)
+    if (storageKey) writeSectionState(storageKey, next)
+  }
+
   return (
     <div className="mb-6 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={toggle}
         className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-neutral-50 transition"
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -234,8 +268,8 @@ function CollapsibleSection({ title, subtitle, badge, defaultOpen, locked, locke
 export function DashboardClient(props: Props) {
   const {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
-    totalIncome, totalExpenses, savingsRate, allocationContext,
-    retirementSnapshot, estateHealthScore, conflictReport,
+    totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
+    allocationContext, retirementSnapshot, estateHealthScore, conflictReport,
     currentFederalTax, sunsetFederalTax, stateTax, stateCode,
     setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
@@ -259,6 +293,9 @@ export function DashboardClient(props: Props) {
   const totalNetWorthSources = netWorthBySource.financial + netWorthBySource.realEstateEquity + netWorthBySource.business + netWorthBySource.insurance
   const sunsetDelta = sunsetFederalTax - currentFederalTax
 
+  // Non-SS income = totalIncome - SS component (for breakdown display)
+  const nonSSIncome = totalIncome - annualSSFromPIA
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
 
@@ -274,18 +311,14 @@ export function DashboardClient(props: Props) {
               : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
           </p>
         </div>
-        {/* Regenerate only — Generate button moved to My Estate Strategy */}
         {hasBaseCase && householdId && (
-          <Link
-            href="/my-estate-strategy"
-            className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition"
-          >
+          <Link href="/my-estate-strategy" className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition">
             View Estate Strategy →
           </Link>
         )}
       </div>
 
-      {/* ── Setup Progress (pinned top when incomplete) ──────────────────── */}
+      {/* ── Setup Progress ───────────────────────────────────────────────── */}
       {!allDone && (
         <div className="mb-6 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-3">
@@ -335,25 +368,24 @@ export function DashboardClient(props: Props) {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 1 — Financial Summary (expanded)                          */}
+      {/* SECTION 1 — Financial Summary                                     */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <CollapsibleSection
         title="Financial Summary"
         subtitle={hasFinancialData(props) ? `Net worth ${fmt(netWorth)}` : 'Add assets and income to see your summary'}
         defaultOpen={true}
+        storageKey={SECTION_KEYS.financial}
         locked={!hasFinancialData(props)}
         lockedMessage="Add your assets, liabilities, income, and expenses to see your full financial summary."
         lockedHref="/assets"
         lockedHrefLabel="Add assets"
       >
-        {/* Net worth headline */}
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">Net Worth</p>
           <p className={`text-4xl font-bold mb-1 ${netWorth >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>{fmt(netWorth)}</p>
           <p className="text-xs text-neutral-400">Total assets minus liabilities</p>
         </div>
 
-        {/* By source breakdown */}
         {totalNetWorthSources > 0 && (
           <div className="mb-6 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">By Source</p>
@@ -369,9 +401,8 @@ export function DashboardClient(props: Props) {
           </div>
         )}
 
-        {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <SummaryCard label="Annual Income" value={fmt(totalIncome)} sub="All sources" icon="💰" />
+          <SummaryCard label="Annual Income" value={fmt(totalIncome)} sub="All sources incl. SS" icon="💰" />
           <SummaryCard label="Annual Expenses" value={fmt(totalExpenses)} sub="All categories" icon="💸" />
           <SummaryCard label="Savings Rate" value={`${savingsRate}%`} sub="Income minus expenses" icon="📊"
             highlight={savingsRate >= 20 ? 'green' : savingsRate >= 10 ? 'yellow' : 'red'} />
@@ -383,15 +414,20 @@ export function DashboardClient(props: Props) {
       </CollapsibleSection>
 
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 2 — Retirement Summary (collapsed)                        */}
+      {/* SECTION 2 — Retirement Summary                                    */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <CollapsibleSection
         title="Retirement Summary"
         subtitle={hasRetirementData(props) && retirementSnapshot
-          ? `${retirementSnapshot.p1RetirementAge ? `Retire at ${retirementSnapshot.p1RetirementAge}` : ''}${retirementSnapshot.yearsToRetirement !== null ? ` · ${retirementSnapshot.yearsToRetirement} years away` : ''}${retirementSnapshot.combinedSSMonthly ? ` · SS ${fmt(retirementSnapshot.combinedSSMonthly)}/mo combined` : ''}`
+          ? [
+              retirementSnapshot.p1RetirementAge ? `Retire at ${retirementSnapshot.p1RetirementAge}` : null,
+              retirementSnapshot.yearsToRetirement !== null ? `${retirementSnapshot.yearsToRetirement} years away` : null,
+              retirementSnapshot.combinedSSMonthly ? `SS ${fmt(retirementSnapshot.combinedSSMonthly)}/mo combined` : null,
+            ].filter(Boolean).join(' · ')
           : 'Complete your profile to see your retirement snapshot'
         }
         defaultOpen={false}
+        storageKey={SECTION_KEYS.retirement}
         locked={!hasRetirementData(props)}
         lockedMessage="Add your retirement age and Social Security PIA on your profile page to see your retirement snapshot."
         lockedHref="/profile"
@@ -400,75 +436,89 @@ export function DashboardClient(props: Props) {
         {retirementSnapshot && (
           <div className="space-y-5">
 
-            {/* Key stats grid */}
+            {/* Current year income vs expenses — the live net metric */}
+            <div className={`rounded-xl border px-5 py-4 ${
+              currentYearNet >= 0 ? 'border-emerald-100 bg-emerald-50' : 'border-red-100 bg-red-50'
+            }`}>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">
+                    Current Year — Income vs Expenses
+                  </p>
+                  <div className="flex items-end gap-2">
+                    <p className={`text-3xl font-bold ${currentYearNet >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {currentYearNet >= 0 ? '+' : ''}{fmt(currentYearNet)}
+                    </p>
+                    <p className={`text-sm mb-1 ${currentYearNet >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {currentYearNet >= 0 ? 'annual surplus' : 'annual shortfall'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right text-xs text-neutral-500 space-y-1 shrink-0">
+                  {nonSSIncome > 0 && <p>Other income: <span className="font-semibold text-neutral-700">{fmt(nonSSIncome)}</span></p>}
+                  {annualSSFromPIA > 0 && <p>SS income: <span className="font-semibold text-neutral-700">{fmt(annualSSFromPIA)}</span></p>}
+                  <p>Expenses: <span className="font-semibold text-red-600">− {fmt(totalExpenses)}</span></p>
+                </div>
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-2">
+                Updates automatically as your income and expense data changes.
+              </p>
+            </div>
+
+            {/* Key retirement stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatBox
                 label="Retirement Age"
                 value={retirementSnapshot.p1RetirementAge?.toString() ?? '—'}
                 sub={retirementSnapshot.yearsToRetirement !== null ? `${retirementSnapshot.yearsToRetirement} years away` : undefined}
               />
-              <StatBox
-                label="Years to Retirement"
-                value={retirementSnapshot.yearsToRetirement?.toString() ?? '—'}
-              />
+              <StatBox label="Years to Retirement" value={retirementSnapshot.yearsToRetirement?.toString() ?? '—'} />
               {retirementSnapshot.projectedAnnualIncome !== null ? (
                 <StatBox
                   label="Projected Income at Retirement"
                   value={fmt(retirementSnapshot.projectedAnnualIncome)}
-                  sub="SS + RMD + other income"
+                  sub="SS + RMD + other"
                   highlight={retirementSnapshot.projectedIncomeGap !== null && retirementSnapshot.projectedIncomeGap >= 0 ? 'green' : undefined}
                 />
               ) : (
-                <StatBox
-                  label="Combined SS / mo"
-                  value={retirementSnapshot.combinedSSMonthly ? fmt(retirementSnapshot.combinedSSMonthly) : '—'}
-                  sub="at claiming age"
-                />
+                <StatBox label="Combined SS / mo" value={retirementSnapshot.combinedSSMonthly ? fmt(retirementSnapshot.combinedSSMonthly) : '—'} sub="at claiming age" />
               )}
               {retirementSnapshot.projectedIncomeGap !== null ? (
                 <StatBox
-                  label={retirementSnapshot.projectedIncomeGap >= 0 ? 'Income Surplus / yr' : 'Income Gap / yr'}
+                  label={retirementSnapshot.projectedIncomeGap >= 0 ? 'Retirement Surplus / yr' : 'Retirement Gap / yr'}
                   value={fmt(Math.abs(retirementSnapshot.projectedIncomeGap))}
                   sub={retirementSnapshot.projectedIncomeGap >= 0 ? 'projected surplus' : 'projected shortfall'}
                   highlight={retirementSnapshot.projectedIncomeGap >= 0 ? 'green' : 'red'}
                 />
               ) : (
-                <StatBox
-                  label="Projected Expenses"
-                  value={fmt(totalExpenses)}
-                  sub="current annual"
-                />
+                <StatBox label="Annual Expenses" value={fmt(totalExpenses)} sub="current" />
               )}
             </div>
 
-            {/* Per-person SS breakdown */}
+            {/* Per-person SS */}
             {(retirementSnapshot.p1MonthlyBenefit || retirementSnapshot.p2MonthlyBenefit) && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">Social Security</p>
-                <div className={`grid gap-3 ${retirementSnapshot.hasSpouse ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">Social Security by Person</p>
+                <div className={`grid gap-3 ${retirementSnapshot.hasSpouse && retirementSnapshot.p2MonthlyBenefit ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
                   {retirementSnapshot.p1MonthlyBenefit && (
                     <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
                       <p className="text-xs text-blue-500 mb-1">{firstName(retirementSnapshot.p1Name) || 'You'}</p>
                       <p className="text-lg font-bold text-blue-800">{fmt(retirementSnapshot.p1MonthlyBenefit)}<span className="text-xs font-normal text-blue-500">/mo</span></p>
-                      {retirementSnapshot.p1SSClaimingAge && (
-                        <p className="text-[10px] text-blue-400 mt-0.5">claiming at {retirementSnapshot.p1SSClaimingAge}</p>
-                      )}
+                      {retirementSnapshot.p1SSClaimingAge && <p className="text-[10px] text-blue-400 mt-0.5">claiming at {retirementSnapshot.p1SSClaimingAge}</p>}
                     </div>
                   )}
                   {retirementSnapshot.hasSpouse && retirementSnapshot.p2MonthlyBenefit && (
                     <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-3">
                       <p className="text-xs text-violet-500 mb-1">{firstName(retirementSnapshot.p2Name) || 'Spouse'}</p>
                       <p className="text-lg font-bold text-violet-800">{fmt(retirementSnapshot.p2MonthlyBenefit)}<span className="text-xs font-normal text-violet-500">/mo</span></p>
-                      {retirementSnapshot.p2SSClaimingAge && (
-                        <p className="text-[10px] text-violet-400 mt-0.5">claiming at {retirementSnapshot.p2SSClaimingAge}</p>
-                      )}
+                      {retirementSnapshot.p2SSClaimingAge && <p className="text-[10px] text-violet-400 mt-0.5">claiming at {retirementSnapshot.p2SSClaimingAge}</p>}
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Income gap alert */}
+            {/* Retirement income gap alert */}
             {retirementSnapshot.projectedIncomeGap !== null && retirementSnapshot.projectedIncomeGap < 0 && (
               <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 flex items-start gap-3">
                 <span className="text-red-500 text-lg mt-0.5">⚠</span>
@@ -482,15 +532,14 @@ export function DashboardClient(props: Props) {
             )}
 
             <p className="text-[10px] text-neutral-400">
-              Based on profile inputs. SS benefit adjusted for claiming age vs full retirement age. See Retirement Planning for detailed analysis.
+              SS adjusted for claiming age vs full retirement age. Projected income from base case projection at retirement year.
             </p>
           </div>
         )}
       </CollapsibleSection>
 
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 3 — Estate Summary (collapsed)                            */}
-      {/* Gates: score+alerts show when assets > 0; tax panel needs base case */}
+      {/* SECTION 3 — Estate Summary                                        */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <CollapsibleSection
         title="Estate Summary"
@@ -509,6 +558,7 @@ export function DashboardClient(props: Props) {
           ) : undefined
         }
         defaultOpen={false}
+        storageKey={SECTION_KEYS.estate}
         locked={!hasEstateData(props)}
         lockedMessage="Add your assets to see your estate readiness score, planning gaps, and tax exposure."
         lockedHref="/assets"
@@ -516,7 +566,6 @@ export function DashboardClient(props: Props) {
       >
         <div className="space-y-6">
 
-          {/* Estate Readiness Score */}
           {estateHealthScore && (
             <div className={`rounded-xl border p-5 ${scoreBg(estateHealthScore.score)}`}>
               <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
@@ -553,7 +602,6 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {/* Tax exposure — only when base case exists */}
           {hasBaseCase && (currentFederalTax > 0 || stateTax > 0 || sunsetFederalTax > 0) && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Current Tax Exposure</p>
@@ -582,7 +630,6 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {/* Planning Gaps — AlertCenter */}
           {householdId && userId && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Planning Gaps</p>
@@ -590,7 +637,6 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {/* Titling & Beneficiary Conflicts */}
           {conflictReport && conflictReport.conflicts.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-3">
@@ -627,7 +673,6 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {/* Estate flow + strategy links */}
           {householdId && (
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <button onClick={() => setShowWalkthrough(true)} className="text-xs text-indigo-600 font-medium hover:underline">
@@ -641,7 +686,6 @@ export function DashboardClient(props: Props) {
         </div>
       </CollapsibleSection>
 
-      {/* ── Walkthrough modal ────────────────────────────────────────────── */}
       {showWalkthrough && householdId && (
         <div className="fixed inset-0 z-50 bg-black/40 p-4 md:p-8 overflow-y-auto">
           <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-6 relative">
