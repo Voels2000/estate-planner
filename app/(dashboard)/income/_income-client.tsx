@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Income
+// Route: /income
+// ─────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addIncome, updateIncome, deleteIncome } from './actions'

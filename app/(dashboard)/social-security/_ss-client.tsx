@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Social Security
+// Route: /social-security
+// ─────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 
 type Scenario = {

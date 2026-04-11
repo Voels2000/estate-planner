@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Assets
+// Route: /assets
+// ─────────────────────────────────────────
+
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'

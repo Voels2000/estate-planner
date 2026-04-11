@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Income
+// Route: /income
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { displayPersonFirstName } from '@/lib/display-person-name'

@@ -1,4 +1,10 @@
 "use client";
+
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Roth Conversion
+// Route: /roth
+// ─────────────────────────────────────────
+
 // app/(dashboard)/roth/_roth-client.tsx
 // Sprint 13 — Roth Optimizer UI
 

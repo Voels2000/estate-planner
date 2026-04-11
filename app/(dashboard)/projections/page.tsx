@@ -1,4 +1,10 @@
 'use client'
+
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Projections
+// Route: /projections
+// ─────────────────────────────────────────
+
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'

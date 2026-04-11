@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Lifetime Snapshot
+// Route: /complete
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { redirect } from 'next/navigation'

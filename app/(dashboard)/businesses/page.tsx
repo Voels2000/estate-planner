@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Business Interests
+// Route: /businesses
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {

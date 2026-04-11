@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Property & Casualty
+// Route: /property-casualty
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { fetchPCInsuranceTypes } from '@/lib/ref-data-fetchers'

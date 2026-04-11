@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Real Estate
+// Route: /real-estate
+// ─────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

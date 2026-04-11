@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Incapacity Planning
+// Route: /health-check
+// ─────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

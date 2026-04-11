@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Roth Conversion
+// Route: /roth
+// ─────────────────────────────────────────
+
 // app/(dashboard)/roth/page.tsx
 // Sprint 13 — Roth Optimizer page (server component)
 

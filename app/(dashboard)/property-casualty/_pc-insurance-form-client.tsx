@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Property & Casualty
+// Route: /property-casualty
+// ─────────────────────────────────────────
+
 import { useState } from 'react'
 
 interface PCPolicy {

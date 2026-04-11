@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Scenarios
+// Route: /scenarios
+// ─────────────────────────────────────────
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'

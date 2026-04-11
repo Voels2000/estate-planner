@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Digital Assets
+// Route: /digital-assets
+// ─────────────────────────────────────────
+
 // Sprint 63 - Consumer digital asset inventory page
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'

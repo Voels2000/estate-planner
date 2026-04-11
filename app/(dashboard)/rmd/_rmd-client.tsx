@@ -1,4 +1,10 @@
 'use client'
+
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > RMD Calculator
+// Route: /rmd
+// ─────────────────────────────────────────
+
 import { useState, useEffect, Fragment } from 'react'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 

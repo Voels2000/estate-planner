@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Monte Carlo
+// Route: /monte-carlo
+// ─────────────────────────────────────────
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'

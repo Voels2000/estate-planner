@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Titling & Beneficiaries
+// Route: /titling
+// ─────────────────────────────────────────
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { displayPersonFirstName } from '@/lib/display-person-name'

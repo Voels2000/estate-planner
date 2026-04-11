@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Titling & Beneficiaries
+// Route: /titling
+// ─────────────────────────────────────────
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Dashboard
+// Route: /dashboard
+// ─────────────────────────────────────────
+
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'

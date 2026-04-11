@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Social Security
+// Route: /social-security
+// ─────────────────────────────────────────
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SSClient } from './_ss-client'

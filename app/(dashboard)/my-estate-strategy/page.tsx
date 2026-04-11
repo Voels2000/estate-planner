@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Estate Planning > My Estate Strategy
+// Route: /my-estate-strategy
+// ─────────────────────────────────────────
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'

@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Life & Estate Insurance
+// Route: /insurance
+// ─────────────────────────────────────────
+
 import { useState } from 'react'
 import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 

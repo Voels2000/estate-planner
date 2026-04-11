@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Estate Planning > My Estate Strategy
+// Route: /my-estate-strategy
+// ─────────────────────────────────────────
+
 import { useState } from 'react'
 import Link from 'next/link'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'

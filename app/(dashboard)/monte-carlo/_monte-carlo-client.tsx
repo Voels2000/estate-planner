@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Monte Carlo
+// Route: /monte-carlo
+// ─────────────────────────────────────────
+
 import { useState, useEffect } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,

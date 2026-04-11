@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Financial Planning > Business Interests
+// Route: /businesses
+// ─────────────────────────────────────────
+
 import { useRef, useState } from 'react'
 import { RefSelect, CurrencyInput, PctInput, ToggleField } from '@/components/ui/RefSelect'
 import type { RefOption } from '@/lib/ref-data-fetchers'

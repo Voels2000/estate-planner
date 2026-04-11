@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > Lifetime Snapshot
+// Route: /complete
+// ─────────────────────────────────────────
+
 import { useState } from 'react'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { displayPersonFirstName } from '@/lib/display-person-name'

@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Retirement Planning > RMD Calculator
+// Route: /rmd
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'

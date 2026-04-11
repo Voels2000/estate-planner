@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Domicile Analysis
+// Route: /domicile-analysis
+// ─────────────────────────────────────────
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DomicileAnalysisClient from './_domicile-analysis-client'

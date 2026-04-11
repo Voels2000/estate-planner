@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Estate Planning > My Family
+// Route: /my-family
+// ─────────────────────────────────────────
+
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 

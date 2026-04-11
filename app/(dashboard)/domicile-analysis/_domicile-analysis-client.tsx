@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Domicile Analysis
+// Route: /domicile-analysis
+// ─────────────────────────────────────────
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import DomicileChecklist from './_domicile-checklist'

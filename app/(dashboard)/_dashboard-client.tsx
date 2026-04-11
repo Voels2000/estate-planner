@@ -1,5 +1,10 @@
 'use client'
 
+// ─────────────────────────────────────────
+// Menu: Dashboard
+// Route: /dashboard
+// ─────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
