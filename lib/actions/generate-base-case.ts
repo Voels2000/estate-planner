@@ -81,10 +81,28 @@ export async function generateBaseCase(householdId: string): Promise<{
         .select('state_code, rate_pct, tax_year')
         .order('tax_year', { ascending: false }),
       admin.from('federal_tax_config').select('*').eq('is_active', true),
-      admin
-        .from('business_interests')
-        .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
-        .eq('owner_id', clientOwnerId),
+      Promise.all([
+        admin
+          .from('business_interests')
+          .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
+          .eq('owner_id', clientOwnerId),
+        admin
+          .from('businesses')
+          .select('id, name, estimated_value, owner_id')
+          .eq('owner_id', clientOwnerId),
+      ]).then(([legacy, modern]) => ({
+        data: [
+          ...(legacy.data ?? []),
+          ...(modern.data ?? []).map((b) => ({
+            id: b.id,
+            entity_name: b.name,
+            fmv_estimated: b.estimated_value,
+            total_entity_value: b.estimated_value,
+            ownership_pct: 100,
+            owner: 'person1',
+          })),
+        ],
+      })),
       admin
         .from('insurance_policies')
         .select('death_benefit, cash_value, is_ilit, is_employer_provided')

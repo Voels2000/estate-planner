@@ -118,15 +118,27 @@ export function DashboardClient({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900" suppressHydrationWarning>
-          {greeting}, {firstName} 👋
-        </h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          {allDone
-            ? "Your estate plan is up to date. Here's your financial snapshot."
-            : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-neutral-900" suppressHydrationWarning>
+            {greeting}, {firstName} 👋
+          </h1>
+          <p className="mt-1 text-sm text-neutral-600">
+            {allDone
+              ? "Your estate plan is up to date. Here's your financial snapshot."
+              : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
+          </p>
+        </div>
+        {hasBaseCase && householdId && (
+          <button
+            type="button"
+            onClick={handleGenerateBaseCase}
+            disabled={generating}
+            className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition"
+          >
+            {generating ? 'Regenerating…' : '↻ Regenerate Estate Plan'}
+          </button>
+        )}
       </div>
 
       {!hasBaseCase && householdId && (
