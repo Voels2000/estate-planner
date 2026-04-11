@@ -25,6 +25,10 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
   const rows = scenario?.outputs_s1_first ?? []
   const snapshot = scenario?.assumption_snapshot
 
+  const firstRow = rows[0]
+  const estateToday = firstRow?.estate_incl_home ?? 0
+  const stateTaxToday = Number(firstRow?.estate_tax_state ?? 0)
+
   const finalRow = rows[rows.length - 1]
   const retirementRow = rows.find((r: any) =>
     snapshot?.person1_retirement_age && r.age_person1 >= snapshot.person1_retirement_age
@@ -33,17 +37,22 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
   const grossAtDeath = finalRow?.estate_incl_home ?? 0
   const grossAtRetirement = (retirementRow?.estate_incl_home ?? 0) > 0 ? retirementRow!.estate_incl_home : grossAtDeath
   const hasSpouse = snapshot?.has_spouse ?? false
-  const exemption = hasSpouse
+  const exemptionWithPortability = hasSpouse
     ? (taxConfig?.estate_exemption_married ?? 27_220_000)
     : (taxConfig?.estate_exemption_individual ?? 13_610_000)
   const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
-  const taxableEstate = Math.max(0, grossAtDeath - exemption)
-  const estimatedFederalTax = Math.round(taxableEstate * topRate)
+  const taxableEstateWithPortability = Math.max(0, estateToday - exemptionWithPortability)
+  const estimatedFederalTaxWithPortability = Math.round(taxableEstateWithPortability * topRate)
+
+  const individualExemption = taxConfig?.estate_exemption_individual ?? 13_610_000
+  const taxableEstateNoPortability = Math.max(0, estateToday - individualExemption)
+  const estimatedFederalTaxNoPortability = Math.round(taxableEstateNoPortability * topRate)
+
   const sunsetExemption = hasSpouse ? 14_000_000 : 7_000_000
-  const taxableEstateSunset = Math.max(0, grossAtDeath - sunsetExemption)
+  const taxableEstateSunset = Math.max(0, estateToday - sunsetExemption)
   const estimatedFederalTaxSunset = Math.round(taxableEstateSunset * topRate)
 
-  const costOfWaiting = Math.max(0, estimatedFederalTaxSunset - estimatedFederalTax)
+  const planningGap = Math.max(estimatedFederalTaxNoPortability, stateTaxToday)
 
   const hasScenario = rows.length > 0
 
@@ -72,7 +81,7 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
                 Estimated Estate at Retirement
@@ -80,37 +89,74 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
               <p className="text-3xl font-bold text-neutral-900">{formatDollars(grossAtRetirement)}</p>
               <p className="text-xs text-neutral-400 mt-1">Based on current growth assumptions</p>
             </div>
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                Estate Tax — Current Law
-              </p>
-              <p className={`text-3xl font-bold ${estimatedFederalTax > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                {estimatedFederalTax > 0 ? formatDollars(estimatedFederalTax) : 'None est.'}
-              </p>
-              <p className="text-xs text-neutral-400 mt-1">Federal only · {taxConfig?.label}</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
+                  Federal Tax — With Portability
+                </p>
+                <p
+                  className={`text-3xl font-bold ${estimatedFederalTaxWithPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}
+                >
+                  {formatDollars(estimatedFederalTaxWithPortability)}
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Requires filing estate tax return within 9 months of first death
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
+                  Federal Tax — Without Portability
+                </p>
+                <p
+                  className={`text-3xl font-bold ${estimatedFederalTaxNoPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}
+                >
+                  {formatDollars(estimatedFederalTaxNoPortability)}
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  If no estate tax return is filed at first death
+                </p>
+              </div>
             </div>
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                Estate Tax — Sunset 2026
-              </p>
-              <p className={`text-3xl font-bold ${estimatedFederalTaxSunset > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {estimatedFederalTaxSunset > 0 ? formatDollars(estimatedFederalTaxSunset) : 'None est.'}
-              </p>
-              <p className="text-xs text-neutral-400 mt-1">If TCJA expires end of 2025</p>
+
+            <p className="text-xs text-neutral-500 mt-2">
+              These are illustrative scenarios. Your advisor or attorney can determine which applies to your situation.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
+                  Estate Tax — Sunset 2026
+                </p>
+                <p className={`text-3xl font-bold ${estimatedFederalTaxSunset > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {estimatedFederalTaxSunset > 0 ? formatDollars(estimatedFederalTaxSunset) : 'None est.'}
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Federal exemption decreases December 31, 2026. Review with your advisor before year end.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">NY State Tax</p>
+                <p
+                  className={`text-3xl font-bold ${stateTaxToday > 0 ? 'text-red-600' : 'text-neutral-600'}`}
+                >
+                  {stateTaxToday > 0 ? formatDollars(stateTaxToday) : 'See Estate Tax tab for details'}
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  NY does not recognize federal portability. Review with your attorney.
+                </p>
+              </div>
             </div>
           </div>
 
-          {costOfWaiting > 0 && (
+          {planningGap > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">
-                    Cost of Waiting
-                  </p>
-                  <p className="text-3xl font-bold text-amber-800">{formatDollars(costOfWaiting)}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">Planning Gap</p>
+                  <p className="text-3xl font-bold text-amber-800">{formatDollars(planningGap)}</p>
                   <p className="text-sm text-amber-700 mt-2">
-                    The difference between your estate tax under current law versus sunset 2026.
-                    Planning now through gifting, trusts, or other strategies can reduce this exposure.
+                    Potential exposure to explore with your advisor or attorney
                   </p>
                 </div>
                 <Link
