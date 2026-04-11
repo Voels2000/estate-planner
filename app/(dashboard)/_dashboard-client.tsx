@@ -45,6 +45,21 @@ type RetirementSnapshot = {
   projectedIncomeGap: number | null
 }
 
+export type EstateTaxHorizonColumn = {
+  federalTax: number
+  stateTax: number
+  sunsetFederalTax: number
+}
+
+export type EstateTaxHorizonsProps = {
+  stateTaxRowLabel: string
+  atDeathColumnHeader: string
+  today: EstateTaxHorizonColumn
+  tenYear: EstateTaxHorizonColumn | null
+  atDeath: EstateTaxHorizonColumn | null
+  showGenerateEstatePlanLink: boolean
+}
+
 type Props = {
   userName: string
   totalAssets: number
@@ -74,10 +89,7 @@ type Props = {
     critical: number
     warnings: number
   } | null
-  currentFederalTax: number
-  sunsetFederalTax: number
-  stateTax: number
-  stateCode?: string
+  estateTaxHorizons: EstateTaxHorizonsProps | null
   setupSteps: SetupStep[]
   completedSteps: number
   progressPct: number
@@ -129,8 +141,8 @@ function fmt(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-function fmtLong(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+function fmtTaxTableDollar(n: number) {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
 function firstName(name: string | null | undefined) {
@@ -275,7 +287,7 @@ export function DashboardClient(props: Props) {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
     allocationContext, retirementSnapshot, estateHealthScore, conflictReport,
-    currentFederalTax, sunsetFederalTax, stateTax, stateCode,
+    estateTaxHorizons,
     setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
@@ -296,7 +308,6 @@ export function DashboardClient(props: Props) {
 
   const debtToAsset = totalAssets > 0 ? Math.round((totalLiabilities / totalAssets) * 100) : 0
   const totalNetWorthSources = netWorthBySource.financial + netWorthBySource.realEstateEquity + netWorthBySource.business + netWorthBySource.insurance
-  const sunsetDelta = sunsetFederalTax - currentFederalTax
 
   // Non-SS income = totalIncome - SS component (for breakdown display)
   const nonSSIncome = totalIncome - annualSSFromPIA
@@ -607,28 +618,62 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {hasBaseCase && (currentFederalTax > 0 || stateTax > 0 || sunsetFederalTax > 0) && (
+          {estateTaxHorizons && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Current Tax Exposure</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
-                  <p className="text-xs text-neutral-400 mb-1">Federal (current law)</p>
-                  <p className="text-lg font-bold text-neutral-900">{currentFederalTax > 0 ? fmtLong(currentFederalTax) : '$0'}</p>
-                  <p className="text-[10px] text-neutral-400 mt-0.5">with portability</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Tax exposure</p>
+              <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 sm:px-4">
+                <div className="overflow-x-auto -mx-1 px-1">
+                  <table className="w-full min-w-[20rem] text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left font-medium text-neutral-500 pb-2 pr-2 align-bottom" />
+                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">Today</th>
+                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">In 10 Years</th>
+                        <th className="text-right font-medium text-neutral-600 pb-2 pl-1 align-bottom min-w-[10rem]">
+                          {estateTaxHorizons.atDeathColumnHeader}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-neutral-900">
+                      <tr className="border-b border-neutral-100">
+                        <td className="py-2 pr-2 text-neutral-600">Fed Tax</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.federalTax)}</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.federalTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.federalTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                      </tr>
+                      <tr className="border-b border-neutral-100">
+                        <td className="py-2 pr-2 text-neutral-600">{estateTaxHorizons.stateTaxRowLabel}</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.stateTax)}</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.stateTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.stateTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 pr-2 text-neutral-600">Sunset Exposure</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.sunsetFederalTax)}</td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.sunsetFederalTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.sunsetFederalTax) : <span className="text-neutral-400">—</span>}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                {stateCode && (
-                  <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
-                    <p className="text-xs text-neutral-400 mb-1">{stateCode} State Tax</p>
-                    <p className="text-lg font-bold text-neutral-900">{stateTax > 0 ? fmtLong(stateTax) : '$0'}</p>
-                    <p className="text-[10px] text-neutral-400 mt-0.5">at current estate value</p>
-                  </div>
-                )}
-                {sunsetDelta > 0 && (
-                  <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
-                    <p className="text-xs text-amber-700 mb-1">Sunset 2026 Exposure</p>
-                    <p className="text-lg font-bold text-amber-800">+{fmtLong(sunsetDelta)}</p>
-                    <p className="text-[10px] text-amber-600 mt-0.5">additional if exemption halves</p>
-                  </div>
+                {estateTaxHorizons.showGenerateEstatePlanLink && (
+                  <p className="mt-3 text-center sm:text-left">
+                    <Link href="/my-estate-strategy" className="text-xs text-indigo-600 font-medium hover:underline">
+                      Generate your estate plan
+                    </Link>
+                  </p>
                 )}
               </div>
               <p className="text-[10px] text-neutral-400 mt-2">Information only — review with your advisor or attorney.</p>

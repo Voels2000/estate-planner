@@ -7,13 +7,19 @@ import type { AssetAllocationContext } from '@/components/AssetAllocationSummary
 import { detectConflicts } from '@/lib/conflict-detector'
 import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
-import { computeEstateTaxProjection } from '@/lib/calculations/estate-tax-projection'
 import type { YearRow } from '@/lib/calculations/projection-complete'
-import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
-import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { AnnualOutput } from '@/lib/types/projection-scenario'
+import {
+  buildStrategyHorizons,
+  computeBusinessOwnershipValue,
+  estimateFederalEstateTaxSnapshot,
+  longevityAndSurvivor,
+  type FederalConfigRow,
+} from '@/lib/my-estate-strategy/horizonSnapshots'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { DashboardClient } from '../_dashboard-client'
+import { DashboardClient, type EstateTaxHorizonsProps } from '../_dashboard-client'
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
 // FRA = 67 for born 1960+. Early = -6.67%/yr (first 3yr) then -5%/yr.
@@ -30,6 +36,38 @@ function adjustSSForClaimingAge(pia: number, claimingAge: number, birthYear: num
   return Math.round(pia * (1 - first3 - beyond))
 }
 
+/** When DB has no active federal rows — must match `FALLBACK_FEDERAL_CONFIGS` in horizonSnapshots.ts */
+const FALLBACK_FEDERAL_CONFIGS: FederalConfigRow[] = [
+  {
+    scenario_id: 'current_law_extended',
+    estate_exemption_individual: 13_610_000,
+    estate_exemption_married: 27_220_000,
+    estate_top_rate_pct: 40,
+  },
+  {
+    scenario_id: 'sunset_2026',
+    estate_exemption_individual: 7_000_000,
+    estate_exemption_married: 14_000_000,
+    estate_top_rate_pct: 40,
+  },
+]
+
+function sunsetFederalTaxAmount(
+  federalConfigs: FederalConfigRow[],
+  grossEstate: number | null | undefined,
+  filingStatus: string | null,
+  hasSpouse: boolean,
+): number {
+  const sunset = federalConfigs.find((c) => c.scenario_id === 'sunset_2026')
+  if (grossEstate == null || grossEstate <= 0 || !sunset) return 0
+  return estimateFederalEstateTaxSnapshot({
+    grossEstate,
+    config: sunset,
+    filingStatus,
+    hasSpouse,
+  }).federalTax
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,6 +77,21 @@ export default async function DashboardPage() {
     .select('*')
     .eq('owner_id', user!.id)
     .single()
+
+  const admin = createAdminClient()
+  const [{ data: federalTaxConfigs }, { data: baseCaseScenario }] = await Promise.all([
+    admin
+      .from('federal_tax_config')
+      .select('scenario_id, estate_exemption_individual, estate_exemption_married, estate_top_rate_pct')
+      .eq('is_active', true),
+    household?.base_case_scenario_id
+      ? admin
+          .from('projection_scenarios')
+          .select('outputs_s1_first, assumption_snapshot')
+          .eq('id', household.base_case_scenario_id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ])
 
   // ── Parallel data fetch ──────────────────────────────────────────────────
   // Income query now includes ALL sources (including social_security) so the
@@ -165,60 +218,84 @@ export default async function DashboardPage() {
     ? await computeEstateHealthScore(household.id, user!.id)
     : null
 
-  // ── Base case / tax projection ───────────────────────────────────────────
-  const { data: baseCaseScenario } = household?.base_case_scenario_id
-    ? await supabase
-        .from('projection_scenarios')
-        .select('outputs_s1_first, assumption_snapshot')
-        .eq('id', household.base_case_scenario_id)
-        .single()
-    : { data: null }
-
+  // ── Base case (projection rows) — same source as My Estate Strategy ──────
   const baseCaseRows: YearRow[] = baseCaseScenario?.outputs_s1_first ?? []
-  const finalRow = baseCaseRows[baseCaseRows.length - 1]
-  const grossAtDeath = finalRow?.estate_incl_home ?? 0
 
-  const { data: sunsetTaxConfig } = await supabase
-    .from('federal_tax_config')
-    .select('*')
-    .eq('scenario_id', 'sunset_2026')
-    .eq('is_active', true)
-    .maybeSingle()
+  const now = new Date()
+  const currentMonthYearLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  const scenarioRows = (baseCaseScenario?.outputs_s1_first ?? null) as AnnualOutput[] | null
+  const effectiveFederalConfigs: FederalConfigRow[] =
+    (federalTaxConfigs ?? []).length > 0 ? (federalTaxConfigs as FederalConfigRow[]) : FALLBACK_FEDERAL_CONFIGS
 
-  let sunsetFederalTax = 0
-  if (household && baseCaseRows.length > 0 && sunsetTaxConfig) {
-    const filingStatus = household.filing_status === 'mfj' || household.filing_status === 'married_filing_jointly' ? 'mfj' : 'single'
-    const { s1_first } = computeEstateTaxProjection(
-      baseCaseRows,
-      sunsetTaxConfig,
-      filingStatus,
-      household.has_spouse ?? false,
-      household.person1_birth_year ?? 1960,
-      household.person1_longevity_age ?? 90,
-      household.person2_birth_year ?? null,
-      household.person2_longevity_age ?? null,
-      0,
-    )
-    sunsetFederalTax = s1_first.estate_tax_federal
-  }
+  const { longevityAge, survivorIsPerson1 } = longevityAndSurvivor({
+    hasSpouse,
+    person1Longevity: household?.person1_longevity_age,
+    person2Longevity: household?.person2_longevity_age,
+  })
+  const survivorFirstName = !household
+    ? 'You'
+    : !hasSpouse
+      ? displayPersonFirstName(household.person1_name, 'You')
+      : survivorIsPerson1
+        ? displayPersonFirstName(household.person1_name, 'You')
+        : displayPersonFirstName(household.person2_name, 'You')
 
-  const { data: taxConfig } = await supabase
-    .from('federal_tax_config')
-    .select('estate_exemption_individual, estate_top_rate_pct')
-    .eq('scenario_id', 'current_law_extended')
-    .single()
+  const horizons =
+    household != null
+      ? buildStrategyHorizons({
+          currentYear,
+          currentMonthYearLabel,
+          liveNetWorth: netWorth,
+          household: {
+            state_primary: household.state_primary,
+            filing_status: household.filing_status,
+            has_spouse: household.has_spouse,
+            person1_name: household.person1_name,
+            person2_name: household.person2_name,
+            person1_birth_year: household.person1_birth_year,
+            person2_birth_year: household.person2_birth_year,
+            person1_longevity_age: household.person1_longevity_age,
+            person2_longevity_age: household.person2_longevity_age,
+          },
+          federalConfigs: effectiveFederalConfigs,
+          scenarioRows,
+          survivorFirstName,
+          longevityAge,
+        })
+      : null
 
-  const exemption = taxConfig?.estate_exemption_individual ?? 13_610_000
-  const alertYear = finalRow?.year ?? currentYear
+  const fs = household?.filing_status ?? null
 
-  const { stateTax } = household
-    ? calculateStateEstateTax({
-        grossEstate: grossAtDeath,
-        stateCode: parseStateTaxCode(household.state_primary),
-        year: alertYear,
-        federalExemption: exemption,
-      })
-    : { stateTax: 0 }
+  const estateTaxHorizons: EstateTaxHorizonsProps | null = horizons
+    ? (() => {
+        const { today, tenYear, atDeath } = horizons
+        const stateTaxRowLabel = household?.state_primary
+          ? `${String(household.state_primary).toUpperCase()} State Tax`
+          : 'State Tax'
+
+        const col = (
+          h: typeof today,
+          gross: number | null | undefined,
+        ): { federalTax: number; stateTax: number; sunsetFederalTax: number } => ({
+          federalTax: h.federalTaxEstimate ?? 0,
+          stateTax: h.stateExposure ?? 0,
+          sunsetFederalTax: sunsetFederalTaxAmount(effectiveFederalConfigs, gross, fs, hasSpouse),
+        })
+
+        const hasBaseCaseRows = (scenarioRows?.length ?? 0) > 0
+        const tenOk = hasBaseCaseRows && !tenYear.isPlaceholder && !tenYear.showGenerateCta
+        const atDeathOk = hasBaseCaseRows && !atDeath.isPlaceholder && !atDeath.showGenerateCta
+
+        return {
+          stateTaxRowLabel,
+          atDeathColumnHeader: atDeath.headerTitle,
+          today: col(today, today.grossEstate),
+          tenYear: tenOk ? col(tenYear, tenYear.grossEstate) : null,
+          atDeath: atDeathOk ? col(atDeath, atDeath.grossEstate) : null,
+          showGenerateEstatePlanLink: !hasBaseCaseRows,
+        }
+      })()
+    : null
 
   // ── Conflict detector ────────────────────────────────────────────────────
   const conflictReport = household?.id ? await detectConflicts(household.id, user!.id) : null
@@ -306,10 +383,7 @@ export default async function DashboardPage() {
       retirementSnapshot={retirementSnapshot}
       estateHealthScore={estateHealthScore}
       conflictReport={conflictReport}
-      currentFederalTax={(finalRow as YearRow & { estate_tax_federal?: number })?.estate_tax_federal ?? 0}
-      sunsetFederalTax={sunsetFederalTax}
-      stateTax={stateTax}
-      stateCode={household?.state_primary ?? undefined}
+      estateTaxHorizons={estateTaxHorizons}
       setupSteps={setupSteps}
       completedSteps={completedSteps}
       progressPct={progressPct}

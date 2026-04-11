@@ -277,16 +277,32 @@ function suggestPrimaryBeneficiary(params: {
   return firstChild
 }
 
-function suggestContingentBeneficiary(params: {
-  hasSpouse: boolean
-  descendantsOrdered: HouseholdPersonRow[]
-}): string | null {
-  const { hasSpouse, descendantsOrdered } = params
-  if (descendantsOrdered.length === 0) return null
-  if (!hasSpouse) {
-    return descendantsOrdered[1]?.full_name.trim() ?? null
+/** Matches gap-modal contingent split filter: child / son / daughter / grandchild substrings (case-insensitive). */
+function relationshipMatchesChildVariantsForContingentSplit(rel: string | null | undefined): boolean {
+  const r = (rel ?? '').toLowerCase()
+  return (
+    r.includes('child') ||
+    r.includes('son') ||
+    r.includes('daughter') ||
+    r.includes('grandchild')
+  )
+}
+
+function householdChildrenForContingentSplit(people: HouseholdPersonRow[]): HouseholdPersonRow[] {
+  return people.filter((p) => relationshipMatchesChildVariantsForContingentSplit(p.relationship)).sort(descendantSort)
+}
+
+/** Per-child % with 2dp; first index gets remainder so allocations sum to exactly 100. */
+function contingentEvenSplitPercents(n: number): number[] {
+  if (n <= 0) return []
+  const perHundredth = Math.round(10000 / n)
+  const remainderScaled = 10000 - perHundredth * n
+  const out: number[] = []
+  out.push((perHundredth + remainderScaled) / 100)
+  for (let i = 1; i < n; i++) {
+    out.push(perHundredth / 100)
   }
-  return descendantsOrdered[0]?.full_name.trim() ?? null
+  return out
 }
 
 function picklistValueForFullName(
@@ -875,6 +891,7 @@ export default function TitlingClient({
           items={incompleteBeneficiaryItems}
           picklistOptions={beneficiaryPicklistOptions}
           beneficiaries={beneficiaries}
+          householdPeople={householdPeople}
           hasSpouse={hasSpouse}
           person1LegalName={person1LegalName}
           person2LegalName={person2LegalName}
@@ -1267,6 +1284,19 @@ function gapItemKey(row: GapItem): string {
   return `${row.kind}:${row.id}`
 }
 
+type BeneficiaryGapRowState = {
+  primaryValue: string
+  primaryManual: string
+  contingentValue: string
+  contingentManual: string
+  contingentSplitRows: Array<{
+    householdPersonId: string
+    pickValue: string
+    manual: string
+    allocationPct: string
+  }> | null
+}
+
 function resolveBeneficiaryFromPick(
   value: string,
   manual: string,
@@ -1287,6 +1317,7 @@ function BeneficiaryGapModal({
   items,
   picklistOptions,
   beneficiaries,
+  householdPeople,
   hasSpouse,
   person1LegalName,
   person2LegalName,
@@ -1297,6 +1328,7 @@ function BeneficiaryGapModal({
   items: GapItem[]
   picklistOptions: BeneficiaryPicklistOption[]
   beneficiaries: Beneficiary[]
+  householdPeople: HouseholdPersonRow[]
   hasSpouse: boolean
   person1LegalName: string | null
   person2LegalName: string | null
@@ -1304,17 +1336,13 @@ function BeneficiaryGapModal({
   onClose: () => void
   onApplied: () => Promise<void>
 }) {
-  const [rows, setRows] = useState<
-    Record<string, { primaryValue: string; primaryManual: string; contingentValue: string; contingentManual: string }>
-  >({})
+  const [rows, setRows] = useState<Record<string, BeneficiaryGapRowState>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const next: Record<
-      string,
-      { primaryValue: string; primaryManual: string; contingentValue: string; contingentManual: string }
-    > = {}
+    const childrenForSplit = householdChildrenForContingentSplit(householdPeople)
+    const next: Record<string, BeneficiaryGapRowState> = {}
     for (const row of items) {
       const sp = row.needsPrimary
         ? suggestPrimaryBeneficiary({
@@ -1325,18 +1353,33 @@ function BeneficiaryGapModal({
             descendantsOrdered,
           })
         : null
-      const sc = row.needsContingent
-        ? suggestContingentBeneficiary({ hasSpouse, descendantsOrdered })
-        : null
+      let contingentValue = ''
+      let contingentManual = ''
+      let contingentSplitRows: BeneficiaryGapRowState['contingentSplitRows'] = null
+      if (row.needsContingent) {
+        if (childrenForSplit.length >= 1) {
+          const splits = contingentEvenSplitPercents(childrenForSplit.length)
+          contingentSplitRows = childrenForSplit.map((c, i) => ({
+            householdPersonId: c.id,
+            pickValue: `hp-row:${c.id}`,
+            manual: '',
+            allocationPct: splits[i].toFixed(2),
+          }))
+        } else {
+          contingentValue = ''
+          contingentManual = ''
+        }
+      }
       next[gapItemKey(row)] = {
         primaryValue: row.needsPrimary && sp ? picklistValueForFullName(sp, picklistOptions) : '',
         primaryManual: '',
-        contingentValue: row.needsContingent && sc ? picklistValueForFullName(sc, picklistOptions) : '',
-        contingentManual: '',
+        contingentValue,
+        contingentManual,
+        contingentSplitRows,
       }
     }
     setRows(next)
-  }, [items, hasSpouse, person1LegalName, person2LegalName, descendantsOrdered, picklistOptions])
+  }, [items, hasSpouse, person1LegalName, person2LegalName, descendantsOrdered, picklistOptions, householdPeople])
 
   function getBensFor(
     working: Beneficiary[],
@@ -1419,10 +1462,16 @@ function BeneficiaryGapModal({
         }
 
         if (row.needsContingent) {
-          const resolved = resolveBeneficiaryFromPick(st.contingentValue, st.contingentManual, picklistOptions)
-          if (resolved) {
-            const rem = remainingPct(working, row.kind, row.id, 'contingent')
-            if (rem > 0.01) {
+          if (st.contingentSplitRows && st.contingentSplitRows.length > 0) {
+            for (const cr of st.contingentSplitRows) {
+              const resolved = resolveBeneficiaryFromPick(cr.pickValue, cr.manual, picklistOptions)
+              if (!resolved) continue
+              const already = getBensFor(working, row.kind, row.id, 'contingent').some(
+                (b) => normalizeNameKey(b.full_name) === normalizeNameKey(resolved.fullName),
+              )
+              if (already) continue
+              const pct = parseFloat(cr.allocationPct)
+              if (!Number.isFinite(pct) || pct <= 0) continue
               const payload = {
                 beneficiary_type: 'contingent' as const,
                 contingent: true,
@@ -1430,7 +1479,7 @@ function BeneficiaryGapModal({
                 relationship: resolved.relationship,
                 email: null as string | null,
                 phone: null as string | null,
-                allocation_pct: rem,
+                allocation_pct: pct,
                 is_gst_skip: resolved.isGst,
                 updated_at: new Date().toISOString(),
               }
@@ -1444,7 +1493,7 @@ function BeneficiaryGapModal({
               })
               if (insErr) throw insErr
               working.push({
-                id: `temp-${row.id}-c`,
+                id: `temp-${row.id}-c-${cr.householdPersonId}`,
                 asset_id: row.kind === 'asset' ? row.id : null,
                 real_estate_id: row.kind === 're' ? row.id : null,
                 insurance_policy_id: row.kind === 'insurance' ? row.id : null,
@@ -1454,9 +1503,50 @@ function BeneficiaryGapModal({
                 relationship: resolved.relationship,
                 email: null,
                 phone: null,
-                allocation_pct: rem,
+                allocation_pct: pct,
                 is_gst_skip: resolved.isGst,
               })
+            }
+          } else {
+            const resolved = resolveBeneficiaryFromPick(st.contingentValue, st.contingentManual, picklistOptions)
+            if (resolved) {
+              const rem = remainingPct(working, row.kind, row.id, 'contingent')
+              if (rem > 0.01) {
+                const payload = {
+                  beneficiary_type: 'contingent' as const,
+                  contingent: true,
+                  full_name: resolved.fullName,
+                  relationship: resolved.relationship,
+                  email: null as string | null,
+                  phone: null as string | null,
+                  allocation_pct: rem,
+                  is_gst_skip: resolved.isGst,
+                  updated_at: new Date().toISOString(),
+                }
+                const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
+                  ...payload,
+                  owner_id: user.id,
+                  asset_id: row.kind === 'asset' ? row.id : null,
+                  real_estate_id: row.kind === 're' ? row.id : null,
+                  insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                  business_id: row.kind === 'business' ? row.id : null,
+                })
+                if (insErr) throw insErr
+                working.push({
+                  id: `temp-${row.id}-c`,
+                  asset_id: row.kind === 'asset' ? row.id : null,
+                  real_estate_id: row.kind === 're' ? row.id : null,
+                  insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                  business_id: row.kind === 'business' ? row.id : null,
+                  beneficiary_type: 'contingent',
+                  full_name: resolved.fullName,
+                  relationship: resolved.relationship,
+                  email: null,
+                  phone: null,
+                  allocation_pct: rem,
+                  is_gst_skip: resolved.isGst,
+                })
+              }
             }
           }
         }
@@ -1496,6 +1586,7 @@ function BeneficiaryGapModal({
                   primaryManual: '',
                   contingentValue: '',
                   contingentManual: '',
+                  contingentSplitRows: null,
                 }
                 const primaries = beneficiaries.filter((b) => {
                   if (b.beneficiary_type !== 'primary') return false
@@ -1559,42 +1650,139 @@ function BeneficiaryGapModal({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 min-w-[12rem]">
+                    <td className="px-3 py-2 min-w-[14rem]">
                       {row.needsContingent ? (
-                        <div className="space-y-1">
-                          <select
-                            value={st.contingentValue}
-                            onChange={(e) =>
-                              setRows((prev) => {
-                                const cur = prev[k] ?? st
-                                return { ...prev, [k]: { ...cur, contingentValue: e.target.value } }
-                              })
-                            }
-                            className={inputClass}
-                          >
-                            <option value="">Choose…</option>
-                            {picklistOptions.map((o) => (
-                              <option key={o.value} value={o.value}>
-                                {o.label}
-                              </option>
+                        st.contingentSplitRows && st.contingentSplitRows.length > 0 ? (
+                          <div className="space-y-2">
+                            {st.contingentSplitRows.map((cr) => (
+                              <div
+                                key={cr.householdPersonId}
+                                className="rounded-lg border border-neutral-100 bg-neutral-50/80 p-2 space-y-1"
+                              >
+                                <select
+                                  value={cr.pickValue}
+                                  onChange={(e) => {
+                                    const v = e.target.value
+                                    setRows((prev) => {
+                                      const cur = prev[k] ?? st
+                                      if (!cur.contingentSplitRows) return prev
+                                      return {
+                                        ...prev,
+                                        [k]: {
+                                          ...cur,
+                                          contingentSplitRows: cur.contingentSplitRows.map((r) =>
+                                            r.householdPersonId === cr.householdPersonId
+                                              ? { ...r, pickValue: v }
+                                              : r,
+                                          ),
+                                        },
+                                      }
+                                    })
+                                  }}
+                                  className={inputClass}
+                                >
+                                  <option value="">Choose…</option>
+                                  {picklistOptions.map((o) => (
+                                    <option key={o.value} value={o.value}>
+                                      {o.label}
+                                    </option>
+                                  ))}
+                                  <option value="__manual__">+ Add manually…</option>
+                                </select>
+                                {cr.pickValue === '__manual__' && (
+                                  <input
+                                    type="text"
+                                    value={cr.manual}
+                                    onChange={(e) => {
+                                      const t = e.target.value
+                                      setRows((prev) => {
+                                        const cur = prev[k] ?? st
+                                        if (!cur.contingentSplitRows) return prev
+                                        return {
+                                          ...prev,
+                                          [k]: {
+                                            ...cur,
+                                            contingentSplitRows: cur.contingentSplitRows.map((r) =>
+                                              r.householdPersonId === cr.householdPersonId
+                                                ? { ...r, manual: t }
+                                                : r,
+                                            ),
+                                          },
+                                        }
+                                      })
+                                    }}
+                                    className={inputClass}
+                                    placeholder="Full name"
+                                  />
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs text-neutral-500 shrink-0">Allocation %</label>
+                                  <input
+                                    type="number"
+                                    min="0.01"
+                                    max="100"
+                                    step="0.01"
+                                    value={cr.allocationPct}
+                                    onChange={(e) => {
+                                      const t = e.target.value
+                                      setRows((prev) => {
+                                        const cur = prev[k] ?? st
+                                        if (!cur.contingentSplitRows) return prev
+                                        return {
+                                          ...prev,
+                                          [k]: {
+                                            ...cur,
+                                            contingentSplitRows: cur.contingentSplitRows.map((r) =>
+                                              r.householdPersonId === cr.householdPersonId
+                                                ? { ...r, allocationPct: t }
+                                                : r,
+                                            ),
+                                          },
+                                        }
+                                      })
+                                    }}
+                                    className={`${inputClass} min-w-0 flex-1`}
+                                  />
+                                </div>
+                              </div>
                             ))}
-                            <option value="__manual__">+ Add manually…</option>
-                          </select>
-                          {st.contingentValue === '__manual__' && (
-                            <input
-                              type="text"
-                              value={st.contingentManual}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <select
+                              value={st.contingentValue}
                               onChange={(e) =>
                                 setRows((prev) => {
                                   const cur = prev[k] ?? st
-                                  return { ...prev, [k]: { ...cur, contingentManual: e.target.value } }
+                                  return { ...prev, [k]: { ...cur, contingentValue: e.target.value } }
                                 })
                               }
                               className={inputClass}
-                              placeholder="Full name"
-                            />
-                          )}
-                        </div>
+                            >
+                              <option value="">Choose…</option>
+                              {picklistOptions.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                  {o.label}
+                                </option>
+                              ))}
+                              <option value="__manual__">+ Add manually…</option>
+                            </select>
+                            {st.contingentValue === '__manual__' && (
+                              <input
+                                type="text"
+                                value={st.contingentManual}
+                                onChange={(e) =>
+                                  setRows((prev) => {
+                                    const cur = prev[k] ?? st
+                                    return { ...prev, [k]: { ...cur, contingentManual: e.target.value } }
+                                  })
+                                }
+                                className={inputClass}
+                                placeholder="Full name"
+                              />
+                            )}
+                          </div>
+                        )
                       ) : (
                         <span className="text-sm text-neutral-700">
                           {contingents.map((b) => b.full_name).join(', ') || '—'}
