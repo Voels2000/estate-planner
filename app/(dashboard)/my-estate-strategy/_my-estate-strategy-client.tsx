@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
 
@@ -22,6 +23,31 @@ type Props = {
 }
 
 export default function MyEstateStrategyClient({ householdId, scenarioId, scenario, taxConfig }: Props) {
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
+  async function handleGenerateBaseCase() {
+    setGenerating(true)
+    setGenerateError(null)
+    try {
+      const res = await fetch('/api/consumer/generate-base-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        window.location.reload()
+      } else {
+        setGenerateError(data.error ?? 'Failed to generate estate plan. Please try again.')
+      }
+    } catch {
+      setGenerateError('Something went wrong. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const rows = scenario?.outputs_s1_first ?? []
   const snapshot = scenario?.assumption_snapshot
 
@@ -58,29 +84,66 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">My Estate Strategy</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          A simplified view of your estate plan based on your current data.
-          {scenario?.calculated_at && (
-            <span className="ml-1 text-neutral-400">
-              Last updated {new Date(scenario.calculated_at).toLocaleDateString()}.
-            </span>
-          )}
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">My Estate Strategy</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            A simplified view of your estate plan based on your current data.
+            {scenario?.calculated_at && (
+              <span className="ml-1 text-neutral-400">
+                Last updated {new Date(scenario.calculated_at).toLocaleDateString()}.
+              </span>
+            )}
+          </p>
+        </div>
+        {/* Regenerate button — always visible when base case exists */}
+        {hasScenario && (
+          <button
+            type="button"
+            onClick={handleGenerateBaseCase}
+            disabled={generating}
+            className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition"
+          >
+            {generating ? 'Regenerating…' : '↻ Regenerate Estate Plan'}
+          </button>
+        )}
       </div>
 
       {!hasScenario ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
+        // ── No base case yet — show generate CTA ──────────────────────────
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-blue-200 bg-blue-50 py-16 px-8 text-center">
           <div className="text-4xl mb-3">📈</div>
-          <p className="text-sm font-medium text-neutral-600">Your estate strategy has not been generated yet</p>
-          <p className="text-xs text-neutral-400 mt-1">Your advisor will generate this during your next review.</p>
-          <Link href="/dashboard" className="mt-4 text-sm text-indigo-600 hover:underline">
-            Return to Dashboard →
+          <p className="text-sm font-semibold text-blue-900 mb-1">
+            Generate Your Estate Plan
+          </p>
+          <p className="text-xs text-blue-700 mb-6 max-w-sm">
+            You have entered your financial data. Generate your estate plan to see
+            your tax exposure, estate flow, and planning gaps.
+          </p>
+          <button
+            type="button"
+            onClick={handleGenerateBaseCase}
+            disabled={generating}
+            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {generating ? 'Generating your plan…' : 'Generate My Estate Plan'}
+          </button>
+          {generateError && (
+            <p className="mt-3 text-xs text-red-600">{generateError}</p>
+          )}
+          <Link href="/dashboard" className="mt-4 text-xs text-neutral-400 hover:text-neutral-600 hover:underline">
+            Return to Dashboard
           </Link>
         </div>
       ) : (
+        // ── Has base case — show strategy view ────────────────────────────
         <div className="space-y-6">
+          {generateError && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              {generateError}
+            </p>
+          )}
+
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
@@ -95,9 +158,7 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
                   Federal Tax — With Portability
                 </p>
-                <p
-                  className={`text-3xl font-bold ${estimatedFederalTaxWithPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}
-                >
+                <p className={`text-3xl font-bold ${estimatedFederalTaxWithPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                   {formatDollars(estimatedFederalTaxWithPortability)}
                 </p>
                 <p className="text-xs text-neutral-400 mt-1">
@@ -108,9 +169,7 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
                   Federal Tax — Without Portability
                 </p>
-                <p
-                  className={`text-3xl font-bold ${estimatedFederalTaxNoPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}
-                >
+                <p className={`text-3xl font-bold ${estimatedFederalTaxNoPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                   {formatDollars(estimatedFederalTaxNoPortability)}
                 </p>
                 <p className="text-xs text-neutral-400 mt-1">
@@ -136,14 +195,12 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
                 </p>
               </div>
               <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">NY State Tax</p>
-                <p
-                  className={`text-3xl font-bold ${stateTaxToday > 0 ? 'text-red-600' : 'text-neutral-600'}`}
-                >
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">State Tax</p>
+                <p className={`text-3xl font-bold ${stateTaxToday > 0 ? 'text-red-600' : 'text-neutral-600'}`}>
                   {stateTaxToday > 0 ? formatDollars(stateTaxToday) : 'See Estate Tax tab for details'}
                 </p>
                 <p className="text-xs text-neutral-400 mt-1">
-                  NY does not recognize federal portability. Review with your attorney.
+                  Review with your attorney.
                 </p>
               </div>
             </div>
