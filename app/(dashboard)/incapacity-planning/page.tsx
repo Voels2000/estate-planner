@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────
+// Menu: Estate Planning > Incapacity Planning
+// Route: /incapacity-planning
+// ─────────────────────────────────────────
+
 import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'

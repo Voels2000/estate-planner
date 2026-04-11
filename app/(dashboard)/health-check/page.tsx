@@ -1,7 +1,7 @@
 'use client'
 
 // ─────────────────────────────────────────
-// Menu: Estate Planning > Incapacity Planning
+// Menu: My Estate Plan > Estate Health Check
 // Route: /health-check
 // ─────────────────────────────────────────
 

@@ -72,7 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/my-family', label: 'My Family', icon: '👨‍👩‍👧‍👦', feature: 'my-family' },
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
-      { href: '/incapacity', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
+      { href: '/incapacity-planning', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },

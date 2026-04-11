@@ -106,7 +106,7 @@ export async function computeEstateHealthScore(
     maxScore: 15,
     status: incapacityScore >= 15 ? 'good' : incapacityScore >= 8 ? 'warning' : 'critical',
     actionLabel: incapacityScore >= 15 ? 'POA & healthcare directive on file' : 'Add incapacity documents',
-    actionHref: '/incapacity',
+    actionHref: '/incapacity-planning',
   })
 
   const benes = assetBenes ?? []
