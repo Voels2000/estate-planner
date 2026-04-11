@@ -15,6 +15,9 @@ export type HouseholdPersonRow = {
 
 type FamilyGroup = 'spouse' | 'children' | 'grandchildren' | 'other'
 
+const GST_SKIP_EXPLANATION =
+  'This person is more than one generation below you (e.g. a grandchild). Leaving assets directly to them may trigger an additional federal tax called the Generation-Skipping Transfer (GST) tax. Your estate attorney can help structure this correctly.'
+
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
 
@@ -79,6 +82,9 @@ export default function MyFamilyClient({
 
   const relationshipEffective = relationship === 'Custom' ? relationshipCustom.trim() : relationship
   const showGstOption = showGstOptionForRelationship(relationshipEffective)
+  /** Show GST education + checkbox when relationship qualifies, or when this row is already flagged in the DB. */
+  const showGstPanel = showGstOption || editing?.is_gst_skip === true
+  const hasAnyGstSkipPerson = people.some(p => p.is_gst_skip === true)
 
   const grouped = useMemo(() => {
     const map: Record<FamilyGroup, HouseholdPersonRow[]> = {
@@ -115,7 +121,7 @@ export default function MyFamilyClient({
     setRelationship(preset === 'Custom' ? 'Custom' : row.relationship)
     setRelationshipCustom(preset === 'Custom' ? row.relationship : '')
     setDateOfBirth(row.date_of_birth ?? '')
-    setIsGstSkip(row.is_gst_skip)
+    setIsGstSkip(Boolean(row.is_gst_skip))
     setIsBeneficiary(row.is_beneficiary)
     setNotes(row.notes ?? '')
     setError(null)
@@ -204,13 +210,13 @@ export default function MyFamilyClient({
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">My Family</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            List people in your household and extended family. Mark grandchildren for GST skip when
-            applicable, and include who should appear as a beneficiary in your estate flow.
+            List people in your household and extended family. Mark anyone more than one generation below
+            you when that applies, and include who should appear as a beneficiary in your estate flow.
           </p>
           {ownerNames.length > 0 && (
             <p className="mt-2 text-xs text-neutral-500">
               Household: {ownerNames.join(' · ')} (not listed here —{' '}
-              <a href="/profile" className="text-xs text-indigo-600 hover:underline">
+              <a href="/profile" className="text-sm text-blue-600 underline hover:text-blue-800">
                 Edit in Profile →
               </a>
               )
@@ -230,6 +236,12 @@ export default function MyFamilyClient({
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
       )}
 
+      {hasAnyGstSkipPerson && (
+        <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-900">
+          <p>{GST_SKIP_EXPLANATION}</p>
+        </div>
+      )}
+
       <div className="space-y-8">
         {GROUP_ORDER.map(({ key, title }) => {
           const rows = grouped[key]
@@ -244,9 +256,7 @@ export default function MyFamilyClient({
                       <p className="font-medium text-neutral-900">{row.full_name}</p>
                       <p className="text-sm text-neutral-600">
                         {row.relationship}
-                        {row.is_gst_skip
-                          ? ' · Grandchild or younger generation (affects inheritance tax)'
-                          : ''}
+                        {row.is_gst_skip ? ' · More than one generation below you (GST tax may apply)' : ''}
                         {!row.is_beneficiary ? ' · Not in flow as beneficiary' : ''}
                       </p>
                       {row.date_of_birth && (
@@ -351,23 +361,19 @@ export default function MyFamilyClient({
                 />
                 Include as beneficiary in estate flow
               </label>
-              {showGstOption && (
+              {showGstPanel && (
                 <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-900">
-                  <p>
-                    This person is two or more generations below you — a grandchild, great-grandchild, or
-                    similar. This affects how gifts and inheritance are taxed. Your advisor can explain the
-                    implications.
-                  </p>
+                  <p>{GST_SKIP_EXPLANATION}</p>
                 </div>
               )}
-              {showGstOption && (
+              {showGstPanel && (
                 <label className="flex items-center gap-2 text-sm text-neutral-800">
                   <input
                     type="checkbox"
                     checked={isGstSkip}
                     onChange={e => setIsGstSkip(e.target.checked)}
                   />
-                  Grandchild or younger generation (affects inheritance tax)
+                  This person is more than one generation below me (mark for GST tax planning)
                 </label>
               )}
               <div>
