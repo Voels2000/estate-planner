@@ -7,27 +7,26 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
+
+type Horizons = MyEstateStrategyHorizonsResult
 
 type Props = {
   householdId: string
   scenarioId: string | null
-  scenario: {
-    outputs_s1_first: any[] | null
-    assumption_snapshot: any
-    calculated_at: string | null
-    label: string | null
-  } | null
-  taxConfig: {
-    estate_exemption_individual: number
-    estate_exemption_married: number
-    estate_top_rate_pct: number
-    scenario_id: string
-    label: string
-  } | null
+  scenarioMeta: {
+    calculatedAt: string | null
+  }
+  horizons: Horizons
 }
 
-export default function MyEstateStrategyClient({ householdId, scenarioId, scenario, taxConfig }: Props) {
+export default function MyEstateStrategyClient({
+  householdId,
+  scenarioId,
+  scenarioMeta,
+  horizons,
+}: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
@@ -53,195 +52,146 @@ export default function MyEstateStrategyClient({ householdId, scenarioId, scenar
     }
   }
 
-  const rows = scenario?.outputs_s1_first ?? []
-  const snapshot = scenario?.assumption_snapshot
-
-  const firstRow = rows[0]
-  const estateToday = firstRow?.estate_incl_home ?? 0
-  const stateTaxToday = Number(firstRow?.estate_tax_state ?? 0)
-
-  const finalRow = rows[rows.length - 1]
-  const retirementRow = rows.find((r: any) =>
-    snapshot?.person1_retirement_age && r.age_person1 >= snapshot.person1_retirement_age
-  )
-
-  const grossAtDeath = finalRow?.estate_incl_home ?? 0
-  const grossAtRetirement = (retirementRow?.estate_incl_home ?? 0) > 0 ? retirementRow!.estate_incl_home : grossAtDeath
-  const hasSpouse = snapshot?.has_spouse ?? false
-  const exemptionWithPortability = hasSpouse
-    ? (taxConfig?.estate_exemption_married ?? 27_220_000)
-    : (taxConfig?.estate_exemption_individual ?? 13_610_000)
-  const topRate = (taxConfig?.estate_top_rate_pct ?? 40) / 100
-  const taxableEstateWithPortability = Math.max(0, estateToday - exemptionWithPortability)
-  const estimatedFederalTaxWithPortability = Math.round(taxableEstateWithPortability * topRate)
-
-  const individualExemption = taxConfig?.estate_exemption_individual ?? 13_610_000
-  const taxableEstateNoPortability = Math.max(0, estateToday - individualExemption)
-  const estimatedFederalTaxNoPortability = Math.round(taxableEstateNoPortability * topRate)
-
-  const sunsetExemption = hasSpouse ? 14_000_000 : 7_000_000
-  const taxableEstateSunset = Math.max(0, estateToday - sunsetExemption)
-  const estimatedFederalTaxSunset = Math.round(taxableEstateSunset * topRate)
-
-  const planningGap = Math.max(estimatedFederalTaxNoPortability, stateTaxToday)
-
-  const hasScenario = rows.length > 0
+  const hasBaseCase = !!scenarioId
+  const { today, tenYear, atDeath, showProjectionMismatchNote } = horizons
+  const columns = [today, tenYear, atDeath]
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+    <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">My Estate Strategy</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            A simplified view of your estate plan based on your current data.
-            {scenario?.calculated_at && (
+            Estimated estate value and tax exposure across three time horizons, based on your data.
+            {scenarioMeta.calculatedAt && (
               <span className="ml-1 text-neutral-400">
-                Last updated {new Date(scenario.calculated_at).toLocaleDateString()}.
+                Last updated {new Date(scenarioMeta.calculatedAt).toLocaleDateString()}.
               </span>
             )}
           </p>
         </div>
-        {/* Regenerate button — always visible when base case exists */}
-        {hasScenario && (
+        {hasBaseCase && (
           <button
             type="button"
             onClick={handleGenerateBaseCase}
             disabled={generating}
-            className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition"
+            className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-50"
           >
             {generating ? 'Regenerating…' : '↻ Regenerate Estate Plan'}
           </button>
         )}
       </div>
 
-      {!hasScenario ? (
-        // ── No base case yet — show generate CTA ──────────────────────────
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-blue-200 bg-blue-50 py-16 px-8 text-center">
-          <div className="text-4xl mb-3">📈</div>
-          <p className="text-sm font-semibold text-blue-900 mb-1">
-            Generate Your Estate Plan
-          </p>
-          <p className="text-xs text-blue-700 mb-6 max-w-sm">
-            You have entered your financial data. Generate your estate plan to see
-            your tax exposure, estate flow, and planning gaps.
-          </p>
-          <button
-            type="button"
-            onClick={handleGenerateBaseCase}
-            disabled={generating}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+      {generateError && (
+        <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          {generateError}
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {columns.map((col) => (
+          <div
+            key={col.headerTitle}
+            className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
           >
-            {generating ? 'Generating your plan…' : 'Generate My Estate Plan'}
-          </button>
-          {generateError && (
-            <p className="mt-3 text-xs text-red-600">{generateError}</p>
-          )}
-          <Link href="/dashboard" className="mt-4 text-xs text-neutral-400 hover:text-neutral-600 hover:underline">
-            Return to Dashboard
-          </Link>
-        </div>
-      ) : (
-        // ── Has base case — show strategy view ────────────────────────────
-        <div className="space-y-6">
-          {generateError && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              {generateError}
-            </p>
-          )}
-
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                Estimated Estate at Retirement
-              </p>
-              <p className="text-3xl font-bold text-neutral-900">{formatDollars(grossAtRetirement)}</p>
-              <p className="text-xs text-neutral-400 mt-1">Based on current growth assumptions</p>
+            <div className={`px-4 py-3 text-center text-sm font-semibold ${col.headerClassName}`}>
+              {col.headerTitle}
             </div>
+            <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+              <p className="text-xs leading-relaxed text-neutral-600">{col.narrative}</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                  Federal Tax — With Portability
-                </p>
-                <p className={`text-3xl font-bold ${estimatedFederalTaxWithPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                  {formatDollars(estimatedFederalTaxWithPortability)}
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Requires filing estate tax return within 9 months of first death
-                </p>
-              </div>
-              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                  Federal Tax — Without Portability
-                </p>
-                <p className={`text-3xl font-bold ${estimatedFederalTaxNoPortability > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                  {formatDollars(estimatedFederalTaxNoPortability)}
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  If no estate tax return is filed at first death
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-neutral-500 mt-2">
-              These are illustrative scenarios. Your advisor or attorney can determine which applies to your situation.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">
-                  Estate Tax — Sunset 2026
-                </p>
-                <p className={`text-3xl font-bold ${estimatedFederalTaxSunset > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                  {estimatedFederalTaxSunset > 0 ? formatDollars(estimatedFederalTaxSunset) : 'None est.'}
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Federal exemption decreases December 31, 2026. Review with your advisor before year end.
-                </p>
-              </div>
-              <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">State Tax</p>
-                <p className={`text-3xl font-bold ${stateTaxToday > 0 ? 'text-red-600' : 'text-neutral-600'}`}>
-                  {stateTaxToday > 0 ? formatDollars(stateTaxToday) : 'See Estate Tax tab for details'}
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Review with your attorney.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {planningGap > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">Planning Gap</p>
-                  <p className="text-3xl font-bold text-amber-800">{formatDollars(planningGap)}</p>
-                  <p className="text-sm text-amber-700 mt-2">
-                    Potential exposure to explore with your advisor or attorney
+              {col.showGenerateCta ? (
+                <div className="mt-6 flex flex-1 flex-col items-center justify-center text-center">
+                  <p className="text-sm text-neutral-700">
+                    Generate your estate plan to see projections
                   </p>
+                  <button
+                    type="button"
+                    onClick={handleGenerateBaseCase}
+                    disabled={generating}
+                    className="mt-4 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {generating ? 'Generating…' : 'Generate My Estate Plan →'}
+                  </button>
+                  <Link
+                    href="/dashboard"
+                    className="mt-3 text-xs text-neutral-400 hover:text-neutral-600 hover:underline"
+                  >
+                    Or go to Dashboard
+                  </Link>
                 </div>
-                <Link
-                  href="/my-advisor"
-                  className="shrink-0 rounded-lg bg-amber-700 px-4 py-2 text-xs font-medium text-white hover:bg-amber-800 transition"
-                >
-                  Talk to my advisor →
-                </Link>
-              </div>
+              ) : (
+                <>
+                  {col.showMissingRowNote && col.missingRowCalendarYear != null && (
+                    <p className="mt-2 text-xs text-amber-800">
+                      This projection does not include {col.missingRowCalendarYear}; figures are
+                      unavailable for this horizon.
+                    </p>
+                  )}
+                  <div className="mt-4 space-y-3 text-sm">
+                    <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
+                    <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
+                    <MetricRow label="Federal exposure" value={fmtEst(col.federalExposure)} />
+                    <MetricRow label="Federal tax estimate" value={fmtEst(col.federalTaxEstimate)} />
+                    <div className="my-3 border-t border-neutral-200" />
+                    <MetricRow label="State exposure" value={fmtEst(col.stateExposure)} />
+                    <MetricRow
+                      label="Est. total tax liability"
+                      value={fmtEst(col.totalTaxLiability)}
+                      emphasized
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          )}
-
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-            <ConsumerEstateFlowView householdId={householdId} scenarioId={scenarioId} />
           </div>
+        ))}
+      </div>
+
+      {showProjectionMismatchNote && (
+        <p className="mt-6 text-xs text-neutral-600">
+          Note: projection figures are based on your base case assumptions. Update your profile or
+          base case to reflect any changes.
+        </p>
+      )}
+
+      {hasBaseCase && (
+        <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <ConsumerEstateFlowView householdId={householdId} scenarioId={scenarioId} />
         </div>
       )}
     </div>
   )
 }
 
-function formatDollars(n: number) {
-  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
-  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
+function MetricRow({
+  label,
+  value,
+  emphasized,
+}: {
+  label: string
+  value: string
+  emphasized?: boolean
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className={`text-neutral-600 ${emphasized ? 'font-medium text-neutral-800' : ''}`}>
+        {label}
+      </span>
+      <span
+        className={`text-right tabular-nums ${emphasized ? 'font-semibold text-neutral-900' : 'text-neutral-900'}`}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function fmtEst(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '—'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
 }

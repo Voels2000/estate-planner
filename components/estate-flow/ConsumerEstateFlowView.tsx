@@ -27,7 +27,7 @@ function buildFlowSteps(graph: EstateFlowGraph): FlowStep[] {
   // Step 1: your estate
   steps.push({
     icon: '🏠',
-    title: 'Your estate today',
+    title: 'Your estate',
     body: `Your total estate — including your home, investments, and other assets — is estimated at ${fmt(s.gross_estate)}.`,
     value: fmt(s.gross_estate),
   })
