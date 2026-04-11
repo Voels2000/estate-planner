@@ -106,12 +106,22 @@ export default async function DashboardPage() {
     ? adjustSSForClaimingAge(p2SSPia, p2SSClaimingAge, p2BirthYear)
     : hasSpouse ? (p2SSPia ?? null) : null
 
+  // combinedSSMonthly = full future SS value — used in retirement snapshot display
   const combinedSSMonthly = (p1MonthlyBenefit ?? 0) + (p2MonthlyBenefit ?? 0)
 
-  // Annual SS from PIA (used if not already in income table)
-  const annualSSFromPIA = combinedSSMonthly * 12
+  // Age gate — only include SS in current year income if the person
+  // has reached their claiming age this year or earlier.
+  const p1CurrentAge = p1BirthYear ? currentYear - p1BirthYear : null
+  const p2CurrentAge = p2BirthYear ? currentYear - p2BirthYear : null
+  const p1IsClaimingNow = p1CurrentAge !== null && p1SSClaimingAge !== null && p1CurrentAge >= p1SSClaimingAge
+  const p2IsClaimingNow = hasSpouse && p2CurrentAge !== null && p2SSClaimingAge !== null && p2CurrentAge >= p2SSClaimingAge
 
-  // Total income = table income + PIA-based SS (if not double-counted)
+  // annualSSFromPIA = SS actually in payment today (age-gated for current year net)
+  const annualSSFromPIA =
+    ((p1IsClaimingNow ? (p1MonthlyBenefit ?? 0) : 0) +
+     (p2IsClaimingNow ? (p2MonthlyBenefit ?? 0) : 0)) * 12
+
+  // Total income = table income + age-gated SS (if not already in income table)
   const totalIncome = hasSSInIncomeTable
     ? totalIncomeFromTable
     : totalIncomeFromTable + annualSSFromPIA
