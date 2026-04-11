@@ -229,10 +229,17 @@ function CollapsibleSection({ title, subtitle, badge, defaultOpen, storageKey, l
   lockedHrefLabel?: string
   children: React.ReactNode
 }) {
-  // Initialize from localStorage if key provided, else use default
-  const [open, setOpen] = useState(() =>
-    storageKey ? readSectionState(storageKey, defaultOpen) : defaultOpen
-  )
+  const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    if (storageKey) {
+      setOpen(readSectionState(storageKey, defaultOpen))
+    } else if (defaultOpen) {
+      setOpen(true)
+    }
+  }, [defaultOpen, storageKey])
 
   function toggle() {
     const next = !open
@@ -258,7 +265,7 @@ function CollapsibleSection({ title, subtitle, badge, defaultOpen, storageKey, l
         </div>
         <span className={`text-neutral-400 text-lg transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}>⌄</span>
       </button>
-      {open && (
+      {mounted && open && (
         <div className="border-t border-neutral-100">
           {locked ? (
             <div className="px-6 py-8 text-center">

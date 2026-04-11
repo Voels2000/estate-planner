@@ -277,14 +277,14 @@ function suggestPrimaryBeneficiary(params: {
   return firstChild
 }
 
-/** Matches gap-modal contingent split filter: child / son / daughter / grandchild substrings (case-insensitive). */
+/** Matches gap-modal contingent split filter: child / son / daughter (case-insensitive);
+ *  excludes grandchild, grandson, and granddaughter. */
 function relationshipMatchesChildVariantsForContingentSplit(rel: string | null | undefined): boolean {
   const r = (rel ?? '').toLowerCase()
   return (
-    r.includes('child') ||
-    r.includes('son') ||
-    r.includes('daughter') ||
-    r.includes('grandchild')
+    (r.includes('child') && !r.includes('grandchild')) ||
+    (r.includes('son') && !r.includes('grandson')) ||
+    (r.includes('daughter') && !r.includes('granddaughter'))
   )
 }
 
@@ -863,7 +863,7 @@ export default function TitlingClient({
           existing={titlingModal.existing}
           asset={titlingModal.asset}
           onClose={() => setTitlingModal(null)}
-          onSave={async () => { setTitlingModal(null); await reloadData() }}
+          onSave={async () => { await reloadData(); setTitlingModal(null) }}
         />
       )}
 
@@ -882,7 +882,7 @@ export default function TitlingClient({
           picklistOptions={beneficiaryPicklistOptions}
           householdPeopleEmpty={householdPeople.length === 0}
           onClose={() => setBeneficiaryModal(null)}
-          onSave={async () => { setBeneficiaryModal(null); await reloadData() }}
+          onSave={async () => { await reloadData(); setBeneficiaryModal(null) }}
         />
       )}
 
@@ -898,8 +898,8 @@ export default function TitlingClient({
           descendantsOrdered={descendantsOrdered}
           onClose={() => setGapModalOpen(false)}
           onApplied={async () => {
-            setGapModalOpen(false)
             await reloadData()
+            setGapModalOpen(false)
           }}
         />
       )}
@@ -1297,6 +1297,81 @@ type BeneficiaryGapRowState = {
   }> | null
 }
 
+/** Merge UI row edits with freshly built defaults so partial state never drops contingent splits or suggested primaries. */
+function mergeGapRowForApply(
+  fb: BeneficiaryGapRowState,
+  cur: BeneficiaryGapRowState | undefined,
+): BeneficiaryGapRowState {
+  if (!cur) return fb
+  const useCurPrimary = cur.primaryValue !== '' || cur.primaryManual.trim() !== ''
+  const split =
+    cur.contingentSplitRows && cur.contingentSplitRows.length > 0
+      ? cur.contingentSplitRows
+      : fb.contingentSplitRows
+  const useCurContingentSingle =
+    !split || split.length === 0
+      ? cur.contingentValue !== '' || cur.contingentManual.trim() !== ''
+      : false
+  return {
+    ...fb,
+    ...cur,
+    primaryValue: useCurPrimary ? cur.primaryValue : fb.primaryValue,
+    primaryManual: useCurPrimary ? cur.primaryManual : fb.primaryManual,
+    contingentSplitRows: split,
+    contingentValue: useCurContingentSingle ? cur.contingentValue : fb.contingentValue,
+    contingentManual: useCurContingentSingle ? cur.contingentManual : fb.contingentManual,
+  }
+}
+
+function buildBeneficiaryGapRowsState(
+  items: GapItem[],
+  picklistOptions: BeneficiaryPicklistOption[],
+  householdPeople: HouseholdPersonRow[],
+  hasSpouse: boolean,
+  person1LegalName: string | null,
+  person2LegalName: string | null,
+  descendantsOrdered: HouseholdPersonRow[],
+): Record<string, BeneficiaryGapRowState> {
+  const childrenForSplit = householdChildrenForContingentSplit(householdPeople)
+  const next: Record<string, BeneficiaryGapRowState> = {}
+  for (const row of items) {
+    const sp = row.needsPrimary
+      ? suggestPrimaryBeneficiary({
+          owner: row.owner,
+          hasSpouse,
+          person1LegalName,
+          person2LegalName,
+          descendantsOrdered,
+        })
+      : null
+    let contingentValue = ''
+    let contingentManual = ''
+    let contingentSplitRows: BeneficiaryGapRowState['contingentSplitRows'] = null
+    if (row.needsContingent) {
+      if (childrenForSplit.length >= 1) {
+        const splits = contingentEvenSplitPercents(childrenForSplit.length)
+        contingentSplitRows = childrenForSplit.map((c, i) => ({
+          householdPersonId: c.id,
+          pickValue: `hp-row:${c.id}`,
+          manual: '',
+          allocationPct: splits[i].toFixed(2),
+        }))
+      } else {
+        contingentValue = ''
+        contingentManual = ''
+      }
+    }
+    next[gapItemKey(row)] = {
+      primaryValue: row.needsPrimary && sp ? picklistValueForFullName(sp, picklistOptions) : '',
+      primaryManual: '',
+      contingentValue,
+      contingentManual,
+      contingentSplitRows,
+    }
+  }
+  return next
+}
+
 function resolveBeneficiaryFromPick(
   value: string,
   manual: string,
@@ -1340,45 +1415,40 @@ function BeneficiaryGapModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const fallbackRows = useMemo(
+    () =>
+      buildBeneficiaryGapRowsState(
+        items,
+        picklistOptions,
+        householdPeople,
+        hasSpouse,
+        person1LegalName,
+        person2LegalName,
+        descendantsOrdered,
+      ),
+    [
+      items,
+      picklistOptions,
+      householdPeople,
+      hasSpouse,
+      person1LegalName,
+      person2LegalName,
+      descendantsOrdered,
+    ],
+  )
+
   useEffect(() => {
-    const childrenForSplit = householdChildrenForContingentSplit(householdPeople)
-    const next: Record<string, BeneficiaryGapRowState> = {}
-    for (const row of items) {
-      const sp = row.needsPrimary
-        ? suggestPrimaryBeneficiary({
-            owner: row.owner,
-            hasSpouse,
-            person1LegalName,
-            person2LegalName,
-            descendantsOrdered,
-          })
-        : null
-      let contingentValue = ''
-      let contingentManual = ''
-      let contingentSplitRows: BeneficiaryGapRowState['contingentSplitRows'] = null
-      if (row.needsContingent) {
-        if (childrenForSplit.length >= 1) {
-          const splits = contingentEvenSplitPercents(childrenForSplit.length)
-          contingentSplitRows = childrenForSplit.map((c, i) => ({
-            householdPersonId: c.id,
-            pickValue: `hp-row:${c.id}`,
-            manual: '',
-            allocationPct: splits[i].toFixed(2),
-          }))
-        } else {
-          contingentValue = ''
-          contingentManual = ''
-        }
-      }
-      next[gapItemKey(row)] = {
-        primaryValue: row.needsPrimary && sp ? picklistValueForFullName(sp, picklistOptions) : '',
-        primaryManual: '',
-        contingentValue,
-        contingentManual,
-        contingentSplitRows,
-      }
-    }
-    setRows(next)
+    setRows(
+      buildBeneficiaryGapRowsState(
+        items,
+        picklistOptions,
+        householdPeople,
+        hasSpouse,
+        person1LegalName,
+        person2LegalName,
+        descendantsOrdered,
+      ),
+    )
   }, [items, hasSpouse, person1LegalName, person2LegalName, descendantsOrdered, picklistOptions, householdPeople])
 
   function getBensFor(
@@ -1410,13 +1480,18 @@ function BeneficiaryGapModal({
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        setError('You must be signed in to apply defaults.')
+        return
+      }
 
       let working = [...beneficiaries]
 
       for (const row of items) {
-        const st = rows[gapItemKey(row)]
-        if (!st) continue
+        const key = gapItemKey(row)
+        const fb = fallbackRows[key]
+        if (!fb) continue
+        const st = mergeGapRowForApply(fb, rows[key])
 
         if (row.needsPrimary) {
           const resolved = resolveBeneficiaryFromPick(st.primaryValue, st.primaryManual, picklistOptions)
@@ -1425,7 +1500,6 @@ function BeneficiaryGapModal({
             if (rem > 0.01) {
               const payload = {
                 beneficiary_type: 'primary' as const,
-                contingent: false,
                 full_name: resolved.fullName,
                 relationship: resolved.relationship,
                 email: null as string | null,
@@ -1474,7 +1548,6 @@ function BeneficiaryGapModal({
               if (!Number.isFinite(pct) || pct <= 0) continue
               const payload = {
                 beneficiary_type: 'contingent' as const,
-                contingent: true,
                 full_name: resolved.fullName,
                 relationship: resolved.relationship,
                 email: null as string | null,
@@ -1514,7 +1587,6 @@ function BeneficiaryGapModal({
               if (rem > 0.01) {
                 const payload = {
                   beneficiary_type: 'contingent' as const,
-                  contingent: true,
                   full_name: resolved.fullName,
                   relationship: resolved.relationship,
                   email: null as string | null,
@@ -1581,13 +1653,15 @@ function BeneficiaryGapModal({
             <tbody className="divide-y divide-neutral-100">
               {items.map((row) => {
                 const k = gapItemKey(row)
-                const st = rows[k] ?? {
-                  primaryValue: '',
-                  primaryManual: '',
-                  contingentValue: '',
-                  contingentManual: '',
-                  contingentSplitRows: null,
-                }
+                const st =
+                  rows[k] ??
+                  fallbackRows[k] ?? {
+                    primaryValue: '',
+                    primaryManual: '',
+                    contingentValue: '',
+                    contingentManual: '',
+                    contingentSplitRows: null,
+                  }
                 const primaries = beneficiaries.filter((b) => {
                   if (b.beneficiary_type !== 'primary') return false
                   if (row.kind === 'asset') return b.asset_id === row.id
@@ -1615,7 +1689,7 @@ function BeneficiaryGapModal({
                             value={st.primaryValue}
                             onChange={(e) =>
                               setRows((prev) => {
-                                const cur = prev[k] ?? st
+                                const cur = prev[k] ?? fallbackRows[k]!
                                 return { ...prev, [k]: { ...cur, primaryValue: e.target.value } }
                               })
                             }
@@ -1635,7 +1709,7 @@ function BeneficiaryGapModal({
                               value={st.primaryManual}
                               onChange={(e) =>
                                 setRows((prev) => {
-                                  const cur = prev[k] ?? st
+                                  const cur = prev[k] ?? fallbackRows[k]!
                                   return { ...prev, [k]: { ...cur, primaryManual: e.target.value } }
                                 })
                               }
@@ -1664,7 +1738,7 @@ function BeneficiaryGapModal({
                                   onChange={(e) => {
                                     const v = e.target.value
                                     setRows((prev) => {
-                                      const cur = prev[k] ?? st
+                                      const cur = prev[k] ?? fallbackRows[k]!
                                       if (!cur.contingentSplitRows) return prev
                                       return {
                                         ...prev,
@@ -1696,7 +1770,7 @@ function BeneficiaryGapModal({
                                     onChange={(e) => {
                                       const t = e.target.value
                                       setRows((prev) => {
-                                        const cur = prev[k] ?? st
+                                        const cur = prev[k] ?? fallbackRows[k]!
                                         if (!cur.contingentSplitRows) return prev
                                         return {
                                           ...prev,
@@ -1726,7 +1800,7 @@ function BeneficiaryGapModal({
                                     onChange={(e) => {
                                       const t = e.target.value
                                       setRows((prev) => {
-                                        const cur = prev[k] ?? st
+                                        const cur = prev[k] ?? fallbackRows[k]!
                                         if (!cur.contingentSplitRows) return prev
                                         return {
                                           ...prev,
@@ -1753,7 +1827,7 @@ function BeneficiaryGapModal({
                               value={st.contingentValue}
                               onChange={(e) =>
                                 setRows((prev) => {
-                                  const cur = prev[k] ?? st
+                                  const cur = prev[k] ?? fallbackRows[k]!
                                   return { ...prev, [k]: { ...cur, contingentValue: e.target.value } }
                                 })
                               }
@@ -1773,7 +1847,7 @@ function BeneficiaryGapModal({
                                 value={st.contingentManual}
                                 onChange={(e) =>
                                   setRows((prev) => {
-                                    const cur = prev[k] ?? st
+                                    const cur = prev[k] ?? fallbackRows[k]!
                                     return { ...prev, [k]: { ...cur, contingentManual: e.target.value } }
                                   })
                                 }
@@ -1935,7 +2009,6 @@ function BeneficiaryModal({
       if (!user) return
       const payload = {
         beneficiary_type: beneficiaryType,
-        contingent: beneficiaryType === 'contingent',
         full_name: fullNameOut,
         relationship: relationshipOut,
         email: email.trim() || null,
