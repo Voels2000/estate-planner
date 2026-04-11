@@ -5,7 +5,8 @@
 // Route: /titling
 // ─────────────────────────────────────────
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -96,6 +97,32 @@ type TitlingCategory = {
   is_active: boolean
 }
 
+type HouseholdPersonRow = {
+  id: string
+  full_name: string
+  relationship: string
+  date_of_birth: string | null
+  is_gst_skip: boolean
+}
+
+type BeneficiaryPicklistOption = {
+  value: string
+  label: string
+  fullName: string
+  relationship: string
+  isGst: boolean
+}
+
+type GapItem = {
+  kind: TitlingKind
+  id: string
+  name: string
+  subtitle: string
+  owner: string | null
+  needsPrimary: boolean
+  needsContingent: boolean
+}
+
 type TitlingClientProps = {
   initialAssets: Asset[]
   initialRealEstate: RealEstateItem[]
@@ -106,6 +133,10 @@ type TitlingClientProps = {
   initialBusinesses: BusinessRow[]
   initialInsurancePolicyTitling: InsurancePolicyTitling[]
   initialBusinessTitling: BusinessTitlingRow[]
+  householdPeople: HouseholdPersonRow[]
+  hasSpouse: boolean
+  person1LegalName: string | null
+  person2LegalName: string | null
   person1Name: string
   person2Name: string
   categories: TitlingCategory[]
@@ -154,6 +185,119 @@ const RELATIONSHIPS = [
 
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
+
+const PREREQ_BANNER_STORAGE_KEY = 'titling-family-prerequisite-banner-dismissed'
+
+function normalizeNameKey(s: string | null | undefined): string {
+  return (s ?? '').toLowerCase().trim().replace(/\s+/g, ' ')
+}
+
+/** Descendants (children / grandchildren) for ordering — matches My Family groupings. */
+function isDescendantRelationship(rel: string): boolean {
+  const g = familyGroupLocal(rel)
+  return g === 'children' || g === 'grandchildren'
+}
+
+function familyGroupLocal(rel: string): 'spouse' | 'children' | 'grandchildren' | 'other' {
+  const r = rel.toLowerCase()
+  if (/\b(spouse|husband|wife|partner)\b/.test(r)) return 'spouse'
+  if (/grand|grandchild|grandson|granddaughter/.test(r)) return 'grandchildren'
+  if (/\b(son|daughter|child|children|kid|stepchild|step-son|step-daughter)\b/.test(r)) return 'children'
+  return 'other'
+}
+
+function descendantSort(a: HouseholdPersonRow, b: HouseholdPersonRow): number {
+  const da = a.date_of_birth ? Date.parse(a.date_of_birth) : NaN
+  const db = b.date_of_birth ? Date.parse(b.date_of_birth) : NaN
+  const ta = Number.isFinite(da) ? da : Infinity
+  const tb = Number.isFinite(db) ? db : Infinity
+  if (ta !== tb) return ta - tb
+  return a.full_name.localeCompare(b.full_name)
+}
+
+function orderedDescendants(people: HouseholdPersonRow[]): HouseholdPersonRow[] {
+  return people.filter((p) => isDescendantRelationship(p.relationship)).sort(descendantSort)
+}
+
+function buildBeneficiaryPicklist(
+  person1LegalName: string | null,
+  person2LegalName: string | null,
+  hasSpouse: boolean,
+  householdPeople: HouseholdPersonRow[],
+): BeneficiaryPicklistOption[] {
+  const used = new Set<string>()
+  const out: BeneficiaryPicklistOption[] = []
+
+  const push = (value: string, fullName: string, relationship: string, isGst: boolean) => {
+    const k = normalizeNameKey(fullName)
+    if (!k) return
+    if (used.has(k)) return
+    used.add(k)
+    const gstPart = isGst ? ' ⚠️ GST' : ''
+    out.push({
+      value,
+      label: `${fullName} (${relationship})${gstPart}`,
+      fullName,
+      relationship,
+      isGst,
+    })
+  }
+
+  if (person1LegalName?.trim()) {
+    push('hp-spouse-1', person1LegalName.trim(), 'Spouse', false)
+  }
+  if (hasSpouse && person2LegalName?.trim()) {
+    push('hp-spouse-2', person2LegalName.trim(), 'Spouse', false)
+  }
+
+  for (const p of householdPeople) {
+    const rel = p.relationship?.trim() || 'Other'
+    push(`hp-row:${p.id}`, p.full_name.trim(), rel, p.is_gst_skip === true)
+  }
+
+  return out
+}
+
+function suggestPrimaryBeneficiary(params: {
+  owner: string | null
+  hasSpouse: boolean
+  person1LegalName: string | null
+  person2LegalName: string | null
+  descendantsOrdered: HouseholdPersonRow[]
+}): string | null {
+  const { owner, hasSpouse, person1LegalName, person2LegalName, descendantsOrdered } = params
+  const p1 = person1LegalName?.trim() ?? null
+  const p2 = person2LegalName?.trim() ?? null
+  const firstChild = descendantsOrdered[0]?.full_name.trim() ?? null
+
+  if (owner === 'person1' && hasSpouse && p2) return p2
+  if (owner === 'person2' && hasSpouse && p1) return p1
+  if (owner === 'joint' && hasSpouse && p2) return p2
+  if ((owner == null || owner === '') && hasSpouse && p2) return p2
+  return firstChild
+}
+
+function suggestContingentBeneficiary(params: {
+  hasSpouse: boolean
+  descendantsOrdered: HouseholdPersonRow[]
+}): string | null {
+  const { hasSpouse, descendantsOrdered } = params
+  if (descendantsOrdered.length === 0) return null
+  if (!hasSpouse) {
+    return descendantsOrdered[1]?.full_name.trim() ?? null
+  }
+  return descendantsOrdered[0]?.full_name.trim() ?? null
+}
+
+function picklistValueForFullName(
+  fullName: string | null | undefined,
+  options: BeneficiaryPicklistOption[],
+): string {
+  if (!fullName?.trim()) return ''
+  const key = normalizeNameKey(fullName)
+  const hit = options.find((o) => normalizeNameKey(o.fullName) === key)
+  return hit?.value ?? '__manual__'
+}
 
 function formatDollars(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -274,6 +418,10 @@ export default function TitlingClient({
   initialBusinesses,
   initialInsurancePolicyTitling,
   initialBusinessTitling,
+  householdPeople,
+  hasSpouse,
+  person1LegalName,
+  person2LegalName,
   person1Name,
   person2Name,
   categories,
@@ -289,6 +437,25 @@ export default function TitlingClient({
   const [businessTitling, setBusinessTitling] = useState<BusinessTitlingRow[]>(initialBusinessTitling)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(initialBeneficiaries)
   const [activeTab, setActiveTab] = useState<string>('assets')
+  const [gapModalOpen, setGapModalOpen] = useState(false)
+  const [prereqBannerDismissed, setPrereqBannerDismissed] = useState(false)
+
+  const beneficiaryPicklistOptions = useMemo(
+    () => buildBeneficiaryPicklist(person1LegalName, person2LegalName, hasSpouse, householdPeople),
+    [person1LegalName, person2LegalName, hasSpouse, householdPeople],
+  )
+
+  const descendantsOrdered = useMemo(() => orderedDescendants(householdPeople), [householdPeople])
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage.getItem(PREREQ_BANNER_STORAGE_KEY) === '1') {
+        setPrereqBannerDismissed(true)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   // Modal state
   const [titlingModal, setTitlingModal] = useState<{
@@ -341,6 +508,7 @@ export default function TitlingClient({
     setInsurancePolicyTitling(it ?? [])
     setBusinessTitling(bt ?? [])
     setBeneficiaries(bens ?? [])
+    await refreshConflicts()
     router.refresh()
   }
 
@@ -365,6 +533,63 @@ export default function TitlingClient({
     if (kind === 're') return realEstateTitling.find(t => t.real_estate_id === id) ?? null
     if (kind === 'insurance') return insurancePolicyTitling.find(t => t.insurance_policy_id === id) ?? null
     return businessTitling.find(t => t.business_id === id) ?? null
+  }
+
+  function titlingExemptFromBeneficiaryGap(t: AnyTitling | null): boolean {
+    return !!(t && ['joint_wros', 'community_property'].includes(t.title_type))
+  }
+
+  const incompleteBeneficiaryItems: GapItem[] = useMemo(() => {
+    const out: GapItem[] = []
+    const pushIfIncomplete = (kind: TitlingKind, id: string, name: string, subtitle: string, owner: string | null) => {
+      const t = getTitlingFor(kind, id)
+      if (titlingExemptFromBeneficiaryGap(t)) return
+      const hasPrimary = getBeneficiariesFor(kind, id, 'primary').length > 0
+      const hasContingent = getBeneficiariesFor(kind, id, 'contingent').length > 0
+      if (hasPrimary && hasContingent) return
+      out.push({
+        kind,
+        id,
+        name,
+        subtitle,
+        owner,
+        needsPrimary: !hasPrimary,
+        needsContingent: !hasContingent,
+      })
+    }
+    for (const a of assets) {
+      pushIfIncomplete('asset', a.id, a.name, a.type.replace(/_/g, ' '), a.owner)
+    }
+    for (const r of realEstate) {
+      pushIfIncomplete('re', r.id, r.name, r.property_type.replace(/_/g, ' '), r.owner)
+    }
+    for (const pol of insurance) {
+      const displayName = pol.policy_name?.trim() || 'Insurance policy'
+      const sub = (pol.insurance_type ?? 'policy').replace(/_/g, ' ')
+      pushIfIncomplete('insurance', pol.id, displayName, sub, null)
+    }
+    for (const biz of businesses) {
+      pushIfIncomplete('business', biz.id, biz.name, (biz.entity_type ?? 'entity').replace(/_/g, ' '), null)
+    }
+    return out
+  }, [
+    assets,
+    realEstate,
+    insurance,
+    businesses,
+    beneficiaries,
+    assetTitling,
+    realEstateTitling,
+    insurancePolicyTitling,
+    businessTitling,
+  ])
+
+  async function refreshConflicts() {
+    try {
+      await fetch('/api/estate/refresh-conflicts', { method: 'POST' })
+    } catch {
+      /* non-fatal */
+    }
   }
 
   // Build tabs dynamically from DB categories
@@ -392,6 +617,34 @@ export default function TitlingClient({
           How each asset is titled and who inherits it. Affects estate distribution and probate.
         </p>
       </div>
+
+      {householdPeople.length === 0 && !prereqBannerDismissed && (
+        <PrerequisiteFamilyBanner
+          onDismiss={() => {
+            try {
+              window.localStorage.setItem(PREREQ_BANNER_STORAGE_KEY, '1')
+            } catch {
+              /* ignore */
+            }
+            setPrereqBannerDismissed(true)
+          }}
+        />
+      )}
+
+      {incompleteBeneficiaryItems.length > 0 && (
+        <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-indigo-950">
+            {incompleteBeneficiaryItems.length} assets are missing beneficiary assignments
+          </p>
+          <button
+            type="button"
+            onClick={() => setGapModalOpen(true)}
+            className="shrink-0 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800 transition"
+          >
+            Review &amp; Apply Defaults →
+          </button>
+        </div>
+      )}
 
       {/* Warnings */}
       {warnings.length > 0 && (
@@ -610,8 +863,27 @@ export default function TitlingClient({
             benForItem({ id: beneficiaryModal.id, kind: beneficiaryModal.kind }, b) &&
             b.id !== beneficiaryModal.existing?.id
           )}
+          picklistOptions={beneficiaryPicklistOptions}
+          householdPeopleEmpty={householdPeople.length === 0}
           onClose={() => setBeneficiaryModal(null)}
           onSave={async () => { setBeneficiaryModal(null); await reloadData() }}
+        />
+      )}
+
+      {gapModalOpen && (
+        <BeneficiaryGapModal
+          items={incompleteBeneficiaryItems}
+          picklistOptions={beneficiaryPicklistOptions}
+          beneficiaries={beneficiaries}
+          hasSpouse={hasSpouse}
+          person1LegalName={person1LegalName}
+          person2LegalName={person2LegalName}
+          descendantsOrdered={descendantsOrdered}
+          onClose={() => setGapModalOpen(false)}
+          onApplied={async () => {
+            setGapModalOpen(false)
+            await reloadData()
+          }}
         />
       )}
     </div>
@@ -964,10 +1236,411 @@ function TitlingModal({
   )
 }
 
+// ─── Prerequisite banner (My Family) ──────────────────────────────────────────
+
+function PrerequisiteFamilyBanner({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-amber-950">
+          For accurate beneficiary assignments, add your family members first.
+        </p>
+        <Link href="/my-family" className="mt-1 inline-block text-sm font-medium text-indigo-700 hover:underline">
+          Go to My Family →
+        </Link>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="text-lg leading-none text-neutral-400 hover:text-neutral-600"
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
+// ─── Gap review modal ─────────────────────────────────────────────────────────
+
+function gapItemKey(row: GapItem): string {
+  return `${row.kind}:${row.id}`
+}
+
+function resolveBeneficiaryFromPick(
+  value: string,
+  manual: string,
+  options: BeneficiaryPicklistOption[],
+): { fullName: string; relationship: string; isGst: boolean } | null {
+  if (!value) return null
+  if (value === '__manual__') {
+    const t = manual.trim()
+    if (!t) return null
+    return { fullName: t, relationship: 'Other', isGst: false }
+  }
+  const opt = options.find((o) => o.value === value)
+  if (!opt) return null
+  return { fullName: opt.fullName, relationship: opt.relationship, isGst: opt.isGst }
+}
+
+function BeneficiaryGapModal({
+  items,
+  picklistOptions,
+  beneficiaries,
+  hasSpouse,
+  person1LegalName,
+  person2LegalName,
+  descendantsOrdered,
+  onClose,
+  onApplied,
+}: {
+  items: GapItem[]
+  picklistOptions: BeneficiaryPicklistOption[]
+  beneficiaries: Beneficiary[]
+  hasSpouse: boolean
+  person1LegalName: string | null
+  person2LegalName: string | null
+  descendantsOrdered: HouseholdPersonRow[]
+  onClose: () => void
+  onApplied: () => Promise<void>
+}) {
+  const [rows, setRows] = useState<
+    Record<string, { primaryValue: string; primaryManual: string; contingentValue: string; contingentManual: string }>
+  >({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const next: Record<
+      string,
+      { primaryValue: string; primaryManual: string; contingentValue: string; contingentManual: string }
+    > = {}
+    for (const row of items) {
+      const sp = row.needsPrimary
+        ? suggestPrimaryBeneficiary({
+            owner: row.owner,
+            hasSpouse,
+            person1LegalName,
+            person2LegalName,
+            descendantsOrdered,
+          })
+        : null
+      const sc = row.needsContingent
+        ? suggestContingentBeneficiary({ hasSpouse, descendantsOrdered })
+        : null
+      next[gapItemKey(row)] = {
+        primaryValue: row.needsPrimary && sp ? picklistValueForFullName(sp, picklistOptions) : '',
+        primaryManual: '',
+        contingentValue: row.needsContingent && sc ? picklistValueForFullName(sc, picklistOptions) : '',
+        contingentManual: '',
+      }
+    }
+    setRows(next)
+  }, [items, hasSpouse, person1LegalName, person2LegalName, descendantsOrdered, picklistOptions])
+
+  function getBensFor(
+    working: Beneficiary[],
+    kind: TitlingKind,
+    itemId: string,
+    type: 'primary' | 'contingent',
+  ) {
+    return working.filter((b) => {
+      if (b.beneficiary_type !== type) return false
+      if (kind === 'asset') return b.asset_id === itemId
+      if (kind === 're') return b.real_estate_id === itemId
+      if (kind === 'insurance') return b.insurance_policy_id === itemId
+      return b.business_id === itemId
+    })
+  }
+
+  function remainingPct(working: Beneficiary[], kind: TitlingKind, itemId: string, type: 'primary' | 'contingent') {
+    const allocated = getBensFor(working, kind, itemId, type).reduce((s, b) => s + Number(b.allocation_pct), 0)
+    return Math.max(0, 100 - allocated)
+  }
+
+  async function handleApply(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      let working = [...beneficiaries]
+
+      for (const row of items) {
+        const st = rows[gapItemKey(row)]
+        if (!st) continue
+
+        if (row.needsPrimary) {
+          const resolved = resolveBeneficiaryFromPick(st.primaryValue, st.primaryManual, picklistOptions)
+          if (resolved) {
+            const rem = remainingPct(working, row.kind, row.id, 'primary')
+            if (rem > 0.01) {
+              const payload = {
+                beneficiary_type: 'primary' as const,
+                contingent: false,
+                full_name: resolved.fullName,
+                relationship: resolved.relationship,
+                email: null as string | null,
+                phone: null as string | null,
+                allocation_pct: rem,
+                is_gst_skip: resolved.isGst,
+                updated_at: new Date().toISOString(),
+              }
+              const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
+                ...payload,
+                owner_id: user.id,
+                asset_id: row.kind === 'asset' ? row.id : null,
+                real_estate_id: row.kind === 're' ? row.id : null,
+                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                business_id: row.kind === 'business' ? row.id : null,
+              })
+              if (insErr) throw insErr
+              working.push({
+                id: `temp-${row.id}-p`,
+                asset_id: row.kind === 'asset' ? row.id : null,
+                real_estate_id: row.kind === 're' ? row.id : null,
+                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                business_id: row.kind === 'business' ? row.id : null,
+                beneficiary_type: 'primary',
+                full_name: resolved.fullName,
+                relationship: resolved.relationship,
+                email: null,
+                phone: null,
+                allocation_pct: rem,
+                is_gst_skip: resolved.isGst,
+              })
+            }
+          }
+        }
+
+        if (row.needsContingent) {
+          const resolved = resolveBeneficiaryFromPick(st.contingentValue, st.contingentManual, picklistOptions)
+          if (resolved) {
+            const rem = remainingPct(working, row.kind, row.id, 'contingent')
+            if (rem > 0.01) {
+              const payload = {
+                beneficiary_type: 'contingent' as const,
+                contingent: true,
+                full_name: resolved.fullName,
+                relationship: resolved.relationship,
+                email: null as string | null,
+                phone: null as string | null,
+                allocation_pct: rem,
+                is_gst_skip: resolved.isGst,
+                updated_at: new Date().toISOString(),
+              }
+              const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
+                ...payload,
+                owner_id: user.id,
+                asset_id: row.kind === 'asset' ? row.id : null,
+                real_estate_id: row.kind === 're' ? row.id : null,
+                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                business_id: row.kind === 'business' ? row.id : null,
+              })
+              if (insErr) throw insErr
+              working.push({
+                id: `temp-${row.id}-c`,
+                asset_id: row.kind === 'asset' ? row.id : null,
+                real_estate_id: row.kind === 're' ? row.id : null,
+                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+                business_id: row.kind === 'business' ? row.id : null,
+                beneficiary_type: 'contingent',
+                full_name: resolved.fullName,
+                relationship: resolved.relationship,
+                email: null,
+                phone: null,
+                allocation_pct: rem,
+                is_gst_skip: resolved.isGst,
+              })
+            }
+          }
+        }
+      }
+
+      await onApplied()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : JSON.stringify(err))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <ModalShell title="Review & Apply Defaults" onClose={onClose} wide>
+      <form onSubmit={handleApply} className="space-y-4">
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+        )}
+        <p className="text-xs text-neutral-600">
+          Only missing primary or contingent assignments are saved. Existing designations are never overwritten.
+        </p>
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">Asset / policy</th>
+                <th className="px-3 py-2">Primary</th>
+                <th className="px-3 py-2">Contingent</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {items.map((row) => {
+                const k = gapItemKey(row)
+                const st = rows[k] ?? {
+                  primaryValue: '',
+                  primaryManual: '',
+                  contingentValue: '',
+                  contingentManual: '',
+                }
+                const primaries = beneficiaries.filter((b) => {
+                  if (b.beneficiary_type !== 'primary') return false
+                  if (row.kind === 'asset') return b.asset_id === row.id
+                  if (row.kind === 're') return b.real_estate_id === row.id
+                  if (row.kind === 'insurance') return b.insurance_policy_id === row.id
+                  return b.business_id === row.id
+                })
+                const contingents = beneficiaries.filter((b) => {
+                  if (b.beneficiary_type !== 'contingent') return false
+                  if (row.kind === 'asset') return b.asset_id === row.id
+                  if (row.kind === 're') return b.real_estate_id === row.id
+                  if (row.kind === 'insurance') return b.insurance_policy_id === row.id
+                  return b.business_id === row.id
+                })
+                return (
+                  <tr key={k} className="align-top">
+                    <td className="px-3 py-2">
+                      <p className="font-medium text-neutral-900">{row.name}</p>
+                      <p className="text-xs text-neutral-400 capitalize">{row.subtitle}</p>
+                    </td>
+                    <td className="px-3 py-2 min-w-[12rem]">
+                      {row.needsPrimary ? (
+                        <div className="space-y-1">
+                          <select
+                            value={st.primaryValue}
+                            onChange={(e) =>
+                              setRows((prev) => {
+                                const cur = prev[k] ?? st
+                                return { ...prev, [k]: { ...cur, primaryValue: e.target.value } }
+                              })
+                            }
+                            className={inputClass}
+                          >
+                            <option value="">Choose…</option>
+                            {picklistOptions.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                            <option value="__manual__">+ Add manually…</option>
+                          </select>
+                          {st.primaryValue === '__manual__' && (
+                            <input
+                              type="text"
+                              value={st.primaryManual}
+                              onChange={(e) =>
+                                setRows((prev) => {
+                                  const cur = prev[k] ?? st
+                                  return { ...prev, [k]: { ...cur, primaryManual: e.target.value } }
+                                })
+                              }
+                              className={inputClass}
+                              placeholder="Full name"
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-neutral-700">
+                          {primaries.map((b) => b.full_name).join(', ') || '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 min-w-[12rem]">
+                      {row.needsContingent ? (
+                        <div className="space-y-1">
+                          <select
+                            value={st.contingentValue}
+                            onChange={(e) =>
+                              setRows((prev) => {
+                                const cur = prev[k] ?? st
+                                return { ...prev, [k]: { ...cur, contingentValue: e.target.value } }
+                              })
+                            }
+                            className={inputClass}
+                          >
+                            <option value="">Choose…</option>
+                            {picklistOptions.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                            <option value="__manual__">+ Add manually…</option>
+                          </select>
+                          {st.contingentValue === '__manual__' && (
+                            <input
+                              type="text"
+                              value={st.contingentManual}
+                              onChange={(e) =>
+                                setRows((prev) => {
+                                  const cur = prev[k] ?? st
+                                  return { ...prev, [k]: { ...cur, contingentManual: e.target.value } }
+                                })
+                              }
+                              className={inputClass}
+                              placeholder="Full name"
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-neutral-700">
+                          {contingents.map((b) => b.full_name).join(', ') || '—'}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+          >
+            {isSubmitting ? 'Saving…' : 'Apply These Defaults'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  )
+}
+
 // ─── Beneficiary Modal ────────────────────────────────────────────────────────
 
 function BeneficiaryModal({
-  kind, id, name, existing, defaultType, allBeneficiariesForItem, onClose, onSave,
+  kind,
+  id,
+  name,
+  existing,
+  defaultType,
+  allBeneficiariesForItem,
+  picklistOptions,
+  householdPeopleEmpty,
+  onClose,
+  onSave,
 }: {
   kind: TitlingKind
   id: string
@@ -975,14 +1648,19 @@ function BeneficiaryModal({
   existing: Beneficiary | null
   defaultType: 'primary' | 'contingent'
   allBeneficiariesForItem: Beneficiary[]
+  picklistOptions: BeneficiaryPicklistOption[]
+  householdPeopleEmpty: boolean
   onClose: () => void
   onSave: () => void
 }) {
   const [beneficiaryType, setBeneficiaryType] = useState<'primary' | 'contingent'>(
-    existing?.beneficiary_type ?? defaultType
+    existing?.beneficiary_type ?? defaultType,
   )
-  const [fullName, setFullName] = useState(existing?.full_name ?? '')
-  const [relationship, setRelationship] = useState(existing?.relationship ?? '')
+  const [pickerValue, setPickerValue] = useState(() =>
+    existing ? picklistValueForFullName(existing.full_name, picklistOptions) : '',
+  )
+  const [manualName, setManualName] = useState(existing?.full_name ?? '')
+  const [manualRelationship, setManualRelationship] = useState(existing?.relationship || 'Other')
   const [email, setEmail] = useState(existing?.email ?? '')
   const [phone, setPhone] = useState(existing?.phone ?? '')
   const [isGstSkip, setIsGstSkip] = useState(existing?.is_gst_skip ?? false)
@@ -991,7 +1669,7 @@ function BeneficiaryModal({
 
   const calcRemaining = (type: 'primary' | 'contingent') => {
     const allocated = allBeneficiariesForItem
-      .filter(b => b.beneficiary_type === type)
+      .filter((b) => b.beneficiary_type === type)
       .reduce((s, b) => s + Number(b.allocation_pct), 0)
     return Math.max(0, 100 - allocated)
   }
@@ -1000,6 +1678,22 @@ function BeneficiaryModal({
     if (existing?.allocation_pct != null) return existing.allocation_pct.toString()
     return String(calcRemaining(existing?.beneficiary_type ?? defaultType))
   })
+
+  function applyPickerChoice(next: string) {
+    setPickerValue(next)
+    if (next === '' || next === '__manual__') {
+      if (next === '__manual__') {
+        setManualName((m) => m || existing?.full_name || '')
+      }
+      return
+    }
+    const opt = picklistOptions.find((o) => o.value === next)
+    if (opt) {
+      setManualName(opt.fullName)
+      setManualRelationship(opt.relationship)
+      setIsGstSkip(opt.isGst)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -1017,14 +1711,45 @@ function BeneficiaryModal({
       setIsSubmitting(false)
       return
     }
+
+    let fullNameOut: string
+    let relationshipOut: string | null
+
+    if (pickerValue === '__manual__') {
+      const t = manualName.trim()
+      if (!t) {
+        setError('Enter a full name or pick from the list.')
+        setIsSubmitting(false)
+        return
+      }
+      fullNameOut = t
+      relationshipOut = manualRelationship.trim() || null
+    } else if (pickerValue) {
+      const opt = picklistOptions.find((o) => o.value === pickerValue)
+      if (!opt) {
+        setError('Invalid beneficiary selection.')
+        setIsSubmitting(false)
+        return
+      }
+      fullNameOut = opt.fullName
+      relationshipOut = opt.relationship || null
+    } else {
+      setError('Choose a beneficiary or + Add manually…')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return
       const payload = {
         beneficiary_type: beneficiaryType,
-        full_name: fullName.trim(),
-        relationship: relationship.trim() || null,
+        contingent: beneficiaryType === 'contingent',
+        full_name: fullNameOut,
+        relationship: relationshipOut,
         email: email.trim() || null,
         phone: phone.trim() || null,
         allocation_pct: pct,
@@ -1054,49 +1779,119 @@ function BeneficiaryModal({
 
   const remaining = calcRemaining(beneficiaryType)
   const alreadyAllocated = 100 - remaining
+  const showManualFields = pickerValue === '__manual__'
 
   return (
     <ModalShell title={`${existing ? 'Edit' : 'Add'} Beneficiary — ${name}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+        )}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
-          <select value={beneficiaryType} onChange={e => setBeneficiaryType(e.target.value as 'primary' | 'contingent')} className={inputClass}>
+          <select
+            value={beneficiaryType}
+            onChange={(e) => {
+              const v = e.target.value as 'primary' | 'contingent'
+              setBeneficiaryType(v)
+              setAllocationPct(String(calcRemaining(v)))
+            }}
+            className={inputClass}
+          >
             <option value="primary">Primary</option>
             <option value="contingent">Contingent</option>
           </select>
         </div>
+
+        {householdPeopleEmpty && (
+          <div className="rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">
+            <p>Add family members on the My Family page first for the best results.</p>
+            <Link href="/my-family" className="mt-1 inline-block font-medium text-indigo-700 hover:underline">
+              Go to My Family →
+            </Link>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Beneficiary</label>
+          <select
+            value={pickerValue}
+            onChange={(e) => applyPickerChoice(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Choose…</option>
+            {picklistOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+            <option value="__manual__">+ Add manually…</option>
+          </select>
+        </div>
+
+        {showManualFields && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Full Name</label>
+              <input
+                type="text"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                className={inputClass}
+                placeholder="e.g. Jane Smith or trust / charity name"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Relationship</label>
+              <select
+                value={manualRelationship}
+                onChange={(e) => setManualRelationship(e.target.value)}
+                className={inputClass}
+              >
+                {RELATIONSHIPS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
-            id="gst_skip"
+            id="gst_skip_modal"
             checked={isGstSkip}
-            onChange={e => setIsGstSkip(e.target.checked)}
+            onChange={(e) => setIsGstSkip(e.target.checked)}
             className="rounded border-neutral-300"
           />
-          <label htmlFor="gst_skip" className="text-sm text-neutral-700">
+          <label htmlFor="gst_skip_modal" className="text-sm text-neutral-700">
             GST Skip Person (grandchild or skip generation)
           </label>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Full Name</label>
-          <input type="text" required value={fullName} onChange={e => setFullName(e.target.value)} className={inputClass} placeholder="e.g. Jane Smith" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Relationship</label>
-          <select value={relationship} onChange={e => setRelationship(e.target.value)} className={inputClass}>
-            <option value="">Select…</option>
-            {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="Optional" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={inputClass} placeholder="Optional" />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </div>
         </div>
         <div>
@@ -1108,7 +1903,7 @@ function BeneficiaryModal({
             max={remaining}
             step="0.01"
             value={allocationPct}
-            onChange={e => setAllocationPct(e.target.value)}
+            onChange={(e) => setAllocationPct(e.target.value)}
             className={inputClass}
             placeholder={remaining.toString()}
           />
@@ -1127,13 +1922,27 @@ function BeneficiaryModal({
 
 // ─── Shared modal shell ───────────────────────────────────────────────────────
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function ModalShell({
+  title,
+  onClose,
+  wide,
+  children,
+}: {
+  title: string
+  onClose: () => void
+  wide?: boolean
+  children: React.ReactNode
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+      <div
+        className={`w-full max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200 ${
+          wide ? 'max-w-4xl' : 'max-w-md'
+        }`}
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
           <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
           <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>

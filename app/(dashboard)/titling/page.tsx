@@ -52,9 +52,9 @@ export default async function TitlingPage() {
       .order('sort_order'),
     supabase
       .from('households')
-      .select('person1_name, person2_name, has_spouse')
+      .select('id, person1_name, person2_name, has_spouse')
       .eq('owner_id', user.id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('assets')
       .select('id, name, type, value, owner, cost_basis, basis_date, titling, liquidity')
@@ -99,6 +99,14 @@ export default async function TitlingPage() {
       .eq('owner_id', user.id),
   ])
 
+  const { data: householdPeople } = household?.id
+    ? await supabase
+        .from('household_people')
+        .select('id, full_name, relationship, date_of_birth, is_gst_skip')
+        .eq('household_id', household.id)
+        .order('full_name', { ascending: true })
+    : { data: [] as { id: string; full_name: string; relationship: string; date_of_birth: string | null; is_gst_skip: boolean }[] }
+
   return (
     <TitlingClient
       categories={titlingCategories ?? []}
@@ -111,6 +119,10 @@ export default async function TitlingPage() {
       initialBusinesses={businesses ?? []}
       initialInsurancePolicyTitling={insurancePolicyTitling ?? []}
       initialBusinessTitling={businessTitling ?? []}
+      householdPeople={householdPeople ?? []}
+      hasSpouse={household?.has_spouse === true}
+      person1LegalName={household?.person1_name?.trim() ?? null}
+      person2LegalName={household?.person2_name?.trim() ?? null}
       person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
       person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
     />
