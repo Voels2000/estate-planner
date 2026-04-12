@@ -48,8 +48,16 @@ function formatDollars(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
+/** Whether this row counts toward income in a calendar year (same range rules as projections). */
+function incomeAppliesToYear(row: IncomeRow, year: number): boolean {
+  const start = row.start_year ?? 0
+  const end = row.end_year ?? 9999
+  return year >= start && year <= end
+}
+
 export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpouse, incomeTypes }: Props) {
   const router = useRouter()
+  const currentCalendarYear = new Date().getFullYear()
   const [modalOpen, setModalOpen]             = useState(false)
   const [editRow, setEditRow]                 = useState<IncomeRow | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -63,7 +71,9 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
     }
   })
 
-  const totalAnnual = income.reduce((sum, i) => sum + Number(i.amount), 0)
+  const totalAnnual = income
+    .filter((i) => incomeAppliesToYear(i, currentCalendarYear))
+    .reduce((sum, i) => sum + Number(i.amount), 0)
 
   function getOwnerLabel(row: IncomeRow) {
     const p = row.ss_person ?? 'person1'
@@ -128,7 +138,8 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Income</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Total annual: <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
+            Total annual ({currentCalendarYear}):{' '}
+            <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
           </p>
         </div>
         <button
@@ -155,7 +166,9 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
           {groupKeys.map((groupKey) => {
             const groupItems = grouped[groupKey]
             const groupLabel = sourceLabel(groupKey, incomeTypes)
-            const groupTotal = groupItems.reduce((s, item) => s + Number(item.amount), 0)
+            const groupTotal = groupItems
+              .filter((item) => incomeAppliesToYear(item, currentCalendarYear))
+              .reduce((s, item) => s + Number(item.amount), 0)
             const isOpen = openGroups[groupKey] ?? true
 
             return (

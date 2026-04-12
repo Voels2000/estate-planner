@@ -7,6 +7,7 @@
 
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 export type HouseholdPersonRow = {
   id: string
@@ -103,6 +104,8 @@ export default function MyFamilyClient({
     }
     return map
   }, [people])
+
+  const firstFamilySectionKey = GROUP_ORDER.find(({ key }) => grouped[key].length > 0)?.key
 
   function openAdd() {
     setEditing(null)
@@ -247,14 +250,18 @@ export default function MyFamilyClient({
         </div>
       )}
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {GROUP_ORDER.map(({ key, title }) => {
           const rows = grouped[key]
           if (rows.length === 0) return null
           return (
-            <section key={key}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">{title}</h2>
-              <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+            <CollapsibleSection
+              key={key}
+              title={title}
+              defaultOpen={key === firstFamilySectionKey}
+              storageKey={`my-family-${key}`}
+            >
+              <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white -m-2">
                 {rows.map(row => (
                   <li key={row.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -288,7 +295,7 @@ export default function MyFamilyClient({
                   </li>
                 ))}
               </ul>
-            </section>
+            </CollapsibleSection>
           )
         })}
       </div>

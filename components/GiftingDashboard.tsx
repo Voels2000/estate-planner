@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Fragment } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 interface GiftingDashboardProps {
   householdId: string;
@@ -86,8 +87,6 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview'); // default: overview
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setHydrated(true); }, []);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -306,161 +305,169 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
           </button>
         </div>
 
-        {/* TCJA Sunset Banner */}
-        {summary.tcja_in_effect && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
-            <div>
-              <p className="text-sm font-semibold text-amber-800">TCJA Sunset — December 31, 2026</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                The current {fmt$(summary.exemption_per_person)} per-person exemption is scheduled to drop to ~$7M on Jan 1, 2027.
-                Gifts made before year-end 2026 lock in the higher exemption permanently.
+        <CollapsibleSection
+          title="Lifetime & annual exclusion summary"
+          subtitle={`${summary.tax_year} tax year`}
+          defaultOpen={true}
+          storageKey="gifting-exemption-overview"
+        >
+          {summary.tcja_in_effect && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">TCJA Sunset — December 31, 2026</p>
+                <p className="text-sm text-amber-700 mt-0.5">
+                  The current {fmt$(summary.exemption_per_person)} per-person exemption is scheduled to drop to ~$7M on Jan 1, 2027.
+                  Gifts made before year-end 2026 lock in the higher exemption permanently.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Lifetime Exemption Used</p>
+              <div className="flex items-end justify-between mb-3">
+                <span className="text-2xl font-bold text-gray-900">{fmt$(summary.lifetime_exemption_used)}</span>
+                <span className="text-sm text-gray-500">of {fmt$(summary.total_exemption)}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${lifetimePct}%` }} />
+              </div>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-green-600">{fmt$(summary.lifetime_exemption_remaining)}</span> remaining
+                {summary.filing_status === 'mfj' ? ' (combined MFJ)' : ''}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Annual Exclusion Used ({summary.tax_year})</p>
+              <div className="flex items-end justify-between mb-3">
+                <span className="text-2xl font-bold text-gray-900">{fmt$(summary.annual_used)}</span>
+                <span className="text-sm text-gray-500">of {fmt$(summary.annual_capacity)}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${annualPct}%` }} />
+              </div>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-green-600">{fmt$(summary.annual_remaining)}</span> remaining this year
+                {summary.filing_status === 'mfj' ? ' (gift splitting)' : ''}
               </p>
             </div>
           </div>
-        )}
+        </CollapsibleSection>
 
-        {/* Tracker Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Lifetime Exemption Used</p>
-            <div className="flex items-end justify-between mb-3">
-              <span className="text-2xl font-bold text-gray-900">{fmt$(summary.lifetime_exemption_used)}</span>
-              <span className="text-sm text-gray-500">of {fmt$(summary.total_exemption)}</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-              <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${lifetimePct}%` }} />
-            </div>
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold text-green-600">{fmt$(summary.lifetime_exemption_remaining)}</span> remaining
-              {summary.filing_status === 'mfj' ? ' (combined MFJ)' : ''}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Annual Exclusion Used ({summary.tax_year})</p>
-            <div className="flex items-end justify-between mb-3">
-              <span className="text-2xl font-bold text-gray-900">{fmt$(summary.annual_used)}</span>
-              <span className="text-sm text-gray-500">of {fmt$(summary.annual_capacity)}</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-              <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${annualPct}%` }} />
-            </div>
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold text-green-600">{fmt$(summary.annual_remaining)}</span> remaining this year
-              {summary.filing_status === 'mfj' ? ' (gift splitting)' : ''}
-            </p>
-          </div>
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex gap-6">
+            {(['overview', 'history'] as const).map(tab => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab === 'overview' ? 'Considerations' : 'Gift History'}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {hydrated && (
-          <>
-            {/* Tabs */}
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex gap-6">
-                {(['overview', 'history'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === tab
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    {tab === 'overview' ? 'Considerations' : 'Gift History'}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Recommendations Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-3">
-                {summary.recommendations.map((rec, i) => (
-                  <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
-                    <div className="flex items-start gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>
-                            {rec.priority.toUpperCase()}
-                          </span>
-                          <p className="text-sm font-semibold text-gray-900">{rec.title}</p>
-                        </div>
-                        <p className="text-sm text-gray-600">{rec.detail}</p>
+        {activeTab === 'overview' && (
+          <CollapsibleSection
+            title="Considerations"
+            defaultOpen={false}
+            storageKey="gifting-considerations"
+          >
+            <div className="space-y-3">
+              {summary.recommendations.map((rec, i) => (
+                <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
+                  <div className="flex items-start gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>
+                          {rec.priority.toUpperCase()}
+                        </span>
+                        <p className="text-sm font-semibold text-gray-900">{rec.title}</p>
                       </div>
+                      <p className="text-sm text-gray-600">{rec.detail}</p>
                     </div>
                   </div>
-                ))}
-                {summary.recommendations.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
-                )}
-              </div>
-            )}
+                </div>
+              ))}
+              {summary.recommendations.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
 
-            {/* Gift History Tab */}
-            {activeTab === 'history' && (
-              <div>
-                {summary.gifts.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a4 4 0 00-4-4H5.45a4 4 0 00-3.95 3.45L1 9h22l-.5-3.55A4 4 0 0018.55 2H16a4 4 0 00-4 4v2zm-7 4h14" />
-                    </svg>
-                    <p className="text-sm">No gifts logged yet. Click <strong>Log a Gift</strong> to get started.</p>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Year</th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient</th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-                          <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-                          <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">709 Filed</th>
-                          <th className="px-4 py-3"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {summary.gifts.map((gift, i) => (
-                          <tr key={gift.id} className={`border-b border-gray-100 ${i % 2 !== 0 ? 'bg-gray-50' : ''}`}>
-                            <td className="px-4 py-3 text-gray-700">{gift.tax_year}</td>
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-gray-900">{gift.recipient_name}</p>
-                              {gift.recipient_relationship && (
-                                <p className="text-xs text-gray-400">{gift.recipient_relationship}</p>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">{GIFT_TYPE_LABELS[gift.gift_type] ?? gift.gift_type}</td>
-                            <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt$(gift.amount)}</td>
-                            <td className="px-4 py-3 text-center">
-                              {gift.form_709_filed
-                                ? <span className="text-green-600 font-bold">✓</span>
-                                : <span className="text-gray-300">—</span>
-                              }
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(gift.id)}
-                                disabled={deleteId === gift.id}
-                                className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
-                              >
-                                {deleteId === gift.id ? 'Deleting...' : 'Delete'}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+        {activeTab === 'history' && (
+          <CollapsibleSection
+            title="Gift History"
+            defaultOpen={false}
+            storageKey="gifting-gift-history"
+          >
+            {summary.gifts.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a4 4 0 00-4-4H5.45a4 4 0 00-3.95 3.45L1 9h22l-.5-3.55A4 4 0 0018.55 2H16a4 4 0 00-4 4v2zm-7 4h14" />
+                </svg>
+                <p className="text-sm">No gifts logged yet. Click <strong>Log a Gift</strong> to get started.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden -m-2">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Year</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
+                      <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">709 Filed</th>
+                      <th className="px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.gifts.map((gift, i) => (
+                      <tr key={gift.id} className={`border-b border-gray-100 ${i % 2 !== 0 ? 'bg-gray-50' : ''}`}>
+                        <td className="px-4 py-3 text-gray-700">{gift.tax_year}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{gift.recipient_name}</p>
+                          {gift.recipient_relationship && (
+                            <p className="text-xs text-gray-400">{gift.recipient_relationship}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{GIFT_TYPE_LABELS[gift.gift_type] ?? gift.gift_type}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt$(gift.amount)}</td>
+                        <td className="px-4 py-3 text-center">
+                          {gift.form_709_filed
+                            ? <span className="text-green-600 font-bold">✓</span>
+                            : <span className="text-gray-300">—</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(gift.id)}
+                            disabled={deleteId === gift.id}
+                            className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
+                          >
+                            {deleteId === gift.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-          </>
+          </CollapsibleSection>
         )}
       </div>
     </Fragment>

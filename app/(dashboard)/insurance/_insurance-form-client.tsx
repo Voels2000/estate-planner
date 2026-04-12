@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────
 
 import { useState } from 'react'
+import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 
 interface InsurancePolicy {
@@ -120,10 +121,7 @@ export default function InsuranceFormClient({
     try {
       const url = editing ? `/api/insurance/${editing.id}` : '/api/insurance'
       const method = editing ? 'PATCH' : 'POST'
-      const payload = {
-        ...form,
-        owner: form.owner?.trim() ? form.owner : null,
-      }
+      const payload = insurancePolicyRowForSave({ ...form } as Record<string, unknown>)
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

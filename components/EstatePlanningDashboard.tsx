@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 interface Recommendation {
   branch: string;
@@ -166,9 +167,32 @@ export default function EstatePlanningDashboard({
         </div>
       </div>
 
-      {/* Completeness Score */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Estate Plan Completeness</h2>
+      <CollapsibleSection
+        title="Plan Complexity Score"
+        subtitle={`${recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} complexity · ${recommendations.tax_year} tax year`}
+        defaultOpen={true}
+        storageKey="estate-planning-complexity-score"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Plan Complexity Score</p>
+          </div>
+          <div className="text-right">
+            <span className="text-2xl font-bold text-gray-900">{recommendations.complexity_score}</span>
+            <span className="text-sm text-gray-400 ml-1">/ 20</span>
+            <div className={`mt-1 px-2 py-0.5 rounded text-xs font-medium inline-block ${complexityColors[recommendations.complexity_flag]}`}>
+              {recommendations.complexity_flag}
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Estate Plan Completeness"
+        subtitle={`Grade ${completeness.grade} · ${completeness.completeness_pct}% complete`}
+        defaultOpen={false}
+        storageKey="estate-planning-completeness"
+      >
         <div className="flex items-center gap-6">
           <div className="relative w-24 h-24 flex-shrink-0">
             <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
@@ -200,12 +224,16 @@ export default function EstatePlanningDashboard({
             ))}
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Tax Exposure — Advisor only */}
       {isAdvisor && showTaxExposure && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Estate Tax Exposure</h2>
+        <CollapsibleSection
+          title="Estate Tax Exposure"
+          subtitle={recommendations.total_tax_exposure > 0 ? `Total exposure ${formatCurrency(recommendations.total_tax_exposure)}` : undefined}
+          defaultOpen={false}
+          storageKey="estate-planning-estate-tax-exposure"
+        >
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Gross Estate</p>
@@ -231,12 +259,17 @@ export default function EstatePlanningDashboard({
               </span>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Consumer T3 notice — no numbers */}
       {isConsumerT3 && !isAdvisor && showTaxExposure && recommendations.total_tax_exposure > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+        <CollapsibleSection
+          title="Potential estate tax exposure detected"
+          defaultOpen={false}
+          storageKey="estate-planning-consumer-tax-notice"
+        >
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 -m-2">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -250,16 +283,17 @@ export default function EstatePlanningDashboard({
             </div>
           </div>
         </div>
+        </CollapsibleSection>
       )}
 
       {/* Recommendations */}
       {(isAdvisor || isConsumerT3) && recommendations.recommendations.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Gaps in your Estate Plan
-            <span className="ml-2 text-sm font-normal text-gray-500">({recommendations.recommendations.length} items)</span>
-          </h2>
-
+        <CollapsibleSection
+          title="Gaps in your Estate Plan"
+          subtitle={`${recommendations.recommendations.length} items`}
+          defaultOpen={false}
+          storageKey="estate-planning-gaps"
+        >
           {highPriority.length > 0 && (
             <div className="mb-4">
               <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">High Priority</p>
@@ -287,23 +321,7 @@ export default function EstatePlanningDashboard({
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Complexity score — advisor only */}
-      {isAdvisor && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-700">Plan Complexity Score</p>
-          </div>
-          <div className="text-right">
-            <span className="text-2xl font-bold text-gray-900">{recommendations.complexity_score}</span>
-            <span className="text-sm text-gray-400 ml-1">/ 20</span>
-            <div className={`mt-1 px-2 py-0.5 rounded text-xs font-medium inline-block ${complexityColors[recommendations.complexity_flag]}`}>
-              {recommendations.complexity_flag}
-            </div>
-          </div>
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   );

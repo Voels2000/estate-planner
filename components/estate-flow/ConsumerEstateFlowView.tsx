@@ -165,6 +165,8 @@ interface Props {
   todayTotalTaxLiability: number
   /** e.g. "April 2026" — shown with heirs receive */
   estateAsOfLabel: string
+  /** When true, the page title block is omitted (e.g. when wrapped in CollapsibleSection). */
+  hidePageHeader?: boolean
 }
 
 export default function ConsumerEstateFlowView({
@@ -173,6 +175,7 @@ export default function ConsumerEstateFlowView({
   todayGrossEstate,
   todayTotalTaxLiability,
   estateAsOfLabel,
+  hidePageHeader = false,
 }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
@@ -216,13 +219,14 @@ export default function ConsumerEstateFlowView({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">What happens when I die?</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Here's how your estate transfers to your heirs — in plain English.
-        </p>
-      </div>
+      {!hidePageHeader && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">What happens when I die?</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Here's how your estate transfers to your heirs — in plain English.
+          </p>
+        </div>
+      )}
 
       {/* Visual flow */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">

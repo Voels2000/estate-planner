@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import DomicileChecklist from './_domicile-checklist'
 import DomicileForm, { type DomicileFormPayload } from './_domicile-form'
 import DomicileResults from './_domicile-results'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type {
   DomicileAnalysisRow,
   DomicileChecklistRow,
@@ -209,7 +210,11 @@ export default function DomicileAnalysisClient({
       </p>
 
       {isAdvisor && (
-        <div className="mb-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+        <CollapsibleSection
+          title="Analysis for"
+          defaultOpen={true}
+          storageKey="domicile-analysis-subject"
+        >
           <label
             htmlFor="subject"
             className="mb-1 block text-xs font-medium text-neutral-600"
@@ -233,7 +238,7 @@ export default function DomicileAnalysisClient({
           {loadingSubject && (
             <p className="mt-2 text-xs text-neutral-400">Loading…</p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {error && (
@@ -243,10 +248,11 @@ export default function DomicileAnalysisClient({
       )}
 
       {analysis && (
-        <section className="mb-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            Results
-          </h2>
+        <CollapsibleSection
+          title="Results"
+          defaultOpen={!isAdvisor}
+          storageKey="domicile-analysis-results"
+        >
           <DomicileResults
             analysis={analysis}
             onRerun={() => scrollToId('domicile-facts')}
@@ -255,34 +261,37 @@ export default function DomicileAnalysisClient({
             stateInheritanceTaxRules={stateInheritanceTaxRules}
             stateIncomeTaxRates={stateIncomeTaxRates}
           />
-        </section>
+        </CollapsibleSection>
       )}
 
-      <div id="domicile-facts" className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Your facts
-        </h2>
-        <DomicileForm
-          key={`${subjectId}-${analysis?.id ?? 'none'}`}
-          existingAnalysis={analysis}
-          loading={submitting}
-          maxStates={MAX_STATE_ROWS}
-          onSubmit={(payload) => void handleDomicileSubmit(payload)}
-        />
+      <div id="domicile-facts">
+        <CollapsibleSection
+          title="Your facts"
+          defaultOpen={!analysis}
+          storageKey="domicile-analysis-your-facts"
+        >
+          <DomicileForm
+            key={`${subjectId}-${analysis?.id ?? 'none'}`}
+            existingAnalysis={analysis}
+            loading={submitting}
+            maxStates={MAX_STATE_ROWS}
+            onSubmit={(payload) => void handleDomicileSubmit(payload)}
+          />
+        </CollapsibleSection>
       </div>
 
       {analysis && (
-        <section
-          id="domicile-checklist"
-          className="mt-8 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
-        >
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            Checklist
-          </h2>
-          <DomicileChecklist
-            items={checklist}
-            onToggle={(itemId, completed) => void toggleChecklistItem(itemId, completed)}
-          />
+        <section id="domicile-checklist" className="mt-2">
+          <CollapsibleSection
+            title="Checklist"
+            defaultOpen={false}
+            storageKey="domicile-analysis-checklist"
+          >
+            <DomicileChecklist
+              items={checklist}
+              onToggle={(itemId, completed) => void toggleChecklistItem(itemId, completed)}
+            />
+          </CollapsibleSection>
         </section>
       )}
     </div>

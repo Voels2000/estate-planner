@@ -79,7 +79,7 @@ export default async function TitlingPage() {
       .order('created_at', { ascending: true }),
     supabase
       .from('insurance_policies')
-      .select('id, policy_name, insurance_type, death_benefit, titling, liquidity, cost_basis, basis_date')
+      .select('id, policy_name, insurance_type, death_benefit, owner, titling, liquidity, cost_basis, basis_date')
       .eq('user_id', user.id)
       .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
       .order('created_at', { ascending: false }),

@@ -32,6 +32,13 @@ function formatDollars(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
+/** Same date-range rules as projection (lib/calculations/projection-complete.ts). */
+function expenseAppliesInYear(e: Expense, year: number): boolean {
+  if (e.start_year != null && year < e.start_year) return false
+  if (e.end_year != null && year > e.end_year) return false
+  return true
+}
+
 type ExpensesClientProps = {
   initialExpenses: Expense[]
   expenseTypes: ExpenseType[]
@@ -62,7 +69,10 @@ export default function ExpensesClient({
   })
   const [error, setError] = useState<string | null>(null)
 
-  const totalAnnual = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
+  const currentYear = new Date().getFullYear()
+  const totalAnnual = expenses
+    .filter((e) => expenseAppliesInYear(e, currentYear))
+    .reduce((sum, e) => sum + Number(e.amount), 0)
 
   async function loadData() {
     const supabase = createClient()
@@ -137,7 +147,8 @@ export default function ExpensesClient({
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Expenses</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Total annual: <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
+            Total annual ({currentYear}):{' '}
+            <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
           </p>
         </div>
         <button
@@ -164,7 +175,9 @@ export default function ExpensesClient({
           {groupKeys.map((groupKey) => {
             const groupItems = grouped[groupKey]
             const groupLabel = categoryLabel(groupKey)
-            const groupTotal = groupItems.reduce((s, item) => s + Number(item.amount), 0)
+            const groupTotal = groupItems
+              .filter((item) => expenseAppliesInYear(item, currentYear))
+              .reduce((s, item) => s + Number(item.amount), 0)
             const isOpen = openGroups[groupKey] ?? true
 
             return (

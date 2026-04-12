@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 interface ChecklistItem {
   doc_type: string;
@@ -169,15 +170,9 @@ export default function IncapacityPlanningDashboard({
   const guardianComplete = data.has_guardian_designation
   const completedCount = data.checklist.filter(i => i.complete).length + (guardianRequired && guardianComplete ? 1 : 0)
   const totalCount = data.checklist.length + (guardianRequired ? 1 : 0)
-  const completePct = Math.round((completedCount / totalCount) * 100)
 
   const highGaps = data.incapacity_gaps.filter(g => g.priority === 'high');
   const moderateGaps = data.incapacity_gaps.filter(g => g.priority === 'moderate');
-
-  const scoreColor =
-    completePct >= 75 ? 'text-green-600' :
-    completePct >= 50 ? 'text-yellow-600' :
-    completePct >= 25 ? 'text-orange-600' : 'text-red-600';
 
   const hasGaps = data.incapacity_gaps.length > 0;
 
@@ -185,24 +180,20 @@ export default function IncapacityPlanningDashboard({
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Incapacity Planning</h2>
           <p className="text-sm text-gray-500 mt-1">
             Documents and structures that protect you if you become unable to manage your own affairs.
           </p>
         </div>
-        {hasGaps && (
-          <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-            {data.incapacity_gaps.length} gap{data.incapacity_gaps.length !== 1 ? 's' : ''} found
-          </span>
-        )}
-        {!hasGaps && (
-          <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            Complete
-          </span>
-        )}
-                 {!hasGaps && (
+        <div className="flex flex-wrap items-center gap-2">
+          {hasGaps && (
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+              {data.incapacity_gaps.length} gap{data.incapacity_gaps.length !== 1 ? 's' : ''} found
+            </span>
+          )}
+          {!hasGaps && (
             <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
               Complete
             </span>
@@ -210,17 +201,15 @@ export default function IncapacityPlanningDashboard({
           {userRole === 'advisor' && (
             <ExportPDFButton householdId={householdId} role={userRole} />
           )}
+        </div>
       </div>
 
-      {/* Document Checklist */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Incapacity Documents</h3>
-          <span className={`text-sm font-semibold ${scoreColor}`}>
-            {completedCount} of {totalCount} complete
-          </span>
-        </div>
-
+      <CollapsibleSection
+        title="Incapacity Documents"
+        subtitle={`${completedCount} of ${totalCount} complete`}
+        defaultOpen={true}
+        storageKey="incapacity-documents"
+      >
         <div className="space-y-3">
           {data.checklist.map(item => (
             <div key={item.doc_type} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
@@ -296,14 +285,14 @@ export default function IncapacityPlanningDashboard({
             </span>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* Document Confirmation */}
-      <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-base font-semibold text-neutral-900">Document Confirmation</h2>
-        <p className="mb-5 text-sm text-neutral-500">
-          Confirm which incapacity planning documents you have in place. This updates your gap analysis.
-        </p>
+      <CollapsibleSection
+        title="Document Confirmation"
+        subtitle="Confirm which incapacity planning documents you have in place. This updates your gap analysis."
+        defaultOpen={false}
+        storageKey="incapacity-document-confirmation"
+      >
         {saveError && (
           <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
         )}
@@ -355,18 +344,15 @@ export default function IncapacityPlanningDashboard({
             );
           })}
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Gap Analysis — advisor full detail */}
       {isAdvisor && hasGaps && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Gap Analysis
-            <span className="ml-2 text-sm font-normal text-gray-500">
-              ({data.incapacity_gaps.length} item{data.incapacity_gaps.length !== 1 ? 's' : ''})
-            </span>
-          </h3>
-
+        <CollapsibleSection
+          title="Gap Analysis"
+          subtitle={`${data.incapacity_gaps.length} item${data.incapacity_gaps.length !== 1 ? 's' : ''}`}
+          defaultOpen={false}
+          storageKey="incapacity-gap-analysis"
+        >
           {highGaps.length > 0 && (
             <div className="mb-4">
               <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">High Priority</p>
@@ -410,12 +396,16 @@ export default function IncapacityPlanningDashboard({
               <span className="text-sm text-gray-400 ml-1">/ 130</span>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
-      {/* Consumer T3 — attorney CTA only */}
       {isConsumerT3 && !isAdvisor && hasGaps && (
-        <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+        <CollapsibleSection
+          title="Your incapacity plan has gaps"
+          defaultOpen={false}
+          storageKey="incapacity-consumer-gaps-cta"
+        >
+          <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3 -m-2">
           <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -430,11 +420,16 @@ export default function IncapacityPlanningDashboard({
             </button>
           </div>
         </div>
+        </CollapsibleSection>
       )}
 
-      {/* All clear */}
       {!hasGaps && (
-        <div className="p-5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+        <CollapsibleSection
+          title="Incapacity plan looks complete"
+          defaultOpen={false}
+          storageKey="incapacity-plan-complete"
+        >
+          <div className="p-5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 -m-2">
           <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -445,6 +440,7 @@ export default function IncapacityPlanningDashboard({
             </p>
           </div>
         </div>
+        </CollapsibleSection>
       )}
 
     </div>

@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ type InsurancePolicyRow = {
   policy_name: string | null
   insurance_type: string | null
   death_benefit: number | null
+  owner: string | null
   titling: string | null
   liquidity: string | null
   cost_basis: number | null
@@ -360,6 +362,91 @@ function ownerLabel(owner: string | null, p1: string, p2: string) {
   return p1
 }
 
+/** Owner line on Financial Assets & Insurance cards; includes trust/other/unassigned. */
+function titlingFinancialOwnerLabel(owner: string | null, p1: string, p2: string) {
+  if (owner === 'person2') return p2
+  if (owner === 'joint') return 'Joint'
+  if (owner === 'trust') return 'Trust'
+  if (owner === 'other') return 'Other'
+  if (owner == null || String(owner).trim() === '') return 'Unassigned'
+  return p1
+}
+
+/** Canonical buckets for grouping titling rows by `owner` (assets & insurance). */
+type OwnerBucketId = 'person1' | 'person2' | 'joint' | 'trust' | 'other' | 'unknown' | 'unassigned'
+
+const OWNER_BUCKET_ORDER: OwnerBucketId[] = [
+  'person1',
+  'person2',
+  'joint',
+  'trust',
+  'other',
+  'unknown',
+  'unassigned',
+]
+
+function normalizeOwnerBucket(owner: string | null): OwnerBucketId {
+  const o = owner?.trim().toLowerCase() ?? ''
+  if (!o) return 'unassigned'
+  if (o === 'person1' || o === 'person2' || o === 'joint' || o === 'trust' || o === 'other') return o
+  return 'unknown'
+}
+
+function ownerBucketLabel(
+  id: OwnerBucketId,
+  p1First: string,
+  p2First: string,
+): string {
+  switch (id) {
+    case 'person1':
+      return p1First
+    case 'person2':
+      return p2First
+    case 'joint':
+      return 'Joint'
+    case 'trust':
+      return 'Trust'
+    case 'other':
+      return 'Other'
+    case 'unknown':
+      return 'Unknown'
+    case 'unassigned':
+      return 'Unassigned'
+    default:
+      return 'Unknown'
+  }
+}
+
+function titlingOwnerStorageKey(tab: 'assets' | 'insurance', id: OwnerBucketId): string {
+  return `titling-${tab === 'assets' ? 'assets' : 'insurance'}-${id}`
+}
+
+function groupRowsByOwnerBucket<T extends { owner: string | null }>(
+  rows: T[],
+  p1First: string,
+  p2First: string,
+  tab: 'assets' | 'insurance',
+): { id: OwnerBucketId; title: string; storageKey: string; rows: T[] }[] {
+  const map = new Map<OwnerBucketId, T[]>()
+  for (const row of rows) {
+    const id = normalizeOwnerBucket(row.owner)
+    if (!map.has(id)) map.set(id, [])
+    map.get(id)!.push(row)
+  }
+  const out: { id: OwnerBucketId; title: string; storageKey: string; rows: T[] }[] = []
+  for (const id of OWNER_BUCKET_ORDER) {
+    const bucketRows = map.get(id)
+    if (!bucketRows?.length) continue
+    out.push({
+      id,
+      title: ownerBucketLabel(id, p1First, p2First),
+      storageKey: titlingOwnerStorageKey(tab, id),
+      rows: bucketRows,
+    })
+  }
+  return out
+}
+
 // ─── Warning helpers ──────────────────────────────────────────────────────────
 
 function benForItem(
@@ -537,6 +624,21 @@ export default function TitlingClient({
     beneficiaries
   )
 
+  const p1First = useMemo(
+    () => displayPersonFirstName(person1LegalName, 'Person 1'),
+    [person1LegalName],
+  )
+  const p2First = useMemo(() => displayPersonFirstName(person2LegalName), [person2LegalName])
+
+  const assetOwnerGroups = useMemo(
+    () => groupRowsByOwnerBucket(assets, p1First, p2First, 'assets'),
+    [assets, p1First, p2First],
+  )
+  const insuranceOwnerGroups = useMemo(
+    () => groupRowsByOwnerBucket(insurance, p1First, p2First, 'insurance'),
+    [insurance, p1First, p2First],
+  )
+
   async function reloadData() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -564,7 +666,7 @@ export default function TitlingClient({
         .order('created_at', { ascending: false }),
       supabase
         .from('insurance_policies')
-        .select('id, policy_name, insurance_type, death_benefit, titling, liquidity, cost_basis, basis_date')
+        .select('id, policy_name, insurance_type, death_benefit, owner, titling, liquidity, cost_basis, basis_date')
         .eq('user_id', user.id)
         .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
         .order('created_at', { ascending: false }),
@@ -822,48 +924,60 @@ export default function TitlingClient({
 
       {/* Assets tab */}
       {activeTab === 'assets' && (
-        <div className="space-y-4">
+        <>
           {assets.length === 0 ? (
             <EmptyState icon="🏦" message="No assets found" sub="Add assets on the Assets page first" href="/assets" />
           ) : (
-            assets.map(asset => (
-              <AssetTitlingCard
-                key={asset.id}
-                kind="asset"
-                id={asset.id}
-                name={asset.name}
-                subtitle={asset.type.replace(/_/g, ' ')}
-                value={asset.value}
-                ownerLabel={ownerLabel(
-                  asset.owner,
-                  displayPersonFirstName(person1LegalName, 'Person 1'),
-                  displayPersonFirstName(person2LegalName),
-                )}
-                titling={getTitlingFor('asset', asset.id)}
-                primaryBens={getBeneficiariesFor('asset', asset.id, 'primary')}
-                contingentBens={getBeneficiariesFor('asset', asset.id, 'contingent')}
-                onEditTitling={() => setTitlingModal({
-                  kind: 'asset', id: asset.id, name: asset.name,
-                  existing: getTitlingFor('asset', asset.id) as AssetTitling | null,
-                  asset,
-                  entityRow: null,
-                })}
-                onAddBeneficiary={(type) => setBeneficiaryModal({
-                  kind: 'asset', id: asset.id, name: asset.name, existing: null, beneficiaryType: type,
-                })}
-                onEditBeneficiary={(ben) => setBeneficiaryModal({
-                  kind: 'asset', id: asset.id, name: asset.name, existing: ben, beneficiaryType: ben.beneficiary_type,
-                })}
-                onDeleteBeneficiary={handleDeleteBeneficiary}
-              />
+            assetOwnerGroups.map(group => (
+              <CollapsibleSection
+                key={group.id}
+                title={group.title}
+                defaultOpen={group.id === 'person1'}
+                storageKey={group.storageKey}
+              >
+                <div className="space-y-4">
+                  {group.rows.map(asset => (
+                    <AssetTitlingCard
+                      key={asset.id}
+                      kind="asset"
+                      id={asset.id}
+                      name={asset.name}
+                      subtitle={asset.type.replace(/_/g, ' ')}
+                      value={asset.value}
+                      ownerLabel={titlingFinancialOwnerLabel(asset.owner, p1First, p2First)}
+                      titling={getTitlingFor('asset', asset.id)}
+                      primaryBens={getBeneficiariesFor('asset', asset.id, 'primary')}
+                      contingentBens={getBeneficiariesFor('asset', asset.id, 'contingent')}
+                      onEditTitling={() => setTitlingModal({
+                        kind: 'asset', id: asset.id, name: asset.name,
+                        existing: getTitlingFor('asset', asset.id) as AssetTitling | null,
+                        asset,
+                        entityRow: null,
+                      })}
+                      onAddBeneficiary={(type) => setBeneficiaryModal({
+                        kind: 'asset', id: asset.id, name: asset.name, existing: null, beneficiaryType: type,
+                      })}
+                      onEditBeneficiary={(ben) => setBeneficiaryModal({
+                        kind: 'asset', id: asset.id, name: asset.name, existing: ben, beneficiaryType: ben.beneficiary_type,
+                      })}
+                      onDeleteBeneficiary={handleDeleteBeneficiary}
+                    />
+                  ))}
+                </div>
+              </CollapsibleSection>
             ))
           )}
-        </div>
+        </>
       )}
 
       {/* Real Estate tab */}
       {activeTab === 'real_estate' && (
-        <div className="space-y-4">
+        <CollapsibleSection
+          title="Real Estate"
+          defaultOpen={true}
+          storageKey="titling-real-estate"
+        >
+          <div className="space-y-4">
           {realEstate.length === 0 ? (
             <EmptyState icon="🏠" message="No properties found" sub="Add properties on the Real Estate page first" href="/real-estate" />
           ) : (
@@ -900,53 +1014,70 @@ export default function TitlingClient({
               />
             ))
           )}
-        </div>
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Insurance tab */}
       {activeTab === 'insurance' && (
-        <div className="space-y-4">
+        <>
           {insurance.length === 0 ? (
             <EmptyState icon="🛡️" message="No insurance policies found" sub="Add life, annuity, LTC, or disability coverage on the Insurance page first" href="/insurance" />
           ) : (
-            insurance.map(pol => {
-              const displayName = pol.policy_name?.trim() || 'Insurance policy'
-              const sub = (pol.insurance_type ?? 'policy').replace(/_/g, ' ')
-              return (
-                <AssetTitlingCard
-                  key={pol.id}
-                  kind="insurance"
-                  id={pol.id}
-                  name={displayName}
-                  subtitle={sub}
-                  value={pol.death_benefit ?? 0}
-                  ownerLabel="—"
-                  titling={getTitlingFor('insurance', pol.id)}
-                  primaryBens={getBeneficiariesFor('insurance', pol.id, 'primary')}
-                  contingentBens={getBeneficiariesFor('insurance', pol.id, 'contingent')}
-                  onEditTitling={() => setTitlingModal({
-                    kind: 'insurance', id: pol.id, name: displayName,
-                    existing: getTitlingFor('insurance', pol.id),
-                    asset: null,
-                    entityRow: pol,
+            insuranceOwnerGroups.map(group => (
+              <CollapsibleSection
+                key={group.id}
+                title={group.title}
+                defaultOpen={group.id === 'person1'}
+                storageKey={group.storageKey}
+              >
+                <div className="space-y-4">
+                  {group.rows.map(pol => {
+                    const displayName = pol.policy_name?.trim() || 'Insurance policy'
+                    const sub = (pol.insurance_type ?? 'policy').replace(/_/g, ' ')
+                    return (
+                      <AssetTitlingCard
+                        key={pol.id}
+                        kind="insurance"
+                        id={pol.id}
+                        name={displayName}
+                        subtitle={sub}
+                        value={pol.death_benefit ?? 0}
+                        ownerLabel={titlingFinancialOwnerLabel(pol.owner, p1First, p2First)}
+                        titling={getTitlingFor('insurance', pol.id)}
+                        primaryBens={getBeneficiariesFor('insurance', pol.id, 'primary')}
+                        contingentBens={getBeneficiariesFor('insurance', pol.id, 'contingent')}
+                        onEditTitling={() => setTitlingModal({
+                          kind: 'insurance', id: pol.id, name: displayName,
+                          existing: getTitlingFor('insurance', pol.id),
+                          asset: null,
+                          entityRow: pol,
+                        })}
+                        onAddBeneficiary={(type) => setBeneficiaryModal({
+                          kind: 'insurance', id: pol.id, name: displayName, existing: null, beneficiaryType: type,
+                        })}
+                        onEditBeneficiary={(ben) => setBeneficiaryModal({
+                          kind: 'insurance', id: pol.id, name: displayName, existing: ben, beneficiaryType: ben.beneficiary_type,
+                        })}
+                        onDeleteBeneficiary={handleDeleteBeneficiary}
+                      />
+                    )
                   })}
-                  onAddBeneficiary={(type) => setBeneficiaryModal({
-                    kind: 'insurance', id: pol.id, name: displayName, existing: null, beneficiaryType: type,
-                  })}
-                  onEditBeneficiary={(ben) => setBeneficiaryModal({
-                    kind: 'insurance', id: pol.id, name: displayName, existing: ben, beneficiaryType: ben.beneficiary_type,
-                  })}
-                  onDeleteBeneficiary={handleDeleteBeneficiary}
-                />
-              )
-            })
+                </div>
+              </CollapsibleSection>
+            ))
           )}
-        </div>
+        </>
       )}
 
       {/* Business tab */}
       {activeTab === 'business' && (
-        <div className="space-y-4">
+        <CollapsibleSection
+          title="Business Interests"
+          defaultOpen={true}
+          storageKey="titling-business-interests"
+        >
+          <div className="space-y-4">
           {businesses.length === 0 ? (
             <EmptyState icon="🏢" message="No business interests found" sub="Add closely-held interests on the Businesses page first" href="/businesses" />
           ) : (
@@ -978,7 +1109,8 @@ export default function TitlingClient({
               />
             ))
           )}
-        </div>
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Titling Modal */}

@@ -9,6 +9,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
@@ -94,73 +95,80 @@ export default function MyEstateStrategyClient({
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {columns.map((col) => (
-          <div
-            key={col.headerTitle}
-            className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
-          >
-            <div className={`px-4 py-3 text-center text-sm font-semibold ${col.headerClassName}`}>
-              {col.headerTitle}
-            </div>
-            <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
-              <p className="text-xs leading-relaxed text-neutral-600">{col.narrative}</p>
+      <CollapsibleSection
+        title="Estate value & tax horizons"
+        subtitle="Today, 10 years, and at second death"
+        defaultOpen={true}
+        storageKey="my-estate-strategy-horizons"
+      >
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {columns.map((col) => (
+            <div
+              key={col.headerTitle}
+              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+            >
+              <div className={`px-4 py-3 text-center text-sm font-semibold ${col.headerClassName}`}>
+                {col.headerTitle}
+              </div>
+              <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+                <p className="text-xs leading-relaxed text-neutral-600">{col.narrative}</p>
 
-              {col.showGenerateCta ? (
-                <div className="mt-6 flex flex-1 flex-col items-center justify-center text-center">
-                  <p className="text-sm text-neutral-700">
-                    Generate your estate plan to see projections
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleGenerateBaseCase}
-                    disabled={generating}
-                    className="mt-4 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {generating ? 'Generating…' : 'Generate My Estate Plan →'}
-                  </button>
-                  <Link
-                    href="/dashboard"
-                    className="mt-3 text-xs text-neutral-400 hover:text-neutral-600 hover:underline"
-                  >
-                    Or go to Dashboard
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  {col.showMissingRowNote && col.missingRowCalendarYear != null && (
-                    <p className="mt-2 text-xs text-amber-800">
-                      This projection does not include {col.missingRowCalendarYear}; figures are
-                      unavailable for this horizon.
+                {col.showGenerateCta ? (
+                  <div className="mt-6 flex flex-1 flex-col items-center justify-center text-center">
+                    <p className="text-sm text-neutral-700">
+                      Generate your estate plan to see projections
                     </p>
-                  )}
-                  <div className="mt-4 space-y-3 text-sm">
-                    <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
-                    <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
-                    <MetricRow label="Federal exposure" value={fmtEst(col.federalExposure)} />
-                    <MetricRow label="Federal tax estimate" value={fmtEst(col.federalTaxEstimate)} />
-                    <div className="my-3 border-t border-neutral-200" />
-                    <MetricRow label="State exposure" value={fmtEst(col.stateExposure)} />
-                    {col === atDeath &&
-                      primaryResidenceValue != null &&
-                      primaryResidenceValue > 0 && (
-                        <p className="mt-2 text-xs leading-relaxed text-neutral-500">
-                          ℹ️ This estimate reflects the surviving spouse&apos;s estate at second death
-                          and includes the primary residence (est. {fmtEst(primaryResidenceValue)}).
-                        </p>
-                      )}
-                    <MetricRow
-                      label="Est. total tax liability"
-                      value={fmtEst(col.totalTaxLiability)}
-                      emphasized
-                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateBaseCase}
+                      disabled={generating}
+                      className="mt-4 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {generating ? 'Generating…' : 'Generate My Estate Plan →'}
+                    </button>
+                    <Link
+                      href="/dashboard"
+                      className="mt-3 text-xs text-neutral-400 hover:text-neutral-600 hover:underline"
+                    >
+                      Or go to Dashboard
+                    </Link>
                   </div>
-                </>
-              )}
+                ) : (
+                  <>
+                    {col.showMissingRowNote && col.missingRowCalendarYear != null && (
+                      <p className="mt-2 text-xs text-amber-800">
+                        This projection does not include {col.missingRowCalendarYear}; figures are
+                        unavailable for this horizon.
+                      </p>
+                    )}
+                    <div className="mt-4 space-y-3 text-sm">
+                      <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
+                      <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
+                      <MetricRow label="Federal exposure" value={fmtEst(col.federalExposure)} />
+                      <MetricRow label="Federal tax estimate" value={fmtEst(col.federalTaxEstimate)} />
+                      <div className="my-3 border-t border-neutral-200" />
+                      <MetricRow label="State exposure" value={fmtEst(col.stateExposure)} />
+                      {col === atDeath &&
+                        primaryResidenceValue != null &&
+                        primaryResidenceValue > 0 && (
+                          <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+                            ℹ️ This estimate reflects the surviving spouse&apos;s estate at second death
+                            and includes the primary residence (est. {fmtEst(primaryResidenceValue)}).
+                          </p>
+                        )}
+                      <MetricRow
+                        label="Est. total tax liability"
+                        value={fmtEst(col.totalTaxLiability)}
+                        emphasized
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </CollapsibleSection>
 
       {showProjectionMismatchNote && (
         <p className="mt-6 text-xs text-neutral-600">
@@ -170,15 +178,21 @@ export default function MyEstateStrategyClient({
       )}
 
       {hasBaseCase && (
-        <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <CollapsibleSection
+          title="What happens when I die?"
+          subtitle="How your estate transfers to your heirs — in plain English"
+          defaultOpen={false}
+          storageKey="my-estate-strategy-heirs-flow"
+        >
           <ConsumerEstateFlowView
             householdId={householdId}
             scenarioId={scenarioId}
             todayGrossEstate={today.grossEstate ?? 0}
             todayTotalTaxLiability={today.totalTaxLiability ?? 0}
             estateAsOfLabel={estateAsOfLabel}
+            hidePageHeader
           />
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   )

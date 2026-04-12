@@ -13,6 +13,7 @@ import {
   type StateEstateTaxBracket,
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
@@ -411,6 +412,12 @@ export default function EstateTaxClient({
         </p>
       )}
 
+      <CollapsibleSection
+        title="Federal estate summary"
+        subtitle="Gross estate, taxable estate, exemption, and federal tax"
+        defaultOpen={true}
+        storageKey="estate-tax-federal-summary"
+      >
       {primaryResidenceValue != null && primaryResidenceValue > 0 && (
         <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-4 text-sm text-neutral-700">
           <p className="font-semibold text-neutral-900">
@@ -430,7 +437,7 @@ export default function EstateTaxClient({
       )}
 
       {/* ── Federal summary cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <SummaryCard
           label="Gross Estate"
           value={formatDollars(grossEstate)}
@@ -459,17 +466,19 @@ export default function EstateTaxClient({
       </div>
 
       {!federalResult && (
-        <p className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <p className="mb-0 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
           No valid rows in <code className="text-xs">federal_estate_tax_brackets</code>. Add brackets to
           compute tax.
         </p>
       )}
+      </CollapsibleSection>
 
-      {/* ── Gifting scenario panel ── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm mb-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-          Gifting scenario
-        </h2>
+      <CollapsibleSection
+        title="Gifting scenario"
+        subtitle="The 2024 annual gift tax exclusion is $18,000 per donee"
+        defaultOpen={false}
+        storageKey="estate-tax-gifting-scenario"
+      >
         <p className="text-xs text-neutral-500 mb-4">
           Annual gifting reduces the taxable estate used for both federal and state calculations.
           The 2024 annual gift tax exclusion is $18,000 per donee.
@@ -516,14 +525,14 @@ export default function EstateTaxClient({
             )}
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* ── Federal estate breakdown ── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm mb-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Federal estate breakdown
-        </h2>
-        <div className="mt-2">
+      <CollapsibleSection
+        title="Federal estate breakdown"
+        defaultOpen={false}
+        storageKey="estate-tax-federal-breakdown"
+      >
+        <div className="mt-0">
           {breakdownRow('Financial assets', financialAssets)}
           {breakdownRow(
             'Real estate',
@@ -554,15 +563,14 @@ export default function EstateTaxClient({
             </span>
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* ── State estate tax ── */}
       {(primaryStateTax || compareStateTax || statePrimary) && (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm mb-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            State estate tax
-          </h2>
-
+        <CollapsibleSection
+          title="State estate tax"
+          defaultOpen={false}
+          storageKey="estate-tax-state-estate"
+        >
           {!statePrimary && (
             <p className="text-sm text-neutral-500">
               Set your primary state in Profile to see state estate tax.
@@ -677,16 +685,17 @@ export default function EstateTaxClient({
               )}
             </div>
           )}
-        </section>
+        </CollapsibleSection>
       )}
 
-      {/* ── State inheritance tax ── */}
       {(STATE_INHERITANCE_TAX_STATES.has(statePrimary?.toUpperCase() ?? '') ||
         STATE_INHERITANCE_TAX_STATES.has(stateCompare?.toUpperCase() ?? '')) && (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm mb-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-            State inheritance tax
-          </h2>
+        <CollapsibleSection
+          title="State inheritance tax"
+          subtitle="Inheritance tax is assessed on the beneficiary's share, not the estate itself"
+          defaultOpen={false}
+          storageKey="estate-tax-state-inheritance"
+        >
           <p className="text-xs text-neutral-500 mb-5">
             Inheritance tax is assessed on the beneficiary's share, not the estate itself. Allocate
             the estate below to see estimated tax by class.
@@ -778,14 +787,15 @@ export default function EstateTaxClient({
               </div>
             )}
           </div>
-        </section>
+        </CollapsibleSection>
       )}
 
-      {/* ── Trusts table ── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden overflow-x-auto mb-8">
-        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Trusts</h2>
-        </div>
+      <CollapsibleSection
+        title="Trusts"
+        defaultOpen={false}
+        storageKey="estate-tax-trusts"
+      >
+        <div className="rounded-xl border border-neutral-200 overflow-hidden overflow-x-auto -m-2">
         {trusts.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-neutral-500">
             No trusts yet. Add a trust to model excluded funding.
@@ -844,7 +854,8 @@ export default function EstateTaxClient({
             </tbody>
           </table>
         )}
-      </section>
+        </div>
+      </CollapsibleSection>
 
       <p className="text-xs text-neutral-400">
         Consult a qualified professional for estate planning and tax compliance.

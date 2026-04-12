@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -7,9 +8,10 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
+  const row = insurancePolicyRowForSave(body as Record<string, unknown>)
   const { data, error } = await supabase
     .from('insurance_policies')
-    .insert({ ...body, user_id: user.id })
+    .insert({ ...row, user_id: user.id })
     .select()
     .single()
 
