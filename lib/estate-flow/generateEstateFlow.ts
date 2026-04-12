@@ -343,8 +343,12 @@ export async function generateEstateFlow(
   // Unique beneficiary node registry (to avoid duplicates)
   const beneNodeMap = new Map<string, string>() // name → node id
 
-  function getOrCreateBeneNode(bene: RawBeneficiary): string {
+  function getOrCreateBeneNode(bene: RawBeneficiary): string | null {
     const key = bene.full_name.toLowerCase().trim()
+    const isOwner =
+      key === (household?.person1_name ?? '').toLowerCase().trim() ||
+      key === (household?.person2_name ?? '').toLowerCase().trim()
+    if (isOwner) return null
     if (beneNodeMap.has(key)) return beneNodeMap.get(key)!
     const nodeId = `bene_${beneNodeMap.size}`
     nodes.push({
@@ -545,6 +549,7 @@ export async function generateEstateFlow(
       // Direct beneficiary designation — bypasses probate
       for (const bene of assetBenes) {
         const beneNodeId = getOrCreateBeneNode(bene)
+        if (!beneNodeId) continue
         const transferAmt = Math.round((asset.value * bene.allocation_pct) / 100)
         edges.push({
           id: `e_bene_${asset.id}_${bene.id}`,
@@ -613,6 +618,7 @@ export async function generateEstateFlow(
     } else if (hasBene) {
       for (const bene of reBenes) {
         const beneNodeId = getOrCreateBeneNode(bene)
+        if (!beneNodeId) continue
         const transferAmt = Math.round((re.current_value * bene.allocation_pct) / 100)
         edges.push({
           id: `e_bene_re_${re.id}_${bene.id}`,
@@ -783,8 +789,10 @@ export async function generateEstateFlow(
     if (seenTrustBene.has(key)) continue
     seenTrustBene.add(key)
 
+    const beneNodeId = getOrCreateBeneNode(bene)
+    if (!beneNodeId) continue
+
     if (trustNodeIds.length > 0) {
-      const beneNodeId = getOrCreateBeneNode(bene)
       edges.push({
         id: `e_trust_dist_${bene.id}`,
         source: trustNodeIds[0],
@@ -797,7 +805,6 @@ export async function generateEstateFlow(
     }
 
     if (bypassTrustNodeId) {
-      const beneNodeId = getOrCreateBeneNode(bene)
       edges.push({
         id: `e_cst_dist_${bene.id}`,
         source: bypassTrustNodeId,

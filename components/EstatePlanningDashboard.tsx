@@ -200,27 +200,6 @@ export default function EstatePlanningDashboard({
             ))}
           </div>
         </div>
-
-        {completeness.attorney_cta_triggered && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-blue-900">Your estate plan needs attention</p>
-              <p className="text-sm text-blue-700 mt-1">
-                {isAdvisor
-                  ? 'Review the recommendations below and discuss next steps with your client.'
-                  : 'Connect with a financial advisor or estate planning attorney to complete your plan.'}
-              </p>
-              {!isAdvisor && (
-                <button className="mt-2 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                  Find an Advisor
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Tax Exposure — Advisor only */}
@@ -277,7 +256,7 @@ export default function EstatePlanningDashboard({
       {(isAdvisor || isConsumerT3) && recommendations.recommendations.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Recommendations
+            Gaps in your Estate Plan
             <span className="ml-2 text-sm font-normal text-gray-500">({recommendations.recommendations.length} items)</span>
           </h2>
 
@@ -316,7 +295,6 @@ export default function EstatePlanningDashboard({
         <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-700">Plan Complexity Score</p>
-            <p className="text-xs text-gray-400 mt-0.5">Used internally for advisor prioritization</p>
           </div>
           <div className="text-right">
             <span className="text-2xl font-bold text-gray-900">{recommendations.complexity_score}</span>

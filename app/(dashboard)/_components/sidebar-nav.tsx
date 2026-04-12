@@ -74,7 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
       { href: '/incapacity-planning', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
-      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
+      // { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/gifting', label: 'Gifting Strategy', icon: '🎁', feature: 'gifting' },
       { href: '/trust-will', label: 'Trust & Will Guidance', icon: '📋', minTier: 3 },
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
@@ -419,6 +419,7 @@ export function SidebarNav({
           ))}
 
         {/* Admin — Advisor Directory */}
+        {/*
         {(role === 'admin' || isAdmin || isSuperuser) &&
           (isLockedUser ? (
             <Link
@@ -444,7 +445,9 @@ export function SidebarNav({
               📋 Advisor Directory
             </Link>
           ))}
+        */}
 
+        {/*
         {(role === 'admin' || isAdmin || isSuperuser) &&
           (isLockedUser ? (
             <Link
@@ -470,6 +473,7 @@ export function SidebarNav({
               ⚖️ Attorney Directory
             </Link>
           ))}
+        */}
 
         {/* My Advisor (consumer) */}
         {(role === 'consumer' || isSuperuser) &&

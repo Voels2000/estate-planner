@@ -5,7 +5,6 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import TitlingClient from './_titling-client'
@@ -62,7 +61,7 @@ export default async function TitlingPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('real_estate')
-      .select('id, name, property_type, current_value, owner')
+      .select('id, name, property_type, current_value, owner, titling, liquidity, cost_basis, basis_date')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -80,13 +79,13 @@ export default async function TitlingPage() {
       .order('created_at', { ascending: true }),
     supabase
       .from('insurance_policies')
-      .select('id, policy_name, insurance_type, death_benefit')
+      .select('id, policy_name, insurance_type, death_benefit, titling, liquidity, cost_basis, basis_date')
       .eq('user_id', user.id)
       .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
       .order('created_at', { ascending: false }),
     supabase
       .from('businesses')
-      .select('id, name, estimated_value, entity_type')
+      .select('id, name, estimated_value, entity_type, owner, titling, liquidity, cost_basis, basis_date')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -123,8 +122,6 @@ export default async function TitlingPage() {
       hasSpouse={household?.has_spouse === true}
       person1LegalName={household?.person1_name?.trim() ?? null}
       person2LegalName={household?.person2_name?.trim() ?? null}
-      person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
-      person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
     />
   )
 }

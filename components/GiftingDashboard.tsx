@@ -371,7 +371,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    {tab === 'overview' ? 'Recommendations' : 'Gift History'}
+                    {tab === 'overview' ? 'Considerations' : 'Gift History'}
                   </button>
                 ))}
               </nav>

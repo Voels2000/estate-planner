@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,10 @@ type RealEstateItem = {
   property_type: string
   current_value: number
   owner: string | null
+  titling: string | null
+  liquidity: string | null
+  cost_basis: number | null
+  basis_date: string | null
 }
 
 type InsurancePolicyRow = {
@@ -37,6 +42,10 @@ type InsurancePolicyRow = {
   policy_name: string | null
   insurance_type: string | null
   death_benefit: number | null
+  titling: string | null
+  liquidity: string | null
+  cost_basis: number | null
+  basis_date: string | null
 }
 
 type BusinessRow = {
@@ -44,6 +53,11 @@ type BusinessRow = {
   name: string
   estimated_value: number | null
   entity_type: string | null
+  owner: string | null
+  titling: string | null
+  liquidity: string | null
+  cost_basis: number | null
+  basis_date: string | null
 }
 
 type AssetTitling = {
@@ -137,8 +151,6 @@ type TitlingClientProps = {
   hasSpouse: boolean
   person1LegalName: string | null
   person2LegalName: string | null
-  person1Name: string
-  person2Name: string
   categories: TitlingCategory[]
 }
 
@@ -158,17 +170,33 @@ const TITLE_TYPES = [
   { value: 'corporate',          label: 'Corporate / LLC' },
 ]
 
-const TITLING_OPTIONS = [
-  { value: '', label: 'Not set' },
-  { value: 'individual_p1', label: 'Individual (Person 1)' },
-  { value: 'individual_p2', label: 'Individual (Person 2)' },
-  { value: 'joint_tenants', label: 'Joint Tenants (JTWROS)' },
-  { value: 'tenants_in_common', label: 'Tenants in Common' },
-  { value: 'trust', label: 'Trust' },
-  { value: 'entity', label: 'Entity (LLC/Corp)' },
-  { value: 'pod', label: 'POD / Transfer on Death' },
-  { value: 'tod', label: 'TOD (Securities)' },
-]
+function buildAssetTitlingOptions(
+  person1LegalName: string | null,
+  person2LegalName: string | null,
+): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = [
+    { value: '', label: 'Not set' },
+    {
+      value: 'individual_p1',
+      label: `Individual (${displayPersonFirstName(person1LegalName, 'Person 1')})`,
+    },
+  ]
+  if (person2LegalName?.trim()) {
+    options.push({
+      value: 'individual_p2',
+      label: `Individual (${displayPersonFirstName(person2LegalName)})`,
+    })
+  }
+  options.push(
+    { value: 'joint_tenants', label: 'Joint Tenants (JTWROS)' },
+    { value: 'tenants_in_common', label: 'Tenants in Common' },
+    { value: 'trust', label: 'Trust' },
+    { value: 'entity', label: 'Entity (LLC/Corp)' },
+    { value: 'pod', label: 'POD / Transfer on Death' },
+    { value: 'tod', label: 'TOD (Securities)' },
+  )
+  return options
+}
 
 const LIQUIDITY_OPTIONS = [
   { value: '', label: 'Not set' },
@@ -177,6 +205,9 @@ const LIQUIDITY_OPTIONS = [
   { value: 'illiquid', label: 'Illiquid (real estate, private)' },
   { value: 'long', label: 'Long-term locked (pension, annuity)' },
 ]
+
+// Exclude P&C lines — same as app/(dashboard)/titling/page.tsx
+const PC_INSURANCE_TYPES = ['auto', 'homeowners', 'renters', 'umbrella', 'flood', 'earthquake', 'valuables', 'commercial', 'other']
 
 const RELATIONSHIPS = [
   'Spouse', 'Child', 'Parent', 'Sibling', 'Grandchild',
@@ -438,15 +469,13 @@ export default function TitlingClient({
   hasSpouse,
   person1LegalName,
   person2LegalName,
-  person1Name,
-  person2Name,
   categories,
 }: TitlingClientProps) {
   const router = useRouter()
-  const [assets] = useState<Asset[]>(initialAssets)
-  const [realEstate] = useState<RealEstateItem[]>(initialRealEstate)
-  const [insurance] = useState<InsurancePolicyRow[]>(initialInsurance)
-  const [businesses] = useState<BusinessRow[]>(initialBusinesses)
+  const [assets, setAssets] = useState<Asset[]>(initialAssets)
+  const [realEstate, setRealEstate] = useState<RealEstateItem[]>(initialRealEstate)
+  const [insurance, setInsurance] = useState<InsurancePolicyRow[]>(initialInsurance)
+  const [businesses, setBusinesses] = useState<BusinessRow[]>(initialBusinesses)
   const [assetTitling, setAssetTitling] = useState<AssetTitling[]>(initialAssetTitling)
   const [realEstateTitling, setRealEstateTitling] = useState<RealEstateTitling[]>(initialRealEstateTitling)
   const [insurancePolicyTitling, setInsurancePolicyTitling] = useState<InsurancePolicyTitling[]>(initialInsurancePolicyTitling)
@@ -459,6 +488,11 @@ export default function TitlingClient({
   const beneficiaryPicklistOptions = useMemo(
     () => buildBeneficiaryPicklist(person1LegalName, person2LegalName, hasSpouse, householdPeople),
     [person1LegalName, person2LegalName, hasSpouse, householdPeople],
+  )
+
+  const assetTitlingOptions = useMemo(
+    () => buildAssetTitlingOptions(person1LegalName, person2LegalName),
+    [person1LegalName, person2LegalName],
   )
 
   const descendantsOrdered = useMemo(() => orderedDescendants(householdPeople), [householdPeople])
@@ -480,6 +514,7 @@ export default function TitlingClient({
     name: string
     existing: AnyTitling | null
     asset: Asset | null
+    entityRow: RealEstateItem | InsurancePolicyRow | BusinessRow | null
   } | null>(null)
 
   const [beneficiaryModal, setBeneficiaryModal] = useState<{
@@ -507,18 +542,47 @@ export default function TitlingClient({
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const [
+      { data: assetsData },
+      { data: reData },
+      { data: insData },
+      { data: bizData },
       { data: at },
       { data: rt },
       { data: it },
       { data: bt },
       { data: bens },
     ] = await Promise.all([
+      supabase
+        .from('assets')
+        .select('id, name, type, value, owner, cost_basis, basis_date, titling, liquidity')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('real_estate')
+        .select('id, name, property_type, current_value, owner, titling, liquidity, cost_basis, basis_date')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('insurance_policies')
+        .select('id, policy_name, insurance_type, death_benefit, titling, liquidity, cost_basis, basis_date')
+        .eq('user_id', user.id)
+        .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('businesses')
+        .select('id, name, estimated_value, entity_type, owner, titling, liquidity, cost_basis, basis_date')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false }),
       supabase.from('asset_titling').select('id, asset_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('real_estate_titling').select('id, real_estate_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('insurance_policy_titling').select('id, insurance_policy_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('business_titling').select('id, business_id, title_type, notes').eq('owner_id', user.id),
       supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, insurance_policy_id, business_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip').eq('owner_id', user.id).order('created_at', { ascending: true }),
     ])
+    setAssets(assetsData ?? [])
+    setRealEstate(reData ?? [])
+    setInsurance(insData ?? [])
+    setBusinesses(bizData ?? [])
     setAssetTitling(at ?? [])
     setRealEstateTitling(rt ?? [])
     setInsurancePolicyTitling(it ?? [])
@@ -526,6 +590,57 @@ export default function TitlingClient({
     setBeneficiaries(bens ?? [])
     await refreshConflicts()
     router.refresh()
+  }
+
+  async function persistTitlingTitle(
+    kind: TitlingKind,
+    entityId: string,
+    nextRaw: string,
+    existing: AnyTitling | null,
+  ) {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const table =
+      kind === 'asset' ? 'asset_titling'
+      : kind === 're' ? 'real_estate_titling'
+        : kind === 'insurance' ? 'insurance_policy_titling'
+          : 'business_titling'
+    const fkCol =
+      kind === 'asset' ? 'asset_id'
+      : kind === 're' ? 'real_estate_id'
+        : kind === 'insurance' ? 'insurance_policy_id'
+          : 'business_id'
+
+    if (!nextRaw) {
+      if (existing?.id) {
+        const { error } = await supabase.from(table).delete().eq('id', existing.id)
+        if (error) throw error
+      }
+      await reloadData()
+      return
+    }
+
+    const payload = {
+      title_type: nextRaw,
+      notes: existing?.notes ?? null,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (existing) {
+      const { error } = await supabase.from(table).update(payload).eq('id', existing.id)
+      if (error) throw error
+    } else {
+      const { error } = await supabase.from(table).insert({
+        ...payload,
+        owner_id: user.id,
+        [fkCol]: entityId,
+      })
+      if (error) throw error
+    }
+
+    await reloadData()
   }
 
   async function handleDeleteBeneficiary(id: string) {
@@ -719,7 +834,11 @@ export default function TitlingClient({
                 name={asset.name}
                 subtitle={asset.type.replace(/_/g, ' ')}
                 value={asset.value}
-                ownerLabel={ownerLabel(asset.owner, person1Name, person2Name)}
+                ownerLabel={ownerLabel(
+                  asset.owner,
+                  displayPersonFirstName(person1LegalName, 'Person 1'),
+                  displayPersonFirstName(person2LegalName),
+                )}
                 titling={getTitlingFor('asset', asset.id)}
                 primaryBens={getBeneficiariesFor('asset', asset.id, 'primary')}
                 contingentBens={getBeneficiariesFor('asset', asset.id, 'contingent')}
@@ -727,6 +846,7 @@ export default function TitlingClient({
                   kind: 'asset', id: asset.id, name: asset.name,
                   existing: getTitlingFor('asset', asset.id) as AssetTitling | null,
                   asset,
+                  entityRow: null,
                 })}
                 onAddBeneficiary={(type) => setBeneficiaryModal({
                   kind: 'asset', id: asset.id, name: asset.name, existing: null, beneficiaryType: type,
@@ -755,7 +875,11 @@ export default function TitlingClient({
                 name={re.name}
                 subtitle={re.property_type.replace(/_/g, ' ')}
                 value={re.current_value}
-                ownerLabel={ownerLabel(re.owner, person1Name, person2Name)}
+                ownerLabel={ownerLabel(
+                  re.owner,
+                  displayPersonFirstName(person1LegalName, 'Person 1'),
+                  displayPersonFirstName(person2LegalName),
+                )}
                 titling={getTitlingFor('re', re.id)}
                 primaryBens={getBeneficiariesFor('re', re.id, 'primary')}
                 contingentBens={getBeneficiariesFor('re', re.id, 'contingent')}
@@ -763,6 +887,7 @@ export default function TitlingClient({
                   kind: 're', id: re.id, name: re.name,
                   existing: getTitlingFor('re', re.id) as RealEstateTitling | null,
                   asset: null,
+                  entityRow: re,
                 })}
                 onAddBeneficiary={(type) => setBeneficiaryModal({
                   kind: 're', id: re.id, name: re.name, existing: null, beneficiaryType: type,
@@ -803,6 +928,7 @@ export default function TitlingClient({
                     kind: 'insurance', id: pol.id, name: displayName,
                     existing: getTitlingFor('insurance', pol.id),
                     asset: null,
+                    entityRow: pol,
                   })}
                   onAddBeneficiary={(type) => setBeneficiaryModal({
                     kind: 'insurance', id: pol.id, name: displayName, existing: null, beneficiaryType: type,
@@ -840,6 +966,7 @@ export default function TitlingClient({
                   kind: 'business', id: biz.id, name: biz.name,
                   existing: getTitlingFor('business', biz.id),
                   asset: null,
+                  entityRow: biz,
                 })}
                 onAddBeneficiary={(type) => setBeneficiaryModal({
                   kind: 'business', id: biz.id, name: biz.name, existing: null, beneficiaryType: type,
@@ -862,6 +989,8 @@ export default function TitlingClient({
           name={titlingModal.name}
           existing={titlingModal.existing}
           asset={titlingModal.asset}
+          entityRow={titlingModal.entityRow}
+          titlingOptions={assetTitlingOptions}
           onClose={() => setTitlingModal(null)}
           onSave={async () => { await reloadData(); setTitlingModal(null) }}
         />
@@ -942,23 +1071,25 @@ function AssetTitlingCard({
             <p className="text-xs text-neutral-400 capitalize mt-0.5">{subtitle} · {ownerLabel} · {formatDollars(value)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {titling ? (
-            <span className="text-xs font-medium bg-neutral-100 text-neutral-600 rounded-full px-3 py-1">
-              {titleLabel(titling.title_type)}
-            </span>
-          ) : (
-            <span className="text-xs font-medium bg-amber-100 text-amber-700 rounded-full px-3 py-1">
-              No title set
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={onEditTitling}
-            className="text-xs text-indigo-600 font-medium hover:text-indigo-800"
-          >
-            {titling ? 'Edit title' : 'Set title'}
-          </button>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex items-center gap-3">
+            {titling ? (
+              <span className="text-xs font-medium bg-neutral-100 text-neutral-600 rounded-full px-3 py-1">
+                {titleLabel(titling.title_type)}
+              </span>
+            ) : (
+              <span className="text-xs font-medium bg-amber-100 text-amber-700 rounded-full px-3 py-1">
+                No title set
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onEditTitling}
+              className="text-xs text-indigo-600 font-medium hover:text-indigo-800"
+            >
+              {titling ? 'Edit title' : 'Set title'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1087,23 +1218,33 @@ function BeneficiarySection({
 // ─── Titling Modal ────────────────────────────────────────────────────────────
 
 function TitlingModal({
-  kind, id, name, existing, asset, onClose, onSave,
+  kind, id, name, existing, asset, entityRow, titlingOptions, onClose, onSave,
 }: {
   kind: TitlingKind
   id: string
   name: string
   existing: AnyTitling | null
   asset: Asset | null
+  entityRow: RealEstateItem | InsurancePolicyRow | BusinessRow | null
+  titlingOptions: { value: string; label: string }[]
   onClose: () => void
   onSave: () => void
 }) {
   const [titleType, setTitleType] = useState(existing?.title_type ?? 'sole')
   const [assetTitling, setAssetTitling] = useState(asset?.titling ?? '')
-  const [liquidity, setLiquidity] = useState(asset?.liquidity ?? '')
-  const [costBasis, setCostBasis] = useState(
-    asset?.cost_basis == null ? '' : String(asset.cost_basis)
+  const [ownerTitling, setOwnerTitling] = useState(
+    entityRow ? (entityRow.titling ?? '') : '',
   )
-  const [basisDate, setBasisDate] = useState(asset?.basis_date ?? '')
+  const [liquidity, setLiquidity] = useState(
+    (kind === 'asset' ? asset?.liquidity : entityRow?.liquidity) ?? '',
+  )
+  const [costBasis, setCostBasis] = useState(() => {
+    const cb = kind === 'asset' ? asset?.cost_basis : entityRow?.cost_basis
+    return cb == null ? '' : String(cb)
+  })
+  const [basisDate, setBasisDate] = useState(
+    (kind === 'asset' ? asset?.basis_date : entityRow?.basis_date) ?? '',
+  )
   const [notes, setNotes] = useState(existing?.notes ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1145,11 +1286,12 @@ function TitlingModal({
         if (error) throw error
       }
 
+      const parsedCostBasis = costBasis.trim() === '' ? null : Number(costBasis)
+      if (parsedCostBasis !== null && Number.isNaN(parsedCostBasis)) {
+        throw new Error('Cost basis must be a valid number.')
+      }
+
       if (kind === 'asset') {
-        const parsedCostBasis = costBasis.trim() === '' ? null : Number(costBasis)
-        if (parsedCostBasis !== null && Number.isNaN(parsedCostBasis)) {
-          throw new Error('Cost basis must be a valid number.')
-        }
         const { error: assetError } = await supabase
           .from('assets')
           .update({
@@ -1161,6 +1303,42 @@ function TitlingModal({
           })
           .eq('id', id)
         if (assetError) throw assetError
+      } else if (kind === 're') {
+        const { error: reErr } = await supabase
+          .from('real_estate')
+          .update({
+            titling: ownerTitling || null,
+            liquidity: liquidity || null,
+            cost_basis: parsedCostBasis,
+            basis_date: basisDate || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+        if (reErr) throw reErr
+      } else if (kind === 'insurance') {
+        const { error: insErr } = await supabase
+          .from('insurance_policies')
+          .update({
+            titling: ownerTitling || null,
+            liquidity: liquidity || null,
+            cost_basis: parsedCostBasis,
+            basis_date: basisDate || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+        if (insErr) throw insErr
+      } else if (kind === 'business') {
+        const { error: bizErr } = await supabase
+          .from('businesses')
+          .update({
+            titling: ownerTitling || null,
+            liquidity: liquidity || null,
+            cost_basis: parsedCostBasis,
+            basis_date: basisDate || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+        if (bizErr) throw bizErr
       }
       onSave()
     } catch (err) {
@@ -1173,15 +1351,15 @@ function TitlingModal({
     <ModalShell title={`Set Title — ${name}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Title Type</label>
-          <select value={titleType} onChange={e => setTitleType(e.target.value)} className={inputClass}>
-            {TITLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <p className="mt-1 text-xs text-neutral-400">{getTitleDescription(titleType)}</p>
-        </div>
-        {kind === 'asset' && (
+        {kind === 'asset' ? (
           <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Title Type</label>
+              <select value={titleType} onChange={e => setTitleType(e.target.value)} className={inputClass}>
+                {TITLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">{getTitleDescription(titleType)}</p>
+            </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Titling</label>
               <select
@@ -1189,12 +1367,73 @@ function TitlingModal({
                 onChange={e => setAssetTitling(e.target.value)}
                 className={inputClass}
               >
-                {TITLING_OPTIONS.map(option => (
+                {titlingOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Liquidity</label>
+              <select
+                value={liquidity}
+                onChange={e => setLiquidity(e.target.value)}
+                className={inputClass}
+              >
+                {LIQUIDITY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Basis</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={costBasis}
+                  onChange={e => setCostBasis(e.target.value)}
+                  className={inputClass}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Basis Date</label>
+                <input
+                  type="date"
+                  value={basisDate}
+                  onChange={e => setBasisDate(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
+              <select
+                value={ownerTitling}
+                onChange={e => setOwnerTitling(e.target.value)}
+                className={inputClass}
+              >
+                {titlingOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Title Type</label>
+              <select value={titleType} onChange={e => setTitleType(e.target.value)} className={inputClass}>
+                {TITLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">{getTitleDescription(titleType)}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Liquidity</label>
