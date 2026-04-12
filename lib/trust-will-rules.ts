@@ -1,5 +1,6 @@
 export type ProfileData = {
-  estateValue: number          // total assets minus liabilities
+  /** Gross estate: financial assets + RE equity + business + non-ILIT insurance (aligned with dashboard). */
+  estateValue: number
   isMarried: boolean
   hasMinorChildren: boolean
   domicileRisk: 'low' | 'moderate' | 'high' | 'critical'
