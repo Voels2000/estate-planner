@@ -9,10 +9,10 @@
 // Sprint 13 — Roth Optimizer UI
 
 import { useState } from "react";
-import { RothOptimizerResult, RothYearRow } from "@/lib/calculations/roth-optimizer";
+import { RothAnalysisResult, RothYearResult } from "@/lib/calculations/roth-analysis";
 
 interface Props {
-  result: RothOptimizerResult;
+  result: RothAnalysisResult;
 }
 
 function fmt(n: number) {
@@ -87,8 +87,9 @@ export function RothClient({ result }: Props) {
                 <th className="py-2 pr-3 font-medium text-right">Income</th>
                 <th className="py-2 pr-3 font-medium text-right">RMD</th>
                 <th className="py-2 pr-3 font-medium text-right">Recommended conversion</th>
-                <th className="py-2 pr-3 font-medium text-right">Incr. tax cost</th>
-                <th className="py-2 pr-3 font-medium text-right">Marginal rate</th>
+                <th className="py-2 pr-3 font-medium text-right">Fed tax cost</th>
+                <th className="py-2 pr-3 font-medium text-right">State tax cost</th>
+                <th className="py-2 pr-3 font-medium text-right">Combined rate</th>
                 <th className="py-2 pr-3 font-medium">Rationale</th>
               </tr>
             </thead>
@@ -110,17 +111,20 @@ export function RothClient({ result }: Props) {
                     {row.recommendedConversion > 0 ? fmt(row.recommendedConversion) : "—"}
                   </td>
                   <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">
-                    {row.incrementalTaxCost > 0 ? fmt(row.incrementalTaxCost) : "—"}
+                    {row.incrementalFederalTax > 0 ? fmt(row.incrementalFederalTax) : "—"}
+                  </td>
+                  <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">
+                    {row.incrementalStateTax > 0 ? fmt(row.incrementalStateTax) : "—"}
                   </td>
                   <td className="py-2 pr-3 text-right tabular-nums">
                     <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      row.marginalRateWithConversion >= 0.32
+                      row.combinedMarginalRate >= 0.32
                         ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                        : row.marginalRateWithConversion >= 0.22
+                        : row.combinedMarginalRate >= 0.22
                         ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
                         : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                     }`}>
-                      {pct(row.marginalRateWithConversion)}
+                      {pct(row.combinedMarginalRate)}
                     </span>
                   </td>
                   <td className="py-2 pr-3 text-xs text-muted-foreground max-w-[180px]">
@@ -204,7 +208,7 @@ export function RothClient({ result }: Props) {
       <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
         <p className="font-medium text-foreground">How this works</p>
         <p>The optimizer finds the optimal Roth conversion amount each year by comparing your current marginal tax rate against the rate you&apos;ll face when RMDs begin. It recommends converting up to the top of your current bracket when that rate is lower than your projected RMD rate — locking in a lower rate today.</p>
-        <p>Tax calculations use federal brackets inflated for inflation annually. State income tax is not included in this calculation. Consult a tax advisor before executing conversions.</p>
+        <p>Tax calculations use federal and state income tax rates. Federal brackets are inflated annually for inflation. Income, Social Security, and RMDs are sourced from your full household projection — the same data used in your Lifetime Snapshot. Consult a tax advisor before executing conversions.</p>
       </div>
     </div>
   );

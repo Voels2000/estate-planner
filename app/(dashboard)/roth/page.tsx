@@ -3,43 +3,14 @@
 // Route: /roth
 // ─────────────────────────────────────────
 
-// app/(dashboard)/roth/page.tsx
-// Sprint 13 — Roth Optimizer page (server component)
-
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getUserAccess } from "@/lib/get-user-access";
 import UpgradeBanner from "@/app/(dashboard)/_components/UpgradeBanner";
 import { RothClient } from "./_roth-client";
-import { runRothOptimizer, FederalBracket } from "@/lib/calculations/roth-optimizer";
+import { runRothAnalysis } from "@/lib/calculations/roth-analysis";
 import { resolveDeduction } from "@/lib/tax/resolve-deduction";
-
-const BRACKETS_MFJ: FederalBracket[] = [
-  { min: 0,       max: 23200,  rate: 0.10 },
-  { min: 23200,   max: 94300,  rate: 0.12 },
-  { min: 94300,   max: 201050, rate: 0.22 },
-  { min: 201050,  max: 383900, rate: 0.24 },
-  { min: 383900,  max: 487450, rate: 0.32 },
-  { min: 487450,  max: 731200, rate: 0.35 },
-  { min: 731200,  max: null,   rate: 0.37 },
-];
-const BRACKETS_SINGLE: FederalBracket[] = [
-  { min: 0,       max: 11600,  rate: 0.10 },
-  { min: 11600,   max: 47150,  rate: 0.12 },
-  { min: 47150,   max: 100525, rate: 0.22 },
-  { min: 100525,  max: 191950, rate: 0.24 },
-  { min: 191950,  max: 243725, rate: 0.32 },
-  { min: 243725,  max: 609350, rate: 0.35 },
-  { min: 609350,  max: null,   rate: 0.37 },
-];
-
-function getBrackets(fs: string): FederalBracket[] {
-  return fs === "mfj" || fs === "qw" ? BRACKETS_MFJ : BRACKETS_SINGLE;
-}
-
-function getStandardDeduction(fs: string): number {
-  return ({ mfj: 29200, mfs: 14600, hoh: 21900, qw: 29200, single: 14600 } as Record<string, number>)[fs] ?? 14600;
-}
 
 export default async function RothPage() {
   const access = await getUserAccess();
@@ -60,14 +31,21 @@ export default async function RothPage() {
     );
   }
 
-  const [{ data: hh }, { data: incomeRows }, { data: assetRows }] = await Promise.all([
+  // ── Fetch household and assets in parallel ──────────────────────────────
+  const [{ data: hh }, { data: assetRows }, { data: stateRates }] = await Promise.all([
     supabase
       .from("households")
-      .select("*, deduction_mode, custom_deduction_amount")
+      .select("*")
       .eq("owner_id", user.id)
       .single(),
-    supabase.from("income").select("source, amount, ss_person, start_year, end_year").eq("owner_id", user.id),
-    supabase.from("assets").select("type, value, owner").eq("owner_id", user.id),
+    supabase
+      .from("assets")
+      .select("type, value, owner")
+      .eq("owner_id", user.id),
+    supabase
+      .from("state_income_tax_rates")
+      .select("state_code, rate_pct, tax_year")
+      .order("tax_year", { ascending: false }),
   ]);
 
   if (!hh) {
@@ -78,95 +56,114 @@ export default async function RothPage() {
     );
   }
 
-  const currentYear = new Date().getFullYear();
+  // ── Get full projection rows from the projection API ───────────────────
+  // Same source as Lifetime Snapshot — all income, SS, RMDs already correct
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/projection`,
+    {
+      headers: { cookie: (await cookies()).toString() },
+      cache: "no-store",
+    }
+  );
 
-  // Retirement years — calculated from birth_year + retirement_age
-  const person1RetirementYear = currentYear + 30; // person1 already retired — use actual income rows
-  const person2RetirementYear = hh.has_spouse
-    ? hh.person2_birth_year + (hh.person2_retirement_age ?? 65)
-    : 9999;
+  if (!res.ok) {
+    return (
+      <div className="p-6 text-muted-foreground">
+        Unable to load projection data. Please complete your profile first.
+      </div>
+    );
+  }
 
-  // Asset classification
+  const { rows } = await res.json();
+
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="p-6 text-muted-foreground">
+        No projection data found. Please complete your profile first.
+      </div>
+    );
+  }
+
+  // ── Asset classification ────────────────────────────────────────────────
+  const TAX_DEFERRED_TYPES = [
+    "traditional_ira",
+    "traditional_401k",
+    "traditional_403b",
+    "401k",
+    "403b",
+    "ira",
+    "sep_ira",
+    "simple_ira",
+    "457",
+    "sep",
+    "retirement_account",
+  ]
+  const ROTH_TYPES = ["roth_ira", "roth_401k", "roth_403b", "roth"];
+  const TAXABLE_TYPES = [
+    "brokerage",
+    "taxable_brokerage",
+    "savings",
+    "checking",
+    "money_market",
+    "cash",
+  ];
+
   const taxDeferredBalance = (assetRows ?? [])
-    .filter((a) => ["traditional_ira","401k","403b","sep_ira","simple_ira"].includes(a.type))
+    .filter((a) => TAX_DEFERRED_TYPES.includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
   const rothBalance = (assetRows ?? [])
-    .filter((a) => ["roth_ira","roth_401k"].includes(a.type))
+    .filter((a) => ROTH_TYPES.includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
   const taxableBalance = (assetRows ?? [])
-    .filter((a) => ["brokerage","savings","checking","money_market"].includes(a.type))
+    .filter((a) => TAXABLE_TYPES.includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
-  // Ordinary income active this year, split by person
-  const activeOrdinary = (incomeRows ?? []).filter(
-    (r) => r.source !== "social_security" &&
-      currentYear >= (r.start_year ?? 1900) &&
-      currentYear <= (r.end_year ?? 9999)
-  );
+  // ── State income tax rate ───────────────────────────────────────────────
+  const stateCode = hh.state_primary?.toUpperCase() ?? null;
+  const stateRate = stateCode && stateRates
+    ? (() => {
+        const rows = stateRates
+          .filter(r => r.state_code.toUpperCase() === stateCode)
+          .sort((a, b) => (b.tax_year ?? 0) - (a.tax_year ?? 0))
+        return rows.length > 0 ? (rows[0].rate_pct / 100) : 0
+      })()
+    : 0
 
-  // Person1 income: rows where ss_person matches person1 OR is unassigned
-  const person1Income = activeOrdinary
-    .filter((r) => !r.ss_person || r.ss_person === hh.person1_name || r.ss_person === 'person1')
-    .reduce((s, r) => s + (r.amount ?? 0), 0);
-
-  // Person2 income: rows where ss_person matches person2
-  const person2Income = hh.has_spouse
-    ? activeOrdinary
-        .filter((r) => r.ss_person === hh.person2_name || r.ss_person === 'person2')
-        .reduce((s, r) => s + (r.amount ?? 0), 0)
-    : 0;
-
-  // SS income
-  const ssRows = (incomeRows ?? []).filter(
-    (r) => r.source === "social_security" && currentYear >= (r.start_year ?? 1900)
-  );
-  const ssIncomePerson1 = ssRows
-    .filter((r) => r.ss_person === hh.person1_name || r.ss_person === 'person1')
-    .reduce((s, r) => s + r.amount, 0);
-  const ssIncomePerson2 = ssRows
-    .filter((r) => r.ss_person === hh.person2_name || r.ss_person === 'person2')
-    .reduce((s, r) => s + r.amount, 0);
-
-  const filingStatus = hh.filing_status ?? "single";
+  // ── RMD start age ───────────────────────────────────────────────────────
   const rmdStartAge = hh.person1_birth_year >= 1960 ? 75 : 73;
 
-  const result = runRothOptimizer({
-    currentYear,
-    person1RetirementYear,
-    person2RetirementYear,
-    deathYear: currentYear + 30,
-    filingStatus,
-    state: hh.state_primary ?? "",
+  // ── Standard deduction ──────────────────────────────────────────────────
+  const standardDeduction = resolveDeduction(
+    hh.deduction_mode,
+    hh.custom_deduction_amount,
+    hh.filing_status
+  )
+
+  // ── Run analysis ────────────────────────────────────────────────────────
+  const result = runRothAnalysis({
+    rows,
+    filingStatus: hh.filing_status ?? "single",
+    stateMarginalRate: stateRate,
     taxDeferredBalance,
     rothBalance,
     taxableBalance,
-    person1Income,
-    person2Income,
-    ordinaryIncomeGrowthRate: 0.02,
-    ssIncomePerson1,
-    ssIncomePerson2,
-    rmdStartAge,
-    person1BirthYear: hh.person1_birth_year,
-    person2BirthYear: hh.has_spouse ? (hh.person2_birth_year ?? 0) : 0,
-    growthRateAccumulation: (hh.growth_rate_accumulation ?? 7) / 100,
     growthRateRetirement: (hh.growth_rate_retirement ?? 5) / 100,
-    inflationRate: (hh.inflation_rate ?? 2.5) / 100,
-    federalBrackets: getBrackets(filingStatus),
-    standardDeduction: resolveDeduction(
-      hh.deduction_mode,
-      hh.custom_deduction_amount,
-      filingStatus
-    ),
     maxAnnualConversion: 500000,
-  });
+    standardDeduction,
+    inflationRate: (hh.inflation_rate ?? 2.5) / 100,
+    person1BirthYear: hh.person1_birth_year,
+    person2BirthYear: hh.has_spouse ? hh.person2_birth_year : null,
+    rmdStartAge,
+  })
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-2">
       <h1 className="text-2xl font-semibold">Roth optimizer</h1>
       <p className="text-sm text-muted-foreground pb-2">
-        Year-by-year Roth conversion strategy to minimize lifetime federal income tax.
+        Year-by-year Roth conversion strategy to minimize lifetime federal
+        and state income tax.
       </p>
       <RothClient result={result} />
     </div>
