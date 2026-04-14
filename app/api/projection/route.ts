@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     { data: irmaa_brackets },
     { data: real_estate },
     { data: state_income_tax_rates },
-    { data: business_interests },
+    { data: businesses_data },
     { data: insurance_policies },
   ] = await Promise.all([
     supabase
@@ -53,15 +53,15 @@ export async function GET(request: NextRequest) {
       .single(),
     supabase.from('assets').select('id, type, value, owner, cost_basis, basis_date, titling, liquidity').eq('owner_id', user.id),
     supabase.from('liabilities').select('id, type, balance, monthly_payment, interest_rate, owner').eq('owner_id', user.id),
-    supabase.from('income').select('id, source, amount, start_year, end_year, inflation_adjust, ss_person').eq('owner_id', user.id),
-    supabase.from('expenses').select('id, category, amount, start_year, end_year, inflation_adjust, owner').eq('owner_id', user.id),
+    supabase.from('income').select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person').eq('owner_id', user.id),
+    supabase.from('expenses').select('id, category, amount, start_year, end_year, start_month, end_month, inflation_adjust, owner').eq('owner_id', user.id),
     supabase.from('irmaa_brackets').select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status').order('tax_year', { ascending: false }).limit(20),
-    supabase.from('real_estate').select('id, name, current_value, is_primary_residence, owner').eq('owner_id', user.id),
+    supabase.from('real_estate').select('id, name, current_value, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, owner').eq('owner_id', user.id),
     // Fetch state income tax rates from DB — no hardcoding
     supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),
     supabase
-      .from('business_interests')
-      .select('id, entity_name, fmv_estimated, total_entity_value, ownership_pct, owner')
+      .from('businesses')
+      .select('id, name, estimated_value, ownership_pct, owner')
       .eq('owner_id', user.id),
     supabase
       .from('insurance_policies')
@@ -80,18 +80,23 @@ export async function GET(request: NextRequest) {
     income:                  (income        ?? []) as unknown as IncomeRowSelect[],
     expenses:                (expenses      ?? []) as ExpenseRowSelect[],
     irmaa_brackets:           irmaa_brackets ?? [],
-    real_estate:             (real_estate   ?? []) as { id: string; name: string; current_value: number; is_primary_residence: boolean; owner: string }[],
+    real_estate: (real_estate ?? []) as {
+      id: string
+      name: string
+      current_value: number
+      mortgage_balance?: number | null
+      monthly_payment?: number | null
+      interest_rate?: number | null
+      is_primary_residence: boolean
+      owner: string
+    }[],
     state_income_tax_rates:   state_income_tax_rates ?? [],
-    businesses: (business_interests ?? []).map((b) => ({
+    businesses: (businesses_data ?? []).map(b => ({
       id: b.id as string,
-      name: (b as { entity_name?: string }).entity_name ?? 'Business',
-      estimated_value: Number(
-        (b as { fmv_estimated?: number; total_entity_value?: number }).fmv_estimated ??
-          (b as { total_entity_value?: number }).total_entity_value ??
-          0,
-      ),
-      ownership_pct: (b as { ownership_pct?: number }).ownership_pct ?? undefined,
-      owner: (b as { owner?: string }).owner ?? undefined,
+      name: b.name ?? 'Business',
+      estimated_value: Number(b.estimated_value ?? 0),
+      ownership_pct: b.ownership_pct ?? 100,
+      owner: b.owner ?? undefined,
     })),
     insurance_policies: (insurance_policies ?? []).map((p) => ({
       death_benefit: Number((p as { death_benefit?: number | null }).death_benefit ?? 0) || null,

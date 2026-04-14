@@ -20,6 +20,8 @@ type Expense = {
   amount: number
   start_year: number
   end_year: number | null
+  start_month?: number | null
+  end_month?: number | null
   inflation_adjust: boolean
   created_at: string
   updated_at: string
@@ -80,7 +82,7 @@ export default function ExpensesClient({
     if (!user) return
     const { data, error: fetchError } = await supabase
       .from('expenses')
-      .select('id, owner_id, owner, category, name, amount, start_year, end_year, inflation_adjust, created_at, updated_at')
+      .select('id, owner_id, owner, category, name, amount, start_year, end_year, start_month, end_month, inflation_adjust, created_at, updated_at')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })
     if (fetchError) setError(fetchError.message)
@@ -311,6 +313,12 @@ function ExpenseModal({
   const [endYear, setEndYear] = useState(
     editExpense?.end_year != null ? editExpense.end_year.toString() : ''
   )
+  const [startMonth, setStartMonth] = useState<string>(
+    editExpense?.start_month != null ? editExpense.start_month.toString() : ''
+  )
+  const [endMonth, setEndMonth] = useState<string>(
+    editExpense?.end_month != null ? editExpense.end_month.toString() : ''
+  )
   const [inflationAdjust, setInflationAdjust] = useState(editExpense?.inflation_adjust ?? true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -346,6 +354,8 @@ function ExpenseModal({
         amount: parseFloat(amount),
         start_year: parsedStartYear,
         end_year: parsedEndYear,
+        start_month: startMonth ? parseInt(startMonth) : null,
+        end_month: endMonth ? parseInt(endMonth) : null,
         inflation_adjust: inflationAdjust,
         updated_at: new Date().toISOString(),
       }
@@ -451,6 +461,53 @@ function ExpenseModal({
                 className={inputClass}
                 placeholder="Leave blank = ongoing"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Start Month <span className="text-neutral-400 font-normal">(optional)</span>
+              </label>
+              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)}
+                className={inputClass}>
+                <option value="">January (default)</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">Only if expense starts mid-year</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                End Month <span className="text-neutral-400 font-normal">(optional)</span>
+              </label>
+              <select value={endMonth} onChange={(e) => setEndMonth(e.target.value)}
+                className={inputClass}>
+                <option value="">December (default)</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">Only if expense ends mid-year</p>
             </div>
           </div>
 

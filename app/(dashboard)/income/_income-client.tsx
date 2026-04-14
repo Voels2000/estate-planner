@@ -18,6 +18,8 @@ type IncomeRow = {
   amount: number
   start_year: number | null
   end_year: number | null
+  start_month?: number | null
+  end_month?: number | null
   inflation_adjust: boolean
   created_at: string
   updated_at: string
@@ -260,6 +262,12 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
   const [amount,          setAmount]          = useState(editRow?.amount?.toString() ?? '')
   const [startYear,       setStartYear]       = useState(editRow?.start_year != null ? editRow.start_year.toString() : currentYear.toString())
   const [endYear,         setEndYear]         = useState(editRow?.end_year != null ? editRow.end_year.toString() : '')
+  const [startMonth, setStartMonth] = useState<string>(
+    editRow?.start_month != null ? editRow.start_month.toString() : ''
+  )
+  const [endMonth, setEndMonth] = useState<string>(
+    editRow?.end_month != null ? editRow.end_month.toString() : ''
+  )
   const [inflationAdjust, setInflationAdjust] = useState(editRow?.inflation_adjust ?? true)
   const [isSubmitting,    setIsSubmitting]    = useState(false)
   const [error,           setError]           = useState<string | null>(null)
@@ -290,6 +298,8 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
         amount: parseFloat(amount),
         start_year: parsedStartYear,
         end_year: parsedEndYear,
+        start_month: startMonth ? parseInt(startMonth) : null,
+        end_month: endMonth ? parseInt(endMonth) : null,
         inflation_adjust: inflationAdjust,
       }
       if (editRow) {
@@ -361,6 +371,53 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
                 onChange={(e) => setEndYear(e.target.value)} className={inputClass}
                 placeholder="Ongoing" />
               <p className="mt-1 text-xs text-neutral-400">Leave blank if ongoing</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Start Month <span className="text-neutral-400 font-normal">(optional)</span>
+              </label>
+              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)}
+                className={inputClass}>
+                <option value="">January (default)</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">Only if income starts mid-year</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                End Month <span className="text-neutral-400 font-normal">(optional)</span>
+              </label>
+              <select value={endMonth} onChange={(e) => setEndMonth(e.target.value)}
+                className={inputClass}>
+                <option value="">December (default)</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">Only if income ends mid-year</p>
             </div>
           </div>
 

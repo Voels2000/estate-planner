@@ -9,6 +9,8 @@ export async function addIncome(ownerId: string, values: {
   amount: number
   start_year: number
   end_year: number | null
+  start_month?: number | null
+  end_month?: number | null
   inflation_adjust: boolean
 }) {
   const supabase = await createClient()
@@ -20,6 +22,8 @@ export async function addIncome(ownerId: string, values: {
     amount: values.amount,
     start_year: values.start_year,
     end_year: values.end_year,
+    start_month: values.start_month ?? null,
+    end_month: values.end_month ?? null,
     inflation_adjust: values.inflation_adjust,
   })
   if (error) throw new Error(error.message)
@@ -33,6 +37,8 @@ export async function updateIncome(id: string, ownerId: string, values: {
   amount: number
   start_year: number
   end_year: number | null
+  start_month?: number | null
+  end_month?: number | null
   inflation_adjust: boolean
 }) {
   const supabase = await createClient()
@@ -45,6 +51,8 @@ export async function updateIncome(id: string, ownerId: string, values: {
       amount: values.amount,
       start_year: values.start_year,
       end_year: values.end_year,
+      start_month: values.start_month ?? null,
+      end_month: values.end_month ?? null,
       inflation_adjust: values.inflation_adjust,
       updated_at: new Date().toISOString(),
     })

@@ -396,16 +396,21 @@ export default async function DashboardPage() {
 
   if (baseCaseRows.length > 0 && p1BirthYear && p1RetirementAge) {
     const retirementYear = p1BirthYear + p1RetirementAge
-    const retirementRow = baseCaseRows.find(r => r.year === retirementYear)
+
+    // Use the FIRST FULL retirement year (retirementYear + 1) rather than
+    // the transition year itself. The transition year blends working and
+    // retired income making it an unreliable snapshot.
+    // Fall back to the retirement year itself if +1 is not in the projection.
+    const firstFullRetirementYear = retirementYear + 1
+    const retirementRow =
+      baseCaseRows.find(r => r.year === firstFullRetirementYear)
+      ?? baseCaseRows.find(r => r.year === retirementYear)
       ?? baseCaseRows.find(r => (r.age_person1 ?? 0) >= p1RetirementAge)
 
     if (retirementRow) {
-      const ss1 = retirementRow.income_ss_person1 ?? 0
-      const ss2 = retirementRow.income_ss_person2 ?? 0
-      const rmd1 = retirementRow.income_rmd_p1 ?? 0
-      const rmd2 = retirementRow.income_rmd_p2 ?? 0
-      const other = retirementRow.income_other_pooled ?? retirementRow.income_earned_p1 ?? 0
-      projectedAnnualIncome = ss1 + ss2 + rmd1 + rmd2 + other
+      // Use income_total from projection — already includes SS, RMD,
+      // and all other income correctly for that year
+      projectedAnnualIncome = retirementRow.income_total ?? 0
       projectedAnnualExpenses = retirementRow.expenses_total ?? totalExpenses
       projectedIncomeGap = projectedAnnualIncome - projectedAnnualExpenses
     }

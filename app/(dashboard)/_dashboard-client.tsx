@@ -528,7 +528,7 @@ export function DashboardClient(props: Props) {
             )}
 
             <p className="text-[10px] text-neutral-400">
-              SS adjusted for claiming age vs full retirement age. Projected income from base case projection at retirement year.
+              SS adjusted for claiming age vs full retirement age. Projected income shown for the first full year after retirement — the transition year itself blends working and retired income and is excluded. If you retire early in the year, your actual first-year income may be higher. Use the Lifetime Snapshot for a year-by-year view.
             </p>
           </div>
         )}

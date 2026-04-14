@@ -131,6 +131,8 @@ export type CompleteProjectionInput = {
     amount: number
     start_year: number | null
     end_year: number | null
+    start_month?: number | null
+    end_month?: number | null
     inflation_adjust: boolean
     ss_person: string | null
   }[]
@@ -140,6 +142,8 @@ export type CompleteProjectionInput = {
     amount: number
     start_year: number | null
     end_year: number | null
+    start_month?: number | null
+    end_month?: number | null
     inflation_adjust: boolean
     owner: string
   }[]
@@ -153,6 +157,9 @@ export type CompleteProjectionInput = {
     id: string
     name: string
     current_value: number
+    mortgage_balance?: number | null
+    monthly_payment?: number | null
+    interest_rate?: number | null
     is_primary_residence: boolean
     owner: string
   }[]
@@ -540,6 +547,32 @@ function bucketTotal(bucket: AssetBucket): number {
   return bucket.taxDeferred + bucket.roth + bucket.taxable
 }
 
+// ─── Month proration helper ───────────────────────────────────────────────────
+// Returns the fraction of the year this income/expense is active.
+// null month = full year (no proration). Month 1=Jan, 12=Dec.
+// Examples:
+//   start_month=12 in start year → 1/12 (only December)
+//   end_month=6 in end year → 6/12 (January through June)
+//   no months → 1.0 (full year)
+function getYearFraction(
+  year: number,
+  startYear: number | null,
+  endYear: number | null,
+  startMonth: number | null | undefined,
+  endMonth: number | null | undefined
+): number {
+  let fraction = 1.0
+  // Prorate the start year if start_month is set
+  if (startYear !== null && year === startYear && startMonth) {
+    fraction = Math.min(fraction, (13 - startMonth) / 12)
+  }
+  // Prorate the end year if end_month is set
+  if (endYear !== null && year === endYear && endMonth) {
+    fraction = Math.min(fraction, endMonth / 12)
+  }
+  return Math.max(0, fraction)
+}
+
 // ─── Main engine ───────────────────────────────────────────────────────────────
 
 export function computeCompleteProjection(input: CompleteProjectionInput): YearRow[] {
@@ -587,21 +620,34 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const poolBucket: AssetBucket = classifyPooledAssets(assets, p1Name, p2Name)
 
   // ── Starting real estate ─────────────────────────────────────────────────────
+  // Use full current_value — mortgage tracked separately in mortgageBalance.
+  // Net equity is captured via liabilities_total in net_worth calculation.
   let re_primary = realEstateInput.filter(r => r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
   let re_other   = realEstateInput.filter(r => !r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
 
-  // ── Starting liabilities ─────────────────────────────────────────────────────
-  let mortgageBalance = liabilities.filter(l => isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
-  let otherDebt       = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
+  // Note: mortgage balance is tracked in mortgageBalance variable above and
+  // subtracted via liabilities_total in net_worth — do not subtract here.
 
-  const annualMortgagePayment  = liabilities.filter(l => isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
-  const annualOtherDebtPayment = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
-  const avgMortgageRate = (() => {
-    const mortgages = liabilities.filter(l => isMortgageType(l.type))
-    return mortgages.length > 0
-      ? mortgages.reduce((s, l) => s + (l.interest_rate ?? 0), 0) / mortgages.length / 100
+  // ── Starting liabilities ─────────────────────────────────────────────────────
+  // Mortgage sourced from real_estate table (balance, payment, rate all there).
+  // Liabilities table handles non-mortgage debt only.
+  // If user has also entered mortgage in liabilities table, we use real_estate
+  // as the authoritative source and ignore mortgage-type liabilities.
+  const reMortgageBalance    = realEstateInput.reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
+  const reMortgagePayment    = realEstateInput.reduce((s, r) => s + (r.monthly_payment ?? 0) * 12, 0)
+  const reMortgageRate       = (() => {
+    const withRate = realEstateInput.filter(r => r.interest_rate && r.interest_rate > 0)
+    return withRate.length > 0
+      ? withRate.reduce((s, r) => s + (r.interest_rate ?? 0), 0) / withRate.length / 100
       : 0
   })()
+
+  let mortgageBalance = reMortgageBalance
+  let otherDebt       = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
+
+  const annualMortgagePayment  = reMortgagePayment
+  const annualOtherDebtPayment = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
+  const avgMortgageRate        = reMortgageRate
 
   // ── Filing status normalisation ──────────────────────────────────────────────
   const fsMap: Record<string, string> = {
@@ -642,7 +688,9 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       if (inc.end_year   && year > inc.end_year)   continue
       if (inc.source === 'social_security') continue
 
-      const amount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
+      const baseAmount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
+      const fraction = getYearFraction(year, inc.start_year, inc.end_year, inc.start_month, inc.end_month)
+      const amount = baseAmount * fraction
       const owner  = inc.ss_person?.trim().toLowerCase() ?? ''
       const isP1   = owner === 'person1'
       const isP2   = owner === 'person2'
@@ -826,7 +874,9 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       // Skip if this expense has ended
       if (exp.end_year && year > exp.end_year) continue
 
-      const amount = exp.inflation_adjust ? exp.amount * inflationFactor : exp.amount
+      const baseAmount = exp.inflation_adjust ? exp.amount * inflationFactor : exp.amount
+      const fraction = getYearFraction(year, exp.start_year, exp.end_year, exp.start_month, exp.end_month)
+      const amount = baseAmount * fraction
       if (exp.category === 'healthcare' || exp.category === 'medical') {
         expenses_healthcare += amount
       } else {
@@ -871,8 +921,6 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     growBucket(p2Bucket,   growthRate)
     growBucket(poolBucket, growthRate)
 
-    re_primary = Math.round(re_primary * (1 + inflationRate))
-    re_other   = Math.round(re_other   * (1 + inflationRate))
     const re_total = re_primary + re_other
 
     const p1Total   = bucketTotal(p1Bucket)
@@ -942,6 +990,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       rmd_shortfall:       Math.round(rmd_shortfall),
       rmd_penalty:         Math.round(rmd_penalty),
     })
+
+    // Grow real estate AFTER pushing current year values
+    re_primary = Math.round(re_primary * (1 + inflationRate))
+    re_other   = Math.round(re_other   * (1 + inflationRate))
   }
 
   return rows
