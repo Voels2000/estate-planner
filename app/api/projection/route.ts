@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
         has_spouse, person2_name, person2_birth_year, person2_retirement_age,
         person2_ss_claiming_age, person2_longevity_age, person2_ss_pia,
         filing_status, state_primary, state_secondary, inflation_rate,
-        growth_rate_accumulation, growth_rate_retirement
+        growth_rate_accumulation, growth_rate_retirement,
+        deduction_mode, custom_deduction_amount
       `)
       .eq('owner_id', user.id)
       .single(),

@@ -101,6 +101,17 @@ type Props = {
   completionScore?: CompletionScore | null
   consumerTier?: number
   isAdvisor?: boolean
+  rmdStatus: {
+    p1Name: string
+    p2Name: string | null
+    p1Required: number
+    p1Planned: number
+    p1StartYear: number | null
+    p2Required: number
+    p2Planned: number
+    p2StartYear: number | null
+    hasSpouse: boolean
+  } | null
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +222,7 @@ export function DashboardClient(props: Props) {
     setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
+    rmdStatus,
   } = props
 
   void consumerTier
@@ -450,6 +462,54 @@ export function DashboardClient(props: Props) {
                       {retirementSnapshot.p2SSClaimingAge && <p className="text-[10px] text-violet-400 mt-0.5">claiming at {retirementSnapshot.p2SSClaimingAge}</p>}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* RMD Status Card */}
+            {rmdStatus && (rmdStatus.p1Required > 0 || rmdStatus.p2Required > 0 || true) && (
+              <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-3">
+                  Required Minimum Distributions — {new Date().getFullYear()}
+                </p>
+                <div className="space-y-2">
+                  {[
+                    {
+                      name: rmdStatus.p1Name,
+                      required: rmdStatus.p1Required,
+                      planned: rmdStatus.p1Planned,
+                      startYear: rmdStatus.p1StartYear,
+                    },
+                    ...(rmdStatus.hasSpouse ? [{
+                      name: rmdStatus.p2Name ?? 'Person 2',
+                      required: rmdStatus.p2Required,
+                      planned: rmdStatus.p2Planned,
+                      startYear: rmdStatus.p2StartYear,
+                    }] : []),
+                  ].map((person) => (
+                    <div
+                      key={person.name}
+                      className="flex items-center justify-between py-2 border-b border-neutral-100 last:border-0"
+                    >
+                      <span className="text-sm font-medium text-neutral-700">
+                        {person.name}
+                      </span>
+                      {person.required === 0 ? (
+                        <span className="text-xs text-neutral-400">
+                          Not required until {person.startYear ?? '—'}
+                        </span>
+                      ) : person.planned >= person.required ? (
+                        <span className="text-xs text-green-600 font-medium">
+                          {fmt(person.required)} required · ✓ Met
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-600 font-medium">
+                          {fmt(person.required)} required ·{' '}
+                          ⚠ {fmt(person.required - person.planned)} remaining
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

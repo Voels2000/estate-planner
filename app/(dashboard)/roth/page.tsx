@@ -12,6 +12,7 @@ import { getUserAccess } from "@/lib/get-user-access";
 import UpgradeBanner from "@/app/(dashboard)/_components/UpgradeBanner";
 import { RothClient } from "./_roth-client";
 import { runRothOptimizer, FederalBracket } from "@/lib/calculations/roth-optimizer";
+import { resolveDeduction } from "@/lib/tax/resolve-deduction";
 
 const BRACKETS_MFJ: FederalBracket[] = [
   { min: 0,       max: 23200,  rate: 0.10 },
@@ -60,7 +61,11 @@ export default async function RothPage() {
   }
 
   const [{ data: hh }, { data: incomeRows }, { data: assetRows }] = await Promise.all([
-    supabase.from("households").select("*").eq("owner_id", user.id).single(),
+    supabase
+      .from("households")
+      .select("*, deduction_mode, custom_deduction_amount")
+      .eq("owner_id", user.id)
+      .single(),
     supabase.from("income").select("source, amount, ss_person, start_year, end_year").eq("owner_id", user.id),
     supabase.from("assets").select("type, value, owner").eq("owner_id", user.id),
   ]);
@@ -149,7 +154,11 @@ export default async function RothPage() {
     growthRateRetirement: (hh.growth_rate_retirement ?? 5) / 100,
     inflationRate: (hh.inflation_rate ?? 2.5) / 100,
     federalBrackets: getBrackets(filingStatus),
-    standardDeduction: getStandardDeduction(filingStatus),
+    standardDeduction: resolveDeduction(
+      hh.deduction_mode,
+      hh.custom_deduction_amount,
+      filingStatus
+    ),
     maxAnnualConversion: 500000,
   });
 

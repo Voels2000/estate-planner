@@ -185,6 +185,25 @@ export default function CompleteClient({
         />
       </div>
 
+      {/* ── RMD Warning Banner ───────────────────────────────────────────── */}
+      {(() => {
+        const shortfallRows = rows.filter(r => (r.rmd_shortfall ?? 0) > 0)
+        if (shortfallRows.length === 0) return null
+        return (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-800 mb-1">
+              ⚠ RMD Shortfall Detected in {shortfallRows.length} Year{shortfallRows.length > 1 ? 's' : ''}
+            </p>
+            <p className="text-xs text-amber-700">
+              Your planned withdrawals fall below IRS required minimum distributions
+              in the highlighted years below. The IRS imposes a 25% excise tax on
+              shortfall amounts. Review the highlighted years and update your planned
+              withdrawals on the Income page.
+            </p>
+          </div>
+        )
+      })()}
+
       {/* ── Table ──────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
         <div className="overflow-x-auto">
@@ -333,7 +352,11 @@ export default function CompleteClient({
                 return (
                   <tr
                     key={r.year}
-                    className={`text-neutral-700 ${isEven ? 'bg-white' : 'bg-neutral-50'} hover:bg-blue-50/30 transition-colors`}
+                    className={`text-neutral-700 ${
+                      (r.rmd_shortfall ?? 0) > 0
+                        ? 'bg-amber-50 border-l-2 border-amber-400'
+                        : isEven ? 'bg-white' : 'bg-neutral-50'
+                    } hover:bg-blue-50/30 transition-colors`}
                   >
                     {/* Always visible */}
                     <td className="py-2 px-3 font-semibold text-neutral-900">{r.year}</td>
@@ -395,6 +418,14 @@ export default function CompleteClient({
                     {/* Net Worth */}
                     <td className={`py-2 px-3 font-bold ${(r.net_worth ?? 0) < 1000 ? 'text-red-600' : 'text-neutral-900'}`}>
                       {fmt(r.net_worth)}
+                      {(r.rmd_shortfall ?? 0) > 0 && (
+                        <span
+                          className="ml-1 text-amber-600 cursor-help text-xs"
+                          title={`RMD required: ${fmt(r.rmd_required ?? 0)} · Planned: ${fmt(r.rmd_user_withdrawal ?? 0)} · Shortfall: ${fmt(r.rmd_shortfall ?? 0)} · Est. IRS penalty: ${fmt(r.rmd_penalty ?? 0)}`}
+                        >
+                          ⚠
+                        </span>
+                      )}
                     </td>
                   </tr>
                 )

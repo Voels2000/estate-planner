@@ -5,6 +5,7 @@ export const INCOME_SOURCES = [
   'social_security',
   'pension',
   'rental',
+  'capital_gains',
   'other',
 ] as const
 
@@ -15,6 +16,7 @@ export const incomeSourceLabels: Record<IncomeSource, string> = {
   social_security: 'Social Security',
   pension: 'Pension',
   rental: 'Rental',
+  capital_gains: 'Capital Gains',
   other: 'Other',
 }
 

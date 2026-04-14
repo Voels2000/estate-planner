@@ -1,3 +1,5 @@
+import { resolveDeduction } from '@/lib/tax/resolve-deduction'
+
 export type YearRow = {
   year: number
   age_person1: number
@@ -62,6 +64,11 @@ export type YearRow = {
   // Bottom line
   net_cash_flow: number
   net_worth: number
+  // RMD tracking
+  rmd_required: number        // auto-calculated RMD for the year
+  rmd_user_withdrawal: number // sum of user-entered traditional_401k/ira income
+  rmd_shortfall: number       // max(0, rmd_required - rmd_user_withdrawal)
+  rmd_penalty: number         // rmd_shortfall * 0.25 (IRS 25% excise tax)
 }
 
 export type StateIncomeTaxRate = {
@@ -96,6 +103,8 @@ export type CompleteProjectionInput = {
     /** @deprecated Prefer person2_ss_pia */
     person2_ss_benefit_67?: number | null
     filing_status: string
+    deduction_mode?: string | null
+    custom_deduction_amount?: number | null
     state_primary: string | null
     state_secondary?: string | null
     inflation_rate: number
@@ -232,10 +241,10 @@ const FEDERAL_BRACKETS_SINGLE = [
 const STANDARD_DEDUCTION_MFJ    = 29200
 const STANDARD_DEDUCTION_SINGLE = 14600
 
-function calcFederalTax(taxableIncome: number, filingStatus: string): number {
+function calcFederalTax(taxableIncome: number, filingStatus: string, deductionOverride?: number): number {
   if (taxableIncome <= 0) return 0
   const brackets  = filingStatus === 'married_joint' ? FEDERAL_BRACKETS_MFJ : FEDERAL_BRACKETS_SINGLE
-  const deduction = filingStatus === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
+  const deduction = deductionOverride ?? (filingStatus === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE)
   const agi = Math.max(0, taxableIncome - deduction)
   let tax = 0, prev = 0
   for (const bracket of brackets) {
@@ -637,13 +646,39 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       const owner  = inc.ss_person?.trim().toLowerCase() ?? ''
       const isP1   = owner === 'person1'
       const isP2   = owner === 'person2'
-      const isEarned = ['salary', 'employment', 'self_employment'].includes(inc.source)
+      const isEarned      = ['salary', 'self_employment', 'equity_awards'].includes(inc.source)
+      const isCapGains    = ['capital_gains', 'dividends', 'interest'].includes(inc.source)
+      const isTaxDeferred = ['traditional_401k', 'traditional_ira'].includes(inc.source)
+      const isRoth        = inc.source === 'roth'
+      // Roth withdrawals are tax-free — tracked in income_other but excluded
+      // from taxable income later. Tax-deferred withdrawals handled via
+      // RMD override logic below. All others are ordinary income.
 
       if (isEarned) {
         if (isP1) income_earned_p1 += amount
         else if (isP2) income_earned_p2 += amount
         else income_earned_p1 += amount
+      } else if (isCapGains) {
+        // Routed to income_other for display; taxed at preferential
+        // rates via userCapGains calculation in tax section
+        if (isP1) income_other_p1 += amount
+        else if (isP2) income_other_p2 += amount
+        else income_other_pooled += amount
+      } else if (isTaxDeferred) {
+        // Tracked separately for RMD override logic — added to
+        // income_other for display
+        if (isP1) income_other_p1 += amount
+        else if (isP2) income_other_p2 += amount
+        else income_other_pooled += amount
+      } else if (isRoth) {
+        // Tax-free — included in income display but NOT in taxable income
+        // Track separately so we can exclude from tax calculation
+        if (isP1) income_other_p1 += amount
+        else if (isP2) income_other_p2 += amount
+        else income_other_pooled += amount
       } else {
+        // salary fallback, pension, business, annuity, rental,
+        // inheritance, other — ordinary income
         if (isP1) income_other_p1 += amount
         else if (isP2) income_other_p2 += amount
         else income_other_pooled += amount
@@ -652,6 +687,27 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
     const income_earned = income_earned_p1 + income_earned_p2
     const income_other  = income_other_p1 + income_other_p2 + income_other_pooled
+
+    // ── RMD user withdrawal tracking ──────────────────────────────────────
+    // Sum user-entered traditional_401k/ira withdrawals for this year
+    const userEnteredTaxDeferred = income
+      .filter(inc => ['traditional_401k', 'traditional_ira'].includes(inc.source))
+      .filter(inc => !(inc.start_year && year < inc.start_year))
+      .filter(inc => !(inc.end_year && year > inc.end_year))
+      .reduce((sum, inc) => {
+        const amt = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
+        return sum + amt
+      }, 0)
+
+    // Sum user-entered Roth withdrawals for this year (tax-free)
+    const userEnteredRoth = income
+      .filter(inc => inc.source === 'roth')
+      .filter(inc => !(inc.start_year && year < inc.start_year))
+      .filter(inc => !(inc.end_year && year > inc.end_year))
+      .reduce((sum, inc) => {
+        const amt = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
+        return sum + amt
+      }, 0)
 
     // ── Social Security ────────────────────────────────────────────────────────
     const income_ss_person1 = (() => {
@@ -701,25 +757,62 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     if (income_rmd_pooled > 0) { poolBucket.taxDeferred = Math.max(0, poolBucket.taxDeferred - income_rmd_pooled) }
 
     const income_rmd   = income_rmd_p1 + income_rmd_p2 + income_rmd_pooled
-    const income_total = income_earned + income_ss_person1 + income_ss_person2 + income_rmd + income_other
+
+    // ── RMD override (Option A) ───────────────────────────────────────────
+    // If user has entered manual tax-deferred withdrawals, they override
+    // the auto-RMD. The engine always uses the HIGHER of the two so that
+    // tax is never understated.
+    const autoRmd = income_rmd
+    const rmd_user_withdrawal = userEnteredTaxDeferred
+    const rmd_required = autoRmd
+    const rmd_shortfall = userEnteredTaxDeferred > 0
+      ? Math.max(0, autoRmd - userEnteredTaxDeferred)
+      : 0
+    const rmd_penalty = Math.round(rmd_shortfall * 0.25)
+
+    // Effective RMD used in income = max of auto and user-entered
+    // (never let user under-report their taxable withdrawal)
+    const effectiveRmd = userEnteredTaxDeferred > 0
+      ? Math.max(userEnteredTaxDeferred, autoRmd)
+      : autoRmd
+
+    const income_total = income_earned + income_ss_person1 + income_ss_person2 + effectiveRmd + income_other
 
     // ── Tax ────────────────────────────────────────────────────────────────────
     const irmaa = calcIrmaa(prevMagi, fs, irmaa_brackets)
-    const tax_federal = calcFederalTax(income_total, fs)
+    const userCapGains =
+      income.filter(inc => inc.source === 'capital_gains')
+        .filter(inc => !(inc.start_year && year < inc.start_year))
+        .filter(inc => !(inc.end_year && year > inc.end_year))
+        .reduce((sum, inc) => {
+          const amt = inc.inflation_adjust
+            ? inc.amount * inflationFactor
+            : inc.amount
+          return sum + amt
+        }, 0)
+    const deduction = resolveDeduction(household.deduction_mode, household.custom_deduction_amount, fs)
+    // Exclude Roth withdrawals and capital gains from ordinary taxable income
+    // Roth = tax-free; cap gains/dividends/interest = preferential rates
+    const ordinaryIncome = income_total - userEnteredRoth - userCapGains
+    const tax_federal = calcFederalTax(ordinaryIncome, fs, deduction)
+    const ordinaryTaxableIncome = Math.max(0, ordinaryIncome - deduction)
 
     // State tax now uses DB rates via effectiveState (supports scenario overrides)
     const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
       income_total, effectiveState, dbStateRates, household.state_secondary
     )
 
-    const deduction              = fs === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE
-    const ordinaryTaxableIncome  = Math.max(0, income_total - deduction)
-    const allTaxableGrowth       = poolBucket.taxable * growthRate + p1Bucket.taxable * growthRate + p2Bucket.taxable * growthRate
-    const tax_capital_gains      = calcCapitalGainsTax(allTaxableGrowth, ordinaryTaxableIncome, fs)
-    const investmentIncome       = income_rmd + allTaxableGrowth + income_other
+    const tax_capital_gains = calcCapitalGainsTax(
+      userCapGains,
+      ordinaryTaxableIncome,
+      fs
+    )
+    const investmentIncome       = income_rmd + income_other + userCapGains
     const tax_niit               = calcNiit(investmentIncome, income_total, fs)
     const tax_payroll            = calcPayrollTax(income_earned)
-    const tax_total              = tax_federal + tax_state + tax_state_secondary + tax_capital_gains + tax_niit + tax_payroll + irmaa.part_b + irmaa.part_d
+    const tax_total              = tax_federal + tax_state + tax_state_secondary +
+                    tax_capital_gains + tax_niit + tax_payroll +
+                    irmaa.part_b + irmaa.part_d
 
     prevMagi = income_total
 
@@ -799,7 +892,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       income_earned:     Math.round(income_earned),
       income_ss_person1: Math.round(income_ss_person1),
       income_ss_person2: Math.round(income_ss_person2),
-      income_rmd:        Math.round(income_rmd),
+      income_rmd:        Math.round(effectiveRmd),
       income_other:      Math.round(income_other),
       income_total:      Math.round(income_total),
       income_earned_p1:  Math.round(income_earned_p1),
@@ -844,6 +937,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       estate_incl_home: Math.round(estate_incl_home),
       net_cash_flow: Math.round(net_cash_flow_pre),
       net_worth:     Math.round(net_worth),
+      rmd_required:        Math.round(rmd_required),
+      rmd_user_withdrawal: Math.round(rmd_user_withdrawal),
+      rmd_shortfall:       Math.round(rmd_shortfall),
+      rmd_penalty:         Math.round(rmd_penalty),
     })
   }
 

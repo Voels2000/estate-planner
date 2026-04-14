@@ -300,6 +300,87 @@ export default async function DashboardPage() {
   // ── Conflict detector ────────────────────────────────────────────────────
   const conflictReport = household?.id ? await detectConflicts(household.id, user!.id) : null
 
+  // ── RMD Status for current year ──────────────────────────────────────
+  function getRmdStartAge(birthYear: number): number {
+    if (birthYear >= 1960) return 75
+    if (birthYear >= 1951) return 73
+    return 72
+  }
+
+  function getRmdFactor(age: number): number {
+    return Math.max(1, 27.4 - (age - 72))
+  }
+
+  function calcRmdAmount(age: number, balance: number, birthYear: number): number {
+    const rmdAge = getRmdStartAge(birthYear)
+    if (age < rmdAge || balance <= 0) return 0
+    return Math.round(balance / getRmdFactor(age))
+  }
+
+  const { data: taxDeferredAssets } = await supabase
+    .from('assets')
+    .select('value, owner, type')
+    .eq('owner_id', user!.id)
+    .in('type', [
+      'traditional_401k', 'traditional_ira', '401k', 'ira',
+      'traditional_403b', 'sep_ira', 'simple_ira', '457', 'sep',
+    ])
+
+  const { data: currentYearWithdrawals } = await supabase
+    .from('income')
+    .select('amount, source, ss_person, start_year, end_year')
+    .eq('owner_id', user!.id)
+    .in('source', ['traditional_401k', 'traditional_ira'])
+
+  const p1TaxDeferred = (taxDeferredAssets ?? [])
+    .filter(a => a.owner === 'person1' ||
+      a.owner === (household?.person1_name ?? '').trim().toLowerCase())
+    .reduce((s, a) => s + Number(a.value), 0)
+
+  const p2TaxDeferred = hasSpouse ? (taxDeferredAssets ?? [])
+    .filter(a => a.owner === 'person2' ||
+      a.owner === (household?.person2_name ?? '').trim().toLowerCase())
+    .reduce((s, a) => s + Number(a.value), 0) : 0
+
+  const p1AgeNow = p1BirthYear ? currentYear - p1BirthYear : null
+  const p2AgeNow = p2BirthYear ? currentYear - p2BirthYear : null
+
+  const p1RmdRequired = p1AgeNow && p1BirthYear
+    ? calcRmdAmount(p1AgeNow, p1TaxDeferred, p1BirthYear) : 0
+
+  const p2RmdRequired = p2AgeNow && p2BirthYear && hasSpouse
+    ? calcRmdAmount(p2AgeNow, p2TaxDeferred, p2BirthYear) : 0
+
+  const activeWithdrawals = (currentYearWithdrawals ?? []).filter(w => {
+    if (w.start_year && w.start_year > currentYear) return false
+    if (w.end_year && w.end_year < currentYear) return false
+    return true
+  })
+
+  const p1RmdPlanned = activeWithdrawals
+    .filter(w => w.ss_person === 'person1')
+    .reduce((s, w) => s + Number(w.amount), 0)
+
+  const p2RmdPlanned = activeWithdrawals
+    .filter(w => w.ss_person === 'person2')
+    .reduce((s, w) => s + Number(w.amount), 0)
+
+  const rmdStatus = {
+    p1Name: displayPersonFirstName(household?.person1_name, 'Person 1'),
+    p2Name: hasSpouse
+      ? displayPersonFirstName(household?.person2_name, 'Person 2')
+      : null,
+    p1Required: p1RmdRequired,
+    p1Planned: p1RmdPlanned,
+    p1StartYear: p1BirthYear ? p1BirthYear + getRmdStartAge(p1BirthYear) : null,
+    p2Required: p2RmdRequired,
+    p2Planned: p2RmdPlanned,
+    p2StartYear: p2BirthYear && hasSpouse
+      ? p2BirthYear + getRmdStartAge(p2BirthYear)
+      : null,
+    hasSpouse,
+  }
+
   // ── Retirement snapshot — from households table ──────────────────────────
   const p1RetirementAge = household?.person1_retirement_age ?? null
   const p2RetirementAge = household?.person2_retirement_age ?? null
@@ -394,6 +475,7 @@ export default async function DashboardPage() {
       completionScore={completionScore}
       consumerTier={profile?.consumer_tier ?? 1}
       isAdvisor={profile?.role === 'advisor'}
+      rmdStatus={rmdStatus}
     />
   )
 }
