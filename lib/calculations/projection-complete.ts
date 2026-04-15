@@ -161,6 +161,8 @@ export type CompleteProjectionInput = {
     monthly_payment?: number | null
     interest_rate?: number | null
     is_primary_residence: boolean
+    planned_sale_year?: number | null
+    selling_costs_pct?: number | null
     owner: string
   }[]
   // State income tax rates from DB — replaces hardcoded STATE_RATES
@@ -619,35 +621,33 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const p2Bucket:   AssetBucket = classifyAssets(assets, p2Name, 'person2')
   const poolBucket: AssetBucket = classifyPooledAssets(assets, p1Name, p2Name)
 
-  // ── Starting real estate ─────────────────────────────────────────────────────
-  // Use full current_value — mortgage tracked separately in mortgageBalance.
-  // Net equity is captured via liabilities_total in net_worth calculation.
-  let re_primary = realEstateInput.filter(r => r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
-  let re_other   = realEstateInput.filter(r => !r.is_primary_residence).reduce((s, r) => s + (r.current_value ?? 0), 0)
+  // ── Per-property mutable state ───────────────────────────────────────────────
+  // Each property tracks its own value, mortgage balance, and sold flag
+  // so planned_sale_year correctly zeroes them out independently.
+  type REState = {
+    value: number
+    mortgageBalance: number
+    annualPayment: number
+    mortgageRate: number
+    isPrimary: boolean
+    saleYear: number | null
+    sellingCostsPct: number
+    sold: boolean
+  }
 
-  // Note: mortgage balance is tracked in mortgageBalance variable above and
-  // subtracted via liabilities_total in net_worth — do not subtract here.
+  const reStates: REState[] = realEstateInput.map(r => ({
+    value: r.current_value ?? 0,
+    mortgageBalance: r.mortgage_balance ?? 0,
+    annualPayment: (r.monthly_payment ?? 0) * 12,
+    mortgageRate: r.interest_rate ? r.interest_rate / 100 : 0,
+    isPrimary: r.is_primary_residence,
+    saleYear: r.planned_sale_year ?? null,
+    sellingCostsPct: r.selling_costs_pct ?? 6,
+    sold: false,
+  }))
 
-  // ── Starting liabilities ─────────────────────────────────────────────────────
-  // Mortgage sourced from real_estate table (balance, payment, rate all there).
-  // Liabilities table handles non-mortgage debt only.
-  // If user has also entered mortgage in liabilities table, we use real_estate
-  // as the authoritative source and ignore mortgage-type liabilities.
-  const reMortgageBalance    = realEstateInput.reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
-  const reMortgagePayment    = realEstateInput.reduce((s, r) => s + (r.monthly_payment ?? 0) * 12, 0)
-  const reMortgageRate       = (() => {
-    const withRate = realEstateInput.filter(r => r.interest_rate && r.interest_rate > 0)
-    return withRate.length > 0
-      ? withRate.reduce((s, r) => s + (r.interest_rate ?? 0), 0) / withRate.length / 100
-      : 0
-  })()
-
-  let mortgageBalance = reMortgageBalance
-  let otherDebt       = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
-
-  const annualMortgagePayment  = reMortgagePayment
+  let otherDebt = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.balance ?? 0), 0)
   const annualOtherDebtPayment = liabilities.filter(l => !isMortgageType(l.type)).reduce((s, l) => s + (l.monthly_payment ?? 0) * 12, 0)
-  const avgMortgageRate        = reMortgageRate
 
   // ── Filing status normalisation ──────────────────────────────────────────────
   const fsMap: Record<string, string> = {
@@ -884,21 +884,52 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       }
     }
     expenses_healthcare += irmaa.part_b + irmaa.part_d
-    const expenses_total = expenses_living + expenses_healthcare
+    // Include active mortgage payments in expenses_total so the Lifetime
+    // Snapshot expenses column reflects full household cash outflow.
+    const annualMortgagePayment = reStates
+      .filter(re => !re.sold && re.mortgageBalance > 0)
+      .reduce((s, re) => s + re.annualPayment, 0)
+    const expenses_total = expenses_living + expenses_healthcare + annualMortgagePayment
 
-    // ── Liabilities paydown ────────────────────────────────────────────────────
-    if (mortgageBalance > 0 && annualMortgagePayment > 0) {
-      const interest  = mortgageBalance * avgMortgageRate
-      const principal = Math.min(mortgageBalance, Math.max(0, annualMortgagePayment - interest))
-      mortgageBalance = Math.max(0, mortgageBalance - principal)
+    // ── Real estate sales & mortgage paydown ───────────────────────────────────
+    let saleProceeds = 0
+    for (const re of reStates) {
+      if (re.sold) continue
+
+      // Process sale in the planned sale year
+      if (re.saleYear !== null && year === re.saleYear) {
+        const costs = re.value * (re.sellingCostsPct / 100)
+        const proceeds = Math.max(0, re.value - costs - re.mortgageBalance)
+        saleProceeds += proceeds
+        re.value = 0
+        re.mortgageBalance = 0
+        re.sold = true
+        continue
+      }
+
+      // Pay down mortgage for unsold properties
+      if (re.mortgageBalance > 0 && re.annualPayment > 0) {
+        const interest  = re.mortgageBalance * re.mortgageRate
+        const principal = Math.min(re.mortgageBalance, Math.max(0, re.annualPayment - interest))
+        re.mortgageBalance = Math.max(0, re.mortgageBalance - principal)
+      }
     }
+
+    // Add sale proceeds to pooled taxable assets
+    if (saleProceeds > 0) {
+      poolBucket.taxable += saleProceeds
+    }
+
     if (otherDebt > 0 && annualOtherDebtPayment > 0) {
       otherDebt = Math.max(0, otherDebt - annualOtherDebtPayment)
     }
-    const liabilities_total = mortgageBalance + otherDebt
+
+    const totalMortgageBalance = reStates.reduce((s, re) => s + re.mortgageBalance, 0)
+    const liabilities_total = totalMortgageBalance + otherDebt
 
     // ── Net cash flow & withdrawals ────────────────────────────────────────────
-    const net_cash_flow_pre = income_total - tax_total - expenses_total - annualMortgagePayment - annualOtherDebtPayment
+    // annualMortgagePayment is now inside expenses_total — only subtract other debt here.
+    const net_cash_flow_pre = income_total - tax_total - expenses_total - annualOtherDebtPayment
 
     if (net_cash_flow_pre < 0) {
       const totalTaxable = poolBucket.taxable + p1Bucket.taxable + p2Bucket.taxable
@@ -921,7 +952,9 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     growBucket(p2Bucket,   growthRate)
     growBucket(poolBucket, growthRate)
 
-    const re_total = re_primary + re_other
+    const re_primary = reStates.filter(re => re.isPrimary).reduce((s, re) => s + re.value, 0)
+    const re_other   = reStates.filter(re => !re.isPrimary).reduce((s, re) => s + re.value, 0)
+    const re_total   = re_primary + re_other
 
     const p1Total   = bucketTotal(p1Bucket)
     const p2Total   = bucketTotal(p2Bucket)
@@ -978,7 +1011,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       real_estate_primary: re_primary,
       real_estate_other:   re_other,
       real_estate_total:   re_total,
-      liabilities_mortgage: mortgageBalance,
+      liabilities_mortgage: totalMortgageBalance,
       liabilities_other:    otherDebt,
       liabilities_total,
       estate_excl_home: Math.round(estate_excl_home),
@@ -991,9 +1024,12 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       rmd_penalty:         Math.round(rmd_penalty),
     })
 
-    // Grow real estate AFTER pushing current year values
-    re_primary = Math.round(re_primary * (1 + inflationRate))
-    re_other   = Math.round(re_other   * (1 + inflationRate))
+    // Grow real estate values AFTER pushing current year values (skips sold properties)
+    for (const re of reStates) {
+      if (!re.sold) {
+        re.value = Math.round(re.value * (1 + inflationRate))
+      }
+    }
   }
 
   return rows

@@ -9,7 +9,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import WhatHappensWalkthrough from '@/components/estate-flow/WhatHappensWalkthrough'
 import AlertCenter from '@/components/alerts/AlertCenter'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
@@ -226,12 +225,10 @@ export function DashboardClient(props: Props) {
   } = props
 
   void consumerTier
-  void isAdvisor
 
   const fn = firstName(userName)
   const allDone = completedSteps === setupSteps.length
   const [greeting, setGreeting] = useState('Good morning')
-  const [showWalkthrough, setShowWalkthrough] = useState(false)
 
   useEffect(() => {
     const h = new Date().getHours()
@@ -663,7 +660,7 @@ export function DashboardClient(props: Props) {
           {householdId && userId && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Planning Gaps</p>
-              <AlertCenter householdId={householdId} userId={userId} runEvaluation={true} />
+              <AlertCenter householdId={householdId} userId={userId} runEvaluation={!isAdvisor} />
             </div>
           )}
 
@@ -705,9 +702,6 @@ export function DashboardClient(props: Props) {
 
           {householdId && (
             <div className="flex flex-wrap items-center gap-4 pt-1">
-              <button onClick={() => setShowWalkthrough(true)} className="text-xs text-indigo-600 font-medium hover:underline">
-                What happens when I die? →
-              </button>
               <Link href="/my-estate-strategy" className="text-xs text-indigo-600 font-medium hover:underline">
                 View My Estate Strategy →
               </Link>
@@ -715,15 +709,6 @@ export function DashboardClient(props: Props) {
           )}
         </div>
       </CollapsibleSection>
-
-      {showWalkthrough && householdId && (
-        <div className="fixed inset-0 z-50 bg-black/40 p-4 md:p-8 overflow-y-auto">
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-6 relative">
-            <button onClick={() => setShowWalkthrough(false)} className="absolute top-3 right-3 text-sm text-neutral-500 hover:text-neutral-800">Close</button>
-            <WhatHappensWalkthrough householdId={householdId} scenarioId={scenarioId ?? null} onComplete={() => setShowWalkthrough(false)} />
-          </div>
-        </div>
-      )}
 
       <FeedbackButton userId={userId} />
       <div className="mt-8"><DisclaimerBanner /></div>

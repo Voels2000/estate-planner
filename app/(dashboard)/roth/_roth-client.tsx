@@ -117,12 +117,12 @@ export function RothClient({ result }: Props) {
                     {row.incrementalStateTax > 0 ? fmt(row.incrementalStateTax) : "—"}
                   </td>
                   <td className="py-2 pr-3 text-right tabular-nums">
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${
                       row.combinedMarginalRate >= 0.32
-                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        ? "bg-red-200 text-red-900"
                         : row.combinedMarginalRate >= 0.22
-                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                        : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        ? "bg-amber-200 text-amber-900"
+                        : "bg-green-200 text-green-900"
                     }`}>
                       {pct(row.combinedMarginalRate)}
                     </span>

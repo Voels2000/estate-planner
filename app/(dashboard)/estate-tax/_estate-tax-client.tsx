@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   calcSection121Exclusion,
@@ -281,24 +282,41 @@ export default function EstateTaxClient({
   }, [stateInheritanceTaxRuleRows])
 
   // ── State estate tax results ─────────────────────────────────
-  const taxableForState = num(federalResult?.taxable_estate)
   const isMFJ = filing === 'married_joint'
   const taxableForStateMD = isMFJ ? grossEstateForState * 0.5 : grossEstateForState
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
+    if (isMFJ) {
+      // Married: no state estate tax at first death via marital deduction
+      return {
+        state: statePrimary.toUpperCase(),
+        state_taxable: 0,
+        state_exemption:
+          stateEstateBrackets.find(b => b.state === statePrimary.toUpperCase())?.exemption_amount ?? 0,
+        state_estate_tax: 0,
+      }
+    }
     return computeStateEstateTax(
       statePrimary.toUpperCase(),
-      taxableForStateMD,
+      num(federalResult?.taxable_estate),
       stateEstateBrackets,
     )
-  }, [statePrimary, taxableForStateMD, stateEstateBrackets])
+  }, [statePrimary, isMFJ, federalResult, stateEstateBrackets])
 
   const compareStateTax = useMemo(() => {
     const sc = stateCompare?.toUpperCase()
     if (!sc || sc === statePrimary?.toUpperCase()) return null
     if (!STATE_ESTATE_TAX_STATES.has(sc)) return null
-    return computeStateEstateTax(sc, taxableForStateMD, stateEstateBrackets)
-  }, [stateCompare, statePrimary, taxableForStateMD, stateEstateBrackets])
+    if (isMFJ) {
+      return {
+        state: sc,
+        state_taxable: 0,
+        state_exemption: stateEstateBrackets.find(b => b.state === sc)?.exemption_amount ?? 0,
+        state_estate_tax: 0,
+      }
+    }
+    return computeStateEstateTax(sc, num(federalResult?.taxable_estate), stateEstateBrackets)
+  }, [stateCompare, statePrimary, isMFJ, federalResult, stateEstateBrackets])
 
   // ── State inheritance tax results ────────────────────────────
   const totalForInheritance = taxableForStateMD // was taxableForState
@@ -390,20 +408,11 @@ export default function EstateTaxClient({
     <div className="mx-auto max-w-5xl px-4 py-12">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Federal + state estate tax picture (illustrative only—not tax advice).
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={openAddTrust}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-        >
-          + Add Trust
-        </button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
+        <p className="mt-1 text-sm text-neutral-600">
+          Federal + state estate tax picture (illustrative only—not tax advice).
+        </p>
       </div>
 
       {error && (
@@ -592,27 +601,48 @@ export default function EstateTaxClient({
                   <p className="text-sm font-semibold text-neutral-700 mb-3">
                     {statePrimary.toUpperCase()} — Primary state
                   </p>
+                  {isMFJ && (
+                    <div className="mb-3 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 text-xs text-blue-800">
+                      <p className="font-semibold mb-1">First Death — Marital Deduction Applies</p>
+                      <p className="leading-relaxed">
+                        For married couples, the entire estate passes to the surviving spouse
+                        tax-free at first death via the unlimited marital deduction.
+                        State estate tax at first death = $0.
+                      </p>
+                      <p className="mt-1.5 leading-relaxed">
+                        At second death, {statePrimary.toUpperCase()} exempts{' '}
+                        <span className="font-semibold">{formatDollars(primaryStateTax.state_exemption)}</span>{' '}
+                        per person. Without a bypass or QTIP trust, the first spouse&apos;s{' '}
+                        {formatDollars(primaryStateTax.state_exemption)} exemption is lost —
+                        worth discussing with your estate attorney.
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-neutral-600">State exemption</span>
+                      <span className="text-neutral-600">State exemption {isMFJ ? '(at second death)' : ''}</span>
                       <span className="font-medium tabular-nums">
                         {formatDollars(primaryStateTax.state_exemption)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-600">State taxable estate</span>
-                      <span className="font-medium tabular-nums">
-                        {formatDollars(primaryStateTax.state_taxable)}
-                      </span>
-                    </div>
+                    {!isMFJ && (
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">State taxable estate</span>
+                        <span className="font-medium tabular-nums">
+                          {formatDollars(primaryStateTax.state_taxable)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between pt-2 border-t border-neutral-100">
-                      <span className="font-semibold text-neutral-900">State estate tax</span>
+                      <span className="font-semibold text-neutral-900">
+                        State estate tax {isMFJ ? '(first death)' : ''}
+                      </span>
                       <span
                         className={`text-lg font-bold tabular-nums ${
                           primaryStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'
                         }`}
                       >
-                        {formatDollars(primaryStateTax.state_estate_tax)}
+                        {isMFJ ? '$0 — marital deduction' : formatDollars(primaryStateTax.state_estate_tax)}
                       </span>
                     </div>
                   </div>
@@ -790,75 +820,11 @@ export default function EstateTaxClient({
         </CollapsibleSection>
       )}
 
-      <CollapsibleSection
-        title="Trusts"
-        defaultOpen={false}
-        storageKey="estate-tax-trusts"
-      >
-        <div className="rounded-xl border border-neutral-200 overflow-hidden overflow-x-auto -m-2">
-        {trusts.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-neutral-500">
-            No trusts yet. Add a trust to model excluded funding.
-          </div>
-        ) : (
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name', 'Type', 'Grantor', 'Trustee', 'Funding', 'Excludes from estate', ''].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-500"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {trusts.map((t) => (
-                <tr key={t.id} className="hover:bg-neutral-50/80">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{t.name}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-600">
-                    {TRUST_TYPES.find((x) => x.value === (t.trust_type || 'revocable'))?.label ??
-                      t.trust_type}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-600">{t.grantor || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-600">{t.trustee || '—'}</td>
-                  <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
-                    {formatDollars(num(t.funding_amount ?? t.excluded_from_estate))}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={
-                        t.excludes_from_estate || num(t.excluded_from_estate) > 0
-                          ? 'text-green-700 font-medium'
-                          : 'text-neutral-400'
-                      }
-                    >
-                      {t.excludes_from_estate || num(t.excluded_from_estate) > 0 ? 'Yes' : 'No'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => openEditTrust(t)}
-                      className="text-sm font-medium text-neutral-700 hover:text-neutral-900"
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        </div>
-      </CollapsibleSection>
+      {/* Trusts section moved to Trust & Will page */}
 
       <p className="text-xs text-neutral-400">
-        Consult a qualified professional for estate planning and tax compliance.
+        Consult a qualified professional for estate planning and tax compliance.{' '}
+        <Link href="/trust-will" className="text-indigo-600 hover:underline">Manage trusts →</Link>
       </p>
 
       {showTrustModal && (

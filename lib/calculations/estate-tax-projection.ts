@@ -133,31 +133,35 @@ function computeSequence({
 
     // Only compute estate tax at death years
     if (row.year === firstDeathYear) {
-      // At first death -- marital deduction applies if married
-      // Married: surviving spouse inherits via marital deduction, no estate tax at first death
-      // DSUE: unused exemption of first spouse passes to survivor
       if (isMarried && secondDeathYear) {
-        // Marital deduction -- no federal estate tax at first death
-        // DSUE = unused exemption amount
-        dsue_amount = exemptionIndividual // full exemption portable
+        // Marital deduction - entire estate passes to surviving spouse tax-free.
+        // No federal or state estate tax at first death for married couples.
+        // DSUE: full individual exemption is portable to survivor.
+        dsue_amount = exemptionIndividual
         estate_tax_federal = 0
         estate_tax_state = 0
         taxable_estate = 0
         exemption_used = 0
       } else {
-        // Single or no surviving spouse -- estate tax applies
+        // Single or widowed - estate tax applies at first (only) death
         const exemption = exemptionIndividual + dsue_amount
         taxable_estate = Math.max(0, grossEstate - exemption)
         estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
-        estate_tax_state = Math.round(grossEstate * stateRate)
+        // State estate tax: apply only if estate exceeds state exemption.
+        // stateRate here is a flat approximation - the estate tax page uses
+        // full progressive brackets for the detailed calculation.
+        estate_tax_state = taxable_estate > 0 ? Math.round(taxable_estate * stateRate) : 0
         exemption_used = Math.min(grossEstate, exemption)
       }
     } else if (secondDeathYear && row.year === secondDeathYear) {
-      // At second death -- DSUE from first spouse added to exemption
+      // Second death - DSUE from first spouse added to survivor's exemption.
+      // Both federal and state estate tax apply against the combined estate.
       const exemption = exemptionIndividual + dsue_amount
       taxable_estate = Math.max(0, grossEstate - exemption)
       estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
-      estate_tax_state = Math.round(grossEstate * stateRate)
+      // At second death, state exemption has already been consumed at first death
+      // (if no bypass trust was used). Use gross estate vs state exemption directly.
+      estate_tax_state = taxable_estate > 0 ? Math.round(taxable_estate * stateRate) : 0
       exemption_used = Math.min(grossEstate, exemption)
     }
 

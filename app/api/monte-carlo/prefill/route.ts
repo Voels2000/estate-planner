@@ -17,31 +17,56 @@ function isActiveForYear(
   return true
 }
 
-/** Sum of retirement-account assets only (tax-advantaged retirement savings), per asset `type`. */
-function sumRetirementAccountValue(
+/**
+ * Sum of all investable/liquid assets for Monte Carlo modeling.
+ * Includes: retirement accounts, brokerage, bank/cash accounts.
+ * Excludes: real estate, business interests, insurance, annuities,
+ *           crypto/collectibles, and anything clearly illiquid.
+ *
+ * Monte Carlo models drawdown from liquidatable assets only.
+ * Real estate and business value are handled separately in the
+ * projection engine and estate calculations.
+ */
+function sumInvestableAssets(
   rows: { type: string | null | undefined; value: number | null | undefined }[] | null | undefined
 ): number | null {
   if (!rows?.length) return null
+
+  // Types that are explicitly NOT investable for retirement drawdown
+  const EXCLUDED_TYPES = new Set([
+    'real_estate',
+    'property',
+    'business',
+    'business_interest',
+    'insurance',
+    'life_insurance',
+    'annuity',
+    'collectible',
+    'art',
+    'jewelry',
+    'vehicle',
+    'auto',
+  ])
+
   let sum = 0
   let any = false
+
   for (const a of rows) {
-    const t = (a.type ?? '').toLowerCase()
+    const t = (a.type ?? '').toLowerCase().trim()
     if (!t) continue
-    if (t === 'retirement_account') {
-      sum += Number(a.value ?? 0)
-      any = true
-      continue
-    }
-    if (['traditional_401k', 'roth_ira', 'traditional_ira'].includes(t)) {
-      sum += Number(a.value ?? 0)
-      any = true
-      continue
-    }
-    if (/(401k|403b|457|ira|roth|hsa|sep|simple|retirement)/.test(t) && !t.includes('brokerage')) {
-      sum += Number(a.value ?? 0)
-      any = true
-    }
+
+    // Skip explicitly illiquid types
+    if (EXCLUDED_TYPES.has(t)) continue
+    if (t.includes('real_estate') || t.includes('property')) continue
+    if (t.includes('business')) continue
+    if (t.includes('insurance') && !t.includes('hsa')) continue
+
+    // Include everything else: retirement accounts, brokerage,
+    // checking, savings, money market, cash, crypto (liquid), etc.
+    sum += Number(a.value ?? 0)
+    any = true
   }
+
   return any ? sum : null
 }
 
@@ -113,8 +138,9 @@ export async function GET() {
     return Math.round(annual / 12)
   })()
 
-  // Portfolio — retirement accounts only (current savings estimate)
-  const current_portfolio = sumRetirementAccountValue(assets ?? [])
+  // Portfolio — all investable assets (retirement + brokerage + bank/cash)
+  // Excludes real estate, business interests, insurance, and illiquid assets.
+  const current_portfolio = sumInvestableAssets(assets ?? [])
 
   // Income — active rows: total for surplus; "other" excludes earned + social_security
   const current_income_annual =

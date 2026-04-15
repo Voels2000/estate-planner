@@ -109,6 +109,7 @@ export default async function TitlingPage() {
   return (
     <TitlingClient
       categories={titlingCategories ?? []}
+      householdId={household?.id ?? null}
       initialAssets={assets ?? []}
       initialRealEstate={realEstate ?? []}
       initialAssetTitling={assetTitling ?? []}

@@ -17,19 +17,19 @@ const SEVERITY_CONFIG = {
     icon: '⚠️',
     badge: 'bg-red-100 text-red-700 border-red-200',
     border: 'border-l-red-500',
-    label: 'High priority',
+    label: 'Needs attention',
   },
   medium: {
     icon: '○',
     badge: 'bg-amber-100 text-amber-700 border-amber-200',
     border: 'border-l-amber-400',
-    label: 'Recommended',
+    label: 'Worth reviewing',
   },
   low: {
     icon: 'ℹ️',
     badge: 'bg-blue-100 text-blue-700 border-blue-200',
     border: 'border-l-blue-300',
-    label: 'Information',
+    label: 'For your awareness',
   },
 }
 
@@ -104,6 +104,7 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
   const [alerts, setAlerts] = useState<HouseholdAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [evaluating, setEvaluating] = useState(false)
+  const [lastChecked, setLastChecked] = useState<Date | null>(null)
 
   const load = useCallback(async () => {
     const data = await loadHouseholdAlerts(householdId)
@@ -121,6 +122,7 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
           setEvaluating(false)
         }
         await load()
+        setLastChecked(new Date())
       } catch (e) {
         console.error('AlertCenter init error:', e)
       } finally {
@@ -162,22 +164,20 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
               <h2 className="text-sm font-semibold text-neutral-900">Estate Planning Alerts</h2>
               {highCount > 0 && (
                 <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-                  {highCount} high priority
+                  {highCount} {highCount === 1 ? 'item needs attention' : 'items need attention'}
                 </span>
               )}
               {highCount === 0 && totalCount > 0 && (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                  {totalCount} item{totalCount !== 1 ? 's' : ''}
+                  {totalCount} {totalCount === 1 ? 'item worth reviewing' : 'items worth reviewing'}
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={load}
-              className="text-xs text-neutral-400 hover:text-neutral-600"
-            >
-              Refresh
-            </button>
+            {lastChecked && (
+              <span className="text-xs text-neutral-400">
+                Last checked {lastChecked.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            )}
           </div>
 
           {/* Alerts */}
@@ -194,7 +194,7 @@ export default function AlertCenter({ householdId, userId, runEvaluation = false
 
           {/* Footer */}
           <div className="px-6 py-3 border-t border-neutral-100 text-xs text-neutral-400">
-            High and warning alerts cannot be dismissed — they resolve automatically when the underlying issue is corrected.
+            These items resolve automatically as your estate plan is updated. Discuss any items with your advisor or attorney.
           </div>
         </div>
       )}

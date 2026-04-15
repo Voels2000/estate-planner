@@ -22,9 +22,22 @@ export async function getUserAccess(): Promise<UserAccess> {
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
-    .select('role, subscription_status, subscription_plan, consumer_tier, trial_start, is_admin')
+    .select('role, subscription_status, subscription_plan, consumer_tier, trial_start, is_admin, is_superuser')
     .eq('id', user.id)
     .single()
+
+  // Superuser bypasses all subscription and tier checks.
+  // Role is preserved (e.g. 'advisor') so primary identity is correct.
+  if (profile?.is_superuser === true) {
+    return {
+      tier: 3,
+      isAdvisor: profile.role === 'advisor',
+      isAdvisorClient: false,
+      isAdmin: true,
+      isTrial: false,
+      subscriptionStatus: 'active',
+    }
+  }
 
   const isAdvisor = profile?.role === 'advisor'
   const isAdmin = profile?.is_admin === true

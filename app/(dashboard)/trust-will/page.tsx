@@ -104,6 +104,12 @@ export default async function TrustWillPage() {
     .eq('owner_id', user.id)
     .ilike('type', '%business%')
 
+  const { data: trusts } = await supabase
+    .from('trusts')
+    .select('*')
+    .eq('owner_id', user.id)
+    .order('created_at', { ascending: false })
+
   const hasBusinessInterests = (businessAssets ?? []).length > 0
 
   const profileData: ProfileData = {
@@ -123,6 +129,7 @@ export default async function TrustWillPage() {
       estateValue={estateValue}
       recommendations={recommendations}
       checklist={checklist}
+      initialTrusts={trusts ?? []}
     />
   )
 }

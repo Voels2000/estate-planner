@@ -140,6 +140,7 @@ type GapItem = {
 }
 
 type TitlingClientProps = {
+  householdId: string | null
   initialAssets: Asset[]
   initialRealEstate: RealEstateItem[]
   initialAssetTitling: AssetTitling[]
@@ -543,6 +544,7 @@ function getTitlingWarnings(
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TitlingClient({
+  householdId,
   initialAssets,
   initialRealEstate,
   initialAssetTitling,
@@ -692,6 +694,15 @@ export default function TitlingClient({
     setBeneficiaries(bens ?? [])
     await refreshConflicts()
     router.refresh()
+  }
+
+  async function touchLastBeneficiaryReview() {
+    if (!householdId) return
+    const supabase = createClient()
+    await supabase
+      .from('households')
+      .update({ last_beneficiary_review: new Date().toISOString() })
+      .eq('id', householdId)
   }
 
   async function persistTitlingTitle(
@@ -1143,7 +1154,11 @@ export default function TitlingClient({
           picklistOptions={beneficiaryPicklistOptions}
           householdPeopleEmpty={householdPeople.length === 0}
           onClose={() => setBeneficiaryModal(null)}
-          onSave={async () => { await reloadData(); setBeneficiaryModal(null) }}
+          onSave={async () => {
+            await touchLastBeneficiaryReview()
+            await reloadData()
+            setBeneficiaryModal(null)
+          }}
         />
       )}
 
@@ -1159,6 +1174,7 @@ export default function TitlingClient({
           descendantsOrdered={descendantsOrdered}
           onClose={() => setGapModalOpen(false)}
           onApplied={async () => {
+            await touchLastBeneficiaryReview()
             await reloadData()
             setGapModalOpen(false)
           }}
@@ -2284,7 +2300,7 @@ function BeneficiaryModal({
   picklistOptions: BeneficiaryPicklistOption[]
   householdPeopleEmpty: boolean
   onClose: () => void
-  onSave: () => void
+  onSave: () => Promise<void>
 }) {
   const [beneficiaryType, setBeneficiaryType] = useState<'primary' | 'contingent'>(
     existing?.beneficiary_type ?? defaultType,
@@ -2402,7 +2418,7 @@ function BeneficiaryModal({
         })
         if (error) throw error
       }
-      onSave()
+      await onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)

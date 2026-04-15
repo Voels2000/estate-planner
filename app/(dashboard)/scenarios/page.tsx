@@ -95,6 +95,28 @@ function formatDollars(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
+const STORAGE_KEY_B = 'scenario_overrides_b'
+const STORAGE_KEY_C = 'scenario_overrides_c'
+
+function loadStoredScenario(key: string): Partial<ScenarioOverrides> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveStoredScenario(key: string, scenario: ScenarioOverrides) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, JSON.stringify(scenario))
+  } catch {
+    // ignore quota errors
+  }
+}
+
 export default function ScenariosPage() {
   const [household, setHousehold]     = useState<Household | null>(null)
   const [isLoading, setIsLoading]     = useState(true)
@@ -174,8 +196,10 @@ export default function ScenariosPage() {
         growth_rate_accumulation: householdData.growth_rate_accumulation ?? 7,
         growth_rate_retirement:   householdData.growth_rate_retirement ?? 5,
       }
-      setScenarioB({ ...base, name: 'Scenario B' })
-      setScenarioC({ ...base, name: 'Scenario C' })
+      const storedB = loadStoredScenario(STORAGE_KEY_B)
+      const storedC = loadStoredScenario(STORAGE_KEY_C)
+      setScenarioB({ ...base, name: 'Scenario B', ...storedB })
+      setScenarioC({ ...base, name: 'Scenario C', ...storedC })
     }
 
     setIsLoading(false)
@@ -189,6 +213,7 @@ export default function ScenariosPage() {
   // ── Re-run B when scenarioB changes (debounced 600ms) ───────────────────────
   useEffect(() => {
     if (!scenarioB) return
+    saveStoredScenario(STORAGE_KEY_B, scenarioB)
     if (timerB.current) clearTimeout(timerB.current)
     timerB.current = setTimeout(() => {
       fetchScenario(scenarioB, setResultB, setLoadingB)
@@ -199,6 +224,7 @@ export default function ScenariosPage() {
   // ── Re-run C when scenarioC changes (debounced 600ms) ───────────────────────
   useEffect(() => {
     if (!scenarioC) return
+    saveStoredScenario(STORAGE_KEY_C, scenarioC)
     if (timerC.current) clearTimeout(timerC.current)
     timerC.current = setTimeout(() => {
       fetchScenario(scenarioC, setResultC, setLoadingC)

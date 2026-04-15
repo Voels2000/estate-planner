@@ -428,11 +428,17 @@ export default function ProfilePage() {
               <input type="number" min="-10" max="30" step="0.5" value={growthRateAccumulation}
                 onChange={(e) => setGrowthRateAccumulation(e.target.value)}
                 className={inputClass} placeholder="7" />
+              <p className="mt-1 text-xs text-neutral-400">
+                Applied to financial assets before retirement. Reflects a longer time horizon and typically higher equity allocation.
+              </p>
             </Field>
             <Field label="Growth Rate – Retirement (%)">
               <input type="number" min="-10" max="30" step="0.5" value={growthRateRetirement}
                 onChange={(e) => setGrowthRateRetirement(e.target.value)}
                 className={inputClass} placeholder="5" />
+              <p className="mt-1 text-xs text-neutral-400">
+                Applied to financial assets after retirement begins. Reflects a more conservative allocation to manage withdrawal risk.
+              </p>
             </Field>
             <Field label="Tax Deduction Method">
               <div className="flex gap-2 mt-1">

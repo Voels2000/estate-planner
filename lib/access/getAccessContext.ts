@@ -78,7 +78,7 @@ export async function getAccessContext(): Promise<AccessContext> {
     isSuperuser,
     isAdmin: isSuperuser || role === 'admin',
     isAdvisor: isSuperuser || role === 'advisor',
-    isAttorney: role === 'attorney',
+    isAttorney: isSuperuser || role === 'attorney',
     isConsumer: role === 'consumer',
     hasActiveSubscription:
       profile?.subscription_status === 'active' ||

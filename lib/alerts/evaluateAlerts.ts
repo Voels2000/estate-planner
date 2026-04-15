@@ -342,6 +342,13 @@ function evalDaysAgoLt(
   condition: Record<string, unknown>,
   data: HouseholdData,
 ): RuleResult {
+  // Only relevant if household already has a trust.
+  // Otherwise flagging untitled assets adds noise.
+  const hasTrust = data.estateDocs.some(
+    d => d.doc_type === 'revocable_trust' && d.status !== 'none'
+  )
+  if (!hasTrust) return { triggered: false, context: {} }
+
   const daysThreshold = condition.value as number
   const now = new Date()
 
@@ -462,17 +469,21 @@ function evalAllocationNot100(
   _condition: Record<string, unknown>,
   data: HouseholdData,
 ): RuleResult {
-  // Group beneficiaries by asset
-  const byAsset = new Map<string, number>()
+  // Group beneficiaries by asset and beneficiary type, then validate each group independently.
+  const byAssetAndType = new Map<string, number>()
   for (const b of data.beneficiaries) {
     const assetId = b.asset_id as string
     if (!assetId) continue
-    byAsset.set(assetId, (byAsset.get(assetId) ?? 0) + (b.allocation_pct as number))
+    const beneficiaryType = ((b.beneficiary_type as string) ?? 'primary').trim() || 'primary'
+    const key = `${assetId}::${beneficiaryType}`
+    byAssetAndType.set(key, (byAssetAndType.get(key) ?? 0) + (b.allocation_pct as number))
   }
 
   const offAssets: string[] = []
-  for (const [assetId, total] of byAsset) {
-    if (Math.abs(total - 100) > 0.5) offAssets.push(assetId)
+  for (const [key, total] of byAssetAndType) {
+    if (Math.abs(total - 100) <= 0.5) continue
+    const [assetId] = key.split('::')
+    if (!offAssets.includes(assetId)) offAssets.push(assetId)
   }
 
   if (offAssets.length === 0) return { triggered: false, context: {} }

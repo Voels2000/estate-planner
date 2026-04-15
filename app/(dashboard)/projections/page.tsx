@@ -17,6 +17,7 @@ type ProjectionYear = {
   taxes: number
   net: number
   portfolio: number
+  net_worth: number
   phase: 'accumulation' | 'retirement'
   // per-person
   income_ss_person1: number
@@ -77,6 +78,7 @@ export default function ProjectionsPage() {
         taxes: r.tax_total,
         net: r.income_total - r.expenses_total - r.tax_total,
         portfolio: (r.assets_p1_total ?? 0) + (r.assets_p2_total ?? 0) + (r.assets_pooled_total ?? 0),
+        net_worth: r.net_worth ?? 0,
         phase: r.age_person1 >= (household.person1_retirement_age ?? 65) ? 'retirement' : 'accumulation',
         income_ss_person1: r.income_ss_person1 ?? 0,
         income_ss_person2: r.income_ss_person2 ?? 0,
@@ -106,10 +108,13 @@ export default function ProjectionsPage() {
     setError(null)
     try {
       const supabase = createClient()
+      const retirementRow = projections.find(p => p.phase === 'retirement')
       const summary = {
-        at_retirement: projections.find(p => p.phase === 'retirement')?.portfolio ?? 0,
-        peak: Math.max(...projections.map(p => p.portfolio)),
-        final: projections[projections.length - 1]?.portfolio ?? 0,
+        at_retirement_net_worth: retirementRow?.net_worth ?? 0,
+        at_retirement_portfolio: retirementRow?.portfolio ?? 0,
+        peak_net_worth: Math.max(...projections.map(p => p.net_worth)),
+        peak_portfolio: Math.max(...projections.map(p => p.portfolio)),
+        final: projections[projections.length - 1]?.net_worth ?? 0,
         funds_outlast: (projections[projections.length - 1]?.portfolio ?? 0) > 0,
       }
       const now = new Date()
@@ -161,7 +166,7 @@ export default function ProjectionsPage() {
   const currentAge = currentYear - household.person1_birth_year
   const retirementRow = projections.find(p => p.phase === 'retirement')
   const finalRow = projections[projections.length - 1]
-  const peakPortfolio = projections.length > 0 ? Math.max(...projections.map(p => p.portfolio)) : 0
+  const peakNetWorth = projections.length > 0 ? Math.max(...projections.map(p => p.net_worth)) : 0
   const fundsOutlast = (finalRow?.portfolio ?? 0) > 0
   const retirementRows = projections.filter(p => p.phase === 'retirement')
   const avgRetirementTax = retirementRows.length > 0
@@ -230,7 +235,16 @@ export default function ProjectionsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-<SummaryCard label="At Retirement" value={formatDollars(retirementRow?.portfolio ?? 0)} sub={`Age ${household.person1_retirement_age}`} />
+        <SummaryCard
+          label="Net Worth at Retirement"
+          value={formatDollars(retirementRow?.net_worth ?? 0)}
+          sub={`Age ${household.person1_retirement_age} · includes RE & business`}
+        />
+        <SummaryCard
+          label="Financial Portfolio at Retirement"
+          value={formatDollars(retirementRow?.portfolio ?? 0)}
+          sub={`Age ${household.person1_retirement_age} · investable assets only`}
+        />
         <SummaryCard label="Avg Tax in Retirement" value={formatDollars(avgRetirementTax)} sub="Federal + state/yr" highlight="amber" />
         <SummaryCard label="Funds Outlast" value={fundsOutlast ? 'Yes ✓' : 'No ✗'} sub={fundsOutlast ? 'On track' : 'Review plan'} highlight={fundsOutlast ? 'green' : 'red'} />
       </div>
@@ -248,7 +262,7 @@ export default function ProjectionsPage() {
           ))}
         </div>
         <div className="p-4">
-          {activeTab === 'chart' && <BarChart projections={projections} peak={peakPortfolio} />}
+          {activeTab === 'chart' && <BarChart projections={projections} peak={peakNetWorth} />}
           {activeTab === 'table' && <ProjectionTable projections={projections} />}
           {activeTab === 'income' && <IncomeTable projections={projections} p1={p1} p2={p2} />}
         </div>
@@ -286,16 +300,16 @@ function BarChart({ projections, peak }: { projections: ProjectionYear[]; peak: 
   return (
     <div className="flex items-end gap-0.5 h-56 w-full px-2">
       {sampled.map((p) => {
-        const pct = peak > 0 ? (p.portfolio / peak) * 100 : 0
+        const pct = peak > 0 ? (p.net_worth / peak) * 100 : 0
         return (
           <div key={p.age} className="flex-1 flex flex-col items-center gap-1 group">
             <div className="relative w-full flex items-end" style={{ height: '200px' }}>
               <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 hidden group-hover:block whitespace-nowrap rounded-lg bg-neutral-900 px-2 py-1 text-xs text-white shadow-lg">
-                Age {p.age}: {formatDollars(p.portfolio)}
+                Age {p.age}: {formatDollars(p.net_worth)}
               </div>
               <div className={`w-full rounded-t transition-all ${
                 p.phase === 'retirement'
-                  ? p.portfolio < peak * 0.1 ? 'bg-red-400' : 'bg-orange-400'
+                  ? p.net_worth < peak * 0.1 ? 'bg-red-400' : 'bg-orange-400'
                   : 'bg-neutral-700'
               }`} style={{ height: `${Math.max(pct, 1)}%` }} />
             </div>
@@ -319,7 +333,8 @@ function ProjectionTable({ projections }: { projections: ProjectionYear[] }) {
             <th className="pb-2 pr-4">Expenses</th>
             <th className="pb-2 pr-4">Taxes</th>
             <th className="pb-2 pr-4">Net</th>
-            <th className="pb-2">Portfolio</th>
+            <th className="pb-2 pr-4">Portfolio</th>
+            <th className="pb-2">Net Worth</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -333,8 +348,11 @@ function ProjectionTable({ projections }: { projections: ProjectionYear[] }) {
               <td className={`py-1.5 pr-4 font-medium ${p.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {p.net >= 0 ? '+' : ''}{formatDollars(p.net)}
               </td>
-              <td className={`py-1.5 font-semibold ${p.portfolio < 1000 ? 'text-red-600' : 'text-neutral-900'}`}>
+              <td className={`py-1.5 pr-4 font-semibold ${p.portfolio < 1000 ? 'text-red-600' : 'text-neutral-900'}`}>
                 {formatDollars(p.portfolio)}
+              </td>
+              <td className={`py-1.5 font-semibold ${p.net_worth < 1000 ? 'text-red-600' : 'text-indigo-700'}`}>
+                {formatDollars(p.net_worth)}
               </td>
             </tr>
           ))}

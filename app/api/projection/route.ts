@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     supabase.from('income').select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person').eq('owner_id', user.id),
     supabase.from('expenses').select('id, category, amount, start_year, end_year, start_month, end_month, inflation_adjust, owner').eq('owner_id', user.id),
     supabase.from('irmaa_brackets').select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status').order('tax_year', { ascending: false }).limit(20),
-    supabase.from('real_estate').select('id, name, current_value, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, owner').eq('owner_id', user.id),
+    supabase.from('real_estate').select('id, name, current_value, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, planned_sale_year, selling_costs_pct, owner').eq('owner_id', user.id),
     // Fetch state income tax rates from DB — no hardcoding
     supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),
     supabase
@@ -80,16 +80,18 @@ export async function GET(request: NextRequest) {
     income:                  (income        ?? []) as unknown as IncomeRowSelect[],
     expenses:                (expenses      ?? []) as ExpenseRowSelect[],
     irmaa_brackets:           irmaa_brackets ?? [],
-    real_estate: (real_estate ?? []) as {
-      id: string
-      name: string
-      current_value: number
-      mortgage_balance?: number | null
-      monthly_payment?: number | null
-      interest_rate?: number | null
-      is_primary_residence: boolean
-      owner: string
-    }[],
+    real_estate: (real_estate ?? []).map((r) => ({
+      id: r.id as string,
+      name: (r as { name?: string | null }).name ?? '',
+      current_value: Number((r as { current_value?: number | null }).current_value ?? 0),
+      mortgage_balance: (r as { mortgage_balance?: number | null }).mortgage_balance ?? null,
+      monthly_payment: (r as { monthly_payment?: number | null }).monthly_payment ?? null,
+      interest_rate: (r as { interest_rate?: number | null }).interest_rate ?? null,
+      is_primary_residence: Boolean((r as { is_primary_residence?: boolean }).is_primary_residence),
+      planned_sale_year: (r as { planned_sale_year?: number | null }).planned_sale_year ?? null,
+      selling_costs_pct: (r as { selling_costs_pct?: number | null }).selling_costs_pct ?? 6,
+      owner: (r as { owner?: string | null }).owner ?? '',
+    })),
     state_income_tax_rates:   state_income_tax_rates ?? [],
     businesses: (businesses_data ?? []).map(b => ({
       id: b.id as string,
