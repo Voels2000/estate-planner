@@ -117,7 +117,7 @@ export default async function DashboardPage() {
     household?.id
       ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
       : Promise.resolve({ data: [] }),
-    supabase.from('real_estate').select('current_value, mortgage_balance, titling').eq('owner_id', user!.id),
+    supabase.from('real_estate').select('current_value, mortgage_balance, monthly_payment, titling').eq('owner_id', user!.id),
     supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', user!.id),
     supabase
       .from('business_interests')
@@ -189,7 +189,11 @@ export default async function DashboardPage() {
     ? totalIncomeFromTable
     : totalIncomeFromTable + annualSSFromPIA
 
-  const totalExpenses = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0)
+  const annualMortgagePayments = (realEstate ?? [])
+    .filter(re => Number(re.mortgage_balance ?? 0) > 0 && Number(re.monthly_payment ?? 0) > 0)
+    .reduce((s, re) => s + Number(re.monthly_payment) * 12, 0)
+
+  const totalExpenses = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0) + annualMortgagePayments
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
 
   // Current year net = total income (all sources incl SS) - total expenses

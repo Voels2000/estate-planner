@@ -95,23 +95,24 @@ function formatDollars(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-const STORAGE_KEY_B = 'scenario_overrides_b'
-const STORAGE_KEY_C = 'scenario_overrides_c'
+function storageKey(householdId: string, label: 'B' | 'C') {
+  return `scenario_overrides_${label.toLowerCase()}_${householdId}`
+}
 
-function loadStoredScenario(key: string): Partial<ScenarioOverrides> | null {
+function loadStoredScenario(householdId: string, label: 'B' | 'C'): Partial<ScenarioOverrides> | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = localStorage.getItem(key)
+    const raw = localStorage.getItem(storageKey(householdId, label))
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-function saveStoredScenario(key: string, scenario: ScenarioOverrides) {
+function saveStoredScenario(householdId: string, label: 'B' | 'C', scenario: ScenarioOverrides) {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(key, JSON.stringify(scenario))
+    localStorage.setItem(storageKey(householdId, label), JSON.stringify(scenario))
   } catch {
     // ignore quota errors
   }
@@ -196,8 +197,8 @@ export default function ScenariosPage() {
         growth_rate_accumulation: householdData.growth_rate_accumulation ?? 7,
         growth_rate_retirement:   householdData.growth_rate_retirement ?? 5,
       }
-      const storedB = loadStoredScenario(STORAGE_KEY_B)
-      const storedC = loadStoredScenario(STORAGE_KEY_C)
+      const storedB = loadStoredScenario(householdData.id, 'B')
+      const storedC = loadStoredScenario(householdData.id, 'C')
       setScenarioB({ ...base, name: 'Scenario B', ...storedB })
       setScenarioC({ ...base, name: 'Scenario C', ...storedC })
     }
@@ -213,7 +214,7 @@ export default function ScenariosPage() {
   // ── Re-run B when scenarioB changes (debounced 600ms) ───────────────────────
   useEffect(() => {
     if (!scenarioB) return
-    saveStoredScenario(STORAGE_KEY_B, scenarioB)
+    if (household) saveStoredScenario(household.id, 'B', scenarioB)
     if (timerB.current) clearTimeout(timerB.current)
     timerB.current = setTimeout(() => {
       fetchScenario(scenarioB, setResultB, setLoadingB)
@@ -224,7 +225,7 @@ export default function ScenariosPage() {
   // ── Re-run C when scenarioC changes (debounced 600ms) ───────────────────────
   useEffect(() => {
     if (!scenarioC) return
-    saveStoredScenario(STORAGE_KEY_C, scenarioC)
+    if (household) saveStoredScenario(household.id, 'C', scenarioC)
     if (timerC.current) clearTimeout(timerC.current)
     timerC.current = setTimeout(() => {
       fetchScenario(scenarioC, setResultC, setLoadingC)
