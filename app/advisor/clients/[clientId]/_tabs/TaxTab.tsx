@@ -7,19 +7,13 @@ import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
+import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 
-export type LawScenario = 'current_law' | 'sunset' | 'no_exemption'
-
-const LAW_SCENARIO_OPTIONS: { value: LawScenario; label: string; description: string }[] = [
+const LAW_SCENARIO_OPTIONS: { value: EstateScenario; label: string; description: string }[] = [
   {
     value: 'current_law',
     label: 'Current Law',
-    description: 'Federal exemption at current indexed amount',
-  },
-  {
-    value: 'sunset',
-    label: 'Sunset (Post-2025)',
-    description: 'Exemption reverts to lower levels after Dec 31, 2025',
+    description: 'Federal exemption under OBBBA: $15M single / $30M MFJ',
   },
   {
     value: 'no_exemption',
@@ -28,26 +22,28 @@ const LAW_SCENARIO_OPTIONS: { value: LawScenario; label: string; description: st
   },
 ]
 
-function getFederalExemption(lawScenario: LawScenario) {
-  if (lawScenario === 'sunset') return 7_000_000
+function getFederalExemption(lawScenario: EstateScenario, filingStatus: FilingStatus) {
   if (lawScenario === 'no_exemption') return 0
-  return 13_610_000
+  return filingStatus === 'mfj'
+    ? OBBBA_2026.BASIC_EXCLUSION_MFJ
+    : OBBBA_2026.BASIC_EXCLUSION_SINGLE
 }
 
 function estimateFederalTax(grossEstate: number, federalExemption: number) {
   const taxable = Math.max(0, grossEstate - federalExemption)
-  return Math.round(taxable * 0.4)
+  return Math.round(taxable * OBBBA_2026.TOP_RATE)
 }
 
 export default function TaxTab({ household, estateTax, stateExemptions }: ClientViewShellProps) {
-  const [lawScenario, setLawScenario] = useState<LawScenario>('current_law')
+  const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
+  const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
 
   const grossEstate =
     (typeof estateTax?.gross_estate === 'number' ? estateTax.gross_estate : null) ??
     (typeof household?.gross_estate === 'number' ? household.gross_estate : null) ??
     0
 
-  const federalExemption = getFederalExemption(lawScenario)
+  const federalExemption = getFederalExemption(lawScenario, filingStatus)
   const federalTax = useMemo(
     () => estimateFederalTax(grossEstate, federalExemption),
     [grossEstate, federalExemption]
@@ -65,7 +61,7 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
         <p className="text-sm text-gray-500 mb-4">
           Select the federal tax law assumption for all calculations on this tab.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {LAW_SCENARIO_OPTIONS.map((option) => (
             <button
               key={option.value}

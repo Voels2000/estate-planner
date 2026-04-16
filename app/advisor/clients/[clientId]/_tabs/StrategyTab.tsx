@@ -9,15 +9,20 @@ import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
-
-type StrategyLawScenario = 'current_law' | 'sunset' | 'no_exemption'
+import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 
 export default function StrategyTab({ household, scenario }: ClientViewShellProps) {
   const grossEstate = Number(scenario?.gross_estate ?? 0)
-  const federalExemption = Number(scenario?.federal_exemption ?? 13_610_000)
+  const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
+  const defaultExemption = filingStatus === 'mfj'
+    ? OBBBA_2026.BASIC_EXCLUSION_MFJ
+    : OBBBA_2026.BASIC_EXCLUSION_SINGLE
+  const federalExemption = Number(scenario?.federal_exemption ?? defaultExemption)
   const estimatedFederalTax = Number(scenario?.estimated_federal_tax ?? 0)
   const estimatedStateTax = Number(scenario?.estimated_state_tax ?? 0)
-  const lawScenario = (scenario?.law_scenario as StrategyLawScenario | undefined) ?? 'current_law'
+  const rawLawScenario = scenario?.law_scenario as string | undefined
+  const lawScenario: EstateScenario =
+    rawLawScenario === 'no_exemption' ? 'no_exemption' : 'current_law'
   const person1BirthYear = household?.person1_birth_year ?? 1960
   const person2BirthYear = household?.person2_birth_year ?? undefined
   const annualRMD = Number(scenario?.annual_rmd ?? 0)
@@ -155,6 +160,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
               person1BirthYear={person1BirthYear}
               person2BirthYear={person2BirthYear}
               lawScenario={lawScenario}
+              filingStatus={filingStatus}
               person1RetirementAge={household?.person1_retirement_age ?? 65}
               growthRateAccumulation={household?.growth_rate_accumulation ?? 7}
               growthRateRetirement={household?.growth_rate_retirement ?? 5}

@@ -2,12 +2,18 @@
 // Federal estate tax engine wired to federal_tax_config (Sprint 59)
 // Reads brackets and exemptions from DB — no hardcoded tax constants.
 
+// Scenario IDs changed Session 20 to reflect OBBBA 2026:
+// - 'current_law_extended' -> 'current_law'  (OBBBA made it permanent)
+// - 'sunset_2026'          -> REMOVED        (OBBBA eliminated the sunset)
+// - 'legislative_change'   -> REMOVED        (was a placeholder, not used)
+// Federal exemption numbers still come from the federal_tax_config DB row.
+// The single source of truth for OBBBA constants is lib/tax/estate-tax-constants.ts.
+
 import type { YearRow } from '@/lib/calculations/projection-complete'
 
 export type TaxScenarioId =
-  | 'current_law_extended'
-  | 'sunset_2026'
-  | 'legislative_change'
+  | 'current_law'
+  | 'no_exemption'
 
 export type FederalTaxConfig = {
   scenario_id: TaxScenarioId
@@ -250,9 +256,8 @@ export function buildScenarioComparison(
 
 function scenarioLabel(id: TaxScenarioId): string {
   const labels: Record<TaxScenarioId, string> = {
-    current_law_extended: 'Current Law Extended',
-    sunset_2026: 'Sunset 2026',
-    legislative_change: 'Legislative Change',
+    current_law: 'Current Law',
+    no_exemption: 'No Exemption',
   }
   return labels[id]
 }

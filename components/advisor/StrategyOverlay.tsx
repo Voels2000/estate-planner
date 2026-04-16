@@ -1,14 +1,16 @@
 'use client'
 
-// Sprint 67 — Strategy Overlay UI
+// Strategy Overlay UI
 // Side-by-side comparison of base case vs strategy scenarios
 // Renders in StrategyTab
-// Net-to-heirs table at mortality ages 75, 80, 85, 90
+// Net-to-heirs table at Today / +10 years / +20 years horizons
+// Federal constants come from lib/tax/estate-tax-constants.ts (OBBBA 2026)
 
 import { useState } from 'react'
 import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyGiftingProgram'
 import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditShelterTrust'
 import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
+import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 
 type StrategyType = 'none' | 'gifting' | 'revocable_trust' | 'credit_shelter_trust'
 
@@ -18,7 +20,8 @@ interface StrategyOverlayProps {
   federalExemption: number
   person1BirthYear: number
   person2BirthYear?: number
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: EstateScenario
+  filingStatus: FilingStatus
   person1RetirementAge: number
   growthRateAccumulation: number
   growthRateRetirement: number
@@ -29,7 +32,6 @@ const HORIZON_YEARS = [
   { label: 'In 10 Years', yearsFromNow: 10 },
   { label: 'In 20 Years', yearsFromNow: 20 },
 ]
-const ESTATE_TAX_RATE = 0.40
 const CURRENT_YEAR = new Date().getFullYear()
 
 function projectEstateBlended(
@@ -55,13 +57,17 @@ function projectEstateBlended(
 
 function calcNetToHeirs(
   estate: number,
-  exemption: number,
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  filingStatus: FilingStatus,
+  lawScenario: EstateScenario,
 ): number {
-  if (lawScenario === 'no_exemption') return estate * (1 - ESTATE_TAX_RATE)
-  const effectiveExemption = lawScenario === 'sunset' ? Math.min(exemption, 7_000_000) : exemption
-  const taxable = Math.max(0, estate - effectiveExemption)
-  return estate - taxable * ESTATE_TAX_RATE
+  const exemption =
+    lawScenario === 'no_exemption'
+      ? 0
+      : filingStatus === 'mfj'
+        ? OBBBA_2026.BASIC_EXCLUSION_MFJ
+        : OBBBA_2026.BASIC_EXCLUSION_SINGLE
+  const taxable = Math.max(0, estate - exemption)
+  return estate - taxable * OBBBA_2026.TOP_RATE
 }
 
 export default function StrategyOverlay({
@@ -71,6 +77,7 @@ export default function StrategyOverlay({
   person1BirthYear,
   person2BirthYear,
   lawScenario,
+  filingStatus,
   person1RetirementAge,
   growthRateAccumulation,
   growthRateRetirement,
@@ -81,7 +88,7 @@ export default function StrategyOverlay({
 
   // Gifting config state
   const [giftingConfig, setGiftingConfig] = useState<GiftingProgramConfig>({
-    annualGiftPerDonor: 18000,
+    annualGiftPerDonor: 19000,
     numberOfRecipients: 2,
     startYear: CURRENT_YEAR,
     giftSplitting: !!person2BirthYear,
@@ -341,14 +348,14 @@ export default function StrategyOverlay({
                   growthRateAccumulation,
                   growthRateRetirement,
                 )
-                const netBase = calcNetToHeirs(projected, federalExemption, lawScenario)
+                const netBase = calcNetToHeirs(projected, filingStatus, lawScenario)
                 const taxBase = projected - netBase
 
                 // Strategy-adjusted net (gifting reduces gross estate)
                 let netWithStrategy = netBase
                 if (selectedStrategy === 'gifting' && giftingResult) {
                   const adjustedEstate = Math.max(0, projected - giftingResult.netEstateReduction)
-                  netWithStrategy = calcNetToHeirs(adjustedEstate, federalExemption, lawScenario)
+                  netWithStrategy = calcNetToHeirs(adjustedEstate, filingStatus, lawScenario)
                 } else if (selectedStrategy === 'credit_shelter_trust' && cstResult) {
                   netWithStrategy = cstResult.netToHeirsWithCST
                 }
@@ -371,8 +378,7 @@ export default function StrategyOverlay({
           </table>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Projected using your profile&apos;s growth assumptions ({growthRateAccumulation}% accumulation
-          before retirement, {growthRateRetirement}% after). Current gross estate is based on year-end projection.
+          Projected using your profile&apos;s growth assumptions ({growthRateAccumulation}% accumulation before retirement, {growthRateRetirement}% after). Current gross estate is based on year-end projection. Federal exemption reflects OBBBA 2026: $15M single / $30M MFJ under Current Law. No-Exemption scenario is a stress test only.
         </p>
       </div>
     </div>
