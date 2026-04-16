@@ -356,12 +356,12 @@ export default function StrategyOverlay({
                 return (
                   <tr key={label} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2 px-3 text-gray-700">{label}</td>
-                    <td className="py-2 px-3 text-right text-gray-700">${Math.round(projected / 1000)}K</td>
-                    <td className="py-2 px-3 text-right text-red-600">${Math.round(taxBase / 1000)}K</td>
-                    <td className="py-2 px-3 text-right font-medium">${Math.round(netBase / 1000)}K</td>
+                    <td className="py-2 px-3 text-right text-gray-700">${Math.round(projected).toLocaleString()}</td>
+                    <td className="py-2 px-3 text-right text-red-600">${Math.round(taxBase).toLocaleString()}</td>
+                    <td className="py-2 px-3 text-right font-medium">${Math.round(netBase).toLocaleString()}</td>
                     {selectedStrategy !== 'none' && (
                       <td className="py-2 px-3 text-right font-medium text-blue-700">
-                        ${Math.round(netWithStrategy / 1000)}K
+                        ${Math.round(netWithStrategy).toLocaleString()}
                       </td>
                     )}
                   </tr>
@@ -372,7 +372,7 @@ export default function StrategyOverlay({
         </div>
         <p className="text-xs text-gray-400 mt-2">
           Projected using your profile&apos;s growth assumptions ({growthRateAccumulation}% accumulation
-          before retirement, {growthRateRetirement}% after). All figures rounded to nearest $1K.
+          before retirement, {growthRateRetirement}% after). Current gross estate is based on year-end projection.
         </p>
       </div>
     </div>
