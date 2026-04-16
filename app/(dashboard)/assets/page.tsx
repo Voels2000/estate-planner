@@ -88,7 +88,7 @@ export default function AssetsPage() {
       { data: household },
     ] = await Promise.all([
       supabase.from('assets').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('asset_types').select('value, label').order('sort_order'),
+      supabase.from('asset_types').select('value, label').eq('is_active', true).order('sort_order'),
       supabase.from('ref_liquidity_types').select('value, label, description').eq('is_active', true).order('sort_order'),
       supabase.from('ref_titling_types').select('value, label, description').eq('is_active', true).order('sort_order'),
       supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),

@@ -26,6 +26,7 @@ export default async function ExpensesPage() {
     supabase
       .from('expense_types')
       .select('value, label')
+      .eq('is_active', true)
       .order('sort_order'),
     supabase
       .from('households')

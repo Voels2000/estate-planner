@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [success, setSuccess] = useState(false)
   const [householdId, setHouseholdId] = useState<string | null>(null)
 
@@ -134,6 +135,26 @@ export default function ProfilePage() {
     setError(null)
     setSuccess(false)
     setIsSubmitting(true)
+
+    const errors: string[] = []
+    if (!person1Name.trim()) errors.push('Your name is required')
+    if (!person1BirthYear) errors.push('Your birth year is required')
+    if (!person1RetirementAge) errors.push('Your retirement age is required')
+    if (!person1SSClaimingAge) errors.push('Your Social Security claiming age is required')
+    if (!person1LongevityAge) errors.push('Your longevity age is required')
+    if (hasSpouse) {
+      if (!person2Name.trim()) errors.push('Spouse name is required')
+      if (!person2BirthYear) errors.push('Spouse birth year is required')
+      if (!person2RetirementAge) errors.push('Spouse retirement age is required')
+      if (!person2SSClaimingAge) errors.push('Spouse Social Security claiming age is required')
+      if (!person2LongevityAge) errors.push('Spouse longevity age is required')
+    }
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      setIsSubmitting(false)
+      return
+    }
+    setValidationErrors([])
 
     try {
       const supabase = createClient()
@@ -476,6 +497,14 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {validationErrors.length > 0 && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 space-y-1">
+            <p className="font-medium">Please complete the following before saving:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {validationErrors.map((e) => <li key={e}>{e}</li>)}
+            </ul>
+          </div>
+        )}
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
         )}

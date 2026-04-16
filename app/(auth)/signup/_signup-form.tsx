@@ -277,7 +277,7 @@ export function SignupForm() {
 
           {hasAdvisorInvite ? (
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              You&apos;re signing up as a client. Your advisor will manage your access.
+              You&apos;re signing up as a client. You will have full access to your own dashboard. Your advisor will have view-only access to support your planning.
             </p>
           ) : (
             <div className="space-y-1.5">

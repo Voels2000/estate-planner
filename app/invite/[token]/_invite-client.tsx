@@ -64,11 +64,11 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
           <ul className="space-y-1.5 text-zinc-600 dark:text-zinc-400">
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-indigo-500">✓</span>
-              Share your full estate planning data with your advisor
+              Share your estate planning data with your advisor
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-indigo-500">✓</span>
-              Allow your advisor to view and manage your plan
+              Allow your advisor to view your plan — your advisor has view-only access and cannot make changes to your data
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-indigo-500">✓</span>
@@ -76,11 +76,11 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-indigo-500">✓</span>
-              Your access becomes read-only while connected to an advisor
+              You retain full access to your own dashboard at all times
             </li>
           </ul>
           <p className="pt-1 text-xs text-zinc-400 dark:text-zinc-500">
-            This is an all-or-nothing consent. You can disconnect from your advisor at any time.
+            You remain in control of your data. You can disconnect from your advisor at any time.
           </p>
         </div>
 

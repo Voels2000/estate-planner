@@ -15,10 +15,10 @@ export async function POST(req: Request) {
       subject: 'Welcome to MyWealthMaps',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-          <h1 style="color:#1a1a2e;font-size:24px">MyWealthMap</h1>
+          <h1 style="color:#1a1a2e;font-size:24px">Welcome to MyWealthMaps</h1>
           <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
           <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
-            <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">Welcome, ${firstName || 'there'}!</h2>
+            <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">Hi, ${firstName || 'there'}!</h2>
             <p style="color:#374151;font-size:16px;line-height:1.6">Your MyWealthMap account is ready. You now have access to a complete suite of financial planning tools.</p>
             <div style="text-align:center;margin:32px 0">
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Go to My Dashboard</a>
