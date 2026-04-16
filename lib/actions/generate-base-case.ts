@@ -74,7 +74,9 @@ export async function generateBaseCase(householdId: string): Promise<{
         .limit(20),
       admin
         .from('real_estate')
-        .select('id, name, current_value, is_primary_residence, owner')
+        .select(
+          'id, name, current_value, mortgage_balance, monthly_payment, interest_rate, planned_sale_year, selling_costs_pct, is_primary_residence, owner',
+        )
         .eq('owner_id', clientOwnerId),
       admin
         .from('state_income_tax_rates')
@@ -121,6 +123,11 @@ export async function generateBaseCase(householdId: string): Promise<{
         id: string
         name: string
         current_value: number
+        mortgage_balance?: number
+        monthly_payment?: number
+        interest_rate?: number
+        planned_sale_year?: number | null
+        selling_costs_pct?: number | null
         is_primary_residence: boolean
         owner: string
       }[],

@@ -37,6 +37,54 @@ export default async function MyEstateStrategyPage() {
 
   const ownerId = user.id
 
+  // ── Auto-generate base case if inputs are complete and no base case exists ──
+  if (!household.base_case_scenario_id) {
+    // Check completeness — fetch just what we need to validate
+    const [
+      { data: incomeRows },
+      { data: assetRows },
+      { data: householdFull },
+    ] = await Promise.all([
+      supabase.from('income').select('id').eq('owner_id', ownerId).limit(1),
+      supabase.from('assets').select('id').eq('owner_id', ownerId).limit(1),
+      supabase
+        .from('households')
+        .select(
+          'person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_pia, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_pia',
+        )
+        .eq('id', household.id)
+        .single(),
+    ])
+
+    const h = householdFull
+    const p1Complete = !!(
+      h?.person1_name &&
+      h?.person1_birth_year &&
+      h?.person1_retirement_age &&
+      h?.person1_longevity_age &&
+      h?.person1_ss_pia
+    )
+    const p2Complete = !h?.has_spouse || !!(
+      h?.person2_name &&
+      h?.person2_birth_year &&
+      h?.person2_retirement_age &&
+      h?.person2_longevity_age &&
+      h?.person2_ss_pia
+    )
+    const hasIncome = (incomeRows ?? []).length > 0
+    const hasAssets = (assetRows ?? []).length > 0
+
+    if (p1Complete && p2Complete && hasIncome && hasAssets) {
+      // Fire and don't await — page renders immediately, base case generates in background
+      // Use admin client so it works for both consumer and advisor paths
+      import('@/lib/actions/generate-base-case')
+        .then(({ generateBaseCase }) => generateBaseCase(household.id))
+        .catch((e) =>
+          console.error('[my-estate-strategy] auto base case failed:', e),
+        )
+    }
+  }
+
   const [
     { data: scenario },
     { data: federalTaxConfigs },
