@@ -24,7 +24,7 @@ interface AdvisoryMetricsDashboardProps {
 
 const CURRENT_YEAR = new Date().getFullYear()
 /** TCJA estate exemption reversion date is Dec 31 of this year (see advisoryMetrics sunset messaging). */
-const SUNSET_YEAR = 2025
+const SUNSET_YEAR = 2026
 const SUNSET_EXEMPTION = 7_000_000
 const DEFAULT_7520_RATE = 0.052
 

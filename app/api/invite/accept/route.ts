@@ -80,14 +80,14 @@ export async function POST(request: Request) {
         if (consumerProfile?.role === 'consumer') {
           const previousTier = consumerProfile.consumer_tier ?? 1
 
-          // Upgrade to Tier 3
+          // Step 1: always upgrade to Tier 3
           await admin.from('profiles').update({ consumer_tier: 3 }).eq('id', clientId)
           await admin
             .from('advisor_clients')
             .update({ previous_consumer_tier: previousTier })
             .eq('id', invite.id)
 
-          // FIX: cancel Stripe subscription by querying customer ID directly
+          // Step 2: attempt Stripe cancellation independently; failure should not block tier upgrade
           let cancelAt: string | null = null
           if (consumerProfile.stripe_customer_id) {
             try {
@@ -105,7 +105,6 @@ export async function POST(request: Request) {
 
               const activeSub = stripeData.data?.[0]
               if (activeSub) {
-                // FIX: halt workflow if Stripe cancel fails — don't silently continue
                 const cancelRes = await fetch(
                   `https://api.stripe.com/v1/subscriptions/${activeSub.id}`,
                   {
@@ -123,17 +122,15 @@ export async function POST(request: Request) {
                 cancelAt = new Date(activeSub.current_period_end * 1000).toISOString()
               }
             } catch (stripeErr) {
-              console.error('invite: stripe cancel error — billing transfer incomplete', stripeErr)
-              // Mark billing_transferred=false so the state is auditable
+              console.error('invite: stripe cancel error — tier already upgraded', stripeErr)
               await admin
                 .from('advisor_clients')
                 .update({ billing_transferred: false })
                 .eq('id', invite.id)
-              return
             }
           }
 
-          // Mark billing transfer complete
+          // Step 3: mark billing transfer complete
           await admin
             .from('advisor_clients')
             .update({
