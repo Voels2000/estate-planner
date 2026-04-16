@@ -61,11 +61,11 @@ export async function generateBaseCase(householdId: string): Promise<{
         .eq('owner_id', clientOwnerId),
       admin
         .from('income')
-        .select('id, source, amount, start_year, end_year, inflation_adjust, ss_person')
+        .select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person')
         .eq('owner_id', clientOwnerId),
       admin
         .from('expenses')
-        .select('id, category, amount, start_year, end_year, inflation_adjust, owner')
+        .select('id, category, amount, start_year, end_year, start_month, end_month, inflation_adjust, owner')
         .eq('owner_id', clientOwnerId),
       admin
         .from('irmaa_brackets')

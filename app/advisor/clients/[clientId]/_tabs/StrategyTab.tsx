@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'
@@ -28,16 +28,92 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
 
+  // Auto-generate base case if missing (Session 18 fix)
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const hasTriggeredRef = useRef(false)
+
+  const profileIncomplete = !household?.person1_birth_year
+  const needsGeneration = !grossEstate && !profileIncomplete
+
+  useEffect(() => {
+    if (!needsGeneration || hasTriggeredRef.current || generating) return
+    hasTriggeredRef.current = true
+    setGenerating(true)
+    setGenerateError(null)
+    fetch('/api/advisor/generate-base-case', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId: household.id }),
+    })
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          throw new Error(data.error ?? 'Failed to generate base case')
+        }
+        // Reload to refetch server-side household/scenario data
+        window.location.reload()
+      })
+      .catch((err: Error) => {
+        setGenerateError(err.message)
+        setGenerating(false)
+        hasTriggeredRef.current = false
+      })
+  }, [needsGeneration, generating, household?.id])
+
+  function handleRetry() {
+    hasTriggeredRef.current = false
+    setGenerateError(null)
+    setGenerating(false)
+    // Trigger effect again by forcing a re-render via state change
+    setGenerating(true)
+    setTimeout(() => setGenerating(false), 10)
+  }
+
+  // Friendly state when no base case exists
   if (!grossEstate) {
-    return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/3" />
-        <div className="grid grid-cols-4 gap-3">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded-lg" />
-          ))}
+    if (profileIncomplete) {
+      return (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <h3 className="text-sm font-semibold text-amber-900">
+            Client profile is incomplete
+          </h3>
+          <p className="mt-2 text-sm text-amber-800">
+            The client needs to complete their profile (birth year, retirement
+            age, longevity age, and Social Security PIA) before a base case
+            can be generated.
+          </p>
         </div>
-        <div className="h-48 bg-gray-200 rounded-lg" />
+      )
+    }
+    if (generateError) {
+      return (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+          <h3 className="text-sm font-semibold text-red-900">
+            Unable to build estate plan
+          </h3>
+          <p className="mt-2 text-sm text-red-800">{generateError}</p>
+          <button
+            onClick={handleRetry}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      )
+    }
+    return (
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-6">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <h3 className="text-sm font-semibold text-blue-900">
+            Building estate plan…
+          </h3>
+        </div>
+        <p className="mt-2 text-sm text-blue-800">
+          Running projections based on this client&apos;s profile, assets,
+          income, and expenses. This usually takes about 10-20 seconds.
+        </p>
       </div>
     )
   }
@@ -79,6 +155,9 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
               person1BirthYear={person1BirthYear}
               person2BirthYear={person2BirthYear}
               lawScenario={lawScenario}
+              person1RetirementAge={household?.person1_retirement_age ?? 65}
+              growthRateAccumulation={household?.growth_rate_accumulation ?? 7}
+              growthRateRetirement={household?.growth_rate_retirement ?? 5}
             />
           </>
         )}

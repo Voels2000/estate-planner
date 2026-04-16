@@ -19,21 +19,38 @@ interface StrategyOverlayProps {
   person1BirthYear: number
   person2BirthYear?: number
   lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  person1RetirementAge: number
+  growthRateAccumulation: number
+  growthRateRetirement: number
 }
 
-const MORTALITY_AGES = [75, 80, 85, 90]
+const HORIZON_YEARS = [
+  { label: 'Today', yearsFromNow: 0 },
+  { label: 'In 10 Years', yearsFromNow: 10 },
+  { label: 'In 20 Years', yearsFromNow: 20 },
+]
 const ESTATE_TAX_RATE = 0.40
 const CURRENT_YEAR = new Date().getFullYear()
 
-function projectEstateAtAge(
+function projectEstateBlended(
   grossEstate: number,
-  growthRate: number,
-  birthYear: number,
-  age: number
+  yearsFromNow: number,
+  person1BirthYear: number,
+  person1RetirementAge: number,
+  growthRateAccumulation: number,
+  growthRateRetirement: number
 ): number {
-  const years = age - (CURRENT_YEAR - birthYear)
-  if (years <= 0) return grossEstate
-  return grossEstate * Math.pow(1 + growthRate, years)
+  if (yearsFromNow <= 0) return grossEstate
+  const accumRate = growthRateAccumulation / 100
+  const retireRate = growthRateRetirement / 100
+  const retirementYear = person1BirthYear + person1RetirementAge
+  let value = grossEstate
+  for (let i = 1; i <= yearsFromNow; i++) {
+    const year = CURRENT_YEAR + i
+    const rate = year >= retirementYear ? retireRate : accumRate
+    value = value * (1 + rate)
+  }
+  return value
 }
 
 function calcNetToHeirs(
@@ -54,11 +71,13 @@ export default function StrategyOverlay({
   person1BirthYear,
   person2BirthYear,
   lawScenario,
+  person1RetirementAge,
+  growthRateAccumulation,
+  growthRateRetirement,
 }: StrategyOverlayProps) {
   void householdId
 
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyType>('none')
-  const [growthRate] = useState(0.06)
 
   // Gifting config state
   const [giftingConfig, setGiftingConfig] = useState<GiftingProgramConfig>({
@@ -296,14 +315,14 @@ export default function StrategyOverlay({
         </div>
       )}
 
-      {/* Net-to-Heirs Table — mortality ages 75, 80, 85, 90 */}
+      {/* Net-to-Heirs Table — Today / +10 / +20 horizons */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">Net to Heirs at Mortality Ages</h3>
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">Net to Heirs by Horizon</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left py-2 px-3 font-medium text-gray-600">Age at Death</th>
+                <th className="text-left py-2 px-3 font-medium text-gray-600">Horizon</th>
                 <th className="text-right py-2 px-3 font-medium text-gray-600">Gross Estate</th>
                 <th className="text-right py-2 px-3 font-medium text-gray-600">Est. Tax</th>
                 <th className="text-right py-2 px-3 font-medium text-gray-600">Net to Heirs</th>
@@ -313,8 +332,15 @@ export default function StrategyOverlay({
               </tr>
             </thead>
             <tbody>
-              {MORTALITY_AGES.map((age) => {
-                const projected = projectEstateAtAge(grossEstate, growthRate, person1BirthYear, age)
+              {HORIZON_YEARS.map(({ label, yearsFromNow }) => {
+                const projected = projectEstateBlended(
+                  grossEstate,
+                  yearsFromNow,
+                  person1BirthYear,
+                  person1RetirementAge,
+                  growthRateAccumulation,
+                  growthRateRetirement,
+                )
                 const netBase = calcNetToHeirs(projected, federalExemption, lawScenario)
                 const taxBase = projected - netBase
 
@@ -328,8 +354,8 @@ export default function StrategyOverlay({
                 }
 
                 return (
-                  <tr key={age} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-3 text-gray-700">Age {age}</td>
+                  <tr key={label} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-2 px-3 text-gray-700">{label}</td>
                     <td className="py-2 px-3 text-right text-gray-700">${Math.round(projected / 1000)}K</td>
                     <td className="py-2 px-3 text-right text-red-600">${Math.round(taxBase / 1000)}K</td>
                     <td className="py-2 px-3 text-right font-medium">${Math.round(netBase / 1000)}K</td>
@@ -345,7 +371,8 @@ export default function StrategyOverlay({
           </table>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Projected at {(growthRate * 100).toFixed(0)}% annual growth. All figures rounded to nearest $1K.
+          Projected using your profile&apos;s growth assumptions ({growthRateAccumulation}% accumulation
+          before retirement, {growthRateRetirement}% after). All figures rounded to nearest $1K.
         </p>
       </div>
     </div>
