@@ -2,7 +2,6 @@
 
 // Sprint 72 — AdvisoryMetricsDashboard
 // 8-metric panel for advisor StrategyTab
-// Sunset urgency countdown engine
 // Consumer shareable readiness score placeholder
 
 import { useMemo } from 'react'
@@ -41,15 +40,6 @@ const STATUS_BADGE = {
   neutral: 'bg-gray-100 text-gray-600',
 }
 
-const URGENCY_COLORS = {
-  low: 'bg-blue-50 border-blue-200',
-  medium: 'bg-amber-50 border-amber-200',
-  high: 'bg-orange-50 border-orange-200',
-  critical: 'bg-red-50 border-red-200',
-}
-
-const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
-
 export default function AdvisoryMetricsDashboard({
   householdId,
   grossEstate,
@@ -81,7 +71,7 @@ export default function AdvisoryMetricsDashboard({
     sunsetExemption: hasSpouse ? 14_000_000 : 7_000_000,
   }
 
-  const { metrics, sunsetUrgency } = useMemo(
+  const { metrics } = useMemo(
     () => calculateAdvisoryMetrics(input),
     [
       grossEstate,
@@ -99,54 +89,6 @@ export default function AdvisoryMetricsDashboard({
 
   return (
     <div className="space-y-6" data-household-id={householdId}>
-      {/* Sunset Urgency Banner */}
-      {sunsetUrgency.exposureAtSunset > 0 && (
-        <div className={`border rounded-lg p-4 ${URGENCY_COLORS[sunsetUrgency.urgencyLevel]}`}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">
-                ⏰ Sunset Urgency — {sunsetUrgency.daysRemaining} days remaining
-              </p>
-              <p className="text-xs text-gray-600">{sunsetUrgency.message}</p>
-            </div>
-            <div className="text-right ml-4 shrink-0">
-              <div className="text-lg font-bold text-red-700">{fmt(sunsetUrgency.exposureAtSunset)}</div>
-              <div className="text-xs text-gray-500">sunset exposure</div>
-            </div>
-          </div>
-          {/* Countdown bar */}
-          <div className="mt-3">
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  sunsetUrgency.urgencyLevel === 'critical'
-                    ? 'bg-red-500'
-                    : sunsetUrgency.urgencyLevel === 'high'
-                      ? 'bg-orange-500'
-                      : sunsetUrgency.urgencyLevel === 'medium'
-                        ? 'bg-amber-500'
-                        : 'bg-blue-500'
-                }`}
-                style={{
-                  width: `${Math.max(2, Math.min(100, (sunsetUrgency.daysRemaining / 730) * 100))}%`,
-                }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>Today</span>
-              <span>{sunsetUrgency.sunsetDate}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* No sunset exposure — informational banner */}
-      {sunsetUrgency.exposureAtSunset === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <p className="text-xs text-blue-700">ℹ️ {sunsetUrgency.message}</p>
-        </div>
-      )}
-
       {/* 8-Metric Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map((metric) => (
