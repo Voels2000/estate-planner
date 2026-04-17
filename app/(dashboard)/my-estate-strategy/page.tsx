@@ -185,6 +185,7 @@ export default async function MyEstateStrategyPage() {
         horizons={horizons}
         estateAsOfLabel={currentMonthYearLabel}
         primaryResidenceValue={primaryResidenceValueForUi}
+        hasSpouse={hasSpouse}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

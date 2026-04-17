@@ -198,7 +198,7 @@ export async function generateEstateFlow(
   supabase?: ReturnType<typeof createClient>,
   hasCSTStrategy = false,
   horizon: EstateHorizon = 'at_longevity',
-  grossEstateOverride?: number | null,
+  liveNetWorth?: number | null,
 ): Promise<EstateFlowGraph> {
   if (!supabase) {
     supabase = createClient()
@@ -321,7 +321,7 @@ export async function generateEstateFlow(
     horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
     horizonCalendarYear = targetYear
   } else {
-    // 'at_longevity' — keep the existing behavior
+    // 'at_longevity' — use the final row
     horizonRow = lastOutput
     horizonCalendarYear = lastOutput?.year ?? currentCalendarYear
   }
@@ -329,9 +329,10 @@ export async function generateEstateFlow(
   console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)
 
   const grossEstateFromHorizon = Number(horizonRow?.estate_incl_home ?? 0)
+  const liveNetWorthValue = Number(liveNetWorth)
   const grossEstate =
-    grossEstateOverride != null && !Number.isNaN(Number(grossEstateOverride))
-      ? Number(grossEstateOverride)
+    horizon === 'today' && liveNetWorth != null && !Number.isNaN(liveNetWorthValue)
+      ? liveNetWorthValue
       : grossEstateFromHorizon
 
   let estateTaxFederal: number

@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from '../_utils'
 import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import { createClient } from '@/lib/supabase/client'
+import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 const ESTATE_DOC_TYPES = [
   { type: 'will',              label: 'Last Will & Testament',     critical: true },
@@ -23,7 +24,11 @@ export default function EstateTab({
   advisorId,
   household,
   assets,
+  liabilities,
   realEstate,
+  businesses,
+  insurancePolicies,
+  businessInterests,
   beneficiaries,
   estateDocuments,
   conflictReport,
@@ -32,6 +37,38 @@ export default function EstateTab({
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
+
+  // Live net worth — matches the consumer dashboard calculation exactly.
+  // assets + real_estate_equity + business_value + non_ilit_insurance_death_benefit - liabilities
+  const financialAssetsTotal = (assets ?? []).reduce(
+    (s, a) => s + Number(a.value ?? 0),
+    0,
+  )
+  const realEstateEquityTotal = (realEstate ?? []).reduce(
+    (s, r) => s + Number(r.current_value ?? 0) - Number(r.mortgage_balance ?? 0),
+    0,
+  )
+  const businessValueTotal = computeBusinessOwnershipValue(
+    (businesses ?? []) as { estimated_value?: unknown; ownership_pct?: unknown }[],
+    (businessInterests ?? []) as {
+      fmv_estimated?: unknown
+      total_entity_value?: unknown
+      ownership_pct?: unknown
+    }[],
+  )
+  const insuranceValue = (insurancePolicies ?? [])
+    .filter(p => !p.is_ilit)
+    .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
+  const liabilitiesTotal = (liabilities ?? []).reduce(
+    (s, l) => s + Number(l.balance ?? 0),
+    0,
+  )
+  const liveNetWorth =
+    financialAssetsTotal +
+    realEstateEquityTotal +
+    businessValueTotal +
+    insuranceValue -
+    liabilitiesTotal
 
   const assetAccountType = (a: { type?: string | null; account_type?: string | null }) =>
     (a.type ?? a.account_type ?? '').toLowerCase()
@@ -107,6 +144,7 @@ export default function EstateTab({
           isAdvisor={true}
           deathView={deathView}
           hasCSTStrategy={hasCSTStrategy}
+          liveNetWorth={liveNetWorth}
         />
       </section>
 

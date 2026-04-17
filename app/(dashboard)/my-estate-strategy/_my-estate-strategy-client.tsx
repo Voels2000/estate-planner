@@ -24,6 +24,8 @@ type Props = {
   estateAsOfLabel: string
   /** Sum of primary residence FMV; only non-null when married + primary home exists */
   primaryResidenceValue: number | null
+  /** Whether the household has a spouse (for death-view picker in flow view) */
+  hasSpouse: boolean
 }
 
 export default function MyEstateStrategyClient({
@@ -33,6 +35,7 @@ export default function MyEstateStrategyClient({
   horizons,
   estateAsOfLabel,
   primaryResidenceValue,
+  hasSpouse,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -188,6 +191,8 @@ export default function MyEstateStrategyClient({
             householdId={householdId}
             scenarioId={scenarioId}
             estateAsOfLabel={estateAsOfLabel}
+            liveNetWorth={today.grossEstate ?? 0}
+            hasSpouse={hasSpouse}
             hidePageHeader
           />
         </CollapsibleSection>

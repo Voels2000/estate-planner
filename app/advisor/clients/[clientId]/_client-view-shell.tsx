@@ -233,6 +233,13 @@ export interface ClientViewShellProps {
     has_key_person_insurance: boolean
     succession_plan: string | null
   }>
+  businessInterests?: Array<{
+    id: string
+    entity_name: string | null
+    fmv_estimated: number | null
+    total_entity_value: number | null
+    ownership_pct: number | null
+  }>
   insurancePolicies?: Array<{
     id: string
     insurance_type: string | null
@@ -243,6 +250,12 @@ export interface ClientViewShellProps {
     annual_premium: number | null
     is_ilit: boolean
     is_employer_provided: boolean
+  }>
+  liabilities?: Array<{
+    id: string
+    type: string | null
+    balance: number | null
+    owner: string | null
   }>
   beneficiaries: any[]
   estateDocuments: any[]

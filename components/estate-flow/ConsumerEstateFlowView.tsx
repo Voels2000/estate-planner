@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import type { EstateFlowGraph, FlowNode, FlowEdge } from '@/lib/estate-flow/generateEstateFlow'
+import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { createClient } from '@/lib/supabase/client'
 
@@ -161,6 +161,10 @@ interface Props {
   scenarioId: string | null
   /** e.g. "April 2026" — shown with heirs receive */
   estateAsOfLabel: string
+  /** Live net worth from the dashboard — passed so "Today" horizon matches dashboard figures. */
+  liveNetWorth: number
+  /** Whether the household has a spouse (enables death-view picker). */
+  hasSpouse: boolean
   /** When true, the page title block is omitted (e.g. when wrapped in CollapsibleSection). */
   hidePageHeader?: boolean
 }
@@ -169,19 +173,23 @@ export default function ConsumerEstateFlowView({
   householdId,
   scenarioId,
   estateAsOfLabel,
+  liveNetWorth,
+  hasSpouse,
   hidePageHeader = false,
 }: Props) {
   const supabase = useMemo(() => createClient(), [])
+  const [horizon, setHorizon] = useState<EstateHorizon>('today')
+  const [deathView, setDeathView] = useState<DeathView>('first_death')
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
-    generateEstateFlow(householdId, scenarioId, 'first_death', supabase, false, 'today')
+    generateEstateFlow(householdId, scenarioId, deathView, supabase, false, horizon, liveNetWorth)
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [householdId, scenarioId, supabase])
+  }, [householdId, scenarioId, supabase, horizon, deathView, liveNetWorth])
 
   if (loading) {
     return (
@@ -221,6 +229,51 @@ export default function ConsumerEstateFlowView({
           </p>
         </div>
       )}
+
+      {/* Scenario pickers — plain-English labels for consumer */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1 rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-label="When">
+          {([
+            { value: 'today',        label: 'Today' },
+            { value: 'ten_year',     label: 'In 10 Years' },
+            { value: 'twenty_year',  label: 'In 20 Years' },
+            { value: 'at_longevity', label: 'At Longevity' },
+          ] as const).map((opt, i) => (
+            <button
+              key={opt.value}
+              onClick={() => setHorizon(opt.value)}
+              className={`px-3 py-1.5 transition-colors ${
+                horizon === opt.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              } ${i > 0 ? 'border-l border-gray-200' : ''}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {hasSpouse && (
+          <div className="flex items-center gap-1 rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-label="Who dies first">
+            {([
+              { value: 'first_death',  label: 'If I die first' },
+              { value: 'second_death', label: 'If my spouse dies first' },
+            ] as const).map((opt, i) => (
+              <button
+                key={opt.value}
+                onClick={() => setDeathView(opt.value)}
+                className={`px-3 py-1.5 transition-colors ${
+                  deathView === opt.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                } ${i > 0 ? 'border-l border-gray-200' : ''}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Visual flow */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">

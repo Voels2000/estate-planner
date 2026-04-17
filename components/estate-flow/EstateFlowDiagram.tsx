@@ -254,6 +254,8 @@ interface Props {
   isAdvisor?: boolean
   deathView?: DeathView
   hasCSTStrategy?: boolean
+  /** Live net worth from the dashboard — passed so "Today" horizon matches dashboard figures. */
+  liveNetWorth?: number
   /** Planned domicile change from StrategyTab / domicile_schedule */
   domicileTransition?: DomicileTransitionNote
   onShareLinkGenerated?: (url: string) => void
@@ -266,6 +268,7 @@ export default function EstateFlowDiagram({
   isAdvisor = false,
   deathView,
   hasCSTStrategy = false,
+  liveNetWorth,
   domicileTransition,
   onShareLinkGenerated,
 }: Props) {
@@ -297,7 +300,7 @@ export default function EstateFlowDiagram({
       setError(null)
       console.log('fetchGraph called with deathView:', internalDeathView)
       try {
-        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase, hasCSTStrategy, horizon)
+        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase, hasCSTStrategy, horizon, liveNetWorth)
         if (!cancelled) {
           setGraph(g)
           const snap = await saveEstateFlowSnapshot(g)
@@ -316,7 +319,7 @@ export default function EstateFlowDiagram({
     return () => {
       cancelled = true
     }
-  }, [householdId, scenarioId, internalDeathView, supabase, horizon, hasCSTStrategy])
+  }, [householdId, scenarioId, internalDeathView, supabase, horizon, hasCSTStrategy, liveNetWorth])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return
