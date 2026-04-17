@@ -263,8 +263,9 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
   onClose: () => void
   onSave: () => void
 }) {
+  const sortedAssetTypes = [...assetTypes].sort((a, b) => a.label.localeCompare(b.label))
   const [owner, setOwner] = useState(editAsset?.owner ?? 'person1')
-  const [type, setType] = useState(editAsset?.type ?? assetTypes[0]?.value ?? '')
+  const [type, setType] = useState(editAsset?.type ?? sortedAssetTypes[0]?.value ?? '')
   const [name, setName] = useState(editAsset?.name ?? '')
   const [value, setValue] = useState(editAsset?.value?.toString() ?? '')
   const [institution, setInstitution] = useState(editAsset?.institution ?? '')
@@ -357,7 +358,7 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Asset Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
-              {assetTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {sortedAssetTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div>

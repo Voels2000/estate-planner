@@ -237,8 +237,9 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
   onClose: () => void
   onSave: () => void
 }) {
+  const sortedLiabilityTypes = [...liabilityTypes].sort((a, b) => a.label.localeCompare(b.label))
   const [owner, setOwner] = useState(editLiability?.owner ?? 'person1')
-  const [type, setType] = useState(editLiability?.type ?? liabilityTypes[0]?.value ?? '')
+  const [type, setType] = useState(editLiability?.type ?? sortedLiabilityTypes[0]?.value ?? '')
   const [name, setName] = useState(editLiability?.name ?? '')
   const [balance, setBalance] = useState(editLiability?.balance?.toString() ?? '')
   const [interestRate, setInterestRate] = useState(editLiability?.interest_rate?.toString() ?? '')
@@ -293,7 +294,7 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Liability Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
-              {liabilityTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {sortedLiabilityTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div>

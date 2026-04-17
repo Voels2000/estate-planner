@@ -302,9 +302,10 @@ function ExpenseModal({
   onClose: () => void
   onSave: () => void
 }) {
+  const sortedExpenseTypes = [...expenseTypes].sort((a, b) => a.label.localeCompare(b.label))
   const currentYear = new Date().getFullYear()
   const [owner, setOwner] = useState(editExpense?.owner ?? 'person1')
-  const [category, setCategory] = useState(editExpense?.category ?? expenseTypes[0]?.value ?? '')
+  const [category, setCategory] = useState(editExpense?.category ?? sortedExpenseTypes[0]?.value ?? '')
   const [name, setName] = useState(editExpense?.name ?? '')
   const [amount, setAmount] = useState(editExpense?.amount?.toString() ?? '')
   const [startYear, setStartYear] = useState(
@@ -394,7 +395,7 @@ function ExpenseModal({
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Expense Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
-              {expenseTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {sortedExpenseTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 

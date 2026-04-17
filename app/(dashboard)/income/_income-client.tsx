@@ -255,9 +255,10 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
   onClose: () => void
   onSuccess: () => void
 }) {
+  const sortedIncomeTypes = [...incomeTypes].sort((a, b) => a.label.localeCompare(b.label))
   const currentYear = new Date().getFullYear()
   const [ssPerson,        setSsPerson]        = useState(editRow?.ss_person ?? 'person1')
-  const [source,          setSource]          = useState(editRow?.source ?? (incomeTypes[0]?.value ?? 'salary'))
+  const [source,          setSource]          = useState(editRow?.source ?? (sortedIncomeTypes[0]?.value ?? 'salary'))
   const [name,            setName]            = useState(editRow?.name ?? '')
   const [amount,          setAmount]          = useState(editRow?.amount?.toString() ?? '')
   const [startYear,       setStartYear]       = useState(editRow?.start_year != null ? editRow.start_year.toString() : currentYear.toString())
@@ -328,7 +329,7 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Income Source</label>
             <select value={source} onChange={(e) => setSource(e.target.value)} className={inputClass}>
-              {incomeTypes.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {sortedIncomeTypes.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
 
