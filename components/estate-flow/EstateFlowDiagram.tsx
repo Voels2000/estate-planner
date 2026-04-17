@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView } from '@/lib/estate-flow/generateEstateFlow'
+import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { saveEstateFlowSnapshot, generateShareLink, loadSnapshotHistory } from '@/lib/estate-flow/snapshotFlow'
 import { createClient } from '@/lib/supabase/client'
@@ -269,13 +269,13 @@ export default function EstateFlowDiagram({
   domicileTransition,
   onShareLinkGenerated,
 }: Props) {
-  void hasCSTStrategy
   console.log('isAdvisor prop:', isAdvisor)
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [internalDeathView, setInternalDeathView] = useState<DeathView>(deathView ?? 'first_death')
+  const [horizon, setHorizon] = useState<EstateHorizon>('at_longevity')
   const [showLabels, setShowLabels] = useState(true)
   const [snapshotId, setSnapshotId] = useState<string | null>(null)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
@@ -297,7 +297,7 @@ export default function EstateFlowDiagram({
       setError(null)
       console.log('fetchGraph called with deathView:', internalDeathView)
       try {
-        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase)
+        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase, hasCSTStrategy, horizon)
         if (!cancelled) {
           setGraph(g)
           const snap = await saveEstateFlowSnapshot(g)
@@ -316,7 +316,7 @@ export default function EstateFlowDiagram({
     return () => {
       cancelled = true
     }
-  }, [householdId, scenarioId, internalDeathView, supabase])
+  }, [householdId, scenarioId, internalDeathView, supabase, horizon, hasCSTStrategy])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return
@@ -364,6 +364,27 @@ export default function EstateFlowDiagram({
       {/* Controls */}
       {isAdvisor && (
         <div className="flex flex-wrap items-center gap-3" style={{ position: 'relative', zIndex: 10 }}>
+              {/* Horizon selector */}
+              <div className="flex items-center gap-1 rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-label="Horizon">
+                {([
+                  { value: 'today',       label: 'Today' },
+                  { value: 'ten_year',    label: 'In 10 Years' },
+                  { value: 'twenty_year', label: 'In 20 Years' },
+                  { value: 'at_longevity', label: 'At Longevity' },
+                ] as const).map((opt, i) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setHorizon(opt.value)}
+                    className={`px-3 py-1.5 transition-colors ${
+                      horizon === opt.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    } ${i > 0 ? 'border-l border-gray-200' : ''}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
           {/* Labels toggle */}
           <button
             onClick={() => setShowLabels(l => !l)}
@@ -545,6 +566,10 @@ export default function EstateFlowDiagram({
       {/* Death view label */}
       <p className="text-center text-xs text-gray-400">
         {internalDeathView === 'first_death' ? 'First death view' : 'Second death view'} ·{' '}
+        {horizon === 'today' ? 'Today' :
+         horizon === 'ten_year' ? 'In 10 Years' :
+         horizon === 'twenty_year' ? 'In 20 Years' :
+         'At Longevity'} ·{' '}
         Generated {new Date(graph.generated_at).toLocaleDateString()}
       </p>
     </div>

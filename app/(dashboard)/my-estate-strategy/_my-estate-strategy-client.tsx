@@ -187,8 +187,6 @@ export default function MyEstateStrategyClient({
           <ConsumerEstateFlowView
             householdId={householdId}
             scenarioId={scenarioId}
-            todayGrossEstate={today.grossEstate ?? 0}
-            todayTotalTaxLiability={today.totalTaxLiability ?? 0}
             estateAsOfLabel={estateAsOfLabel}
             hidePageHeader
           />

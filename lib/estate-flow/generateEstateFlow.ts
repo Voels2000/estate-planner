@@ -9,7 +9,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { computeBusinessOwnershipValue, computeColumnTaxes } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
 
@@ -62,10 +62,13 @@ export interface FlowEdge {
 
 export type DeathView = 'first_death' | 'second_death'
 
+export type EstateHorizon = 'today' | 'ten_year' | 'twenty_year' | 'at_longevity'
+
 export interface EstateFlowGraph {
   household_id: string
   scenario_id: string | null
   death_view: DeathView
+  horizon: EstateHorizon
   generated_at: string
   nodes: FlowNode[]
   edges: FlowEdge[]
@@ -194,7 +197,7 @@ export async function generateEstateFlow(
   deathView: DeathView = 'first_death',
   supabase?: ReturnType<typeof createClient>,
   hasCSTStrategy = false,
-  /** When set, replaces projection end-state `estate_incl_home` for summary and owner-node gross (today's live estate). */
+  horizon: EstateHorizon = 'at_longevity',
   grossEstateOverride?: number | null,
 ): Promise<EstateFlowGraph> {
   if (!supabase) {
@@ -297,20 +300,62 @@ export async function generateEstateFlow(
     ? (scenario?.outputs_s2_first ?? scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
     : (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
   const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
+  console.log('deathView:', deathView, 'horizon:', horizon, 'rawOutputs length:', rawOutputs?.length)
 
-  console.log('deathView:', deathView, 'rawOutputs length:', rawOutputs?.length)
+  const currentCalendarYear = new Date().getFullYear()
   const lastOutput = outputs.length > 0 ? outputs[outputs.length - 1] : null
+
+  // Pick the projection row that matches the selected horizon.
+  // Falls back to lastOutput if the horizon year isn't in the projection.
+  let horizonRow = lastOutput
+  let horizonCalendarYear = currentCalendarYear
+  if (horizon === 'today') {
+    horizonRow = outputs.find(r => r.year === currentCalendarYear) ?? outputs[0] ?? lastOutput
+    horizonCalendarYear = currentCalendarYear
+  } else if (horizon === 'ten_year') {
+    const targetYear = currentCalendarYear + 10
+    horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
+    horizonCalendarYear = targetYear
+  } else if (horizon === 'twenty_year') {
+    const targetYear = currentCalendarYear + 20
+    horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
+    horizonCalendarYear = targetYear
+  } else {
+    // 'at_longevity' — keep the existing behavior
+    horizonRow = lastOutput
+    horizonCalendarYear = lastOutput?.year ?? currentCalendarYear
+  }
 
   console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)
 
-  const estateTaxFederal = Number(lastOutput?.estate_tax_federal ?? 0)
-  const estateTaxState = Number(lastOutput?.estate_tax_state ?? 0)
-  const netToHeirs = Number(lastOutput?.net_to_heirs ?? 0)
-  const grossEstateFromProjection = Number(lastOutput?.estate_incl_home ?? 0)
+  const grossEstateFromHorizon = Number(horizonRow?.estate_incl_home ?? 0)
   const grossEstate =
     grossEstateOverride != null && !Number.isNaN(Number(grossEstateOverride))
       ? Number(grossEstateOverride)
-      : grossEstateFromProjection
+      : grossEstateFromHorizon
+
+  let estateTaxFederal: number
+  let estateTaxState: number
+  let netToHeirs: number
+
+  if (horizon === 'at_longevity') {
+    // Use the projection's actual death-year tax values (includes DSUE, portability, etc.)
+    estateTaxFederal = Number(horizonRow?.estate_tax_federal ?? 0)
+    estateTaxState = Number(horizonRow?.estate_tax_state ?? 0)
+    netToHeirs = Number(horizonRow?.net_to_heirs ?? 0)
+  } else {
+    // Compute hypothetical "what if death occurred this year" tax using OBBBA constants
+    const hypothetical = computeColumnTaxes({
+      grossEstate,
+      calendarYear: horizonCalendarYear,
+      statePrimary: household.state_primary,
+      filingStatus: household.filing_status,
+      hasSpouse: Boolean(household.has_spouse),
+    })
+    estateTaxFederal = hypothetical.federalTax
+    estateTaxState = hypothetical.stateExposure
+    netToHeirs = Math.max(0, grossEstate - estateTaxFederal - estateTaxState)
+  }
 
   // Determine which documents exist
   const hasTrust = trusts.length > 0 ||
@@ -956,6 +1001,7 @@ export async function generateEstateFlow(
     household_id: householdId,
     scenario_id: scenarioId,
     death_view: deathView,
+    horizon,
     generated_at: new Date().toISOString(),
     nodes,
     edges,

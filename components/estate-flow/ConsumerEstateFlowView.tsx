@@ -159,10 +159,6 @@ function ConsumerNodePill({ node }: { node: FlowNode }) {
 interface Props {
   householdId: string
   scenarioId: string | null
-  /** Today's live estate size (same as My Estate Strategy "Today" column), not projection at-death. */
-  todayGrossEstate: number
-  /** Total tax from My Estate Strategy "Today" column (federal + state snapshot). */
-  todayTotalTaxLiability: number
   /** e.g. "April 2026" — shown with heirs receive */
   estateAsOfLabel: string
   /** When true, the page title block is omitted (e.g. when wrapped in CollapsibleSection). */
@@ -172,8 +168,6 @@ interface Props {
 export default function ConsumerEstateFlowView({
   householdId,
   scenarioId,
-  todayGrossEstate,
-  todayTotalTaxLiability,
   estateAsOfLabel,
   hidePageHeader = false,
 }: Props) {
@@ -183,11 +177,11 @@ export default function ConsumerEstateFlowView({
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
-    generateEstateFlow(householdId, scenarioId, 'first_death', supabase, false, todayGrossEstate)
+    generateEstateFlow(householdId, scenarioId, 'first_death', supabase, false, 'today')
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [householdId, scenarioId, supabase, todayGrossEstate])
+  }, [householdId, scenarioId, supabase])
 
   if (loading) {
     return (
@@ -206,8 +200,8 @@ export default function ConsumerEstateFlowView({
   }
 
   const steps = buildFlowSteps(graph, {
-    gross: todayGrossEstate,
-    totalTax: todayTotalTaxLiability,
+    gross: graph.summary.gross_estate,
+    totalTax: graph.summary.estate_tax_federal + graph.summary.estate_tax_state,
     asOfLabel: estateAsOfLabel,
   })
 
