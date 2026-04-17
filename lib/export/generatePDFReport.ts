@@ -35,7 +35,6 @@ export interface PDFReportData {
   stateTax: number
   federalExemption: number
   lawScenario: string
-  sunsetTax?: number
 
   // Health score
   healthScore: number
@@ -282,13 +281,6 @@ export function generatePDFHTML(data: PDFReportData): string {
           <td>${fmt(data.federalTax + data.stateTax)}</td>
           <td>${fmt(data.grossEstate - data.federalTax - data.stateTax)}</td>
         </tr>
-        ${data.sunsetTax !== undefined ? `
-        <tr>
-          <td>Post-Sunset</td>
-          <td>${fmt(7_000_000)}</td>
-          <td>${fmt(data.sunsetTax)}</td>
-          <td>${fmt(data.grossEstate - data.sunsetTax)}</td>
-        </tr>` : ''}
         <tr>
           <td>No Exemption</td>
           <td>$0</td>

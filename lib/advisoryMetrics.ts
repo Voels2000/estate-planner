@@ -1,6 +1,6 @@
-// Sprint 72 — Advisory Metrics Engine
+// Sprint 72 - Advisory Metrics Engine
 // 8-metric panel for advisor client view
-// All metrics derive from existing projection data — no new DB queries needed
+// All metrics derive from existing projection data - no new DB queries needed
 //
 // Metrics:
 // 1. Effective Estate Tax Rate
@@ -35,10 +35,8 @@ export interface AdvisoryMetricsInput {
   survivorExemption?: number
   // Monte Carlo P50 (if run)
   monteCarloP50Tax?: number
-  // Sunset urgency
-  currentYear: number
-  sunsetYear: number
-  sunsetExemption: number
+  // Stress scenario
+  noExemptionStressTax?: number
 }
 
 export interface AdvisoryMetric {
@@ -52,16 +50,7 @@ export interface AdvisoryMetric {
 
 export interface AdvisoryMetricsResult {
   metrics: AdvisoryMetric[]
-  sunsetUrgency: {
-    daysRemaining: number
-    sunsetDate: string
-    exposureAtSunset: number
-    urgencyLevel: 'low' | 'medium' | 'high' | 'critical'
-    message: string
-  }
 }
-
-const ESTATE_TAX_RATE = 0.4
 
 export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryMetricsResult {
   const {
@@ -79,12 +68,11 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
     cstFundingAmount,
     cstGrowthRate,
     survivorExemption,
-    currentYear,
-    sunsetYear,
-    sunsetExemption,
+    noExemptionStressTax,
   } = input
 
   const totalTax = federalTax + stateTax
+  const currentYear = new Date().getFullYear()
   const metrics: AdvisoryMetric[] = []
 
   // 1. Effective Estate Tax Rate
@@ -108,21 +96,19 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   // Approximated as: total tax / remaining planning years (assume 20 years)
   const planningYears = 20
   const costOfInaction = totalTax > 0 ? Math.round(totalTax / planningYears) : 0
-  const sunsetExposure =
-    grossEstate > sunsetExemption ? Math.max(0, grossEstate - sunsetExemption) * ESTATE_TAX_RATE : 0
   metrics.push({
     id: 'cost_of_inaction',
     label: 'Cost of Inaction',
     value: costOfInaction > 0 ? `$${Math.round(costOfInaction).toLocaleString()}/yr` : '$0/yr',
     subtext:
-      sunsetExposure > 0
-        ? `Sunset exposure: $${Math.round(sunsetExposure).toLocaleString()}`
+      noExemptionStressTax !== undefined && noExemptionStressTax > 0
+        ? `No-exemption stress: $${Math.round(noExemptionStressTax).toLocaleString()}`
         : 'No current tax exposure',
     status: costOfInaction > 50_000 ? 'critical' : costOfInaction > 10_000 ? 'warning' : 'good',
     detail:
       costOfInaction > 0
         ? `Each year without planning costs heirs an estimated $${Math.round(costOfInaction).toLocaleString()} in avoidable estate tax.`
-        : 'Estate is currently below the exemption threshold. Monitor for growth and sunset scenario.',
+        : 'Estate is currently below the exemption threshold. Monitor for estate growth; run the no-exemption stress test for downside scenarios.',
   })
 
   // 3. Exemption Utilization
@@ -140,7 +126,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
     status: exemptionUtilPct >= 100 ? 'critical' : exemptionUtilPct > 75 ? 'warning' : 'good',
     detail:
       unusedExemption > 0
-        ? `$${Math.round(unusedExemption).toLocaleString()} in federal exemption remains unused. Consider gifting or trust strategies to utilize before sunset.`
+        ? `$${Math.round(unusedExemption).toLocaleString()} in federal exemption remains unused. Consider gifting or trust strategies to reduce future estate tax exposure as the estate grows.`
         : 'Estate exceeds the available federal exemption.',
   })
 
@@ -184,7 +170,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
             : 'critical',
     detail:
       totalTax === 0
-        ? 'No estate tax under current law. Run with sunset scenario to assess future liquidity needs.'
+        ? 'No estate tax under current law. Run the no-exemption stress test to assess liquidity under a scenario where the exemption is eliminated.'
         : coverageRatio >= 1
           ? `Sufficient liquidity to cover estimated tax burden of $${Math.round(totalTax).toLocaleString()}.`
           : `Liquidity shortfall of $${Math.round(totalTax - totalLiquidity).toLocaleString()}. Consider an ILIT to provide tax-free death benefit liquidity.`,
@@ -238,49 +224,5 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
       : 'Model a Credit Shelter Trust in the strategy panels to calculate the crossover year.',
   })
 
-  // Sunset urgency — statutory sunset is Dec 31 of sunsetYear (TCJA individual exemption)
-  const sunsetDate = new Date(`${sunsetYear}-12-31T23:59:59`)
-  const today = new Date()
-  const isPastSunset = today.getTime() > sunsetDate.getTime()
-  const daysRemaining = isPastSunset
-    ? 0
-    : Math.max(
-        0,
-        Math.floor((sunsetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
-      )
-
-  let urgencyLevel: 'low' | 'medium' | 'high' | 'critical'
-  if (isPastSunset && sunsetExposure > 0) {
-    urgencyLevel = 'critical'
-  } else if (daysRemaining < 180) {
-    urgencyLevel = 'critical'
-  } else if (daysRemaining < 365) {
-    urgencyLevel = 'high'
-  } else if (daysRemaining < 730) {
-    urgencyLevel = 'medium'
-  } else {
-    urgencyLevel = 'low'
-  }
-
-  const sunsetDateLabel = sunsetDate.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-
-  const sunsetUrgency = {
-    daysRemaining,
-    sunsetDate: sunsetDateLabel,
-    exposureAtSunset: sunsetExposure,
-    urgencyLevel,
-    message: isPastSunset
-      ? sunsetExposure > 0
-        ? `The federal estate tax exemption sunset occurred December 31, ${sunsetYear}. This household faces an estimated $${Math.round(sunsetExposure).toLocaleString()} in additional estate tax if exemptions revert toward pre-TCJA levels.`
-        : `The federal estate tax exemption sunset occurred December 31, ${sunsetYear}. This estate is currently below typical post-sunset exemption thresholds in modeled scenarios.`
-      : sunsetExposure > 0
-        ? `${daysRemaining} days until exemption sunset (${sunsetDateLabel}). This household faces $${Math.round(sunsetExposure).toLocaleString()} in additional estate tax if the exemption reverts.`
-        : `${daysRemaining} days until exemption sunset (${sunsetDateLabel}). This estate is currently below both current law and sunset exemption thresholds.`,
-  }
-
-  return { metrics, sunsetUrgency }
+  return { metrics }
 }

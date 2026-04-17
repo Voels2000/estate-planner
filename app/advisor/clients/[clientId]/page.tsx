@@ -305,11 +305,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const taxSummaryForExport: TaxSummaryExport | null = latestOutput
     ? {
         federal_tax_current: fedTaxExport,
-        federal_tax_sunset: Number(
-          latestOutput.estate_tax_federal_sunset ??
-            latestOutput.federal_tax_sunset ??
-            fedTaxExport,
-        ),
         state_tax: stTaxExport,
         state_name: String(household.state_primary ?? 'State'),
       }

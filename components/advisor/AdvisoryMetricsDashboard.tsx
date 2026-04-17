@@ -19,11 +19,8 @@ interface AdvisoryMetricsDashboardProps {
   section7520Rate?: number
   cstFundingAmount?: number
   cstGrowthRate?: number
+  noExemptionStressTax?: number
 }
-
-const CURRENT_YEAR = new Date().getFullYear()
-/** TCJA estate exemption reversion date is Dec 31 of this year (see advisoryMetrics sunset messaging). */
-const SUNSET_YEAR = 2026
 const DEFAULT_7520_RATE = 0.052
 
 const STATUS_COLORS = {
@@ -52,6 +49,7 @@ export default function AdvisoryMetricsDashboard({
   section7520Rate = DEFAULT_7520_RATE,
   cstFundingAmount,
   cstGrowthRate = 0.06,
+  noExemptionStressTax,
 }: AdvisoryMetricsDashboardProps) {
   const input: AdvisoryMetricsInput = {
     grossEstate,
@@ -65,10 +63,8 @@ export default function AdvisoryMetricsDashboard({
     section7520Rate,
     cstFundingAmount,
     cstGrowthRate,
+    noExemptionStressTax,
     survivorExemption: federalExemption,
-    currentYear: CURRENT_YEAR,
-    sunsetYear: SUNSET_YEAR,
-    sunsetExemption: hasSpouse ? 14_000_000 : 7_000_000,
   }
 
   const { metrics } = useMemo(
@@ -84,6 +80,7 @@ export default function AdvisoryMetricsDashboard({
       section7520Rate,
       cstFundingAmount,
       cstGrowthRate,
+      noExemptionStressTax,
     ],
   )
 

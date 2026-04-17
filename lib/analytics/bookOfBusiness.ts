@@ -1,5 +1,5 @@
 // Sprint 62 — Book-of-Business Analytics data functions
-// Aggregates health scores, estate tax exposure, alerts, and sunset opportunity
+// Aggregates health scores, estate tax exposure, alerts, and large-estate exposure.
 // across all clients for an advisor. Reads from stored projection data only.
 
 import { createClient } from '@/lib/supabase/client'
@@ -14,8 +14,6 @@ export interface ClientSummary {
   health_score: number | null
   gross_estate: number | null
   estate_tax_federal_current: number | null
-  estate_tax_federal_sunset: number | null
-  sunset_delta: number | null
   has_projection: boolean
   active_alert_count: number
   high_alert_count: number
@@ -38,28 +36,27 @@ export interface EstateTaxBand {
   max: number | null
 }
 
-export interface SunsetOpportunity {
+export interface LargeEstateExposure {
   client_id: string
   household_id: string
   full_name: string
   gross_estate: number
-  tax_current: number
-  tax_sunset: number
-  delta: number
+  federal_tax: number
+  state_tax: number
+  total_tax: number
 }
 
 export interface BookOfBusinessData {
   clients: ClientSummary[]
   healthDistribution: HealthScoreDistribution[]
   taxBands: EstateTaxBand[]
-  sunsetOpportunities: SunsetOpportunity[]
+  largeEstateExposures: LargeEstateExposure[]
   staleDocumentClients: ClientSummary[]
   unplannedExposureClients: ClientSummary[]
   openConflictClients: ClientSummary[]
   totalClients: number
   averageHealthScore: number | null
   totalProjectedTax: number
-  totalSunsetDelta: number
 }
 
 // ─── Main data fetcher ────────────────────────────────────────────────────────
@@ -156,7 +153,6 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
     // Extract tax data from projection outputs
     let grossEstate: number | null = null
     let taxCurrent: number | null = null
-    let taxSunset: number | null = null
     let netToHeirs: number | null = null
 
     if (projection?.outputs_s1_first) {
@@ -169,10 +165,6 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
       }
     }
 
-    // For sunset delta we'd need the sunset scenario — approximate from current
-    // Full sunset comparison requires both scenarios to be run
-    taxSunset = taxCurrent // placeholder — real value requires sunset scenario
-
     return {
       client_id: clientId,
       household_id: householdId,
@@ -181,8 +173,6 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
       health_score: healthScore,
       gross_estate: grossEstate,
       estate_tax_federal_current: taxCurrent,
-      estate_tax_federal_sunset: taxSunset,
-      sunset_delta: null, // requires both scenarios
       has_projection: !!projection,
       active_alert_count: alertCounts.total,
       high_alert_count: alertCounts.high,
@@ -194,7 +184,7 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
   // Build analytics panels
   const healthDistribution = buildHealthDistribution(clients)
   const taxBands = buildTaxBands(clients)
-  const sunsetOpportunities = buildSunsetOpportunities(clients)
+  const largeEstateExposures = buildLargeEstateExposures(clients)
   const staleDocumentClients = clients.filter(c => c.active_alert_count > 0)
   const unplannedExposureClients = clients.filter(
     c => (c.estate_tax_federal_current ?? 0) > 2_000_000 && !c.has_active_strategies
@@ -207,20 +197,18 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
     : null
 
   const totalProjectedTax = clients.reduce((s, c) => s + (c.estate_tax_federal_current ?? 0), 0)
-  const totalSunsetDelta = clients.reduce((s, c) => s + (c.sunset_delta ?? 0), 0)
 
   return {
     clients,
     healthDistribution,
     taxBands,
-    sunsetOpportunities,
+    largeEstateExposures,
     staleDocumentClients,
     unplannedExposureClients,
     openConflictClients,
     totalClients: clients.length,
     averageHealthScore,
     totalProjectedTax,
-    totalSunsetDelta,
   }
 }
 
@@ -260,19 +248,19 @@ function buildTaxBands(clients: ClientSummary[]): EstateTaxBand[] {
   }))
 }
 
-function buildSunsetOpportunities(clients: ClientSummary[]): SunsetOpportunity[] {
+function buildLargeEstateExposures(clients: ClientSummary[]): LargeEstateExposure[] {
   return clients
-    .filter(c => (c.sunset_delta ?? 0) >= 500_000 && c.has_projection)
+    .filter(c => (c.estate_tax_federal_current ?? 0) >= 500_000 && c.has_projection)
     .map(c => ({
       client_id: c.client_id,
       household_id: c.household_id,
       full_name: c.full_name,
       gross_estate: c.gross_estate ?? 0,
-      tax_current: c.estate_tax_federal_current ?? 0,
-      tax_sunset: c.estate_tax_federal_sunset ?? 0,
-      delta: c.sunset_delta ?? 0,
+      federal_tax: c.estate_tax_federal_current ?? 0,
+      state_tax: 0, // state tax not currently threaded into ClientSummary; leave 0 for now
+      total_tax: c.estate_tax_federal_current ?? 0,
     }))
-    .sort((a, b) => b.delta - a.delta)
+    .sort((a, b) => b.federal_tax - a.federal_tax)
 }
 
 function emptyData(): BookOfBusinessData {
@@ -280,14 +268,13 @@ function emptyData(): BookOfBusinessData {
     clients: [],
     healthDistribution: [],
     taxBands: [],
-    sunsetOpportunities: [],
+    largeEstateExposures: [],
     staleDocumentClients: [],
     unplannedExposureClients: [],
     openConflictClients: [],
     totalClients: 0,
     averageHealthScore: null,
     totalProjectedTax: 0,
-    totalSunsetDelta: 0,
   }
 }
 

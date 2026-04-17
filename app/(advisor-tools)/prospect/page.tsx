@@ -1,4 +1,5 @@
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
 import { ProspectSelects } from './_prospect-selects'
 
 const ASSET_MIDPOINTS: Record<string, number> = {
@@ -37,20 +38,18 @@ export default async function ProspectPage({ searchParams }: Props) {
   let result = null
   if (hasResult) {
     const assets = ASSET_MIDPOINTS[range] ?? 10_000_000
-    const exemptionCurrent = marital === 'married' ? 27_220_000 : 13_610_000
-    const exemptionSunset = marital === 'married' ? 14_400_000 : 7_200_000
+    const exemptionCurrent = marital === 'married'
+      ? OBBBA_2026.BASIC_EXCLUSION_MFJ
+      : OBBBA_2026.BASIC_EXCLUSION_SINGLE
     const taxableCurrent = Math.max(0, assets - exemptionCurrent)
-    const federalTaxCurrent = Math.round(taxableCurrent * 0.40)
-    const taxableSunset = Math.max(0, assets - exemptionSunset)
-    const federalTaxSunset = Math.round(taxableSunset * 0.40)
-    const sunsetDelta = federalTaxSunset - federalTaxCurrent
+    const federalTaxCurrent = Math.round(taxableCurrent * OBBBA_2026.TOP_RATE)
     let stateTax = 0
     if (ESTATE_TAX_STATES.includes(state)) {
       const stateExemption = STATE_EXEMPTIONS[state] ?? 2_000_000
       stateTax = Math.round(Math.max(0, assets - stateExemption) * (STATE_TOP_RATES[state] ?? 0.16))
     }
     const gaps: string[] = []
-    if (assets > exemptionSunset) gaps.push('Potential estate tax exposure under sunset scenario')
+    if (assets > exemptionCurrent) gaps.push('Federal estate tax exposure above the $15M/$30M permanent exemption')
     if (marital === 'married' && assets > 5_000_000) gaps.push('Credit shelter trust opportunity at first death')
     if (businessOwner) gaps.push('Business succession and valuation planning needed')
     if (assets > 10_000_000) gaps.push('Annual gifting program could reduce estate over time')
@@ -58,14 +57,13 @@ export default async function ProspectPage({ searchParams }: Props) {
     if (age > 60) gaps.push('Beneficiary designation review recommended')
     const lookAt: string[] = [
       'Review all beneficiary designations and account titling',
-      'Analyze federal and state estate tax exposure under current and sunset law',
+      'Analyze federal and state estate tax exposure under OBBBA 2026 law',
     ]
     if (marital === 'married') lookAt.push('Evaluate portability election and credit shelter trust')
     if (assets > 10_000_000) lookAt.push('Annual gifting program and lifetime exemption utilization')
     if (businessOwner) lookAt.push('Business succession plan and valuation discount strategies')
-    if (sunsetDelta > 500_000) lookAt.push('Sunset planning window - strategies available before December 31, 2025')
     if (ESTATE_TAX_STATES.includes(state)) lookAt.push(`${state} state estate tax mitigation strategies`)
-    result = { federalTaxCurrent, federalTaxSunset, sunsetDelta, stateTax, state, gaps: gaps.slice(0, 5), lookAt: lookAt.slice(0, 6) }
+    result = { federalTaxCurrent, stateTax, state, gaps: gaps.slice(0, 5), lookAt: lookAt.slice(0, 6) }
   }
 
   return (
@@ -96,16 +94,6 @@ export default async function ProspectPage({ searchParams }: Props) {
                 <span className="text-neutral-600">Current law</span>
                 <span className="font-semibold">{fmt(result.federalTaxCurrent)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-600">Sunset scenario</span>
-                <span className="font-semibold text-amber-700">{fmt(result.federalTaxSunset)}</span>
-              </div>
-              {result.sunsetDelta > 0 && (
-                <div className="flex justify-between text-sm border-t border-neutral-100 pt-2">
-                  <span className="font-medium">Additional tax under sunset</span>
-                  <span className="font-bold text-red-600">{fmt(result.sunsetDelta)}</span>
-                </div>
-              )}
               {result.stateTax > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-600">{result.state} state estate tax</span>

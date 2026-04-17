@@ -20,7 +20,6 @@ export interface ExportProjectionRow {
 
 export interface TaxSummaryExport {
   federal_tax_current: number
-  federal_tax_sunset: number
   state_tax: number
   state_name: string
 }
@@ -114,7 +113,6 @@ export default function ExportPanel({
           <h2>Tax Analysis</h2>
           <div class="metric-grid">
             <div class="metric"><span class="label">Federal Tax - Current Law</span><span class="value">${fmt(taxSummary.federal_tax_current)}</span></div>
-            <div class="metric"><span class="label">Federal Tax - Sunset Scenario</span><span class="value">${fmt(taxSummary.federal_tax_sunset)}</span></div>
             <div class="metric"><span class="label">${taxSummary.state_name} State Tax</span><span class="value">${fmt(taxSummary.state_tax)}</span></div>
           </div>
         </div>
@@ -253,7 +251,6 @@ export default function ExportPanel({
       const taxRows: (string | number)[][] = [['Metric', 'Value']]
       if (taxSummary) {
         taxRows.push(['Federal Tax - Current Law', taxSummary.federal_tax_current])
-        taxRows.push(['Federal Tax - Sunset', taxSummary.federal_tax_sunset])
         taxRows.push([`${taxSummary.state_name} State Tax`, taxSummary.state_tax])
       }
       wb.SheetNames.push('Tax Analysis')

@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
 
 const ASSET_MIDPOINTS: Record<string, number> = {
   sm: 3_000_000,
@@ -44,8 +45,6 @@ export default function ProspectModePage() {
 
   const [result, setResult] = useState<null | {
     federal_tax_current: number
-    federal_tax_sunset: number
-    sunset_delta: number
     state_tax_estimate: number
     selectedState: string
     planning_gaps: string[]
@@ -70,14 +69,12 @@ export default function ProspectModePage() {
     console.log('Calculate:', { state, assetRange, maritalStatus, businessOwner, age })
 
     const assets = ASSET_MIDPOINTS[assetRange] ?? 10_000_000
-    const exemptionCurrent = maritalStatus === 'married' ? 27_220_000 : 13_610_000
-    const exemptionSunset = maritalStatus === 'married' ? 14_400_000 : 7_200_000
+    const exemptionCurrent = maritalStatus === 'married'
+      ? OBBBA_2026.BASIC_EXCLUSION_MFJ
+      : OBBBA_2026.BASIC_EXCLUSION_SINGLE
 
     const taxableCurrent = Math.max(0, assets - exemptionCurrent)
-    const federalTaxCurrent = Math.round(taxableCurrent * 0.40)
-    const taxableSunset = Math.max(0, assets - exemptionSunset)
-    const federalTaxSunset = Math.round(taxableSunset * 0.40)
-    const sunsetDelta = federalTaxSunset - federalTaxCurrent
+    const federalTaxCurrent = Math.round(taxableCurrent * OBBBA_2026.TOP_RATE)
 
     let stateTaxEstimate = 0
     if (ESTATE_TAX_STATES.includes(state)) {
@@ -87,7 +84,7 @@ export default function ProspectModePage() {
     }
 
     const planningGaps: string[] = []
-    if (assets > exemptionSunset) planningGaps.push('Potential estate tax exposure under sunset scenario')
+    if (assets > exemptionCurrent) planningGaps.push('Federal estate tax exposure above the $15M/$30M permanent exemption')
     if (maritalStatus === 'married' && assets > 5_000_000) planningGaps.push('Credit shelter trust opportunity at first death')
     if (businessOwner) planningGaps.push('Business succession and valuation planning needed')
     if (assets > 10_000_000) planningGaps.push('Annual gifting program could reduce estate over time')
@@ -96,18 +93,15 @@ export default function ProspectModePage() {
 
     const lookAt: string[] = [
       'Review all beneficiary designations and account titling',
-      'Analyze federal and state estate tax exposure under current and sunset law',
+      'Analyze federal and state estate tax exposure under OBBBA 2026 law',
     ]
     if (maritalStatus === 'married') lookAt.push('Evaluate portability election and credit shelter trust')
     if (assets > 10_000_000) lookAt.push('Annual gifting program and lifetime exemption utilization')
     if (businessOwner) lookAt.push('Business succession plan and valuation discount strategies')
-    if (sunsetDelta > 500_000) lookAt.push('Sunset planning window — strategies available before December 31, 2025')
     if (ESTATE_TAX_STATES.includes(state)) lookAt.push(`${state} state estate tax mitigation strategies`)
 
     setResult({
       federal_tax_current: federalTaxCurrent,
-      federal_tax_sunset: federalTaxSunset,
-      sunset_delta: sunsetDelta,
       state_tax_estimate: stateTaxEstimate,
       selectedState: state,
       planning_gaps: planningGaps.slice(0, 5),
@@ -210,16 +204,6 @@ export default function ProspectModePage() {
                 <span className="text-neutral-600">Current law</span>
                 <span className="font-semibold">{fmt(result.federal_tax_current)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-600">Sunset scenario</span>
-                <span className="font-semibold text-amber-700">{fmt(result.federal_tax_sunset)}</span>
-              </div>
-              {result.sunset_delta > 0 && (
-                <div className="flex justify-between text-sm border-t border-neutral-100 pt-2">
-                  <span className="font-medium">Additional tax under sunset</span>
-                  <span className="font-bold text-red-600">{fmt(result.sunset_delta)}</span>
-                </div>
-              )}
               {result.state_tax_estimate > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-600">{result.selectedState} state estate tax</span>

@@ -1,12 +1,12 @@
 // Sprint 62 — Book-of-Business Analytics client component
-// 6 panels: health distribution, tax bands, stale docs, sunset opportunity,
+// 6 panels: health distribution, tax bands, stale docs, large-estate exposure,
 // unplanned exposure, open conflicts. All sortable and exportable as CSV.
 
 'use client'
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { BookOfBusinessData, ClientSummary, SunsetOpportunity } from '@/lib/analytics/bookOfBusiness'
+import type { BookOfBusinessData, ClientSummary, LargeEstateExposure } from '@/lib/analytics/bookOfBusiness'
 import { fetchBookOfBusiness } from '@/lib/analytics/bookOfBusiness'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -183,37 +183,37 @@ function StaleDocumentsPanel({ data }: { data: BookOfBusinessData }) {
   )
 }
 
-// ─── Panel 4: Sunset opportunity list ────────────────────────────────────────
+// ─── Panel 4: Large estate exposure list ─────────────────────────────────────
 
-function SunsetOpportunityPanel({ data }: { data: BookOfBusinessData }) {
-  const exportSunset = () => {
-    const headers = ['Name', 'Gross Estate', 'Tax (Current Law)', 'Tax (Sunset)', 'Delta']
-    const rows = data.sunsetOpportunities.map((c: SunsetOpportunity) => [
+function LargeEstateExposurePanel({ data }: { data: BookOfBusinessData }) {
+  const exportLargeEstate = () => {
+    const headers = ['Name', 'Gross Estate', 'Federal Tax', 'State Tax', 'Total Tax']
+    const rows = data.largeEstateExposures.map((c: LargeEstateExposure) => [
       c.full_name,
       fmt(c.gross_estate),
-      fmt(c.tax_current),
-      fmt(c.tax_sunset),
-      fmt(c.delta),
+      fmt(c.federal_tax),
+      fmt(c.state_tax),
+      fmt(c.total_tax),
     ])
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'sunset-opportunity-list.csv'
+    a.download = 'large-estate-exposure.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
 
   return (
     <Panel
-      title="Sunset Opportunity List"
-      subtitle="Clients with $500K+ additional tax under sunset scenario"
-      onExport={exportSunset}
+      title="Large Estate Exposure"
+      subtitle="Clients with $500K+ projected federal estate tax under current law"
+      onExport={exportLargeEstate}
     >
-      {data.sunsetOpportunities.length === 0 ? (
+      {data.largeEstateExposures.length === 0 ? (
         <div className="text-center py-4">
-          <p className="text-sm text-neutral-400">No clients with significant sunset exposure yet.</p>
+          <p className="text-sm text-neutral-400">No clients with significant federal estate tax exposure.</p>
           <p className="text-xs text-neutral-300 mt-1">Run projections for clients to populate this list.</p>
         </div>
       ) : (
@@ -222,13 +222,13 @@ function SunsetOpportunityPanel({ data }: { data: BookOfBusinessData }) {
             <thead>
               <tr className="border-b border-neutral-100">
                 <th className="text-left text-xs font-semibold text-neutral-500 pb-2">Client</th>
-                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">Current Tax</th>
-                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">Sunset Tax</th>
-                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">Delta</th>
+                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">Federal Tax</th>
+                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">State Tax</th>
+                <th className="text-right text-xs font-semibold text-neutral-500 pb-2">Total Tax</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
-              {data.sunsetOpportunities.map((c: SunsetOpportunity) => (
+              {data.largeEstateExposures.map((c: LargeEstateExposure) => (
                 <tr key={c.client_id} className="hover:bg-neutral-50">
                   <td className="py-2">
                     <Link
@@ -238,9 +238,9 @@ function SunsetOpportunityPanel({ data }: { data: BookOfBusinessData }) {
                       {c.full_name}
                     </Link>
                   </td>
-                  <td className="py-2 text-right text-neutral-700">{fmt(c.tax_current)}</td>
-                  <td className="py-2 text-right text-amber-700">{fmt(c.tax_sunset)}</td>
-                  <td className="py-2 text-right font-semibold text-red-600">{fmt(c.delta)}</td>
+                  <td className="py-2 text-right text-neutral-700">{fmt(c.federal_tax)}</td>
+                  <td className="py-2 text-right text-amber-700">{fmt(c.state_tax)}</td>
+                  <td className="py-2 text-right font-semibold text-red-600">{fmt(c.total_tax)}</td>
                 </tr>
               ))}
             </tbody>
@@ -374,7 +374,7 @@ export default function AnalyticsDashboardClient({ advisorId, advisorName }: Pro
             <HealthDistributionPanel data={data} />
             <TaxBandsPanel data={data} />
             <StaleDocumentsPanel data={data} />
-            <SunsetOpportunityPanel data={data} />
+            <LargeEstateExposurePanel data={data} />
             <UnplannedExposurePanel data={data} />
             <OpenConflictsPanel data={data} />
           </div>
