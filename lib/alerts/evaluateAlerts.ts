@@ -592,7 +592,7 @@ async function evaluateEstateAlerts(
       alertType: 'warning',
       severity: 'medium',
       title: 'No annual gifting program',
-      description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, above the typical sunset planning threshold, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
+      description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
       linkPath: '/my-estate-strategy',
       context: { grossEstate, sunsetThreshold: SUNSET_ESTATE_THRESHOLD },
     },
