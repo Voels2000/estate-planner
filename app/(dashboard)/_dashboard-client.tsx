@@ -256,11 +256,6 @@ export function DashboardClient(props: Props) {
               : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
           </p>
         </div>
-        {hasBaseCase && householdId && (
-          <Link href="/my-estate-strategy" className="shrink-0 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition">
-            View Estate Strategy →
-          </Link>
-        )}
       </div>
 
       {/* ── Setup Progress ───────────────────────────────────────────────── */}
@@ -697,13 +692,6 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {householdId && (
-            <div className="flex flex-wrap items-center gap-4 pt-1">
-              <Link href="/my-estate-strategy" className="text-xs text-indigo-600 font-medium hover:underline">
-                View My Estate Strategy →
-              </Link>
-            </div>
-          )}
         </div>
       </CollapsibleSection>
 
