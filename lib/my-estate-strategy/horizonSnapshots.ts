@@ -1,51 +1,34 @@
-// Facts-only estate snapshots for My Estate Strategy (three horizons).
-// Federal: exemption + flat top-rate estimate from active federal_tax_config (sunset-aware by calendar year).
+// Facts-only estate snapshots for My Estate Strategy (four horizons).
+// Federal constants come from OBBBA 2026 — see lib/tax/estate-tax-constants.ts.
+// No sunset scenario: the One Big Beautiful Bill Act made the exemption permanent.
 
 import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
-
-export type FederalConfigRow = {
-  scenario_id: string
-  estate_exemption_individual: number
-  estate_exemption_married: number
-  estate_top_rate_pct: number
-}
-
-export function pickFederalConfigForCalendarYear(
-  year: number,
-  configs: FederalConfigRow[],
-): FederalConfigRow | null {
-  const sunset = configs.find((c) => c.scenario_id === 'sunset_2026')
-  const extended = configs.find((c) => c.scenario_id === 'current_law_extended')
-  if (year >= 2026 && sunset) return sunset
-  if (extended) return extended
-  return configs[0] ?? null
-}
+import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
 
 function isMarriedFilingJoint(filingStatus: string | null | undefined): boolean {
   const fs = (filingStatus ?? '').toLowerCase()
   return fs === 'mfj' || fs === 'married_filing_jointly' || fs === 'married filing jointly'
 }
 
+/** Returns OBBBA 2026 basic exclusion for the household. */
 export function householdFederalExemption(
-  config: FederalConfigRow,
   filingStatus: string | null | undefined,
   hasSpouse: boolean,
 ): number {
-  if (isMarriedFilingJoint(filingStatus) && hasSpouse) return config.estate_exemption_married
-  return config.estate_exemption_individual
+  if (isMarriedFilingJoint(filingStatus) && hasSpouse) return OBBBA_2026.BASIC_EXCLUSION_MFJ
+  return OBBBA_2026.BASIC_EXCLUSION_SINGLE
 }
 
 export function estimateFederalEstateTaxSnapshot(params: {
   grossEstate: number
-  config: FederalConfigRow
   filingStatus: string | null | undefined
   hasSpouse: boolean
 }): { exemption: number; federalExposure: number; federalTax: number } {
-  const { grossEstate, config, filingStatus, hasSpouse } = params
-  const exemption = householdFederalExemption(config, filingStatus, hasSpouse)
+  const { grossEstate, filingStatus, hasSpouse } = params
+  const exemption = householdFederalExemption(filingStatus, hasSpouse)
   const federalExposure = Math.max(0, grossEstate - exemption)
-  const federalTax = Math.round(federalExposure * (config.estate_top_rate_pct / 100))
+  const federalTax = Math.round(federalExposure * OBBBA_2026.TOP_RATE)
   return { exemption, federalExposure, federalTax }
 }
 
@@ -69,6 +52,11 @@ export function findTenYearRow(rows: AnnualOutput[], currentYear: number): Annua
   return rows.find((r) => r.year === target)
 }
 
+export function findTwentyYearRow(rows: AnnualOutput[], currentYear: number): AnnualOutput | undefined {
+  const target = currentYear + 20
+  return rows.find((r) => r.year === target)
+}
+
 export function findAtDeathRow(
   rows: AnnualOutput[],
   params: {
@@ -80,8 +68,7 @@ export function findAtDeathRow(
   },
 ): AnnualOutput | undefined {
   if (!rows.length) return undefined
-  const { hasSpouse, person1BirthYear, person2BirthYear, person1Longevity, person2Longevity } =
-    params
+  const { hasSpouse, person1BirthYear, person2BirthYear, person1Longevity, person2Longevity } = params
   const { longevityAge, survivorIsPerson1 } = longevityAndSurvivor({
     hasSpouse,
     person1Longevity,
@@ -99,7 +86,7 @@ export function grossEstateFromRow(row: AnnualOutput | undefined | null): number
 
 /**
  * Ownership-weighted business value from `businesses` and legacy `business_interests`.
- * Mirrors the merge in `lib/actions/generate-base-case.ts` (both tables, `ownership_pct` on each row).
+ * Mirrors the merge in `lib/actions/generate-base-case.ts`.
  */
 export function computeBusinessOwnershipValue(
   businesses: { estimated_value?: unknown; ownership_pct?: unknown }[],
@@ -110,14 +97,11 @@ export function computeBusinessOwnershipValue(
   }[],
 ): number {
   const modern = (businesses ?? []).reduce(
-    (s, b) =>
-      s + Number(b.estimated_value ?? 0) * (Number(b.ownership_pct ?? 100) / 100),
+    (s, b) => s + Number(b.estimated_value ?? 0) * (Number(b.ownership_pct ?? 100) / 100),
     0,
   )
   const legacy = (businessInterests ?? []).reduce((s, b) => {
-    const base = Number(
-      b.fmv_estimated ?? b.total_entity_value ?? 0,
-    )
+    const base = Number(b.fmv_estimated ?? b.total_entity_value ?? 0)
     const pct = Number(b.ownership_pct ?? 100) / 100
     return s + base * pct
   }, 0)
@@ -130,7 +114,6 @@ export function computeColumnTaxes(params: {
   statePrimary: string | null | undefined
   filingStatus: string | null | undefined
   hasSpouse: boolean
-  federalConfigs: FederalConfigRow[]
 }): {
   federalExemption: number
   federalExposure: number
@@ -138,19 +121,8 @@ export function computeColumnTaxes(params: {
   stateExposure: number
   totalTax: number
 } {
-  const { grossEstate, calendarYear, statePrimary, filingStatus, hasSpouse, federalConfigs } =
-    params
-  const config = pickFederalConfigForCalendarYear(calendarYear, federalConfigs)
-  if (!config) {
-    return {
-      federalExemption: 0,
-      federalExposure: 0,
-      federalTax: 0,
-      stateExposure: 0,
-      totalTax: 0,
-    }
-  }
-  const exemption = householdFederalExemption(config, filingStatus, hasSpouse)
+  const { grossEstate, calendarYear, statePrimary, filingStatus, hasSpouse } = params
+  const exemption = householdFederalExemption(filingStatus, hasSpouse)
   if (grossEstate <= 0) {
     return {
       federalExemption: exemption,
@@ -162,7 +134,6 @@ export function computeColumnTaxes(params: {
   }
   const { federalExposure, federalTax } = estimateFederalEstateTaxSnapshot({
     grossEstate,
-    config,
     filingStatus,
     hasSpouse,
   })
@@ -198,7 +169,7 @@ export type StrategyHorizonColumn = {
   showGenerateCta: boolean
   /** Base case exists but the projection has no row for this horizon year */
   showMissingRowNote?: boolean
-  /** Calendar year we looked for (e.g. 10-year horizon) when `showMissingRowNote` */
+  /** Calendar year we looked for when `showMissingRowNote` */
   missingRowCalendarYear?: number
 }
 
@@ -217,32 +188,17 @@ export type BuildHorizonsInput = {
     person1_longevity_age: number | null
     person2_longevity_age: number | null
   }
-  federalConfigs: FederalConfigRow[]
   scenarioRows: AnnualOutput[] | null
   survivorFirstName: string
   longevityAge: number
 }
-
-const FALLBACK_FEDERAL_CONFIGS: FederalConfigRow[] = [
-  {
-    scenario_id: 'current_law_extended',
-    estate_exemption_individual: 13_610_000,
-    estate_exemption_married: 27_220_000,
-    estate_top_rate_pct: 40,
-  },
-  {
-    scenario_id: 'sunset_2026',
-    estate_exemption_individual: 7_000_000,
-    estate_exemption_married: 14_000_000,
-    estate_top_rate_pct: 40,
-  },
-]
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
 
 export function buildStrategyHorizons(input: BuildHorizonsInput): {
   today: StrategyHorizonColumn
   tenYear: StrategyHorizonColumn
+  twentyYear: StrategyHorizonColumn
   atDeath: StrategyHorizonColumn
   showProjectionMismatchNote: boolean
   grossAtDeathByLongevity: number
@@ -253,14 +209,10 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     currentMonthYearLabel,
     liveNetWorth,
     household,
-    federalConfigs: federalConfigsRaw,
     scenarioRows,
     survivorFirstName,
     longevityAge,
   } = input
-
-  const federalConfigs =
-    federalConfigsRaw.length > 0 ? federalConfigsRaw : FALLBACK_FEDERAL_CONFIGS
 
   const hasSpouse = household.has_spouse ?? false
   const fs = household.filing_status
@@ -270,6 +222,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   const hasBaseCase = rows.length > 0
 
   const y10 = hasBaseCase ? findTenYearRow(rows, currentYear) : undefined
+  const y20 = hasBaseCase ? findTwentyYearRow(rows, currentYear) : undefined
   const atDeathRow = hasBaseCase
     ? findAtDeathRow(rows, {
         hasSpouse,
@@ -287,13 +240,13 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   const showProjectionMismatchNote =
     hasBaseCase && Math.abs(grossAtDeathByLongevity - grossAtDeathFinalRow) > 10_000
 
+  // ── Today column ──────────────────────────────────────────────────────
   const todayTax = computeColumnTaxes({
     grossEstate: liveNetWorth,
     calendarYear: currentYear,
     statePrimary,
     filingStatus: fs,
     hasSpouse,
-    federalConfigs,
   })
 
   const today: StrategyHorizonColumn = {
@@ -310,40 +263,18 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     showGenerateCta: false,
   }
 
-  const tenYearYear = currentYear + 10
-  const tenYearGross = y10 ? grossEstateFromRow(y10) : null
-  const tenYearTax =
-    tenYearGross !== null
-      ? computeColumnTaxes({
-          grossEstate: tenYearGross,
-          calendarYear: tenYearYear,
-          statePrimary,
-          filingStatus: fs,
-          hasSpouse,
-          federalConfigs,
-        })
-      : null
-
-  const tenYear: StrategyHorizonColumn = hasBaseCase
-    ? {
-        headerTitle: 'In 10 Years',
-        headerClassName: 'bg-blue-600 text-white',
-        narrative: `Your projected estate in ${tenYearYear}. All figures are estimates.`,
-        grossEstate: tenYearGross,
-        federalExemption: tenYearTax?.federalExemption ?? null,
-        federalExposure: tenYearTax?.federalExposure ?? null,
-        federalTaxEstimate: tenYearTax?.federalTax ?? null,
-        stateExposure: tenYearTax?.stateExposure ?? null,
-        totalTaxLiability: tenYearTax?.totalTax ?? null,
-        isPlaceholder: !y10,
-        showGenerateCta: false,
-        showMissingRowNote: !y10,
-        missingRowCalendarYear: tenYearYear,
-      }
-    : {
-        headerTitle: 'In 10 Years',
-        headerClassName: 'bg-blue-600 text-white',
-        narrative: `Your projected estate in ${tenYearYear}. All figures are estimates.`,
+  // ── Helper to build projected horizon columns ─────────────────────────
+  function buildProjectedColumn(
+    headerTitle: string,
+    headerClassName: string,
+    targetYear: number,
+    row: AnnualOutput | undefined,
+  ): StrategyHorizonColumn {
+    if (!hasBaseCase) {
+      return {
+        headerTitle,
+        headerClassName,
+        narrative: `Your projected estate in ${targetYear}. All figures are estimates.`,
         grossEstate: null,
         federalExemption: null,
         federalExposure: null,
@@ -353,7 +284,36 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         isPlaceholder: true,
         showGenerateCta: true,
       }
+    }
+    const gross = row ? grossEstateFromRow(row) : null
+    const tax = gross !== null ? computeColumnTaxes({
+      grossEstate: gross,
+      calendarYear: targetYear,
+      statePrimary,
+      filingStatus: fs,
+      hasSpouse,
+    }) : null
+    return {
+      headerTitle,
+      headerClassName,
+      narrative: `Your projected estate in ${targetYear}. All figures are estimates.`,
+      grossEstate: gross,
+      federalExemption: tax?.federalExemption ?? null,
+      federalExposure: tax?.federalExposure ?? null,
+      federalTaxEstimate: tax?.federalTax ?? null,
+      stateExposure: tax?.stateExposure ?? null,
+      totalTaxLiability: tax?.totalTax ?? null,
+      isPlaceholder: !row,
+      showGenerateCta: false,
+      showMissingRowNote: !row,
+      missingRowCalendarYear: targetYear,
+    }
+  }
 
+  const tenYear = buildProjectedColumn('In 10 Years', 'bg-blue-600 text-white', currentYear + 10, y10)
+  const twentyYear = buildProjectedColumn('In 20 Years', 'bg-indigo-600 text-white', currentYear + 20, y20)
+
+  // ── At Death column ───────────────────────────────────────────────────
   const atDeathCalendarYear = atDeathRow?.year ?? currentYear
   const atDeathGross = atDeathRow ? grossEstateFromRow(atDeathRow) : null
   const atDeathTax =
@@ -364,7 +324,6 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
           statePrimary,
           filingStatus: fs,
           hasSpouse,
-          federalConfigs,
         })
       : null
 
@@ -399,6 +358,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   return {
     today,
     tenYear,
+    twentyYear,
     atDeath,
     showProjectionMismatchNote,
     grossAtDeathByLongevity,

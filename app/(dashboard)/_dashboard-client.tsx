@@ -48,7 +48,6 @@ type RetirementSnapshot = {
 export type EstateTaxHorizonColumn = {
   federalTax: number
   stateTax: number
-  sunsetFederalTax: number
 }
 
 export type EstateTaxHorizonsProps = {
@@ -56,6 +55,7 @@ export type EstateTaxHorizonsProps = {
   atDeathColumnHeader: string
   today: EstateTaxHorizonColumn
   tenYear: EstateTaxHorizonColumn | null
+  twentyYear: EstateTaxHorizonColumn | null
   atDeath: EstateTaxHorizonColumn | null
   showGenerateEstatePlanLink: boolean
 }
@@ -606,6 +606,7 @@ export function DashboardClient(props: Props) {
                         <th className="text-left font-medium text-neutral-500 pb-2 pr-2 align-bottom" />
                         <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">Today</th>
                         <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">In 10 Years</th>
+                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">In 20 Years</th>
                         <th className="text-right font-medium text-neutral-600 pb-2 pl-1 align-bottom min-w-[10rem]">
                           {estateTaxHorizons.atDeathColumnHeader}
                         </th>
@@ -618,28 +619,24 @@ export function DashboardClient(props: Props) {
                         <td className="py-2 px-1 text-right tabular-nums font-medium">
                           {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.federalTax) : <span className="text-neutral-400">—</span>}
                         </td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.twentyYear ? fmtTaxTableDollar(estateTaxHorizons.twentyYear.federalTax) : <span className="text-neutral-400">—</span>}
+                        </td>
                         <td className="py-2 pl-1 text-right tabular-nums font-medium">
                           {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.federalTax) : <span className="text-neutral-400">—</span>}
                         </td>
                       </tr>
-                      <tr className="border-b border-neutral-100">
+                      <tr>
                         <td className="py-2 pr-2 text-neutral-600">{estateTaxHorizons.stateTaxRowLabel}</td>
                         <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.stateTax)}</td>
                         <td className="py-2 px-1 text-right tabular-nums font-medium">
                           {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.stateTax) : <span className="text-neutral-400">—</span>}
                         </td>
+                        <td className="py-2 px-1 text-right tabular-nums font-medium">
+                          {estateTaxHorizons.twentyYear ? fmtTaxTableDollar(estateTaxHorizons.twentyYear.stateTax) : <span className="text-neutral-400">—</span>}
+                        </td>
                         <td className="py-2 pl-1 text-right tabular-nums font-medium">
                           {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.stateTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 pr-2 text-neutral-600">Sunset Exposure</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.sunsetFederalTax)}</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.sunsetFederalTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.sunsetFederalTax) : <span className="text-neutral-400">—</span>}
                         </td>
                       </tr>
                     </tbody>

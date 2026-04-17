@@ -87,7 +87,6 @@ export default async function MyEstateStrategyPage() {
 
   const [
     { data: scenario },
-    { data: federalTaxConfigs },
     { data: assets },
     { data: liabilities },
     { data: realEstate },
@@ -102,10 +101,6 @@ export default async function MyEstateStrategyPage() {
           .eq('id', household.base_case_scenario_id)
           .single()
       : Promise.resolve({ data: null }),
-    admin
-      .from('federal_tax_config')
-      .select('scenario_id, estate_exemption_individual, estate_exemption_married, estate_top_rate_pct')
-      .eq('is_active', true),
     supabase.from('assets').select('value').eq('owner_id', ownerId),
     supabase.from('liabilities').select('balance').eq('owner_id', ownerId),
     supabase
@@ -174,7 +169,6 @@ export default async function MyEstateStrategyPage() {
       person1_longevity_age: household.person1_longevity_age,
       person2_longevity_age: household.person2_longevity_age,
     },
-    federalConfigs: federalTaxConfigs ?? [],
     scenarioRows,
     survivorFirstName,
     longevityAge,
