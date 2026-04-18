@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import AlertCenter from '@/components/alerts/AlertCenter'
+import { createClient } from '@/lib/supabase/client'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
@@ -204,6 +204,86 @@ function StatBox({ label, value, sub, highlight }: {
         highlight === 'amber' ? 'text-amber-600' : 'text-neutral-900'
       }`}>{value}</p>
       {sub && <p className="text-[10px] text-neutral-400 mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+function PlanningGapsSection({ householdId }: { householdId: string }) {
+  const supabase = createClient()
+  const [recs, setRecs] = useState<{
+    branch: string
+    priority: 'high' | 'moderate' | 'low'
+    reason: string
+  }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.rpc('generate_estate_recommendations', {
+        p_household_id: householdId,
+      })
+      if (data?.recommendations) setRecs(data.recommendations)
+      setLoading(false)
+    }
+    load()
+  }, [householdId])
+
+  if (loading) return (
+    <div className="text-xs text-neutral-400 py-2">Loading planning gaps...</div>
+  )
+
+  if (recs.length === 0) return (
+    <div className="text-xs text-neutral-500 py-2">No planning gaps identified.</div>
+  )
+
+  const high = recs.filter(r => r.priority === 'high')
+  const moderate = recs.filter(r => r.priority === 'moderate')
+
+  const branchLabels: Record<string, string> = {
+    will: 'Will',
+    dpoa: 'Durable Power of Attorney',
+    healthcare_directive: 'Healthcare Directive',
+    revocable_living_trust: 'Revocable Living Trust',
+    pour_over_will: 'Pour-Over Will',
+    bypass_trust: 'Bypass Trust (Credit Shelter)',
+    ilit: 'Irrevocable Life Insurance Trust (ILIT)',
+    gifting_strategy: 'Annual Gifting Strategy',
+  }
+
+  const priorityBorder: Record<string, string> = {
+    high: 'border-l-red-500',
+    moderate: 'border-l-yellow-500',
+    low: 'border-l-green-500',
+  }
+
+  return (
+    <div className="space-y-3">
+      {high.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">High Priority</p>
+          <div className="space-y-2">
+            {high.map(rec => (
+              <div key={rec.branch} className={`p-3 bg-gray-50 rounded-lg border-l-4 ${priorityBorder[rec.priority]}`}>
+                <p className="text-sm font-semibold text-gray-900">{branchLabels[rec.branch] ?? rec.branch}</p>
+                <p className="text-sm text-gray-600 mt-0.5">{rec.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {moderate.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-2">Moderate Priority</p>
+          <div className="space-y-2">
+            {moderate.map(rec => (
+              <div key={rec.branch} className={`p-3 bg-gray-50 rounded-lg border-l-4 ${priorityBorder[rec.priority]}`}>
+                <p className="text-sm font-semibold text-gray-900">{branchLabels[rec.branch] ?? rec.branch}</p>
+                <p className="text-sm text-gray-600 mt-0.5">{rec.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -649,10 +729,10 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
-          {householdId && userId && (
+          {householdId && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Planning Gaps</p>
-              <AlertCenter householdId={householdId} userId={userId} runEvaluation={!isAdvisor} />
+              <PlanningGapsSection householdId={householdId} />
             </div>
           )}
 
