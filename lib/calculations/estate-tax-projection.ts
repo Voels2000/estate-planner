@@ -11,6 +11,13 @@
 
 import type { YearRow } from '@/lib/calculations/projection-complete'
 
+export type StateBracket = {
+  min_amount: number
+  max_amount: number
+  rate_pct: number
+  exemption_amount: number
+}
+
 export type TaxScenarioId =
   | 'current_law'
   | 'no_exemption'
@@ -56,7 +63,7 @@ export function computeEstateTaxProjection(
   person1LongevityAge: number,
   person2BirthYear: number | null,
   person2LongevityAge: number | null,
-  stateEstateTaxRate: number, // from calculate_state_estate_tax RPC or 0
+  stateBrackets: StateBracket[],
 ): {
   s1_first: DeathSequenceOutput
   s2_first: DeathSequenceOutput | null
@@ -82,7 +89,7 @@ export function computeEstateTaxProjection(
     exemptionMarried,
     topRate,
     isMarried,
-    stateRate: stateEstateTaxRate,
+    stateBrackets,
     sequence: 'S1_first',
   })
 
@@ -97,7 +104,7 @@ export function computeEstateTaxProjection(
           exemptionMarried,
           topRate,
           isMarried,
-          stateRate: stateEstateTaxRate,
+          stateBrackets,
           sequence: 'S2_first',
         })
       : null
@@ -113,7 +120,7 @@ function computeSequence({
   exemptionMarried,
   topRate,
   isMarried,
-  stateRate,
+  stateBrackets,
   sequence,
 }: {
   rows: YearRow[]
@@ -123,7 +130,7 @@ function computeSequence({
   exemptionMarried: number
   topRate: number
   isMarried: boolean
-  stateRate: number
+  stateBrackets: StateBracket[]
   sequence: 'S1_first' | 'S2_first' | 'single'
 }): DeathSequenceOutput {
   let dsue_amount = 0
@@ -153,10 +160,10 @@ function computeSequence({
         const exemption = exemptionIndividual + dsue_amount
         taxable_estate = Math.max(0, grossEstate - exemption)
         estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
-        // State estate tax: apply only if estate exceeds state exemption.
-        // stateRate here is a flat approximation - the estate tax page uses
-        // full progressive brackets for the detailed calculation.
-        estate_tax_state = taxable_estate > 0 ? Math.round(taxable_estate * stateRate) : 0
+        estate_tax_state =
+          taxable_estate > 0
+            ? computeStateEstateTaxFromBrackets(grossEstate, stateBrackets)
+            : 0
         exemption_used = Math.min(grossEstate, exemption)
       }
     } else if (secondDeathYear && row.year === secondDeathYear) {
@@ -165,9 +172,10 @@ function computeSequence({
       const exemption = exemptionIndividual + dsue_amount
       taxable_estate = Math.max(0, grossEstate - exemption)
       estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
-      // At second death, state exemption has already been consumed at first death
-      // (if no bypass trust was used). Use gross estate vs state exemption directly.
-      estate_tax_state = taxable_estate > 0 ? Math.round(taxable_estate * stateRate) : 0
+      estate_tax_state =
+        taxable_estate > 0
+          ? computeStateEstateTaxFromBrackets(grossEstate, stateBrackets)
+          : 0
       exemption_used = Math.min(grossEstate, exemption)
     }
 
@@ -214,6 +222,25 @@ function computeProgressiveEstateTax(taxableEstate: number, topRate: number): nu
   // For the projection engine we use the top rate directly since
   // the full bracket table is applied in the estate-tax page
   return Math.round(taxableEstate * topRate)
+}
+
+function computeStateEstateTaxFromBrackets(
+  grossEstate: number,
+  brackets: StateBracket[],
+): number {
+  if (brackets.length === 0) return 0
+  const exemption = brackets[0].exemption_amount ?? 0
+  const taxable = Math.max(0, grossEstate - exemption)
+  if (taxable <= 0) return 0
+  let tax = 0
+  for (const bracket of brackets) {
+    const bracketMin = bracket.min_amount
+    const bracketMax = bracket.max_amount >= 9_999_999_999 ? Infinity : bracket.max_amount
+    if (taxable <= bracketMin) break
+    const inBracket = Math.min(taxable, bracketMax) - bracketMin
+    if (inBracket > 0) tax += inBracket * (bracket.rate_pct / 100)
+  }
+  return Math.round(tax)
 }
 
 // -- Scenario comparison ------------------------------------------------------

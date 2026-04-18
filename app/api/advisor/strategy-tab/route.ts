@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       household.person1_longevity_age ?? 90,
       household.person2_birth_year,
       household.person2_longevity_age,
-      0, // simplified state rate for cross-scenario comparison
+      [], // no state brackets in this path — cross-scenario comparison uses federal only
     )
 
     const seq = sequenceParam === 'S2_first' ? s2_first : s1_first
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     household.person1_longevity_age ?? 90,
     household.person2_birth_year,
     household.person2_longevity_age,
-    0,
+    [],
   )
 
   const rows = sequenceParam === 'S2_first' ? s2_first?.rows ?? [] : s1_first.rows

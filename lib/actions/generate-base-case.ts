@@ -151,20 +151,18 @@ export async function generateBaseCase(householdId: string): Promise<{
       })),
     })
 
-    // State estate tax rate - use flat approximation until RPC is wired
-    // Sprint 59 locked decision: calls calculate_state_estate_tax for current year
-    const { data: stateEstateTaxRaw } = await admin
-      .rpc('calculate_state_estate_tax', { p_household_id: householdId })
-      .maybeSingle()
-
-    const stateEstateTaxData = stateEstateTaxRaw as { state_estate_tax?: number } | null
-    const stateEstateTaxRate = stateEstateTaxData?.state_estate_tax
-      ? stateEstateTaxData.state_estate_tax /
-        Math.max(1, projectionRows[projectionRows.length - 1]?.estate_incl_home ?? 1)
-      : 0
+    const statePrimary = household.state_primary ?? null
+    const { data: stateBracketRows } = statePrimary
+      ? await admin
+          .from('state_estate_tax_rules')
+          .select('min_amount, max_amount, rate_pct, exemption_amount')
+          .eq('state', statePrimary)
+          .order('min_amount', { ascending: true })
+      : { data: [] }
+    const stateBrackets = stateBracketRows ?? []
 
     // Run estate tax projection for all 3 scenarios
-    const currentLawConfig = taxConfigs?.find(c => c.scenario_id === 'current_law_extended')
+    const currentLawConfig = taxConfigs?.find(c => c.scenario_id === 'current_law')
     const legislativeConfig = taxConfigs?.find(c => c.scenario_id === 'legislative_change')
 
     if (!currentLawConfig) return { error: 'Tax config not found - run Sprint 57 SQL' }
@@ -184,7 +182,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       household.person1_longevity_age ?? 90,
       household.person2_birth_year,
       household.person2_longevity_age,
-      stateEstateTaxRate,
+      stateBrackets,
     )
 
     // Build assumption snapshot
