@@ -264,6 +264,7 @@ export async function generateEstateFlow(
       .from('state_estate_tax_rules')
       .select('min_amount, max_amount, rate_pct, exemption_amount')
       .eq('state', household.state_primary ?? '')
+      .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
   ])
 
