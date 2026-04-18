@@ -612,11 +612,21 @@ export default function EstateTaxClient({
                         State estate tax at first death = $0.
                       </p>
                       <p className="mt-1.5 leading-relaxed">
-                        At second death, {statePrimary.toUpperCase()} exempts{' '}
+                        At the second death, {statePrimary.toUpperCase()} applies a{' '}
                         <span className="font-semibold">{formatDollars(primaryStateTax.state_exemption)}</span>{' '}
-                        per person. Without a bypass or QTIP trust, the first spouse&apos;s{' '}
-                        {formatDollars(primaryStateTax.state_exemption)} exemption is lost —
-                        worth discussing with your estate attorney.
+                        exemption against the combined estate. Without advance planning, the first
+                        spouse&apos;s {formatDollars(primaryStateTax.state_exemption)} exemption is
+                        permanently lost — only one exemption applies at second death.
+                      </p>
+                      <p className="mt-1.5 leading-relaxed">
+                        A Credit Shelter Trust (Bypass Trust) funded at first death can preserve
+                        both spouses&apos; exemptions, potentially reducing{' '}
+                        {statePrimary.toUpperCase()} estate tax by{' '}
+                        <span className="font-semibold">
+                          {formatDollars(primaryStateTax.state_exemption * 0.10)}–{formatDollars(primaryStateTax.state_exemption * 0.20)}
+                        </span>{' '}
+                        or more depending on the estate size and growth. This is worth discussing
+                        with your estate attorney before the first death occurs.
                       </p>
                     </div>
                   )}

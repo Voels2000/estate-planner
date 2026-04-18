@@ -30,6 +30,7 @@ export default async function EstateTaxPage() {
     { data: realEstateRows },
     { data: assetsRows },
     { data: liabilitiesRows },
+    { data: businessesRows },
     { data: trustsRows },
     { data: householdRow },
     { data: federalEstateTaxBracketsRows },
@@ -51,6 +52,10 @@ export default async function EstateTaxPage() {
       .select('*')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('businesses')
+      .select('id, estimated_value, ownership_pct')
+      .eq('owner_id', user.id),
     supabase
       .from('trusts')
       .select('*')
@@ -82,7 +87,12 @@ export default async function EstateTaxPage() {
     const assets = (assetsRows ?? []).reduce((s, a) => s + Number((a as Record<string, unknown>).value ?? 0), 0)
     const re = (realEstateRows ?? []).reduce((s, r) => s + Number((r as Record<string, unknown>).current_value ?? 0), 0)
     const liabilities = (liabilitiesRows ?? []).reduce((s, l) => s + Number((l as Record<string, unknown>).balance ?? 0), 0)
-    return assets + re - liabilities
+    const businesses = (businessesRows ?? []).reduce((s, b) => {
+      const val = Number((b as Record<string, unknown>).estimated_value ?? 0)
+      const pct = Number((b as Record<string, unknown>).ownership_pct ?? 100) / 100
+      return s + val * pct
+    }, 0)
+    return assets + re + businesses - liabilities
   })()
 
   const primaryResidenceValue = (() => {
