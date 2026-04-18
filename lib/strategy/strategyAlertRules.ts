@@ -13,6 +13,7 @@
 export interface StrategyAlertInput {
   householdId: string
   grossEstate: number
+  filingStatus?: 'single' | 'mfj' | 'married_joint'
   federalExemption: number
   hasGiftingProgram: boolean
   hasILIT: boolean
@@ -48,7 +49,13 @@ export function evaluateStrategyAlerts(input: StrategyAlertInput): StrategyAlert
     marginalTaxRate,
   } = input
 
-  const taxableUnderSunset = grossEstate > 7_000_000
+  const LARGE_ESTATE_THRESHOLD_SINGLE = 10_000_000
+  const LARGE_ESTATE_THRESHOLD_MFJ = 20_000_000
+  const largeEstateThreshold =
+    input.filingStatus === 'mfj' || input.filingStatus === 'married_joint'
+      ? LARGE_ESTATE_THRESHOLD_MFJ
+      : LARGE_ESTATE_THRESHOLD_SINGLE
+  const largeEstateSignal = grossEstate > largeEstateThreshold
 
   // Rule 1: No gifting program on taxable estate
   alerts.push({
@@ -59,8 +66,8 @@ export function evaluateStrategyAlerts(input: StrategyAlertInput): StrategyAlert
       `This household has a gross estate of $${Math.round(grossEstate).toLocaleString()} ` +
       `but no annual gifting program is on record. A systematic gifting program could remove ` +
       `$72,000+ per year from the taxable estate with no gift tax cost.`,
-    shouldFire: taxableUnderSunset && !hasGiftingProgram,
-    contextData: { grossEstate, federalExemption, taxableUnderSunset },
+    shouldFire: largeEstateSignal && !hasGiftingProgram,
+    contextData: { grossEstate, federalExemption, largeEstateSignal },
   })
 
   // Rule 2: Life insurance outside ILIT
@@ -86,7 +93,7 @@ export function evaluateStrategyAlerts(input: StrategyAlertInput): StrategyAlert
       `This household holds $${Math.round(businessInterestValue).toLocaleString()} in business ` +
       `or private equity interests with high appreciation potential. A GRAT could transfer ` +
       `appreciation above the §7520 hurdle rate to beneficiaries gift-tax free.`,
-    shouldFire: businessInterestValue > 500_000 && !hasGRAT && taxableUnderSunset,
+    shouldFire: businessInterestValue > 500_000 && !hasGRAT && largeEstateSignal,
     contextData: { businessInterestValue },
   })
 

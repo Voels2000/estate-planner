@@ -4,7 +4,6 @@
 export type ScenarioType =
   | 'base_case'
   | 'current_law_extended'
-  | 'sunset_2026'
   | 'legislative_change'
   | 'custom'
 

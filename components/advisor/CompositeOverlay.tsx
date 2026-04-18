@@ -18,18 +18,14 @@ interface CompositeOverlayProps {
   grossEstate: number
   federalExemption: number
   estimatedFederalTax: number
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
 }
 
 const ESTATE_TAX_RATE = 0.40
 
 function calcTax(estate: number, exemption: number, lawScenario: string): number {
   const effectiveExemption =
-    lawScenario === 'sunset'
-      ? Math.min(exemption, 7_000_000)
-      : lawScenario === 'no_exemption'
-        ? 0
-        : exemption
+    lawScenario === 'no_exemption' ? 0 : exemption
   return Math.max(0, estate - effectiveExemption) * ESTATE_TAX_RATE
 }
 

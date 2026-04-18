@@ -528,7 +528,8 @@ function fillTemplate(
 }
 
 /** Sprint 81 — Consumer estate-planning alerts (string rule ids; no DB rows). Runs after DB alert_rules. */
-const SUNSET_ESTATE_THRESHOLD = 7_000_000
+const LARGE_ESTATE_THRESHOLD_SINGLE = 10_000_000
+const LARGE_ESTATE_THRESHOLD_MFJ = 20_000_000
 const ILIT_GAP_DOLLARS = 250_000
 const LARGE_ESTATE_NO_TRUST_THRESHOLD = 1_000_000
 
@@ -551,6 +552,11 @@ async function evaluateEstateAlerts(
   const grossEstate =
     ctx.assets.reduce((s, a) => s + Number(a.value ?? 0), 0) +
     ctx.realEstateRows.reduce((s, r) => s + Number(r.current_value ?? 0), 0)
+
+  const filingStatus = (ctx.household as { filing_status?: string }).filing_status ?? 'single'
+  const largeEstateThreshold = filingStatus === 'mfj' || filingStatus === 'married_joint'
+    ? LARGE_ESTATE_THRESHOLD_MFJ
+    : LARGE_ESTATE_THRESHOLD_SINGLE
 
   const lifeInsuranceOutsideIlit = ctx.insurancePolicies
     .filter((p) => !p.is_ilit)
@@ -588,13 +594,13 @@ async function evaluateEstateAlerts(
     },
     {
       id: 'estate_gifting_gap',
-      fire: grossEstate > SUNSET_ESTATE_THRESHOLD && !hasGiftingProgram,
+      fire: grossEstate > largeEstateThreshold && !hasGiftingProgram,
       alertType: 'warning',
       severity: 'medium',
       title: 'No annual gifting program',
       description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
       linkPath: '/my-estate-strategy',
-      context: { grossEstate, sunsetThreshold: SUNSET_ESTATE_THRESHOLD },
+      context: { grossEstate, largeEstateThreshold },
     },
     {
       id: 'estate_large_no_trust',

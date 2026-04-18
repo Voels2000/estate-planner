@@ -5,14 +5,12 @@ test.beforeEach(async ({ page }) => {
   await gotoMichaelJohnsonClient(page)
 })
 
-test('advisory metrics grid lists sunset messaging or info banner', async ({ page }) => {
+test('advisory metrics grid renders without sunset messaging', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
   const dashboard = page.getByText('Advisory Metrics Dashboard')
   await expect(dashboard.or(page.locator('.animate-pulse')).first()).toBeVisible({ timeout: 30_000 })
   if (await dashboard.isVisible()) {
-    await expect(
-      page.getByText(/Sunset Urgency|sunset/i).or(page.getByText(/ℹ️/)),
-    ).toBeVisible()
+    await expect(page.getByText(/Sunset Urgency|sunset/i)).not.toBeVisible()
   }
 })
 

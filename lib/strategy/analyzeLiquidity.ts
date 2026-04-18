@@ -110,8 +110,7 @@ export function analyzeLiquidity(config: LiquidityConfig): LiquidityResult {
   if (totalTaxBurden === 0) {
     advisoryNotes.push(
       `No estate tax is projected under the current scenario. ` +
-      `Liquidity analysis becomes critical under the sunset scenario — run this analysis ` +
-      `with sunset law selected in the Tax tab.`
+      `Liquidity analysis becomes critical under a no-exemption stress scenario — run this analysis with the No Exemption stress scenario selected in the Tax tab.`
     )
   }
 

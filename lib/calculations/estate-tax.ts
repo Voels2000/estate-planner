@@ -6,24 +6,24 @@ export type EstateTaxBracket = {
   rate_pct: number
 }
 
-export const FEDERAL_EXEMPTION_2024 = 13_610_000
+export const FEDERAL_EXEMPTION_2026 = 15_000_000
 
-// Year-aware federal estate tax exemptions
-// 2026: TCJA sunsets — exemption drops back to ~$7M per person
+// Year-aware federal estate tax exemptions (per person)
+// OBBBA 2026 (P.L. 119-21): permanent $15M single / $30M MFJ, inflation-indexed from 2027
 const FEDERAL_EXEMPTIONS_BY_YEAR: Record<number, number> = {
   2024: 13_610_000,
   2025: 13_990_000,
-  2026:  7_000_000,  // TCJA sunset estimate — update if legislation changes
+  2026: 15_000_000,  // OBBBA 2026 — One Big Beautiful Bill Act (P.L. 119-21)
 }
 
 export function getFederalExemption(taxYear?: number): number {
-  if (!taxYear) return FEDERAL_EXEMPTION_2024
+  if (!taxYear) return FEDERAL_EXEMPTION_2026
   // Use exact year if available, otherwise nearest past year
   const years = Object.keys(FEDERAL_EXEMPTIONS_BY_YEAR).map(Number).sort((a, b) => b - a)
   for (const y of years) {
     if (taxYear >= y) return FEDERAL_EXEMPTIONS_BY_YEAR[y]
   }
-  return FEDERAL_EXEMPTION_2024
+  return FEDERAL_EXEMPTION_2026
 }
 
 export type FederalEstateTaxResult = {

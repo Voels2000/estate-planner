@@ -311,21 +311,6 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
           defaultOpen={true}
           storageKey="gifting-exemption-overview"
         >
-          {summary.tcja_in_effect && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
-              <div>
-                <p className="text-sm font-semibold text-amber-800">TCJA Sunset — December 31, 2026</p>
-                <p className="text-sm text-amber-700 mt-0.5">
-                  The current {fmt$(summary.exemption_per_person)} per-person exemption is scheduled to drop to ~$7M on Jan 1, 2027.
-                  Gifts made before year-end 2026 lock in the higher exemption permanently.
-                </p>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Lifetime Exemption Used</p>

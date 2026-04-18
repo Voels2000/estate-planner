@@ -55,7 +55,7 @@ export const OPENAPI_SPEC = {
                   household_id: { type: 'string', format: 'uuid' },
                   law_scenario: {
                     type: 'string',
-                    enum: ['current_law', 'sunset', 'no_exemption'],
+                    enum: ['current_law', 'no_exemption'],
                     default: 'current_law',
                   },
                   save_scenario: { type: 'boolean', default: false },
@@ -181,7 +181,8 @@ export async function POST(req: NextRequest) {
       law_scenario?: string
       save_scenario?: boolean
     }
-    const { household_id, law_scenario = 'current_law' } = body
+    const { household_id } = body
+    let law_scenario = body.law_scenario ?? 'current_law'
 
     if (!household_id) {
       return NextResponse.json(
@@ -190,7 +191,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const allowedLaw = ['current_law', 'sunset', 'no_exemption'] as const
+    const allowedLaw = ['current_law', 'no_exemption'] as const
+    if ((law_scenario as string) === 'sunset') law_scenario = 'current_law'
     const lawScenario = allowedLaw.includes(law_scenario as (typeof allowedLaw)[number])
       ? law_scenario
       : 'current_law'

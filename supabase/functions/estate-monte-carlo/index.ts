@@ -28,12 +28,7 @@ function randomNormal(mean: number, stdDev: number): number {
 
 function calcEstateTax(estate: number, exemption: number, stateRate: number, lawScenario: string): number {
   const FEDERAL_RATE = 0.4
-  const effectiveExemption =
-    lawScenario === 'no_exemption'
-      ? 0
-      : lawScenario === 'sunset'
-        ? Math.min(exemption, 7_000_000)
-        : exemption
+  const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
   const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
   const stateTax = estate * stateRate
   return federalTax + stateTax
@@ -130,8 +125,8 @@ function runEstateMonteCarlo(inputs: {
     },
     {
       variable: 'Federal Exemption',
-      low_value: 7_000_000,
-      low_tax: calcEstateTax(p50_estate, 7_000_000, stateEstateTaxRate, 'current_law'),
+      low_value: 0,
+      low_tax: calcEstateTax(p50_estate, 0, stateEstateTaxRate, 'no_exemption'),
       base_tax: p50_tax,
       high_value: federalExemption,
       high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, 'current_law'),

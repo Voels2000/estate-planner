@@ -41,7 +41,7 @@ export function applyGiftingProgram(
   scenario: ProjectionScenario,
   config: GiftingProgramConfig,
   deathYear: number,
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption' = 'current_law'
+  lawScenario: 'current_law' | 'no_exemption' = 'current_law'
 ): GiftingProgramResult {
   void scenario
   void lawScenario

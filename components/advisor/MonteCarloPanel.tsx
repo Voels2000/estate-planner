@@ -45,7 +45,7 @@ interface MonteCarloProps {
   federalExemption: number
   estimatedStateTax: number
   person1BirthYear: number
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
   supabaseUrl: string
 }
 

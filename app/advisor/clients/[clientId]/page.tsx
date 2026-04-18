@@ -267,7 +267,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
           latestOutput?.state_estate_tax ??
           0
         ),
-        law_scenario: (scenario.scenario_type === 'sunset_2026' ? 'sunset' : 'current_law') as 'current_law' | 'sunset' | 'no_exemption',
+        law_scenario: 'current_law' as 'current_law' | 'no_exemption',
       }
     : null
 

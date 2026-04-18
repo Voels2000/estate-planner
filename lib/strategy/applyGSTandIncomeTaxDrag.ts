@@ -97,7 +97,7 @@ export function trackGSTLedger(
     advisoryNotes.push(
       `$${remainingExemption.toLocaleString()} in GST exemption remains unused. ` +
       `Consider allocating to dynasty trust or direct skip transfers to grandchildren ` +
-      `to leverage the exemption before potential sunset.`
+      `to leverage the exemption before potential legislative changes.`
     )
   }
 

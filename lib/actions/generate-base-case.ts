@@ -165,11 +165,9 @@ export async function generateBaseCase(householdId: string): Promise<{
 
     // Run estate tax projection for all 3 scenarios
     const currentLawConfig = taxConfigs?.find(c => c.scenario_id === 'current_law_extended')
-    const sunsetConfig = taxConfigs?.find(c => c.scenario_id === 'sunset_2026')
     const legislativeConfig = taxConfigs?.find(c => c.scenario_id === 'legislative_change')
 
     if (!currentLawConfig) return { error: 'Tax config not found - run Sprint 57 SQL' }
-    void sunsetConfig
     void legislativeConfig
 
     const filingStatus =

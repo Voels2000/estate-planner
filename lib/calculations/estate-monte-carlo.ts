@@ -25,7 +25,7 @@ export interface EstateMCInputs {
   // Strategy reductions already applied (from CompositeOverlay)
   strategyEstatereduction: number
   // Law scenario
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
   // Number of simulation paths
   simulationCount: number
   // Whether to include sensitivity analysis
@@ -93,15 +93,11 @@ function calcEstateTax(
   estate: number,
   exemption: number,
   stateRate: number,
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
 ): number {
   const FEDERAL_RATE = 0.4
   const effectiveExemption =
-    lawScenario === 'no_exemption'
-      ? 0
-      : lawScenario === 'sunset'
-        ? Math.min(exemption, 7_000_000)
-        : exemption
+    lawScenario === 'no_exemption' ? 0 : exemption
 
   const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
   const stateTax = estate * stateRate
@@ -198,11 +194,11 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
       })
     }
 
-    // Exemption sensitivity (current law vs sunset)
+    // Exemption sensitivity (current law vs no-exemption stress)
     sensitivity_matrix.push({
       variable: 'Federal Exemption',
-      low_value: 7_000_000,
-      low_tax: calcEstateTax(p50_estate, 7_000_000, stateEstateTaxRate, 'current_law'),
+      low_value: 0,
+      low_tax: calcEstateTax(p50_estate, 0, stateEstateTaxRate, 'no_exemption'),
       base_tax: p50_tax,
       high_value: federalExemption,
       high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, 'current_law'),

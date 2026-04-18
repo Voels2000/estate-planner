@@ -405,7 +405,7 @@ export default function AdvancedStrategyPanel({
               <div className="flex justify-between text-sm"><span className="text-gray-600">Total Liquidity</span><span className="font-medium">{fmt(liquidityResult.totalLiquidity)}</span></div>
               {liquidityResult.totalTaxBurden === 0 ? (
                 <div className="bg-blue-50 border border-blue-100 rounded p-3 text-xs text-blue-800">
-                  No estate tax projected under the current scenario. Switch to the Sunset scenario
+                  No estate tax projected under the current scenario. Switch to the No Exemption stress scenario
                   in the Tax tab to model liquidity under a taxable estate.
                 </div>
               ) : (

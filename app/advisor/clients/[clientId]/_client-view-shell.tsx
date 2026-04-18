@@ -270,7 +270,7 @@ export interface ClientViewShellProps {
     pre_ira_balance?: number
     estimated_federal_tax?: number
     estimated_state_tax?: number
-    law_scenario?: 'current_law' | 'sunset' | 'no_exemption'
+    law_scenario?: 'current_law' | 'no_exemption'
   } | null
   scenarioHistory?: ScenarioVersion[]
   exportPdfData?: PDFReportData

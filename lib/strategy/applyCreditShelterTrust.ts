@@ -17,12 +17,12 @@ export interface CSTConfig {
   cstGrowthRate: number
   // Years between first and second death
   yearsBetweenDeaths: number
-  // Federal exemption at second death (may differ due to sunset)
+  // Federal exemption at second death (may differ from first death)
   federalExemptionAtSecondDeath: number
   // Surviving spouse's own assets (outside of CST)
   survivingSpouseAssets: number
   // Law scenario for second death tax calculation
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
 }
 
 export interface CSTResult {
@@ -53,14 +53,12 @@ const ESTATE_TAX_RATE = 0.40 // Federal estate tax top rate
 function calcEstateTax(
   taxableEstate: number,
   exemption: number,
-  lawScenario: 'current_law' | 'sunset' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption'
 ): number {
   if (lawScenario === 'no_exemption') {
     return taxableEstate * ESTATE_TAX_RATE
   }
-  const effectiveExemption = lawScenario === 'sunset'
-    ? Math.min(exemption, 7_000_000) // Approximate post-sunset exemption
-    : exemption
+  const effectiveExemption = exemption
   const taxable = Math.max(0, taxableEstate - effectiveExemption)
   return taxable * ESTATE_TAX_RATE
 }
@@ -137,12 +135,12 @@ export function applyCreditShelterTrust(
     )
   }
 
-  if (lawScenario === 'sunset') {
-    advisoryNotes.push(
-      'Under the sunset scenario, the CST advantage increases significantly as the surviving ' +
-      "spouse's exemption is reduced. Consider funding the CST at the maximum available amount."
-    )
-  }
+  advisoryNotes.push(
+    'A Credit Shelter Trust locks in the first-death exemption as a permanent credit at the ' +
+    'second death, protecting that exemption from erosion due to growth of the surviving ' +
+    "spouse's estate and any future legislative changes. Portability alone does not provide " +
+    'this protection.'
+  )
 
   if (crossoverYear) {
     advisoryNotes.push(
