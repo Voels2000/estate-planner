@@ -241,6 +241,7 @@ export async function generateEstateFlow(
     estateDocsRes,
     scenarioMetaRes,
     scenarioS2Res,
+    stateBracketsRes,
   ] = await Promise.all([
     supabase.from('assets').select('*').eq('owner_id', userId),
     supabase.from('real_estate').select('*').eq('owner_id', userId),
@@ -259,6 +260,11 @@ export async function generateEstateFlow(
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
     scenarioMetaPromise,
     scenarioS2Promise,
+    supabase
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', household.state_primary ?? '')
+      .order('min_amount', { ascending: true }),
   ])
 
   console.log('households error:', householdRes.error)
@@ -285,6 +291,12 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const householdPeople = (householdPeopleRes.data ?? []) as RawHouseholdPerson[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
+  const stateBrackets = (stateBracketsRes.data ?? []) as {
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }[]
   const scenario = scenarioMetaRes.data
     ? {
         ...scenarioMetaRes.data,
@@ -352,6 +364,7 @@ export async function generateEstateFlow(
       statePrimary: household.state_primary,
       filingStatus: household.filing_status,
       hasSpouse: Boolean(household.has_spouse),
+      stateBrackets,
     })
     estateTaxFederal = hypothetical.federalTax
     estateTaxState = hypothetical.stateExposure

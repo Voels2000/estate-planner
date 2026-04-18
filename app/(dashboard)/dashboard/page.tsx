@@ -67,6 +67,7 @@ export default async function DashboardPage() {
     { data: businesses },
     { data: businessInterests },
     { data: insurance },
+    { data: stateBracketRows },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('assets').select('value').eq('owner_id', user!.id),
@@ -84,7 +85,14 @@ export default async function DashboardPage() {
       .select('fmv_estimated, total_entity_value, ownership_pct')
       .eq('owner_id', user!.id),
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
+    admin
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', household?.state_primary ?? '')
+      .order('min_amount', { ascending: true }),
   ])
+
+  const stateBrackets = stateBracketRows ?? []
 
   // ── Financial calculations ───────────────────────────────────────────────
   const financialAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -208,6 +216,7 @@ export default async function DashboardPage() {
           currentYear,
           currentMonthYearLabel,
           liveNetWorth: netWorth,
+          stateBrackets,
           household: {
             state_primary: household.state_primary,
             filing_status: household.filing_status,

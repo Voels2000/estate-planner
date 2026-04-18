@@ -2,6 +2,7 @@
 // Federal constants come from OBBBA 2026 — see lib/tax/estate-tax-constants.ts.
 // No sunset scenario: the One Big Beautiful Bill Act made the exemption permanent.
 
+import { computeStateEstateTaxFromBrackets, type StateBracket } from '@/lib/calculations/estate-tax-projection'
 import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
@@ -114,6 +115,7 @@ export function computeColumnTaxes(params: {
   statePrimary: string | null | undefined
   filingStatus: string | null | undefined
   hasSpouse: boolean
+  stateBrackets?: StateBracket[]
 }): {
   federalExemption: number
   federalExposure: number
@@ -137,13 +139,18 @@ export function computeColumnTaxes(params: {
     filingStatus,
     hasSpouse,
   })
-  const stateCode = parseStateTaxCode(statePrimary)
-  const { stateTax } = calculateStateEstateTax({
-    grossEstate,
-    stateCode,
-    year: calendarYear,
-    federalExemption: exemption,
-  })
+  const brackets = params.stateBrackets ?? []
+  const stateTax = brackets.length > 0
+    ? computeStateEstateTaxFromBrackets(grossEstate, brackets)
+    : (() => {
+        const stateCode = parseStateTaxCode(statePrimary)
+        return calculateStateEstateTax({
+          grossEstate,
+          stateCode,
+          year: calendarYear,
+          federalExemption: exemption,
+        }).stateTax
+      })()
   return {
     federalExemption: exemption,
     federalExposure,
@@ -177,6 +184,7 @@ export type BuildHorizonsInput = {
   currentYear: number
   currentMonthYearLabel: string
   liveNetWorth: number
+  stateBrackets?: StateBracket[]
   household: {
     state_primary: string | null
     filing_status: string | null
@@ -208,6 +216,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     currentYear,
     currentMonthYearLabel,
     liveNetWorth,
+    stateBrackets,
     household,
     scenarioRows,
     survivorFirstName,
@@ -247,6 +256,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     statePrimary,
     filingStatus: fs,
     hasSpouse,
+    stateBrackets,
   })
 
   const today: StrategyHorizonColumn = {
@@ -292,6 +302,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       statePrimary,
       filingStatus: fs,
       hasSpouse,
+      stateBrackets,
     }) : null
     return {
       headerTitle,
@@ -324,6 +335,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
           statePrimary,
           filingStatus: fs,
           hasSpouse,
+          stateBrackets,
         })
       : null
 

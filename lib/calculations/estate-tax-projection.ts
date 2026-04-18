@@ -224,7 +224,7 @@ function computeProgressiveEstateTax(taxableEstate: number, topRate: number): nu
   return Math.round(taxableEstate * topRate)
 }
 
-function computeStateEstateTaxFromBrackets(
+export function computeStateEstateTaxFromBrackets(
   grossEstate: number,
   brackets: StateBracket[],
 ): number {

@@ -93,6 +93,7 @@ export default async function MyEstateStrategyPage() {
     { data: businesses },
     { data: businessInterests },
     { data: insurance },
+    { data: stateBracketRows },
   ] = await Promise.all([
     household.base_case_scenario_id
       ? admin
@@ -113,7 +114,14 @@ export default async function MyEstateStrategyPage() {
       .select('fmv_estimated, total_entity_value, ownership_pct')
       .eq('owner_id', ownerId),
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', ownerId),
+    supabase
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', household?.state_primary ?? '')
+      .order('min_amount', { ascending: true }),
   ])
+
+  const stateBrackets = stateBracketRows ?? []
 
   const financialAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
   const realEstateEquity = (realEstate ?? []).reduce(
@@ -158,6 +166,7 @@ export default async function MyEstateStrategyPage() {
     currentYear,
     currentMonthYearLabel,
     liveNetWorth,
+    stateBrackets,
     household: {
       state_primary: household.state_primary,
       filing_status: household.filing_status,
