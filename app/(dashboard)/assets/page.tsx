@@ -108,7 +108,12 @@ export default function AssetsPage() {
 
   async function handleDelete(id: string) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('assets').delete().eq('id', id)
+    if (!error && user?.id) {
+      const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+      if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+    }
     if (error) setError(error.message)
     else setAssets((prev) => prev.filter((a) => a.id !== id))
     setConfirmDeleteId(null)
@@ -291,6 +296,12 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const { data: household } = await supabase
+        .from('households')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single()
+
       const situsPayload = {
         situs_state: situsState.trim() || null,
         situs_asset_type: situsAssetType.trim() || null,
@@ -337,6 +348,9 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
             ...situsPayload,
           })
         if (error) throw error
+      }
+      if (household?.id) {
+        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', household.id)
       }
       onSave()
     } catch (err) {
