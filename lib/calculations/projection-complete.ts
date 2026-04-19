@@ -599,7 +599,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const p2Name      = household.has_spouse ? (household.person2_name ?? null) : null
   const p1Birth     = household.person1_birth_year ?? currentYear - 50
   const p1Longevity = household.person1_longevity_age ?? 90
-  const endYear     = p1Birth + p1Longevity
+  const p2BirthRaw  = household.has_spouse ? (household.person2_birth_year ?? null) : null
+  const p2LongevityRaw = household.has_spouse ? (household.person2_longevity_age ?? null) : null
+  const endYear = (p2BirthRaw && p2LongevityRaw)
+    ? Math.max(p1Birth + p1Longevity, p2BirthRaw + p2LongevityRaw)
+    : p1Birth + p1Longevity
 
   // Apply overrides for scenario comparisons
   const effectiveState       = overrides.state_primary   !== undefined ? overrides.state_primary   : household.state_primary
@@ -663,9 +667,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const yearsFromNow    = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
     const businessValue   = Math.round(baseBusinessValue * inflationFactor)
-    const insuranceEstate = insurancePoliciesInput
+    const insuranceDeathBenefit = insurancePoliciesInput
       .filter(p => !p.is_ilit && p.death_benefit)
       .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
+    const insuranceCashValue = insurancePoliciesInput
+      .reduce((s, p) => s + (p.cash_value ?? 0), 0)
 
     const age1 = year - p1Birth
     const age2 = household.has_spouse && household.person2_birth_year
@@ -961,10 +967,12 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const poolTotal = bucketTotal(poolBucket)
     const assets_total = p1Total + p2Total + poolTotal
 
-    const net_worth = assets_total + re_total + businessValue + insuranceEstate - liabilities_total
+    // Net worth uses cash value (what you own today if you cashed out)
+    const net_worth = assets_total + re_total + businessValue + insuranceCashValue - liabilities_total
 
-    const estate_excl_home = assets_total + re_other + businessValue + insuranceEstate - liabilities_total
-    const estate_incl_home = assets_total + re_total + businessValue + insuranceEstate - liabilities_total
+    // Gross estate uses death benefit (what transfers at death); liabilities deducted per IRC §2053
+    const estate_excl_home = assets_total + re_other + businessValue + insuranceDeathBenefit - liabilities_total
+    const estate_incl_home = assets_total + re_total + businessValue + insuranceDeathBenefit - liabilities_total
 
     rows.push({
       year,

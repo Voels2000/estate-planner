@@ -26,6 +26,8 @@ type Props = {
   primaryResidenceValue: number | null
   /** Whether the household has a spouse (for death-view picker in flow view) */
   hasSpouse: boolean
+  survivorEndYear: number
+  currentYear: number
 }
 
 export default function MyEstateStrategyClient({
@@ -36,6 +38,8 @@ export default function MyEstateStrategyClient({
   estateAsOfLabel,
   primaryResidenceValue,
   hasSpouse,
+  survivorEndYear,
+  currentYear,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -92,6 +96,26 @@ export default function MyEstateStrategyClient({
         )}
       </div>
 
+      {survivorEndYear < currentYear + 10 && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          ℹ️ Your longevity settings end in {survivorEndYear}, which is before the 10-year
+          horizon ({currentYear + 10}). The 10-year and 20-year projections are not available.{' '}
+          <Link href="/profile" className="underline hover:text-amber-900">
+            Update your longevity age in your profile
+          </Link>{' '}
+          to see these horizons.
+        </div>
+      )}
+      {survivorEndYear >= currentYear + 10 && survivorEndYear < currentYear + 20 && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          ℹ️ Your longevity settings end in {survivorEndYear}, which is before the 20-year
+          horizon ({currentYear + 20}). The 20-year projection is not available.{' '}
+          <Link href="/profile" className="underline hover:text-amber-900">
+            Update your longevity age in your profile
+          </Link>{' '}
+          to see this horizon.
+        </div>
+      )}
       {generateError && (
         <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           {generateError}

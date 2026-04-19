@@ -139,8 +139,16 @@ export default async function MyEstateStrategyPage() {
   const liveNetWorth = totalAssets - totalLiabilities
 
   const now = new Date()
-  const currentYear = now.getFullYear()
+  const currentYear = new Date().getFullYear()
   const currentMonthYearLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+
+  const p1EndYear =
+    (household.person1_birth_year ?? currentYear - 50) + (household.person1_longevity_age ?? 90)
+  const p2EndYear =
+    household.has_spouse && household.person2_birth_year && household.person2_longevity_age
+      ? household.person2_birth_year + household.person2_longevity_age
+      : null
+  const survivorEndYear = p2EndYear ? Math.max(p1EndYear, p2EndYear) : p1EndYear
 
   const hasSpouse = household.has_spouse ?? false
 
@@ -196,6 +204,8 @@ export default async function MyEstateStrategyPage() {
         estateAsOfLabel={currentMonthYearLabel}
         primaryResidenceValue={primaryResidenceValueForUi}
         hasSpouse={hasSpouse}
+        survivorEndYear={survivorEndYear}
+        currentYear={currentYear}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />
