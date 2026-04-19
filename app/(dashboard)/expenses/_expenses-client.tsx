@@ -363,9 +363,17 @@ function ExpenseModal({
 
       if (editExpense) {
         const { error } = await supabase.from('expenses').update(payload).eq('id', editExpense.id)
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       } else {
         const { error } = await supabase.from('expenses').insert({ ...payload, owner_id: user.id })
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       }
       onSave()

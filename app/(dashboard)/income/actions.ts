@@ -26,6 +26,10 @@ export async function addIncome(ownerId: string, values: {
     end_month: values.end_month ?? null,
     inflation_adjust: values.inflation_adjust,
   })
+  if (!error) {
+    const { data: hh } = await supabase.from('households').select('id').eq('owner_id', ownerId).single()
+    if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+  }
   if (error) throw new Error(error.message)
   revalidatePath('/income')
 }

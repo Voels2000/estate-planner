@@ -269,9 +269,17 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
 
       if (editLiability) {
         const { error } = await supabase.from('liabilities').update(payload).eq('id', editLiability.id)
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       } else {
         const { error } = await supabase.from('liabilities').insert({ ...payload, owner_id: user.id })
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       }
       onSave()

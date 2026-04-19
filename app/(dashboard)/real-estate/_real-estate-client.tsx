@@ -483,12 +483,20 @@ function RealEstateModal({
 
       if (editRow) {
         const { error } = await supabase.from('real_estate').update(payload).eq('id', editRow.id)
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       } else {
         const { error } = await supabase.from('real_estate').insert({
           ...payload,
           owner_id: user.id,
         })
+        if (!error) {
+          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
+          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        }
         if (error) throw error
       }
       onSave()

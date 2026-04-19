@@ -27,5 +27,8 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (household?.id) {
+    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', household.id)
+  }
   return NextResponse.json(data)
 }
