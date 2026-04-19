@@ -28,7 +28,7 @@ export default async function MyEstateStrategyPage() {
   const { data: household } = await supabase
     .from('households')
     .select(
-      'id, base_case_scenario_id, person1_name, person2_name, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age, has_spouse, filing_status, state_primary',
+      'id, base_case_scenario_id, updated_at, person1_name, person2_name, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age, has_spouse, filing_status, state_primary',
     )
     .eq('owner_id', user.id)
     .single()
@@ -38,7 +38,24 @@ export default async function MyEstateStrategyPage() {
   const ownerId = user.id
 
   // ── Auto-generate base case if inputs are complete and no base case exists ──
-  if (!household.base_case_scenario_id) {
+  // Staleness check — regenerate if household was updated after the last projection
+  const { data: existingScenario } = household.base_case_scenario_id
+    ? await supabase
+        .from('projection_scenarios')
+        .select('calculated_at')
+        .eq('id', household.base_case_scenario_id)
+        .single()
+    : { data: null }
+
+  const householdUpdatedAt = household.updated_at ?? null
+  const projectionCalculatedAt = existingScenario?.calculated_at ?? null
+  const isStale =
+    !household.base_case_scenario_id ||
+    (householdUpdatedAt &&
+      projectionCalculatedAt &&
+      new Date(householdUpdatedAt) > new Date(projectionCalculatedAt))
+
+  if (isStale) {
     // Check completeness — fetch just what we need to validate
     const [
       { data: incomeRows },
@@ -75,13 +92,17 @@ export default async function MyEstateStrategyPage() {
     const hasAssets = (assetRows ?? []).length > 0
 
     if (p1Complete && p2Complete && hasIncome && hasAssets) {
-      // Fire and don't await — page renders immediately, base case generates in background
-      // Use admin client so it works for both consumer and advisor paths
-      import('@/lib/actions/generate-base-case')
-        .then(({ generateBaseCase }) => generateBaseCase(household.id))
-        .catch((e) =>
-          console.error('[my-estate-strategy] auto base case failed:', e),
-        )
+      const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
+      await generateBaseCase(household.id)
+      // Reload household so base_case_scenario_id is fresh for the queries below
+      const { data: refreshed } = await supabase
+        .from('households')
+        .select('base_case_scenario_id')
+        .eq('id', household.id)
+        .single()
+      if (refreshed?.base_case_scenario_id) {
+        household.base_case_scenario_id = refreshed.base_case_scenario_id
+      }
     }
   }
 
