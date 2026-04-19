@@ -67,8 +67,8 @@ export default function MyEstateStrategyClient({
   }
 
   const hasBaseCase = !!scenarioId
-  const { today, tenYear, atDeath, showProjectionMismatchNote } = horizons
-  const columns = [today, tenYear, atDeath]
+  const { today, tenYear, twentyYear, atDeath, showProjectionMismatchNote } = horizons
+  const columns = [today, tenYear, twentyYear, atDeath]
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -76,7 +76,7 @@ export default function MyEstateStrategyClient({
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">My Estate Strategy</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            Estimated estate value and tax exposure across three time horizons, based on your data.
+            Estimated estate value and tax exposure across four time horizons, based on your data.
             {scenarioMeta.calculatedAt && (
               <span className="ml-1 text-neutral-400">
                 Last updated {new Date(scenarioMeta.calculatedAt).toLocaleDateString()}.
@@ -124,11 +124,11 @@ export default function MyEstateStrategyClient({
 
       <CollapsibleSection
         title="Estate value & tax horizons"
-        subtitle="Today, 10 years, and at second death"
+        subtitle="Today, 10 years, 20 years, and at second death"
         defaultOpen={true}
         storageKey="my-estate-strategy-horizons"
       >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           {columns.map((col) => (
             <div
               key={col.headerTitle}
