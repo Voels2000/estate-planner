@@ -269,9 +269,8 @@ export default function ProjectionsPage() {
       </div>
 
       <p className="mt-4 text-xs text-neutral-400">
-        * Taxes estimated using {currentYear} federal brackets and standard deduction for{' '}
-        <span className="capitalize">{(household.filing_status ?? 'single').replace(/_/g, ' ')}</span> filers
-        {household.state_primary ? ` + ${household.state_primary} state rate` : ''}.
+        * Taxes are estimated using current year federal brackets for deduction and filing status
+        slected and state taxes are estimateed using a flat rate.
       </p>
     </div>
   )
