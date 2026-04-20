@@ -162,7 +162,6 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
 
   if (!summary) return null;
 
-  const lifetimePct = Math.min(100, summary.lifetime_used_pct ?? 0);
   const annualGiftRows = summary.gifts.filter(
     g => g.gift_type === 'annual' && g.tax_year === summary.tax_year,
   );
@@ -191,6 +190,11 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
   const annualPct = annualCapacityDynamic > 0
     ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
+    : 0;
+  const lifetimeUsedDisplay = Math.max(0, Number(summary.lifetime_exemption_used ?? 0)) + annualOverflowToLifetime;
+  const lifetimeRemainingDisplay = Math.max(0, Number(summary.total_exemption ?? 0) - lifetimeUsedDisplay);
+  const lifetimePct = summary.total_exemption > 0
+    ? Math.min(100, (lifetimeUsedDisplay / summary.total_exemption) * 100)
     : 0;
 
   return (
@@ -343,16 +347,21 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Lifetime Exemption Used</p>
               <div className="flex items-end justify-between mb-3">
-                <span className="text-2xl font-bold text-gray-900">{fmt$(summary.lifetime_exemption_used)}</span>
+                <span className="text-2xl font-bold text-gray-900">{fmt$(lifetimeUsedDisplay)}</span>
                 <span className="text-sm text-gray-500">of {fmt$(summary.total_exemption)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
                 <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${lifetimePct}%` }} />
               </div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold text-green-600">{fmt$(summary.lifetime_exemption_remaining)}</span> remaining
+                <span className="font-semibold text-green-600">{fmt$(lifetimeRemainingDisplay)}</span> remaining
                 {summary.filing_status === 'mfj' ? ' (combined MFJ)' : ''}
               </p>
+              {annualOverflowToLifetime > 0 && (
+                <p className="text-xs text-amber-700 mt-1">
+                  Includes {fmt$(annualOverflowToLifetime)} above annual exclusion limits this year.
+                </p>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -381,8 +390,8 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts
-                {' '}at {fmt$(annualPerRecipientLimit)} per recipient.
+                {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} × {fmt$(annualPerRecipientLimit)}
+                {' '}= {fmt$(annualCapacityDynamic)} annual exclusion capacity ({fmt$(annualUsedDynamic)} used).
               </p>
             </div>
           </div>
