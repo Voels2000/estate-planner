@@ -237,6 +237,9 @@ export default function CompleteClient({
                   </th>
                 )}
 
+                {/* Always-visible: Combined income */}
+                <th colSpan={1} className="pb-1 pt-3 px-3" />
+
                 {/* Tax group */}
                 <th
                   colSpan={expandTax ? 7 : 1}
@@ -303,6 +306,9 @@ export default function CompleteClient({
                   </>}
                 </>}
 
+                {/* Always visible */}
+                <th className="py-2 px-2 whitespace-nowrap">Total Income</th>
+
                 {/* Tax */}
                 <th className="py-2 px-2 whitespace-nowrap text-amber-600">Tax Total</th>
                 {expandTax && <>
@@ -348,6 +354,7 @@ export default function CompleteClient({
                 const p2Assets = (r.assets_p2_total ?? 0)
                 const irmaaTotal = (r.irmaa_part_b ?? 0) + (r.irmaa_part_d ?? 0)
                 const reTotal = (r.real_estate_total ?? 0)
+                const combinedIncome = p1Income + p2Income
 
                 return (
                   <tr
@@ -384,6 +391,9 @@ export default function CompleteClient({
                         <td className="py-2 px-2 text-violet-600">{fmt(p2Assets)}</td>
                       </>}
                     </>}
+
+                    {/* Always visible */}
+                    <td className="py-2 px-2 font-semibold text-neutral-900">{fmt(combinedIncome)}</td>
 
                     {/* Tax */}
                     <td className="py-2 px-2 text-amber-700 font-medium">{fmt(r.tax_total)}</td>
