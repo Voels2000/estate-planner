@@ -158,6 +158,7 @@ export default function EstateTaxClient({
   giftingAnnualCapacity,
   giftingAnnualUsed,
   giftingAnnualRemaining,
+  giftingAnnualLoggedTotal,
   giftingTaxYear,
   giftingSplitSelected,
   giftingPerRecipientLimit,
@@ -177,6 +178,7 @@ export default function EstateTaxClient({
   giftingAnnualCapacity?: number | null
   giftingAnnualUsed?: number | null
   giftingAnnualRemaining?: number | null
+  giftingAnnualLoggedTotal?: number | null
   giftingTaxYear?: number | null
   giftingSplitSelected?: boolean
   giftingPerRecipientLimit?: number | null
@@ -213,6 +215,13 @@ export default function EstateTaxClient({
     }
     setAnnualGifting(recommendedAnnualGifting)
   }, [giftingAnnualUsed, recommendedAnnualGifting])
+
+  const syncedEligibleAnnual = Math.max(0, giftingAnnualUsed ?? 0)
+  const syncedLifetimeOverflow = Math.max(0, giftingExcessOverLimit ?? 0)
+  const syncedGiftTotalReduction = syncedEligibleAnnual + syncedLifetimeOverflow
+  const useSyncedGifting = syncedGiftTotalReduction > 0
+  const effectiveAnnualGifting = useSyncedGifting ? syncedGiftTotalReduction : annualGifting
+  const effectiveGiftingYears = useSyncedGifting ? 1 : giftingYears
 
   const statePrimary = (household?.state_primary as string | null) ?? ''
   const stateCompare = (household?.state_compare as string | null) ?? ''
@@ -274,8 +283,8 @@ export default function EstateTaxClient({
           trustsExcluded,
           filing,
           brackets,
-          annualGifting,
-          giftingYears,
+          effectiveAnnualGifting,
+          effectiveGiftingYears,
         )
       : null
 
@@ -544,6 +553,11 @@ export default function EstateTaxClient({
                   </>
                 )}
               </p>
+              {giftingAnnualLoggedTotal != null && (
+                <p className="mt-1">
+                  Total annual gifts logged: {formatDollars(giftingAnnualLoggedTotal)}.
+                </p>
+              )}
               {(giftingExcessOverLimit ?? 0) > 0 && (
                 <p className="mt-1 text-amber-700">
                   {formatDollars(giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit and is
@@ -591,11 +605,16 @@ export default function EstateTaxClient({
           <div className="flex flex-col justify-end">
             <p className="text-xs text-neutral-500 mb-1">Total gifting reduction</p>
             <p className="text-2xl font-bold text-green-600 tabular-nums">
-              {formatDollars(annualGifting * giftingYears)}
+              {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
             </p>
             {federalResult && (
               <p className="text-xs text-neutral-400 mt-0.5">
                 Taxable estate reduced to {formatDollars(federalResult.taxable_estate)}
+              </p>
+            )}
+            {useSyncedGifting && (
+              <p className="text-xs text-neutral-500 mt-1">
+                Synced from Gifting Strategy (current tax year): eligible annual + lifetime-overflow taxable gifts.
               </p>
             )}
           </div>
@@ -622,7 +641,29 @@ export default function EstateTaxClient({
           )}
           {breakdownRow('Liabilities', totalLiabilities, { muted: true })}
           {breakdownRow('Trusts excluded', trustsExcluded, { muted: true })}
-          {annualGifting > 0 &&
+          {useSyncedGifting ? (
+            <>
+              {syncedEligibleAnnual > 0 &&
+                breakdownRow(
+                  'Annual exclusion gifts (current year)',
+                  syncedEligibleAnnual,
+                  {
+                    muted: true,
+                    sub: 'Applied using per-recipient annual exclusion limits',
+                  },
+                )}
+              {syncedLifetimeOverflow > 0 &&
+                breakdownRow(
+                  'Taxable gifts using lifetime exemption',
+                  syncedLifetimeOverflow,
+                  {
+                    muted: true,
+                    sub: 'Amounts above annual exclusion limits still reduce the estate',
+                  },
+                )}
+            </>
+          ) : (
+            annualGifting > 0 &&
             breakdownRow(
               'Lifetime gifting reduction',
               annualGifting * giftingYears,
@@ -630,7 +671,8 @@ export default function EstateTaxClient({
                 muted: true,
                 sub: `${formatDollars(annualGifting)}/yr × ${giftingYears} yr`,
               },
-            )}
+            )
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-4 border-t border-neutral-200">
             <span className="text-base font-semibold text-neutral-900">Taxable estate</span>
             <span className="text-base font-bold text-neutral-900 tabular-nums">

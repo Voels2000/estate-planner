@@ -153,6 +153,11 @@ export default async function EstateTaxPage() {
 
   let qualifyingAnnualGifts = 0
   let excessAnnualGifts = 0
+  let annualLoggedTotal = 0
+  for (const row of giftRows) {
+    if ((row.gift_type ?? 'annual') !== 'annual') continue
+    annualLoggedTotal += Number(row.amount ?? 0)
+  }
   recipientGiftTotals.forEach((total) => {
     const qualifying = Math.min(Math.max(0, total), perRecipientLimit)
     qualifyingAnnualGifts += qualifying
@@ -182,6 +187,7 @@ export default async function EstateTaxPage() {
         giftingAnnualCapacity={giftingData?.annual_capacity ?? null}
         giftingAnnualUsed={qualifyingAnnualGifts}
         giftingAnnualRemaining={giftingData?.annual_remaining ?? null}
+        giftingAnnualLoggedTotal={annualLoggedTotal}
         giftingTaxYear={giftingTaxYear}
         giftingSplitSelected={splitSelected}
         giftingPerRecipientLimit={perRecipientLimit}

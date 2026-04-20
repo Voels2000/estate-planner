@@ -163,7 +163,9 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   if (!summary) return null;
 
   const lifetimePct = Math.min(100, summary.lifetime_used_pct ?? 0);
-  const annualGiftRows = summary.gifts.filter(g => g.gift_type === 'annual');
+  const annualGiftRows = summary.gifts.filter(
+    g => g.gift_type === 'annual' && g.tax_year === summary.tax_year,
+  );
   const annualSplitSelected =
     summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true);
   const annualPerRecipientLimit = annualSplitSelected ? 38000 : 19000;
@@ -185,6 +187,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
     0,
   );
   const annualLoggedTotal = annualGiftRows.reduce((sum, g) => sum + Number(g.amount ?? 0), 0);
+  const annualOverflowToLifetime = Math.max(0, annualLoggedTotal - annualUsedDynamic);
   const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
   const annualPct = annualCapacityDynamic > 0
     ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
@@ -372,6 +375,11 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
               <p className="text-xs text-gray-500 mt-1">
                 Total annual gifts logged: {fmt$(annualLoggedTotal)} across {annualGiftRows.length} entr{annualGiftRows.length === 1 ? 'y' : 'ies'}.
               </p>
+              {annualOverflowToLifetime > 0 && (
+                <p className="text-xs text-amber-700 mt-1">
+                  {fmt$(annualOverflowToLifetime)} exceeds annual exclusion limits and counts toward lifetime exemption.
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts
                 {' '}at {fmt$(annualPerRecipientLimit)} per recipient.
