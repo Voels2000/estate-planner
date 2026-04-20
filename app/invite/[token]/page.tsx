@@ -36,7 +36,20 @@ export default async function InvitePage({ params }: Props) {
   // redirect to signup — do NOT sign them out
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.email?.toLowerCase() !== invite.invited_email?.toLowerCase()) {
-    redirect(`/signup?invite=${token}&email=${encodeURIComponent(invite.invited_email ?? '')}`)
+    // Check if this email already has an auth account (profiles row exists for every auth user)
+    const { data: existingProfile } = await admin
+      .from('profiles')
+      .select('id')
+      .ilike('email', invite.invited_email ?? '')
+      .maybeSingle()
+    const alreadyRegistered = !!existingProfile
+    if (alreadyRegistered) {
+      // Existing user — send to login with invite token preserved as redirectTo
+      redirect(`/login?redirectTo=${encodeURIComponent(`/invite/${token}`)}&email=${encodeURIComponent(invite.invited_email ?? '')}`)
+    } else {
+      // New user — send to signup as before
+      redirect(`/signup?invite=${token}&email=${encodeURIComponent(invite.invited_email ?? '')}`)
+    }
   }
 
   // 4. Consent gate — correct person is logged in; no mutations until user clicks Accept
