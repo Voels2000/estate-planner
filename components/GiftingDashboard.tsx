@@ -163,7 +163,19 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   if (!summary) return null;
 
   const lifetimePct = Math.min(100, summary.lifetime_used_pct ?? 0);
-  const annualPct = Math.min(100, summary.annual_used_pct ?? 0);
+  const annualGiftRows = summary.gifts.filter(g => g.gift_type === 'annual');
+  const uniqueAnnualRecipients = new Set(
+    annualGiftRows
+      .map(g => (g.recipient_name ?? '').trim().toLowerCase())
+      .filter(Boolean),
+  ).size;
+  const recipientCountForCapacity = Math.max(1, uniqueAnnualRecipients);
+  const annualCapacityDynamic = summary.annual_exclusion * recipientCountForCapacity;
+  const annualUsedDynamic = annualGiftRows.reduce((sum, g) => sum + Number(g.amount ?? 0), 0);
+  const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
+  const annualPct = annualCapacityDynamic > 0
+    ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
+    : 0;
 
   return (
     <Fragment>
@@ -330,15 +342,18 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Annual Exclusion Used ({summary.tax_year})</p>
               <div className="flex items-end justify-between mb-3">
-                <span className="text-2xl font-bold text-gray-900">{fmt$(summary.annual_used)}</span>
-                <span className="text-sm text-gray-500">of {fmt$(summary.annual_capacity)}</span>
+                <span className="text-2xl font-bold text-gray-900">{fmt$(annualUsedDynamic)}</span>
+                <span className="text-sm text-gray-500">of {fmt$(annualCapacityDynamic)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
                 <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${annualPct}%` }} />
               </div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold text-green-600">{fmt$(summary.annual_remaining)}</span> remaining this year
+                <span className="font-semibold text-green-600">{fmt$(annualRemainingDynamic)}</span> remaining this year
                 {summary.filing_status === 'mfj' ? ' (gift splitting)' : ''}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts.
               </p>
             </div>
           </div>
