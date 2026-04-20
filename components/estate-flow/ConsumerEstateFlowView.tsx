@@ -207,11 +207,16 @@ export default function ConsumerEstateFlowView({
     )
   }
 
-  const steps = buildFlowSteps(graph, {
-    gross: graph.summary.gross_estate,
-    totalTax: graph.summary.estate_tax_federal + graph.summary.estate_tax_state,
-    asOfLabel: estateAsOfLabel,
-  })
+  const heirsTodayContext =
+    horizon === 'today'
+      ? {
+          gross: graph.summary.gross_estate,
+          totalTax: graph.summary.estate_tax_federal + graph.summary.estate_tax_state,
+          asOfLabel: estateAsOfLabel,
+        }
+      : null
+
+  const steps = buildFlowSteps(graph, heirsTodayContext)
 
   // Simplified visual: show owner → assets → vehicles → recipients in rows
   const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
