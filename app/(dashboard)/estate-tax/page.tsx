@@ -115,17 +115,6 @@ export default async function EstateTaxPage() {
       : { data: null }
 
   const currentTaxYear = new Date().getFullYear()
-  const splitGiftStatus =
-    householdRow?.id != null
-      ? await supabase
-          .from('gift_history')
-          .select('id')
-          .eq('household_id', householdRow.id)
-          .eq('tax_year', currentTaxYear)
-          .eq('form_709_filed', true)
-          .limit(1)
-      : { data: null }
-
   const giftingData = giftingSummary.data as
     | {
         annual_capacity?: number
@@ -134,6 +123,41 @@ export default async function EstateTaxPage() {
         tax_year?: number
       }
     | null
+  const giftingTaxYear = giftingData?.tax_year ?? currentTaxYear
+
+  const giftRowsResult =
+    householdRow?.id != null
+      ? await supabase
+          .from('gift_history')
+          .select('recipient_name, amount, gift_type, form_709_filed')
+          .eq('household_id', householdRow.id)
+          .eq('tax_year', giftingTaxYear)
+      : { data: null }
+
+  const giftRows = (giftRowsResult.data ?? []) as Array<{
+    recipient_name: string | null
+    amount: number | null
+    gift_type: string | null
+    form_709_filed: boolean | null
+  }>
+  const splitSelected = giftRows.some((r) => r.form_709_filed === true)
+  const perRecipientLimit = splitSelected ? 38000 : 19000
+
+  const recipientGiftTotals = new Map<string, number>()
+  for (const row of giftRows) {
+    if ((row.gift_type ?? 'annual') !== 'annual') continue
+    const recipientKey = (row.recipient_name ?? 'Unnamed recipient').trim().toLowerCase()
+    const amount = Number(row.amount ?? 0)
+    recipientGiftTotals.set(recipientKey, (recipientGiftTotals.get(recipientKey) ?? 0) + amount)
+  }
+
+  let qualifyingAnnualGifts = 0
+  let excessAnnualGifts = 0
+  recipientGiftTotals.forEach((total) => {
+    const qualifying = Math.min(Math.max(0, total), perRecipientLimit)
+    qualifyingAnnualGifts += qualifying
+    excessAnnualGifts += Math.max(0, total - perRecipientLimit)
+  })
 
   return (
     <>
@@ -156,10 +180,12 @@ export default async function EstateTaxPage() {
         primaryResidenceValue={primaryResidenceValue}
         liveNetWorth={netWorth}
         giftingAnnualCapacity={giftingData?.annual_capacity ?? null}
-        giftingAnnualUsed={giftingData?.annual_used ?? null}
+        giftingAnnualUsed={qualifyingAnnualGifts}
         giftingAnnualRemaining={giftingData?.annual_remaining ?? null}
-        giftingTaxYear={giftingData?.tax_year ?? null}
-        giftingSplitSelected={(splitGiftStatus.data?.length ?? 0) > 0}
+        giftingTaxYear={giftingTaxYear}
+        giftingSplitSelected={splitSelected}
+        giftingPerRecipientLimit={perRecipientLimit}
+        giftingExcessOverLimit={excessAnnualGifts}
       />
     </>
   )

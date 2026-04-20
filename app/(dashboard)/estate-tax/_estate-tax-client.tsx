@@ -160,6 +160,8 @@ export default function EstateTaxClient({
   giftingAnnualRemaining,
   giftingTaxYear,
   giftingSplitSelected,
+  giftingPerRecipientLimit,
+  giftingExcessOverLimit,
 }: {
   assets: Record<string, unknown>[]
   liabilities: Record<string, unknown>[]
@@ -177,6 +179,8 @@ export default function EstateTaxClient({
   giftingAnnualRemaining?: number | null
   giftingTaxYear?: number | null
   giftingSplitSelected?: boolean
+  giftingPerRecipientLimit?: number | null
+  giftingExcessOverLimit?: number | null
 }) {
   const router = useRouter()
   const [trusts, setTrusts] = useState<EstateTaxTrustRow[]>(initialTrusts)
@@ -203,8 +207,12 @@ export default function EstateTaxClient({
     filing === 'married_joint' && giftingSplitSelected ? 38000 : 19000
 
   useEffect(() => {
+    if (giftingAnnualUsed != null && giftingAnnualUsed > 0) {
+      setAnnualGifting(Math.round(giftingAnnualUsed))
+      return
+    }
     setAnnualGifting(recommendedAnnualGifting)
-  }, [recommendedAnnualGifting])
+  }, [giftingAnnualUsed, recommendedAnnualGifting])
 
   const statePrimary = (household?.state_primary as string | null) ?? ''
   const stateCompare = (household?.state_compare as string | null) ?? ''
@@ -528,9 +536,20 @@ export default function EstateTaxClient({
                 Gifting Strategy sync{giftingTaxYear ? ` (${giftingTaxYear})` : ''}
               </p>
               <p className="mt-1">
-                Annual exclusion used: {formatDollars(giftingAnnualUsed)} of{' '}
-                {formatDollars(giftingAnnualCapacity)}. Remaining: {formatDollars(giftingAnnualRemaining)}.
+                Eligible annual gifts applied to estate-tax reduction: {formatDollars(giftingAnnualUsed)}.
+                {giftingPerRecipientLimit != null && (
+                  <>
+                    {' '}Per-recipient limit used: {formatDollars(giftingPerRecipientLimit)}
+                    {giftingSplitSelected ? ' (gift-splitting selected).' : ' (gift-splitting not selected).'}
+                  </>
+                )}
               </p>
+              {(giftingExcessOverLimit ?? 0) > 0 && (
+                <p className="mt-1 text-amber-700">
+                  {formatDollars(giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit and is
+                  not included in the annual exclusion reduction.
+                </p>
+              )}
               {filing === 'married_joint' && !giftingSplitSelected && (
                 <p className="mt-1 text-amber-700">
                   Gift-splitting was not selected in Gifting Strategy, so this page uses the{' '}
