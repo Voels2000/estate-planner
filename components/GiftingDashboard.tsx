@@ -173,24 +173,46 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
       .map(g => (g.recipient_name ?? '').trim().toLowerCase())
       .filter(Boolean),
   ).size;
-  const recipientCountForCapacity = Math.max(1, uniqueAnnualRecipients);
+  const recipientCountForCapacity = uniqueAnnualRecipients;
   const annualCapacityDynamic = annualPerRecipientLimit * recipientCountForCapacity;
   const recipientAnnualTotals = new Map<string, number>();
+  const recipientDisplayNames = new Map<string, string>();
+  const recipientGiftRows = new Map<string, GiftRow[]>();
   for (const gift of annualGiftRows) {
     const key = (gift.recipient_name ?? 'Unnamed recipient').trim().toLowerCase();
+    const displayName = (gift.recipient_name ?? 'Unnamed recipient').trim() || 'Unnamed recipient';
     const amount = Number(gift.amount ?? 0);
     recipientAnnualTotals.set(key, (recipientAnnualTotals.get(key) ?? 0) + amount);
+    if (!recipientDisplayNames.has(key)) recipientDisplayNames.set(key, displayName);
+    const rows = recipientGiftRows.get(key) ?? [];
+    rows.push(gift);
+    recipientGiftRows.set(key, rows);
   }
   const annualUsedDynamic = Array.from(recipientAnnualTotals.values()).reduce(
     (sum, totalForRecipient) => sum + Math.min(Math.max(0, totalForRecipient), annualPerRecipientLimit),
     0,
   );
   const annualLoggedTotal = annualGiftRows.reduce((sum, g) => sum + Number(g.amount ?? 0), 0);
+  // Lifetime exemption should only absorb per-recipient amounts above annual exclusion.
   const annualOverflowToLifetime = Math.max(0, annualLoggedTotal - annualUsedDynamic);
   const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
   const annualPct = annualCapacityDynamic > 0
     ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
     : 0;
+  const recipientAuditRows = Array.from(recipientAnnualTotals.entries())
+    .map(([key, totalGifted]) => {
+      const exclusionUsed = Math.min(Math.max(0, totalGifted), annualPerRecipientLimit);
+      const overflowToLifetime = Math.max(0, totalGifted - annualPerRecipientLimit);
+      return {
+        key,
+        recipientName: recipientDisplayNames.get(key) ?? 'Unnamed recipient',
+        totalGifted,
+        exclusionUsed,
+        overflowToLifetime,
+        entries: recipientGiftRows.get(key) ?? [],
+      };
+    })
+    .sort((a, b) => b.totalGifted - a.totalGifted);
   const lifetimeUsedDisplay = Math.max(0, Number(summary.lifetime_exemption_used ?? 0)) + annualOverflowToLifetime;
   const lifetimeRemainingDisplay = Math.max(0, Number(summary.total_exemption ?? 0) - lifetimeUsedDisplay);
   const lifetimePct = summary.total_exemption > 0
@@ -382,19 +404,96 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
                   : ''}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Total annual gifts logged: {fmt$(annualLoggedTotal)} across {annualGiftRows.length} entr{annualGiftRows.length === 1 ? 'y' : 'ies'}.
+                Total annual gifts logged: {fmt$(annualLoggedTotal)} across {uniqueAnnualRecipients} recipient{uniqueAnnualRecipients === 1 ? '' : 's'}.
               </p>
               {annualOverflowToLifetime > 0 && (
                 <p className="text-xs text-amber-700 mt-1">
-                  {fmt$(annualOverflowToLifetime)} exceeds annual exclusion limits and counts toward lifetime exemption.
+                  {fmt$(annualOverflowToLifetime)} exceeds per-recipient annual limits and counts toward lifetime exemption.
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
+                Annual exclusion used is the sum across recipients, capped at {fmt$(annualPerRecipientLimit)} per recipient
+                {' '}({annualSplitSelected ? 'gift-splitting selected' : 'no gift-splitting'}).
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
                 {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} × {fmt$(annualPerRecipientLimit)}
-                {' '}= {fmt$(annualCapacityDynamic)} annual exclusion capacity ({fmt$(annualUsedDynamic)} used).
+                {' '}= {fmt$(annualCapacityDynamic)} capacity; {fmt$(annualUsedDynamic)} used.
               </p>
             </div>
           </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Per-recipient annual exclusion audit"
+          subtitle="Annual exclusion used and lifetime overflow by recipient"
+          defaultOpen={false}
+          storageKey="gifting-recipient-audit"
+        >
+          {recipientAuditRows.length === 0 ? (
+            <p className="text-sm text-gray-500">No annual gifts logged for {summary.tax_year}.</p>
+          ) : (
+            <div className="space-y-3">
+              {recipientAuditRows.map((row) => (
+                <div key={row.key} className="rounded-xl border border-gray-200 bg-white p-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:items-center">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Recipient</p>
+                      <p className="text-sm font-semibold text-gray-900">{row.recipientName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Total gifted</p>
+                      <p className="text-sm font-semibold text-gray-900">{fmt$(row.totalGifted)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Annual exclusion used</p>
+                      <p className="text-sm font-semibold text-green-700">{fmt$(row.exclusionUsed)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">To lifetime exemption</p>
+                      <p className={`text-sm font-semibold ${row.overflowToLifetime > 0 ? 'text-amber-700' : 'text-gray-700'}`}>
+                        {fmt$(row.overflowToLifetime)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Limit applied</p>
+                      <p className="text-sm text-gray-700">
+                        {fmt$(annualPerRecipientLimit)}
+                        {annualSplitSelected ? ' (split)' : ' (non-split)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 border-t border-gray-100 pt-3">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                      Entries ({row.entries.length})
+                    </p>
+                    <div className="space-y-2">
+                      {row.entries.map((gift) => (
+                        <div
+                          key={gift.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-100 bg-gray-50 px-3 py-2"
+                        >
+                          <div className="text-xs text-gray-600">
+                            <span className="font-medium text-gray-800">{fmt$(gift.amount)}</span>
+                            {' '}· {GIFT_TYPE_LABELS[gift.gift_type] ?? gift.gift_type}
+                            {gift.form_709_filed ? ' · Form 709 filed' : ''}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(gift.id)}
+                            disabled={deleteId === gift.id}
+                            className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
+                          >
+                            {deleteId === gift.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CollapsibleSection>
 
         <div className="border-b border-gray-200">
