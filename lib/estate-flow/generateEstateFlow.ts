@@ -348,29 +348,19 @@ export async function generateEstateFlow(
       ? liveNetWorthValue
       : grossEstateFromHorizon
 
-  let estateTaxFederal: number
-  let estateTaxState: number
-  let netToHeirs: number
-
-  if (horizon === 'at_longevity') {
-    // Use the projection's actual death-year tax values (includes DSUE, portability, etc.)
-    estateTaxFederal = Number(horizonRow?.estate_tax_federal ?? 0)
-    estateTaxState = Number(horizonRow?.estate_tax_state ?? 0)
-    netToHeirs = Number(horizonRow?.net_to_heirs ?? 0)
-  } else {
-    // Compute hypothetical "what if death occurred this year" tax using OBBBA constants
-    const hypothetical = computeColumnTaxes({
-      grossEstate,
-      calendarYear: horizonCalendarYear,
-      statePrimary: household.state_primary,
-      filingStatus: household.filing_status,
-      hasSpouse: Boolean(household.has_spouse),
-      stateBrackets,
-    })
-    estateTaxFederal = hypothetical.federalTax
-    estateTaxState = hypothetical.stateExposure
-    netToHeirs = Math.max(0, grossEstate - estateTaxFederal - estateTaxState)
-  }
+  // Compute "if death occurred at selected horizon" taxes consistently across all horizons.
+  // Avoid relying on scenario row fields that may be absent in some generated outputs.
+  const hypothetical = computeColumnTaxes({
+    grossEstate,
+    calendarYear: horizonCalendarYear,
+    statePrimary: household.state_primary,
+    filingStatus: household.filing_status,
+    hasSpouse: Boolean(household.has_spouse),
+    stateBrackets,
+  })
+  const estateTaxFederal = hypothetical.federalTax
+  const estateTaxState = hypothetical.stateExposure
+  const netToHeirs = Math.max(0, grossEstate - estateTaxFederal - estateTaxState)
 
   // Determine which documents exist
   const hasTrust = trusts.length > 0 ||
