@@ -164,14 +164,26 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
 
   const lifetimePct = Math.min(100, summary.lifetime_used_pct ?? 0);
   const annualGiftRows = summary.gifts.filter(g => g.gift_type === 'annual');
+  const annualSplitSelected =
+    summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true);
+  const annualPerRecipientLimit = annualSplitSelected ? 38000 : 19000;
   const uniqueAnnualRecipients = new Set(
     annualGiftRows
       .map(g => (g.recipient_name ?? '').trim().toLowerCase())
       .filter(Boolean),
   ).size;
   const recipientCountForCapacity = Math.max(1, uniqueAnnualRecipients);
-  const annualCapacityDynamic = summary.annual_exclusion * recipientCountForCapacity;
-  const annualUsedDynamic = annualGiftRows.reduce((sum, g) => sum + Number(g.amount ?? 0), 0);
+  const annualCapacityDynamic = annualPerRecipientLimit * recipientCountForCapacity;
+  const recipientAnnualTotals = new Map<string, number>();
+  for (const gift of annualGiftRows) {
+    const key = (gift.recipient_name ?? 'Unnamed recipient').trim().toLowerCase();
+    const amount = Number(gift.amount ?? 0);
+    recipientAnnualTotals.set(key, (recipientAnnualTotals.get(key) ?? 0) + amount);
+  }
+  const annualUsedDynamic = Array.from(recipientAnnualTotals.values()).reduce(
+    (sum, totalForRecipient) => sum + Math.min(Math.max(0, totalForRecipient), annualPerRecipientLimit),
+    0,
+  );
   const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
   const annualPct = annualCapacityDynamic > 0
     ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
@@ -350,10 +362,15 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
               </div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold text-green-600">{fmt$(annualRemainingDynamic)}</span> remaining this year
-                {summary.filing_status === 'mfj' ? ' (gift splitting)' : ''}
+                {summary.filing_status === 'mfj'
+                  ? annualSplitSelected
+                    ? ' (gift splitting selected)'
+                    : ' (gift splitting not selected)'
+                  : ''}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts.
+                Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts
+                {' '}at {fmt$(annualPerRecipientLimit)} per recipient.
               </p>
             </div>
           </div>
