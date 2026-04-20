@@ -1002,6 +1002,18 @@ export async function generateEstateFlow(
     })
   }
 
+  // Route buckets (trust / direct / probate) are built from current-profile asset rows.
+  // Scale them to the selected horizon's gross estate so the step-by-step figures
+  // track the horizon picker (today / 10y / 20y / longevity).
+  const routedTotal = trustAssetsValue + directTransferValue + probateAssetsValue
+  if (grossEstate > 0 && routedTotal > 0) {
+    const scale = grossEstate / routedTotal
+    trustAssetsValue = Math.round(trustAssetsValue * scale)
+    directTransferValue = Math.round(directTransferValue * scale)
+    // Keep totals additive after rounding by assigning remainder to probate.
+    probateAssetsValue = Math.max(0, grossEstate - trustAssetsValue - directTransferValue)
+  }
+
   return {
     household_id: householdId,
     scenario_id: scenarioId,

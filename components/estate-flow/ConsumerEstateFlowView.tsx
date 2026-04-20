@@ -31,6 +31,7 @@ function fmtHeirsCurrency(n: number): string {
 function buildFlowSteps(
   graph: EstateFlowGraph,
   heirsToday: { gross: number; totalTax: number; asOfLabel: string } | null,
+  horizonLabel: string,
 ): FlowStep[] {
   const steps: FlowStep[] = []
   const s = graph.summary
@@ -58,7 +59,7 @@ function buildFlowSteps(
     steps.push({
       icon: '➡️',
       title: 'What transfers directly to your heirs',
-      body: `${fmt(s.direct_transfer_value)} passes directly to named beneficiaries through account designations (such as POD or TOD accounts, or retirement accounts with a named beneficiary). These bypass probate.`,
+      body: `${fmt(s.direct_transfer_value)} passes directly to named beneficiaries through account designations (such as POD or TOD accounts, or retirement accounts with a named beneficiary). These bypass probate.\n\nEstimate shown for ${horizonLabel}.`,
       value: fmt(s.direct_transfer_value),
     })
   }
@@ -69,8 +70,8 @@ function buildFlowSteps(
       icon: '⚖️',
       title: `What passes through your estate${s.probate_assets_value > 0 ? ` (${fmt(s.probate_assets_value)})` : ''}`,
       body: s.probate_assets_value > 0
-        ? `${fmt(s.probate_assets_value)} of your estate has no trust or beneficiary designation and would go through the court process (probate) before reaching your heirs. Your will directs how these assets are distributed.`
-        : 'All of your assets appear to be covered by your trust or beneficiary designations — nothing currently goes through probate.',
+        ? `${fmt(s.probate_assets_value)} of your estate has no trust or beneficiary designation and would go through the court process (probate) before reaching your heirs. Your will directs how these assets are distributed.\n\nEstimate shown for ${horizonLabel}.`
+        : `All of your assets appear to be covered by your trust or beneficiary designations — nothing currently goes through probate for ${horizonLabel}.`,
       highlight: s.probate_assets_value > 100_000,
     })
   }
@@ -216,7 +217,16 @@ export default function ConsumerEstateFlowView({
         }
       : null
 
-  const steps = buildFlowSteps(graph, heirsTodayContext)
+  const horizonLabel =
+    horizon === 'today'
+      ? estateAsOfLabel
+      : horizon === 'ten_year'
+        ? 'In 10 Years'
+        : horizon === 'twenty_year'
+          ? 'In 20 Years'
+          : 'At Longevity'
+
+  const steps = buildFlowSteps(graph, heirsTodayContext, horizonLabel)
 
   // Simplified visual: show owner → assets → vehicles → recipients in rows
   const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
