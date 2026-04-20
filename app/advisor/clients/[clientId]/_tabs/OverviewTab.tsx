@@ -3,18 +3,23 @@
 // Advisor client snapshot — net worth, gap analysis, quick stats
 
 import { ClientViewShellProps } from '../_client-view-shell'
+import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 import {
-  formatCurrency, formatPct, getAge, getComplexityStyle,
+  formatCurrency, getAge, getComplexityStyle,
   computeGaps, severityBadge, severityDot, type Gap
 } from '../_utils'
 
-export default function OverviewTab({ household, assets, realEstate, businesses, insurancePolicies, beneficiaries, estateDocuments }: ClientViewShellProps) {
+export default function OverviewTab({ household, assets, realEstate, businesses, businessInterests, liabilities, insurancePolicies, beneficiaries, estateDocuments }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
   // ── Net worth calc ───────────────────────────────────────────────────────
-  const totalBusinessValue = (businesses ?? []).reduce(
-    (s, b) => s + (b.owner_estimated_value ?? b.estimated_value ?? 0),
-    0,
+  const totalBusinessValue = computeBusinessOwnershipValue(
+    (businesses ?? []) as { estimated_value?: unknown; ownership_pct?: unknown }[],
+    (businessInterests ?? []) as {
+      fmv_estimated?: unknown
+      total_entity_value?: unknown
+      ownership_pct?: unknown
+    }[],
   )
   const totalInsuranceEstate = (insurancePolicies ?? [])
     .filter(p => !p.is_ilit && p.death_benefit)
@@ -27,9 +32,9 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
     totalInsuranceEstate,
   ].reduce((s, v) => s + v, 0)
 
-  const totalLiabilities = [
-    ...(realEstate ?? []).map(r => r.mortgage_balance ?? 0),
-  ].reduce((s, v) => s + v, 0)
+  const mortgageTotal = (realEstate ?? []).reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
+  const otherLiabilitiesTotal = (liabilities ?? []).reduce((s, l) => s + Number(l.balance ?? 0), 0)
+  const totalLiabilities = mortgageTotal + otherLiabilitiesTotal
 
   const netWorth = totalAssets - totalLiabilities
   const assetPct = totalAssets > 0 ? Math.round((totalAssets / (totalAssets + totalLiabilities)) * 100) : 100
