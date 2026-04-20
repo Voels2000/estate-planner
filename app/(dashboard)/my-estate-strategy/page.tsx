@@ -38,7 +38,7 @@ export default async function MyEstateStrategyPage() {
   const ownerId = user.id
 
   // ── Auto-generate base case if inputs are complete and no base case exists ──
-  // Staleness check — regenerate if household was updated after the last projection
+  // Staleness check — regenerate when any strategy-driving input changed after the last projection.
   const { data: existingScenario } = household.base_case_scenario_id
     ? await supabase
         .from('projection_scenarios')
@@ -47,13 +47,64 @@ export default async function MyEstateStrategyPage() {
         .single()
     : { data: null }
 
-  const householdUpdatedAt = household.updated_at ?? null
   const projectionCalculatedAt = existingScenario?.calculated_at ?? null
+
+  const getLatestChangeTs = async (
+    table: string,
+    ownerColumn: string,
+    ownerValue: string,
+  ): Promise<string | null> => {
+    const { data } = await supabase
+      .from(table)
+      .select('updated_at, created_at')
+      .eq(ownerColumn, ownerValue)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+    const row = (data?.[0] ?? null) as { updated_at?: string | null; created_at?: string | null } | null
+    return row?.updated_at ?? row?.created_at ?? null
+  }
+
+  const [
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+  ] = await Promise.all([
+    getLatestChangeTs('assets', 'owner_id', ownerId),
+    getLatestChangeTs('liabilities', 'owner_id', ownerId),
+    getLatestChangeTs('income', 'owner_id', ownerId),
+    getLatestChangeTs('expenses', 'owner_id', ownerId),
+    getLatestChangeTs('real_estate', 'owner_id', ownerId),
+    getLatestChangeTs('businesses', 'owner_id', ownerId),
+    getLatestChangeTs('business_interests', 'owner_id', ownerId),
+    getLatestChangeTs('insurance_policies', 'user_id', ownerId),
+  ])
+
+  const latestInputChangeMs = [
+    household.updated_at ?? null,
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+  ].reduce((max, ts) => {
+    if (!ts) return max
+    const ms = new Date(ts).getTime()
+    return Number.isFinite(ms) ? Math.max(max, ms) : max
+  }, 0)
+
+  const projectionCalculatedMs = projectionCalculatedAt ? new Date(projectionCalculatedAt).getTime() : 0
   const isStale =
     !household.base_case_scenario_id ||
-    (householdUpdatedAt &&
-      projectionCalculatedAt &&
-      new Date(householdUpdatedAt) > new Date(projectionCalculatedAt))
+    !projectionCalculatedAt ||
+    latestInputChangeMs > projectionCalculatedMs
 
   if (isStale) {
     // Check completeness — fetch just what we need to validate
