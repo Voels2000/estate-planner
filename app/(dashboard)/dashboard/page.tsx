@@ -17,6 +17,7 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { cookies } from 'next/headers'
 import { DashboardClient, type EstateTaxHorizonsProps } from '../_dashboard-client'
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
@@ -62,7 +63,6 @@ export default async function DashboardPage() {
     { data: liabilities },
     { data: income },           // ALL sources including SS rows if entered manually
     { data: expenses },
-    { data: projections },
     { data: realEstate },
     { data: businesses },
     { data: businessInterests },
@@ -75,9 +75,6 @@ export default async function DashboardPage() {
     // Removed .neq('source', 'social_security') — include all income sources
     supabase.from('income').select('amount, source, start_year, end_year').eq('owner_id', user!.id),
     supabase.from('expenses').select('amount').eq('owner_id', user!.id),
-    household?.id
-      ? supabase.from('projections').select('summary').eq('household_id', household.id).limit(1)
-      : Promise.resolve({ data: [] }),
     supabase.from('real_estate').select('current_value, mortgage_balance, monthly_payment, titling').eq('owner_id', user!.id),
     supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', user!.id),
     supabase
@@ -169,6 +166,20 @@ export default async function DashboardPage() {
   // This is the live metric — updates as income/expense data changes.
   // E.g. when expenses drop $110K in 2030 after moving, this reflects it.
   const currentYearNet = totalIncome - totalExpenses
+  let hasLiveProjectionOutput = false
+  try {
+    const projectionRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projection`, {
+      headers: { cookie: (await cookies()).toString() },
+      cache: 'no-store',
+    })
+    if (projectionRes.ok) {
+      const projectionData = await projectionRes.json()
+      hasLiveProjectionOutput =
+        Array.isArray(projectionData?.rows) && projectionData.rows.length > 0
+    }
+  } catch {
+    hasLiveProjectionOutput = false
+  }
 
   // ── Setup steps — "Compare scenarios" removed (no longer a gate) ─────────
   const setupSteps = [
@@ -177,7 +188,7 @@ export default async function DashboardPage() {
     { key: 'liabilities', label: 'Add your liabilities', href: '/liabilities', done: (liabilities ?? []).length > 0 },
     { key: 'income', label: 'Add income sources', href: '/income', done: (income ?? []).length > 0 },
     { key: 'expenses', label: 'Add your expenses', href: '/expenses', done: (expenses ?? []).length > 0 },
-    { key: 'projections', label: 'Run a projection', href: '/projections', done: (projections ?? []).length > 0 },
+    { key: 'projections', label: 'Run a projection', href: '/projections', done: hasLiveProjectionOutput },
   ]
   const completedSteps = setupSteps.filter(s => s.done).length
   const progressPct = Math.round((completedSteps / setupSteps.length) * 100)

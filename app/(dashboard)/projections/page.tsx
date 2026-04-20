@@ -55,9 +55,6 @@ export default function ProjectionsPage() {
   const [household, setHousehold] = useState<Household | null>(null)
   const [projections, setProjections] = useState<ProjectionYear[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [scenarioName, setScenarioName] = useState('Base Case')
-  const [savedMessage, setSavedMessage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'chart' | 'table' | 'income'>('chart')
 
@@ -101,42 +98,6 @@ export default function ProjectionsPage() {
   }, [])
 
   useEffect(() => { loadData() }, [loadData])
-
-  async function handleSave() {
-    if (!household) return
-    setIsSaving(true)
-    setError(null)
-    try {
-      const supabase = createClient()
-      const retirementRow = projections.find(p => p.phase === 'retirement')
-      const summary = {
-        at_retirement_net_worth: retirementRow?.net_worth ?? 0,
-        at_retirement_portfolio: retirementRow?.portfolio ?? 0,
-        peak_net_worth: Math.max(...projections.map(p => p.net_worth)),
-        peak_portfolio: Math.max(...projections.map(p => p.portfolio)),
-        final: projections[projections.length - 1]?.net_worth ?? 0,
-        funds_outlast: (projections[projections.length - 1]?.portfolio ?? 0) > 0,
-      }
-      const now = new Date()
-      const timestamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-        ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      const uniqueName = `${scenarioName} — ${timestamp}`
-      const { error } = await supabase.from('projections').insert({
-        household_id: household.id,
-        scenario_name: uniqueName,
-        projection_data: projections,
-        summary,
-        calculated_at: now.toISOString(),
-      })
-      if (error) throw error
-      setSavedMessage(true)
-      setTimeout(() => setSavedMessage(false), 3000)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : JSON.stringify(err))
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   async function handleGrowthRateChange(field: 'growth_rate_accumulation' | 'growth_rate_retirement', value: number) {
     if (!household) return
@@ -184,26 +145,9 @@ export default function ProjectionsPage() {
             Based on your current income, expenses, assets, and tax settings from your profile.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={scenarioName}
-            onChange={(e) => setScenarioName(e.target.value)}
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-            placeholder="Scenario name"
-          />
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
-          >
-            {isSaving ? 'Saving...' : 'Save Scenario'}
-          </button>
-        </div>
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
-      {savedMessage && <p className="mb-4 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3">Scenario saved successfully!</p>}
 
       {/* Growth Rate Assumptions */}
       <div className="mb-6 rounded-xl border border-neutral-200 bg-white shadow-sm p-4">
