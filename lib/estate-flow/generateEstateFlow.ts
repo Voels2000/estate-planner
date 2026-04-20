@@ -446,6 +446,19 @@ export async function generateEstateFlow(
     })
   }
 
+  if (hasCSTStrategy) {
+    bypassTrustNodeId = 'trust_bypass'
+    nodes.push({
+      id: bypassTrustNodeId,
+      type: 'trust',
+      category: 'vehicle',
+      label: 'Bypass Trust',
+      technicalLabel: 'Credit Shelter Trust (Bypass Trust)',
+      value: 0,
+      metadata: { strategy: 'credit_shelter_trust' },
+    })
+  }
+
   if (bypassTrustNodeId) {
     const cstFundingAmount = grossEstate * 0.5
     const spouseRemainder = Math.max(0, grossEstate - cstFundingAmount)
@@ -504,19 +517,6 @@ export async function generateEstateFlow(
       technicalLabel: 'Probate Estate',
       value: 0,
       metadata: { has_will: hasWill },
-    })
-  }
-
-  if (hasCSTStrategy) {
-    bypassTrustNodeId = 'trust_bypass'
-    nodes.push({
-      id: bypassTrustNodeId,
-      type: 'trust',
-      category: 'vehicle',
-      label: 'Bypass Trust',
-      technicalLabel: 'Credit Shelter Trust (Bypass Trust)',
-      value: 0,
-      metadata: { strategy: 'credit_shelter_trust' },
     })
   }
 

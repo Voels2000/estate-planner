@@ -107,7 +107,7 @@ const BENEFICIARY_CLASS_LABELS: Record<BeneficiaryClass, string> = {
 // Types
 // ─────────────────────────────────────────────────────────────
 
-export type EstateTaxRealEstateRow = {
+type EstateTaxRealEstateRow = {
   id?: string
   current_value?: unknown
   purchase_price?: unknown | null

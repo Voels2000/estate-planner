@@ -69,9 +69,7 @@ function buildFlowSteps(
     steps.push({
       icon: '⚖️',
       title: 'What passes through your estate',
-      body: s.probate_assets_value > 0
-        ? `${fmt(s.probate_assets_value)} of your estate has no trust or beneficiary designation and would go through the court process (probate) before reaching your heirs. Your will directs how these assets are distributed.\n\nEstimate shown for ${horizonLabel}.`
-        : `All of your assets appear to be covered by your trust or beneficiary designations — nothing currently goes through probate for ${horizonLabel}.`,
+      body: `${fmt(s.probate_assets_value)} of your estate has no trust or beneficiary designation and would go through the court process (probate) before reaching your heirs. Your will directs how these assets are distributed.\n\nEstimate shown for ${horizonLabel}.`,
       value: fmt(s.probate_assets_value),
       highlight: s.probate_assets_value > 100_000,
     })
@@ -187,6 +185,7 @@ export default function ConsumerEstateFlowView({
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
+    setLoading(true)
     generateEstateFlow(householdId, scenarioId, deathView, supabase, false, horizon, liveNetWorth)
       .then(setGraph)
       .catch(console.error)
