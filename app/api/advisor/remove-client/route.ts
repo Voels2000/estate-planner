@@ -37,6 +37,26 @@ export async function DELETE(req: NextRequest) {
       .eq('id', record.client_id)
   }
 
+  // Revoke all active beneficiary access grants for this household
+  if (record.client_id) {
+    const { data: household } = await admin
+      .from('households')
+      .select('id')
+      .eq('owner_id', record.client_id)
+      .maybeSingle()
+
+    if (household?.id) {
+      await admin
+        .from('beneficiary_access_grants')
+        .update({
+          revoked_at: new Date().toISOString(),
+          revoked_by_user_id: user.id,
+        })
+        .eq('household_id', household.id)
+        .is('revoked_at', null)
+    }
+  }
+
   const { error: updateError } = await admin
     .from('advisor_clients')
     .update({

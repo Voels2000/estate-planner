@@ -5,6 +5,7 @@ import { useState, useEffect, useTransition } from 'react'
 import {
   createBeneficiaryGrant,
   revokeBeneficiaryGrant,
+  deleteGrant,
   getGrantsForHousehold,
 } from '@/app/actions/beneficiary-grant-actions'
 import type {
@@ -105,6 +106,14 @@ export default function BeneficiaryGrantPanel({ householdId, initialGrants }: Pr
       return
     startTransition(async () => {
       await revokeBeneficiaryGrant(grantId)
+      setReloadTick((v) => v + 1)
+    })
+  }
+
+  async function handleDelete(grantId: string, granteeName: string) {
+    if (!confirm(`Permanently delete the grant record for ${granteeName}?`)) return
+    startTransition(async () => {
+      await deleteGrant(grantId)
       setReloadTick((v) => v + 1)
     })
   }
@@ -255,7 +264,13 @@ export default function BeneficiaryGrantPanel({ householdId, initialGrants }: Pr
           </h3>
           <div className="space-y-2">
             {expiredGrants.map((grant) => (
-              <GrantRow key={grant.id} grant={grant} expired />
+              <GrantRow
+                key={grant.id}
+                grant={grant}
+                expired
+                onDelete={() => handleDelete(grant.id, grant.grantee_name)}
+                isPending={isPending}
+              />
             ))}
           </div>
         </div>
@@ -267,11 +282,13 @@ export default function BeneficiaryGrantPanel({ householdId, initialGrants }: Pr
 function GrantRow({
   grant,
   onRevoke,
+  onDelete,
   isPending,
   expired = false,
 }: {
   grant: BeneficiaryAccessGrant
   onRevoke?: () => void
+  onDelete?: () => void
   isPending?: boolean
   expired?: boolean
 }) {
@@ -300,6 +317,17 @@ function GrantRow({
           </p>
         )}
       </div>
+      {expired && onDelete && (
+        <div className="flex items-center gap-2 ml-4 shrink-0">
+          <button
+            onClick={onDelete}
+            disabled={isPending}
+            className="text-xs text-red-500 hover:underline disabled:opacity-40"
+          >
+            Delete
+          </button>
+        </div>
+      )}
       {!expired && onRevoke && (
         <div className="flex items-center gap-2 ml-4 shrink-0">
           <button

@@ -133,6 +133,25 @@ export async function createDigitalAsset(
   return { success: true }
 }
 
+export async function deleteGrant(
+  grantId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('beneficiary_access_grants')
+    .delete()
+    .eq('id', grantId)
+
+  if (error) {
+    console.error('deleteGrant error:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/advisor/clients')
+  return { success: true }
+}
+
 // Email helper
 async function sendGrantInviteEmail(grant: BeneficiaryAccessGrant): Promise<void> {
   console.log('sendGrantInviteEmail called for:', grant.grantee_email, 'token:', grant.token)
