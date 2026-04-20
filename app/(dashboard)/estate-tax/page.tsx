@@ -107,6 +107,34 @@ export default async function EstateTaxPage() {
     return sum > 0 ? sum : null
   })()
 
+  const giftingSummary =
+    householdRow?.id != null
+      ? await supabase.rpc('calculate_gifting_summary', {
+          p_household_id: householdRow.id,
+        })
+      : { data: null }
+
+  const currentTaxYear = new Date().getFullYear()
+  const splitGiftStatus =
+    householdRow?.id != null
+      ? await supabase
+          .from('gift_history')
+          .select('id')
+          .eq('household_id', householdRow.id)
+          .eq('tax_year', currentTaxYear)
+          .eq('form_709_filed', true)
+          .limit(1)
+      : { data: null }
+
+  const giftingData = giftingSummary.data as
+    | {
+        annual_capacity?: number
+        annual_used?: number
+        annual_remaining?: number
+        tax_year?: number
+      }
+    | null
+
   return (
     <>
       {householdRow?.id && (
@@ -127,6 +155,11 @@ export default async function EstateTaxPage() {
         stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
         primaryResidenceValue={primaryResidenceValue}
         liveNetWorth={netWorth}
+        giftingAnnualCapacity={giftingData?.annual_capacity ?? null}
+        giftingAnnualUsed={giftingData?.annual_used ?? null}
+        giftingAnnualRemaining={giftingData?.annual_remaining ?? null}
+        giftingTaxYear={giftingData?.tax_year ?? null}
+        giftingSplitSelected={(splitGiftStatus.data?.length ?? 0) > 0}
       />
     </>
   )

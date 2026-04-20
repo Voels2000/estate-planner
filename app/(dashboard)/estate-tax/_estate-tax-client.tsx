@@ -155,6 +155,11 @@ export default function EstateTaxClient({
   stateInheritanceTaxRules: stateInheritanceTaxRuleRows,
   primaryResidenceValue,
   liveNetWorth,
+  giftingAnnualCapacity,
+  giftingAnnualUsed,
+  giftingAnnualRemaining,
+  giftingTaxYear,
+  giftingSplitSelected,
 }: {
   assets: Record<string, unknown>[]
   liabilities: Record<string, unknown>[]
@@ -167,6 +172,11 @@ export default function EstateTaxClient({
   /** Sum of FMV for `real_estate.is_primary_residence`; omit UI when null */
   primaryResidenceValue: number | null
   liveNetWorth?: number
+  giftingAnnualCapacity?: number | null
+  giftingAnnualUsed?: number | null
+  giftingAnnualRemaining?: number | null
+  giftingTaxYear?: number | null
+  giftingSplitSelected?: boolean
 }) {
   const router = useRouter()
   const [trusts, setTrusts] = useState<EstateTaxTrustRow[]>(initialTrusts)
@@ -189,7 +199,8 @@ export default function EstateTaxClient({
   })
 
   const filing = filingForTax(household)
-  const recommendedAnnualGifting = filing === 'married_joint' ? 38000 : 19000
+  const recommendedAnnualGifting =
+    filing === 'married_joint' && giftingSplitSelected ? 38000 : 19000
 
   useEffect(() => {
     setAnnualGifting(recommendedAnnualGifting)
@@ -494,7 +505,9 @@ export default function EstateTaxClient({
         title="Gifting scenario"
         subtitle={
           filing === 'married_joint'
-            ? 'Annual gifting limit: $19,000 per donor, or $38,000 with qualifying gift-splitting'
+            ? giftingSplitSelected
+              ? 'Annual gifting limit: $38,000 with gift-splitting consent on file'
+              : 'Annual gifting limit: $19,000 (gift-splitting not selected)'
             : 'Annual gifting limit: $19,000 per donee'
         }
         defaultOpen={false}
@@ -507,6 +520,25 @@ export default function EstateTaxClient({
           citizens/residents, remain married for the year, and timely file Form 709 consenting to
           gift-splitting.
         </p>
+        {giftingAnnualCapacity != null &&
+          giftingAnnualUsed != null &&
+          giftingAnnualRemaining != null && (
+            <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
+              <p className="font-medium text-neutral-800">
+                Gifting Strategy sync{giftingTaxYear ? ` (${giftingTaxYear})` : ''}
+              </p>
+              <p className="mt-1">
+                Annual exclusion used: {formatDollars(giftingAnnualUsed)} of{' '}
+                {formatDollars(giftingAnnualCapacity)}. Remaining: {formatDollars(giftingAnnualRemaining)}.
+              </p>
+              {filing === 'married_joint' && !giftingSplitSelected && (
+                <p className="mt-1 text-amber-700">
+                  Gift-splitting was not selected in Gifting Strategy, so this page uses the{' '}
+                  {formatDollars(19000)} limit.
+                </p>
+              )}
+            </div>
+          )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
