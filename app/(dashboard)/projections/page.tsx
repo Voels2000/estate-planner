@@ -6,7 +6,6 @@
 // ─────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 
 type ProjectionYear = {
@@ -99,14 +98,6 @@ export default function ProjectionsPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  async function handleGrowthRateChange(field: 'growth_rate_accumulation' | 'growth_rate_retirement', value: number) {
-    if (!household) return
-    const supabase = createClient()
-    await supabase.from('households').update({ [field]: value }).eq('id', household.id)
-    setHousehold(h => h ? { ...h, [field]: value } : h)
-    await loadData()
-  }
-
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>
   }
@@ -149,31 +140,25 @@ export default function ProjectionsPage() {
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
-      {/* Growth Rate Assumptions */}
+      {/* Growth assumptions (read-only from profile) */}
       <div className="mb-6 rounded-xl border border-neutral-200 bg-white shadow-sm p-4">
-        <h2 className="text-sm font-semibold text-neutral-700 mb-3">Projection Assumptions</h2>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-700">Projection Assumptions</h2>
         <div className="flex flex-wrap gap-6 items-end">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Accumulation Growth Rate (%)</label>
-            <input
-              type="number" min="0" max="20" step="0.1"
-              value={household.growth_rate_accumulation ?? 7}
-              onChange={e => setHousehold(h => h ? { ...h, growth_rate_accumulation: Number(e.target.value) } : h)}
-              onBlur={e => handleGrowthRateChange('growth_rate_accumulation', Number(e.target.value))}
-              className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-            />
+            <p className="mb-1 block text-xs font-medium text-neutral-500">Accumulation Growth Rate</p>
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
+              {(household.growth_rate_accumulation ?? 7).toFixed(1)}%
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Retirement Growth Rate (%)</label>
-            <input
-              type="number" min="0" max="20" step="0.1"
-              value={household.growth_rate_retirement ?? 5}
-              onChange={e => setHousehold(h => h ? { ...h, growth_rate_retirement: Number(e.target.value) } : h)}
-              onBlur={e => handleGrowthRateChange('growth_rate_retirement', Number(e.target.value))}
-              className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-            />
+            <p className="mb-1 block text-xs font-medium text-neutral-500">Retirement Growth Rate</p>
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
+              {(household.growth_rate_retirement ?? 5).toFixed(1)}%
+            </div>
           </div>
-          <p className="text-xs text-neutral-400 pb-2">Changes save automatically and update the projection.</p>
+          <p className="pb-2 text-xs text-neutral-500">
+            This projection is based on growth assumptions from your profile.
+          </p>
         </div>
       </div>
 
