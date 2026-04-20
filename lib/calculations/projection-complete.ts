@@ -853,7 +853,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
     // State tax now uses DB rates via effectiveState (supports scenario overrides)
     const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
-      income_total, effectiveState, dbStateRates, household.state_secondary
+      ordinaryIncome, effectiveState, dbStateRates, household.state_secondary
     )
 
     const tax_capital_gains = calcCapitalGainsTax(

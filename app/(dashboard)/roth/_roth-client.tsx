@@ -209,6 +209,10 @@ export function RothClient({ result }: Props) {
         <p className="font-medium text-foreground">How this works</p>
         <p>The optimizer finds the optimal Roth conversion amount each year by comparing your current marginal tax rate against the rate you&apos;ll face when RMDs begin. It recommends converting up to the top of your current bracket when that rate is lower than your projected RMD rate — locking in a lower rate today.</p>
         <p>Tax calculations use federal and state income tax rates. Federal brackets are inflated annually for inflation. Income, Social Security, and RMDs are sourced from your full household projection — the same data used in your Lifetime Snapshot. Consult a tax advisor before executing conversions.</p>
+        <p className="pt-1 border-t border-border/40 mt-1">
+          <span className="font-medium text-foreground">5-year rule & qualified withdrawals: </span>
+          Projections assume Roth withdrawals are qualified — account held 5+ years and owner age 59½ or older. Early or non-qualified withdrawals may be subject to income tax and a 10% penalty. Each conversion starts its own 5-year clock. A small number of states tax Roth conversions as ordinary income in the conversion year regardless of federal treatment — consult your tax advisor if you are planning a large conversion.
+        </p>
       </div>
     </div>
   );
