@@ -90,7 +90,7 @@ export async function generateBaseCase(householdId: string): Promise<{
           .eq('owner_id', clientOwnerId),
         admin
           .from('businesses')
-          .select('id, name, estimated_value, owner_id')
+          .select('id, name, estimated_value, owner_id, ownership_pct')
           .eq('owner_id', clientOwnerId),
       ]).then(([legacy, modern]) => ({
         data: [
@@ -100,7 +100,7 @@ export async function generateBaseCase(householdId: string): Promise<{
             entity_name: b.name,
             fmv_estimated: b.estimated_value,
             total_entity_value: b.estimated_value,
-            ownership_pct: 100,
+            ownership_pct: b.ownership_pct ?? 100,
             owner: 'person1',
           })),
         ],

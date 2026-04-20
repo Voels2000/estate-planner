@@ -693,6 +693,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       if (inc.start_year && year < inc.start_year) continue
       if (inc.end_year   && year > inc.end_year)   continue
       if (inc.source === 'social_security') continue
+      if (['traditional_401k', 'traditional_ira'].includes(inc.source)) continue
 
       const baseAmount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
       const fraction = getYearFraction(year, inc.start_year, inc.end_year, inc.start_month, inc.end_month)
@@ -702,7 +703,6 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       const isP2   = owner === 'person2'
       const isEarned      = ['salary', 'self_employment', 'equity_awards'].includes(inc.source)
       const isCapGains    = ['capital_gains', 'dividends', 'interest'].includes(inc.source)
-      const isTaxDeferred = ['traditional_401k', 'traditional_ira'].includes(inc.source)
       const isRoth        = inc.source === 'roth'
       // Roth withdrawals are tax-free — tracked in income_other but excluded
       // from taxable income later. Tax-deferred withdrawals handled via
@@ -715,12 +715,6 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       } else if (isCapGains) {
         // Routed to income_other for display; taxed at preferential
         // rates via userCapGains calculation in tax section
-        if (isP1) income_other_p1 += amount
-        else if (isP2) income_other_p2 += amount
-        else income_other_pooled += amount
-      } else if (isTaxDeferred) {
-        // Tracked separately for RMD override logic — added to
-        // income_other for display
         if (isP1) income_other_p1 += amount
         else if (isP2) income_other_p2 += amount
         else income_other_pooled += amount
@@ -811,6 +805,20 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     if (income_rmd_pooled > 0) { poolBucket.taxDeferred = Math.max(0, poolBucket.taxDeferred - income_rmd_pooled) }
 
     const income_rmd   = income_rmd_p1 + income_rmd_p2 + income_rmd_pooled
+    const extraUserWithdrawal = Math.max(0, userEnteredTaxDeferred - income_rmd)
+    if (extraUserWithdrawal > 0) {
+      const fromPool = Math.min(poolBucket.taxDeferred, extraUserWithdrawal)
+      poolBucket.taxDeferred -= fromPool
+      let remaining = extraUserWithdrawal - fromPool
+      if (remaining > 0) {
+        const fromP1 = Math.min(p1Bucket.taxDeferred, remaining)
+        p1Bucket.taxDeferred -= fromP1
+        remaining -= fromP1
+      }
+      if (remaining > 0) {
+        p2Bucket.taxDeferred = Math.max(0, p2Bucket.taxDeferred - remaining)
+      }
+    }
 
     // ── RMD override (Option A) ───────────────────────────────────────────
     // If user has entered manual tax-deferred withdrawals, they override
@@ -835,7 +843,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     // ── Tax ────────────────────────────────────────────────────────────────────
     const irmaa = calcIrmaa(prevMagi, fs, irmaa_brackets)
     const userCapGains =
-      income.filter(inc => inc.source === 'capital_gains')
+      income.filter(inc => ['capital_gains', 'dividends', 'interest'].includes(inc.source))
         .filter(inc => !(inc.start_year && year < inc.start_year))
         .filter(inc => !(inc.end_year && year > inc.end_year))
         .reduce((sum, inc) => {
