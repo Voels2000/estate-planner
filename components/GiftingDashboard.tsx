@@ -184,6 +184,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
     (sum, totalForRecipient) => sum + Math.min(Math.max(0, totalForRecipient), annualPerRecipientLimit),
     0,
   );
+  const annualLoggedTotal = annualGiftRows.reduce((sum, g) => sum + Number(g.amount ?? 0), 0);
   const annualRemainingDynamic = Math.max(0, annualCapacityDynamic - annualUsedDynamic);
   const annualPct = annualCapacityDynamic > 0
     ? Math.min(100, (annualUsedDynamic / annualCapacityDynamic) * 100)
@@ -367,6 +368,9 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
                     ? ' (gift splitting selected)'
                     : ' (gift splitting not selected)'
                   : ''}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Total annual gifts logged: {fmt$(annualLoggedTotal)} across {annualGiftRows.length} entr{annualGiftRows.length === 1 ? 'y' : 'ies'}.
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Based on {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} with annual gifts
