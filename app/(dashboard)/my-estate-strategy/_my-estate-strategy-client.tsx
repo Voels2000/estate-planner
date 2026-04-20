@@ -68,7 +68,9 @@ export default function MyEstateStrategyClient({
 
   const hasBaseCase = !!scenarioId
   const { today, tenYear, twentyYear, atDeath, showProjectionMismatchNote } = horizons
-  const columns = [today, tenYear, twentyYear, atDeath]
+  const columns = [today, tenYear, twentyYear, atDeath].filter(
+    (col) => !col.isPlaceholder || col.showGenerateCta
+  )
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -118,7 +120,11 @@ export default function MyEstateStrategyClient({
         defaultOpen={true}
         storageKey="my-estate-strategy-horizons"
       >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-4 ${
+          columns.length === 4 ? 'lg:grid-cols-4' :
+          columns.length === 3 ? 'lg:grid-cols-3' :
+          columns.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
+        }`}>
           {columns.map((col) => (
             <div
               key={col.headerTitle}
