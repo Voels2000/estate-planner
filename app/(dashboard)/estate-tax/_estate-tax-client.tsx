@@ -177,7 +177,7 @@ export default function EstateTaxClient({
   const [error, setError] = useState<string | null>(null)
 
   // ── Gifting inputs ──────────────────────────────────────────
-  const [annualGifting, setAnnualGifting] = useState(18000)
+  const [annualGifting, setAnnualGifting] = useState(19000)
   const [giftingYears, setGiftingYears] = useState(10)
 
   // ── Inheritance tax: beneficiary allocation sliders ──────────
@@ -189,6 +189,12 @@ export default function EstateTaxClient({
   })
 
   const filing = filingForTax(household)
+  const recommendedAnnualGifting = filing === 'married_joint' ? 38000 : 19000
+
+  useEffect(() => {
+    setAnnualGifting(recommendedAnnualGifting)
+  }, [recommendedAnnualGifting])
+
   const statePrimary = (household?.state_primary as string | null) ?? ''
   const stateCompare = (household?.state_compare as string | null) ?? ''
 
@@ -486,13 +492,20 @@ export default function EstateTaxClient({
 
       <CollapsibleSection
         title="Gifting scenario"
-        subtitle="The 2024 annual gift tax exclusion is $18,000 per donee"
+        subtitle={
+          filing === 'married_joint'
+            ? 'Annual gifting limit: $19,000 per donor, or $38,000 with qualifying gift-splitting'
+            : 'Annual gifting limit: $19,000 per donee'
+        }
         defaultOpen={false}
         storageKey="estate-tax-gifting-scenario"
       >
         <p className="text-xs text-neutral-500 mb-4">
           Annual gifting reduces the taxable estate used for both federal and state calculations.
-          The 2024 annual gift tax exclusion is $18,000 per donee.
+          Annual exclusion is {formatDollars(19000)} per donor. Married couples can treat gifts as
+          split gifts up to {formatDollars(38000)} per donee only if both spouses are U.S.
+          citizens/residents, remain married for the year, and timely file Form 709 consenting to
+          gift-splitting.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
