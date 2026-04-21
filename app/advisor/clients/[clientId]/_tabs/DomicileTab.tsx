@@ -260,6 +260,7 @@ export default function DomicileTab({
         <StateTaxPanel
           grossEstate={grossEstateForStateTax}
           stateCode={parseStateTaxCode(claimed_domicile_state ?? 'WA')}
+          profileStateAbbrev={claimed_domicile_state ?? household?.state_primary}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           dbExemptions={stateExemptions}
         />

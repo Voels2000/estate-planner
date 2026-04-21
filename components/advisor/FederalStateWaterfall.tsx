@@ -1,13 +1,19 @@
 'use client'
 
 import type { DbStateExemption, StateTaxCode } from '@/lib/projection/stateRegistry'
-import { calculateStateEstateTax, getStateExemptionForYear } from '@/lib/projection/stateRegistry'
+import {
+  calculateStateEstateTax,
+  getEstateTaxDisplayStateName,
+  getStateExemptionForYear,
+} from '@/lib/projection/stateRegistry'
 
 interface Props {
   grossEstate: number
   federalTax: number
   federalExemption: number
   stateCode: StateTaxCode
+  /** Profile `state_primary` — full state name in labels when modeled code is `other`. */
+  profileStateAbbrev?: string | null
   year: number
   dsue?: number
   dbExemptions?: DbStateExemption[]
@@ -28,11 +34,14 @@ export default function FederalStateWaterfall({
   federalTax,
   federalExemption,
   stateCode,
+  profileStateAbbrev,
   year,
   dsue = 0,
   dbExemptions,
   scenarioLabel = 'Current Law',
 }: Props) {
+  const stateDisplayName = getEstateTaxDisplayStateName(stateCode, profileStateAbbrev)
+
   const stateResult = calculateStateEstateTax({
     grossEstate,
     stateCode,
@@ -62,7 +71,7 @@ export default function FederalStateWaterfall({
       textColor: 'text-red-700',
     },
     {
-      label: `${stateCode} State Tax`,
+      label: `${stateDisplayName} Estate Tax`,
       value: stateResult.stateTax,
       color: 'bg-orange-400',
       textColor: 'text-orange-700',
@@ -122,13 +131,13 @@ export default function FederalStateWaterfall({
               <td className="py-2 text-right text-red-700 font-medium">{fmt(federalTax)}</td>
             </tr>
             <tr>
-              <td className="py-2 text-slate-600">{stateCode} Exemption</td>
+              <td className="py-2 text-slate-600">{stateDisplayName} Exemption</td>
               <td className="py-2 text-right text-slate-500">
                 ({isFinite(stateExemption) ? fmt(stateExemption) : 'No state tax'})
               </td>
             </tr>
             <tr>
-              <td className="py-2 text-slate-600">{stateCode} Estate Tax</td>
+              <td className="py-2 text-slate-600">{stateDisplayName} Estate Tax</td>
               <td className="py-2 text-right text-orange-700 font-medium">{fmt(stateResult.stateTax)}</td>
             </tr>
             <tr className="border-t-2 border-slate-200">
@@ -146,7 +155,7 @@ export default function FederalStateWaterfall({
       </div>
 
       <p className="text-xs text-slate-400">
-        State tax uses blended effective rate. Actual tax depends on asset composition and distribution.
+        {stateDisplayName} state tax uses blended effective rate. Actual tax depends on asset composition and distribution.
         Consult a qualified estate attorney for precise calculations.
       </p>
     </div>

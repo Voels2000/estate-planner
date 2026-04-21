@@ -37,6 +37,19 @@ export function parseStateTaxCode(state: string | null | undefined): StateTaxCod
   return 'other'
 }
 
+/** US postal abbrev → full name from profile (`state_primary`) when estate tax modeling uses `other`. */
+export const US_STATE_POSTAL_TO_NAME: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
+  CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky',
+  LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire',
+  NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota',
+  OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
+  WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+}
+
 // ── Hardcoded fallbacks (used when DB data not available) ─────────────────────
 const FALLBACK_EXEMPTIONS: Record<StateTaxCode, Record<number, number>> = {
   WA: { 2024: 2193000, 2025: 2193000, 2026: 3000000, 2027: 3000000, 2028: 3000000 },
@@ -311,3 +324,14 @@ export const STATE_HAS_ESTATE_TAX: Record<string, boolean> = {
 
 export const STATE_SPECIAL_RULES = SPECIAL_RULES
 export const STATE_NAMES_MAP = STATE_NAMES
+
+/** Display name for advisor UI: modeled state name, or profile state when code is `other`. */
+export function getEstateTaxDisplayStateName(
+  parsedCode: StateTaxCode,
+  profileStateAbbrev: string | null | undefined
+): string {
+  if (parsedCode !== 'other') return STATE_NAMES[parsedCode]
+  const ab = profileStateAbbrev?.trim().toUpperCase()
+  if (ab && US_STATE_POSTAL_TO_NAME[ab]) return US_STATE_POSTAL_TO_NAME[ab]
+  return STATE_NAMES.other
+}

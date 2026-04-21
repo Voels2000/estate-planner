@@ -90,6 +90,7 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
           federalTax={federalTax}
           federalExemption={federalExemption}
           stateCode={stateCode}
+          profileStateAbbrev={household?.state_primary}
           year={currentYear}
           dbExemptions={stateExemptions}
           scenarioLabel={LAW_SCENARIO_OPTIONS.find((o) => o.value === lawScenario)?.label}
@@ -101,6 +102,7 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
         <StateTaxPanel
           grossEstate={grossEstate}
           stateCode={stateCode}
+          profileStateAbbrev={household?.state_primary}
           federalExemption={federalExemption}
           dbExemptions={stateExemptions}
         />
