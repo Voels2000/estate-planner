@@ -83,18 +83,6 @@ export default async function EstateTaxPage() {
       .order('state', { ascending: true }),
   ])
 
-  const netWorth = (() => {
-    const assets = (assetsRows ?? []).reduce((s, a) => s + Number((a as Record<string, unknown>).value ?? 0), 0)
-    const re = (realEstateRows ?? []).reduce((s, r) => s + Number((r as Record<string, unknown>).current_value ?? 0), 0)
-    const liabilities = (liabilitiesRows ?? []).reduce((s, l) => s + Number((l as Record<string, unknown>).balance ?? 0), 0)
-    const businesses = (businessesRows ?? []).reduce((s, b) => {
-      const val = Number((b as Record<string, unknown>).estimated_value ?? 0)
-      const pct = Number((b as Record<string, unknown>).ownership_pct ?? 100) / 100
-      return s + val * pct
-    }, 0)
-    return assets + re + businesses - liabilities
-  })()
-
   const primaryResidenceValue = (() => {
     const rows = (realEstateRows ?? []).filter(
       (r) => (r as { is_primary_residence?: boolean }).is_primary_residence === true,
@@ -183,7 +171,6 @@ export default async function EstateTaxPage() {
         stateEstateTaxRules={stateEstateTaxRows ?? []}
         stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
         primaryResidenceValue={primaryResidenceValue}
-        liveNetWorth={netWorth}
         giftingAnnualCapacity={giftingData?.annual_capacity ?? null}
         giftingAnnualUsed={qualifyingAnnualGifts}
         giftingAnnualRemaining={giftingData?.annual_remaining ?? null}

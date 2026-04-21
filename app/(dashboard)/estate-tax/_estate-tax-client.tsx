@@ -154,7 +154,6 @@ export default function EstateTaxClient({
   stateEstateTaxRules: stateEstateTaxRows,
   stateInheritanceTaxRules: stateInheritanceTaxRuleRows,
   primaryResidenceValue,
-  liveNetWorth,
   giftingAnnualCapacity,
   giftingAnnualUsed,
   giftingAnnualRemaining,
@@ -174,7 +173,6 @@ export default function EstateTaxClient({
   stateInheritanceTaxRules: Record<string, unknown>[]
   /** Sum of FMV for `real_estate.is_primary_residence`; omit UI when null */
   primaryResidenceValue: number | null
-  liveNetWorth?: number
   giftingAnnualCapacity?: number | null
   giftingAnnualUsed?: number | null
   giftingAnnualRemaining?: number | null
@@ -259,7 +257,7 @@ export default function EstateTaxClient({
   )
 
   const trustsExcluded = useMemo(() => trustsExcludedSum(trusts), [trusts])
-  const grossEstate = liveNetWorth ?? (financialAssets + realEstateIncluded)
+  const grossEstate = financialAssets + realEstateIncluded
   const grossEstateForState = financialAssets + realEstateFmv
 
   // ── Federal brackets ────────────────────────────────────────
