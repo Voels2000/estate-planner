@@ -23,6 +23,13 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Touch households.updated_at so staleness detection triggers base-case regeneration
+  await supabase
+    .from('households')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('owner_id', user.id)
+
   return NextResponse.json(data)
 }
 
@@ -40,5 +47,12 @@ export async function DELETE(
   const { error } = await supabase.from('businesses').delete().eq('id', id).eq('owner_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Touch households.updated_at so staleness detection triggers base-case regeneration
+  await supabase
+    .from('households')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('owner_id', user.id)
+
   return NextResponse.json({ success: true })
 }

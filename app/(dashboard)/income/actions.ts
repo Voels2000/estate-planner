@@ -63,6 +63,10 @@ export async function updateIncome(id: string, ownerId: string, values: {
     .eq('id', id)
     .eq('owner_id', ownerId)
   if (error) throw new Error(error.message)
+
+  const { data: hh } = await supabase.from('households').select('id').eq('owner_id', ownerId).single()
+  if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+
   revalidatePath('/income')
 }
 
@@ -74,5 +78,9 @@ export async function deleteIncome(id: string, ownerId: string) {
     .eq('id', id)
     .eq('owner_id', ownerId)
   if (error) throw new Error(error.message)
+
+  const { data: hh } = await supabase.from('households').select('id').eq('owner_id', ownerId).single()
+  if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+
   revalidatePath('/income')
 }
