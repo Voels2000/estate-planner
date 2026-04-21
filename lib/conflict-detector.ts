@@ -24,20 +24,34 @@ export type ConflictReport = {
 
 // -- Rule definitions --------------------------------------------------------
 
-// Rule 1: No primary beneficiary designated on any asset
-function ruleNoBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
-  const conflicts: Conflict[] = []
+function getBeneficiaryGapCounts(assets: any[], beneficiaries: any[]) {
   const assetsWithPrimary = new Set(
     beneficiaries.filter((b) => b.beneficiary_type === 'primary' && b.asset_id).map((b) => b.asset_id),
   )
-  const assetsMissingBene = assets.filter((asset) => !assetsWithPrimary.has(asset.id))
-  if (assetsMissingBene.length > 0) {
+  const assetsWithContingent = new Set(
+    beneficiaries.filter((b) => b.beneficiary_type === 'contingent' && b.asset_id).map((b) => b.asset_id),
+  )
+
+  const missingPrimary = assets.filter((asset) => !assetsWithPrimary.has(asset.id))
+  const missingContingent = assets.filter((asset) => assetsWithPrimary.has(asset.id) && !assetsWithContingent.has(asset.id))
+
+  return {
+    missingPrimaryCount: missingPrimary.length,
+    missingContingentCount: missingContingent.length,
+  }
+}
+
+// Rule 1: No primary beneficiary designated on any asset
+function ruleNoBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
+  const conflicts: Conflict[] = []
+  const { missingPrimaryCount, missingContingentCount } = getBeneficiaryGapCounts(assets, beneficiaries)
+  if (missingPrimaryCount > 0) {
     conflicts.push({
       conflict_type: 'no_primary_beneficiary',
       severity: 'warning',
       asset_id: null,
       real_estate_id: null,
-      description: `${assetsMissingBene.length} account${assetsMissingBene.length !== 1 ? 's have' : ' has'} no primary beneficiary on file.`,
+      description: `${missingPrimaryCount} account${missingPrimaryCount !== 1 ? 's have' : ' has'} no primary beneficiary and ${missingContingentCount} account${missingContingentCount !== 1 ? 's have' : ' has'} no contingent beneficiary on file.`,
       recommended_action: 'A primary beneficiary designation is worth reviewing for these accounts.',
     })
   }
@@ -68,22 +82,14 @@ function ruleAllocationNotHundred(assets: any[], beneficiaries: any[]): Conflict
 // Rule 3: No contingent beneficiary (risk of lapse)
 function ruleNoContingentBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
   const conflicts: Conflict[] = []
-  const assetsWithPrimary = new Set(
-    beneficiaries.filter((b) => b.beneficiary_type === 'primary' && b.asset_id).map((b) => b.asset_id),
-  )
-  const assetsWithContingent = new Set(
-    beneficiaries.filter((b) => b.beneficiary_type === 'contingent' && b.asset_id).map((b) => b.asset_id),
-  )
-  const assetsMissingContingent = assets.filter(
-    (asset) => assetsWithPrimary.has(asset.id) && !assetsWithContingent.has(asset.id),
-  )
-  if (assetsMissingContingent.length > 0) {
+  const { missingPrimaryCount, missingContingentCount } = getBeneficiaryGapCounts(assets, beneficiaries)
+  if (missingContingentCount > 0) {
     conflicts.push({
       conflict_type: 'no_contingent_beneficiary',
       severity: 'warning',
       asset_id: null,
       real_estate_id: null,
-      description: `${assetsMissingContingent.length} account${assetsMissingContingent.length !== 1 ? 's have' : ' has'} no contingent beneficiary on file.`,
+      description: `${missingPrimaryCount} account${missingPrimaryCount !== 1 ? 's have' : ' has'} no primary beneficiary and ${missingContingentCount} account${missingContingentCount !== 1 ? 's have' : ' has'} no contingent beneficiary on file.`,
       recommended_action: 'A contingent designation is worth discussing with your advisor.',
     })
   }
@@ -264,9 +270,9 @@ export async function detectConflicts(householdId: string, ownerId: string): Pro
 
 function conflictTitle(type: string): string {
   const titles: Record<string, string> = {
-    no_primary_beneficiary: 'Missing Beneficiary',
+    no_primary_beneficiary: 'Beneficiary Gaps: Primary / Contingent',
     allocation_not_100: 'Beneficiary Allocation Error',
-    no_contingent_beneficiary: 'No Contingent Beneficiary',
+    no_contingent_beneficiary: 'Beneficiary Gaps: Primary / Contingent',
     sole_ownership_married: 'Sole Ownership - Married Estate',
     sole_ownership_real_estate: 'Real Estate Titling Gap',
     large_estate_no_trust: 'Large Estate Without Trust',
