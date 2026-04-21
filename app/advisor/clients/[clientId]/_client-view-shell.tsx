@@ -268,6 +268,7 @@ export interface ClientViewShellProps {
     federal_exemption?: number
     annual_rmd?: number
     pre_ira_balance?: number
+    roth_balance?: number
     estimated_federal_tax?: number
     estimated_state_tax?: number
     law_scenario?: 'current_law' | 'no_exemption'

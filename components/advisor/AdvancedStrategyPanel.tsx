@@ -21,6 +21,7 @@ interface AdvancedStrategyPanelProps {
   person1BirthYear: number
   annualRMD?: number
   preIRABalance?: number
+  rothBalance?: number
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -35,6 +36,7 @@ export default function AdvancedStrategyPanel({
   person1BirthYear,
   annualRMD = 0,
   preIRABalance = 0,
+  rothBalance = 0,
 }: AdvancedStrategyPanelProps) {
   void householdId
   void federalExemption
@@ -395,10 +397,6 @@ export default function AdvancedStrategyPanel({
               <label htmlFor="ilit2035" className="text-sm text-gray-600">ILIT §2035 flag active (exclude from liquidity)</label>
             </div>
           </div>
-          {/* Temp debug */}
-          <pre className="text-xs bg-gray-100 p-2 rounded">
-            federalTax: {JSON.stringify(estimatedFederalTax)} | stateTax: {JSON.stringify(estimatedStateTax)}
-          </pre>
           {liquidityResult && (
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm"><span className="text-gray-600">Total Tax Burden</span><span className="font-medium text-red-600">{fmt(liquidityResult.totalTaxBurden)}</span></div>
@@ -434,6 +432,20 @@ export default function AdvancedStrategyPanel({
       {activePanel === 'roth' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Roth Conversion Analysis</h4>
+          {rothBalance > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1">
+              <p className="font-semibold text-blue-800">Client actuals (from base case)</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-700">
+                <span>Current Roth balance</span>
+                <span className="text-right font-medium">${Math.round(rothBalance).toLocaleString()}</span>
+                <span>Pre-tax IRA balance</span>
+                <span className="text-right font-medium">${Math.round(preIRABalance).toLocaleString()}</span>
+                <span>Annual RMD</span>
+                <span className="text-right font-medium">${Math.round(annualRMD).toLocaleString()}</span>
+              </div>
+              <p className="text-blue-500 pt-1">Parameters below are pre-filled from client data. Adjust to model conversion scenarios.</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Pre-Tax IRA Balance', key: 'preIRABalance', value: rothConfig.preIRABalance },

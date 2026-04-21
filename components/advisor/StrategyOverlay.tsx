@@ -6,7 +6,7 @@
 // Net-to-heirs table at Today / +10 years / +20 years horizons
 // Federal constants come from lib/tax/estate-tax-constants.ts (OBBBA 2026)
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyGiftingProgram'
 import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditShelterTrust'
 import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
@@ -25,6 +25,15 @@ interface StrategyOverlayProps {
   person1RetirementAge: number
   growthRateAccumulation: number
   growthRateRetirement: number
+  giftingActuals?: {
+    annualUsed: number
+    annualCapacity: number
+    lifetimeUsed: number
+    lifetimeRemaining: number
+    perRecipientLimit: number
+    splitElected: boolean
+    uniqueRecipients: number
+  } | null
 }
 
 const HORIZON_YEARS = [
@@ -70,6 +79,41 @@ function calcNetToHeirs(
   return estate - taxable * OBBBA_2026.TOP_RATE
 }
 
+function useRecommendStrategy(householdId: string) {
+  const [savedStrategies, setSavedStrategies] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!householdId) return
+    fetch(`/api/strategy-configs?householdId=${householdId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d)) setSavedStrategies(new Set(d.map((s: { strategy_type: string }) => s.strategy_type)))
+      })
+      .catch(() => null)
+  }, [householdId])
+
+  async function toggleRecommended(strategyType: string, label: string) {
+    setSaving(true)
+    const isActive = savedStrategies.has(strategyType)
+    const method = isActive ? 'DELETE' : 'POST'
+    await fetch('/api/strategy-configs', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId, strategyType, label }),
+    })
+    setSavedStrategies((prev) => {
+      const next = new Set(prev)
+      if (isActive) next.delete(strategyType)
+      else next.add(strategyType)
+      return next
+    })
+    setSaving(false)
+  }
+
+  return { savedStrategies, saving, toggleRecommended }
+}
+
 export default function StrategyOverlay({
   householdId,
   grossEstate,
@@ -81,18 +125,29 @@ export default function StrategyOverlay({
   person1RetirementAge,
   growthRateAccumulation,
   growthRateRetirement,
+  giftingActuals,
 }: StrategyOverlayProps) {
-  void householdId
+  const { savedStrategies, saving, toggleRecommended } = useRecommendStrategy(householdId)
 
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyType>('none')
 
-  // Gifting config state
+  // Gifting config state — seeded from client actuals when available
   const [giftingConfig, setGiftingConfig] = useState<GiftingProgramConfig>({
-    annualGiftPerDonor: 19000,
-    numberOfRecipients: 2,
+    annualGiftPerDonor: giftingActuals?.perRecipientLimit ?? 19000,
+    numberOfRecipients: giftingActuals?.uniqueRecipients ?? 2,
     startYear: CURRENT_YEAR,
-    giftSplitting: !!person2BirthYear,
+    giftSplitting: giftingActuals?.splitElected ?? !!person2BirthYear,
   })
+
+  useEffect(() => {
+    if (!giftingActuals) return
+    setGiftingConfig((prev) => ({
+      ...prev,
+      annualGiftPerDonor: giftingActuals.perRecipientLimit,
+      numberOfRecipients: giftingActuals.uniqueRecipients,
+      giftSplitting: giftingActuals.splitElected,
+    }))
+  }, [giftingActuals])
 
   // CST config state
   const [cstConfig, setCstConfig] = useState<Partial<CSTConfig>>({
@@ -164,6 +219,22 @@ export default function StrategyOverlay({
       {selectedStrategy === 'gifting' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <h4 className="text-sm font-semibold text-gray-800">Gifting Program Parameters</h4>
+          {giftingActuals && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1">
+              <p className="font-semibold text-blue-800">Client actuals (this calendar year)</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-700">
+                <span>Annual used</span>
+                <span className="text-right font-medium">${giftingActuals.annualUsed.toLocaleString()} / ${giftingActuals.annualCapacity.toLocaleString()}</span>
+                <span>Lifetime used</span>
+                <span className="text-right font-medium">${giftingActuals.lifetimeUsed.toLocaleString()}</span>
+                <span>Lifetime remaining</span>
+                <span className="text-right font-medium">${Math.round(giftingActuals.lifetimeRemaining).toLocaleString()}</span>
+                <span>Split elected</span>
+                <span className="text-right font-medium">{giftingActuals.splitElected ? 'Yes' : 'No'}</span>
+              </div>
+              <p className="text-blue-500 pt-1">Parameters below are pre-filled from client data. Adjust to model future scenarios.</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-gray-500 block mb-1">Annual Gift Per Donor</label>
@@ -221,6 +292,21 @@ export default function StrategyOverlay({
               )}
             </div>
           )}
+          <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
+            <button
+              type="button"
+              onClick={() => toggleRecommended('gifting', 'Annual Gifting Program')}
+              disabled={saving}
+              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                savedStrategies.has('gifting')
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {savedStrategies.has('gifting') ? '✓ Recommended' : 'Mark as recommended'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -278,6 +364,21 @@ export default function StrategyOverlay({
               ))}
             </div>
           )}
+          <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
+            <button
+              type="button"
+              onClick={() => toggleRecommended('credit_shelter_trust', 'Credit Shelter Trust (CST)')}
+              disabled={saving}
+              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                savedStrategies.has('credit_shelter_trust')
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {savedStrategies.has('credit_shelter_trust') ? '✓ Recommended' : 'Mark as recommended'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -319,6 +420,21 @@ export default function StrategyOverlay({
               {note}
             </div>
           ))}
+          <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
+            <button
+              type="button"
+              onClick={() => toggleRecommended('revocable_trust', 'Revocable Living Trust')}
+              disabled={saving}
+              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                savedStrategies.has('revocable_trust')
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {savedStrategies.has('revocable_trust') ? '✓ Recommended' : 'Mark as recommended'}
+            </button>
+          </div>
         </div>
       )}
 

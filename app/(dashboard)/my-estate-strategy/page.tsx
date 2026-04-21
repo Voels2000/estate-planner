@@ -264,6 +264,13 @@ export default async function MyEstateStrategyPage() {
     longevityAge,
   })
 
+  // Advisor recommendations
+  const { data: advisorRecommendations } = await supabase
+    .from('strategy_configs')
+    .select('strategy_type, label')
+    .eq('household_id', household.id)
+    .eq('is_active', true)
+
   return (
     <div className="min-h-screen">
       <MyEstateStrategyClient
@@ -278,6 +285,7 @@ export default async function MyEstateStrategyPage() {
         hasSpouse={hasSpouse}
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
+        advisorRecommendations={advisorRecommendations ?? []}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

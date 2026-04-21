@@ -255,6 +255,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 15_000_000),
         annual_rmd: Number(latestOutput?.income_rmd ?? 0),
         pre_ira_balance: Number(latestOutput?.assets_tax_deferred ?? 0),
+        roth_balance: Number(latestOutput?.assets_roth ?? 0),
         estimated_federal_tax: Number(
           latestOutput?.estate_tax_federal ??
           latestOutput?.federal_tax ??

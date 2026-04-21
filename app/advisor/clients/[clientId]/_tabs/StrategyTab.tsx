@@ -27,11 +27,46 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const person2BirthYear = household?.person2_birth_year ?? undefined
   const annualRMD = Number(scenario?.annual_rmd ?? 0)
   const preIRABalance = Number(scenario?.pre_ira_balance ?? 0)
+  const rothBalance = Number(scenario?.roth_balance ?? 0)
   const [strategyOverlayOpen, setStrategyOverlayOpen] = useState(true)
   const [slatIlitOpen, setSlatIlitOpen] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
+
+  // Gifting actuals from RPC
+  const [giftingActuals, setGiftingActuals] = useState<{
+    annualUsed: number
+    annualCapacity: number
+    lifetimeUsed: number
+    lifetimeRemaining: number
+    perRecipientLimit: number
+    splitElected: boolean
+    uniqueRecipients: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (!household?.id) return
+    fetch('/api/gifting-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId: household.id }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) return
+        setGiftingActuals({
+          annualUsed: d.annual_used ?? 0,
+          annualCapacity: d.annual_capacity ?? 0,
+          lifetimeUsed: d.lifetime_used ?? 0,
+          lifetimeRemaining: d.lifetime_remaining ?? 0,
+          perRecipientLimit: d.per_recipient_limit ?? 19000,
+          splitElected: d.split_elected ?? false,
+          uniqueRecipients: d.unique_recipients ?? 2,
+        })
+      })
+      .catch(() => null)
+  }, [household?.id])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)
@@ -164,6 +199,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
               person1RetirementAge={household?.person1_retirement_age ?? 65}
               growthRateAccumulation={household?.growth_rate_accumulation ?? 7}
               growthRateRetirement={household?.growth_rate_retirement ?? 5}
+              giftingActuals={giftingActuals}
             />
           </>
         )}
@@ -210,6 +246,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
             person1BirthYear={person1BirthYear}
             annualRMD={annualRMD}
             preIRABalance={preIRABalance}
+            rothBalance={rothBalance}
           />
         )}
       </section>
