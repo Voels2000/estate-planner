@@ -1873,6 +1873,8 @@ function BeneficiaryGapModal({
       }
 
       let working = [...beneficiaries]
+      let appliedCount = 0
+      const applyErrors: string[] = []
 
       for (const row of items) {
         const key = gapItemKey(row)
@@ -1903,7 +1905,11 @@ function BeneficiaryGapModal({
                 insurance_policy_id: row.kind === 'insurance' ? row.id : null,
                 business_id: row.kind === 'business' ? row.id : null,
               })
-              if (insErr) throw insErr
+              if (insErr) {
+                applyErrors.push(`${row.name} (primary): ${insErr.message}`)
+              } else {
+                appliedCount += 1
+              }
               working.push({
                 id: `temp-${row.id}-p`,
                 asset_id: row.kind === 'asset' ? row.id : null,
@@ -1951,7 +1957,11 @@ function BeneficiaryGapModal({
                 insurance_policy_id: row.kind === 'insurance' ? row.id : null,
                 business_id: row.kind === 'business' ? row.id : null,
               })
-              if (insErr) throw insErr
+              if (insErr) {
+                applyErrors.push(`${row.name} (contingent): ${insErr.message}`)
+                continue
+              }
+              appliedCount += 1
               working.push({
                 id: `temp-${row.id}-c-${cr.householdPersonId}`,
                 asset_id: row.kind === 'asset' ? row.id : null,
@@ -1990,7 +2000,11 @@ function BeneficiaryGapModal({
                   insurance_policy_id: row.kind === 'insurance' ? row.id : null,
                   business_id: row.kind === 'business' ? row.id : null,
                 })
-                if (insErr) throw insErr
+                if (insErr) {
+                  applyErrors.push(`${row.name} (contingent): ${insErr.message}`)
+                } else {
+                  appliedCount += 1
+                }
                 working.push({
                   id: `temp-${row.id}-c`,
                   asset_id: row.kind === 'asset' ? row.id : null,
@@ -2011,7 +2025,15 @@ function BeneficiaryGapModal({
         }
       }
 
-      await onApplied()
+      if (appliedCount > 0) {
+        await onApplied()
+        return
+      }
+      if (applyErrors.length > 0) {
+        setError(`No defaults were applied. ${applyErrors.slice(0, 3).join(' | ')}`)
+      } else {
+        setError('No defaults were applied. There may be no missing beneficiary assignments left to fill.')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
