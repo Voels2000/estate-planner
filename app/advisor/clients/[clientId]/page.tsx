@@ -252,7 +252,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     ? {
         id: scenario.id,
         gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
-        federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000),
+        federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 15_000_000),
         annual_rmd: Number(latestOutput?.income_rmd ?? 0),
         pre_ira_balance: Number(latestOutput?.assets_tax_deferred ?? 0),
         estimated_federal_tax: Number(
@@ -288,7 +288,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const stTaxExport = Number(
     latestOutput?.estate_tax_state ?? latestOutput?.state_tax ?? latestOutput?.state_estate_tax ?? 0,
   )
-  const exemptionExport = Number(assumptionSnapshot.estate_exemption_individual ?? 13_610_000)
+  const exemptionExport = Number(assumptionSnapshot.estate_exemption_individual ?? 15_000_000)
   const lawScenarioExport = scenarioForStrategy?.law_scenario ?? 'current_law'
 
   const projectionRowsForExcel: Array<Record<string, number | string>> = scenarioOutputs.map((row) => {
