@@ -26,6 +26,7 @@ interface InsurancePolicy {
   is_employer_provided: boolean
   is_ilit: boolean
   notes: string | null
+  estate_inclusion_status?: string | null
 }
 
 interface Props {
@@ -58,6 +59,7 @@ const EMPTY: Partial<InsurancePolicy> = {
   is_employer_provided: false,
   is_ilit: false,
   notes: null,
+  estate_inclusion_status: 'included',
 }
 
 function displayPolicyOwner(
@@ -204,6 +206,9 @@ export default function InsuranceFormClient({
                     {!p.is_ilit && (p.insurance_type?.includes('life') || p.insurance_type === 'survivorship_life') && (
                       <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⚠ Not in ILIT</span>
                     )}
+                    {p.estate_inclusion_status && p.estate_inclusion_status !== 'included' ? (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Outside estate</span>
+                    ) : null}
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-3">
                     {primaryValue > 0 && (
@@ -403,6 +408,29 @@ export default function InsuranceFormClient({
                     <div>
                       <label htmlFor="is_ilit" className="text-sm font-medium text-neutral-700 cursor-pointer">Held in an ILIT</label>
                       <p className="text-xs text-neutral-400 mt-0.5">If held in an Irrevocable Life Insurance Trust, the death benefit is excluded from your taxable estate.</p>
+                    </div>
+                  </div>
+                )}
+                {form.is_ilit && (
+                  <div className="flex items-start gap-3 ml-7">
+                    <input
+                      type="checkbox"
+                      id="ilit_transfer_complete"
+                      checked={(form as any).estate_inclusion_status === 'excluded_irrevocable'}
+                      onChange={e => setForm(f => ({
+                        ...f,
+                        estate_inclusion_status: e.target.checked ? 'excluded_irrevocable' : 'included'
+                      } as any))}
+                      className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-green-600"
+                    />
+                    <div>
+                      <label htmlFor="ilit_transfer_complete" className="text-sm font-medium text-neutral-700 cursor-pointer">
+                        ILIT transfer is legally complete
+                      </label>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Check this only when the policy has been formally transferred to the ILIT and all legal requirements are met.
+                        This removes the death benefit from your gross estate. Consult your estate attorney.
+                      </p>
                     </div>
                   </div>
                 )}

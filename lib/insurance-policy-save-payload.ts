@@ -29,5 +29,6 @@ export function insurancePolicyRowForSave(input: Record<string, unknown>) {
     is_employer_provided: Boolean(input.is_employer_provided),
     is_ilit: Boolean(input.is_ilit),
     notes: strOrNull(input.notes),
+    estate_inclusion_status: strOrNull(input.estate_inclusion_status) ?? 'included',
   }
 }

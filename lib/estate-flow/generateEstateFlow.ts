@@ -98,6 +98,7 @@ interface RawAsset {
   liquidity: string | null
   owner: string
   details: Record<string, unknown> | null
+  estate_inclusion_status?: string | null
 }
 
 interface RawRealEstate {
@@ -106,6 +107,7 @@ interface RawRealEstate {
   current_value: number
   titling_type?: string | null
   state?: string | null
+  estate_inclusion_status?: string | null
 }
 
 interface RawDigitalAsset {
@@ -129,6 +131,7 @@ interface RawInsurance {
   face_value?: number
   death_benefit?: number
   owner?: string
+  estate_inclusion_status?: string | null
 }
 
 /** Modern `businesses` table */
@@ -138,6 +141,7 @@ interface RawModernBusiness {
   entity_type?: string | null
   estimated_value?: number | null
   ownership_pct?: number | null
+  estate_inclusion_status?: string | null
 }
 
 /** Legacy `business_interests` table */
@@ -544,6 +548,26 @@ export async function generateEstateFlow(
     })
   }
 
+  // ── Outside estate node — for assets excluded via ILIT, gifting, or trust transfer ──
+  // Created lazily — only added if at least one excluded asset is found.
+  let outsideEstateNodeCreated = false
+  let outsideEstateValue = 0
+
+  function ensureOutsideEstateNode() {
+    if (!outsideEstateNodeCreated) {
+      nodes.push({
+        id: 'outside_estate',
+        type: 'trust',          // reuse trust type for styling
+        category: 'vehicle',
+        label: 'Outside taxable estate',
+        technicalLabel: 'Assets Outside Taxable Estate (ILIT, completed gifts, irrevocable transfers)',
+        value: 0,
+        metadata: { exclusion_type: 'mixed' },
+      })
+      outsideEstateNodeCreated = true
+    }
+  }
+
   // ── 5. Financial assets ──────────────────────────────────────────────────────
   let probateAssetsValue = 0
   let trustAssetsValue = 0
@@ -555,6 +579,8 @@ export async function generateEstateFlow(
     const hasBene = assetBenes.length > 0
     const isTrustOwned = asset.titling === 'trust_owned'
     const isPOD = asset.titling === 'pod' || asset.titling === 'tod'
+    const isExcluded = asset.estate_inclusion_status != null &&
+      asset.estate_inclusion_status !== 'included'
 
     nodes.push({
       id: nodeId,
@@ -568,6 +594,7 @@ export async function generateEstateFlow(
         titling: asset.titling,
         liquidity: asset.liquidity,
         owner: asset.owner,
+        estate_inclusion_status: asset.estate_inclusion_status,
       },
     })
 
@@ -581,6 +608,22 @@ export async function generateEstateFlow(
       value: asset.value,
       metadata: {},
     })
+
+    // Excluded assets route to outside estate node — not counted in gross estate routing
+    if (isExcluded) {
+      ensureOutsideEstateNode()
+      outsideEstateValue += asset.value
+      edges.push({
+        id: `e_outside_${asset.id}`,
+        source: nodeId,
+        target: 'outside_estate',
+        type: 'transfers_to',
+        label: `${fmt(asset.value)} — ${asset.estate_inclusion_status?.replace(/_/g, ' ') ?? 'excluded'}`,
+        value: asset.value,
+        metadata: { exclusion_type: asset.estate_inclusion_status },
+      })
+      continue
+    }
 
     // Edge: asset → destination at death
     if (isTrustOwned && trustNodeIds.length > 0) {
@@ -633,6 +676,8 @@ export async function generateEstateFlow(
     const reBenes = beneByRealEstate.get(re.id) ?? []
     const hasBene = reBenes.length > 0
     const isTrustOwned = re.titling_type === 'trust_owned'
+    const isExcluded = re.estate_inclusion_status != null &&
+      re.estate_inclusion_status !== 'included'
 
     nodes.push({
       id: nodeId,
@@ -641,7 +686,8 @@ export async function generateEstateFlow(
       label: shortAddress(re.name),
       technicalLabel: `${re.name} — ${fmt(re.current_value)}`,
       value: re.current_value,
-      metadata: { name: re.name, titling_type: re.titling_type, state: re.state },
+      metadata: { name: re.name, titling_type: re.titling_type, state: re.state,
+        estate_inclusion_status: re.estate_inclusion_status },
     })
 
     edges.push({
@@ -653,6 +699,21 @@ export async function generateEstateFlow(
       value: re.current_value,
       metadata: {},
     })
+
+    if (isExcluded) {
+      ensureOutsideEstateNode()
+      outsideEstateValue += re.current_value
+      edges.push({
+        id: `e_outside_re_${re.id}`,
+        source: nodeId,
+        target: 'outside_estate',
+        type: 'transfers_to',
+        label: `${fmt(re.current_value)} — ${re.estate_inclusion_status?.replace(/_/g, ' ') ?? 'excluded'}`,
+        value: re.current_value,
+        metadata: { exclusion_type: re.estate_inclusion_status },
+      })
+      continue
+    }
 
     if (isTrustOwned && trustNodeIds.length > 0) {
       edges.push({
@@ -778,19 +839,63 @@ export async function generateEstateFlow(
     modernBusinesses,
     legacyBusinessInterests,
   )
-  if (businessRowCount > 0) {
+  // Split businesses into included vs excluded
+  const includedBusinesses = modernBusinesses.filter(
+    b => !b.estate_inclusion_status || b.estate_inclusion_status === 'included'
+  )
+  const excludedBusinesses = modernBusinesses.filter(
+    b => b.estate_inclusion_status && b.estate_inclusion_status !== 'included'
+  )
+  const includedBusinessTotal = computeBusinessOwnershipValue(includedBusinesses, legacyBusinessInterests)
+  const excludedBusinessTotal = computeBusinessOwnershipValue(excludedBusinesses, [])
+
+  // Route excluded businesses to outside estate node
+  if (excludedBusinessTotal > 0) {
+    ensureOutsideEstateNode()
+    outsideEstateValue += excludedBusinessTotal
+    const excNodeId = 'business_excluded_group'
+    nodes.push({
+      id: excNodeId,
+      type: 'business',
+      category: 'asset',
+      label: `Business interests (outside estate)`,
+      technicalLabel: `Excluded Business Interests — ${fmtCurrencyFull(excludedBusinessTotal)}`,
+      value: excludedBusinessTotal,
+      metadata: { total: excludedBusinessTotal, exclusion_type: 'mixed' },
+    })
+    edges.push({
+      id: 'e_own_business_excluded',
+      source: 'owner_p1',
+      target: excNodeId,
+      type: 'owns',
+      label: fmtCurrencyFull(excludedBusinessTotal),
+      value: excludedBusinessTotal,
+      metadata: {},
+    })
+    edges.push({
+      id: 'e_outside_business',
+      source: excNodeId,
+      target: 'outside_estate',
+      type: 'transfers_to',
+      label: `${fmtCurrencyFull(excludedBusinessTotal)} — excluded`,
+      value: excludedBusinessTotal,
+      metadata: {},
+    })
+  }
+
+  if (businessRowCount > 0 && includedBusinessTotal > 0) {
     const nodeId = 'business_interests_group'
-    const countLabel = businessRowCount === 1 ? 'Business interest' : `Business interests (${businessRowCount})`
+    const countLabel = includedBusinesses.length === 1 ? 'Business interest' : `Business interests (${includedBusinesses.length})`
     nodes.push({
       id: nodeId,
       type: 'business',
       category: 'asset',
       label: countLabel,
-      technicalLabel: `Business — ${fmtCurrencyFull(businessOwnershipTotal)}`,
-      value: businessOwnershipTotal,
+      technicalLabel: `Business — ${fmtCurrencyFull(includedBusinessTotal)}`,
+      value: includedBusinessTotal,
       metadata: {
-        total: businessOwnershipTotal,
-        modern_count: modernBusinesses.length,
+        total: includedBusinessTotal,
+        modern_count: includedBusinesses.length,
         legacy_count: legacyBusinessInterests.length,
       },
     })
@@ -800,8 +905,8 @@ export async function generateEstateFlow(
       source: 'owner_p1',
       target: nodeId,
       type: 'owns',
-      label: fmtCurrencyFull(businessOwnershipTotal),
-      value: businessOwnershipTotal,
+      label: fmtCurrencyFull(includedBusinessTotal),
+      value: includedBusinessTotal,
       metadata: {},
     })
 
@@ -821,11 +926,11 @@ export async function generateEstateFlow(
         source: nodeId,
         target: probateNodeId,
         type: 'transfers_to',
-        label: fmtCurrencyFull(businessOwnershipTotal),
-        value: businessOwnershipTotal,
+        label: fmtCurrencyFull(includedBusinessTotal),
+        value: includedBusinessTotal,
         metadata: {},
       })
-      probateAssetsValue += businessOwnershipTotal
+      probateAssetsValue += includedBusinessTotal
     }
   }
 
@@ -1012,6 +1117,12 @@ export async function generateEstateFlow(
     directTransferValue = Math.round(directTransferValue * scale)
     // Keep totals additive after rounding by assigning remainder to probate.
     probateAssetsValue = Math.max(0, grossEstate - trustAssetsValue - directTransferValue)
+  }
+
+  // Update outside estate node value now that we know the total
+  if (outsideEstateNodeCreated) {
+    const outsideNode = nodes.find(n => n.id === 'outside_estate')
+    if (outsideNode) outsideNode.value = outsideEstateValue
   }
 
   return {

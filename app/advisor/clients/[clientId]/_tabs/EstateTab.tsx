@@ -44,6 +44,16 @@ export default function EstateTab({
   const [savingAdminExpense, setSavingAdminExpense] = useState(false)
   const [savingBusinessId, setSavingBusinessId] = useState<string | null>(null)
   const [savingInsuranceId, setSavingInsuranceId] = useState<string | null>(null)
+  const [bizInclusionStatus, setBizInclusionStatus] = useState<Record<string, string>>(
+    Object.fromEntries(
+      (businesses ?? []).map(b => [b.id, (b as any).estate_inclusion_status ?? 'included'])
+    )
+  )
+  const [insInclusionStatus, setInsInclusionStatus] = useState<Record<string, string>>(
+    Object.fromEntries(
+      (insurancePolicies ?? []).map(p => [p.id, (p as any).estate_inclusion_status ?? 'included'])
+    )
+  )
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -162,20 +172,27 @@ export default function EstateTab({
     field: 'dloc_pct' | 'dlom_pct' | 'estate_inclusion_status',
     value: number | string,
   ) {
+    console.log('[saveBusinessDiscount]', businessId, field, value)
+    if (field === 'estate_inclusion_status') {
+      setBizInclusionStatus(prev => ({ ...prev, [businessId]: value as string }))
+    }
     setSavingBusinessId(businessId)
     try {
-      await fetch(`/api/businesses/${businessId}`, {
+      const businessPatchResponse = await fetch(`/api/businesses/${businessId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
       })
-      const res = await fetch('/api/estate-composition', {
+      console.log('[saveBusinessDiscount] response status:', businessPatchResponse.status)
+      const businessPatchBody = await businessPatchResponse.json()
+      console.log('[saveBusinessDiscount] response body:', businessPatchBody)
+      const compositionRefreshResponse = await fetch('/api/estate-composition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ householdId: household.id }),
       })
-      if (res.ok) {
-        const data = await res.json()
+      if (compositionRefreshResponse.ok) {
+        const data = await compositionRefreshResponse.json()
         if (data.success) setComposition(data)
       }
     } finally {
@@ -184,6 +201,7 @@ export default function EstateTab({
   }
 
   async function saveInsuranceInclusion(policyId: string, status: string) {
+    setInsInclusionStatus(prev => ({ ...prev, [policyId]: status }))
     setSavingInsuranceId(policyId)
     try {
       await fetch(`/api/insurance/${policyId}`, {
@@ -512,17 +530,16 @@ export default function EstateTab({
                         )}
                       </td>
                       <td className="py-2.5 pl-3">
-                        <select
-                          value={biz.estate_inclusion_status ?? 'included'}
-                          onChange={e => saveBusinessDiscount(b.id, 'estate_inclusion_status', e.target.value)}
-                          disabled={savingBusinessId === b.id}
-                          className="text-xs border border-slate-200 rounded px-2 py-1 bg-white disabled:opacity-40"
-                        >
-                          <option value="included">Included</option>
-                          <option value="excluded_irrevocable">Irrevocable transfer</option>
-                          <option value="excluded_gifted">Gifted</option>
-                          <option value="excluded_other">Other exclusion</option>
-                        </select>
+                        {isExcluded ? (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                            ✓ Outside estate
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            Inside estate
+                          </span>
+                        )}
+                        <p className="text-[10px] text-slate-400 mt-0.5">Client sets in /businesses</p>
                       </td>
                     </tr>
                   )
@@ -645,7 +662,7 @@ export default function EstateTab({
                       </td>
                       <td className="py-2.5 pl-3">
                         <select
-                          value={pol.estate_inclusion_status ?? 'included'}
+                          value={insInclusionStatus[p.id] ?? 'included'}
                           onChange={e => saveInsuranceInclusion(p.id, e.target.value)}
                           disabled={savingInsuranceId === p.id}
                           className="text-xs border border-slate-200 rounded px-2 py-1 bg-white disabled:opacity-40"

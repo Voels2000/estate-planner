@@ -27,6 +27,7 @@ interface Business {
   industry: string | null
   state_of_formation: string | null
   notes: string | null
+  estate_inclusion_status?: string | null
 }
 
 interface BusinessFormClientProps {
@@ -78,6 +79,7 @@ export default function BusinessFormClient({
       industry: (data.get('industry') as string) || null,
       state_of_formation: (data.get('state_of_formation') as string) || null,
       notes: (data.get('notes') as string) || null,
+      estate_inclusion_status: (data.get('estate_inclusion_status') as string) || 'included',
     }
 
     if (payload.estimated_value && payload.ownership_pct) {
@@ -170,7 +172,7 @@ export default function BusinessFormClient({
                     <p className="text-sm font-semibold text-neutral-800">{b.owner_estimated_value ? fmt(b.owner_estimated_value) : '—'}</p>
                   </div>
                 </div>
-                <div className="flex gap-4 mt-3">
+                <div className="flex gap-4 mt-3 flex-wrap">
                   {b.has_buy_sell_agreement ? (
                     <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ Buy-sell agreement</span>
                   ) : (
@@ -178,6 +180,11 @@ export default function BusinessFormClient({
                   )}
                   {b.has_key_person_insurance && (
                     <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ Key person insurance</span>
+                  )}
+                  {b.estate_inclusion_status && b.estate_inclusion_status !== 'included' ? (
+                    <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✓ Outside taxable estate</span>
+                  ) : (
+                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Inside taxable estate</span>
                   )}
                 </div>
               </div>
@@ -342,6 +349,28 @@ export default function BusinessFormClient({
                 placeholder="Select succession plan..."
                 helpText="What is the intended plan for this business when you retire or pass away?"
               />
+            </div>
+
+            <div className="border-t border-neutral-100 pt-5">
+              <h3 className="text-sm font-semibold text-neutral-700 mb-2">Estate Inclusion</h3>
+              <p className="text-xs text-neutral-500 mb-3">
+                Mark this business interest as outside your taxable estate only when a legal
+                transfer is complete and effective (e.g. gifted, placed in irrevocable trust).
+                Consult your estate attorney before marking as excluded.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Estate Status</label>
+                <select
+                  name="estate_inclusion_status"
+                  defaultValue={editing?.estate_inclusion_status ?? 'included'}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                >
+                  <option value="included">Included in taxable estate</option>
+                  <option value="excluded_irrevocable">Irrevocable transfer — legally complete</option>
+                  <option value="excluded_gifted">Gifted — transfer complete</option>
+                  <option value="excluded_other">Other exclusion</option>
+                </select>
+              </div>
             </div>
 
             <div>
