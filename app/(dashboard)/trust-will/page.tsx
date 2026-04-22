@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
-import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import {
   getTrustWillRecommendations,
@@ -31,8 +31,18 @@ export default async function TrustWillPage() {
   }
 
   const admin = createAdminClient()
+  const { data: household } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', user.id)
+    .single()
 
-  // Gross estate — same components as dashboard / My Estate Strategy (see horizonSnapshots + dashboard page)
+  if (!household) redirect('/profile')
+
+  const composition = await classifyEstateAssets(supabase, household.id)
+  const estateValue = composition.taxable_estate
+
+  // Profile signals used for recommendation/checklist logic
   const [
     { data: assets },
     { data: realEstate },
@@ -59,11 +69,20 @@ export default async function TrustWillPage() {
     (s, r) => s + Number(r.current_value ?? 0) - Number(r.mortgage_balance ?? 0),
     0,
   )
-  const businessValue = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
+  const businessValue =
+    (businesses ?? []).reduce(
+      (s, b) => s + Number(b.estimated_value ?? 0) * (Number(b.ownership_pct ?? 100) / 100),
+      0,
+    ) +
+    (businessInterests ?? []).reduce((s, b) => {
+      const base = Number(b.fmv_estimated ?? b.total_entity_value ?? 0)
+      const pct = Number(b.ownership_pct ?? 100) / 100
+      return s + base * pct
+    }, 0)
   const insuranceValue = (insurance ?? [])
     .filter((p) => !p.is_ilit)
     .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
-  const estateValue = financialAssets + realEstateEquity + businessValue + insuranceValue
+  const recommendationEstateValue = financialAssets + realEstateEquity + businessValue + insuranceValue
 
   const now = new Date()
   const hasMinorChildren = (beneficiaries ?? []).some((b) => {
@@ -113,7 +132,7 @@ export default async function TrustWillPage() {
   const hasBusinessInterests = (businessAssets ?? []).length > 0
 
   const profileData: ProfileData = {
-    estateValue,
+    estateValue: recommendationEstateValue,
     isMarried: profile?.marital_status === 'married',
     hasMinorChildren,
     domicileRisk,

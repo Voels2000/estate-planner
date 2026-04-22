@@ -115,7 +115,7 @@ export default function TrustWillClient({
       )}
 
       <CollapsibleSection
-        title="Estimated Estate Value"
+        title="Estimated Taxable Estate"
         defaultOpen={true}
         storageKey="trust-will-estimated-estate-value"
       >
