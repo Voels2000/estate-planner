@@ -3,44 +3,23 @@
 // Advisor client snapshot — net worth, gap analysis, quick stats
 
 import { ClientViewShellProps } from '../_client-view-shell'
-import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { EstateComposition } from '@/lib/estate/types'
 import {
   formatCurrency, getAge, getComplexityStyle,
   computeGaps, severityBadge, severityDot, type Gap
 } from '../_utils'
 
-export default function OverviewTab({ household, assets, realEstate, businesses, businessInterests, liabilities, insurancePolicies, beneficiaries, estateDocuments }: ClientViewShellProps) {
+export default function OverviewTab({ household, assets, realEstate, businesses, insurancePolicies, beneficiaries, estateDocuments, estateComposition }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
-  // ── Net worth calc ───────────────────────────────────────────────────────
-  const totalBusinessValue = computeBusinessOwnershipValue(
-    (businesses ?? []) as { estimated_value?: unknown; ownership_pct?: unknown }[],
-    (businessInterests ?? []) as {
-      fmv_estimated?: unknown
-      total_entity_value?: unknown
-      ownership_pct?: unknown
-    }[],
-  )
-  const totalInsuranceEstate = (insurancePolicies ?? [])
-    .filter(p => !p.is_ilit && p.death_benefit)
-    .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
-
-  const totalAssets = [
-    ...(assets ?? []).map(a => a.value ?? 0),
-    ...(realEstate ?? []).map(r => r.current_value ?? 0),
-    totalBusinessValue,
-    totalInsuranceEstate,
-  ].reduce((s, v) => s + v, 0)
-
-  const mortgageTotal = (realEstate ?? []).reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
-  const otherLiabilitiesTotal = (liabilities ?? []).reduce((s, l) => s + Number(l.balance ?? 0), 0)
-  const totalLiabilities = mortgageTotal + otherLiabilitiesTotal
-
-  const netWorth = totalAssets - totalLiabilities
+  // ── Net worth calc (matches My Estate Strategy estate composition source) ──
+  const totalAssets = estateComposition.gross_estate
+  const totalLiabilities = estateComposition.total_liabilities
+  const netWorth = estateComposition.net_estate
   const assetPct = totalAssets > 0 ? Math.round((totalAssets / (totalAssets + totalLiabilities)) * 100) : 100
 
   // ── Asset breakdown ──────────────────────────────────────────────────────
-  const assetGroups = groupAssets(assets ?? [], realEstate ?? [], totalBusinessValue, totalInsuranceEstate)
+  const assetGroups = groupAssetsFromComposition(estateComposition)
 
   // ── Gap analysis ─────────────────────────────────────────────────────────
   const gaps = computeGaps({ household, assets, realEstate, beneficiaries, estateDocuments })
@@ -129,7 +108,9 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-medium text-slate-800">{formatCurrency(g.value, true)}</span>
-                    <span className="text-xs text-slate-400 ml-1">({Math.round((g.value / totalAssets) * 100)}%)</span>
+                    <span className="text-xs text-slate-400 ml-1">
+                      ({totalAssets > 0 ? Math.round((g.value / totalAssets) * 100) : 0}%)
+                    </span>
                   </div>
                 </div>
               ))}
@@ -339,38 +320,20 @@ function formatFilingStatus(status: string | null) {
   return status ? (map[status] ?? status) : '—'
 }
 
-function groupAssets(assets: any[], realEstate: any[], totalBusinessValue: number, totalInsuranceEstate: number) {
+function groupAssetsFromComposition(composition: EstateComposition) {
   const groups: { label: string; value: number; color: string }[] = []
-
-  const RETIREMENT_TYPES = ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension', 'retirement_account']
-  const BROKERAGE_TYPES  = ['brokerage', 'taxable']
-  const CASH_TYPES       = ['checking', 'savings', 'money_market', 'cd', 'cash']
-  const INSURANCE_TYPES  = ['life_insurance', 'annuity']
-  const EDUCATION_TYPES  = ['education_savings', '529']
-
-  const getType = (a: any) => (a.type ?? a.account_type ?? '').toLowerCase()
-
-  const retirement  = assets.filter(a => RETIREMENT_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
-  const brokerage   = assets.filter(a => BROKERAGE_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
-  const cash        = assets.filter(a => CASH_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
-  const insurance   = assets.filter(a => INSURANCE_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
-  const education   = assets.filter(a => EDUCATION_TYPES.includes(getType(a))).reduce((s, a) => s + (a.value ?? 0), 0)
-  const other       = assets.filter(a => {
-    const t = getType(a)
-    return ![...RETIREMENT_TYPES, ...BROKERAGE_TYPES, ...CASH_TYPES, ...INSURANCE_TYPES, ...EDUCATION_TYPES].includes(t)
-  }).reduce((s, a) => s + (a.value ?? 0), 0)
-
-  const reValue = realEstate.reduce((s, r) => s + (r.current_value ?? 0), 0)
-
-  if (reValue > 0)    groups.push({ label: 'Real Estate',      value: reValue,   color: 'bg-teal-500' })
-  if (totalBusinessValue > 0) groups.push({ label: 'Business Interests', value: totalBusinessValue, color: 'bg-orange-500' })
-  if (totalInsuranceEstate > 0) groups.push({ label: 'Life Insurance (Estate)', value: totalInsuranceEstate, color: 'bg-rose-400' })
-  if (retirement > 0) groups.push({ label: 'Retirement Accts', value: retirement, color: 'bg-indigo-500' })
-  if (brokerage > 0)  groups.push({ label: 'Brokerage',        value: brokerage,  color: 'bg-violet-400' })
-  if (cash > 0)       groups.push({ label: 'Cash & Equiv.',    value: cash,       color: 'bg-emerald-400' })
-  if (insurance > 0)  groups.push({ label: 'Life Insurance',   value: insurance,  color: 'bg-rose-400' })
-  if (education > 0)  groups.push({ label: 'Education (529)',  value: education,  color: 'bg-amber-400' })
-  if (other > 0)      groups.push({ label: 'Other Assets',     value: other,      color: 'bg-slate-400' })
+  if (composition.inside_real_estate > 0) {
+    groups.push({ label: 'Real Estate', value: composition.inside_real_estate, color: 'bg-teal-500' })
+  }
+  if (composition.inside_business_gross > 0) {
+    groups.push({ label: 'Business Interests', value: composition.inside_business_gross, color: 'bg-orange-500' })
+  }
+  if (composition.inside_insurance > 0) {
+    groups.push({ label: 'Life Insurance (Estate)', value: composition.inside_insurance, color: 'bg-rose-400' })
+  }
+  if (composition.inside_financial > 0) {
+    groups.push({ label: 'Financial Assets', value: composition.inside_financial, color: 'bg-indigo-500' })
+  }
 
   return groups.sort((a, b) => b.value - a.value)
 }

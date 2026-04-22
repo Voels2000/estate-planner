@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
@@ -90,6 +91,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const currentYear = new Date().getFullYear()
   const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
   const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
+  const estateComposition = await classifyEstateAssets(supabase, household.id)
 
   const [
     assetsResult,
@@ -449,6 +451,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       domicileChecklist={domicileChecklist}
       stateExemptions={stateExemptions}
       conflictReport={conflictReport}
+      estateComposition={estateComposition}
     />
   )
 }

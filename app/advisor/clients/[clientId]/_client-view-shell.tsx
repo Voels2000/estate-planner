@@ -4,6 +4,7 @@ import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
+import type { EstateComposition } from '@/lib/estate/types'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
@@ -310,4 +311,5 @@ export interface ClientViewShellProps {
     critical: number
     warnings: number
   } | null
+  estateComposition: EstateComposition
 }
