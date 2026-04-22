@@ -250,6 +250,7 @@ export interface ClientViewShellProps {
     annual_premium: number | null
     is_ilit: boolean
     is_employer_provided: boolean
+    estate_inclusion_status: string | null
   }>
   liabilities?: Array<{
     id: string

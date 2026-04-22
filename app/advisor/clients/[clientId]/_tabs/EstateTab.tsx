@@ -38,6 +38,12 @@ export default function EstateTab({
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
   const [composition, setComposition] = useState<import('@/lib/estate/types').EstateComposition | null>(null)
+  const [adminExpensePct, setAdminExpensePct] = useState<number>(
+    (household as any).admin_expense_pct ?? 0.02
+  )
+  const [savingAdminExpense, setSavingAdminExpense] = useState(false)
+  const [savingBusinessId, setSavingBusinessId] = useState<string | null>(null)
+  const [savingInsuranceId, setSavingInsuranceId] = useState<string | null>(null)
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -127,6 +133,78 @@ export default function EstateTab({
     }
   }, [household.id])
 
+  // ── Save helpers ─────────────────────────────────────────────────────────
+  async function saveAdminExpense(pct: number) {
+    setSavingAdminExpense(true)
+    try {
+      await fetch(`/api/households/${household.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_expense_pct: pct }),
+      })
+      // Refresh composition card
+      const res = await fetch('/api/estate-composition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId: household.id }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) setComposition(data)
+      }
+    } finally {
+      setSavingAdminExpense(false)
+    }
+  }
+
+  async function saveBusinessDiscount(
+    businessId: string,
+    field: 'dloc_pct' | 'dlom_pct' | 'estate_inclusion_status',
+    value: number | string,
+  ) {
+    setSavingBusinessId(businessId)
+    try {
+      await fetch(`/api/businesses/${businessId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      const res = await fetch('/api/estate-composition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId: household.id }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) setComposition(data)
+      }
+    } finally {
+      setSavingBusinessId(null)
+    }
+  }
+
+  async function saveInsuranceInclusion(policyId: string, status: string) {
+    setSavingInsuranceId(policyId)
+    try {
+      await fetch(`/api/insurance/${policyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estate_inclusion_status: status }),
+      })
+      const res = await fetch('/api/estate-composition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId: household.id }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) setComposition(data)
+      }
+    } finally {
+      setSavingInsuranceId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <DisclaimerBanner />
@@ -139,6 +217,37 @@ export default function EstateTab({
           snapshotLabel="Current snapshot"
         />
       )}
+
+      {/* ── Admin Expense Override ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-700">Admin Expense Estimate</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              IRS Form 706 deduction — executor fees, legal, accounting. Default 2%. Typical range 1–4%.
+              Consult estate attorney for precise figure.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                value={+(adminExpensePct * 100).toFixed(2)}
+                onChange={e => setAdminExpensePct(Number(e.target.value) / 100)}
+                onBlur={e => saveAdminExpense(Number(e.target.value) / 100)}
+                className="w-20 border border-slate-200 rounded px-2 py-1.5 text-sm text-right pr-6"
+              />
+              <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
+            </div>
+            {savingAdminExpense && (
+              <span className="text-xs text-slate-400">Saving...</span>
+            )}
+          </div>
+        </div>
+      </div>
 
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -317,6 +426,117 @@ export default function EstateTab({
         </div>
       )}
 
+      {/* ── Business Interests & Valuation Discounts ── */}
+      {(businesses ?? []).length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">Business Interests</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                DLOC/DLOM discounts apply to taxable estate only, not gross estate.
+                Appraiser-supplied values only — requires qualified appraisal for Form 706.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Business</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">FMV (Gross)</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Ownership</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-3">DLOC %</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-2">DLOM %</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Taxable Value</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-3">Estate Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {(businesses ?? []).map(b => {
+                  const biz = b as any
+                  const ownershipPct = (biz.ownership_pct ?? 100) / 100
+                  const grossValue = (biz.estimated_value ?? 0) * ownershipPct
+                  const dloc = biz.dloc_pct ?? 0
+                  const dlom = biz.dlom_pct ?? 0
+                  const combinedDiscount = 1 - (1 - dloc) * (1 - dlom)
+                  const taxableValue = grossValue * (1 - combinedDiscount)
+                  const isExcluded = biz.estate_inclusion_status !== 'included'
+                  return (
+                    <tr key={b.id} className="hover:bg-slate-50">
+                      <td className="py-2.5 font-medium text-slate-800">
+                        {b.name}
+                        {isExcluded && (
+                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Outside estate</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 text-right text-slate-700">{formatCurrency(grossValue)}</td>
+                      <td className="py-2.5 text-right text-slate-500">{biz.ownership_pct ?? 100}%</td>
+                      <td className="py-2.5 text-right pl-3">
+                        <input
+                          type="number"
+                          min="0"
+                          max="99"
+                          step="1"
+                          disabled={isExcluded}
+                          defaultValue={+(dloc * 100).toFixed(1)}
+                          onBlur={e => saveBusinessDiscount(b.id, 'dloc_pct', Number(e.target.value) / 100)}
+                          className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
+                          title="Discount for Lack of Control — appraiser-supplied"
+                        />
+                        <span className="text-xs text-slate-400 ml-0.5">%</span>
+                      </td>
+                      <td className="py-2.5 text-right pl-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="99"
+                          step="1"
+                          disabled={isExcluded}
+                          defaultValue={+(dlom * 100).toFixed(1)}
+                          onBlur={e => saveBusinessDiscount(b.id, 'dlom_pct', Number(e.target.value) / 100)}
+                          className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
+                          title="Discount for Lack of Marketability — appraiser-supplied"
+                        />
+                        <span className="text-xs text-slate-400 ml-0.5">%</span>
+                      </td>
+                      <td className="py-2.5 text-right font-medium text-slate-800">
+                        {isExcluded ? (
+                          <span className="text-slate-400 text-xs">—</span>
+                        ) : (
+                          formatCurrency(taxableValue)
+                        )}
+                        {combinedDiscount > 0 && !isExcluded && (
+                          <span className="block text-[10px] text-green-600">
+                            {(combinedDiscount * 100).toFixed(1)}% discount
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pl-3">
+                        <select
+                          value={biz.estate_inclusion_status ?? 'included'}
+                          onChange={e => saveBusinessDiscount(b.id, 'estate_inclusion_status', e.target.value)}
+                          disabled={savingBusinessId === b.id}
+                          className="text-xs border border-slate-200 rounded px-2 py-1 bg-white disabled:opacity-40"
+                        >
+                          <option value="included">Included</option>
+                          <option value="excluded_irrevocable">Irrevocable transfer</option>
+                          <option value="excluded_gifted">Gifted</option>
+                          <option value="excluded_other">Other exclusion</option>
+                        </select>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            DLOC + DLOM are applied multiplicatively: combined = 1 − (1−DLOC) × (1−DLOM).
+            Requires qualified appraisal per IRC §2031. Do not use estimated discounts.
+          </p>
+        </div>
+      )}
+
       {/* ── Real Estate & Titling ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <div className="flex items-center justify-between mb-4">
@@ -375,6 +595,78 @@ export default function EstateTab({
           </div>
         )}
       </div>
+
+      {/* ── Insurance Policies & Estate Inclusion ── */}
+      {(insurancePolicies ?? []).length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">Insurance Policies</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Estate-owned policies are included at death benefit value. Mark as excluded when
+                ILIT transfer is complete and effective.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Policy</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Type</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Death Benefit</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Cash Value</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-3">Estate Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {(insurancePolicies ?? []).map(p => {
+                  const pol = p as any
+                  const isExcluded = pol.estate_inclusion_status === 'excluded_irrevocable'
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50">
+                      <td className="py-2.5 font-medium text-slate-800">
+                        {p.policy_name ?? p.provider ?? 'Policy'}
+                        {p.is_ilit && (
+                          <span className="ml-2 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">ILIT</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 text-slate-500 capitalize text-xs">
+                        {p.insurance_type?.replace(/_/g, ' ') ?? '—'}
+                      </td>
+                      <td className="py-2.5 text-right text-slate-800">
+                        {p.death_benefit ? formatCurrency(p.death_benefit) : '—'}
+                        {isExcluded && (
+                          <span className="block text-[10px] text-green-600">Outside estate</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 text-right text-slate-500">
+                        {p.cash_value ? formatCurrency(p.cash_value) : '—'}
+                      </td>
+                      <td className="py-2.5 pl-3">
+                        <select
+                          value={pol.estate_inclusion_status ?? 'included'}
+                          onChange={e => saveInsuranceInclusion(p.id, e.target.value)}
+                          disabled={savingInsuranceId === p.id}
+                          className="text-xs border border-slate-200 rounded px-2 py-1 bg-white disabled:opacity-40"
+                        >
+                          <option value="included">Included in estate</option>
+                          <option value="excluded_irrevocable">ILIT — transfer complete</option>
+                          <option value="excluded_other">Other exclusion</option>
+                        </select>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            Only mark as excluded when the ILIT transfer is legally complete and effective.
+            An incomplete transfer may still be included in the gross estate under IRC §2035.
+          </p>
+        </div>
+      )}
 
       {/* ── Retirement & Investment Accounts ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">

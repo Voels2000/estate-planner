@@ -78,7 +78,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       person1_ss_benefit_62, person1_ss_benefit_67,
       person1_ss_pia, person2_ss_pia,
       person2_ss_benefit_62, person2_ss_benefit_67,
-      last_recommendation_at, created_at, updated_at
+      last_recommendation_at, created_at, updated_at, admin_expense_pct
     `)
     .eq('owner_id', clientId)
     .single()
@@ -175,7 +175,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .order('effective_year', { ascending: true }),
     supabase
       .from('businesses')
-      .select('id, name, entity_type, ownership_pct, estimated_value, owner_estimated_value, valuation_method, has_buy_sell_agreement, buy_sell_funded, has_key_person_insurance, succession_plan')
+      .select('id, name, entity_type, ownership_pct, estimated_value, owner_estimated_value, valuation_method, has_buy_sell_agreement, buy_sell_funded, has_key_person_insurance, succession_plan, dloc_pct, dlom_pct, estate_inclusion_status')
       .eq('owner_id', clientId),
     supabase
       .from('liabilities')
@@ -187,7 +187,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .eq('owner_id', clientId),
     supabase
       .from('insurance_policies')
-      .select('id, insurance_type, provider, policy_name, death_benefit, cash_value, annual_premium, is_ilit, is_employer_provided')
+      .select('id, insurance_type, provider, policy_name, death_benefit, cash_value, annual_premium, is_ilit, is_employer_provided, estate_inclusion_status')
       .eq('user_id', clientId),
     supabase.rpc('get_state_exemptions', {
       p_states: statesToFetch,

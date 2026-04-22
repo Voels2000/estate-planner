@@ -736,6 +736,42 @@ export default function EstateTaxClient({
                 sub={`${formatDollars(annualGifting)}/yr × ${giftingYears} yr`} />
             )
           )}
+          {/* Certain/Probable strategy reductions — current or committed transfers */}
+          {(composition?.outside_strategy_items ?? [])
+            .filter(s => s.confidence_level === 'certain' || s.confidence_level === 'probable')
+            .map((item, i) => (
+              <BreakdownRow
+                key={i}
+                label={`− ${item.strategy_source.replace(/_/g, ' ').replace(/\w/g, (c: string) => c.toUpperCase())}`}
+                value={item.amount}
+                muted
+                sub={`${item.confidence_level === 'certain' ? 'Completed transfer' : 'In progress'} — reduces taxable estate`}
+              />
+            ))
+          }
+
+          {/* Illustrative strategies — shown separately, NOT as current deductions */}
+          {(composition?.outside_strategy_items ?? []).filter(s => s.confidence_level === 'illustrative').length > 0 && (
+            <div className="py-3 border-b border-neutral-100">
+              <p className="text-xs font-medium text-neutral-500 mb-1">Illustrative strategies (not yet reducing taxable estate)</p>
+              {(composition?.outside_strategy_items ?? [])
+                .filter(s => s.confidence_level === 'illustrative')
+                .map((item, i) => (
+                  <div key={i} className="flex justify-between text-xs text-neutral-400 py-0.5">
+                    <span className="italic capitalize">
+                      {item.strategy_source.replace(/_/g, ' ').replace(/\w/g, (c: string) => c.toUpperCase())}
+                      {item.effective_year ? ` (est. ${item.effective_year})` : ''}
+                    </span>
+                    <span>{formatDollars(item.amount)} projected</span>
+                  </div>
+                ))
+              }
+              <p className="text-[10px] text-neutral-400 mt-1 italic">
+                Projected future transfers — assets remain in estate until conditions are met.
+              </p>
+            </div>
+          )}
+
           {composition?.adjusted_taxable_gifts != null && composition.adjusted_taxable_gifts > 0 && (
             <BreakdownRow label="+ Adjusted taxable gifts" value={composition.adjusted_taxable_gifts}
               sub="Post-1976 taxable gifts added back per IRC §2001(b)" color="text-red-600" />

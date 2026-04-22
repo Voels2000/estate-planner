@@ -90,14 +90,38 @@ function OutsideStructureRow({ item }: { item: OutsideStructureItem }) {
   )
 }
 
+// Strategy condition notes — shown for illustrative strategies
+const STRATEGY_CONDITIONS: Record<string, string> = {
+  grat:  'Projected remainder after term — requires grantor to survive GRAT term',
+  crt:   'Projected remainder to charity — requires trust completion',
+  clat:  'Projected remainder to heirs — requires trust completion',
+  gsl:   'Projected after sale completion',
+}
+
 function OutsideStrategyRow({ item }: { item: OutsideStrategyItem }) {
+  const condition = item.confidence_level === 'illustrative'
+    ? (STRATEGY_CONDITIONS[item.strategy_source] ?? 'Projected future transfer — conditions must be met')
+    : null
+  const effectiveYear = item.effective_year
   return (
-    <div className="flex items-center justify-between text-xs py-1">
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-gray-700 capitalize">{item.strategy_source.replace(/_/g, ' ')}</span>
-        <ConfidenceBadge level={item.confidence_level} />
+    <div className="flex flex-col text-xs py-1.5 border-b border-gray-50 last:border-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-gray-700 capitalize font-medium">
+            {item.strategy_source.replace(/_/g, ' ').replace(/\w/g, c => c.toUpperCase())}
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <ConfidenceBadge level={item.confidence_level} />
+            {effectiveYear && (
+              <span className="text-[10px] text-gray-400">est. {effectiveYear}</span>
+            )}
+          </div>
+        </div>
+        <span className="font-medium text-gray-700 shrink-0">{fmt(item.amount)}</span>
       </div>
-      <span className="font-medium text-gray-700 ml-2 shrink-0">{fmt(item.amount)}</span>
+      {condition && (
+        <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed italic">{condition}</p>
+      )}
     </div>
   )
 }
@@ -336,8 +360,10 @@ export default function EstateCompositionCard({
                 <span className="text-blue-700">{fmt(outside_strategy_total)}</span>
               </div>
               <p className="text-[10px] text-gray-400 pt-1 leading-relaxed">
-                Strategies worth discussing with your advisor. Confidence reflects
-                whether the transfer is complete, in progress, or illustrative.
+                <span className="font-medium text-green-700">Certain</span> = transfer complete.{' '}
+                <span className="font-medium text-blue-700">Probable</span> = in progress.{' '}
+                <span className="font-medium text-gray-600">Illustrative</span> = projected future transfer,
+                conditions must be met. Consult your advisor and attorney before acting.
               </p>
             </div>
           )}
