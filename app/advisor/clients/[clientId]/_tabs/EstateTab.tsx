@@ -172,7 +172,6 @@ export default function EstateTab({
     field: 'dloc_pct' | 'dlom_pct' | 'estate_inclusion_status',
     value: number | string,
   ) {
-    console.log('[saveBusinessDiscount]', businessId, field, value)
     if (field === 'estate_inclusion_status') {
       setBizInclusionStatus(prev => ({ ...prev, [businessId]: value as string }))
     }
@@ -183,9 +182,7 @@ export default function EstateTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
       })
-      console.log('[saveBusinessDiscount] response status:', businessPatchResponse.status)
       const businessPatchBody = await businessPatchResponse.json()
-      console.log('[saveBusinessDiscount] response body:', businessPatchBody)
       const compositionRefreshResponse = await fetch('/api/estate-composition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
