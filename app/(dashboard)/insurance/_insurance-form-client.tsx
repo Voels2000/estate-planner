@@ -5,7 +5,7 @@
 // Route: /insurance
 // ─────────────────────────────────────────
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 
@@ -89,7 +89,14 @@ export default function InsuranceFormClient({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const selectedTypeData = insuranceTypes.find(t => t.value === form.insurance_type)
+  const insuranceTypeLabelMap = useMemo(
+    () => new Map(insuranceTypes.map((t) => [t.value, t.label])),
+    [insuranceTypes],
+  )
+  const selectedTypeData = useMemo(
+    () => insuranceTypes.find((t) => t.value === form.insurance_type),
+    [insuranceTypes, form.insurance_type],
+  )
   const showDeathBenefit = selectedTypeData?.has_death_benefit ?? false
   const showCashValue = selectedTypeData?.has_cash_value ?? false
   const showIlit = selectedTypeData?.has_ilit_option ?? false
@@ -184,7 +191,7 @@ export default function InsuranceFormClient({
       {/* Policy list */}
       <div className="space-y-4">
         {policies.map((p) => {
-          const typeLabel = insuranceTypes.find(t => t.value === p.insurance_type)?.label ?? p.insurance_type ?? 'Insurance'
+          const typeLabel = insuranceTypeLabelMap.get(p.insurance_type ?? '') ?? p.insurance_type ?? 'Insurance'
           const primaryValue = p.death_benefit ?? p.coverage_amount ?? 0
           const ownerLabel = displayPolicyOwner(p.owner, person1Name, person2Name)
 

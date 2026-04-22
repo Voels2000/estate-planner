@@ -5,7 +5,7 @@
 // Route: /businesses
 // ─────────────────────────────────────────
 
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { RefSelect, CurrencyInput, PctInput, ToggleField } from '@/components/ui/RefSelect'
 import type { RefOption } from '@/lib/ref-data-fetchers'
 
@@ -55,6 +55,10 @@ export default function BusinessFormClient({
   const [editing, setEditing] = useState<Business | null>(null)
   const [saving, setSaving] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+  const entityTypeLabelMap = useMemo(
+    () => new Map(entityTypes.map((e) => [e.value, e.label])),
+    [entityTypes],
+  )
   void householdId
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +158,7 @@ export default function BusinessFormClient({
                   <h3 className="font-semibold text-neutral-900">{b.name}</h3>
                   {b.entity_type && (
                     <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">
-                      {entityTypes.find(e => e.value === b.entity_type)?.label ?? b.entity_type}
+                      {entityTypeLabelMap.get(b.entity_type ?? '') ?? b.entity_type}
                     </span>
                   )}
                 </div>

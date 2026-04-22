@@ -376,14 +376,12 @@ function ExpenseModal({
       if (editExpense) {
         const { error } = await supabase.from('expenses').update(payload).eq('id', editExpense.id)
         // Touch households.updated_at for staleness detection
-        const { data: { user: u } } = await supabase.auth.getUser()
-        if (u) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', u.id)
+        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user.id)
         if (error) throw error
       } else {
         const { error } = await supabase.from('expenses').insert({ ...payload, owner_id: user.id })
         // Touch households.updated_at for staleness detection
-        const { data: { user: u } } = await supabase.auth.getUser()
-        if (u) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', u.id)
+        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user.id)
         if (error) throw error
       }
       onSave()

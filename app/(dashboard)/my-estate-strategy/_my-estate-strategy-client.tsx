@@ -15,6 +15,24 @@ import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
+const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+})
+
+const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
+  gifting: 'Annual Gifting Program',
+  revocable_trust: 'Revocable Living Trust',
+  credit_shelter_trust: 'Credit Shelter Trust (CST)',
+  grat: 'Grantor Retained Annuity Trust (GRAT)',
+  crt: 'Charitable Remainder Trust (CRT)',
+  clat: 'Charitable Lead Annuity Trust (CLAT)',
+  daf: 'Donor Advised Fund (DAF)',
+  roth: 'Roth Conversion',
+  liquidity: 'Estate Liquidity Planning',
+}
+
 type Props = {
   householdId: string
   scenarioId: string | null
@@ -88,18 +106,7 @@ export default function MyEstateStrategyClient({
             </p>
             <ul className="space-y-1">
               {advisorRecommendations.map((r) => {
-                const LABELS: Record<string, string> = {
-                  gifting: 'Annual Gifting Program',
-                  revocable_trust: 'Revocable Living Trust',
-                  credit_shelter_trust: 'Credit Shelter Trust (CST)',
-                  grat: 'Grantor Retained Annuity Trust (GRAT)',
-                  crt: 'Charitable Remainder Trust (CRT)',
-                  clat: 'Charitable Lead Annuity Trust (CLAT)',
-                  daf: 'Donor Advised Fund (DAF)',
-                  roth: 'Roth Conversion',
-                  liquidity: 'Estate Liquidity Planning',
-                }
-                const displayLabel = r.label ?? LABELS[r.strategy_type] ?? r.strategy_type
+                const displayLabel = r.label ?? ADVISOR_STRATEGY_LABELS[r.strategy_type] ?? r.strategy_type
                 return (
                   <li key={r.strategy_type} className="flex items-center gap-2 text-sm text-blue-800">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
@@ -330,9 +337,5 @@ function MetricRow({
 
 function fmtEst(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(n)
+  return CURRENCY_FORMATTER.format(n)
 }
