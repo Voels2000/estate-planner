@@ -58,6 +58,16 @@ export default function ExpensesClient({
 }: ExpensesClientProps) {
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
+  const [userId, setUserId] = useState<string | null>(null)
+  // Fetch userId once on mount — reused by all staleness touches
+  useEffect(() => {
+    const sb = createClient()
+    sb.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null)
+    })
+  }, [])
+
+
   const [showModal, setShowModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -93,7 +103,7 @@ export default function ExpensesClient({
     const supabase = createClient()
     const { error } = await supabase.from('expenses').delete().eq('id', id)
     // Touch households.updated_at for staleness detection
-    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
+    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
     else setExpenses((prev) => prev.filter((e) => e.id !== id))
     setConfirmDeleteId(null)
@@ -365,17 +375,15 @@ function ExpenseModal({
 
       if (editExpense) {
         const { error } = await supabase.from('expenses').update(payload).eq('id', editExpense.id)
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-        }
+        // Touch households.updated_at for staleness detection
+        const { data: { user: u } } = await supabase.auth.getUser()
+        if (u) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', u.id)
         if (error) throw error
       } else {
         const { error } = await supabase.from('expenses').insert({ ...payload, owner_id: user.id })
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-        }
+        // Touch households.updated_at for staleness detection
+        const { data: { user: u } } = await supabase.auth.getUser()
+        if (u) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', u.id)
         if (error) throw error
       }
       onSave()

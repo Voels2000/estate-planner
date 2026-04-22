@@ -165,6 +165,16 @@ export default function RealEstateClient({
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
+  const [userId, setUserId] = useState<string | null>(null)
+  // Fetch userId once on mount — reused by all staleness touches
+  useEffect(() => {
+    const sb = createClient()
+    sb.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null)
+    })
+  }, [])
+
+
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow] = useState<RealEstate | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -194,7 +204,7 @@ export default function RealEstateClient({
     const supabase = createClient()
     const { error } = await supabase.from('real_estate').delete().eq('id', id)
     // Touch households.updated_at for staleness detection
-    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
+    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
     else setRows((prev) => prev.filter((r) => r.id !== id))
     setConfirmDeleteId(null)

@@ -31,6 +31,7 @@ export default function LiabilitiesPage() {
   const [person2Name, setPerson2Name] = useState('Person 2')
   const [liabilities, setLiabilities] = useState<Liability[]>([])
   const [liabilityTypes, setLiabilityTypes] = useState<LiabilityType[]>([])
+  const [userId, setUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editLiability, setEditLiability] = useState<Liability | null>(null)
@@ -67,13 +68,21 @@ export default function LiabilitiesPage() {
     setIsLoading(false)
   }, [])
 
+  // Fetch userId once on mount — reused by all staleness touches
+  useEffect(() => {
+    const sb = createClient()
+    sb.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null)
+    })
+  }, [])
+
   useEffect(() => { loadData() }, [loadData])
 
   async function handleDelete(id: string) {
     const supabase = createClient()
     const { error } = await supabase.from('liabilities').delete().eq('id', id)
     // Touch households.updated_at for staleness detection
-    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
+    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
     else setLiabilities(prev => prev.filter(l => l.id !== id))
     setConfirmDeleteId(null)
