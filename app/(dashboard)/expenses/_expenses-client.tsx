@@ -92,6 +92,8 @@ export default function ExpensesClient({
   async function handleDelete(id: string) {
     const supabase = createClient()
     const { error } = await supabase.from('expenses').delete().eq('id', id)
+    // Touch households.updated_at for staleness detection
+    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
     if (error) setError(error.message)
     else setExpenses((prev) => prev.filter((e) => e.id !== id))
     setConfirmDeleteId(null)

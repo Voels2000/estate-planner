@@ -72,6 +72,8 @@ export default function LiabilitiesPage() {
   async function handleDelete(id: string) {
     const supabase = createClient()
     const { error } = await supabase.from('liabilities').delete().eq('id', id)
+    // Touch households.updated_at for staleness detection
+    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
     if (error) setError(error.message)
     else setLiabilities(prev => prev.filter(l => l.id !== id))
     setConfirmDeleteId(null)

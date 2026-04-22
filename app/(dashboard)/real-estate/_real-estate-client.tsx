@@ -193,6 +193,8 @@ export default function RealEstateClient({
   async function handleDelete(id: string) {
     const supabase = createClient()
     const { error } = await supabase.from('real_estate').delete().eq('id', id)
+    // Touch households.updated_at for staleness detection
+    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user!.id)
     if (error) setError(error.message)
     else setRows((prev) => prev.filter((r) => r.id !== id))
     setConfirmDeleteId(null)
