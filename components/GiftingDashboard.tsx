@@ -27,6 +27,8 @@ interface GiftingSummary {
   success: boolean;
   tax_year: number;
   filing_status: string;
+  split_elected?: boolean;
+  per_recipient_limit?: number;
   exemption_per_person: number;
   total_exemption: number;
   lifetime_exemption_used: number;
@@ -165,9 +167,14 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
   const annualGiftRows = summary.gifts.filter(
     g => g.gift_type === 'annual' && g.tax_year === summary.tax_year,
   );
+  // Session 27 fix — use RPC values as single source of truth
+  // summary.split_elected and summary.per_recipient_limit come from
+  // calculate_gifting_summary which correctly handles all edge cases
   const annualSplitSelected =
-    summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true);
-  const annualPerRecipientLimit = annualSplitSelected ? 38000 : 19000;
+    (summary as any).split_elected ??
+    (summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true));
+  const annualPerRecipientLimit =
+    (summary as any).per_recipient_limit ?? (annualSplitSelected ? 38000 : 19000);
   const uniqueAnnualRecipients = new Set(
     annualGiftRows
       .map(g => (g.recipient_name ?? '').trim().toLowerCase())

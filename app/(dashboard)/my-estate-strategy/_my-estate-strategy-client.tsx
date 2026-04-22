@@ -235,6 +235,40 @@ export default function MyEstateStrategyClient({
                         emphasized
                       />
                     </div>
+
+                    {/* ── Inside / Outside sub-row ── */}
+                    {composition && col === today && (
+                      <div className="mt-3 pt-3 border-t border-neutral-100 space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-neutral-500">Inside taxable estate</span>
+                          <span className="font-medium text-blue-700">{fmtEst(composition.inside_total)}</span>
+                        </div>
+                        {(composition.outside_structure_total + composition.outside_strategy_total) > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-neutral-500">Outside taxable estate</span>
+                            <span className="font-medium text-green-700">
+                              {fmtEst(composition.outside_structure_total + composition.outside_strategy_total)}
+                            </span>
+                          </div>
+                        )}
+                        {composition.outside_strategy_items.filter(s => s.confidence_level === 'illustrative').length > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-neutral-400 italic">Illustrative strategies</span>
+                            <span className="text-neutral-400 italic">
+                              {fmtEst(composition.outside_strategy_items
+                                .filter(s => s.confidence_level === 'illustrative')
+                                .reduce((sum, s) => sum + s.amount, 0))}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-xs">
+                          <span className="text-neutral-500">Exemption remaining</span>
+                          <span className={`font-medium ${composition.exemption_remaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
+                            {fmtEst(composition.exemption_remaining)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
