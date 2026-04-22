@@ -51,3 +51,11 @@ export function getExemptionForScenario(
     ? OBBBA_2026.BASIC_EXCLUSION_MFJ
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
 }
+
+// ── Administration expense default ───────────────────────────────────────────
+// IRS Form 706 allows deduction of estate administration expenses
+// (executor fees, legal fees, accounting, appraisals, etc.).
+// Default: 2% of gross estate. Advisor can override per household
+// via the admin_expense_pct column on the households table.
+// Typical range: 1–4% depending on estate complexity.
+export const ADMIN_EXPENSE_DEFAULT_PCT = 0.02

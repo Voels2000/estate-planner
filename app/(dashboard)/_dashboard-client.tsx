@@ -15,6 +15,8 @@ import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
+import type { EstateComposition } from '@/lib/estate/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -111,6 +113,7 @@ type Props = {
     p2StartYear: number | null
     hasSpouse: boolean
   } | null
+  composition?: EstateComposition | null
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +305,7 @@ export function DashboardClient(props: Props) {
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
+    composition,
   } = props
 
   void consumerTier
@@ -667,6 +671,16 @@ export function DashboardClient(props: Props) {
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {composition && (
+            <div className="mb-6">
+              <EstateCompositionCard
+                composition={composition}
+                label="Your Estate"
+                snapshotLabel="Current snapshot"
+              />
             </div>
           )}
 

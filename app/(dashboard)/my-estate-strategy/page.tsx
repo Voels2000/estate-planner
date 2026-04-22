@@ -9,12 +9,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
-import {
-  buildStrategyHorizons,
-  computeBusinessOwnershipValue,
-  longevityAndSurvivor,
-} from '@/lib/my-estate-strategy/horizonSnapshots'
+import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 
 export default async function MyEstateStrategyPage() {
   const supabase = await createClient()
@@ -159,12 +156,7 @@ export default async function MyEstateStrategyPage() {
 
   const [
     { data: scenario },
-    { data: assets },
-    { data: liabilities },
     { data: realEstate },
-    { data: businesses },
-    { data: businessInterests },
-    { data: insurance },
     { data: stateBracketRows },
   ] = await Promise.all([
     household.base_case_scenario_id
@@ -174,18 +166,10 @@ export default async function MyEstateStrategyPage() {
           .eq('id', household.base_case_scenario_id)
           .single()
       : Promise.resolve({ data: null }),
-    supabase.from('assets').select('value').eq('owner_id', ownerId),
-    supabase.from('liabilities').select('balance').eq('owner_id', ownerId),
     supabase
       .from('real_estate')
       .select('current_value, mortgage_balance, is_primary_residence')
       .eq('owner_id', ownerId),
-    supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', ownerId),
-    supabase
-      .from('business_interests')
-      .select('fmv_estimated, total_entity_value, ownership_pct')
-      .eq('owner_id', ownerId),
-    supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', ownerId),
     supabase
       .from('state_estate_tax_rules')
       .select('min_amount, max_amount, rate_pct, exemption_amount')
@@ -195,20 +179,6 @@ export default async function MyEstateStrategyPage() {
   ])
 
   const stateBrackets = stateBracketRows ?? []
-
-  const financialAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
-  const realEstateEquity = (realEstate ?? []).reduce(
-    (s, r) => s + Number(r.current_value) - Number(r.mortgage_balance ?? 0),
-    0,
-  )
-  const businessValue = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
-  const insuranceValue = (insurance ?? [])
-    .filter((p) => !p.is_ilit)
-    .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
-
-  const totalAssets = financialAssets + realEstateEquity + businessValue + insuranceValue
-  const totalLiabilities = (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
-  const liveNetWorth = totalAssets - totalLiabilities
 
   const now = new Date()
   const currentYear = new Date().getFullYear()
@@ -243,10 +213,12 @@ export default async function MyEstateStrategyPage() {
 
   const scenarioRows = (scenario?.outputs_s1_first ?? null) as AnnualOutput[] | null
 
+  const composition = await classifyEstateAssets(supabase, household.id)
+
   const horizons = buildStrategyHorizons({
     currentYear,
     currentMonthYearLabel,
-    liveNetWorth,
+    liveNetWorth: composition.gross_estate,
     stateBrackets,
     household: {
       state_primary: household.state_primary,
@@ -286,6 +258,7 @@ export default async function MyEstateStrategyPage() {
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
         advisorRecommendations={advisorRecommendations ?? []}
+        composition={composition}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

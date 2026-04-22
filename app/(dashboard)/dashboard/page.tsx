@@ -16,6 +16,7 @@ import {
 } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { cookies } from 'next/headers'
 import { DashboardClient, type EstateTaxHorizonsProps } from '../_dashboard-client'
@@ -202,6 +203,11 @@ export default async function DashboardPage() {
     ? await computeEstateHealthScore(household.id, user!.id)
     : null
 
+  // ── Estate composition (gross estate for strategy horizons) ─────────────
+  const composition = household?.id
+    ? await classifyEstateAssets(supabase, household.id)
+    : null
+
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
   const baseCaseRows: YearRow[] = baseCaseScenario?.outputs_s1_first ?? []
 
@@ -227,7 +233,7 @@ export default async function DashboardPage() {
       ? buildStrategyHorizons({
           currentYear,
           currentMonthYearLabel,
-          liveNetWorth: netWorth,
+          liveNetWorth: composition?.gross_estate ?? netWorth,
           stateBrackets,
           household: {
             state_primary: household.state_primary,
@@ -428,6 +434,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
+      composition={composition}
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}
       totalLiabilities={totalLiabilities}

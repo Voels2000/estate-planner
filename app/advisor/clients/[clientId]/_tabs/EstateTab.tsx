@@ -10,6 +10,7 @@ import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
 import { createClient } from '@/lib/supabase/client'
 import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
+import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 
 const ESTATE_DOC_TYPES = [
   { type: 'will',              label: 'Last Will & Testament',     critical: true },
@@ -36,6 +37,7 @@ export default function EstateTab({
 }: ClientViewShellProps) {
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
+  const [composition, setComposition] = useState<import('@/lib/estate/types').EstateComposition | null>(null)
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -101,6 +103,25 @@ export default function EstateTab({
 
     fetchHasCSTStrategy()
 
+    // Fetch estate composition for EstateCompositionCard
+    const fetchComposition = async () => {
+      try {
+        const res = await fetch('/api/estate-composition', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ householdId: household.id }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (mounted && data.success) setComposition(data)
+        }
+      } catch (e) {
+        console.error('[EstateTab] composition fetch error:', e)
+      }
+    }
+
+    fetchComposition()
+
     return () => {
       mounted = false
     }
@@ -109,6 +130,15 @@ export default function EstateTab({
   return (
     <div className="space-y-6">
       <DisclaimerBanner />
+
+      {/* ── Estate Composition — Inside / Outside view ── */}
+      {composition && (
+        <EstateCompositionCard
+          composition={composition}
+          label={`${household.person1_first_name ?? 'Client'}'s Estate`}
+          snapshotLabel="Current snapshot"
+        />
+      )}
 
       <section>
         <div className="flex items-center justify-between mb-4">

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -152,6 +153,13 @@ export default async function EstateTaxPage() {
     excessAnnualGifts += Math.max(0, total - perRecipientLimit)
   })
 
+  // ── Estate composition — correct gross estate from RPC ──────────────────────
+  // Fetched server-side so the client component has it immediately without
+  // a loading state. Falls back gracefully if household has no data.
+  const composition = householdRow?.id
+    ? await classifyEstateAssets(supabase, householdRow.id)
+    : null
+
   return (
     <>
       {householdRow?.id && (
@@ -179,6 +187,7 @@ export default async function EstateTaxPage() {
         giftingSplitSelected={splitSelected}
         giftingPerRecipientLimit={perRecipientLimit}
         giftingExcessOverLimit={excessAnnualGifts}
+        composition={composition}
       />
     </>
   )

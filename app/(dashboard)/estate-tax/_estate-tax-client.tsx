@@ -1,11 +1,23 @@
 'use client'
 
+// app/(dashboard)/estate-tax/_estate-tax-client.tsx
+// Redesigned Session 27 — Estate Tax page
+//
+// Key changes from prior version:
+//   • Gross estate comes from calculate_estate_composition RPC (correct FMV)
+//   • §121 exclusion removed from gross estate — it's an income tax concept,
+//     not an estate tax concept. Informational note shown in RE section instead.
+//   • Businesses and insurance now included (were missing before)
+//   • State tax uses composition.gross_estate as base (not §121-adjusted value)
+//   • Strategy impact section shown only when strategy_line_items exist
+//   • EstateCompositionCard shown at top
+//   • Federal section shows "no tax" state clearly when under exemption
+
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
-  calcSection121Exclusion,
   computeFederalEstateTax,
   computeStateEstateTax,
   computeStateInheritanceTaxTotal,
@@ -14,46 +26,14 @@ import {
   type StateEstateTaxBracket,
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
+import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/estate-tax-projection'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
-
-const inputClass =
-  'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
+import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
+import type { EstateComposition, OutsideStrategyItem } from '@/lib/estate/types'
 
 // ─────────────────────────────────────────────────────────────
-// Presentational helpers
+// Helpers
 // ─────────────────────────────────────────────────────────────
-
-function SummaryCard({
-  label,
-  value,
-  sub,
-  highlight,
-}: {
-  label: string
-  value: string
-  sub?: string
-  highlight?: 'green' | 'red' | 'amber'
-}) {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
-      <p
-        className={`mt-1 text-xl font-bold ${
-          highlight === 'green'
-            ? 'text-green-600'
-            : highlight === 'red'
-              ? 'text-red-600'
-              : highlight === 'amber'
-                ? 'text-amber-600'
-                : 'text-neutral-900'
-        }`}
-      >
-        {value}
-      </p>
-      {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
-    </div>
-  )
-}
 
 function num(v: unknown): number {
   if (typeof v === 'number' && !Number.isNaN(v)) return v
@@ -88,9 +68,6 @@ function trustsExcludedSum(trusts: EstateTaxTrustRow[]): number {
   }, 0)
 }
 
-// ─────────────────────────────────────────────────────────────
-// States that have estate tax (for display label)
-// ─────────────────────────────────────────────────────────────
 const STATE_ESTATE_TAX_STATES = new Set([
   'CT', 'DC', 'HI', 'IL', 'ME', 'MD', 'MA', 'MN', 'NY', 'OR', 'RI', 'VT', 'WA',
 ])
@@ -103,17 +80,76 @@ const BENEFICIARY_CLASS_LABELS: Record<BeneficiaryClass, string> = {
   other: 'Other beneficiaries',
 }
 
+const CONFIDENCE_COLORS: Record<string, string> = {
+  certain:      'bg-green-100 text-green-800 border-green-200',
+  probable:     'bg-blue-100 text-blue-800 border-blue-200',
+  illustrative: 'bg-gray-100 text-gray-600 border-gray-200',
+}
+
+// ─────────────────────────────────────────────────────────────
+// Presentational helpers
+// ─────────────────────────────────────────────────────────────
+
+function SummaryCard({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string
+  value: string
+  sub?: string
+  highlight?: 'green' | 'red' | 'amber'
+}) {
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${
+        highlight === 'green' ? 'text-green-600'
+        : highlight === 'red' ? 'text-red-600'
+        : highlight === 'amber' ? 'text-amber-600'
+        : 'text-neutral-900'
+      }`}>
+        {value}
+      </p>
+      {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+function BreakdownRow({
+  label,
+  value,
+  muted,
+  sub,
+  bold,
+  color,
+}: {
+  label: string
+  value: number
+  muted?: boolean
+  sub?: string
+  bold?: boolean
+  color?: string
+}) {
+  return (
+    <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3 border-b border-neutral-100 last:border-0 ${muted ? 'text-neutral-500' : ''}`}>
+      <div>
+        <span className={bold ? 'text-sm font-semibold text-neutral-900' : muted ? 'text-sm' : 'text-sm font-medium text-neutral-800'}>
+          {label}
+        </span>
+        {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
+      </div>
+      <span className={`text-sm font-semibold tabular-nums ${color ?? (muted ? 'text-neutral-500' : 'text-neutral-900')}`}>
+        {muted && value >= 0 ? '−' : ''}{formatDollars(Math.abs(value))}
+      </span>
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
-
-type EstateTaxRealEstateRow = {
-  id?: string
-  current_value?: unknown
-  purchase_price?: unknown | null
-  is_primary_residence?: boolean
-  years_lived_in?: unknown | null
-}
 
 export type EstateTaxTrustRow = {
   id: string
@@ -132,29 +168,28 @@ export type EstateTaxTrustRow = {
 }
 
 const TRUST_TYPES = [
-  { value: 'revocable', label: 'Revocable' },
-  { value: 'irrevocable', label: 'Irrevocable' },
-  { value: 'qtip', label: 'QTIP' },
-  { value: 'bypass', label: 'Bypass' },
-  { value: 'charitable', label: 'Charitable' },
-  { value: 'special_needs', label: 'Special needs' },
+  { value: 'revocable',      label: 'Revocable' },
+  { value: 'irrevocable',    label: 'Irrevocable' },
+  { value: 'qtip',           label: 'QTIP' },
+  { value: 'bypass',         label: 'Bypass' },
+  { value: 'charitable',     label: 'Charitable' },
+  { value: 'special_needs',  label: 'Special needs' },
 ] as const
+
+const inputClass =
+  'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
 
 // ─────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────
 
 export default function EstateTaxClient({
-  assets,
   liabilities,
-  realEstate,
   trusts: initialTrusts,
   household,
   brackets: bracketRows,
   stateEstateTaxRules: stateEstateTaxRows,
   stateInheritanceTaxRules: stateInheritanceTaxRuleRows,
-  primaryResidenceValue,
-  giftingAnnualCapacity,
   giftingAnnualUsed,
   giftingAnnualRemaining,
   giftingAnnualLoggedTotal,
@@ -162,17 +197,16 @@ export default function EstateTaxClient({
   giftingSplitSelected,
   giftingPerRecipientLimit,
   giftingExcessOverLimit,
+  // Pre-fetched from page.tsx via classifyEstateAssets
+  composition: compositionProp,
 }: {
-  assets: Record<string, unknown>[]
   liabilities: Record<string, unknown>[]
-  realEstate: EstateTaxRealEstateRow[]
   trusts: EstateTaxTrustRow[]
   household: Record<string, unknown> | null
   brackets: Record<string, unknown>[]
   stateEstateTaxRules: Record<string, unknown>[]
   stateInheritanceTaxRules: Record<string, unknown>[]
-  /** Sum of FMV for `real_estate.is_primary_residence`; omit UI when null */
-  primaryResidenceValue: number | null
+  primaryResidenceValue?: number | null
   giftingAnnualCapacity?: number | null
   giftingAnnualUsed?: number | null
   giftingAnnualRemaining?: number | null
@@ -181,6 +215,12 @@ export default function EstateTaxClient({
   giftingSplitSelected?: boolean
   giftingPerRecipientLimit?: number | null
   giftingExcessOverLimit?: number | null
+  // New — from classifyEstateAssets RPC
+  composition?: EstateComposition | null
+  // Legacy props kept for backwards compat — no longer used for gross estate
+  assets?: Record<string, unknown>[]
+  realEstate?: Record<string, unknown>[]
+  businesses?: Record<string, unknown>[]
 }) {
   const router = useRouter()
   const [trusts, setTrusts] = useState<EstateTaxTrustRow[]>(initialTrusts)
@@ -189,6 +229,41 @@ export default function EstateTaxClient({
   const [showTrustModal, setShowTrustModal] = useState(false)
   const [editTrust, setEditTrust] = useState<EstateTaxTrustRow | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Composition state — use prop if available, else fetch client-side
+  const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
+  const [compositionLoading, setCompositionLoading] = useState(!compositionProp)
+
+  useEffect(() => {
+    if (compositionProp) {
+      setComposition(compositionProp)
+      setCompositionLoading(false)
+      return
+    }
+    // Fallback: fetch client-side if page didn't pass it as a prop
+    const householdId = household?.id as string | null
+    if (!householdId) return
+    setCompositionLoading(true)
+    fetch('/api/estate-composition', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+      .then(r => r.json())
+      .then((data: EstateComposition) => {
+        if (data.success) setComposition(data)
+      })
+      .catch(console.error)
+      .finally(() => setCompositionLoading(false))
+  }, [compositionProp, household?.id])
+
+  // Strategy line items — load to show strategy impact section
+  const [strategyItems, setStrategyItems] = useState<OutsideStrategyItem[]>([])
+  useEffect(() => {
+    if (composition?.outside_strategy_items?.length) {
+      setStrategyItems(composition.outside_strategy_items)
+    }
+  }, [composition])
 
   // ── Gifting inputs ──────────────────────────────────────────
   const [annualGifting, setAnnualGifting] = useState(19000)
@@ -224,41 +299,16 @@ export default function EstateTaxClient({
   const statePrimary = (household?.state_primary as string | null) ?? ''
   const stateCompare = (household?.state_compare as string | null) ?? ''
 
-  // ── Core asset calculations ─────────────────────────────────
-  const financialAssets = useMemo(
-    () => assets.reduce((s, a) => s + num(a.value), 0),
-    [assets],
-  )
-
-  const { realEstateIncluded, section121Total, realEstateFmv } = useMemo(() => {
-    let included = 0
-    let fmv = 0
-    let s121 = 0
-    for (const r of realEstate) {
-      const value = num(r.current_value)
-      fmv += value
-      const purchase = r.purchase_price != null ? num(r.purchase_price) : value
-      const gain = Math.max(0, value - purchase)
-      const excl = calcSection121Exclusion(
-        Boolean(r.is_primary_residence),
-        num(r.years_lived_in ?? 0),
-        filing,
-        gain,
-      )
-      s121 += excl
-      included += value - excl
-    }
-    return { realEstateIncluded: included, section121Total: s121, realEstateFmv: fmv }
-  }, [realEstate, filing])
-
+  // ── Gross estate from RPC — single source of truth ─────────
+  // Full FMV: financial + RE FMV + business (ownership-weighted) + insurance death benefit
+  // §121 does NOT apply here — it's an income tax concept for capital gains on sale,
+  // not an estate tax concept. The primary residence is included at full FMV per IRC §2031.
+  const grossEstate = composition?.gross_estate ?? 0
   const totalLiabilities = useMemo(
     () => liabilities.reduce((s, l) => s + num(l.balance), 0),
     [liabilities],
   )
-
   const trustsExcluded = useMemo(() => trustsExcludedSum(trusts), [trusts])
-  const grossEstate = financialAssets + realEstateIncluded
-  const grossEstateForState = financialAssets + realEstateFmv
 
   // ── Federal brackets ────────────────────────────────────────
   const brackets: EstateTaxBracket[] = useMemo(() => {
@@ -272,30 +322,46 @@ export default function EstateTaxClient({
       }))
   }, [bracketRows])
 
-  // ── Federal result (includes gifting) ───────────────────────
-  const federalResult =
-    brackets.length > 0
-      ? computeFederalEstateTax(
-          grossEstate,
-          totalLiabilities,
-          trustsExcluded,
-          filing,
-          brackets,
-          effectiveAnnualGifting,
-          effectiveGiftingYears,
-        )
-      : null
+  // ── Federal result ──────────────────────────────────────────
+  const federalResult = brackets.length > 0 && grossEstate > 0
+    ? computeFederalEstateTax(
+        grossEstate,
+        totalLiabilities,
+        trustsExcluded,
+        filing,
+        brackets,
+        effectiveAnnualGifting,
+        effectiveGiftingYears,
+      )
+    : null
 
-  // ── State estate tax rules ───────────────────────────────────
+  // ── Federal result WITH strategies applied ──────────────────
+  const strategyReductionTotal = strategyItems
+    .filter(s => s.confidence_level !== 'illustrative')
+    .reduce((sum, s) => sum + s.amount, 0)
+
+  const federalResultWithStrategies = brackets.length > 0 && grossEstate > 0 && strategyReductionTotal > 0
+    ? computeFederalEstateTax(
+        Math.max(0, grossEstate - strategyReductionTotal),
+        totalLiabilities,
+        trustsExcluded,
+        filing,
+        brackets,
+        effectiveAnnualGifting,
+        effectiveGiftingYears,
+      )
+    : null
+
+  // ── State estate tax brackets ────────────────────────────────
   const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(() => {
     const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
     return stateEstateTaxRows
       .filter(r => num(r.tax_year) === latestYear)
       .map((r) => ({
-        state: String(r.state ?? '').trim().toUpperCase(),
-        min_amount: num(r.min_amount),
-        max_amount: num(r.max_amount),
-        rate_pct: num(r.rate_pct),
+        state:            String(r.state ?? '').trim().toUpperCase(),
+        min_amount:       num(r.min_amount),
+        max_amount:       num(r.max_amount),
+        rate_pct:         num(r.rate_pct),
         exemption_amount: num(r.exemption_amount),
       }))
   }, [stateEstateTaxRows])
@@ -306,72 +372,95 @@ export default function EstateTaxClient({
     return stateInheritanceTaxRuleRows
       .filter(r => num(r.tax_year) === latestYear)
       .map((r) => ({
-        state: String(r.state ?? '').trim().toUpperCase(),
+        state:             String(r.state ?? '').trim().toUpperCase(),
         beneficiary_class: String(r.beneficiary_class ?? ''),
-        min_amount: num(r.min_amount),
-        max_amount: num(r.max_amount),
-        rate_pct: num(r.rate_pct),
-        exemption_amount: num(r.exemption_amount),
+        min_amount:        num(r.min_amount),
+        max_amount:        num(r.max_amount),
+        rate_pct:          num(r.rate_pct),
+        exemption_amount:  num(r.exemption_amount),
       }))
   }, [stateInheritanceTaxRuleRows])
 
   // ── State estate tax results ─────────────────────────────────
+  // Uses gross_estate from composition RPC as base — consistent with all other pages.
+  // computeStateEstateTaxFromBrackets uses the bracket exemption amount directly.
   const isMFJ = filing === 'married_joint'
-  const taxableForStateMD = isMFJ ? grossEstateForState * 0.5 : grossEstateForState
+  const hasSpouse = household?.has_spouse === true
+
+  const primaryStateBrackets = useMemo(
+    () => stateEstateBrackets.filter(b => b.state === statePrimary?.toUpperCase()),
+    [stateEstateBrackets, statePrimary],
+  )
+
+  const primaryStateExemption = primaryStateBrackets[0]?.exemption_amount ?? 0
+
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
-    if (isMFJ) {
-      // Married: no state estate tax at first death via marital deduction
+    if (isMFJ && hasSpouse) {
+      // First death: marital deduction applies — no state estate tax
       return {
-        state: statePrimary.toUpperCase(),
-        state_taxable: 0,
-        state_exemption:
-          stateEstateBrackets.find(b => b.state === statePrimary.toUpperCase())?.exemption_amount ?? 0,
+        state:            statePrimary.toUpperCase(),
+        state_taxable:    0,
+        state_exemption:  primaryStateExemption,
         state_estate_tax: 0,
+        is_first_death:   true,
       }
     }
-    return computeStateEstateTax(
-      statePrimary.toUpperCase(),
-      num(federalResult?.taxable_estate),
-      stateEstateBrackets,
-    )
-  }, [statePrimary, isMFJ, federalResult, stateEstateBrackets])
+    return {
+      ...computeStateEstateTax(
+        statePrimary.toUpperCase(),
+        num(federalResult?.taxable_estate),
+        stateEstateBrackets,
+      ),
+      is_first_death: false,
+    }
+  }, [statePrimary, isMFJ, hasSpouse, federalResult, stateEstateBrackets, primaryStateExemption])
+
+  const compareStateBrackets = useMemo(
+    () => stateEstateBrackets.filter(b => b.state === stateCompare?.toUpperCase()),
+    [stateEstateBrackets, stateCompare],
+  )
 
   const compareStateTax = useMemo(() => {
     const sc = stateCompare?.toUpperCase()
     if (!sc || sc === statePrimary?.toUpperCase()) return null
     if (!STATE_ESTATE_TAX_STATES.has(sc)) return null
-    if (isMFJ) {
+    if (isMFJ && hasSpouse) {
       return {
-        state: sc,
-        state_taxable: 0,
-        state_exemption: stateEstateBrackets.find(b => b.state === sc)?.exemption_amount ?? 0,
+        state:            sc,
+        state_taxable:    0,
+        state_exemption:  compareStateBrackets[0]?.exemption_amount ?? 0,
         state_estate_tax: 0,
+        is_first_death:   true,
       }
     }
-    return computeStateEstateTax(sc, num(federalResult?.taxable_estate), stateEstateBrackets)
-  }, [stateCompare, statePrimary, isMFJ, federalResult, stateEstateBrackets])
+    return {
+      ...computeStateEstateTax(sc, num(federalResult?.taxable_estate), stateEstateBrackets),
+      is_first_death: false,
+    }
+  }, [stateCompare, statePrimary, isMFJ, hasSpouse, federalResult, stateEstateBrackets, compareStateBrackets])
 
-  // ── State inheritance tax results ────────────────────────────
-  const totalForInheritance = taxableForStateMD // was taxableForState
+  const showComparison =
+    !!stateCompare &&
+    stateCompare.toUpperCase() !== statePrimary?.toUpperCase() &&
+    (compareStateTax !== null || true)
+
+  // ── State inheritance tax ────────────────────────────────────
+  const totalForInheritance = isMFJ ? grossEstate * 0.5 : grossEstate
   const inheritanceShareDollars = useMemo<Partial<Record<BeneficiaryClass, number>>>(() => {
     const total = inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
     if (total === 0) return {}
     return {
-      spouse: (inheritShares.spouse / total) * totalForInheritance,
-      child: (inheritShares.child / total) * totalForInheritance,
+      spouse:  (inheritShares.spouse  / total) * totalForInheritance,
+      child:   (inheritShares.child   / total) * totalForInheritance,
       sibling: (inheritShares.sibling / total) * totalForInheritance,
-      other: (inheritShares.other / total) * totalForInheritance,
+      other:   (inheritShares.other   / total) * totalForInheritance,
     }
   }, [inheritShares, totalForInheritance])
 
   const primaryInheritanceTax = useMemo(() => {
     if (!statePrimary || !STATE_INHERITANCE_TAX_STATES.has(statePrimary.toUpperCase())) return null
-    return computeStateInheritanceTaxTotal(
-      statePrimary.toUpperCase(),
-      inheritanceShareDollars,
-      stateInheritanceRules,
-    )
+    return computeStateInheritanceTaxTotal(statePrimary.toUpperCase(), inheritanceShareDollars, stateInheritanceRules)
   }, [statePrimary, inheritanceShareDollars, stateInheritanceRules])
 
   const compareInheritanceTax = useMemo(() => {
@@ -380,12 +469,6 @@ export default function EstateTaxClient({
     if (!STATE_INHERITANCE_TAX_STATES.has(sc)) return null
     return computeStateInheritanceTaxTotal(sc, inheritanceShareDollars, stateInheritanceRules)
   }, [stateCompare, statePrimary, inheritanceShareDollars, stateInheritanceRules])
-
-  // ── Show comparison column? ──────────────────────────────────
-  const showComparison =
-    !!stateCompare &&
-    stateCompare.toUpperCase() !== statePrimary?.toUpperCase() &&
-    (compareStateTax !== null || compareInheritanceTax !== null)
 
   // ── Trust CRUD ───────────────────────────────────────────────
   const loadTrusts = useCallback(async () => {
@@ -401,38 +484,18 @@ export default function EstateTaxClient({
     else setTrusts((data as EstateTaxTrustRow[]) ?? [])
   }, [])
 
-  function openAddTrust() { setEditTrust(null); setShowTrustModal(true); setError(null) }
-  function openEditTrust(t: EstateTaxTrustRow) { setEditTrust(t); setShowTrustModal(true); setError(null) }
-
-  // ── Shared breakdown row ─────────────────────────────────────
-  function breakdownRow(label: string, value: number, opts?: { muted?: boolean; sub?: string }) {
-    return (
-      <div
-        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3 border-b border-neutral-100 last:border-0 ${
-          opts?.muted ? 'text-neutral-500' : ''
-        }`}
-      >
-        <div>
-          <span className={opts?.muted ? 'text-sm' : 'text-sm font-medium text-neutral-800'}>
-            {label}
-          </span>
-          {opts?.sub && <p className="text-xs text-neutral-400 mt-0.5">{opts.sub}</p>}
-        </div>
-        <span className={`text-sm font-semibold tabular-nums ${opts?.muted ? '' : 'text-neutral-900'}`}>
-          {opts?.muted && value >= 0 ? '−' : ''}
-          {formatDollars(Math.abs(value))}
-        </span>
-      </div>
-    )
-  }
-
-  // ── Slider helper ────────────────────────────────────────────
   function updateInheritShare(cls: BeneficiaryClass, pct: number) {
     setInheritShares((prev) => ({ ...prev, [cls]: Math.max(0, Math.min(100, pct)) }))
   }
 
   const totalSliderPct =
     inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
+
+  const hasStrategies = strategyItems.length > 0
+  const taxSavingsFromStrategies =
+    federalResult && federalResultWithStrategies
+      ? Math.max(0, federalResult.net_estate_tax - federalResultWithStrategies.net_estate_tax)
+      : 0
 
   // ─────────────────────────────────────────────────────────────
   // Render
@@ -445,7 +508,7 @@ export default function EstateTaxClient({
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Federal + state estate tax picture (illustrative only—not tax advice).
+          Federal and state estate tax exposure. Strategies marked by your advisor appear below.
         </p>
       </div>
 
@@ -455,67 +518,238 @@ export default function EstateTaxClient({
         </p>
       )}
 
+      {/* ── Estate Composition Card ── */}
+      {compositionLoading ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse mb-6">
+          <div className="h-4 bg-gray-100 rounded w-48 mb-4" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-32 bg-gray-100 rounded-lg" />
+            <div className="h-32 bg-gray-100 rounded-lg" />
+          </div>
+        </div>
+      ) : composition ? (
+        <div className="mb-6">
+          <EstateCompositionCard
+            composition={composition}
+            label="Your Estate"
+            snapshotLabel="Current snapshot"
+          />
+        </div>
+      ) : null}
+
+      {/* ── Federal Estate Summary ── */}
       <CollapsibleSection
         title="Federal estate summary"
         subtitle="Gross estate, taxable estate, exemption, and federal tax"
         defaultOpen={true}
         storageKey="estate-tax-federal-summary"
       >
-      {primaryResidenceValue != null && primaryResidenceValue > 0 && (
-        <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-4 text-sm text-neutral-700">
-          <p className="font-semibold text-neutral-900">
-            ℹ️ Primary Residence &amp; Married Couples
-          </p>
-          <p className="mt-2 leading-relaxed">
-            Your primary residence (est. {formatDollars(primaryResidenceValue)}) is excluded from this
-            first-death estimate. For married couples, the residence typically passes to the surviving
-            spouse tax-free at first death via the marital deduction.
-          </p>
-          <p className="mt-2 leading-relaxed">
-            At second death, the residence is fully included in the surviving spouse&apos;s taxable
-            estate — which can significantly increase tax exposure. Your estate attorney can help
-            structure ownership to minimize this impact.
-          </p>
-        </div>
-      )}
+        {grossEstate === 0 && !compositionLoading ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            <p className="font-semibold">No estate data found</p>
+            <p className="mt-1">Add assets, real estate, and businesses to see your estate tax picture.</p>
+          </div>
+        ) : (
+          <>
+            {/* Federal summary cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <SummaryCard
+                label="Gross Estate"
+                value={formatDollars(grossEstate)}
+                sub="Financial + real estate FMV + business + insurance"
+              />
+              <SummaryCard
+                label="Taxable Estate"
+                value={federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
+                sub="After liabilities, trusts & gifting"
+              />
+              <SummaryCard
+                label="Federal Exemption"
+                value={federalResult ? formatDollars(federalResult.exemption_used) : '—'}
+                sub={filing === 'married_joint' ? '$30M MFJ (OBBBA 2026)' : '$15M single (OBBBA 2026)'}
+              />
+              <SummaryCard
+                label="Federal Estate Tax"
+                value={federalResult ? formatDollars(federalResult.net_estate_tax) : '—'}
+                sub={
+                  federalResult && federalResult.net_estate_tax > 0
+                    ? 'Estimated federal transfer tax'
+                    : 'No estimated federal tax due'
+                }
+                highlight={!federalResult ? undefined : federalResult.net_estate_tax > 0 ? 'red' : 'green'}
+              />
+            </div>
 
-      {/* ── Federal summary cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <SummaryCard
-          label="Gross Estate"
-          value={formatDollars(grossEstate)}
-          sub="Financial assets + real estate (§121-adjusted)"
-        />
-        <SummaryCard
-          label="Taxable Estate"
-          value={federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
-          sub="After liabilities, trusts & gifting"
-        />
-        <SummaryCard
-          label="Federal Exemption Used"
-          value={federalResult ? formatDollars(federalResult.exemption_used) : '—'}
-          sub="Sheltered amount (reporting)"
-        />
-        <SummaryCard
-          label="Federal Estate Tax"
-          value={federalResult ? formatDollars(federalResult.net_estate_tax) : '—'}
-          sub={
-            federalResult && federalResult.net_estate_tax > 0
-              ? 'Estimated federal transfer tax'
-              : 'No estimated federal tax due'
-          }
-          highlight={!federalResult ? undefined : federalResult.net_estate_tax > 0 ? 'red' : 'green'}
-        />
-      </div>
+            {/* No-tax green state */}
+            {federalResult && federalResult.net_estate_tax === 0 && (
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 mb-4">
+                <p className="font-semibold">No federal estate tax estimated</p>
+                <p className="mt-1 leading-relaxed">
+                  Your taxable estate of {formatDollars(federalResult.taxable_estate)} is below the{' '}
+                  {filing === 'married_joint' ? '$30,000,000 MFJ' : '$15,000,000 single'} federal exemption
+                  under the OBBBA 2026. Federal estate tax becomes a consideration only when your taxable
+                  estate exceeds this threshold.
+                </p>
+                {composition && composition.exemption_remaining > 0 && (
+                  <p className="mt-1.5 text-green-700">
+                    Exemption remaining: <span className="font-semibold">{formatDollars(composition.exemption_remaining)}</span>
+                  </p>
+                )}
+              </div>
+            )}
 
-      {!federalResult && (
-        <p className="mb-0 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          No valid rows in <code className="text-xs">federal_estate_tax_brackets</code>. Add brackets to
-          compute tax.
-        </p>
-      )}
+            {/* Note about §121 */}
+            {composition && composition.inside_real_estate > 0 && (
+              <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-xs text-sky-800 mb-4">
+                <span className="font-semibold">Note on primary residence: </span>
+                Your real estate is included at full fair market value in the gross estate per IRC §2031.
+                The §121 income tax exclusion (up to $500,000 MFJ on capital gains) applies only if
+                the estate or heirs later <em>sell</em> the property — not to estate tax inclusion itself.
+                Your estate attorney can advise on post-death sale planning.
+              </div>
+            )}
+          </>
+        )}
       </CollapsibleSection>
 
+      {/* ── Strategy Impact — only shown when strategies exist ── */}
+      {hasStrategies && (
+        <CollapsibleSection
+          title="Strategy impact"
+          subtitle="How your advisor's recommended strategies affect your estate tax"
+          defaultOpen={true}
+          storageKey="estate-tax-strategy-impact"
+        >
+          <div className="space-y-4">
+            {/* Before / After summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 mb-1">
+                  Without strategies
+                </p>
+                <p className="text-xl font-bold text-neutral-900">
+                  {federalResult ? formatDollars(federalResult.net_estate_tax) : '—'}
+                </p>
+                <p className="text-xs text-neutral-400 mt-0.5">Est. federal tax</p>
+              </div>
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-green-700 mb-1">
+                  With strategies
+                </p>
+                <p className="text-xl font-bold text-green-700">
+                  {federalResultWithStrategies
+                    ? formatDollars(federalResultWithStrategies.net_estate_tax)
+                    : federalResult
+                    ? formatDollars(federalResult.net_estate_tax)
+                    : '—'}
+                </p>
+                <p className="text-xs text-green-600 mt-0.5">Est. federal tax</p>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-blue-700 mb-1">
+                  Potential savings
+                </p>
+                <p className="text-xl font-bold text-blue-700">
+                  {formatDollars(taxSavingsFromStrategies)}
+                </p>
+                <p className="text-xs text-blue-600 mt-0.5">Est. federal tax reduction</p>
+              </div>
+            </div>
+
+            {/* Strategy line items */}
+            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+              <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
+                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">
+                  Advisor-recommended strategies
+                </p>
+              </div>
+              <div className="divide-y divide-neutral-100">
+                {strategyItems.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-3">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-sm font-medium text-neutral-800 capitalize">
+                        {item.strategy_source.replace(/_/g, ' ')}
+                      </span>
+                      <span className={`inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${CONFIDENCE_COLORS[item.confidence_level] ?? CONFIDENCE_COLORS.illustrative}`}>
+                        {item.confidence_level.charAt(0).toUpperCase() + item.confidence_level.slice(1)}
+                      </span>
+                    </div>
+                    <div className="text-right ml-4 shrink-0">
+                      <span className="text-sm font-semibold text-green-700">
+                        −{formatDollars(item.amount)}
+                      </span>
+                      <p className="text-xs text-neutral-400">estate reduction</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-3 border-t border-neutral-200 bg-neutral-50 flex justify-between items-center">
+                <span className="text-xs font-semibold text-neutral-700">
+                  Total estate reduction (certain + probable)
+                </span>
+                <span className="text-sm font-bold text-green-700">
+                  −{formatDollars(strategyReductionTotal)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-400">
+              Illustrative strategies are excluded from the tax reduction calculation. Consult your
+              advisor and attorney before implementing any strategy.
+            </p>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* ── Federal Breakdown ── */}
+      <CollapsibleSection
+        title="Federal estate breakdown"
+        defaultOpen={false}
+        storageKey="estate-tax-federal-breakdown"
+      >
+        <div className="mt-0">
+          <BreakdownRow label="Gross estate (FMV)" value={grossEstate}
+            sub="Financial assets + real estate FMV + business interests + insurance death benefit" />
+          <BreakdownRow label="Liabilities" value={totalLiabilities} muted
+            sub="Mortgages, loans, and other debts" />
+          {trustsExcluded > 0 && (
+            <BreakdownRow label="Trusts excluded" value={trustsExcluded} muted />
+          )}
+          {composition?.admin_expense != null && composition.admin_expense > 0 && (
+            <BreakdownRow label="Admin expense (est.)" value={composition.admin_expense} muted
+              sub={`${((composition.admin_expense_pct ?? 0.02) * 100).toFixed(0)}% of gross estate — executor fees, legal, accounting`} />
+          )}
+          {useSyncedGifting ? (
+            <>
+              {syncedEligibleAnnual > 0 && (
+                <BreakdownRow label="Annual exclusion gifts (current year)" value={syncedEligibleAnnual} muted
+                  sub="Applied using per-recipient annual exclusion limits" />
+              )}
+              {syncedLifetimeOverflow > 0 && (
+                <BreakdownRow label="Taxable gifts using lifetime exemption" value={syncedLifetimeOverflow} muted
+                  sub="Amounts above annual exclusion limits still reduce the estate" />
+              )}
+            </>
+          ) : (
+            annualGifting > 0 && (
+              <BreakdownRow label="Lifetime gifting reduction" value={annualGifting * giftingYears} muted
+                sub={`${formatDollars(annualGifting)}/yr × ${giftingYears} yr`} />
+            )
+          )}
+          {composition?.adjusted_taxable_gifts != null && composition.adjusted_taxable_gifts > 0 && (
+            <BreakdownRow label="+ Adjusted taxable gifts" value={composition.adjusted_taxable_gifts}
+              sub="Post-1976 taxable gifts added back per IRC §2001(b)" color="text-red-600" />
+          )}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-4 border-t border-neutral-200">
+            <span className="text-base font-semibold text-neutral-900">Taxable estate</span>
+            <span className="text-base font-bold text-neutral-900 tabular-nums">
+              {federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
+            </span>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* ── Gifting Scenario ── */}
       <CollapsibleSection
         title="Gifting scenario"
         subtitle={
@@ -529,76 +763,45 @@ export default function EstateTaxClient({
         storageKey="estate-tax-gifting-scenario"
       >
         <p className="text-xs text-neutral-500 mb-4">
-          Annual gifting reduces the taxable estate used for both federal and state calculations.
-          Annual exclusion is {formatDollars(19000)} per donor. Married couples can treat gifts as
-          split gifts up to {formatDollars(38000)} per donee only if both spouses are U.S.
-          citizens/residents, remain married for the year, and timely file Form 709 consenting to
-          gift-splitting.
+          Annual gifting reduces the taxable estate. Married couples may elect gift-splitting
+          up to $38,000 per donee by filing Form 709 consenting to split gifts.
         </p>
-        {giftingAnnualCapacity != null &&
-          giftingAnnualUsed != null &&
-          giftingAnnualRemaining != null && (
-            <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
-              <p className="font-medium text-neutral-800">
-                Gifting Strategy sync{giftingTaxYear ? ` (${giftingTaxYear})` : ''}
+
+        {giftingAnnualUsed != null && giftingAnnualRemaining != null && (
+          <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
+            <p className="font-medium text-neutral-800">
+              Gifting Strategy sync{giftingTaxYear ? ` (${giftingTaxYear})` : ''}
+            </p>
+            <p className="mt-1">
+              Eligible annual gifts: {formatDollars(giftingAnnualUsed)}.
+              {giftingPerRecipientLimit != null && (
+                <> Per-recipient limit: {formatDollars(giftingPerRecipientLimit)}
+                {giftingSplitSelected ? ' (split-gifting).' : '.'}</>
+              )}
+            </p>
+            {giftingAnnualLoggedTotal != null && (
+              <p className="mt-1">Total annual gifts logged: {formatDollars(giftingAnnualLoggedTotal)}.</p>
+            )}
+            {(giftingExcessOverLimit ?? 0) > 0 && (
+              <p className="mt-1 text-amber-700">
+                {formatDollars(giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit.
               </p>
-              <p className="mt-1">
-                Eligible annual gifts applied to estate-tax reduction: {formatDollars(giftingAnnualUsed)}.
-                {giftingPerRecipientLimit != null && (
-                  <>
-                    {' '}Per-recipient limit used: {formatDollars(giftingPerRecipientLimit)}
-                    {giftingSplitSelected ? ' (gift-splitting selected).' : ' (gift-splitting not selected).'}
-                  </>
-                )}
-              </p>
-              {giftingAnnualLoggedTotal != null && (
-                <p className="mt-1">
-                  Total annual gifts logged: {formatDollars(giftingAnnualLoggedTotal)}.
-                </p>
-              )}
-              {(giftingExcessOverLimit ?? 0) > 0 && (
-                <p className="mt-1 text-amber-700">
-                  {formatDollars(giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit and is
-                  not included in the annual exclusion reduction.
-                </p>
-              )}
-              {filing === 'married_joint' && !giftingSplitSelected && (
-                <p className="mt-1 text-amber-700">
-                  Gift-splitting was not selected in Gifting Strategy, so this page uses the{' '}
-                  {formatDollars(19000)} limit.
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
-              Annual gift amount ($)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="1000"
-              value={annualGifting}
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Annual gift amount ($)</label>
+            <input type="number" min="0" step="1000" value={annualGifting}
               onChange={(e) => setAnnualGifting(Math.max(0, Number(e.target.value) || 0))}
-              className={inputClass}
-            />
+              className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
-              Years of gifting
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="40"
-              step="1"
-              value={giftingYears}
-              onChange={(e) =>
-                setGiftingYears(Math.max(1, Math.min(40, Number(e.target.value) || 1)))
-              }
-              className={inputClass}
-            />
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Years of gifting</label>
+            <input type="number" min="1" max="40" step="1" value={giftingYears}
+              onChange={(e) => setGiftingYears(Math.max(1, Math.min(40, Number(e.target.value) || 1)))}
+              className={inputClass} />
           </div>
           <div className="flex flex-col justify-end">
             <p className="text-xs text-neutral-500 mb-1">Total gifting reduction</p>
@@ -607,79 +810,14 @@ export default function EstateTaxClient({
             </p>
             {federalResult && (
               <p className="text-xs text-neutral-400 mt-0.5">
-                Taxable estate reduced to {formatDollars(federalResult.taxable_estate)}
-              </p>
-            )}
-            {useSyncedGifting && (
-              <p className="text-xs text-neutral-500 mt-1">
-                Synced from Gifting Strategy (current tax year): eligible annual + lifetime-overflow taxable gifts.
+                Taxable estate: {formatDollars(federalResult.taxable_estate)}
               </p>
             )}
           </div>
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection
-        title="Federal estate breakdown"
-        defaultOpen={false}
-        storageKey="estate-tax-federal-breakdown"
-      >
-        <div className="mt-0">
-          {breakdownRow('Financial assets', financialAssets)}
-          {breakdownRow(
-            'Real estate',
-            realEstateIncluded,
-            section121Total > 0
-              ? {
-                  sub: `FMV ${formatDollars(realEstateFmv)} less §121 exclusion ${formatDollars(section121Total)} on qualifying primary residence gain`,
-                }
-              : realEstate.length > 0
-                ? { sub: 'Included at current value (no §121 reduction)' }
-                : undefined,
-          )}
-          {breakdownRow('Liabilities', totalLiabilities, { muted: true })}
-          {breakdownRow('Trusts excluded', trustsExcluded, { muted: true })}
-          {useSyncedGifting ? (
-            <>
-              {syncedEligibleAnnual > 0 &&
-                breakdownRow(
-                  'Annual exclusion gifts (current year)',
-                  syncedEligibleAnnual,
-                  {
-                    muted: true,
-                    sub: 'Applied using per-recipient annual exclusion limits',
-                  },
-                )}
-              {syncedLifetimeOverflow > 0 &&
-                breakdownRow(
-                  'Taxable gifts using lifetime exemption',
-                  syncedLifetimeOverflow,
-                  {
-                    muted: true,
-                    sub: 'Amounts above annual exclusion limits still reduce the estate',
-                  },
-                )}
-            </>
-          ) : (
-            annualGifting > 0 &&
-            breakdownRow(
-              'Lifetime gifting reduction',
-              annualGifting * giftingYears,
-              {
-                muted: true,
-                sub: `${formatDollars(annualGifting)}/yr × ${giftingYears} yr`,
-              },
-            )
-          )}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-4 border-t border-neutral-200">
-            <span className="text-base font-semibold text-neutral-900">Taxable estate</span>
-            <span className="text-base font-bold text-neutral-900 tabular-nums">
-              {federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
-            </span>
-          </div>
-        </div>
-      </CollapsibleSection>
-
+      {/* ── State Estate Tax ── */}
       {(primaryStateTax || compareStateTax || statePrimary) && (
         <CollapsibleSection
           title="State estate tax"
@@ -687,78 +825,55 @@ export default function EstateTaxClient({
           storageKey="estate-tax-state-estate"
         >
           {!statePrimary && (
-            <p className="text-sm text-neutral-500">
-              Set your primary state in Profile to see state estate tax.
-            </p>
+            <p className="text-sm text-neutral-500">Set your primary state in Profile to see state estate tax.</p>
           )}
-
           {statePrimary && !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase()) && (
             <p className="text-sm text-neutral-500">
-              <span className="font-medium">{statePrimary.toUpperCase()}</span> does not have a state
-              estate tax.
+              <span className="font-medium">{statePrimary.toUpperCase()}</span> does not have a state estate tax.
             </p>
           )}
 
           {(primaryStateTax || compareStateTax) && (
-            <div className={`grid gap-6 ${showComparison ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 ${showComparison && compareStateTax ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+
               {/* Primary state */}
               {primaryStateTax && (
                 <div>
                   <p className="text-sm font-semibold text-neutral-700 mb-3">
                     {statePrimary.toUpperCase()} — Primary state
                   </p>
-                  {isMFJ && (
+                  {isMFJ && hasSpouse && (
                     <div className="mb-3 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 text-xs text-blue-800">
                       <p className="font-semibold mb-1">First Death — Marital Deduction Applies</p>
                       <p className="leading-relaxed">
-                        For married couples, the entire estate passes to the surviving spouse
-                        tax-free at first death via the unlimited marital deduction.
-                        State estate tax at first death = $0.
+                        The estate passes to the surviving spouse tax-free at first death via the
+                        unlimited marital deduction. State estate tax at first death = $0.
                       </p>
                       <p className="mt-1.5 leading-relaxed">
-                        At the second death, {statePrimary.toUpperCase()} applies a{' '}
+                        At second death, {statePrimary.toUpperCase()} applies a{' '}
                         <span className="font-semibold">{formatDollars(primaryStateTax.state_exemption)}</span>{' '}
-                        exemption against the combined estate. Without advance planning, the first
-                        spouse&apos;s {formatDollars(primaryStateTax.state_exemption)} exemption is
-                        permanently lost — only one exemption applies at second death.
-                      </p>
-                      <p className="mt-1.5 leading-relaxed">
-                        A Credit Shelter Trust (Bypass Trust) funded at first death can preserve
-                        both spouses&apos; exemptions, potentially reducing{' '}
-                        {statePrimary.toUpperCase()} estate tax by{' '}
-                        <span className="font-semibold">
-                          {formatDollars(primaryStateTax.state_exemption * 0.10)}–{formatDollars(primaryStateTax.state_exemption * 0.20)}
-                        </span>{' '}
-                        or more depending on the estate size and growth. This is worth discussing
-                        with your estate attorney before the first death occurs.
+                        exemption. Without a Credit Shelter Trust, the first spouse's exemption is
+                        permanently lost — worth discussing with your estate attorney.
                       </p>
                     </div>
                   )}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-neutral-600">State exemption {isMFJ ? '(at second death)' : ''}</span>
-                      <span className="font-medium tabular-nums">
-                        {formatDollars(primaryStateTax.state_exemption)}
-                      </span>
+                      <span className="font-medium tabular-nums">{formatDollars(primaryStateTax.state_exemption)}</span>
                     </div>
                     {!isMFJ && (
                       <div className="flex justify-between">
                         <span className="text-neutral-600">State taxable estate</span>
-                        <span className="font-medium tabular-nums">
-                          {formatDollars(primaryStateTax.state_taxable)}
-                        </span>
+                        <span className="font-medium tabular-nums">{formatDollars(primaryStateTax.state_taxable)}</span>
                       </div>
                     )}
                     <div className="flex justify-between pt-2 border-t border-neutral-100">
                       <span className="font-semibold text-neutral-900">
                         State estate tax {isMFJ ? '(first death)' : ''}
                       </span>
-                      <span
-                        className={`text-lg font-bold tabular-nums ${
-                          primaryStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'
-                        }`}
-                      >
-                        {isMFJ ? '$0 — marital deduction' : formatDollars(primaryStateTax.state_estate_tax)}
+                      <span className={`text-lg font-bold tabular-nums ${primaryStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {isMFJ && hasSpouse ? '$0 — marital deduction' : formatDollars(primaryStateTax.state_estate_tax)}
                       </span>
                     </div>
                   </div>
@@ -774,46 +889,36 @@ export default function EstateTaxClient({
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-neutral-600">State exemption</span>
-                      <span className="font-medium tabular-nums">
-                        {formatDollars(compareStateTax.state_exemption)}
-                      </span>
+                      <span className="font-medium tabular-nums">{formatDollars(compareStateTax.state_exemption)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-600">State taxable estate</span>
-                      <span className="font-medium tabular-nums">
-                        {formatDollars(compareStateTax.state_taxable)}
-                      </span>
-                    </div>
+                    {!isMFJ && (
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">State taxable estate</span>
+                        <span className="font-medium tabular-nums">{formatDollars(compareStateTax.state_taxable)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between pt-2 border-t border-neutral-100">
                       <span className="font-semibold text-neutral-900">State estate tax</span>
-                      <span
-                        className={`text-lg font-bold tabular-nums ${
-                          compareStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'
-                        }`}
-                      >
+                      <span className={`text-lg font-bold tabular-nums ${compareStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {formatDollars(compareStateTax.state_estate_tax)}
                       </span>
                     </div>
                   </div>
                   {primaryStateTax && (
                     <div className="mt-3 rounded-lg bg-neutral-50 border border-neutral-200 px-3 py-2 text-xs text-neutral-600">
-                      Moving from{' '}
-                      <span className="font-medium">{statePrimary.toUpperCase()}</span> to{' '}
+                      Moving from <span className="font-medium">{statePrimary.toUpperCase()}</span> to{' '}
                       <span className="font-medium">{stateCompare.toUpperCase()}</span> would{' '}
                       {compareStateTax.state_estate_tax < primaryStateTax.state_estate_tax ? (
                         <span className="text-green-700 font-semibold">
-                          save {formatDollars(primaryStateTax.state_estate_tax - compareStateTax.state_estate_tax)}{' '}
-                          in state estate tax
+                          save {formatDollars(primaryStateTax.state_estate_tax - compareStateTax.state_estate_tax)} in state estate tax
                         </span>
                       ) : compareStateTax.state_estate_tax > primaryStateTax.state_estate_tax ? (
                         <span className="text-red-700 font-semibold">
-                          add {formatDollars(compareStateTax.state_estate_tax - primaryStateTax.state_estate_tax)}{' '}
-                          in state estate tax
+                          add {formatDollars(compareStateTax.state_estate_tax - primaryStateTax.state_estate_tax)} in state estate tax
                         </span>
                       ) : (
                         <span className="font-medium">result in no state estate tax difference</span>
-                      )}
-                      .
+                      )}.
                     </div>
                   )}
                 </div>
@@ -834,39 +939,29 @@ export default function EstateTaxClient({
         </CollapsibleSection>
       )}
 
+      {/* ── State Inheritance Tax ── */}
       {(STATE_INHERITANCE_TAX_STATES.has(statePrimary?.toUpperCase() ?? '') ||
         STATE_INHERITANCE_TAX_STATES.has(stateCompare?.toUpperCase() ?? '')) && (
         <CollapsibleSection
           title="State inheritance tax"
-          subtitle="Inheritance tax is assessed on the beneficiary's share, not the estate itself"
+          subtitle="Assessed on the beneficiary's share, not the estate itself"
           defaultOpen={false}
           storageKey="estate-tax-state-inheritance"
         >
           <p className="text-xs text-neutral-500 mb-5">
-            Inheritance tax is assessed on the beneficiary's share, not the estate itself. Allocate
-            the estate below to see estimated tax by class.
+            Inheritance tax is assessed on the beneficiary's share. Allocate the estate below to see
+            estimated tax by beneficiary class.
           </p>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {(Object.keys(BENEFICIARY_CLASS_LABELS) as BeneficiaryClass[]).map((cls) => (
               <div key={cls}>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-neutral-700">
-                    {BENEFICIARY_CLASS_LABELS[cls]}
-                  </label>
-                  <span className="text-xs text-neutral-500 tabular-nums">
-                    {inheritShares[cls]}%
-                  </span>
+                  <label className="text-xs font-medium text-neutral-700">{BENEFICIARY_CLASS_LABELS[cls]}</label>
+                  <span className="text-xs text-neutral-500 tabular-nums">{inheritShares[cls]}%</span>
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value={inheritShares[cls]}
+                <input type="range" min="0" max="100" step="5" value={inheritShares[cls]}
                   onChange={(e) => updateInheritShare(cls, Number(e.target.value))}
-                  className="w-full accent-neutral-900"
-                />
+                  className="w-full accent-neutral-900" />
               </div>
             ))}
           </div>
@@ -883,18 +978,14 @@ export default function EstateTaxClient({
                   {statePrimary.toUpperCase()} — Inheritance tax
                 </p>
                 <div className="space-y-1">
-                  {primaryInheritanceTax.results
-                    .filter((r) => r.share_amount > 0)
-                    .map((r) => (
-                      <div key={r.beneficiary_class} className="flex justify-between text-sm py-1 border-b border-neutral-100">
-                        <span className="text-neutral-600">
-                          {BENEFICIARY_CLASS_LABELS[r.beneficiary_class as BeneficiaryClass]}
-                        </span>
-                        <span className={`font-medium tabular-nums ${r.inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatDollars(r.inheritance_tax)}
-                        </span>
-                      </div>
-                    ))}
+                  {primaryInheritanceTax.results.filter(r => r.share_amount > 0).map(r => (
+                    <div key={r.beneficiary_class} className="flex justify-between text-sm py-1 border-b border-neutral-100">
+                      <span className="text-neutral-600">{BENEFICIARY_CLASS_LABELS[r.beneficiary_class as BeneficiaryClass]}</span>
+                      <span className={`font-medium tabular-nums ${r.inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatDollars(r.inheritance_tax)}
+                      </span>
+                    </div>
+                  ))}
                   <div className="flex justify-between pt-2 border-t border-neutral-200">
                     <span className="font-semibold text-neutral-900 text-sm">Total inheritance tax</span>
                     <span className={`text-lg font-bold tabular-nums ${primaryInheritanceTax.total_inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -904,25 +995,20 @@ export default function EstateTaxClient({
                 </div>
               </div>
             )}
-
             {compareInheritanceTax && (
               <div className="sm:border-l sm:border-neutral-200 sm:pl-6">
                 <p className="text-sm font-semibold text-neutral-700 mb-3">
                   {stateCompare.toUpperCase()} — Inheritance tax
                 </p>
                 <div className="space-y-1">
-                  {compareInheritanceTax.results
-                    .filter((r) => r.share_amount > 0)
-                    .map((r) => (
-                      <div key={r.beneficiary_class} className="flex justify-between text-sm py-1 border-b border-neutral-100">
-                        <span className="text-neutral-600">
-                          {BENEFICIARY_CLASS_LABELS[r.beneficiary_class as BeneficiaryClass]}
-                        </span>
-                        <span className={`font-medium tabular-nums ${r.inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatDollars(r.inheritance_tax)}
-                        </span>
-                      </div>
-                    ))}
+                  {compareInheritanceTax.results.filter(r => r.share_amount > 0).map(r => (
+                    <div key={r.beneficiary_class} className="flex justify-between text-sm py-1 border-b border-neutral-100">
+                      <span className="text-neutral-600">{BENEFICIARY_CLASS_LABELS[r.beneficiary_class as BeneficiaryClass]}</span>
+                      <span className={`font-medium tabular-nums ${r.inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatDollars(r.inheritance_tax)}
+                      </span>
+                    </div>
+                  ))}
                   <div className="flex justify-between pt-2 border-t border-neutral-200">
                     <span className="font-semibold text-neutral-900 text-sm">Total inheritance tax</span>
                     <span className={`text-lg font-bold tabular-nums ${compareInheritanceTax.total_inheritance_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -936,10 +1022,8 @@ export default function EstateTaxClient({
         </CollapsibleSection>
       )}
 
-      {/* Trusts section moved to Trust & Will page */}
-
-      <p className="text-xs text-neutral-400">
-        Consult a qualified professional for estate planning and tax compliance.{' '}
+      <p className="text-xs text-neutral-400 mt-6">
+        Illustrative only — not tax or legal advice. Consult a qualified estate planning attorney.{' '}
         <Link href="/trust-will" className="text-indigo-600 hover:underline">Manage trusts →</Link>
       </p>
 
@@ -961,7 +1045,7 @@ export default function EstateTaxClient({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Trust modal
+// Trust modal (unchanged from prior version)
 // ─────────────────────────────────────────────────────────────
 
 function TrustModal({
@@ -980,20 +1064,17 @@ function TrustModal({
   const [grantor, setGrantor] = useState(editRow?.grantor ?? '')
   const [trustee, setTrustee] = useState(editRow?.trustee ?? '')
   const [fundingAmount, setFundingAmount] = useState(
-    editRow != null
-      ? String(num(editRow.funding_amount ?? editRow.excluded_from_estate))
-      : '0',
+    editRow != null ? String(num(editRow.funding_amount ?? editRow.excluded_from_estate)) : '0',
   )
   const [state, setState] = useState(editRow?.state ?? '')
   const [isIrrevocable, setIsIrrevocable] = useState(editRow?.is_irrevocable ?? false)
   const [excludesFromEstate, setExcludesFromEstate] = useState(
-    editRow?.excludes_from_estate ??
-      (editRow != null && num(editRow.excluded_from_estate) > 0),
+    editRow?.excludes_from_estate ?? (editRow != null && num(editRow.excluded_from_estate) > 0),
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  function num(v: unknown): number {
+  function localNum(v: unknown): number {
     if (typeof v === 'number' && !Number.isNaN(v)) return v
     if (typeof v === 'string' && v !== '') return Number(v) || 0
     return 0
@@ -1007,10 +1088,8 @@ function TrustModal({
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
       const funding = Math.max(0, parseFloat(fundingAmount) || 0)
       const excludedNumeric = excludesFromEstate ? funding : 0
-
       const payload = {
         name: name.trim() || 'Trust',
         trust_type: trustType,
@@ -1023,12 +1102,14 @@ function TrustModal({
         excluded_from_estate: excludedNumeric,
         updated_at: new Date().toISOString(),
       }
-
       if (editRow) {
         const { error } = await supabase.from('trusts').update(payload).eq('id', editRow.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('trusts').insert({ ...payload, owner_id: (await supabase.auth.getUser()).data.user?.id })
+        const { error } = await supabase.from('trusts').insert({
+          ...payload,
+          owner_id: (await supabase.auth.getUser()).data.user?.id,
+        })
         if (error) throw error
       }
       await onSaved()
@@ -1049,15 +1130,11 @@ function TrustModal({
           <h2 className="text-base font-semibold text-neutral-900">
             {editRow ? 'Edit Trust' : 'Add Trust'}
           </h2>
-          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
-            ✕
-          </button>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           {formError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              {formError}
-            </p>
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{formError}</p>
           )}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
@@ -1066,9 +1143,7 @@ function TrustModal({
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Trust type</label>
             <select value={trustType} onChange={(e) => setTrustType(e.target.value)} className={ic}>
-              {TRUST_TYPES.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
+              {TRUST_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
