@@ -5,7 +5,7 @@
 // Route: /my-estate-strategy
 // ─────────────────────────────────────────
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { EstateComposition } from '@/lib/estate/types'
@@ -66,6 +66,7 @@ export default function MyEstateStrategyClient({
   composition,
 }: Props) {
   const [generating, setGenerating] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
   async function handleGenerateBaseCase() {
@@ -79,6 +80,7 @@ export default function MyEstateStrategyClient({
       })
       const data = await res.json()
       if (data.success) {
+        setRefreshing(true)
         window.location.reload()
       } else {
         setGenerateError(data.error ?? 'Failed to generate estate plan. Please try again.')
@@ -92,9 +94,28 @@ export default function MyEstateStrategyClient({
 
   const hasBaseCase = !!scenarioId
   const { today, tenYear, twentyYear, atDeath, showProjectionMismatchNote } = horizons
-  const columns = [today, tenYear, twentyYear, atDeath].filter(
-    (col) => !col.isPlaceholder || col.showGenerateCta
+  const columns = useMemo(
+    () => [today, tenYear, twentyYear, atDeath].filter((col) => !col.isPlaceholder || col.showGenerateCta),
+    [today, tenYear, twentyYear, atDeath],
   )
+  const gridClassName = useMemo(() => {
+    if (columns.length === 4) return 'lg:grid-cols-4'
+    if (columns.length === 3) return 'lg:grid-cols-3'
+    if (columns.length === 2) return 'lg:grid-cols-2'
+    return 'lg:grid-cols-1'
+  }, [columns.length])
+  const illustrativeStrategySummary = useMemo(() => {
+    if (!composition) return { count: 0, total: 0 }
+    let count = 0
+    let total = 0
+    for (const item of composition.outside_strategy_items) {
+      if (item.confidence_level === 'illustrative') {
+        count += 1
+        total += item.amount
+      }
+    }
+    return { count, total }
+  }, [composition])
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -132,6 +153,9 @@ export default function MyEstateStrategyClient({
               </span>
             )}
           </p>
+          {refreshing && (
+            <p className="mt-2 text-xs font-medium text-blue-700">Refreshing data...</p>
+          )}
         </div>
       </div>
 
@@ -177,11 +201,7 @@ export default function MyEstateStrategyClient({
         defaultOpen={true}
         storageKey="my-estate-strategy-horizons"
       >
-        <div className={`grid grid-cols-1 gap-4 ${
-          columns.length === 4 ? 'lg:grid-cols-4' :
-          columns.length === 3 ? 'lg:grid-cols-3' :
-          columns.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
-        }`}>
+        <div className={`grid grid-cols-1 gap-4 ${gridClassName}`}>
           {columns.map((col) => (
             <div
               key={col.headerTitle}
@@ -258,13 +278,11 @@ export default function MyEstateStrategyClient({
                             </span>
                           </div>
                         )}
-                        {composition.outside_strategy_items.filter(s => s.confidence_level === 'illustrative').length > 0 && (
+                        {illustrativeStrategySummary.count > 0 && (
                           <div className="flex justify-between text-xs">
                             <span className="text-neutral-400 italic">Illustrative strategies</span>
                             <span className="text-neutral-400 italic">
-                              {fmtEst(composition.outside_strategy_items
-                                .filter(s => s.confidence_level === 'illustrative')
-                                .reduce((sum, s) => sum + s.amount, 0))}
+                              {fmtEst(illustrativeStrategySummary.total)}
                             </span>
                           </div>
                         )}
