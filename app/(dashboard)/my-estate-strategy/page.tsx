@@ -269,6 +269,8 @@ export default async function MyEstateStrategyPage() {
         householdId={household.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
+        showCompleteness={false}
+        showGaps={false}
       />
       <MyEstateStrategyClient
         householdId={household.id}
@@ -282,6 +284,15 @@ export default async function MyEstateStrategyPage() {
         hasSpouse={hasSpouse}
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
+        middleContent={
+          <EstatePlanningDashboard
+            householdId={household.id}
+            userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+            consumerTier={access.tier}
+            showHeader={false}
+            embedded
+          />
+        }
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

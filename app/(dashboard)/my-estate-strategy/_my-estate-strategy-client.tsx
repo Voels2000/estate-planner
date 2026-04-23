@@ -5,7 +5,7 @@
 // Route: /my-estate-strategy
 // ─────────────────────────────────────────
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
@@ -46,6 +46,7 @@ type Props = {
   hasSpouse: boolean
   survivorEndYear: number
   currentYear: number
+  middleContent?: ReactNode
 }
 
 export default function MyEstateStrategyClient({
@@ -58,6 +59,7 @@ export default function MyEstateStrategyClient({
   hasSpouse,
   survivorEndYear,
   currentYear,
+  middleContent,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -253,6 +255,8 @@ export default function MyEstateStrategyClient({
           ))}
         </div>
       </CollapsibleSection>
+
+      {middleContent}
 
       {hasBaseCase && (
         <CollapsibleSection

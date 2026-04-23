@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import type { ReactNode } from 'react';
 
 interface Recommendation {
   branch: string;
@@ -57,6 +58,11 @@ interface EstatePlanningDashboardProps {
   consumerTier?: number;
   /** When false, hides the advisor "Estate Tax Exposure" card (e.g. on pages that show tax elsewhere). Default false. */
   showTaxExposure?: boolean;
+  showHeader?: boolean;
+  showCompleteness?: boolean;
+  showGaps?: boolean;
+  embedded?: boolean;
+  afterHeaderContent?: ReactNode;
 }
 
 const formatCurrency = (n: number) =>
@@ -91,6 +97,11 @@ export default function EstatePlanningDashboard({
   userRole,
   consumerTier = 1,
   showTaxExposure = false,
+  showHeader = true,
+  showCompleteness = true,
+  showGaps = true,
+  embedded = false,
+  afterHeaderContent,
 }: EstatePlanningDashboardProps) {
   const supabase = createClient();
   const [recommendations, setRecommendations] = useState<RecommendationsResult | null>(null);
@@ -148,66 +159,72 @@ export default function EstatePlanningDashboard({
   const highPriority = recommendations.recommendations.filter(r => r.priority === 'high');
   const moderatePriority = recommendations.recommendations.filter(r => r.priority === 'moderate');
 
-  return (
-    <div className="space-y-6 p-6 max-w-4xl mx-auto">
+  const content = (
+    <>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Estate Planning</h1>
-          <p className="text-sm text-gray-500 mt-1">{recommendations.tax_year} tax year parameters</p>
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Estate Planning</h1>
+            <p className="text-sm text-gray-500 mt-1">{recommendations.tax_year} tax year parameters</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+              Score {recommendations.complexity_score}/20
+            </span>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${complexityColors[recommendations.complexity_flag]}`}>
+              {recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} Complexity
+            </span>
+            {userRole === 'advisor' && (
+              <ExportPDFButton householdId={householdId} role={userRole} />
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-            Score {recommendations.complexity_score}/20
-          </span>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${complexityColors[recommendations.complexity_flag]}`}>
-            {recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} Complexity
-          </span>
-          {userRole === 'advisor' && (
-            <ExportPDFButton householdId={householdId} role={userRole} />
-          )}
-        </div>
-      </div>
+      )}
 
-      <CollapsibleSection
-        title="Estate Plan Completeness"
-        subtitle={`Grade ${completeness.grade} · ${completeness.completeness_pct}% complete`}
-        defaultOpen={false}
-        storageKey="estate-planning-completeness"
-      >
-        <div className="flex items-center gap-6">
-          <div className="relative w-24 h-24 flex-shrink-0">
-            <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="#e5e7eb" strokeWidth="3" />
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="currentColor" strokeWidth="3"
-                strokeDasharray={`${completeness.completeness_pct}, 100`}
-                className={scoreColor} />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-xl font-bold ${scoreColor}`}>{completeness.completeness_pct}%</span>
-              <span className="text-xs text-gray-400">Grade {completeness.grade}</span>
+      {afterHeaderContent}
+
+      {showCompleteness && (
+        <CollapsibleSection
+          title="Estate Plan Completeness"
+          subtitle={`Grade ${completeness.grade} · ${completeness.completeness_pct}% complete`}
+          defaultOpen={false}
+          storageKey="estate-planning-completeness"
+        >
+          <div className="flex items-center gap-6">
+            <div className="relative w-24 h-24 flex-shrink-0">
+              <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none" stroke="currentColor" strokeWidth="3"
+                  strokeDasharray={`${completeness.completeness_pct}, 100`}
+                  className={scoreColor} />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`text-xl font-bold ${scoreColor}`}>{completeness.completeness_pct}%</span>
+                <span className="text-xs text-gray-400">Grade {completeness.grade}</span>
+              </div>
+            </div>
+            <div className="flex-1 space-y-2">
+              {[
+                { label: 'Will or Trust', points: completeness.breakdown.will_or_trust_points, max: 25, done: completeness.breakdown.has_will_or_trust },
+                { label: 'Power of Attorney', points: completeness.breakdown.dpoa_points, max: 20, done: completeness.breakdown.has_dpoa },
+                { label: 'Healthcare Directive', points: completeness.breakdown.healthcare_points, max: 15, done: completeness.breakdown.has_healthcare_directive },
+                { label: 'Beneficiary Designations', points: completeness.breakdown.beneficiary_points, max: 10, done: completeness.breakdown.has_beneficiaries },
+                { label: 'Tax Strategy', points: completeness.breakdown.tax_strategy_points, max: 30, done: completeness.breakdown.has_tax_strategy },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <span className={`w-4 h-4 rounded-full flex-shrink-0 ${item.done ? 'bg-green-500' : 'bg-gray-200'}`} />
+                  <span className="text-sm text-gray-700 flex-1">{item.label}</span>
+                  <span className="text-xs text-gray-400">{item.points}/{item.max} pts</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex-1 space-y-2">
-            {[
-              { label: 'Will or Trust', points: completeness.breakdown.will_or_trust_points, max: 25, done: completeness.breakdown.has_will_or_trust },
-              { label: 'Power of Attorney', points: completeness.breakdown.dpoa_points, max: 20, done: completeness.breakdown.has_dpoa },
-              { label: 'Healthcare Directive', points: completeness.breakdown.healthcare_points, max: 15, done: completeness.breakdown.has_healthcare_directive },
-              { label: 'Beneficiary Designations', points: completeness.breakdown.beneficiary_points, max: 10, done: completeness.breakdown.has_beneficiaries },
-              { label: 'Tax Strategy', points: completeness.breakdown.tax_strategy_points, max: 30, done: completeness.breakdown.has_tax_strategy },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-3">
-                <span className={`w-4 h-4 rounded-full flex-shrink-0 ${item.done ? 'bg-green-500' : 'bg-gray-200'}`} />
-                <span className="text-sm text-gray-700 flex-1">{item.label}</span>
-                <span className="text-xs text-gray-400">{item.points}/{item.max} pts</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CollapsibleSection>
+        </CollapsibleSection>
+      )}
 
       {/* Tax Exposure — Advisor only */}
       {isAdvisor && showTaxExposure && (
@@ -270,7 +287,7 @@ export default function EstatePlanningDashboard({
       )}
 
       {/* Recommendations */}
-      {(isAdvisor || isConsumerT3) && recommendations.recommendations.length > 0 && (
+      {showGaps && (isAdvisor || isConsumerT3) && recommendations.recommendations.length > 0 && (
         <CollapsibleSection
           title="Gaps in your Estate Plan"
           subtitle={`${recommendations.recommendations.length} items`}
@@ -306,6 +323,16 @@ export default function EstatePlanningDashboard({
           )}
         </CollapsibleSection>
       )}
+    </>
+  )
+
+  if (embedded) {
+    return <div className="space-y-6">{content}</div>
+  }
+
+  return (
+    <div className="space-y-6 p-6 max-w-4xl mx-auto">
+      {content}
     </div>
   );
 }
