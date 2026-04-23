@@ -21,18 +21,6 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
-  gifting: 'Annual Gifting Program',
-  revocable_trust: 'Revocable Living Trust',
-  credit_shelter_trust: 'Credit Shelter Trust (CST)',
-  grat: 'Grantor Retained Annuity Trust (GRAT)',
-  crt: 'Charitable Remainder Trust (CRT)',
-  clat: 'Charitable Lead Annuity Trust (CLAT)',
-  daf: 'Donor Advised Fund (DAF)',
-  roth: 'Roth Conversion',
-  liquidity: 'Estate Liquidity Planning',
-}
-
 type Props = {
   householdId: string
   scenarioId: string | null
@@ -48,7 +36,6 @@ type Props = {
   hasSpouse: boolean
   survivorEndYear: number
   currentYear: number
-  advisorRecommendations: { strategy_type: string; label: string | null }[]
   composition?: EstateComposition
 }
 
@@ -62,7 +49,6 @@ export default function MyEstateStrategyClient({
   hasSpouse,
   survivorEndYear,
   currentYear,
-  advisorRecommendations,
   composition,
 }: Props) {
   const [generating, setGenerating] = useState(false)
@@ -106,29 +92,6 @@ export default function MyEstateStrategyClient({
   }, [columns.length])
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      {advisorRecommendations.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 pt-6">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm font-semibold text-blue-900 mb-2">
-              Your advisor has flagged strategies worth discussing
-            </p>
-            <ul className="space-y-1">
-              {advisorRecommendations.map((r) => {
-                const displayLabel = r.label ?? ADVISOR_STRATEGY_LABELS[r.strategy_type] ?? r.strategy_type
-                return (
-                  <li key={r.strategy_type} className="flex items-center gap-2 text-sm text-blue-800">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                    {displayLabel}
-                  </li>
-                )
-              })}
-            </ul>
-            <p className="text-xs text-blue-600 mt-3">
-              Contact your advisor to learn more about these strategies.
-            </p>
-          </div>
-        </div>
-      )}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Estate Planning Horizons</h1>

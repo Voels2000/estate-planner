@@ -7,4 +7,5 @@ export const NOTIFICATION_META: Record<string, { icon: string }> = {
   client_accepted_invite: { icon: '✅' },
   referral_status_update: { icon: '📝' },
   security: { icon: '🔐' },
+  advisor_strategy_recommended: { icon: '🏛️' },
 }

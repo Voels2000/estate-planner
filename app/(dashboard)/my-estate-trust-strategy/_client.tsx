@@ -34,6 +34,7 @@ interface Props {
   userRole: 'consumer' | 'advisor'
   consumerTier: number
   initialTab: string
+  advisorRecommendations: { strategy_type: string; label: string | null }[]
 }
 
 type TrustDocumentRow = {
@@ -44,11 +45,28 @@ type TrustDocumentRow = {
   funding_amount: number | null
 }
 
+const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
+  gifting: 'Annual Gifting Program',
+  revocable_trust: 'Revocable Living Trust',
+  credit_shelter_trust: 'Credit Shelter Trust (CST)',
+  grat: 'Grantor Retained Annuity Trust (GRAT)',
+  crt: 'Charitable Remainder Trust (CRT)',
+  clat: 'Charitable Lead Annuity Trust (CLAT)',
+  daf: 'Donor Advised Fund (DAF)',
+  roth: 'Roth Conversion',
+  liquidity: 'Estate Liquidity Planning',
+}
+
+function toDisplayStrategyLabel(strategyType: string, label: string | null): string {
+  return label ?? ADVISOR_STRATEGY_LABELS[strategyType] ?? strategyType
+}
+
 export default function MyEstateTrustStrategyClient({
   householdId,
   userRole,
   consumerTier,
   initialTab,
+  advisorRecommendations,
 }: Props) {
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
@@ -150,7 +168,53 @@ export default function MyEstateTrustStrategyClient({
         />
       )}
 
-      {activeTab === 'strategies' && <ConsumerStrategyPanel householdId={householdId} userRole={userRole} />}
+      {activeTab === 'strategies' && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="mb-3 text-sm font-semibold text-blue-900">
+              Advisor Recommended Strategies
+            </p>
+            {advisorRecommendations.length === 0 ? (
+              <p className="text-sm text-blue-700">
+                No advisor-recommended strategies yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-blue-100 bg-white">
+                <table className="w-full min-w-[28rem] text-sm">
+                  <thead className="bg-blue-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold text-blue-900">Strategy</th>
+                      <th className="px-3 py-2 text-left font-semibold text-blue-900">Status</th>
+                      <th className="px-3 py-2 text-left font-semibold text-blue-900">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {advisorRecommendations.map((rec) => (
+                      <tr key={rec.strategy_type} className="border-t border-blue-100">
+                        <td className="px-3 py-2 text-gray-900">
+                          {toDisplayStrategyLabel(rec.strategy_type, rec.label)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            Recommended
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-gray-600">Advisor</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {advisorRecommendations.length > 0 && (
+              <p className="mt-3 text-xs text-blue-700">
+                Contact your advisor to review implementation details for these strategies.
+              </p>
+            )}
+          </div>
+          <ConsumerStrategyPanel householdId={householdId} userRole={userRole} />
+        </div>
+      )}
 
       {activeTab === 'trusts' && (
         <div className="space-y-4">
