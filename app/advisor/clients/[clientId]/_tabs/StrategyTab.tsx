@@ -10,6 +10,9 @@ import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
+import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
+import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
+import type { StrategyLineItem } from '@/lib/estate/types'
 
 export default function StrategyTab({ household, scenario }: ClientViewShellProps) {
   const grossEstate = Number(scenario?.gross_estate ?? 0)
@@ -33,6 +36,10 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
+  type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
+  const [advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
+  const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
+  const [strategyConfigs, setStrategyConfigs] = useState<any[]>([])
 
   // Gifting actuals from RPC
   const [giftingActuals, setGiftingActuals] = useState<{
@@ -66,6 +73,19 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         })
       })
       .catch(() => null)
+  }, [household?.id])
+
+  useEffect(() => {
+    if (!household?.id) return
+    Promise.all([
+      fetchStrategyLineItems(household.id, 'advisor'),
+      fetchStrategyLineItems(household.id, 'consumer'),
+      fetchStrategyConfigs(household.id),
+    ]).then(([adv, con, configs]) => {
+      setAdvisorLineItems(adv)
+      setConsumerLineItems(con)
+      setStrategyConfigs(configs)
+    }).catch(() => null)
   }, [household?.id])
 
   // Auto-generate base case if missing (Session 18 fix)
@@ -295,6 +315,20 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
             supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
           />
         )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Client&apos;s Confirmed Plan</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+            Read-only — client owns this
+          </span>
+        </div>
+        <ConsumerPlanStatus
+          consumerComposition={null}
+          consumerLineItems={consumerLineItems}
+          strategyConfigs={strategyConfigs}
+        />
       </section>
 
       <DisclaimerBanner />

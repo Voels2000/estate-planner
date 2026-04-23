@@ -3,6 +3,7 @@
 // These mirror the JSON returned by calculate_estate_composition RPC.
 
 export type ConfidenceLevel = 'certain' | 'probable' | 'illustrative'
+export type StrategySourceRole = 'consumer' | 'advisor'
 
 export type ExclusionType =
   | 'excluded_irrevocable'
@@ -110,6 +111,7 @@ export type StrategyLineItemInput = {
   confidence_level?: ConfidenceLevel
   effective_year?: number | null
   metadata?: Record<string, unknown>
+  source_role?: StrategySourceRole
 }
 
 export type StrategyLineItem = StrategyLineItemInput & {

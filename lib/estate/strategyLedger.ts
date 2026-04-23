@@ -5,7 +5,12 @@
 // outside_strategy bucket in EstateCompositionCard.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { StrategyLineItem, StrategyLineItemInput } from './types'
+import { createClient } from '@/lib/supabase/client'
+import type {
+  StrategyLineItem,
+  StrategyLineItemInput,
+  StrategySourceRole,
+} from './types'
 
 /**
  * Create or update a strategy line item.
@@ -115,4 +120,36 @@ export async function getActiveLineItems(
   }
 
   return { data: (data ?? []) as StrategyLineItem[], error: null }
+}
+
+export async function fetchStrategyLineItems(
+  householdId: string,
+  sourceRole: StrategySourceRole
+): Promise<Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('strategy_line_items')
+    .select(
+      'amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role'
+    )
+    .eq('household_id', householdId)
+    .eq('source_role', sourceRole)
+    .is('projection_year', null)
+    .eq('is_active', true)
+
+  if (error) throw new Error(`fetchStrategyLineItems: ${error.message}`)
+  return (data ?? []) as Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>[]
+}
+
+export async function fetchStrategyConfigs(householdId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('strategy_configs')
+    .select('*')
+    .eq('household_id', householdId)
+
+  if (error) throw new Error(`fetchStrategyConfigs: ${error.message}`)
+  return data ?? []
 }
