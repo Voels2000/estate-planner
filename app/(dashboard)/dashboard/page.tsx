@@ -8,17 +8,14 @@ import type { ConflictReport } from '@/lib/conflict-detector'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import type { YearRow } from '@/lib/calculations/projection-complete'
-import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import {
-  buildStrategyHorizons,
   computeBusinessOwnershipValue,
-  longevityAndSurvivor,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { DashboardClient, type EstateTaxHorizonsProps } from '../_dashboard-client'
+import { DashboardClient } from '../_dashboard-client'
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
 // FRA = 67 for born 1960+. Early = -6.67%/yr (first 3yr) then -5%/yr.
@@ -67,7 +64,6 @@ export default async function DashboardPage() {
     { data: businesses },
     { data: businessInterests },
     { data: insurance },
-    { data: stateBracketRows },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('assets').select('value').eq('owner_id', user!.id),
@@ -82,15 +78,7 @@ export default async function DashboardPage() {
       .select('fmv_estimated, total_entity_value, ownership_pct')
       .eq('owner_id', user!.id),
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
-    admin
-      .from('state_estate_tax_rules')
-      .select('min_amount, max_amount, rate_pct, exemption_amount')
-      .eq('state', household?.state_primary ?? '')
-      .eq('tax_year', new Date().getFullYear())
-      .order('min_amount', { ascending: true }),
   ])
-
-  const stateBrackets = stateBracketRows ?? []
 
   // ── Financial calculations ───────────────────────────────────────────────
   const financialAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -225,76 +213,6 @@ export default async function DashboardPage() {
 
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
   const baseCaseRows: YearRow[] = baseCaseScenario?.outputs_s1_first ?? []
-
-  const now = new Date()
-  const currentMonthYearLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
-  const scenarioRows = (baseCaseScenario?.outputs_s1_first ?? null) as AnnualOutput[] | null
-
-  const { longevityAge, survivorIsPerson1 } = longevityAndSurvivor({
-    hasSpouse,
-    person1Longevity: household?.person1_longevity_age,
-    person2Longevity: household?.person2_longevity_age,
-  })
-  const survivorFirstName = !household
-    ? 'You'
-    : !hasSpouse
-      ? displayPersonFirstName(household.person1_name, 'You')
-      : survivorIsPerson1
-        ? displayPersonFirstName(household.person1_name, 'You')
-        : displayPersonFirstName(household.person2_name, 'You')
-
-  const horizons =
-    household != null
-      ? buildStrategyHorizons({
-          currentYear,
-          currentMonthYearLabel,
-          liveNetWorth: composition?.gross_estate ?? netWorth,
-          stateBrackets,
-          household: {
-            state_primary: household.state_primary,
-            filing_status: household.filing_status,
-            has_spouse: household.has_spouse,
-            person1_name: household.person1_name,
-            person2_name: household.person2_name,
-            person1_birth_year: household.person1_birth_year,
-            person2_birth_year: household.person2_birth_year,
-            person1_longevity_age: household.person1_longevity_age,
-            person2_longevity_age: household.person2_longevity_age,
-          },
-          scenarioRows,
-          survivorFirstName,
-          longevityAge,
-        })
-      : null
-
-  const estateTaxHorizons: EstateTaxHorizonsProps | null = horizons
-    ? (() => {
-        const { today, tenYear, twentyYear, atDeath } = horizons
-        const stateTaxRowLabel = household?.state_primary
-          ? `${String(household.state_primary).toUpperCase()} State Tax`
-          : 'State Tax'
-
-        const col = (h: typeof today): { federalTax: number; stateTax: number } => ({
-          federalTax: h.federalTaxEstimate ?? 0,
-          stateTax: h.stateExposure ?? 0,
-        })
-
-        const hasBaseCaseRows = (scenarioRows?.length ?? 0) > 0
-        const tenOk = hasBaseCaseRows && !tenYear.isPlaceholder && !tenYear.showGenerateCta
-        const twentyYearOk = hasBaseCaseRows && !twentyYear.isPlaceholder && !twentyYear.showGenerateCta
-        const atDeathOk = hasBaseCaseRows && !atDeath.isPlaceholder && !atDeath.showGenerateCta
-
-        return {
-          stateTaxRowLabel,
-          atDeathColumnHeader: atDeath.headerTitle,
-          today: col(today),
-          tenYear: tenOk ? col(tenYear) : null,
-          twentyYear: twentyYearOk ? col(twentyYear) : null,
-          atDeath: atDeathOk ? col(atDeath) : null,
-          showGenerateEstatePlanLink: !hasBaseCaseRows,
-        }
-      })()
-    : null
 
   // ── Conflict detector — read from cache, recomputed async on staleness ───
   // detectConflicts writes to DB — never call it in render path.
@@ -484,7 +402,6 @@ export default async function DashboardPage() {
       retirementSnapshot={retirementSnapshot}
       estateHealthScore={estateHealthScore}
       conflictReport={conflictReport}
-      estateTaxHorizons={estateTaxHorizons}
       setupSteps={setupSteps}
       completedSteps={completedSteps}
       progressPct={progressPct}

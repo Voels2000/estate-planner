@@ -47,21 +47,6 @@ type RetirementSnapshot = {
   projectedIncomeGap: number | null
 }
 
-export type EstateTaxHorizonColumn = {
-  federalTax: number
-  stateTax: number
-}
-
-export type EstateTaxHorizonsProps = {
-  stateTaxRowLabel: string
-  atDeathColumnHeader: string
-  today: EstateTaxHorizonColumn
-  tenYear: EstateTaxHorizonColumn | null
-  twentyYear: EstateTaxHorizonColumn | null
-  atDeath: EstateTaxHorizonColumn | null
-  showGenerateEstatePlanLink: boolean
-}
-
 type Props = {
   userName: string
   totalAssets: number
@@ -91,7 +76,6 @@ type Props = {
     critical: number
     warnings: number
   } | null
-  estateTaxHorizons: EstateTaxHorizonsProps | null
   setupSteps: SetupStep[]
   completedSteps: number
   progressPct: number
@@ -134,10 +118,6 @@ function fmt(n: number) {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
   return `$${Math.round(n).toLocaleString()}`
-}
-
-function fmtTaxTableDollar(n: number) {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
 function firstName(name: string | null | undefined) {
@@ -300,7 +280,6 @@ export function DashboardClient(props: Props) {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
     allocationContext, retirementSnapshot, estateHealthScore, conflictReport,
-    estateTaxHorizons,
     setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
@@ -692,65 +671,6 @@ export function DashboardClient(props: Props) {
                 label="Your Estate"
                 snapshotLabel="Current snapshot"
               />
-            </div>
-          )}
-
-          {estateTaxHorizons && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Tax exposure</p>
-              <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 sm:px-4">
-                <div className="overflow-x-auto -mx-1 px-1">
-                  <table className="w-full min-w-[20rem] text-sm">
-                    <thead>
-                      <tr className="border-b border-neutral-200">
-                        <th className="text-left font-medium text-neutral-500 pb-2 pr-2 align-bottom" />
-                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">Today</th>
-                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">In 10 Years</th>
-                        <th className="text-right font-medium text-neutral-600 pb-2 px-1 align-bottom whitespace-nowrap">In 20 Years</th>
-                        <th className="text-right font-medium text-neutral-600 pb-2 pl-1 align-bottom min-w-[10rem]">
-                          {estateTaxHorizons.atDeathColumnHeader}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-neutral-900">
-                      <tr className="border-b border-neutral-100">
-                        <td className="py-2 pr-2 text-neutral-600">Fed Tax</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.federalTax)}</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.federalTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.twentyYear ? fmtTaxTableDollar(estateTaxHorizons.twentyYear.federalTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.federalTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 pr-2 text-neutral-600">{estateTaxHorizons.stateTaxRowLabel}</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">{fmtTaxTableDollar(estateTaxHorizons.today.stateTax)}</td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.tenYear ? fmtTaxTableDollar(estateTaxHorizons.tenYear.stateTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                        <td className="py-2 px-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.twentyYear ? fmtTaxTableDollar(estateTaxHorizons.twentyYear.stateTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                        <td className="py-2 pl-1 text-right tabular-nums font-medium">
-                          {estateTaxHorizons.atDeath ? fmtTaxTableDollar(estateTaxHorizons.atDeath.stateTax) : <span className="text-neutral-400">—</span>}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                {estateTaxHorizons.showGenerateEstatePlanLink && (
-                  <p className="mt-3 text-center sm:text-left">
-                    <Link href="/my-estate-strategy" className="text-xs text-indigo-600 font-medium hover:underline">
-                      Generate your estate plan
-                    </Link>
-                  </p>
-                )}
-              </div>
-              <p className="text-[10px] text-neutral-400 mt-2">Information only — review with your advisor or attorney.</p>
             </div>
           )}
 
