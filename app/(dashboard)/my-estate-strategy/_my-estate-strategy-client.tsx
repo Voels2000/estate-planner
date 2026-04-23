@@ -254,13 +254,6 @@ export default function MyEstateStrategyClient({
         </div>
       </CollapsibleSection>
 
-      {showProjectionMismatchNote && (
-        <p className="mt-6 text-xs text-neutral-600">
-          Note: projection figures are based on your base case assumptions. Update your profile or
-          base case to reflect any changes.
-        </p>
-      )}
-
       {hasBaseCase && (
         <CollapsibleSection
           title="What happens when I die?"
