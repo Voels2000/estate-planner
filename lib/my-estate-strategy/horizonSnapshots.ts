@@ -178,6 +178,9 @@ export type StrategyHorizonColumn = {
   showMissingRowNote?: boolean
   /** Calendar year we looked for when `showMissingRowNote` */
   missingRowCalendarYear?: number
+  insideTotal?: number | null
+  outsideCertainProbableTotal?: number | null
+  outsideIllustrativeTotal?: number | null
 }
 
 export type BuildHorizonsInput = {
@@ -185,6 +188,14 @@ export type BuildHorizonsInput = {
   currentMonthYearLabel: string
   liveNetWorth: number
   stateBrackets?: StateBracket[]
+  strategyLineItems?: Array<{
+    amount: number
+    confidence_level: 'certain' | 'probable' | 'illustrative'
+    effective_year: number | null
+    is_active: boolean
+    /** Reductions (default) vs additions; matches `strategy_line_items.sign`. */
+    sign?: number
+  }>
   household: {
     state_primary: string | null
     filing_status: string | null
@@ -202,6 +213,35 @@ export type BuildHorizonsInput = {
 }
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
+
+/**
+ * Sums strategy line items into outside-estate buckets for a calendar horizon.
+ * Illustrative items always count toward illustrative (Session 27 / horizon cards).
+ * Certain/probable items count only once effective_year has passed (or is unset).
+ */
+function computeOutsideForHorizon(
+  strategyLineItems: BuildHorizonsInput['strategyLineItems'],
+  horizonCalendarYear: number,
+): { certainProbable: number; illustrative: number } {
+  const items = (strategyLineItems ?? []).filter((i) => i.is_active)
+  let certainProbable = 0
+  let illustrative = 0
+  for (const item of items) {
+    if ((item.sign ?? -1) !== -1) continue
+    const amt = Number(item.amount) || 0
+    const transferred =
+      item.effective_year === null || item.effective_year <= horizonCalendarYear
+
+    if (item.confidence_level === 'illustrative') {
+      illustrative += amt
+      continue
+    }
+
+    if (!transferred) continue
+    certainProbable += amt
+  }
+  return { certainProbable, illustrative }
+}
 
 export function buildStrategyHorizons(input: BuildHorizonsInput): {
   today: StrategyHorizonColumn
@@ -221,6 +261,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     scenarioRows,
     survivorFirstName,
     longevityAge,
+    strategyLineItems,
   } = input
 
   const hasSpouse = household.has_spouse ?? false
@@ -259,6 +300,8 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     stateBrackets,
   })
 
+  const todayOutside = computeOutsideForHorizon(strategyLineItems, currentYear)
+
   const today: StrategyHorizonColumn = {
     headerTitle: 'Today',
     headerClassName: 'bg-slate-600 text-white',
@@ -271,6 +314,12 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     totalTaxLiability: todayTax.totalTax,
     isPlaceholder: false,
     showGenerateCta: false,
+    insideTotal: Math.max(
+      0,
+      liveNetWorth - todayOutside.certainProbable - todayOutside.illustrative,
+    ),
+    outsideCertainProbableTotal: todayOutside.certainProbable,
+    outsideIllustrativeTotal: todayOutside.illustrative,
   }
 
   // ── Helper to build projected horizon columns ─────────────────────────
@@ -296,6 +345,11 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       }
     }
     const gross = row ? grossEstateFromRow(row) : null
+    const outside = computeOutsideForHorizon(strategyLineItems, targetYear)
+    const insideTotal =
+      gross !== null
+        ? Math.max(0, gross - outside.certainProbable - outside.illustrative)
+        : null
     const tax = gross !== null ? computeColumnTaxes({
       grossEstate: gross,
       calendarYear: targetYear,
@@ -318,6 +372,9 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       showGenerateCta: false,
       showMissingRowNote: !row,
       missingRowCalendarYear: targetYear,
+      insideTotal: row ? insideTotal : null,
+      outsideCertainProbableTotal: row ? outside.certainProbable : null,
+      outsideIllustrativeTotal: row ? outside.illustrative : null,
     }
   }
 
@@ -327,6 +384,11 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   // ── At Death column ───────────────────────────────────────────────────
   const atDeathCalendarYear = atDeathRow?.year ?? currentYear
   const atDeathGross = atDeathRow ? grossEstateFromRow(atDeathRow) : null
+  const atDeathOutside = computeOutsideForHorizon(strategyLineItems, atDeathCalendarYear)
+  const atDeathInsideTotal =
+    atDeathGross !== null
+      ? Math.max(0, atDeathGross - atDeathOutside.certainProbable - atDeathOutside.illustrative)
+      : null
   const atDeathTax =
     atDeathGross !== null && hasBaseCase
       ? computeColumnTaxes({
@@ -352,6 +414,9 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         totalTaxLiability: atDeathTax?.totalTax ?? null,
         isPlaceholder: false,
         showGenerateCta: false,
+        insideTotal: atDeathInsideTotal,
+        outsideCertainProbableTotal: atDeathOutside.certainProbable,
+        outsideIllustrativeTotal: atDeathOutside.illustrative,
       }
     : {
         headerTitle: `At Death (Age ${longevityAge}, ${survivorFirstName})`,

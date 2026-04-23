@@ -213,12 +213,28 @@ export default async function MyEstateStrategyPage() {
 
   const scenarioRows = (scenario?.outputs_s1_first ?? null) as AnnualOutput[] | null
 
-  const composition = await classifyEstateAssets(supabase, household.id)
+  const [composition, { data: strategyLineRows }] = await Promise.all([
+    classifyEstateAssets(supabase, household.id),
+    supabase
+      .from('strategy_line_items')
+      .select('amount, confidence_level, effective_year, is_active, sign')
+      .eq('household_id', household.id)
+      .is('projection_year', null),
+  ])
+
+  const strategyLineItems = (strategyLineRows ?? []).map((row) => ({
+    amount: Number(row.amount ?? 0),
+    confidence_level: row.confidence_level as 'certain' | 'probable' | 'illustrative',
+    effective_year: row.effective_year,
+    is_active: row.is_active ?? true,
+    sign: typeof row.sign === 'number' ? row.sign : -1,
+  }))
 
   const horizons = buildStrategyHorizons({
     currentYear,
     currentMonthYearLabel,
     liveNetWorth: composition.gross_estate,
+    strategyLineItems,
     stateBrackets,
     household: {
       state_primary: household.state_primary,

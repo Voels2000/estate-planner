@@ -104,19 +104,6 @@ export default function MyEstateStrategyClient({
     if (columns.length === 2) return 'lg:grid-cols-2'
     return 'lg:grid-cols-1'
   }, [columns.length])
-  const illustrativeStrategySummary = useMemo(() => {
-    if (!composition) return { count: 0, total: 0 }
-    let count = 0
-    let total = 0
-    for (const item of composition.outside_strategy_items) {
-      if (item.confidence_level === 'illustrative') {
-        count += 1
-        total += item.amount
-      }
-    }
-    return { count, total }
-  }, [composition])
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       {advisorRecommendations.length > 0 && (
@@ -263,35 +250,39 @@ export default function MyEstateStrategyClient({
                       />
                     </div>
 
-                    {/* ── Inside / Outside sub-row ── */}
-                    {composition && col === today && (
+                    {/* ── Inside / Outside sub-rows (Session 27 pattern; all horizons) ── */}
+                    {col.insideTotal != null && (
                       <div className="mt-3 pt-3 border-t border-neutral-100 space-y-1.5">
                         <div className="flex justify-between text-xs">
                           <span className="text-neutral-500">Inside taxable estate</span>
-                          <span className="font-medium text-blue-700">{fmtEst(composition.inside_total)}</span>
+                          <span className="font-medium text-blue-700">{fmtEst(col.insideTotal)}</span>
                         </div>
-                        {(composition.outside_structure_total + composition.outside_strategy_total) > 0 && (
+                        {(col.outsideCertainProbableTotal ?? 0) > 0 && (
                           <div className="flex justify-between text-xs">
                             <span className="text-neutral-500">Outside taxable estate</span>
                             <span className="font-medium text-green-700">
-                              {fmtEst(composition.outside_structure_total + composition.outside_strategy_total)}
+                              {fmtEst(col.outsideCertainProbableTotal)}
                             </span>
                           </div>
                         )}
-                        {illustrativeStrategySummary.count > 0 && (
+                        {(col.outsideIllustrativeTotal ?? 0) > 0 && (
                           <div className="flex justify-between text-xs">
                             <span className="text-neutral-400 italic">Illustrative strategies</span>
                             <span className="text-neutral-400 italic">
-                              {fmtEst(illustrativeStrategySummary.total)}
+                              {fmtEst(col.outsideIllustrativeTotal)}
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between text-xs">
-                          <span className="text-neutral-500">Exemption remaining</span>
-                          <span className={`font-medium ${composition.exemption_remaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
-                            {fmtEst(composition.exemption_remaining)}
-                          </span>
-                        </div>
+                        {col.federalExemption != null &&
+                          col.insideTotal != null &&
+                          col.federalExemption - col.insideTotal > 0 && (
+                            <div className="flex justify-between text-xs">
+                              <span className="text-neutral-500">Exemption remaining</span>
+                              <span className="font-medium text-green-700">
+                                {fmtEst(col.federalExemption - col.insideTotal)}
+                              </span>
+                            </div>
+                          )}
                       </div>
                     )}
                   </>
