@@ -50,3 +50,4 @@ node_modules/
 
 # Playwright auth state (Sprint 75)
 .auth/
+tsc.log
