@@ -336,7 +336,7 @@ export function DashboardClient(props: Props) {
           </h1>
           <p className="mt-1 text-sm text-neutral-600">
             {allDone
-              ? "Your estate plan is up to date. Here's your financial snapshot."
+              ? 'Your Estate Summary'
               : `You're ${progressPct}% set up. Complete the steps below to get the most out of Estate Planner.`}
           </p>
         </div>

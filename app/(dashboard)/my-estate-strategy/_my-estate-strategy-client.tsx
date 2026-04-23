@@ -131,7 +131,7 @@ export default function MyEstateStrategyClient({
       )}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">My Estate Strategy</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Estate Planning Horizons</h1>
           <p className="mt-1 text-sm text-neutral-500">
             Estimated estate value and tax exposure across four time horizons, based on your data.
             {scenarioMeta.calculatedAt && (
