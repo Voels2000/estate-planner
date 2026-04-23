@@ -158,6 +158,9 @@ export default function EstatePlanningDashboard({
           <p className="text-sm text-gray-500 mt-1">{recommendations.tax_year} tax year parameters</p>
         </div>
         <div className="flex items-center gap-3">
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+            Score {recommendations.complexity_score}/20
+          </span>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${complexityColors[recommendations.complexity_flag]}`}>
             {recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} Complexity
           </span>
@@ -166,26 +169,6 @@ export default function EstatePlanningDashboard({
           )}
         </div>
       </div>
-
-      <CollapsibleSection
-        title="Plan Complexity Score"
-        subtitle={`${recommendations.complexity_flag.charAt(0).toUpperCase() + recommendations.complexity_flag.slice(1)} complexity · ${recommendations.tax_year} tax year`}
-        defaultOpen={true}
-        storageKey="estate-planning-complexity-score"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-700">Plan Complexity Score</p>
-          </div>
-          <div className="text-right">
-            <span className="text-2xl font-bold text-gray-900">{recommendations.complexity_score}</span>
-            <span className="text-sm text-gray-400 ml-1">/ 20</span>
-            <div className={`mt-1 px-2 py-0.5 rounded text-xs font-medium inline-block ${complexityColors[recommendations.complexity_flag]}`}>
-              {recommendations.complexity_flag}
-            </div>
-          </div>
-        </div>
-      </CollapsibleSection>
 
       <CollapsibleSection
         title="Estate Plan Completeness"
