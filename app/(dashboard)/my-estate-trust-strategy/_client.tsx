@@ -156,13 +156,9 @@ export default function MyEstateTrustStrategyClient({
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-1 text-base font-semibold text-gray-800">Trusts & Estate Documents</h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Trust planning and document management are coming soon. Your estate documents (will,
-              power of attorney, advance directive) can be tracked in the meantime.
-            </p>
             <a
               href="/trust-will"
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              className="mb-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
               + Add Trust Document
             </a>
@@ -238,13 +234,8 @@ export default function MyEstateTrustStrategyClient({
           </div>
           <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
             <p className="text-sm text-amber-800">
-              <span className="font-semibold">Note:</span> Trust formation, funding, and
-              administration require an attorney. This tool provides information only - not legal
-              advice. Use the <a href="/my-advisor" className="underline">My Advisor</a> or{' '}
-              <a href="/settings/attorney-access" className="underline">
-                My Attorney
-              </a>{' '}
-              pages to connect with a professional.
+              <span className="font-semibold">Note:</span> The advance strategies and trusts on this
+              page are complex. We recommend you consult an advisor or attorney.
             </p>
           </div>
         </div>
