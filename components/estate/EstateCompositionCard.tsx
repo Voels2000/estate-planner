@@ -357,7 +357,7 @@ export default function EstateCompositionCard({
               ))}
               <div className="flex justify-between text-xs font-semibold pt-1 border-t border-gray-100">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="text-blue-700">{fmt(outside_strategy_total)}</span>
+                <span className="text-gray-700">{fmt(outside_strategy_total)}</span>
               </div>
               <p className="text-[10px] text-gray-400 pt-1 leading-relaxed">
                 <span className="font-medium text-green-700">Certain</span> = transfer complete.{' '}
