@@ -218,6 +218,10 @@ export default function CharitableGivingDashboard({
   if (!summary) return null;
 
   const { summary: s, deduction_detail: dd, qcd_summary: qcd } = summary;
+  const recommendations = summary.recommendations.filter((rec) => {
+    const text = `${rec.title} ${rec.detail}`.toLowerCase();
+    return !text.includes('tcja') && !text.includes('sunset');
+  });
 
   return (
     <Fragment>
@@ -386,10 +390,10 @@ export default function CharitableGivingDashboard({
 
             {activeTab === 'recommendations' && (
               <div className="space-y-3">
-                {summary.recommendations.length === 0 ? (
+                {recommendations.length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
                 ) : (
-                  summary.recommendations.map((rec, i) => (
+                  recommendations.map((rec, i) => (
                     <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>{priorityLabel[rec.priority]}</span>
