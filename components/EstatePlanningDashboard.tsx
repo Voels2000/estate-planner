@@ -167,7 +167,6 @@ export default function EstatePlanningDashboard({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Estate Planning</h1>
-            <p className="text-sm text-gray-500 mt-1">{recommendations.tax_year} tax year parameters</p>
           </div>
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">

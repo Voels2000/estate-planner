@@ -100,24 +100,14 @@ export default function MyEstateStrategyClient({
     if (columns.length === 2) return 'lg:grid-cols-2'
     return 'lg:grid-cols-1'
   }, [columns.length])
+  const horizonsSubtitle = scenarioMeta.calculatedAt
+    ? `Today, 10 years, 20 years, and at second death · Last updated ${new Date(scenarioMeta.calculatedAt).toLocaleDateString()}.`
+    : 'Today, 10 years, 20 years, and at second death'
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-neutral-900">Estate Planning Horizons</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Estimated estate value and tax exposure across four time horizons, based on your data.
-            {scenarioMeta.calculatedAt && (
-              <span className="ml-1 text-neutral-400">
-                Last updated {new Date(scenarioMeta.calculatedAt).toLocaleDateString()}.
-              </span>
-            )}
-          </p>
-          {refreshing && (
-            <p className="mt-2 text-xs font-medium text-blue-700">Refreshing data...</p>
-          )}
-        </div>
-      </div>
+      {refreshing && (
+        <p className="mb-4 text-xs font-medium text-blue-700">Refreshing data...</p>
+      )}
 
       {survivorEndYear < currentYear + 10 && (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -147,7 +137,7 @@ export default function MyEstateStrategyClient({
 
       <CollapsibleSection
         title="Estate value & tax horizons"
-        subtitle="Today, 10 years, 20 years, and at second death"
+        subtitle={horizonsSubtitle}
         defaultOpen={true}
         storageKey="my-estate-strategy-horizons"
       >
