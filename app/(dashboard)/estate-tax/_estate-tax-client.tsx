@@ -430,9 +430,6 @@ export default function EstateTaxClient({
       {/* ── Header ── */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          Federal and state estate tax exposure. Strategies marked by your advisor appear below.
-        </p>
       </div>
 
       {/* ── Estate Composition Card ── */}
