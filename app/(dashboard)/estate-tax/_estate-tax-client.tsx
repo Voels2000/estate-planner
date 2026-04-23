@@ -429,7 +429,7 @@ export default function EstateTaxClient({
 
       {/* ── Header ── */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Estate Tax</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Estate Tax Snaphot</h1>
       </div>
 
       {/* ── Estate Composition Card ── */}
