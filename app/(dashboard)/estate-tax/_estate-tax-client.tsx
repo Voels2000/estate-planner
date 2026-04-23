@@ -240,10 +240,6 @@ export default function EstateTaxClient({
     }
   }, [composition])
 
-  // ── Gifting inputs ──────────────────────────────────────────
-  const [annualGifting, setAnnualGifting] = useState(19000)
-  const [giftingYears, setGiftingYears] = useState(10)
-
   // ── Inheritance tax: beneficiary allocation sliders ──────────
   const [inheritShares, setInheritShares] = useState<Record<BeneficiaryClass, number>>({
     spouse: 50,
@@ -253,23 +249,11 @@ export default function EstateTaxClient({
   })
 
   const filing = filingForTax(household)
-  const recommendedAnnualGifting =
-    filing === 'married_joint' && giftingSplitSelected ? 38000 : 19000
-
-  useEffect(() => {
-    if (giftingAnnualUsed != null && giftingAnnualUsed > 0) {
-      setAnnualGifting(Math.round(giftingAnnualUsed))
-      return
-    }
-    setAnnualGifting(recommendedAnnualGifting)
-  }, [giftingAnnualUsed, recommendedAnnualGifting])
-
   const syncedEligibleAnnual = Math.max(0, giftingAnnualUsed ?? 0)
   const syncedLifetimeOverflow = Math.max(0, giftingExcessOverLimit ?? 0)
   const syncedGiftTotalReduction = syncedEligibleAnnual + syncedLifetimeOverflow
-  const useSyncedGifting = syncedGiftTotalReduction > 0
-  const effectiveAnnualGifting = useSyncedGifting ? syncedGiftTotalReduction : annualGifting
-  const effectiveGiftingYears = useSyncedGifting ? 1 : giftingYears
+  const effectiveAnnualGifting = syncedGiftTotalReduction
+  const effectiveGiftingYears = syncedGiftTotalReduction > 0 ? 1 : 0
 
   const statePrimary = (household?.state_primary as string | null) ?? ''
   const stateCompare = (household?.state_compare as string | null) ?? ''
@@ -563,7 +547,7 @@ export default function EstateTaxClient({
             <BreakdownRow label="Admin expense (est.)" value={composition.admin_expense} muted
               sub={`${((composition.admin_expense_pct ?? 0.02) * 100).toFixed(0)}% of gross estate — executor fees, legal, accounting`} />
           )}
-          {useSyncedGifting ? (
+          {syncedGiftTotalReduction > 0 ? (
             <>
               {syncedEligibleAnnual > 0 && (
                 <BreakdownRow label="Annual exclusion gifts (current year)" value={syncedEligibleAnnual} muted
@@ -574,12 +558,7 @@ export default function EstateTaxClient({
                   sub="Amounts above annual exclusion limits still reduce the estate" />
               )}
             </>
-          ) : (
-            annualGifting > 0 && (
-              <BreakdownRow label="Lifetime gifting reduction" value={annualGifting * giftingYears} muted
-                sub={`${formatDollars(annualGifting)}/yr × ${giftingYears} yr`} />
-            )
-          )}
+          ) : null}
           {/* Certain/Probable strategy reductions — current or committed transfers */}
           {(composition?.outside_strategy_items ?? [])
             .filter(s => s.confidence_level === 'certain' || s.confidence_level === 'probable')
@@ -625,74 +604,6 @@ export default function EstateTaxClient({
             <span className="text-base font-bold text-neutral-900 tabular-nums">
               {federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
             </span>
-          </div>
-        </div>
-      </CollapsibleSection>
-
-      {/* ── Gifting Scenario ── */}
-      <CollapsibleSection
-        title="Gifting scenario"
-        subtitle={
-          filing === 'married_joint'
-            ? giftingSplitSelected
-              ? 'Annual gifting limit: $38,000 with gift-splitting consent on file'
-              : 'Annual gifting limit: $19,000 (gift-splitting not selected)'
-            : 'Annual gifting limit: $19,000 per donee'
-        }
-        defaultOpen={false}
-        storageKey="estate-tax-gifting-scenario"
-      >
-        <p className="text-xs text-neutral-500 mb-4">
-          Annual gifting reduces the taxable estate. Married couples may elect gift-splitting
-          up to $38,000 per donee by filing Form 709 consenting to split gifts.
-        </p>
-
-        {giftingAnnualUsed != null && giftingAnnualRemaining != null && (
-          <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
-            <p className="font-medium text-neutral-800">
-              Gifting Strategy sync{giftingTaxYear ? ` (${giftingTaxYear})` : ''}
-            </p>
-            <p className="mt-1">
-              Eligible annual gifts: {formatDollars(giftingAnnualUsed)}.
-              {giftingPerRecipientLimit != null && (
-                <> Per-recipient limit: {formatDollars(giftingPerRecipientLimit)}
-                {giftingSplitSelected ? ' (split-gifting).' : '.'}</>
-              )}
-            </p>
-            {giftingAnnualLoggedTotal != null && (
-              <p className="mt-1">Total annual gifts logged: {formatDollars(giftingAnnualLoggedTotal)}.</p>
-            )}
-            {(giftingExcessOverLimit ?? 0) > 0 && (
-              <p className="mt-1 text-amber-700">
-                {formatDollars(giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit.
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Annual gift amount ($)</label>
-            <input type="number" min="0" step="1000" value={annualGifting}
-              onChange={(e) => setAnnualGifting(Math.max(0, Number(e.target.value) || 0))}
-              className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Years of gifting</label>
-            <input type="number" min="1" max="40" step="1" value={giftingYears}
-              onChange={(e) => setGiftingYears(Math.max(1, Math.min(40, Number(e.target.value) || 1)))}
-              className={inputClass} />
-          </div>
-          <div className="flex flex-col justify-end">
-            <p className="text-xs text-neutral-500 mb-1">Total gifting reduction</p>
-            <p className="text-2xl font-bold text-green-600 tabular-nums">
-              {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
-            </p>
-            {federalResult && (
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Taxable estate: {formatDollars(federalResult.taxable_estate)}
-              </p>
-            )}
           </div>
         </div>
       </CollapsibleSection>

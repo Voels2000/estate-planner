@@ -6,6 +6,7 @@ import Link from 'next/link'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
+import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
 const CharitableGivingDashboard = dynamic(() => import('@/components/CharitableGivingDashboard'), {
@@ -43,6 +44,16 @@ interface Props {
     taxWithStrategies: number
     taxSavings: number
   }
+  giftingScenario: {
+    filing: 'single' | 'married_joint'
+    giftingAnnualUsed: number | null
+    giftingAnnualRemaining: number | null
+    giftingAnnualLoggedTotal: number | null
+    giftingTaxYear: number
+    giftingSplitSelected: boolean
+    giftingPerRecipientLimit: number | null
+    giftingExcessOverLimit: number | null
+  }
 }
 
 type TrustDocumentRow = {
@@ -76,6 +87,7 @@ export default function MyEstateTrustStrategyClient({
   initialTab,
   advisorRecommendations,
   strategyImpact,
+  giftingScenario,
 }: Props) {
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
@@ -84,6 +96,8 @@ export default function MyEstateTrustStrategyClient({
   const [trustDocsLoading, setTrustDocsLoading] = useState(false)
   const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
   const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null)
+  const [annualGifting, setAnnualGifting] = useState(19000)
+  const [giftingYears, setGiftingYears] = useState(10)
 
   async function loadTrustDocuments() {
     if (activeTab !== 'trusts') return
@@ -150,6 +164,24 @@ export default function MyEstateTrustStrategyClient({
     illustrative: 'bg-gray-100 text-gray-600 border-gray-200',
   }
 
+  const recommendedAnnualGifting =
+    giftingScenario.filing === 'married_joint' && giftingScenario.giftingSplitSelected ? 38000 : 19000
+
+  useEffect(() => {
+    if (giftingScenario.giftingAnnualUsed != null && giftingScenario.giftingAnnualUsed > 0) {
+      setAnnualGifting(Math.round(giftingScenario.giftingAnnualUsed))
+      return
+    }
+    setAnnualGifting(recommendedAnnualGifting)
+  }, [giftingScenario.giftingAnnualUsed, recommendedAnnualGifting])
+
+  const syncedEligibleAnnual = Math.max(0, giftingScenario.giftingAnnualUsed ?? 0)
+  const syncedLifetimeOverflow = Math.max(0, giftingScenario.giftingExcessOverLimit ?? 0)
+  const syncedGiftTotalReduction = syncedEligibleAnnual + syncedLifetimeOverflow
+  const useSyncedGifting = syncedGiftTotalReduction > 0
+  const effectiveAnnualGifting = useSyncedGifting ? syncedGiftTotalReduction : annualGifting
+  const effectiveGiftingYears = useSyncedGifting ? 1 : giftingYears
+
   return (
     <div className="space-y-6">
       <div>
@@ -180,7 +212,81 @@ export default function MyEstateTrustStrategyClient({
       </div>
 
       {activeTab === 'gifting' && (
-        <GiftingDashboard householdId={householdId} userRole={userRole} consumerTier={consumerTier} />
+        <div className="space-y-4">
+          <GiftingDashboard householdId={householdId} userRole={userRole} consumerTier={consumerTier} />
+          <CollapsibleSection
+            title="Gifting scenario"
+            subtitle={
+              giftingScenario.filing === 'married_joint'
+                ? giftingScenario.giftingSplitSelected
+                  ? 'Annual gifting limit: $38,000 with gift-splitting consent on file'
+                  : 'Annual gifting limit: $19,000 (gift-splitting not selected)'
+                : 'Annual gifting limit: $19,000 per donee'
+            }
+            defaultOpen={false}
+            storageKey="gifting-strategy-gifting-scenario"
+          >
+            <p className="mb-4 text-xs text-neutral-500">
+              Annual gifting reduces the taxable estate. Married couples may elect gift-splitting
+              up to $38,000 per donee by filing Form 709 consenting to split gifts.
+            </p>
+
+            {giftingScenario.giftingAnnualUsed != null && giftingScenario.giftingAnnualRemaining != null && (
+              <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
+                <p className="font-medium text-neutral-800">
+                  Gifting Strategy sync ({giftingScenario.giftingTaxYear})
+                </p>
+                <p className="mt-1">
+                  Eligible annual gifts: {formatDollars(giftingScenario.giftingAnnualUsed)}.
+                  {giftingScenario.giftingPerRecipientLimit != null && (
+                    <> Per-recipient limit: {formatDollars(giftingScenario.giftingPerRecipientLimit)}
+                    {giftingScenario.giftingSplitSelected ? ' (split-gifting).' : '.'}</>
+                  )}
+                </p>
+                {giftingScenario.giftingAnnualLoggedTotal != null && (
+                  <p className="mt-1">Total annual gifts logged: {formatDollars(giftingScenario.giftingAnnualLoggedTotal)}.</p>
+                )}
+                {(giftingScenario.giftingExcessOverLimit ?? 0) > 0 && (
+                  <p className="mt-1 text-amber-700">
+                    {formatDollars(giftingScenario.giftingExcessOverLimit ?? 0)} exceeds the per-recipient annual limit.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-neutral-700">Annual gift amount ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={annualGifting}
+                  onChange={(e) => setAnnualGifting(Math.max(0, Number(e.target.value) || 0))}
+                  className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-neutral-700">Years of gifting</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="40"
+                  step="1"
+                  value={giftingYears}
+                  onChange={(e) => setGiftingYears(Math.max(1, Math.min(40, Number(e.target.value) || 1)))}
+                  className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                />
+              </div>
+              <div className="flex flex-col justify-end">
+                <p className="mb-1 text-xs text-neutral-500">Total gifting reduction</p>
+                <p className="text-2xl font-bold tabular-nums text-green-600">
+                  {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
+                </p>
+              </div>
+            </div>
+          </CollapsibleSection>
+        </div>
       )}
 
       {activeTab === 'charitable' && (

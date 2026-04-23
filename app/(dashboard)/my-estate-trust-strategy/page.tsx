@@ -132,6 +132,8 @@ export default async function MyEstateTrustStrategyPage({
     { data: liabilitiesRows },
     { data: trustRows },
     { data: federalBracketRows },
+    { data: giftingSummaryData, error: giftingSummaryError },
+    { data: giftHistoryRows },
   ] = await Promise.all([
     classifyEstateAssets(supabase, householdRow.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
@@ -144,6 +146,12 @@ export default async function MyEstateTrustStrategyPage({
       .select('tax_year, min_amount, max_amount, rate_pct')
       .order('tax_year', { ascending: false })
       .order('min_amount', { ascending: true }),
+    supabase.rpc('calculate_gifting_summary', { p_household_id: householdRow.id }),
+    supabase
+      .from('gift_history')
+      .select('recipient_name, amount, gift_type, form_709_filed')
+      .eq('household_id', householdRow.id)
+      .eq('tax_year', new Date().getFullYear()),
   ])
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]
@@ -195,6 +203,45 @@ export default async function MyEstateTrustStrategyPage({
         ).net_estate_tax
       : 0
 
+  const currentTaxYear = new Date().getFullYear()
+  const giftingData = giftingSummaryError
+    ? null
+    : (giftingSummaryData as
+        | {
+            annual_used?: number
+            annual_remaining?: number
+            tax_year?: number
+          }
+        | null)
+  const giftingTaxYear = giftingData?.tax_year ?? currentTaxYear
+  const giftRows = (giftHistoryRows ?? []) as Array<{
+    recipient_name: string | null
+    amount: number | null
+    gift_type: string | null
+    form_709_filed: boolean | null
+  }>
+  const splitSelected = giftRows.some((r) => r.form_709_filed === true)
+  const perRecipientLimit = splitSelected ? 38000 : 19000
+  const recipientGiftTotals = new Map<string, number>()
+  for (const row of giftRows) {
+    if ((row.gift_type ?? 'annual') !== 'annual') continue
+    const recipientKey = (row.recipient_name ?? 'Unnamed recipient').trim().toLowerCase()
+    const amount = Number(row.amount ?? 0)
+    recipientGiftTotals.set(recipientKey, (recipientGiftTotals.get(recipientKey) ?? 0) + amount)
+  }
+  let qualifyingAnnualGifts = 0
+  let excessAnnualGifts = 0
+  let annualLoggedTotal = 0
+  for (const row of giftRows) {
+    if ((row.gift_type ?? 'annual') !== 'annual') continue
+    annualLoggedTotal += Number(row.amount ?? 0)
+  }
+  recipientGiftTotals.forEach((total) => {
+    const qualifying = Math.min(Math.max(0, total), perRecipientLimit)
+    qualifyingAnnualGifts += qualifying
+    excessAnnualGifts += Math.max(0, total - perRecipientLimit)
+  })
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <MyEstateTrustStrategyClient
@@ -209,6 +256,19 @@ export default async function MyEstateTrustStrategyPage({
           taxWithoutStrategies,
           taxWithStrategies,
           taxSavings: Math.max(0, taxWithoutStrategies - taxWithStrategies),
+        }}
+        giftingScenario={{
+          filing,
+          giftingAnnualUsed:
+            qualifyingAnnualGifts > 0
+              ? qualifyingAnnualGifts
+              : (giftingData?.annual_used ?? null),
+          giftingAnnualRemaining: giftingData?.annual_remaining ?? null,
+          giftingAnnualLoggedTotal: annualLoggedTotal || null,
+          giftingTaxYear,
+          giftingSplitSelected: splitSelected,
+          giftingPerRecipientLimit: perRecipientLimit,
+          giftingExcessOverLimit: excessAnnualGifts || null,
         }}
       />
     </div>
