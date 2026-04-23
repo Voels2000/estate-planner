@@ -78,12 +78,6 @@ const BENEFICIARY_CLASS_LABELS: Record<BeneficiaryClass, string> = {
   other: 'Other beneficiaries',
 }
 
-const CONFIDENCE_COLORS: Record<string, string> = {
-  certain:      'bg-green-100 text-green-800 border-green-200',
-  probable:     'bg-blue-100 text-blue-800 border-blue-200',
-  illustrative: 'bg-gray-100 text-gray-600 border-gray-200',
-}
-
 // ─────────────────────────────────────────────────────────────
 // Presentational helpers
 // ─────────────────────────────────────────────────────────────
@@ -316,22 +310,6 @@ export default function EstateTaxClient({
       )
     : null
 
-  // ── Federal result WITH strategies applied ──────────────────
-  const strategyReductionTotal = strategyItems
-    .filter(s => s.confidence_level !== 'illustrative')
-    .reduce((sum, s) => sum + s.amount, 0)
-
-  const federalResultWithStrategies = brackets.length > 0 && grossEstate > 0 && strategyReductionTotal > 0
-    ? computeFederalEstateTax(
-        Math.max(0, grossEstate - strategyReductionTotal),
-        totalLiabilities,
-        trustsExcluded,
-        filing,
-        brackets,
-        effectiveAnnualGifting,
-        effectiveGiftingYears,
-      )
-    : null
 
   // ── State estate tax brackets ────────────────────────────────
   const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(() => {
@@ -458,12 +436,6 @@ export default function EstateTaxClient({
   const totalSliderPct =
     inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
 
-  const hasStrategies = strategyItems.length > 0
-  const taxSavingsFromStrategies =
-    federalResult && federalResultWithStrategies
-      ? Math.max(0, federalResult.net_estate_tax - federalResultWithStrategies.net_estate_tax)
-      : 0
-
   // ─────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────
@@ -572,95 +544,6 @@ export default function EstateTaxClient({
           </>
         )}
       </CollapsibleSection>
-
-      {/* ── Strategy Impact — only shown when strategies exist ── */}
-      {hasStrategies && (
-        <CollapsibleSection
-          title="Strategy impact"
-          subtitle="How your advisor's recommended strategies affect your estate tax"
-          defaultOpen={true}
-          storageKey="estate-tax-strategy-impact"
-        >
-          <div className="space-y-4">
-            {/* Before / After summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 mb-1">
-                  Without strategies
-                </p>
-                <p className="text-xl font-bold text-neutral-900">
-                  {federalResult ? formatDollars(federalResult.net_estate_tax) : '—'}
-                </p>
-                <p className="text-xs text-neutral-400 mt-0.5">Est. federal tax</p>
-              </div>
-              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-green-700 mb-1">
-                  With strategies
-                </p>
-                <p className="text-xl font-bold text-green-700">
-                  {federalResultWithStrategies
-                    ? formatDollars(federalResultWithStrategies.net_estate_tax)
-                    : federalResult
-                    ? formatDollars(federalResult.net_estate_tax)
-                    : '—'}
-                </p>
-                <p className="text-xs text-green-600 mt-0.5">Est. federal tax</p>
-              </div>
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-blue-700 mb-1">
-                  Potential savings
-                </p>
-                <p className="text-xl font-bold text-blue-700">
-                  {formatDollars(taxSavingsFromStrategies)}
-                </p>
-                <p className="text-xs text-blue-600 mt-0.5">Est. federal tax reduction</p>
-              </div>
-            </div>
-
-            {/* Strategy line items */}
-            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
-                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">
-                  Advisor-recommended strategies
-                </p>
-              </div>
-              <div className="divide-y divide-neutral-100">
-                {strategyItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between px-4 py-3">
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-sm font-medium text-neutral-800 capitalize">
-                        {item.strategy_source.replace(/_/g, ' ')}
-                      </span>
-                      <span className={`inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${CONFIDENCE_COLORS[item.confidence_level] ?? CONFIDENCE_COLORS.illustrative}`}>
-                        {item.confidence_level.charAt(0).toUpperCase() + item.confidence_level.slice(1)}
-                      </span>
-                    </div>
-                    <div className="text-right ml-4 shrink-0">
-                      <span className="text-sm font-semibold text-green-700">
-                        −{formatDollars(item.amount)}
-                      </span>
-                      <p className="text-xs text-neutral-400">estate reduction</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-4 py-3 border-t border-neutral-200 bg-neutral-50 flex justify-between items-center">
-                <span className="text-xs font-semibold text-neutral-700">
-                  Total estate reduction (certain + probable)
-                </span>
-                <span className="text-sm font-bold text-green-700">
-                  −{formatDollars(strategyReductionTotal)}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-neutral-400">
-              Illustrative strategies are excluded from the tax reduction calculation. Consult your
-              advisor and attorney before implementing any strategy.
-            </p>
-          </div>
-        </CollapsibleSection>
-      )}
 
       {/* ── Federal Breakdown ── */}
       <CollapsibleSection

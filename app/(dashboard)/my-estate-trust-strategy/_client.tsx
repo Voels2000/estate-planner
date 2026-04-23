@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import { createClient } from '@/lib/supabase/client'
+import type { OutsideStrategyItem } from '@/lib/estate/types'
 
 const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
 const CharitableGivingDashboard = dynamic(() => import('@/components/CharitableGivingDashboard'), {
@@ -35,6 +36,13 @@ interface Props {
   consumerTier: number
   initialTab: string
   advisorRecommendations: { strategy_type: string; label: string | null }[]
+  strategyImpact: {
+    strategyItems: OutsideStrategyItem[]
+    strategyReductionTotal: number
+    taxWithoutStrategies: number
+    taxWithStrategies: number
+    taxSavings: number
+  }
 }
 
 type TrustDocumentRow = {
@@ -67,6 +75,7 @@ export default function MyEstateTrustStrategyClient({
   consumerTier,
   initialTab,
   advisorRecommendations,
+  strategyImpact,
 }: Props) {
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
@@ -125,6 +134,20 @@ export default function MyEstateTrustStrategyClient({
     }
     setTrustDocs((prev) => prev.filter((t) => t.id !== id))
     setDeletingTrustId(null)
+  }
+
+  function formatDollars(n: number) {
+    return n.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    })
+  }
+
+  const confidenceColors: Record<string, string> = {
+    certain: 'bg-green-100 text-green-800 border-green-200',
+    probable: 'bg-blue-100 text-blue-800 border-blue-200',
+    illustrative: 'bg-gray-100 text-gray-600 border-gray-200',
   }
 
   return (
@@ -212,6 +235,81 @@ export default function MyEstateTrustStrategyClient({
               </p>
             )}
           </div>
+          {strategyImpact.strategyItems.length > 0 && (
+            <div className="rounded-xl border border-neutral-200 bg-white p-4">
+              <p className="mb-3 text-sm font-semibold text-neutral-900">Strategy impact</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    Without strategies
+                  </p>
+                  <p className="text-xl font-bold text-neutral-900">
+                    {formatDollars(strategyImpact.taxWithoutStrategies)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-neutral-400">Est. federal tax</p>
+                </div>
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-700">
+                    With strategies
+                  </p>
+                  <p className="text-xl font-bold text-green-700">
+                    {formatDollars(strategyImpact.taxWithStrategies)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-green-600">Est. federal tax</p>
+                </div>
+                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-blue-700">
+                    Potential savings
+                  </p>
+                  <p className="text-xl font-bold text-blue-700">
+                    {formatDollars(strategyImpact.taxSavings)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-blue-600">Est. federal tax reduction</p>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+                <div className="border-b border-neutral-100 bg-neutral-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                    Advisor-recommended strategies
+                  </p>
+                </div>
+                <div className="divide-y divide-neutral-100">
+                  {strategyImpact.strategyItems.map((item, i) => (
+                    <div key={`${item.strategy_source}-${i}`} className="flex items-center justify-between px-4 py-3">
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium capitalize text-neutral-800">
+                          {item.strategy_source.replace(/_/g, ' ')}
+                        </span>
+                        <span
+                          className={`ml-2 inline-flex w-fit items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${confidenceColors[item.confidence_level] ?? confidenceColors.illustrative}`}
+                        >
+                          {item.confidence_level.charAt(0).toUpperCase() + item.confidence_level.slice(1)}
+                        </span>
+                      </div>
+                      <div className="ml-4 shrink-0 text-right">
+                        <span className="text-sm font-semibold text-green-700">
+                          −{formatDollars(item.amount)}
+                        </span>
+                        <p className="text-xs text-neutral-400">estate reduction</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-4 py-3">
+                  <span className="text-xs font-semibold text-neutral-700">
+                    Total estate reduction (certain + probable)
+                  </span>
+                  <span className="text-sm font-bold text-green-700">
+                    −{formatDollars(strategyImpact.strategyReductionTotal)}
+                  </span>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-neutral-400">
+                Illustrative strategies are excluded from the tax reduction calculation.
+              </p>
+            </div>
+          )}
           <ConsumerStrategyPanel householdId={householdId} userRole={userRole} />
         </div>
       )}
