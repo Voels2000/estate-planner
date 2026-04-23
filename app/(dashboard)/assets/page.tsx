@@ -27,6 +27,23 @@ const SITUS_ASSET_TYPES: { value: string; label: string }[] = [
 ]
 
 type AssetType = { value: string; label: string }
+
+type EstateInclusionStatus =
+  | 'included'
+  | 'excluded_irrevocable'
+  | 'excluded_gifted'
+  | 'excluded_other'
+
+const ESTATE_INCLUSION_HELPER: Record<EstateInclusionStatus, string> = {
+  included: 'This asset is part of your taxable estate.',
+  excluded_irrevocable:
+    'Assets held in an irrevocable trust are generally outside your taxable estate.',
+  excluded_gifted:
+    'A completed gift removes this asset from your estate. Gift tax rules may apply.',
+  excluded_other:
+    'Mark this asset as excluded if it has been transferred outside your estate by another method.',
+}
+
 type Asset = {
   id: string
   owner_id: string
@@ -48,6 +65,7 @@ type Asset = {
   account_last4?: string | null
   face_value?: number | null
   is_ilit?: boolean | null
+  estate_inclusion_status?: EstateInclusionStatus | string | null
 }
 
 const STORAGE_KEY = 'ep_assets_groups'
@@ -211,7 +229,26 @@ export default function AssetsPage() {
                     <tbody className="divide-y divide-neutral-100">
                       {groupItems.map((asset) => (
                         <tr key={asset.id} className="group hover:bg-neutral-50 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium text-neutral-900">{asset.name}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-neutral-900">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>{asset.name}</span>
+                              {asset.estate_inclusion_status === 'excluded_irrevocable' ? (
+                                <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                  Irrevocable Trust
+                                </span>
+                              ) : null}
+                              {asset.estate_inclusion_status === 'excluded_gifted' ? (
+                                <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                  Gifted
+                                </span>
+                              ) : null}
+                              {asset.estate_inclusion_status === 'excluded_other' ? (
+                                <span className="text-xs font-medium bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                  Excluded
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
                           <td className="px-4 py-3 text-sm text-neutral-500">{getTypeLabel(asset.type)}</td>
                           <td className="px-4 py-3 text-sm text-neutral-500">
                             {(asset.owner ?? 'person1') === 'person1' ? person1Name : (asset.owner ?? 'person1') === 'person2' ? person2Name : 'Joint'}
@@ -244,6 +281,7 @@ export default function AssetsPage() {
 
       {showModal && (
         <AssetModal
+          key={editAsset?.id ?? 'new'}
           editAsset={editAsset}
           assetTypes={assetTypes}
           person1Name={person1Name}
@@ -283,6 +321,9 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
   const [isIlit, setIsIlit] = useState(editAsset?.is_ilit ?? false)
   const [situsState, setSitusState] = useState(editAsset?.situs_state ?? '')
   const [situsAssetType, setSitusAssetType] = useState(editAsset?.situs_asset_type ?? '')
+  const [estateInclusionStatus, setEstateInclusionStatus] = useState<EstateInclusionStatus>(
+    (editAsset?.estate_inclusion_status as EstateInclusionStatus | undefined) ?? 'included'
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -307,6 +348,8 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
         situs_asset_type: situsAssetType.trim() || null,
       }
 
+      const estatePayload = { estate_inclusion_status: estateInclusionStatus }
+
       if (editAsset) {
         const { error } = await supabase
           .from('assets')
@@ -324,6 +367,7 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
             face_value: faceValue ? parseFloat(faceValue) : null,
             is_ilit: isIlit,
             ...situsPayload,
+            ...estatePayload,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editAsset.id)
@@ -346,6 +390,7 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
             face_value: faceValue ? parseFloat(faceValue) : null,
             is_ilit: isIlit,
             ...situsPayload,
+            ...estatePayload,
           })
         if (error) throw error
       }
@@ -437,6 +482,25 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
                   ))}
               </select>
               <p className="mt-1 text-xs text-neutral-500">How is this asset legally owned? Affects estate planning and probate.</p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-neutral-200 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-neutral-900">Estate Inclusion</h3>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Estate status</label>
+              <select
+                value={estateInclusionStatus}
+                onChange={(e) => setEstateInclusionStatus(e.target.value as EstateInclusionStatus)}
+                className={inputClass}
+              >
+                <option value="included">Included in Estate</option>
+                <option value="excluded_irrevocable">Held in Irrevocable Trust</option>
+                <option value="excluded_gifted">Gifted (Completed Transfer)</option>
+                <option value="excluded_other">Excluded – Other</option>
+              </select>
+              <p className="mt-2 text-xs text-neutral-500">
+                {ESTATE_INCLUSION_HELPER[estateInclusionStatus] ?? ESTATE_INCLUSION_HELPER.included}
+              </p>
             </div>
           </div>
           {type === 'life_insurance' && (

@@ -30,8 +30,44 @@ export type RealEstate = {
   owner: string
   titling?: string | null
   situs_state?: string | null
+  estate_inclusion_status?: string | null
   created_at: string
   updated_at: string
+}
+
+/** Plain-English helper under Estate Inclusion dropdown (matches businesses Session 27 pattern). */
+const ESTATE_INCLUSION_HELPER: Record<string, string> = {
+  included:
+    'This property is part of your taxable estate at full fair market value.',
+  excluded_irrevocable:
+    'Property held in an irrevocable trust is generally outside your taxable estate.',
+  excluded_gifted:
+    'A completed gift removes this property from your estate. Gift tax rules may apply.',
+  excluded_other:
+    'Mark this property as excluded if it has been transferred outside your estate by another method.',
+}
+
+/** Card badges when status is not default `included` (same idea as businesses list). */
+function EstateInclusionStatusBadge({ status }: { status: string | null | undefined }) {
+  const s = status ?? 'included'
+  if (s === 'included') return null
+  const map: Record<string, { label: string; className: string }> = {
+    excluded_irrevocable: {
+      label: 'Irrevocable Trust',
+      className: 'text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full',
+    },
+    excluded_gifted: {
+      label: 'Gifted',
+      className: 'text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full',
+    },
+    excluded_other: {
+      label: 'Excluded',
+      className: 'text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full',
+    },
+  }
+  const cfg = map[s]
+  if (!cfg) return null
+  return <span className={cfg.className}>{cfg.label}</span>
 }
 
 const PROPERTY_TYPE_LABELS: Record<RealEstate['property_type'], string> = {
@@ -292,9 +328,12 @@ export default function RealEstateClient({
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <h3 className="text-sm font-semibold text-neutral-900 truncate">{row.name}</h3>
-                      <span className="text-xs text-neutral-500">
-                        {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <EstateInclusionStatusBadge status={row.estate_inclusion_status} />
+                        <span className="text-xs text-neutral-500">
+                          {PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type}
+                        </span>
+                      </div>
                     </div>
                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
                       <p className="text-sm text-neutral-600">
@@ -451,8 +490,15 @@ function RealEstateModal({
   const [owner, setOwner] = useState(editRow?.owner ?? 'person1')
   const [titling, setTitling] = useState(editRow?.titling ?? '')
   const [situsState, setSitusState] = useState(editRow?.situs_state ?? '')
+  const [estateInclusionStatus, setEstateInclusionStatus] = useState(
+    editRow?.estate_inclusion_status ?? 'included',
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setEstateInclusionStatus(editRow?.estate_inclusion_status ?? 'included')
+  }, [editRow])
 
   useEffect(() => {
     if (propertyType === 'primary_residence') {
@@ -490,8 +536,12 @@ function RealEstateModal({
         owner,
         titling: titling || null,
         situs_state: situsState || null,
+        estate_inclusion_status: estateInclusionStatus || 'included',
         updated_at: new Date().toISOString(),
       }
+
+      // RLS: verify `real_estate` owner UPDATE policy still allows all columns including
+      // estate_inclusion_status (see 20250317100000_real_estate.sql — no column restrictions).
 
       if (editRow) {
         const { error } = await supabase.from('real_estate').update(payload).eq('id', editRow.id)
@@ -730,6 +780,32 @@ function RealEstateModal({
               <option value="joint">Joint</option>
             </select>
           </div>
+
+          <div className="border-t border-neutral-100 pt-5">
+            <h3 className="text-sm font-semibold text-neutral-700 mb-2">Estate Inclusion</h3>
+            <p className="text-xs text-neutral-500 mb-3">
+              Mark this property as outside your taxable estate only when a legal
+              transfer is complete and effective (e.g. gifted, placed in irrevocable trust).
+              Consult your estate attorney before marking as excluded.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Estate Status</label>
+              <select
+                value={estateInclusionStatus}
+                onChange={(e) => setEstateInclusionStatus(e.target.value)}
+                className={inputClass}
+              >
+                <option value="included">Included in Estate</option>
+                <option value="excluded_irrevocable">Held in Irrevocable Trust</option>
+                <option value="excluded_gifted">Gifted (Completed Transfer)</option>
+                <option value="excluded_other">Excluded – Other</option>
+              </select>
+              <p className="mt-2 text-xs text-neutral-500">
+                {ESTATE_INCLUSION_HELPER[estateInclusionStatus] ?? ESTATE_INCLUSION_HELPER.included}
+              </p>
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-2 pb-1">
             <button
               type="button"

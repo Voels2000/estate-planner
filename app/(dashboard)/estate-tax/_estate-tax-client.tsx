@@ -13,10 +13,8 @@
 //   • EstateCompositionCard shown at top
 //   • Federal section shows "no tax" state clearly when under exemption
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import {
   computeFederalEstateTax,
   computeStateEstateTax,
@@ -167,15 +165,6 @@ export type EstateTaxTrustRow = {
   updated_at?: string
 }
 
-const TRUST_TYPES = [
-  { value: 'revocable',      label: 'Revocable' },
-  { value: 'irrevocable',    label: 'Irrevocable' },
-  { value: 'qtip',           label: 'QTIP' },
-  { value: 'bypass',         label: 'Bypass' },
-  { value: 'charitable',     label: 'Charitable' },
-  { value: 'special_needs',  label: 'Special needs' },
-] as const
-
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
 
@@ -222,14 +211,6 @@ export default function EstateTaxClient({
   realEstate?: Record<string, unknown>[]
   businesses?: Record<string, unknown>[]
 }) {
-  const router = useRouter()
-  const [trusts, setTrusts] = useState<EstateTaxTrustRow[]>(initialTrusts)
-  useEffect(() => { setTrusts(initialTrusts) }, [initialTrusts])
-
-  const [showTrustModal, setShowTrustModal] = useState(false)
-  const [editTrust, setEditTrust] = useState<EstateTaxTrustRow | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
   // Composition state — use prop if available, else fetch client-side
   const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
   const [compositionLoading, setCompositionLoading] = useState(!compositionProp)
@@ -308,7 +289,7 @@ export default function EstateTaxClient({
     () => liabilities.reduce((s, l) => s + num(l.balance), 0),
     [liabilities],
   )
-  const trustsExcluded = useMemo(() => trustsExcludedSum(trusts), [trusts])
+  const trustsExcluded = useMemo(() => trustsExcludedSum(initialTrusts), [initialTrusts])
 
   // ── Federal brackets ────────────────────────────────────────
   const brackets: EstateTaxBracket[] = useMemo(() => {
@@ -470,20 +451,6 @@ export default function EstateTaxClient({
     return computeStateInheritanceTaxTotal(sc, inheritanceShareDollars, stateInheritanceRules)
   }, [stateCompare, statePrimary, inheritanceShareDollars, stateInheritanceRules])
 
-  // ── Trust CRUD ───────────────────────────────────────────────
-  const loadTrusts = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error: e } = await supabase
-      .from('trusts')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    if (e) setError(e.message)
-    else setTrusts((data as EstateTaxTrustRow[]) ?? [])
-  }, [])
-
   function updateInheritShare(cls: BeneficiaryClass, pct: number) {
     setInheritShares((prev) => ({ ...prev, [cls]: Math.max(0, Math.min(100, pct)) }))
   }
@@ -511,12 +478,6 @@ export default function EstateTaxClient({
           Federal and state estate tax exposure. Strategies marked by your advisor appear below.
         </p>
       </div>
-
-      {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-          {error}
-        </p>
-      )}
 
       {/* ── Estate Composition Card ── */}
       {compositionLoading ? (
@@ -1062,164 +1023,6 @@ export default function EstateTaxClient({
         Illustrative only — not tax or legal advice. Consult a qualified estate planning attorney.{' '}
         <Link href="/trust-will" className="text-indigo-600 hover:underline">Manage trusts →</Link>
       </p>
-
-      {showTrustModal && (
-        <TrustModal
-          editRow={editTrust}
-          inputClass={inputClass}
-          onClose={() => { setShowTrustModal(false); setEditTrust(null) }}
-          onSaved={async () => {
-            setShowTrustModal(false)
-            setEditTrust(null)
-            await loadTrusts()
-            router.refresh()
-          }}
-        />
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────
-// Trust modal (unchanged from prior version)
-// ─────────────────────────────────────────────────────────────
-
-function TrustModal({
-  editRow,
-  inputClass: ic,
-  onClose,
-  onSaved,
-}: {
-  editRow: EstateTaxTrustRow | null
-  inputClass: string
-  onClose: () => void
-  onSaved: () => Promise<void>
-}) {
-  const [name, setName] = useState(editRow?.name ?? '')
-  const [trustType, setTrustType] = useState(editRow?.trust_type ?? 'revocable')
-  const [grantor, setGrantor] = useState(editRow?.grantor ?? '')
-  const [trustee, setTrustee] = useState(editRow?.trustee ?? '')
-  const [fundingAmount, setFundingAmount] = useState(
-    editRow != null ? String(num(editRow.funding_amount ?? editRow.excluded_from_estate)) : '0',
-  )
-  const [state, setState] = useState(editRow?.state ?? '')
-  const [isIrrevocable, setIsIrrevocable] = useState(editRow?.is_irrevocable ?? false)
-  const [excludesFromEstate, setExcludesFromEstate] = useState(
-    editRow?.excludes_from_estate ?? (editRow != null && num(editRow.excluded_from_estate) > 0),
-  )
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  function localNum(v: unknown): number {
-    if (typeof v === 'number' && !Number.isNaN(v)) return v
-    if (typeof v === 'string' && v !== '') return Number(v) || 0
-    return 0
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setFormError(null)
-    setIsSubmitting(true)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const funding = Math.max(0, parseFloat(fundingAmount) || 0)
-      const excludedNumeric = excludesFromEstate ? funding : 0
-      const payload = {
-        name: name.trim() || 'Trust',
-        trust_type: trustType,
-        grantor: grantor.trim(),
-        trustee: trustee.trim(),
-        funding_amount: funding,
-        state: state.trim().length === 2 ? state.trim().toUpperCase() : state.trim(),
-        is_irrevocable: isIrrevocable,
-        excludes_from_estate: excludesFromEstate,
-        excluded_from_estate: excludedNumeric,
-        updated_at: new Date().toISOString(),
-      }
-      if (editRow) {
-        const { error } = await supabase.from('trusts').update(payload).eq('id', editRow.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('trusts').insert({
-          ...payload,
-          owner_id: (await supabase.auth.getUser()).data.user?.id,
-        })
-        if (error) throw error
-      }
-      await onSaved()
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
-        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-neutral-900">
-            {editRow ? 'Edit Trust' : 'Add Trust'}
-          </h2>
-          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
-          {formError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{formError}</p>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className={ic} placeholder="e.g. Smith Family Trust" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Trust type</label>
-            <select value={trustType} onChange={(e) => setTrustType(e.target.value)} className={ic}>
-              {TRUST_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Grantor</label>
-              <input type="text" value={grantor} onChange={(e) => setGrantor(e.target.value)} className={ic} placeholder="Name" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Trustee</label>
-              <input type="text" value={trustee} onChange={(e) => setTrustee(e.target.value)} className={ic} placeholder="Name" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Funding amount ($)</label>
-              <input type="number" min="0" step="0.01" value={fundingAmount} onChange={(e) => setFundingAmount(e.target.value)} className={ic} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">State</label>
-              <input type="text" value={state} onChange={(e) => setState(e.target.value)} className={ic} placeholder="e.g. CA" maxLength={32} />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input id="isIrrevocable" type="checkbox" checked={isIrrevocable} onChange={(e) => setIsIrrevocable(e.target.checked)} className="h-4 w-4 rounded border-neutral-300" />
-            <label htmlFor="isIrrevocable" className="text-sm text-neutral-700">Is irrevocable</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input id="excludesFromEstate" type="checkbox" checked={excludesFromEstate} onChange={(e) => setExcludesFromEstate(e.target.checked)} className="h-4 w-4 rounded border-neutral-300" />
-            <label htmlFor="excludesFromEstate" className="text-sm text-neutral-700">Excludes from estate</label>
-          </div>
-          <div className="flex gap-3 pt-2 pb-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition">
-              Cancel
-            </button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
-              {isSubmitting ? 'Saving...' : editRow ? 'Save Changes' : 'Add Trust'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   )
 }
