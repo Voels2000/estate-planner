@@ -282,7 +282,6 @@ export default async function MyEstateStrategyPage() {
         hasSpouse={hasSpouse}
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
-        composition={composition}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

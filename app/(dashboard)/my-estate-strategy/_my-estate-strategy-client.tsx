@@ -9,8 +9,6 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
-import type { EstateComposition } from '@/lib/estate/types'
-import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 
 type Horizons = MyEstateStrategyHorizonsResult
@@ -48,7 +46,6 @@ type Props = {
   hasSpouse: boolean
   survivorEndYear: number
   currentYear: number
-  composition?: EstateComposition
 }
 
 export default function MyEstateStrategyClient({
@@ -61,7 +58,6 @@ export default function MyEstateStrategyClient({
   hasSpouse,
   survivorEndYear,
   currentYear,
-  composition,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -145,16 +141,6 @@ export default function MyEstateStrategyClient({
         <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           {generateError}
         </p>
-      )}
-
-      {composition && (
-        <div className="mb-6">
-          <EstateCompositionCard
-            composition={composition}
-            label="Your Estate"
-            snapshotLabel="Current snapshot"
-          />
-        </div>
       )}
 
       <CollapsibleSection
