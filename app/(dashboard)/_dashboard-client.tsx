@@ -674,6 +674,17 @@ export function DashboardClient(props: Props) {
             </div>
           )}
 
+          {!estateHealthScore && hasEstateData(props) && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <p className="text-sm font-medium text-blue-900">
+                Generate your estate plan to see your health score.
+              </p>
+              <p className="mt-1 text-xs text-blue-700">
+                We&apos;ll show your readiness score here after your first successful recompute.
+              </p>
+            </div>
+          )}
+
           {composition && (
             <div className="mb-6">
               <EstateCompositionCard

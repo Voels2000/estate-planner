@@ -4,8 +4,8 @@
 // ─────────────────────────────────────────
 
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
-import { detectConflicts } from '@/lib/conflict-detector'
-import { computeEstateHealthScore, type EstateHealthScore } from '@/lib/estate-health-score'
+import type { ConflictReport } from '@/lib/conflict-detector'
+import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
@@ -18,7 +18,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { cookies } from 'next/headers'
 import { DashboardClient, type EstateTaxHorizonsProps } from '../_dashboard-client'
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
@@ -167,20 +166,10 @@ export default async function DashboardPage() {
   // This is the live metric — updates as income/expense data changes.
   // E.g. when expenses drop $110K in 2030 after moving, this reflects it.
   const currentYearNet = totalIncome - totalExpenses
-  let hasLiveProjectionOutput = false
-  try {
-    const projectionRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projection`, {
-      headers: { cookie: (await cookies()).toString() },
-      cache: 'no-store',
-    })
-    if (projectionRes.ok) {
-      const projectionData = await projectionRes.json()
-      hasLiveProjectionOutput =
-        Array.isArray(projectionData?.rows) && projectionData.rows.length > 0
-    }
-  } catch {
-    hasLiveProjectionOutput = false
-  }
+  // Derive from baseCaseScenario already loaded above — no HTTP roundtrip needed
+  const hasLiveProjectionOutput =
+    Array.isArray(baseCaseScenario?.outputs_s1_first) &&
+    (baseCaseScenario.outputs_s1_first as unknown[]).length > 0
 
   // ── Setup steps — "Compare scenarios" removed (no longer a gate) ─────────
   const setupSteps = [
@@ -196,16 +185,42 @@ export default async function DashboardPage() {
 
   // ── Tier / completion ────────────────────────────────────────────────────
   const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
-  const completionScore: CompletionScore | null = isConsumerTier2 ? await getCompletionScore(user!.id) : null
+  const [completionScore, composition] = await Promise.all([
+    isConsumerTier2 ? getCompletionScore(user!.id) : Promise.resolve(null),
+    household?.id ? classifyEstateAssets(supabase, household.id) : Promise.resolve(null),
+  ])
 
-  // ── Estate health score ──────────────────────────────────────────────────
-  const estateHealthScore: EstateHealthScore | null = household?.id
-    ? await computeEstateHealthScore(household.id, user!.id)
-    : null
+  // ── Estate health score — read from cache, recomputed async on staleness ─
+  // computeEstateHealthScore writes to DB — never call it in render path.
+  // Dashboard reads the last persisted score; background recompute updates it.
+  const { data: healthScoreRow } = household?.id
+    ? await admin
+        .from('estate_health_scores')
+        .select('score, component_scores, computed_at')
+        .eq('household_id', household.id)
+        .maybeSingle()
+    : { data: null }
 
-  // ── Estate composition (gross estate for strategy horizons) ─────────────
-  const composition = household?.id
-    ? await classifyEstateAssets(supabase, household.id)
+  const estateHealthScore: EstateHealthScore | null = healthScoreRow
+    ? {
+        score: healthScoreRow.score ?? 0,
+        components: Object.entries(healthScoreRow.component_scores ?? {}).map(
+          ([key, val]: [string, any]) => ({
+            key,
+            label: val.label ?? key,
+            score: val.score ?? 0,
+            maxScore: val.maxScore ?? 0,
+            status: (val.score ?? 0) >= (val.maxScore ?? 1)
+              ? 'good'
+              : (val.score ?? 0) >= (val.maxScore ?? 1) * 0.5
+              ? 'warning'
+              : 'critical',
+            actionLabel: val.actionLabel ?? '',
+            actionHref: val.actionHref ?? '/health-check',
+          }),
+        ),
+        computedAt: healthScoreRow.computed_at ?? new Date().toISOString(),
+      }
     : null
 
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
@@ -281,8 +296,23 @@ export default async function DashboardPage() {
       })()
     : null
 
-  // ── Conflict detector ────────────────────────────────────────────────────
-  const conflictReport = household?.id ? await detectConflicts(household.id, user!.id) : null
+  // ── Conflict detector — read from cache, recomputed async on staleness ───
+  // detectConflicts writes to DB — never call it in render path.
+  const { data: conflictRows } = household?.id
+    ? await admin
+        .from('beneficiary_conflicts')
+        .select('conflict_type, severity, asset_id, real_estate_id, description, recommended_action')
+        .eq('household_id', household.id)
+    : { data: null }
+
+  const conflictReport: ConflictReport | null = conflictRows
+    ? {
+        conflicts: conflictRows,
+        critical: conflictRows.filter(c => c.severity === 'critical').length,
+        warnings: conflictRows.filter(c => c.severity === 'warning').length,
+        computedAt: new Date().toISOString(),
+      }
+    : null
 
   // ── RMD Status for current year ──────────────────────────────────────
   function getRmdStartAge(birthYear: number): number {
