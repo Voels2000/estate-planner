@@ -7,6 +7,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
+import { getUserAccess } from '@/lib/get-user-access'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
@@ -14,6 +16,7 @@ import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 
 export default async function MyEstateStrategyPage() {
+  const access = await getUserAccess()
   const supabase = await createClient()
   const {
     data: { user },
@@ -262,6 +265,11 @@ export default async function MyEstateStrategyPage() {
 
   return (
     <div className="min-h-screen">
+      <EstatePlanningDashboard
+        householdId={household.id}
+        userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+        consumerTier={access.tier}
+      />
       <MyEstateStrategyClient
         householdId={household.id}
         scenarioId={household.base_case_scenario_id}

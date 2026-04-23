@@ -1,5 +1,4 @@
 import { getUserAccess } from '@/lib/get-user-access'
-import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
@@ -162,13 +161,6 @@ export default async function EstateTaxPage() {
 
   return (
     <>
-      {householdRow?.id && (
-        <EstatePlanningDashboard
-          householdId={householdRow.id as string}
-          userRole={access.isAdvisor ? 'advisor' : 'consumer'}
-          consumerTier={access.tier}
-        />
-      )}
       <EstateTaxClient
         realEstate={realEstateRows ?? []}
         assets={assetsRows ?? []}

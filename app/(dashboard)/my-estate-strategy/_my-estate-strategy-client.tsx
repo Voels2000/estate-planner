@@ -7,9 +7,9 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { EstateComposition } from '@/lib/estate/types'
-import ConsumerEstateFlowView from '@/components/estate-flow/ConsumerEstateFlowView'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 
@@ -20,6 +20,18 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
   currency: 'USD',
   maximumFractionDigits: 0,
 })
+
+const ConsumerEstateFlowView = dynamic(
+  () => import('@/components/estate-flow/ConsumerEstateFlowView'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+        Loading estate flow...
+      </div>
+    ),
+  },
+)
 
 type Props = {
   householdId: string
@@ -91,10 +103,10 @@ export default function MyEstateStrategyClient({
     return 'lg:grid-cols-1'
   }, [columns.length])
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Estate Planning Horizons</h1>
+          <h2 className="text-xl font-semibold text-neutral-900">Estate Planning Horizons</h2>
           <p className="mt-1 text-sm text-neutral-500">
             Estimated estate value and tax exposure across four time horizons, based on your data.
             {scenarioMeta.calculatedAt && (
