@@ -66,7 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Estate Value and Tax Horizons',
+    label: 'Estate Planning',
     icon: '📜',
     locked: true,
     items: [
@@ -188,7 +188,7 @@ export function SidebarNav({
             group.locked === true &&
             !isAdvisor &&
             ((group.label === 'Retirement Planning' && tier < 2) ||
-              (group.label === 'Estate Value and Tax Horizons' && tier < 3))
+              (group.label === 'Estate Planning' && tier < 3))
 
           return (
             <div key={group.label}>
