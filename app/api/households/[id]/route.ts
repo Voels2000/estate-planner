@@ -85,12 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const cookieHeader = request.headers.get('cookie') ?? ''
-    triggerEstateHealthRecompute(
-      householdId,
-      process.env.NEXT_PUBLIC_APP_URL ?? '',
-      cookieHeader,
-    )
+    triggerEstateHealthRecompute(householdId, process.env.NEXT_PUBLIC_APP_URL ?? '')
 
     return NextResponse.json({ success: true, data })
   } catch (err) {

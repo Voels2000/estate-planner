@@ -134,6 +134,7 @@ export default async function MyEstateTrustStrategyPage({
     { data: federalBracketRows },
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
+    { data: advisorLineItemRows },
   ] = await Promise.all([
     classifyEstateAssets(supabase, householdRow.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
@@ -152,6 +153,12 @@ export default async function MyEstateTrustStrategyPage({
       .select('recipient_name, amount, gift_type, form_709_filed')
       .eq('household_id', householdRow.id)
       .eq('tax_year', new Date().getFullYear()),
+    supabase
+      .from('strategy_line_items')
+      .select('strategy_source, amount, sign, confidence_level, effective_year, metadata')
+      .eq('household_id', householdRow.id)
+      .eq('source_role', 'advisor')
+      .eq('is_active', true),
   ])
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]
@@ -250,6 +257,7 @@ export default async function MyEstateTrustStrategyPage({
         consumerTier={access.tier}
         initialTab={searchParams.tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
+        advisorLineItems={advisorLineItemRows ?? []}
         strategyImpact={{
           strategyItems,
           strategyReductionTotal,

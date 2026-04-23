@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -73,6 +74,17 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Fire estate health recompute (best-effort, fire-and-forget)
+  const { data: hh } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', policyUserId)
+    .single()
+  if (hh?.id) {
+    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+  }
+
   return NextResponse.json(data)
 }
 
@@ -95,5 +107,16 @@ export async function DELETE(
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Fire estate health recompute (best-effort, fire-and-forget)
+  const { data: hh } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', policyUserId)
+    .single()
+  if (hh?.id) {
+    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+  }
+
   return NextResponse.json({ success: true })
 }

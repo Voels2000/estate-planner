@@ -13,9 +13,13 @@ import type { EstateComposition } from './types'
 export async function classifyEstateAssets(
   supabase: SupabaseClient,
   householdId: string,
+  sourceRole: 'consumer' | 'advisor' = 'consumer',
 ): Promise<EstateComposition> {
   const { data, error } = await supabase
-    .rpc('calculate_estate_composition', { p_household_id: householdId })
+    .rpc('calculate_estate_composition', {
+      p_household_id: householdId,
+      p_source_role: sourceRole,
+    })
 
   if (error) {
     console.error('[classifyEstateAssets] RPC error:', error.message)

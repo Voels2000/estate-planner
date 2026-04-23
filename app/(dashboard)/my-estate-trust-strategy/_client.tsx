@@ -8,6 +8,15 @@ import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 
+type AdvisorLineItem = {
+  strategy_source: string
+  amount: number
+  sign: number
+  confidence_level: string
+  effective_year: number | null
+  metadata: Record<string, unknown> | null
+}
+
 const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
 const CharitableGivingDashboard = dynamic(() => import('@/components/CharitableGivingDashboard'), {
   ssr: false,
@@ -37,6 +46,7 @@ interface Props {
   consumerTier: number
   initialTab: string
   advisorRecommendations: { strategy_type: string; label: string | null }[]
+  advisorLineItems: AdvisorLineItem[]
   strategyImpact: {
     strategyItems: OutsideStrategyItem[]
     strategyReductionTotal: number
@@ -86,6 +96,7 @@ export default function MyEstateTrustStrategyClient({
   consumerTier,
   initialTab,
   advisorRecommendations,
+  advisorLineItems,
   strategyImpact,
   giftingScenario,
 }: Props) {
@@ -416,7 +427,11 @@ export default function MyEstateTrustStrategyClient({
               </p>
             </div>
           )}
-          <ConsumerStrategyPanel householdId={householdId} userRole={userRole} />
+          <ConsumerStrategyPanel
+            householdId={householdId}
+            userRole={userRole}
+            advisorLineItems={advisorLineItems}
+          />
         </div>
       )}
 

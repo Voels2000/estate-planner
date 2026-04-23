@@ -7,11 +7,21 @@ import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidi
 import { modelRothConversion, RothConversionConfig } from '@/lib/strategy/modelRothConversion'
 import type { StrategyLineItemInput } from '@/lib/estate/types'
 
+type AdvisorLineItem = {
+  strategy_source: string
+  amount: number
+  sign: number
+  confidence_level: string
+  effective_year: number | null
+  metadata: Record<string, unknown> | null
+}
+
 type AdvancedPanel = 'grat' | 'crt' | 'clat' | 'daf' | 'liquidity' | 'roth' | null
 
 interface ConsumerStrategyPanelProps {
   householdId: string
   userRole: 'consumer' | 'advisor'
+  advisorLineItems?: AdvisorLineItem[]
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -116,7 +126,18 @@ function RecommendButton({
   )
 }
 
-export default function ConsumerStrategyPanel({ householdId, userRole }: ConsumerStrategyPanelProps) {
+export default function ConsumerStrategyPanel({
+  householdId,
+  userRole,
+  advisorLineItems = [],
+}: ConsumerStrategyPanelProps) {
+  function advisorMeta(strategySource: string): Record<string, unknown> {
+    return advisorLineItems.find((i) => i.strategy_source === strategySource)?.metadata ?? {}
+  }
+  function advisorAmount(strategySource: string): number {
+    return advisorLineItems.find((i) => i.strategy_source === strategySource)?.amount ?? 0
+  }
+
   const grossEstate = DEFAULT_GROSS_ESTATE
   const federalExemption = DEFAULT_EXEMPTION
   const estimatedFederalTax = DEFAULT_ESTIMATED_FEDERAL_TAX
@@ -131,8 +152,10 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
   const defaultDeathYear = person1BirthYear + 82
 
   const [gratConfig, setGratConfig] = useState<GRATConfig>({
-    fundingAmount: Math.min(5_000_000, grossEstate * 0.25),
-    termYears: 5,
+    fundingAmount: Number(
+      advisorMeta('grat').funding_amount ?? Math.min(5_000_000, grossEstate * 0.25),
+    ),
+    termYears: Number(advisorMeta('grat').term_years ?? 5),
     expectedGrowthRate: 0.08,
     section7520Rate: DEFAULT_7520_RATE,
     isZeroedOut: true,
@@ -144,7 +167,7 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
   })
 
   const [crtConfig, setCrtConfig] = useState({
-    fundingAmount: 1_000_000,
+    fundingAmount: advisorAmount('crt') > 0 ? advisorAmount('crt') : 1_000_000,
     payoutRate: 0.05,
     termYears: 20,
     section7520Rate: DEFAULT_7520_RATE,
@@ -153,7 +176,7 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
   })
 
   const [clatConfig, setClatConfig] = useState({
-    fundingAmount: 2_000_000,
+    fundingAmount: advisorAmount('clat') > 0 ? advisorAmount('clat') : 2_000_000,
     annualCharitableAnnuity: 200_000,
     termYears: 10,
     section7520Rate: DEFAULT_7520_RATE,
@@ -162,7 +185,7 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
   })
 
   const [dafConfig, setDafConfig] = useState<DAFConfig>({
-    contributionAmount: 500_000,
+    contributionAmount: advisorAmount('daf') > 0 ? advisorAmount('daf') : 500_000,
     assetType: 'appreciated_securities',
     costBasis: 100_000,
     marginalIncomeTaxRate: 0.37,
@@ -182,8 +205,8 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
   const [rothConfig, setRothConfig] = useState<RothConversionConfig>({
     preIRABalance,
     annualRMD,
-    annualConversionAmount: 100_000,
-    conversionYears: 10,
+    annualConversionAmount: Number(advisorMeta('roth').annual_conversion ?? 100_000),
+    conversionYears: Number(advisorMeta('roth').years ?? 10),
     marginalTaxRateDuringConversion: 0.32,
     beneficiaryMarginalTaxRate: 0.37,
     growthRate: 0.07,
@@ -228,6 +251,12 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
               }`}
             >
               {p.label}
+              {advisorLineItems.some((i) => i.strategy_source === (p.id ?? '')) && (
+                <span
+                  className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400"
+                  title="Advisor modeled"
+                />
+              )}
               {saved.has(p.id ?? '') && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
               )}

@@ -147,12 +147,7 @@ export default async function MyEstateStrategyPage() {
       await generateBaseCase(household.id)
       // Trigger async health score + conflict recompute after base case regeneration.
       const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
-      const cookieStr = (await import('next/headers')).cookies().toString()
-      triggerEstateHealthRecompute(
-        household.id,
-        process.env.NEXT_PUBLIC_APP_URL ?? '',
-        cookieStr,
-      )
+      triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
       // Reload household so base_case_scenario_id is fresh for the queries below
       const { data: refreshed } = await supabase
         .from('households')

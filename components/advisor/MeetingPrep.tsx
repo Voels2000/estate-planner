@@ -11,6 +11,18 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
+const STRATEGY_LABELS: Record<string, string> = {
+  gifting: 'Annual Gifting Program',
+  revocable_trust: 'Revocable Living Trust',
+  credit_shelter_trust: 'Credit Shelter Trust (CST)',
+  grat: 'Grantor Retained Annuity Trust (GRAT)',
+  crt: 'Charitable Remainder Trust (CRT)',
+  clat: 'Charitable Lead Annuity Trust (CLAT)',
+  daf: 'Donor Advised Fund (DAF)',
+  roth: 'Roth Conversion',
+  liquidity: 'Estate Liquidity Planning',
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MeetingBrief {
@@ -63,6 +75,8 @@ async function generateMeetingBrief(
     alertsRes,
     projectionRes,
     notesRes,
+    strategyConfigsRes,
+    advisorLineItemsRes,
   ] = await Promise.all([
     supabase
       .from('estate_health_scores')
@@ -93,12 +107,25 @@ async function generateMeetingBrief(
       .order('created_at', { ascending: false })
       .limit(1)
       .single(),
+    supabase
+      .from('strategy_configs')
+      .select('strategy_type, label')
+      .eq('household_id', householdId)
+      .eq('is_active', true),
+    supabase
+      .from('strategy_line_items')
+      .select('strategy_source, amount, confidence_level, source_role')
+      .eq('household_id', householdId)
+      .eq('source_role', 'advisor')
+      .eq('is_active', true),
   ])
 
   const healthScores = healthScoreRes.data ?? []
   const alerts = alertsRes.data ?? []
   const projection = projectionRes.data
   const lastNote = notesRes.data
+  const strategyConfigs = strategyConfigsRes.data ?? []
+  const advisorLineItems = advisorLineItemsRes.data ?? []
 
   // Health score
   const scoreToday = healthScores[0]?.score ?? null
@@ -133,7 +160,21 @@ async function generateMeetingBrief(
     estate_tax: estateTax,
     net_to_heirs: netToHeirs,
     cost_of_inaction: costOfInaction,
-    recommended_strategies: [], // populated in Sprint 67 when strategy modules exist
+    recommended_strategies: strategyConfigs.map((sc) => {
+      const lineItem = advisorLineItems.find(
+        (li) => li.strategy_source === sc.strategy_type,
+      )
+      const label = sc.label ?? STRATEGY_LABELS[sc.strategy_type] ?? sc.strategy_type
+      if (lineItem) {
+        const amt = fmt(lineItem.amount)
+        const conf =
+          lineItem.confidence_level === 'illustrative'
+            ? 'modeled'
+            : lineItem.confidence_level
+        return `${label} — ${amt} (${conf})`
+      }
+      return label
+    }),
     last_note: lastNote?.content ?? null,
     last_note_date: lastNote?.created_at ?? null,
     has_projection: !!projection,
@@ -302,6 +343,22 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
                       Without additional planning, the projected estate tax liability is{' '}
                       <strong className="text-neutral-900">{fmt(brief.cost_of_inaction)}</strong>.
                       Strategy options are available in the StrategyTab.
+                    </p>
+                  </BriefSection>
+                )}
+
+                {brief.recommended_strategies.length > 0 && (
+                  <BriefSection title={`Recommended Strategies (${brief.recommended_strategies.length})`}>
+                    <ul className="space-y-1.5">
+                      {brief.recommended_strategies.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-neutral-400">
+                      Review implementation details with the client in the Strategy tab.
                     </p>
                   </BriefSection>
                 )}

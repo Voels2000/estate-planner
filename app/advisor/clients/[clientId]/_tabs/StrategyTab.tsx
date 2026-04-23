@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'
@@ -12,7 +12,7 @@ import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
-import type { StrategyLineItem } from '@/lib/estate/types'
+import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 
 export default function StrategyTab({ household, scenario }: ClientViewShellProps) {
   const grossEstate = Number(scenario?.gross_estate ?? 0)
@@ -40,6 +40,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const [advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
   const [strategyConfigs, setStrategyConfigs] = useState<any[]>([])
+  const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
 
   // Gifting actuals from RPC
   const [giftingActuals, setGiftingActuals] = useState<{
@@ -75,18 +76,33 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
       .catch(() => null)
   }, [household?.id])
 
-  useEffect(() => {
+  const loadConsumerData = useCallback(async () => {
     if (!household?.id) return
     Promise.all([
       fetchStrategyLineItems(household.id, 'advisor'),
       fetchStrategyLineItems(household.id, 'consumer'),
       fetchStrategyConfigs(household.id),
-    ]).then(([adv, con, configs]) => {
+    ]).then(async ([adv, con, configs]) => {
       setAdvisorLineItems(adv)
       setConsumerLineItems(con)
       setStrategyConfigs(configs)
+      try {
+        const r = await fetch('/api/estate-composition', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ householdId: household.id, sourceRole: 'consumer' }),
+        })
+        const d = await r.json()
+        if (!d.error) setConsumerComposition(d)
+      } catch {
+        // non-fatal — ConsumerPlanStatus handles null gracefully
+      }
     }).catch(() => null)
   }, [household?.id])
+
+  useEffect(() => {
+    loadConsumerData()
+  }, [loadConsumerData])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)
@@ -267,6 +283,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
             annualRMD={annualRMD}
             preIRABalance={preIRABalance}
             rothBalance={rothBalance}
+            onRecommend={loadConsumerData}
           />
         )}
       </section>
@@ -325,7 +342,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
           </span>
         </div>
         <ConsumerPlanStatus
-          consumerComposition={null}
+          consumerComposition={consumerComposition}
           consumerLineItems={consumerLineItems}
           strategyConfigs={strategyConfigs}
         />

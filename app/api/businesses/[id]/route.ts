@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function resolveBusinessAuth(
@@ -59,6 +60,16 @@ export async function PATCH(
     .update({ updated_at: new Date().toISOString() })
     .eq('owner_id', ownerId)
 
+  // Fire estate health recompute (best-effort, fire-and-forget)
+  const { data: hh } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .single()
+  if (hh?.id) {
+    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+  }
+
   return NextResponse.json(data)
 }
 
@@ -86,6 +97,16 @@ export async function DELETE(
     .from('households')
     .update({ updated_at: new Date().toISOString() })
     .eq('owner_id', ownerId)
+
+  // Fire estate health recompute (best-effort, fire-and-forget)
+  const { data: hh } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .single()
+  if (hh?.id) {
+    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+  }
 
   return NextResponse.json({ success: true })
 }

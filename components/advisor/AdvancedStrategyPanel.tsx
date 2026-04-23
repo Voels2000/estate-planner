@@ -24,6 +24,7 @@ interface AdvancedStrategyPanelProps {
   annualRMD?: number
   preIRABalance?: number
   rothBalance?: number
+  onRecommend?: () => void | Promise<void>
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -61,7 +62,10 @@ async function removeStrategyLineItem(householdId: string, strategySource: strin
   })
 }
 
-function useRecommendAdvanced(householdId: string) {
+function useRecommendAdvanced(
+  householdId: string,
+  onRecommend?: () => void | Promise<void>,
+) {
   const [saved, setSaved] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
 
@@ -94,6 +98,7 @@ function useRecommendAdvanced(householdId: string) {
       return next
     })
     setSaving(false)
+    await onRecommend?.()
   }
 
   return { saved, saving, toggle }
@@ -140,8 +145,9 @@ export default function AdvancedStrategyPanel({
   annualRMD = 0,
   preIRABalance = 0,
   rothBalance = 0,
+  onRecommend,
 }: AdvancedStrategyPanelProps) {
-  const { saved, saving, toggle } = useRecommendAdvanced(householdId)
+  const { saved, saving, toggle } = useRecommendAdvanced(householdId, onRecommend)
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82
 
