@@ -22,7 +22,7 @@ export default async function MyEstateTrustStrategyPage({
         <h1 className="mb-4 text-2xl font-bold text-gray-900">My Estate & Trust Strategy</h1>
         <UpgradeBanner
           requiredTier={3}
-          moduleName="My Estate & Trust Strategy"
+          moduleName="Gifting, Strategies & Trusts"
           valueProposition="Track gifting, charitable giving, and estate transfer strategies in one place."
         />
       </div>

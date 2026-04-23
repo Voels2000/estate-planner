@@ -31,7 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: '🏠',
     items: [
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
-      { href: '/dashboard', label: 'My Estate Plan', icon: '📊', feature: 'dashboard' },
+      { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
     ],
   },
   {
@@ -76,8 +76,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       // { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
-      { href: '/my-estate-trust-strategy', label: 'My Estate & Trust Strategy', icon: '🏛️' },
-      { href: '/my-estate-strategy', label: 'My Estate Plan', icon: '📈' },
+      { href: '/my-estate-trust-strategy', label: 'Gifting, Strategies & Trusts', icon: '🏛️' },
+      { href: '/my-estate-strategy', label: 'Estate Plan', icon: '📈' },
       // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
     ],
   },
