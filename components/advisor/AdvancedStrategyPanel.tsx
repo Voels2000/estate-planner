@@ -44,7 +44,7 @@ async function writeStrategyLineItem(input: StrategyLineItemInput) {
   await fetch('/api/strategy-line-items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
   })
 }
 
@@ -57,7 +57,7 @@ async function removeStrategyLineItem(householdId: string, strategySource: strin
   await fetch('/api/strategy-line-items', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ householdId, strategySource }),
+    body: JSON.stringify({ householdId, strategySource, source_role: 'advisor' }),
   })
 }
 
@@ -78,13 +78,14 @@ function useRecommendAdvanced(householdId: string) {
   async function toggle(
     strategySource: string,
     lineItemInput: Omit<StrategyLineItemInput, 'household_id'>,
+    sourceRole: 'consumer' | 'advisor' = 'advisor',
   ) {
     setSaving(true)
     const isActive = saved.has(strategySource)
     if (isActive) {
       await removeStrategyLineItem(householdId, strategySource)
     } else {
-      await writeStrategyLineItem({ ...lineItemInput, household_id: householdId })
+      await writeStrategyLineItem({ ...lineItemInput, household_id: householdId, source_role: sourceRole })
     }
     setSaved(prev => {
       const next = new Set(prev)
@@ -313,7 +314,7 @@ export default function AdvancedStrategyPanel({
                 note: 'Remainder passes to beneficiaries after GRAT term if grantor survives. Assets remain in gross estate during term.',
                 condition: 'grantor_survives_term',
               },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
 
@@ -359,7 +360,7 @@ export default function AdvancedStrategyPanel({
               sign: -1,
               confidence_level: 'illustrative',
               metadata: { funding_amount: crtConfig.fundingAmount, payout_rate: crtConfig.payoutRate },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
 
@@ -408,7 +409,7 @@ export default function AdvancedStrategyPanel({
               sign: -1,
               confidence_level: 'illustrative',
               metadata: { funding_amount: clatConfig.fundingAmount, term_years: clatConfig.termYears },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
 
@@ -467,7 +468,7 @@ export default function AdvancedStrategyPanel({
               sign: -1,
               confidence_level: 'probable',
               metadata: { contribution_amount: dafConfig.contributionAmount, asset_type: dafConfig.assetType },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
 
@@ -534,7 +535,7 @@ export default function AdvancedStrategyPanel({
               sign: -1,
               confidence_level: 'illustrative',
               metadata: { liquid_assets: liquidityConfig.liquidAssets, illiquid_assets: liquidityConfig.illiquidAssets },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
 
@@ -596,7 +597,7 @@ export default function AdvancedStrategyPanel({
               sign: -1,
               confidence_level: 'illustrative',
               metadata: { annual_conversion: rothConfig.annualConversionAmount, years: rothConfig.conversionYears },
-            })} />
+            }, 'advisor')} />
         </div>
       )}
     </div>
