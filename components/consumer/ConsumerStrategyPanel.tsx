@@ -873,9 +873,6 @@ export default function ConsumerStrategyPanel({ householdId, userRole }: Consume
       <p className="text-xs text-gray-500">
         Estimates are educational and should be reviewed with your attorney, CPA, and advisor.
       </p>
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-        Federal exemption reference: {fmt(federalExemption)}.
-      </div>
     </div>
   )
 }
