@@ -66,7 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Estate Planning',
+    label: 'Estate Value and Tax Horizons',
     icon: '📜',
     locked: true,
     items: [
@@ -76,7 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       // { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', advisorOnly: false, minTier: 3 },
       { href: '/estate-tax', label: 'Estate Tax', icon: '⚖️', feature: 'estate-tax' },
-      { href: '/my-estate-strategy', label: 'Estate Planning', icon: '📈' },
+      { href: '/my-estate-strategy', label: 'Estate Value and Tax Horizons', icon: '📈' },
       { href: '/my-estate-trust-strategy', label: 'Gifting, Strategies & Trusts', icon: '🏛️' },
       // Export Estate Plan removed here — lives exclusively in Advisor Portal tabs (Sprint 55)
     ],
@@ -188,7 +188,7 @@ export function SidebarNav({
             group.locked === true &&
             !isAdvisor &&
             ((group.label === 'Retirement Planning' && tier < 2) ||
-              (group.label === 'Estate Planning' && tier < 3))
+              (group.label === 'Estate Value and Tax Horizons' && tier < 3))
 
           return (
             <div key={group.label}>
