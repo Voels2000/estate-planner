@@ -128,8 +128,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .select('id, name, property_type, current_value, purchase_price, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, situs_state, owner')
       .eq('owner_id', clientId),
     supabase
-      .from('beneficiaries')
-      .select('id, name, relationship, allocation_pct, account_type, contingent, created_at')
+      .from('asset_beneficiaries')
+      .select(
+        'id, full_name, relationship, allocation_pct, beneficiary_type, asset_id, real_estate_id, insurance_policy_id, business_id, created_at',
+      )
       .eq('owner_id', clientId),
     supabase
       .from('estate_documents')
@@ -217,7 +219,22 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   const assets = assetsResult.data
   const realEstate = realEstateResult.data
-  const beneficiaries = beneficiariesResult.data
+  const beneficiaries = (beneficiariesResult.data ?? []).map((b) => {
+    const linkedAsset = (assetsResult.data ?? []).find((a) => a.id === b.asset_id)
+    const linkedType = (linkedAsset?.type ?? '').toLowerCase()
+    const accountType =
+      linkedType ||
+      (b.real_estate_id ? 'real_estate' : b.insurance_policy_id ? 'insurance' : b.business_id ? 'business' : null)
+    return {
+      id: b.id,
+      name: b.full_name,
+      relationship: b.relationship,
+      allocation_pct: b.allocation_pct,
+      account_type: accountType,
+      contingent: b.beneficiary_type === 'contingent',
+      created_at: b.created_at,
+    }
+  })
   const estateDocuments = estateDocumentsResult.data
   const legalDocuments = legalDocumentsResult.data
   const notes = notesResult.data
