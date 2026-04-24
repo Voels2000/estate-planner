@@ -54,6 +54,7 @@ export default function EstateTab({
     )
   )
   const [expandedBeneficiaryGroups, setExpandedBeneficiaryGroups] = useState<Record<string, boolean>>({})
+  const [expandedAccountGroups, setExpandedAccountGroups] = useState<Record<string, boolean>>({})
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -101,6 +102,17 @@ export default function EstateTab({
     return acc
   }, {})
   const beneficiaryGroupKeys = Object.keys(beneficiaryGroups).sort((a, b) => {
+    if (a === 'unassigned') return 1
+    if (b === 'unassigned') return -1
+    return a.localeCompare(b)
+  })
+  const accountGroups = (assets ?? []).reduce<Record<string, any[]>>((acc, a) => {
+    const key = assetAccountType(a) || 'unassigned'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(a)
+    return acc
+  }, {})
+  const accountGroupKeys = Object.keys(accountGroups).sort((a, b) => {
     if (a === 'unassigned') return 1
     if (b === 'unassigned') return -1
     return a.localeCompare(b)
@@ -161,6 +173,16 @@ export default function EstateTab({
       return next
     })
   }, [beneficiaryGroupKeys.join('|')])
+
+  useEffect(() => {
+    setExpandedAccountGroups((prev) => {
+      const next: Record<string, boolean> = {}
+      accountGroupKeys.forEach((key, idx) => {
+        next[key] = prev[key] ?? idx === 0
+      })
+      return next
+    })
+  }, [accountGroupKeys.join('|')])
 
   // ── Save helpers ─────────────────────────────────────────────────────────
   async function saveAdminExpense(pct: number) {
@@ -717,39 +739,65 @@ export default function EstateTab({
         {(assets ?? []).length === 0 ? (
           <p className="text-sm text-slate-400">No assets on file</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Account</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Type</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Owner</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Titling</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Value</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Liquidity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {(assets ?? []).sort((a, b) => (b.value ?? 0) - (a.value ?? 0)).map(a => (
-                  <tr key={a.id} className="hover:bg-slate-50">
-                    <td className="py-2.5 font-medium text-slate-800">{a.name}</td>
-                    <td className="py-2.5">
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase">
-                        {a.type ?? a.account_type ?? a.asset_type ?? '—'}
-                      </span>
-                    </td>
-                    <td className="py-2.5 text-slate-500">{formatOwner(a.owner, household)}</td>
-                    <td className="py-2.5 text-slate-500">{a.titling ?? a.institution ?? '—'}</td>
-                    <td className="py-2.5 text-right font-medium text-slate-800">{formatCurrency(a.value)}</td>
-                    <td className="py-2.5 pl-4">
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                        {a.liquidity ?? '—'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {accountGroupKeys.map((groupKey) => {
+              const groupItems = (accountGroups[groupKey] ?? []).sort(
+                (a, b) => (b.value ?? 0) - (a.value ?? 0)
+              )
+              const isOpen = expandedAccountGroups[groupKey] ?? false
+              const groupTotal = groupItems.reduce((s, a) => s + Number(a.value ?? 0), 0)
+              return (
+                <div key={groupKey} className="rounded-lg border border-slate-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedAccountGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
+                    }
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-slate-50 hover:bg-slate-100"
+                  >
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        {formatAccountTypeLabel(groupKey)}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {groupItems.length} account{groupItems.length !== 1 ? 's' : ''} · {formatCurrency(groupTotal)}
+                      </p>
+                    </div>
+                    <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'}</span>
+                  </button>
+                  {isOpen && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100">
+                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-3 pt-2">Account</th>
+                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Owner</th>
+                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Titling</th>
+                            <th className="text-right text-xs font-semibold text-slate-500 pb-2 pt-2">Value</th>
+                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4 pt-2">Liquidity</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {groupItems.map((a) => (
+                            <tr key={a.id} className="hover:bg-slate-50">
+                              <td className="py-2.5 px-3 font-medium text-slate-800">{a.name}</td>
+                              <td className="py-2.5 text-slate-500">{formatOwner(a.owner, household)}</td>
+                              <td className="py-2.5 text-slate-500">{a.titling ?? a.institution ?? '—'}</td>
+                              <td className="py-2.5 text-right font-medium text-slate-800">{formatCurrency(a.value)}</td>
+                              <td className="py-2.5 pl-4">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                  {a.liquidity ?? '—'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
