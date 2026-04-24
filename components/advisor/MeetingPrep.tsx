@@ -1,6 +1,6 @@
 // Sprint 62 — Meeting Preparation Mode
-// Session 33: Estate Snapshot now shows current estate via calculate_estate_composition RPC.
-// Falls back to projection at-death row if RPC unavailable.
+// Session 33: Estate Snapshot now shows current estate via /api/estate-composition.
+// Falls back to projection at-death row if composition fetch is unavailable.
 
 'use client'
 
@@ -29,7 +29,7 @@ interface MeetingBrief {
   health_score_last_meeting: number | null
   health_score_delta: number | null
   top_alerts: Array<{ title: string; severity: string; description: string }>
-  // Current estate (from calculate_estate_composition RPC)
+  // Current estate (from estate composition API)
   current_gross_estate: number | null
   current_taxable_estate: number | null
   current_estimated_tax: number | null
@@ -120,7 +120,7 @@ async function generateMeetingBrief(
     notesRes,
     strategyConfigsRes,
     advisorLineItemsRes,
-    compositionRes,
+    compositionData,
   ] = await Promise.all([
     supabase
       .from('household_alerts')
@@ -156,8 +156,17 @@ async function generateMeetingBrief(
       .eq('household_id', householdId)
       .eq('source_role', 'advisor')
       .eq('is_active', true),
-    // NEW: current estate composition via RPC
-    supabase.rpc('calculate_estate_composition', { p_household_id: householdId }),
+    // Current estate composition via API (matches consumer flow/classifyEstateAssets)
+    fetch('/api/estate-composition', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        householdId,
+        sourceRole: 'consumer',
+      }),
+    })
+      .then(async (res) => (res.ok ? await res.json() : null))
+      .catch(() => null),
   ])
 
   const alerts = alertsRes.data ?? []
@@ -171,15 +180,15 @@ async function generateMeetingBrief(
   const scoreLast = null
   const scoreDelta = null
 
-  // Current estate from RPC — handles both single object and array response
+  // Current estate from API response — handles both single object and array response
   let currentGrossEstate: number | null = null
   let currentTaxableEstate: number | null = null
   let currentEstimatedTax: number | null = null
 
-  const compositionRow = Array.isArray(compositionRes.data)
-    ? compositionRes.data.find((r: Record<string, unknown>) => r.source_role === 'consumer') ??
-      compositionRes.data[0]
-    : compositionRes.data
+  const compositionRow = Array.isArray(compositionData)
+    ? compositionData.find((r: Record<string, unknown>) => r.source_role === 'consumer') ??
+      compositionData[0]
+    : compositionData
 
   if (compositionRow) {
     currentGrossEstate = Number(compositionRow.gross_estate ?? 0) || null
@@ -368,7 +377,7 @@ export default function MeetingPrep({
                   </BriefSection>
                 )}
 
-                {/* Estate snapshot — current (RPC) + at-death (projection) */}
+                {/* Estate snapshot — current + at-death (projection) */}
                 <BriefSection title="Estate Snapshot">
                   {hasCurrentData ? (
                     <div className="space-y-4">
@@ -417,7 +426,7 @@ export default function MeetingPrep({
                       )}
                     </div>
                   ) : brief.has_projection ? (
-                    // Fallback: RPC failed, show projection only
+                    // Fallback: composition API fetch failed, show projection only
                     <div className="grid grid-cols-3 gap-4">
                       {[
                         { label: 'Gross Estate', value: brief.gross_estate ? fmt(brief.gross_estate) : '—' },

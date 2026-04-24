@@ -281,6 +281,7 @@ export default async function MyEstateTrustStrategyPage({
   }
 
   const currentTaxYear = new Date().getFullYear()
+  const initialGiftingSummary = giftingSummaryError ? null : (giftingSummaryData ?? null)
   const giftingData = giftingSummaryError
     ? null
     : (giftingSummaryData as
@@ -349,6 +350,7 @@ export default async function MyEstateTrustStrategyPage({
           giftingPerRecipientLimit: perRecipientLimit,
           giftingExcessOverLimit: excessAnnualGifts || null,
         }}
+        initialGiftingSummary={initialGiftingSummary}
       />
     </div>
   )

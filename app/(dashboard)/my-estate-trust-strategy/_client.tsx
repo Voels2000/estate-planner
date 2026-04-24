@@ -8,6 +8,7 @@ import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import type { GiftingSummary } from '@/components/GiftingDashboard'
 
 type AdvisorLineItem = {
   strategy_source: string
@@ -66,6 +67,7 @@ interface Props {
     giftingPerRecipientLimit: number | null
     giftingExcessOverLimit: number | null
   }
+  initialGiftingSummary?: GiftingSummary | null
 }
 
 type TrustDocumentRow = {
@@ -102,6 +104,7 @@ export default function MyEstateTrustStrategyClient({
   advisorLineItems,
   strategyImpact,
   giftingScenario,
+  initialGiftingSummary,
 }: Props) {
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
@@ -227,7 +230,12 @@ export default function MyEstateTrustStrategyClient({
 
       {activeTab === 'gifting' && (
         <div className="space-y-4">
-          <GiftingDashboard householdId={householdId} userRole={userRole} consumerTier={consumerTier} />
+          <GiftingDashboard
+            householdId={householdId}
+            userRole={userRole}
+            consumerTier={consumerTier}
+            initialGiftingSummary={initialGiftingSummary}
+          />
           <CollapsibleSection
             title="Gifting scenario"
             subtitle={

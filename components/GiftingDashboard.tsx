@@ -8,6 +8,7 @@ interface GiftingDashboardProps {
   householdId: string;
   userRole: 'consumer' | 'advisor';
   consumerTier?: number;
+  initialGiftingSummary?: GiftingSummary | null;
 }
 
 interface GiftRow {
@@ -23,7 +24,7 @@ interface GiftRow {
   created_at: string;
 }
 
-interface GiftingSummary {
+export interface GiftingSummary {
   success: boolean;
   tax_year: number;
   filing_status: string;
@@ -69,7 +70,12 @@ const priorityBadge: Record<string, string> = {
   low: 'bg-green-100 text-green-700',
 };
 
-export default function GiftingDashboard({ householdId, userRole, consumerTier }: GiftingDashboardProps) {
+export default function GiftingDashboard({
+  householdId,
+  userRole,
+  consumerTier,
+  initialGiftingSummary,
+}: GiftingDashboardProps) {
   const CURRENT_YEAR = new Date().getFullYear();
   const emptyForm = {
     tax_year: CURRENT_YEAR,
@@ -81,13 +87,14 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
     form_709_filed: false,
     notes: '',
   };
-  const [summary, setSummary] = useState<GiftingSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<GiftingSummary | null>(initialGiftingSummary ?? null);
+  const [loading, setLoading] = useState(initialGiftingSummary == null);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview'); // default: overview
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -108,7 +115,10 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
     }
   };
 
-  useEffect(() => { load(); }, [householdId]);
+  useEffect(() => {
+    if (refreshCount === 0) return;
+    void load();
+  }, [refreshCount, householdId]);
 
   const handleAdd = async () => {
     if (!form.recipient_name || !form.amount) return;
@@ -130,7 +140,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
       if (insertError) throw insertError;
       setForm(emptyForm);
       setShowAddForm(false);
-      await load();
+      setRefreshCount((c) => c + 1);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -143,7 +153,7 @@ export default function GiftingDashboard({ householdId, userRole, consumerTier }
     try {
       const { error: delError } = await supabase.from('gift_history').delete().eq('id', id);
       if (delError) throw delError;
-      await load();
+      setRefreshCount((c) => c + 1);
     } catch (e: any) {
       setError(e.message);
     } finally {
