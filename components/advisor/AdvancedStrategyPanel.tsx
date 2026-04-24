@@ -32,7 +32,7 @@ const DEFAULT_7520_RATE = 0.052
 
 // ── Strategy line item writer ─────────────────────────────────────────────────
 async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  await fetch('/api/strategy-configs', {
+  const configRes = await fetch('/api/strategy-configs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -42,7 +42,7 @@ async function writeStrategyLineItem(input: StrategyLineItemInput) {
     }),
   })
   // Also write strategy_line_items for the composition card
-  await fetch('/api/strategy-line-items', {
+  const lineRes = await fetch('/api/strategy-line-items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
@@ -121,7 +121,9 @@ function RecommendButton({
       <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => {
+          onToggle()
+        }}
         disabled={saving}
         className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
           isRecommended

@@ -1,12 +1,10 @@
 // Sprint 62 — Meeting Preparation Mode
-// Generates a single-page meeting brief for an advisor-client meeting.
-// Shows: health score delta, top alerts, estate flow thumbnail,
-// cost of inaction, recommended strategies, last advisor notes.
-// Available as on-screen view and downloadable PDF.
+// Session 33: Estate Snapshot now shows current estate via calculate_estate_composition RPC.
+// Falls back to projection at-death row if RPC unavailable.
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -31,6 +29,11 @@ interface MeetingBrief {
   health_score_last_meeting: number | null
   health_score_delta: number | null
   top_alerts: Array<{ title: string; severity: string; description: string }>
+  // Current estate (from calculate_estate_composition RPC)
+  current_gross_estate: number | null
+  current_taxable_estate: number | null
+  current_estimated_tax: number | null
+  // At-death projection (from projection_scenarios)
   gross_estate: number | null
   estate_tax: number | null
   net_to_heirs: number | null
@@ -77,6 +80,7 @@ async function generateMeetingBrief(
     notesRes,
     strategyConfigsRes,
     advisorLineItemsRes,
+    compositionRes,
   ] = await Promise.all([
     supabase
       .from('estate_health_scores')
@@ -118,6 +122,8 @@ async function generateMeetingBrief(
       .eq('household_id', householdId)
       .eq('source_role', 'advisor')
       .eq('is_active', true),
+    // NEW: current estate composition via RPC
+    supabase.rpc('calculate_estate_composition', { p_household_id: householdId }),
   ])
 
   const healthScores = healthScoreRes.data ?? []
@@ -132,7 +138,23 @@ async function generateMeetingBrief(
   const scoreLast = healthScores[1]?.score ?? null
   const scoreDelta = scoreToday !== null && scoreLast !== null ? scoreToday - scoreLast : null
 
-  // Projection data
+  // Current estate from RPC — handles both single object and array response
+  let currentGrossEstate: number | null = null
+  let currentTaxableEstate: number | null = null
+  let currentEstimatedTax: number | null = null
+
+  const compositionRow = Array.isArray(compositionRes.data)
+    ? compositionRes.data.find((r: Record<string, unknown>) => r.source_role === 'consumer') ??
+      compositionRes.data[0]
+    : compositionRes.data
+
+  if (compositionRow) {
+    currentGrossEstate = Number(compositionRow.gross_estate ?? 0) || null
+    currentTaxableEstate = Number(compositionRow.taxable_estate ?? 0) || null
+    currentEstimatedTax = Number(compositionRow.estimated_tax ?? 0) || null
+  }
+
+  // At-death projection from saved scenario
   let grossEstate: number | null = null
   let estateTax: number | null = null
   let netToHeirs: number | null = null
@@ -145,7 +167,6 @@ async function generateMeetingBrief(
       grossEstate = lastRow.estate_incl_home ?? null
       estateTax = (lastRow.estate_tax_federal ?? 0) + (lastRow.estate_tax_state ?? 0)
       netToHeirs = lastRow.net_to_heirs ?? null
-      // Cost of inaction: approximate as estate tax (full strategies in Sprint 67+)
       costOfInaction = estateTax
     }
   }
@@ -156,21 +177,20 @@ async function generateMeetingBrief(
     health_score_last_meeting: scoreLast,
     health_score_delta: scoreDelta,
     top_alerts: alerts,
+    current_gross_estate: currentGrossEstate,
+    current_taxable_estate: currentTaxableEstate,
+    current_estimated_tax: currentEstimatedTax,
     gross_estate: grossEstate,
     estate_tax: estateTax,
     net_to_heirs: netToHeirs,
     cost_of_inaction: costOfInaction,
     recommended_strategies: strategyConfigs.map((sc) => {
-      const lineItem = advisorLineItems.find(
-        (li) => li.strategy_source === sc.strategy_type,
-      )
+      const lineItem = advisorLineItems.find((li) => li.strategy_source === sc.strategy_type)
       const label = sc.label ?? STRATEGY_LABELS[sc.strategy_type] ?? sc.strategy_type
       if (lineItem) {
         const amt = fmt(lineItem.amount)
         const conf =
-          lineItem.confidence_level === 'illustrative'
-            ? 'modeled'
-            : lineItem.confidence_level
+          lineItem.confidence_level === 'illustrative' ? 'modeled' : lineItem.confidence_level
         return `${label} — ${amt} (${conf})`
       }
       return label
@@ -212,6 +232,11 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
 
   const handlePrint = () => window.print()
 
+  const hasCurrentData = brief &&
+    (brief.current_gross_estate !== null ||
+      brief.current_taxable_estate !== null ||
+      brief.current_estimated_tax !== null)
+
   return (
     <>
       <button
@@ -237,18 +262,12 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
                 )}
               </div>
               <div className="flex items-center gap-2 print:hidden">
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded-lg hover:bg-neutral-800"
-                >
+                <button type="button" onClick={handlePrint}
+                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded-lg hover:bg-neutral-800">
                   Print / PDF
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="text-neutral-400 hover:text-neutral-600 text-xl leading-none px-2"
-                >
+                <button type="button" onClick={() => setOpen(false)}
+                  className="text-neutral-400 hover:text-neutral-600 text-xl leading-none px-2">
                   ×
                 </button>
               </div>
@@ -291,8 +310,7 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
                         <div key={i} className="flex items-start gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${
                             alert.severity === 'high' || alert.severity === 'critical'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-amber-100 text-amber-700'
+                              ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                           }`}>
                             {alert.severity}
                           </span>
@@ -306,15 +324,62 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
                   </BriefSection>
                 )}
 
-                {/* Estate snapshot */}
+                {/* Estate snapshot — current (RPC) + at-death (projection) */}
                 <BriefSection title="Estate Snapshot">
-                  {brief.has_projection ? (
+                  {hasCurrentData ? (
+                    <div className="space-y-4">
+                      {/* Current estate */}
+                      <div>
+                        <p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">
+                          Current Estate
+                        </p>
+                        <div className="grid grid-cols-3 gap-4">
+                          {[
+                            { label: 'Gross Estate', value: brief.current_gross_estate ? fmt(brief.current_gross_estate) : '—' },
+                            { label: 'Taxable Estate', value: brief.current_taxable_estate ? fmt(brief.current_taxable_estate) : '—' },
+                            { label: 'Est. Tax (current)', value: brief.current_estimated_tax !== null ? fmt(brief.current_estimated_tax) : '—', red: true },
+                          ].map((item) => (
+                            <div key={item.label} className="text-center">
+                              <div className={`text-lg font-bold ${item.red ? 'text-red-600' : 'text-neutral-900'}`}>
+                                {item.value}
+                              </div>
+                              <div className="text-xs text-neutral-400 mt-0.5">{item.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* At-death projection */}
+                      {brief.has_projection && (
+                        <div className="border-t border-neutral-100 pt-3">
+                          <p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">
+                            At Death (Projected)
+                          </p>
+                          <div className="grid grid-cols-3 gap-4">
+                            {[
+                              { label: 'Gross Estate', value: brief.gross_estate ? fmt(brief.gross_estate) : '—' },
+                              { label: 'Est. Tax', value: brief.estate_tax !== null ? fmt(brief.estate_tax) : '—', red: true },
+                              { label: 'Net to Heirs', value: brief.net_to_heirs ? fmt(brief.net_to_heirs) : '—', green: true },
+                            ].map((item) => (
+                              <div key={item.label} className="text-center">
+                                <div className={`text-base font-semibold ${item.red ? 'text-red-500' : item.green ? 'text-green-600' : 'text-neutral-700'}`}>
+                                  {item.value}
+                                </div>
+                                <div className="text-xs text-neutral-400 mt-0.5">{item.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : brief.has_projection ? (
+                    // Fallback: RPC failed, show projection only
                     <div className="grid grid-cols-3 gap-4">
                       {[
                         { label: 'Gross Estate', value: brief.gross_estate ? fmt(brief.gross_estate) : '—' },
                         { label: 'Est. Tax', value: brief.estate_tax !== null ? fmt(brief.estate_tax) : '—', red: true },
                         { label: 'Net to Heirs', value: brief.net_to_heirs ? fmt(brief.net_to_heirs) : '—', green: true },
-                      ].map(item => (
+                      ].map((item) => (
                         <div key={item.label} className="text-center">
                           <div className={`text-lg font-bold ${item.red ? 'text-red-600' : item.green ? 'text-green-600' : 'text-neutral-900'}`}>
                             {item.value}
@@ -325,11 +390,9 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
                     </div>
                   ) : (
                     <div className="text-center py-2">
-                      <p className="text-sm text-neutral-400">No projection run yet.</p>
-                      <Link
-                        href={`/advisor/clients/${clientId}`}
-                        className="text-xs text-indigo-600 hover:underline mt-1 inline-block"
-                      >
+                      <p className="text-sm text-neutral-400">No estate data available yet.</p>
+                      <Link href={`/advisor/clients/${clientId}`}
+                        className="text-xs text-indigo-600 hover:underline mt-1 inline-block">
                         Run a projection in StrategyTab →
                       </Link>
                     </div>
