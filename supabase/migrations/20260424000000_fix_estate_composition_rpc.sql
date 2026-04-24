@@ -28,6 +28,7 @@ DECLARE
   v_inside_liquid numeric := 0;
   v_inside_illiquid numeric := 0;
 
+  v_outside_struct numeric := 0;
   v_outside_structure_total numeric := 0;
   v_outside_structure_items jsonb := '[]'::jsonb;
   v_outside_strategy_total numeric := 0;
@@ -161,7 +162,8 @@ BEGIN
   v_inside_liquid := v_inside_financial_liquid + v_inside_insurance;
   v_inside_illiquid := v_inside_financial_illiquid + v_inside_real_estate + v_inside_business;
 
-  v_gross_estate := v_inside_total;
+  v_outside_struct := v_outside_structure_total;
+  v_gross_estate := v_inside_total + v_outside_struct;
 
   SELECT COALESCE(SUM(balance), 0)
   INTO v_total_liabilities FROM liabilities WHERE owner_id = v_owner_id;
