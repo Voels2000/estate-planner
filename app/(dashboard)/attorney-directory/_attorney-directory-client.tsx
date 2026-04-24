@@ -41,7 +41,6 @@ export function AttorneyDirectoryClient({
   // Request to Connect state
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set())
   const [modalAttorney, setModalAttorney] = useState<Attorney | null>(null)
-  const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
   const [consentChecked, setConsentChecked] = useState(false)
@@ -116,13 +115,11 @@ export function AttorneyDirectoryClient({
 
   function openModal(attorney: Attorney) {
     setModalAttorney(attorney)
-    setMessage('')
     setModalError(null)
   }
 
   function closeModal() {
     setModalAttorney(null)
-    setMessage('')
     setModalError(null)
     setConsentChecked(false)
   }

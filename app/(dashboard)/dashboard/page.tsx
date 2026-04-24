@@ -186,6 +186,14 @@ export default async function DashboardPage() {
     household?.id ? classifyEstateAssets(supabase, household.id) : Promise.resolve(null),
   ])
 
+  const { data: initialRecsData } = household?.id
+    ? await supabase.rpc('generate_estate_recommendations', {
+        p_household_id: household.id,
+      })
+    : { data: null }
+
+  const initialRecommendations = initialRecsData?.recommendations ?? null
+
   // ── Estate health score — read from cache, recomputed async on staleness ─
   // computeEstateHealthScore writes to DB — never call it in render path.
   // Dashboard reads the last persisted score; background recompute updates it.
@@ -425,6 +433,7 @@ export default async function DashboardPage() {
       consumerTier={profile?.consumer_tier ?? 1}
       isAdvisor={profile?.role === 'advisor'}
       rmdStatus={rmdStatus}
+      initialRecommendations={initialRecommendations}
     />
   )
 }

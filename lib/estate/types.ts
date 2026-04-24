@@ -57,6 +57,7 @@ export type EstateComposition = {
   // Three-tier metrics
   gross_estate: number
   total_liabilities: number
+  liabilities?: number | null
   net_estate: number
   admin_expense: number
   admin_expense_pct: number

@@ -33,6 +33,10 @@ interface MeetingBrief {
   current_gross_estate: number | null
   current_taxable_estate: number | null
   current_estimated_tax: number | null
+  estimated_tax_state: number | null
+  estimated_tax_state_with_cst: number | null
+  cst_benefit: number | null
+  has_portability_gap: boolean | null
   // At-death projection (from projection_scenarios)
   gross_estate: number | null
   estate_tax: number | null
@@ -51,6 +55,10 @@ interface MeetingBriefSeed {
   current_gross_estate?: number | null
   current_taxable_estate?: number | null
   current_estimated_tax?: number | null
+  estimated_tax_state?: number | null
+  estimated_tax_state_with_cst?: number | null
+  cst_benefit?: number | null
+  has_portability_gap?: boolean | null
   gross_estate?: number | null
   estate_tax?: number | null
   net_to_heirs?: number | null
@@ -92,6 +100,10 @@ function buildBriefFromSeed(clientName: string, seed: MeetingBriefSeed): Meeting
     current_gross_estate: seed.current_gross_estate ?? null,
     current_taxable_estate: seed.current_taxable_estate ?? null,
     current_estimated_tax: seed.current_estimated_tax ?? null,
+    estimated_tax_state: seed.estimated_tax_state ?? null,
+    estimated_tax_state_with_cst: seed.estimated_tax_state_with_cst ?? null,
+    cst_benefit: seed.cst_benefit ?? null,
+    has_portability_gap: seed.has_portability_gap ?? null,
     gross_estate: seed.gross_estate ?? null,
     estate_tax: seed.estate_tax ?? null,
     net_to_heirs: seed.net_to_heirs ?? null,
@@ -184,6 +196,10 @@ async function generateMeetingBrief(
   let currentGrossEstate: number | null = null
   let currentTaxableEstate: number | null = null
   let currentEstimatedTax: number | null = null
+  let cstBenefit: number | null = null
+  let hasPortabilityGap: boolean | null = null
+  let estimatedTaxState: number | null = null
+  let estimatedTaxStateWithCst: number | null = null
 
   const compositionRow = Array.isArray(compositionData)
     ? compositionData.find((r: Record<string, unknown>) => r.source_role === 'consumer') ??
@@ -194,6 +210,10 @@ async function generateMeetingBrief(
     currentGrossEstate = Number(compositionRow.gross_estate ?? 0) || null
     currentTaxableEstate = Number(compositionRow.taxable_estate ?? 0) || null
     currentEstimatedTax = Number(compositionRow.estimated_tax ?? 0) || null
+    cstBenefit = Number(compositionRow.cst_benefit ?? 0) || null
+    hasPortabilityGap = compositionRow.has_portability_gap === true
+    estimatedTaxState = Number(compositionRow.estimated_tax_state ?? 0) || null
+    estimatedTaxStateWithCst = Number(compositionRow.estimated_tax_state_with_cst ?? 0) || null
   }
 
   // At-death projection from saved scenario
@@ -222,6 +242,10 @@ async function generateMeetingBrief(
     current_gross_estate: currentGrossEstate,
     current_taxable_estate: currentTaxableEstate,
     current_estimated_tax: currentEstimatedTax,
+    estimated_tax_state: estimatedTaxState,
+    estimated_tax_state_with_cst: estimatedTaxStateWithCst,
+    cst_benefit: cstBenefit,
+    has_portability_gap: hasPortabilityGap,
     gross_estate: grossEstate,
     estate_tax: estateTax,
     net_to_heirs: netToHeirs,
@@ -401,6 +425,46 @@ export default function MeetingPrep({
                           ))}
                         </div>
                       </div>
+
+                      {brief.cst_benefit !== null && brief.cst_benefit > 0 && (
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
+                          <div className="flex items-start gap-3 mb-3">
+                            <span className="text-emerald-500 text-base mt-0.5">💡</span>
+                            <div>
+                              <p className="text-sm font-semibold text-emerald-800">
+                                Credit Shelter Trust Opportunity
+                              </p>
+                              <p className="text-xs text-emerald-700 mt-0.5">
+                                A Credit Shelter Trust could save{' '}
+                                <strong>{fmt(brief.cst_benefit)}</strong> in state estate tax
+                                for this household.
+                              </p>
+                            </div>
+                          </div>
+                          {brief.estimated_tax_state !== null && brief.estimated_tax_state_with_cst !== null && (
+                            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-emerald-200">
+                              <div className="text-center">
+                                <p className="text-xs text-emerald-600 mb-1">Without CST</p>
+                                <p className="text-sm font-bold text-red-600">
+                                  {fmt(brief.estimated_tax_state)}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-emerald-600 mb-1">With CST</p>
+                                <p className="text-sm font-bold text-emerald-700">
+                                  {fmt(brief.estimated_tax_state_with_cst)}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-emerald-600 mb-1">Savings</p>
+                                <p className="text-sm font-bold text-emerald-800">
+                                  {fmt(brief.cst_benefit)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* At-death projection */}
                       {brief.has_projection && (

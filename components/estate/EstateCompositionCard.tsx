@@ -210,6 +210,7 @@ export default function EstateCompositionCard({
     outside_strategy_items,
     gross_estate,
     net_estate,
+    liabilities,
     taxable_estate,
     exemption_available,
     exemption_remaining,
@@ -412,22 +413,62 @@ export default function EstateCompositionCard({
           {expanded && (
             <div className="px-5 pb-4 space-y-2 border-t border-gray-100 bg-gray-50">
               <p className="text-[10px] text-gray-400 pt-3 uppercase tracking-wide font-semibold">
-                How your taxable estate is calculated
+                How your taxable estate is calculated (IRS basis)
               </p>
               {[
-                { label: 'Gross Estate',          value: gross_estate,          sign: '' },
-                { label: '− Liabilities',          value: gross_estate - net_estate, sign: '−' },
-                { label: '− Admin expense (est.)', value: admin_expense,         sign: '−' },
-                { label: '+ Adj. Taxable Gifts',   value: adjusted_taxable_gifts, sign: '+', hide: adjusted_taxable_gifts === 0 },
-                { label: '= Taxable Estate',       value: taxable_estate,        sign: '=', bold: true },
-                { label: '− Exemption',            value: exemption_available,   sign: '−' },
-                { label: '= Est. Federal Tax',     value: estimated_tax,         sign: '=', bold: true,
-                  color: estimated_tax > 0 ? 'text-red-600' : 'text-green-700' },
+                {
+                  label: 'Gross Estate (IRS basis)',
+                  value: gross_estate,
+                  sign: '',
+                  bold: true,
+                  note: 'Real estate at full market value',
+                },
+                {
+                  label: '− Mortgage & liabilities',
+                  value: liabilities ?? (gross_estate - net_estate),
+                  sign: '−',
+                  note: 'Mortgage + other debts',
+                },
+                {
+                  label: '− Admin expense (est.)',
+                  value: admin_expense,
+                  sign: '−',
+                  note: `${Math.round((composition.admin_expense_pct ?? 0.02) * 100)}% of gross`,
+                },
+                {
+                  label: '+ Adj. Taxable Gifts',
+                  value: adjusted_taxable_gifts,
+                  sign: '+',
+                  hide: adjusted_taxable_gifts === 0,
+                },
+                {
+                  label: '= Taxable Estate',
+                  value: taxable_estate,
+                  sign: '=',
+                  bold: true,
+                },
+                {
+                  label: '− Federal Exemption',
+                  value: exemption_available,
+                  sign: '−',
+                },
+                {
+                  label: '= Est. Federal Tax',
+                  value: estimated_tax,
+                  sign: '=',
+                  bold: true,
+                  color: estimated_tax > 0 ? 'text-red-600' : 'text-green-700',
+                },
               ]
                 .filter((r) => !r.hide)
                 .map((row, i) => (
                   <div key={i} className={`flex justify-between text-xs ${row.bold ? 'font-semibold border-t border-gray-200 pt-1.5' : 'text-gray-600'}`}>
-                    <span>{row.label}</span>
+                    <div className="flex flex-col">
+                      <span>{row.label}</span>
+                      {row.note && (
+                        <span className="text-[10px] text-gray-400">{row.note}</span>
+                      )}
+                    </div>
                     <span className={row.color ?? ''}>
                       {row.sign === '−' ? `(${fmt(row.value)})` : fmt(row.value)}
                     </span>

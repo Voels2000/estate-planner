@@ -98,6 +98,11 @@ type Props = {
     hasSpouse: boolean
   } | null
   composition?: EstateComposition | null
+  initialRecommendations?: Array<{
+    branch: string
+    priority: 'high' | 'moderate' | 'low'
+    reason: string
+  }> | null
 }
 
 // ---------------------------------------------------------------------------
@@ -191,16 +196,30 @@ function StatBox({ label, value, sub, highlight }: {
   )
 }
 
-function PlanningGapsSection({ householdId }: { householdId: string }) {
+function PlanningGapsSection({
+  householdId,
+  initialRecommendations,
+}: {
+  householdId: string
+  initialRecommendations?: Array<{
+    branch: string
+    priority: 'high' | 'moderate' | 'low'
+    reason: string
+  }> | null
+}) {
   const [recs, setRecs] = useState<{
     branch: string
     priority: 'high' | 'moderate' | 'low'
     reason: string
-  }[]>([])
-  const [loading, setLoading] = useState(true)
+  }[]>(initialRecommendations ?? [])
+  const [loading, setLoading] = useState(!initialRecommendations)
+  const [refreshCount, setRefreshCount] = useState(0)
+  void setRefreshCount
 
   useEffect(() => {
+    if (refreshCount === 0) return
     async function load() {
+      setLoading(true)
       const supabase = createClient()
       const { data } = await supabase.rpc('generate_estate_recommendations', {
         p_household_id: householdId,
@@ -209,7 +228,7 @@ function PlanningGapsSection({ householdId }: { householdId: string }) {
       setLoading(false)
     }
     load()
-  }, [householdId])
+  }, [householdId, refreshCount])
 
   if (loading) return (
     <div className="text-xs text-neutral-400 py-2">Loading planning gaps...</div>
@@ -285,6 +304,7 @@ export function DashboardClient(props: Props) {
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
     composition,
+    initialRecommendations,
   } = props
 
   void consumerTier
@@ -678,7 +698,10 @@ export function DashboardClient(props: Props) {
           {householdId && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Planning Gaps</p>
-              <PlanningGapsSection householdId={householdId} />
+              <PlanningGapsSection
+                householdId={householdId}
+                initialRecommendations={initialRecommendations}
+              />
             </div>
           )}
 
