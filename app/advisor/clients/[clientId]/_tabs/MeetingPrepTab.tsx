@@ -44,6 +44,9 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
   }
 
   const clientName = getClientName(household)
+  const latestOnlyExportPanelProps = exportPanelProps
+    ? { ...exportPanelProps, scenarioHistory: exportPanelProps.scenarioHistory.slice(0, 1) }
+    : null
 
   return (
     <div className="space-y-8">
@@ -59,10 +62,10 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
         />
       </section>
 
-      {exportPanelProps && (
+      {latestOnlyExportPanelProps && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Export & Reports</h2>
-          <ExportPanel {...exportPanelProps} />
+          <ExportPanel {...latestOnlyExportPanelProps} />
         </section>
       )}
 
