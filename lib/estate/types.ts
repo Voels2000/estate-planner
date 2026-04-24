@@ -70,6 +70,8 @@ export type EstateComposition = {
   exemption_available: number
   exemption_remaining: number
   estimated_tax: number
+  estimated_tax_federal?: number | null
+  estimated_tax_state?: number | null
 }
 
 // ── Strategy line item types ──────────────────────────────────────────────────

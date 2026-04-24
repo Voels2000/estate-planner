@@ -218,6 +218,8 @@ export default function EstateCompositionCard({
     marital_deduction,
     adjusted_taxable_gifts,
     estimated_tax,
+    estimated_tax_federal,
+    estimated_tax_state,
   } = composition
 
   const outside_total = outside_structure_total + outside_strategy_total
@@ -454,10 +456,18 @@ export default function EstateCompositionCard({
                 },
                 {
                   label: '= Est. Federal Tax',
-                  value: estimated_tax,
+                  value: estimated_tax_federal ?? 0,
                   sign: '=',
                   bold: true,
-                  color: estimated_tax > 0 ? 'text-red-600' : 'text-green-700',
+                  color: (estimated_tax_federal ?? 0) > 0 ? 'text-red-600' : 'text-green-700',
+                },
+                {
+                  label: '= Est. State Tax',
+                  value: estimated_tax_state ?? 0,
+                  sign: '=',
+                  bold: true,
+                  hide: (estimated_tax_state ?? 0) === 0,
+                  color: (estimated_tax_state ?? 0) > 0 ? 'text-red-600' : 'text-green-700',
                 },
               ]
                 .filter((r) => !r.hide)
