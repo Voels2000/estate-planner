@@ -136,6 +136,7 @@ export default async function MyEstateTrustStrategyPage({
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
     { data: advisorLineItemRows },
+    { data: retirementAssetRows },
   ] = await Promise.all([
     classifyEstateAssets(supabase, householdRow.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
@@ -160,6 +161,11 @@ export default async function MyEstateTrustStrategyPage({
       .eq('household_id', householdRow.id)
       .eq('source_role', 'advisor')
       .eq('is_active', true),
+    supabase
+      .from('assets')
+      .select('type, value, owner')
+      .eq('owner_id', user.id)
+      .in('type', ['traditional_ira', 'traditional_401k', 'sep_account', 'roth_ira', 'roth_401k']),
   ])
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]
@@ -212,34 +218,61 @@ export default async function MyEstateTrustStrategyPage({
       : 0
   // ── Estate context for ConsumerStrategyPanel ──────────────────────────────
   // Replaces hardcoded DEFAULT_GROSS_ESTATE and other constants in the panel.
-  // Derives liquid/illiquid split from classifyEstateAssets composition.
-  const insideFinancial = Number((composition as any).inside_financial ?? 0)
-  const insideLiquid = Number((composition as any).inside_liquid ?? 0)
-  const insideIlliquid = Number((composition as any).inside_illiquid ?? 0)
-  const insideRE = Number((composition as any).inside_real_estate ?? 0)
-  const insideBusiness = Number((composition as any).inside_business_gross ?? 0)
-
-  // Financial assets split by liquidity tag; RE and business always illiquid
+  // Liquid/illiquid split from classifyEstateAssets composition
+  const compositionValues = composition as Record<string, unknown>
+  const insideLiquid = Number(compositionValues.inside_liquid ?? 0)
+  const insideIlliquid = Number(compositionValues.inside_illiquid ?? 0)
+  const insideRE = Number(compositionValues.inside_real_estate ?? 0)
+  const insideBusiness = Number(compositionValues.inside_business_gross ?? 0)
   const liquidAssets = insideLiquid
   const illiquidAssets = insideIlliquid + insideRE + insideBusiness
 
-  // Pre-tax IRA balance for Roth modeling — sum traditional_401k + traditional_ira assets
-  // These are already fetched via classifyEstateAssets; use 0 as safe fallback
-  const preIRABalance = 0 // TODO Session 35: pass from assets query
-  const rothBalance = 0 // TODO Session 35: pass from assets query
-  const annualRMD = 0 // TODO Session 35: pass from households
+  // Retirement asset balances from assets table
+  const PRE_TAX_TYPES = ['traditional_ira', 'traditional_401k', 'sep_account']
+  const ROTH_TYPES = ['roth_ira', 'roth_401k']
+
+  const retirementAssets = retirementAssetRows ?? []
+  const preIRABalance = retirementAssets
+    .filter((a) => PRE_TAX_TYPES.includes(a.type))
+    .reduce((s, a) => s + Number(a.value ?? 0), 0)
+  const rothBalance = retirementAssets
+    .filter((a) => ROTH_TYPES.includes(a.type))
+    .reduce((s, a) => s + Number(a.value ?? 0), 0)
+
+  // RMD calculation — IRS Uniform Lifetime Table approximation
+  // RMD start age: 73 for born 1951-1959, 75 for born 1960+
+  function getRMDStartAge(birthYear: number): number {
+    if (birthYear >= 1960) return 75
+    if (birthYear >= 1951) return 73
+    return 72
+  }
+  function getRMDFactor(age: number): number {
+    // Simplified IRS Uniform Lifetime Table — factor decreases ~1 per year after 72
+    return Math.max(1.0, 27.4 - (age - 72))
+  }
+
+  const p1BirthYear = householdRow.person1_birth_year ?? new Date().getFullYear() - 50
+  const p1CurrentAge = new Date().getFullYear() - p1BirthYear
+  const rmdStartAge = getRMDStartAge(p1BirthYear)
+  const annualRMD =
+    p1CurrentAge >= rmdStartAge && preIRABalance > 0
+      ? Math.round(preIRABalance / getRMDFactor(p1CurrentAge))
+      : 0
+
+  // Federal exemption from brackets or fallback
+  const federalExemptionForContext =
+    federalBrackets.length > 0
+      ? filing === 'married_joint'
+        ? 30_000_000
+        : 15_000_000
+      : 13_990_000
 
   const estateContext: EstateContext = {
     grossEstate: grossEstate,
-    federalExemption:
-      federalBrackets.length > 0
-        ? filing === 'married_joint'
-          ? 30_000_000
-          : 15_000_000
-        : 13_990_000,
+    federalExemption: federalExemptionForContext,
     estimatedFederalTax: taxWithoutStrategies,
-    estimatedStateTax: 0, // TODO Session 35: wire from stateEstateTax engine
-    person1BirthYear: householdRow.person1_birth_year ?? new Date().getFullYear() - 50,
+    estimatedStateTax: 0,
+    person1BirthYear: p1BirthYear,
     liquidAssets,
     illiquidAssets,
     preIRABalance,
