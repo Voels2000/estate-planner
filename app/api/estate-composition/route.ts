@@ -1,6 +1,6 @@
 // app/api/estate-composition/route.ts
 // POST /api/estate-composition
-// Body: { householdId: string }
+// Body: { householdId: string, sourceRole?: 'consumer' | 'advisor' }
 // Returns: EstateComposition JSON
 //
 // Called by EstateCompositionCard on consumer dashboard,
@@ -13,8 +13,8 @@ import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { householdId?: string }
-    const { householdId } = body
+    const body = await request.json() as { householdId?: string; sourceRole?: 'consumer' | 'advisor' }
+    const { householdId, sourceRole } = body
 
     if (!householdId) {
       return NextResponse.json(
@@ -34,7 +34,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const composition = await classifyEstateAssets(supabase, householdId)
+    const normalizedSourceRole: 'consumer' | 'advisor' =
+      sourceRole === 'advisor' ? 'advisor' : 'consumer'
+
+    const composition = await classifyEstateAssets(supabase, householdId, normalizedSourceRole)
 
     return NextResponse.json(composition)
   } catch (err) {

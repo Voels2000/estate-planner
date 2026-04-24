@@ -12,7 +12,14 @@ function getClientName(household: ClientViewShellProps['household']) {
   return `${household?.person1_first_name ?? ''} ${household?.person1_last_name ?? ''}`.trim() || 'Client'
 }
 
-export default function MeetingPrepTab({ clientId, household, exportPanelProps }: ClientViewShellProps) {
+export default function MeetingPrepTab({
+  clientId,
+  household,
+  exportPanelProps,
+  notes,
+  scenario,
+  estateComposition,
+}: ClientViewShellProps) {
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
@@ -47,6 +54,28 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
   const latestOnlyExportPanelProps = exportPanelProps
     ? { ...exportPanelProps, scenarioHistory: exportPanelProps.scenarioHistory.slice(0, 1) }
     : null
+  const latestNote = (notes ?? [])[0] ?? null
+  const initialBriefSeed = {
+    health_score_today: exportPanelProps?.healthScore ?? null,
+    top_alerts: (exportPanelProps?.actionItems ?? []).slice(0, 3).map((a) => ({
+      title: a.message,
+      severity: a.severity,
+      description: a.message,
+    })),
+    current_gross_estate: estateComposition?.gross_estate ?? null,
+    current_taxable_estate: estateComposition?.taxable_estate ?? null,
+    current_estimated_tax: estateComposition?.estimated_tax ?? null,
+    gross_estate: scenario?.gross_estate ?? null,
+    estate_tax:
+      (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),
+    net_to_heirs: null,
+    cost_of_inaction:
+      (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),
+    recommended_strategies: exportPanelProps?.activeStrategies ?? [],
+    last_note: latestNote?.content ?? null,
+    last_note_date: latestNote?.created_at ?? null,
+    has_projection: Boolean(scenario?.id),
+  }
 
   return (
     <div className="space-y-8">
@@ -60,6 +89,7 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
           householdId={household.id}
           clientName={clientName}
           initialHealthScore={exportPanelProps?.healthScore ?? null}
+          initialBriefSeed={initialBriefSeed}
         />
       </section>
 

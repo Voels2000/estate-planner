@@ -31,12 +31,15 @@ export default function EstateTab({
   businessInterests,
   beneficiaries,
   estateDocuments,
+  estateComposition,
   conflictReport,
   beneficiaryGrants = [],
 }: ClientViewShellProps) {
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
-  const [composition, setComposition] = useState<import('@/lib/estate/types').EstateComposition | null>(null)
+  const [composition, setComposition] = useState<import('@/lib/estate/types').EstateComposition | null>(
+    estateComposition ?? null,
+  )
   const [adminExpensePct, setAdminExpensePct] = useState<number>(
     (household as any).admin_expense_pct ?? 0.02
   )
@@ -140,29 +143,14 @@ export default function EstateTab({
 
     fetchHasCSTStrategy()
 
-    // Fetch estate composition for EstateCompositionCard
-    const fetchComposition = async () => {
-      try {
-        const res = await fetch('/api/estate-composition', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ householdId: household.id }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (mounted && data.success) setComposition(data)
-        }
-      } catch (e) {
-        console.error('[EstateTab] composition fetch error:', e)
-      }
-    }
-
-    fetchComposition()
-
     return () => {
       mounted = false
     }
   }, [household.id])
+
+  useEffect(() => {
+    setComposition(estateComposition ?? null)
+  }, [estateComposition])
 
   useEffect(() => {
     setExpandedBeneficiaryGroups((prev) => {
@@ -201,7 +189,7 @@ export default function EstateTab({
       })
       if (res.ok) {
         const data = await res.json()
-        if (data.success) setComposition(data)
+        setComposition(data.success === false ? null : data)
       }
     } finally {
       setSavingAdminExpense(false)
@@ -231,7 +219,7 @@ export default function EstateTab({
       })
       if (compositionRefreshResponse.ok) {
         const data = await compositionRefreshResponse.json()
-        if (data.success) setComposition(data)
+        setComposition(data.success === false ? null : data)
       }
     } finally {
       setSavingBusinessId(null)
@@ -254,7 +242,7 @@ export default function EstateTab({
       })
       if (res.ok) {
         const data = await res.json()
-        if (data.success) setComposition(data)
+        setComposition(data.success === false ? null : data)
       }
     } finally {
       setSavingInsuranceId(null)

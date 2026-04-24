@@ -45,11 +45,28 @@ interface MeetingBrief {
   generated_at: string
 }
 
+interface MeetingBriefSeed {
+  health_score_today?: number | null
+  top_alerts?: Array<{ title: string; severity: string; description: string }>
+  current_gross_estate?: number | null
+  current_taxable_estate?: number | null
+  current_estimated_tax?: number | null
+  gross_estate?: number | null
+  estate_tax?: number | null
+  net_to_heirs?: number | null
+  cost_of_inaction?: number | null
+  recommended_strategies?: string[]
+  last_note?: string | null
+  last_note_date?: string | null
+  has_projection?: boolean
+}
+
 interface Props {
   clientId: string
   householdId: string
   clientName: string
   initialHealthScore?: number | null
+  initialBriefSeed?: MeetingBriefSeed | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,6 +80,28 @@ function fmt(n: number): string {
 function fmtDate(iso: string): string {
   const d = new Date(iso)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function buildBriefFromSeed(clientName: string, seed: MeetingBriefSeed): MeetingBrief {
+  return {
+    client_name: clientName,
+    health_score_today: seed.health_score_today ?? null,
+    health_score_last_meeting: null,
+    health_score_delta: null,
+    top_alerts: seed.top_alerts ?? [],
+    current_gross_estate: seed.current_gross_estate ?? null,
+    current_taxable_estate: seed.current_taxable_estate ?? null,
+    current_estimated_tax: seed.current_estimated_tax ?? null,
+    gross_estate: seed.gross_estate ?? null,
+    estate_tax: seed.estate_tax ?? null,
+    net_to_heirs: seed.net_to_heirs ?? null,
+    cost_of_inaction: seed.cost_of_inaction ?? null,
+    recommended_strategies: seed.recommended_strategies ?? [],
+    last_note: seed.last_note ?? null,
+    last_note_date: seed.last_note_date ?? null,
+    has_projection: seed.has_projection ?? false,
+    generated_at: new Date().toISOString(),
+  }
 }
 
 // ─── Meeting brief generator ──────────────────────────────────────────────────
@@ -211,14 +250,25 @@ function BriefSection({ title, children }: { title: string; children: React.Reac
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function MeetingPrep({ clientId, householdId, clientName, initialHealthScore = null }: Props) {
-  const [brief, setBrief] = useState<MeetingBrief | null>(null)
+export default function MeetingPrep({
+  clientId,
+  householdId,
+  clientName,
+  initialHealthScore = null,
+  initialBriefSeed = null,
+}: Props) {
+  const [brief, setBrief] = useState<MeetingBrief | null>(
+    initialBriefSeed ? buildBriefFromSeed(clientName, initialBriefSeed) : null,
+  )
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
   const handleGenerate = async () => {
-    setLoading(true)
     setOpen(true)
+    if (!brief && initialBriefSeed) {
+      setBrief(buildBriefFromSeed(clientName, initialBriefSeed))
+    }
+    setLoading(true)
     const b = await generateMeetingBrief(clientId, householdId, clientName, initialHealthScore)
     setBrief(b)
     setLoading(false)
