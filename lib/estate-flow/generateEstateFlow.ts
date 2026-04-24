@@ -356,7 +356,6 @@ export async function generateEstateFlow(
   // Avoid relying on scenario row fields that may be absent in some generated outputs.
   const hypothetical = computeColumnTaxes({
     grossEstate,
-    calendarYear: horizonCalendarYear,
     statePrimary: household.state_primary,
     filingStatus: household.filing_status,
     hasSpouse: Boolean(household.has_spouse),

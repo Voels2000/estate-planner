@@ -24,7 +24,7 @@ import {
   type StateEstateTaxBracket,
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
-import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/estate-tax-projection'
+import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import type { EstateComposition, OutsideStrategyItem } from '@/lib/estate/types'
