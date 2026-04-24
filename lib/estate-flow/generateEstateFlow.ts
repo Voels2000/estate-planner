@@ -325,22 +325,17 @@ export async function generateEstateFlow(
   // Pick the projection row that matches the selected horizon.
   // Falls back to lastOutput if the horizon year isn't in the projection.
   let horizonRow = lastOutput
-  let horizonCalendarYear = currentCalendarYear
   if (horizon === 'today') {
     horizonRow = outputs.find(r => r.year === currentCalendarYear) ?? outputs[0] ?? lastOutput
-    horizonCalendarYear = currentCalendarYear
   } else if (horizon === 'ten_year') {
     const targetYear = currentCalendarYear + 10
     horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
-    horizonCalendarYear = targetYear
   } else if (horizon === 'twenty_year') {
     const targetYear = currentCalendarYear + 20
     horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
-    horizonCalendarYear = targetYear
   } else {
     // 'at_longevity' — use the final row
     horizonRow = lastOutput
-    horizonCalendarYear = lastOutput?.year ?? currentCalendarYear
   }
 
   console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)

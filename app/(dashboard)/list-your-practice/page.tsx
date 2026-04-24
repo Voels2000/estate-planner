@@ -22,7 +22,7 @@ export default async function ListYourPracticePage() {
           List Your Practice
         </h1>
         <p className="mt-3 text-neutral-500">
-          Choose the type of practice you'd like to list. Each directory
+          Choose the type of practice you&apos;d like to list. Each directory
           serves a different audience on the platform.
         </p>
       </div>

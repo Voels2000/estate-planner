@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 
 type Attorney = {
   id: string
@@ -315,7 +314,7 @@ export function AttorneyDirectoryClient({
           {!requestSent ? (
             <>
               <h2 className="text-lg font-semibold text-neutral-900 mb-1">
-                Don't see your attorney?
+                Don&apos;t see your attorney?
               </h2>
               <p className="text-sm text-neutral-500 mb-6">
                 Submit their details and we will send them an invitation to join the platform.

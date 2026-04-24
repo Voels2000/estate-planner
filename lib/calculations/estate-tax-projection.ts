@@ -71,7 +71,6 @@ export function computeEstateTaxProjection(
 } {
   const isMarried = hasSpouse && filingStatus === 'mfj'
   const exemptionIndividual = config.estate_exemption_individual
-  const exemptionMarried = config.estate_exemption_married
   const topRate = config.estate_top_rate_pct / 100
 
   // Death years
@@ -87,7 +86,6 @@ export function computeEstateTaxProjection(
     firstDeathYear: deathYearP1,
     secondDeathYear: deathYearP2,
     exemptionIndividual,
-    exemptionMarried,
     topRate,
     isMarried,
     stateBrackets,
@@ -102,7 +100,6 @@ export function computeEstateTaxProjection(
           firstDeathYear: deathYearP2,
           secondDeathYear: deathYearP1,
           exemptionIndividual,
-          exemptionMarried,
           topRate,
           isMarried,
           stateBrackets,
@@ -118,7 +115,6 @@ function computeSequence({
   firstDeathYear,
   secondDeathYear,
   exemptionIndividual,
-  exemptionMarried,
   topRate,
   isMarried,
   stateBrackets,
@@ -128,7 +124,6 @@ function computeSequence({
   firstDeathYear: number
   secondDeathYear: number | null
   exemptionIndividual: number
-  exemptionMarried: number
   topRate: number
   isMarried: boolean
   stateBrackets: StateBracket[]

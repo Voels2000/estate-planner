@@ -220,7 +220,7 @@ export default function ScenariosPage() {
       fetchScenario(scenarioB, setResultB, setLoadingB)
     }, 600)
     return () => { if (timerB.current) clearTimeout(timerB.current) }
-  }, [scenarioB])
+  }, [scenarioB, household])
 
   // ── Re-run C when scenarioC changes (debounced 600ms) ───────────────────────
   useEffect(() => {
@@ -231,7 +231,7 @@ export default function ScenariosPage() {
       fetchScenario(scenarioC, setResultC, setLoadingC)
     }, 600)
     return () => { if (timerC.current) clearTimeout(timerC.current) }
-  }, [scenarioC])
+  }, [scenarioC, household])
 
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading…</p></div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -52,18 +52,16 @@ const priorityColors: Record<string, string> = {
   low: 'border-l-green-500',
 };
 
-const priorityLabelColors: Record<string, string> = {
-  high: 'text-red-600',
-  moderate: 'text-yellow-600',
-  low: 'text-green-600',
-};
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unexpected error';
 
 export default function IncapacityPlanningDashboard({
   householdId,
   userRole,
   consumerTier = 1,
 }: IncapacityPlanningDashboardProps) {
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [data, setData] = useState<IncapacityResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,14 +83,14 @@ export default function IncapacityPlanningDashboard({
         );
         if (err) throw err;
         setData(result);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load incapacity planning data.');
+      } catch (error: unknown) {
+        setError(getErrorMessage(error) || 'Failed to load incapacity planning data.');
       } finally {
         setLoading(false);
       }
     }
-    load();
-  }, [householdId]);
+    void load();
+  }, [householdId, supabase]);
 
   useEffect(() => {
     async function loadConfirmations() {
@@ -109,8 +107,8 @@ export default function IncapacityPlanningDashboard({
         setConfirmations(map);
       }
     }
-    loadConfirmations();
-  }, [householdId]);
+    void loadConfirmations();
+  }, [householdId, supabase]);
 
   async function handleToggleConfirmation(doc_type: string, confirmed: boolean) {
     setSaving(doc_type);
@@ -146,8 +144,8 @@ export default function IncapacityPlanningDashboard({
           return next;
         });
       }
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to save.');
+    } catch (error: unknown) {
+      setSaveError(getErrorMessage(error) || 'Failed to save.');
     } finally {
       setSaving(null);
     }

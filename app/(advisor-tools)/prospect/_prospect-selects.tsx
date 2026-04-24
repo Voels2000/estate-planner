@@ -64,7 +64,7 @@ export function ProspectSelects({
       maritalEl?.removeEventListener('change', handleMarital)
       ageEl?.removeEventListener('input', handleAge)
     }
-  }, [])
+  }, [state, range, marital, age])
 
   const handleSubmit = () => {
     const form = stateRef.current?.closest('form')

@@ -30,7 +30,7 @@ export default async function EstateTaxPage() {
     { data: realEstateRows },
     { data: assetsRows },
     { data: liabilitiesRows },
-    { data: businessesRows },
+    ,
     { data: trustsRows },
     { data: householdRow },
     { data: federalEstateTaxBracketsRows },

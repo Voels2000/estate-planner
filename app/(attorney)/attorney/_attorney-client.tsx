@@ -32,6 +32,7 @@ export default function AttorneyClientPage({
   attorneyClients,
   attorneyId,
 }: Props) {
+  void attorneyId
   const [clients, setClients] = useState(attorneyClients)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -181,7 +182,7 @@ export default function AttorneyClientPage({
                       <p className="text-sm font-medium text-neutral-900">{displayName}</p>
                       <p className="text-xs text-neutral-500">{displayEmail}</p>
                       {c.request_message && (
-                        <p className="mt-1 text-xs text-neutral-600 italic">"{c.request_message}"</p>
+                        <p className="mt-1 text-xs text-neutral-600 italic">&quot;{c.request_message}&quot;</p>
                       )}
                       <p className="mt-1 text-xs text-neutral-400">
                         Requested {formatDate(c.created_at)}
@@ -277,7 +278,7 @@ export default function AttorneyClientPage({
               Add a Client by Email
             </h2>
             <p className="text-sm text-neutral-600 mb-4">
-              Enter your client's email address. They'll receive an invitation to connect with your practice on Wealth Maps.
+              Enter your client&apos;s email address. They&apos;ll receive an invitation to connect with your practice on Wealth Maps.
             </p>
             <div className="space-y-3">
               <input

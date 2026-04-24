@@ -32,7 +32,7 @@ const DEFAULT_7520_RATE = 0.052
 
 // ── Strategy line item writer ─────────────────────────────────────────────────
 async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  const configRes = await fetch('/api/strategy-configs', {
+  await fetch('/api/strategy-configs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -42,7 +42,7 @@ async function writeStrategyLineItem(input: StrategyLineItemInput) {
     }),
   })
   // Also write strategy_line_items for the composition card
-  const lineRes = await fetch('/api/strategy-line-items', {
+  await fetch('/api/strategy-line-items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
@@ -140,7 +140,7 @@ function RecommendButton({
 export default function AdvancedStrategyPanel({
   householdId,
   grossEstate,
-  federalExemption,
+  federalExemption: _federalExemption,
   estimatedFederalTax,
   estimatedStateTax,
   person1BirthYear,
@@ -149,6 +149,7 @@ export default function AdvancedStrategyPanel({
   rothBalance = 0,
   onRecommend,
 }: AdvancedStrategyPanelProps) {
+  void _federalExemption
   const { saved, saving, toggle } = useRecommendAdvanced(householdId, onRecommend)
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82

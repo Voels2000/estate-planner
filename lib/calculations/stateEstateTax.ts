@@ -152,6 +152,7 @@ export function calculateStateEstateTax(
   isMFJ: boolean,
   hasCSTInPlace = false,
 ): StateEstateTaxResult {
+  void hasCSTInPlace
   const code = stateCode.toUpperCase().trim()
 
   // No brackets = no state estate tax for this state

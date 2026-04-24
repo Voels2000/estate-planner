@@ -145,7 +145,6 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     standardDeduction,
     inflationRate,
     person1BirthYear,
-    person2BirthYear,
     rmdStartAge,
   } = inputs
 

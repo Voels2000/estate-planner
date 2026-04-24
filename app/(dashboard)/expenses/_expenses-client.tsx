@@ -149,11 +149,14 @@ export default function ExpensesClient({
       try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
     })()
     if (!hasSaved && expenses.length > 0) {
-      const allOpen: Record<string, boolean> = {}
-      groupKeys.forEach((k) => { allOpen[k] = true })
-      setOpenGroups(allOpen)
+      const timeoutId = window.setTimeout(() => {
+        const allOpen: Record<string, boolean> = {}
+        groupKeys.forEach((k) => { allOpen[k] = true })
+        setOpenGroups(allOpen)
+      }, 0)
+      return () => window.clearTimeout(timeoutId)
     }
-  }, [expenses.length])
+  }, [expenses.length, groupKeys])
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">

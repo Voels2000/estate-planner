@@ -398,7 +398,71 @@ const fmtDate = (iso: string) =>
 const capitalize = (s: string) =>
   s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : ''
 
-const clientName = (h: any) => {
+type PdfHousehold = {
+  person1_first_name?: string | null
+  person1_last_name?: string | null
+  has_spouse?: boolean | null
+  person2_first_name?: string | null
+  person2_last_name?: string | null
+  state_primary?: string | null
+  filing_status?: string | null
+  estate_complexity_flag?: string | null
+}
+
+type PdfRecommendation = { priority?: string | null; branch?: string | null; reason?: string | null }
+type PdfChecklistItem = { doc_type?: string | null; complete?: boolean | null; label?: string | null }
+type PdfGap = { doc_type?: string | null; reason?: string | null }
+type PdfDoc = { document_type?: string | null; status?: string | null }
+type PdfTrust = { trust_type?: string | null }
+
+type EstatePlanPdfData = {
+  household: PdfHousehold
+  advisor_name?: string | null
+  role?: 'advisor' | 'consumer' | string
+  generated_at: string
+  completeness?: {
+    completeness_pct?: number | null
+    completeness_score?: number | null
+    grade?: string | null
+    attorney_cta_triggered?: boolean | null
+    breakdown?: {
+      has_will_or_trust?: boolean | null
+      has_beneficiaries?: boolean | null
+      has_tax_strategy?: boolean | null
+    } | null
+  } | null
+  recommendations?: {
+    recommendations_json?: {
+      recommendations?: PdfRecommendation[] | null
+    } | null
+  } | null
+  federal_estate_tax?: {
+    gross_estate?: number | null
+    filing_status?: string | null
+    estimated_tax?: number | null
+    available_exemption?: number | null
+    tcja_in_effect?: boolean | null
+  } | null
+  state_estate_tax?: {
+    estimated_state_tax?: number | null
+    domicile_state?: string | null
+    state_exemption?: number | null
+    effective_rate_pct?: number | null
+  } | null
+  incapacity?: {
+    incapacity_gaps?: PdfGap[] | null
+    priority_score?: number | null
+    checklist?: PdfChecklistItem[] | null
+    has_dpoa?: boolean | null
+    has_medical_poa?: boolean | null
+    has_advance_directive?: boolean | null
+    has_living_will?: boolean | null
+  } | null
+  documents?: PdfDoc[] | null
+  trusts?: PdfTrust[] | null
+}
+
+const clientName = (h: PdfHousehold) => {
   const p1 = [h.person1_first_name, h.person1_last_name].filter(Boolean).join(' ')
   const p2 = h.has_spouse
     ? [h.person2_first_name, h.person2_last_name].filter(Boolean).join(' ')
@@ -407,7 +471,7 @@ const clientName = (h: any) => {
 }
 
 // --- Shared Header ---
-const PDFHeader = ({ data }: { data: any }) => (
+const PDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
   <View>
     <View style={s.headerAccent} />
     <View style={s.header}>
@@ -435,7 +499,7 @@ const PDFHeader = ({ data }: { data: any }) => (
 )
 
 // --- Shared Footer ---
-const PDFFooter = ({ data }: { data: any }) => (
+const PDFFooter = ({ data }: { data: EstatePlanPdfData }) => (
   <View style={s.footer} fixed>
     <Text style={s.footerText}>Estate Planner  |  Confidential  |  {clientName(data.household)}</Text>
     <Text style={s.footerText} render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => `Page ${pageNumber} of ${totalPages}`} />
@@ -455,7 +519,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 )
 
 // --- Completeness Score Section ---
-const CompletenessSection = ({ data }: { data: any }) => {
+const CompletenessSection = ({ data }: { data: EstatePlanPdfData }) => {
   const c = data.completeness
   if (!c) return null
   const pct = c.completeness_pct ?? c.completeness_score ?? 0
@@ -484,7 +548,7 @@ const CompletenessSection = ({ data }: { data: any }) => {
 }
 
 // --- Recommendations Section ---
-const RecommendationsSection = ({ data }: { data: any }) => {
+const RecommendationsSection = ({ data }: { data: EstatePlanPdfData }) => {
   const recs = data.recommendations?.recommendations_json?.recommendations
   if (!recs || recs.length === 0) return null
   return (
@@ -495,15 +559,15 @@ const RecommendationsSection = ({ data }: { data: any }) => {
           <Text style={[s.tableHeaderCell, s.colItem]}>Recommendation</Text>
           <Text style={[s.tableHeaderCell, s.colReason]}>Reason</Text>
         </View>
-        {recs.map((r: any, i: number) => (
+        {recs.map((r: PdfRecommendation, i: number) => (
           <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
             <View style={s.colPriority}>
               <Text style={r.priority === 'high' ? s.badgeHigh : r.priority === 'moderate' ? s.badgeMod : s.badgeLow}>
                 {r.priority?.toUpperCase()}
               </Text>
             </View>
-            <Text style={[s.tableCell, s.colItem]}>{capitalize(r.branch)}</Text>
-            <Text style={[s.tableCell, s.colReason]}>{r.reason}</Text>
+            <Text style={[s.tableCell, s.colItem]}>{capitalize(r.branch ?? '')}</Text>
+            <Text style={[s.tableCell, s.colReason]}>{r.reason ?? ''}</Text>
           </View>
         ))}
       </View>
@@ -512,7 +576,7 @@ const RecommendationsSection = ({ data }: { data: any }) => {
 }
 
 // --- Tax Exposure Section (Advisor only) ---
-const TaxSection = ({ data }: { data: any }) => {
+const TaxSection = ({ data }: { data: EstatePlanPdfData }) => {
   const fed = data.federal_estate_tax
   const state = data.state_estate_tax
   if (!fed || !state) return null
@@ -544,7 +608,7 @@ const TaxSection = ({ data }: { data: any }) => {
 }
 
 // --- Incapacity Section ---
-const IncapacitySection = ({ data }: { data: any }) => {
+const IncapacitySection = ({ data }: { data: EstatePlanPdfData }) => {
   const inc = data.incapacity
   if (!inc) return null
   return (
@@ -556,8 +620,8 @@ const IncapacitySection = ({ data }: { data: any }) => {
         <Text style={s.priorityScoreValue}>{inc.priority_score ?? 0} / 100</Text>
       </View>
       <View style={[s.table, { marginBottom: 0 }]}>
-        {inc.checklist?.map((item: any, i: number) => {
-          const gap = inc.incapacity_gaps?.find((g: any) => g.doc_type === item.doc_type)
+        {inc.checklist?.map((item: PdfChecklistItem, i: number) => {
+          const gap = inc.incapacity_gaps?.find((g: PdfGap) => g.doc_type === item.doc_type)
           return (
             <View key={i} wrap={false}>
               <View style={s.checklistItem}>
@@ -581,13 +645,13 @@ const IncapacitySection = ({ data }: { data: any }) => {
 }
 
 // --- Documents on File Section ---
-const DocumentsSection = ({ data }: { data: any }) => {
+const DocumentsSection = ({ data }: { data: EstatePlanPdfData }) => {
   const docs = data.documents
   const trusts = data.trusts
   if ((!docs || docs.length === 0) && (!trusts || trusts.length === 0)) return null
   const allDocs = [
-    ...(docs ?? []).map((d: any) => ({ label: capitalize(d.document_type), status: d.status })),
-    ...(trusts ?? []).map((t: any) => ({ label: capitalize(t.trust_type), status: 'active' })),
+    ...(docs ?? []).map((d: PdfDoc) => ({ label: capitalize(d.document_type ?? ''), status: d.status })),
+    ...(trusts ?? []).map((t: PdfTrust) => ({ label: capitalize(t.trust_type ?? ''), status: 'active' })),
   ]
   return (
     <Section title="Documents & Trusts on File">
@@ -604,7 +668,7 @@ const DocumentsSection = ({ data }: { data: any }) => {
 }
 
 // --- Consumer T3 Checklist ---
-const ConsumerChecklistSection = ({ data }: { data: any }) => {
+const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
   const inc = data.incapacity
   const c = data.completeness
   const items = [
@@ -641,7 +705,7 @@ const ConsumerChecklistSection = ({ data }: { data: any }) => {
 }
 
 // --- Advisor PDF Export ---
-export const AdvisorEstatePlanPDF = ({ data }: { data: any }) => (
+export const AdvisorEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
   <Document title={`Estate Plan — ${clientName(data.household)}`} author="Estate Planner">
     <Page size="LETTER" style={s.page}>
       <PDFHeader data={data} />
@@ -658,7 +722,7 @@ export const AdvisorEstatePlanPDF = ({ data }: { data: any }) => (
 )
 
 // --- Consumer T3 PDF Export ---
-export const ConsumerEstatePlanPDF = ({ data }: { data: any }) => (
+export const ConsumerEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
   <Document title={`Estate Plan Summary — ${clientName(data.household)}`} author="Estate Planner">
     <Page size="LETTER" style={s.page}>
       <PDFHeader data={data} />

@@ -471,7 +471,7 @@ export default function CompleteClient({
 
       {/* ── Footer note ────────────────────────────────────────────────────── */}
       <p className="mt-4 text-xs text-neutral-400 text-center">
-        Values shown are end-of-year projections — year 1 reflects today's balances after income, expenses, and growth are applied for the full year. Financial assets grow at investment rate · Real estate grows at inflation rate · Click group labels above to expand detail columns
+        Values shown are end-of-year projections — year 1 reflects today&apos;s balances after income, expenses, and growth are applied for the full year. Financial assets grow at investment rate · Real estate grows at inflation rate · Click group labels above to expand detail columns
       </p>
     </div>
   )

@@ -121,7 +121,6 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
   // Build lookup maps
   const profileMap = new Map(profiles.map(p => [p.id, p]))
   const householdByOwner = new Map(households.map(h => [h.owner_id, h]))
-  const householdById = new Map(households.map(h => [h.id, h]))
   const healthScoreMap = new Map(healthScores.map(s => [s.household_id, s.score]))
 
   // Group alerts by household
@@ -297,10 +296,11 @@ export function calculateCharitableImpact(
   giftType: GiftType,
   effectiveEstateTaxRate: number = 0.40,
   effectiveIncomeTaxRate: number = 0.37,
-  discountRate: number = 0.05,
+  _discountRate: number = 0.05,
   nonprofitReturnRate: number = 0.07,
 ): CharitableImpactResult {
   void householdId
+  void _discountRate
 
   // Income tax deduction PV
   const incomeTaxDeductionPV = giftAmount * effectiveIncomeTaxRate * (

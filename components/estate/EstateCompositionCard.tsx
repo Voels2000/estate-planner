@@ -157,13 +157,17 @@ export default function EstateCompositionCard({
 
   useEffect(() => {
     if (compositionProp) {
-      setComposition(compositionProp)
-      setLoading(false)
+      const timeoutId = window.setTimeout(() => {
+        setComposition(compositionProp)
+        setLoading(false)
+      }, 0)
+      return () => window.clearTimeout(timeoutId)
+    }
+    if (!householdId) {
       return
     }
-    if (!householdId) return
 
-    setLoading(true)
+    const loadingTimeoutId = window.setTimeout(() => setLoading(true), 0)
     fetch('/api/estate-composition', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -179,6 +183,7 @@ export default function EstateCompositionCard({
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
+    return () => window.clearTimeout(loadingTimeoutId)
   }, [householdId, compositionProp])
 
   if (loading) return <Skeleton />

@@ -192,7 +192,6 @@ function StatBox({ label, value, sub, highlight }: {
 }
 
 function PlanningGapsSection({ householdId }: { householdId: string }) {
-  const supabase = createClient()
   const [recs, setRecs] = useState<{
     branch: string
     priority: 'high' | 'moderate' | 'low'
@@ -202,6 +201,7 @@ function PlanningGapsSection({ householdId }: { householdId: string }) {
 
   useEffect(() => {
     async function load() {
+      const supabase = createClient()
       const { data } = await supabase.rpc('generate_estate_recommendations', {
         p_household_id: householdId,
       })
@@ -288,15 +288,16 @@ export function DashboardClient(props: Props) {
   } = props
 
   void consumerTier
+  void hasBaseCase
+  void scenarioId
+  void isAdvisor
 
   const fn = firstName(userName)
   const allDone = completedSteps === setupSteps.length
-  const [greeting, setGreeting] = useState('Good morning')
-
-  useEffect(() => {
+  const [greeting] = useState(() => {
     const h = new Date().getHours()
-    setGreeting(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
-  }, [])
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  })
 
   const debtToAsset = totalAssets > 0 ? Math.round((totalLiabilities / totalAssets) * 100) : 0
   const totalNetWorthSources = netWorthBySource.financial + netWorthBySource.realEstateEquity + netWorthBySource.business + netWorthBySource.insurance

@@ -22,8 +22,6 @@ export const expenseCategoryLabels: Record<ExpenseCategory, string> = {
   other: 'Other',
 }
 
-const currentYear = new Date().getFullYear()
-
 export const expenseFormSchema = z.object({
   category: z.enum(EXPENSE_CATEGORIES, { message: 'Please select a category' }),
   amount: z.coerce.number().min(0, 'Amount must be 0 or greater'),

@@ -44,7 +44,7 @@ export function BillingClient({
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong.'); setLoadingPriceId(null); return }
-      window.location.href = data.url
+      window.location.assign(data.url)
     } catch { setError('Something went wrong. Please try again.'); setLoadingPriceId(null) }
   }
 
@@ -55,19 +55,7 @@ export function BillingClient({
       const res = await fetch('/api/stripe/portal', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong.'); setLoadingPriceId(null); return }
-      window.location.href = data.url
-    } catch { setError('Something went wrong. Please try again.'); setLoadingPriceId(null) }
-  }
-
-  async function handleCancelSubscription() {
-    if (!confirm('Are you sure you want to cancel? You will keep access until the end of your current billing period.')) return
-    setError(null)
-    setLoadingPriceId('cancel')
-    try {
-      const res = await fetch('/api/stripe/cancel', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Something went wrong.'); setLoadingPriceId(null); return }
-      window.location.href = '/billing?canceled=true'
+      window.location.assign(data.url)
     } catch { setError('Something went wrong. Please try again.'); setLoadingPriceId(null) }
   }
 

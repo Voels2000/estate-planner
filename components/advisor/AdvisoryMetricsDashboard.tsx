@@ -5,7 +5,7 @@
 // Consumer shareable readiness score placeholder
 
 import { useMemo } from 'react'
-import { calculateAdvisoryMetrics, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
+import { calculateAdvisoryMetrics } from '@/lib/advisoryMetrics'
 
 interface AdvisoryMetricsDashboardProps {
   householdId: string
@@ -51,24 +51,22 @@ export default function AdvisoryMetricsDashboard({
   cstGrowthRate = 0.06,
   noExemptionStressTax,
 }: AdvisoryMetricsDashboardProps) {
-  const input: AdvisoryMetricsInput = {
-    grossEstate,
-    federalExemption,
-    federalTax: estimatedFederalTax,
-    stateTax: estimatedStateTax,
-    hasSpouse,
-    dsueAvailable: hasSpouse ? federalExemption : 0,
-    liquidAssets,
-    ilitDeathBenefit,
-    section7520Rate,
-    cstFundingAmount,
-    cstGrowthRate,
-    noExemptionStressTax,
-    survivorExemption: federalExemption,
-  }
-
   const { metrics } = useMemo(
-    () => calculateAdvisoryMetrics(input),
+    () => calculateAdvisoryMetrics({
+      grossEstate,
+      federalExemption,
+      federalTax: estimatedFederalTax,
+      stateTax: estimatedStateTax,
+      hasSpouse,
+      dsueAvailable: hasSpouse ? federalExemption : 0,
+      liquidAssets,
+      ilitDeathBenefit,
+      section7520Rate,
+      cstFundingAmount,
+      cstGrowthRate,
+      noExemptionStressTax,
+      survivorExemption: federalExemption,
+    }),
     [
       grossEstate,
       federalExemption,

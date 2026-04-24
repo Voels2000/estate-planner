@@ -50,12 +50,15 @@ export function CollapsibleSection({
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    if (storageKey) {
-      setOpen(readSectionState(storageKey, defaultOpen))
-    } else if (defaultOpen) {
-      setOpen(true)
-    }
+    const timeoutId = window.setTimeout(() => {
+      setMounted(true)
+      if (storageKey) {
+        setOpen(readSectionState(storageKey, defaultOpen))
+      } else if (defaultOpen) {
+        setOpen(true)
+      }
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [defaultOpen, storageKey])
 
   function toggle() {

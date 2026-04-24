@@ -20,6 +20,59 @@ const ESTATE_DOC_TYPES = [
   { type: 'living_will',       label: 'Living Will',               critical: false },
 ]
 
+type BusinessEstateRow = {
+  id: string
+  name?: string | null
+  estimated_value?: number | null
+  ownership_pct?: number | null
+  dloc_pct?: number | null
+  dlom_pct?: number | null
+  estate_inclusion_status?: string | null
+}
+
+type InsuranceEstateRow = {
+  id: string
+  provider?: string | null
+  policy_name?: string | null
+  is_ilit?: boolean | null
+  insurance_type?: string | null
+  death_benefit?: number | null
+  cash_value?: number | null
+  estate_inclusion_status?: string | null
+}
+
+type BeneficiaryRowType = {
+  id: string
+  contingent?: boolean | null
+  account_type?: string | null
+  name?: string | null
+  relationship?: string | null
+  allocation_pct?: number | null
+}
+
+type AssetRowType = {
+  id: string
+  name?: string | null
+  value?: number | null
+  type?: string | null
+  account_type?: string | null
+  owner?: string | null
+  titling?: string | null
+  institution?: string | null
+  liquidity?: string | null
+}
+
+type RealEstateRowType = {
+  id: string
+  name?: string | null
+  current_value?: number | null
+  mortgage_balance?: number | null
+  is_primary_residence?: boolean | null
+  property_type?: string | null
+  owner?: string | null
+  situs_state?: string | null
+}
+
 export default function EstateTab({
   advisorId,
   household,
@@ -41,19 +94,13 @@ export default function EstateTab({
     estateComposition ?? null,
   )
   const [adminExpensePct, setAdminExpensePct] = useState<number>(
-    (household as any).admin_expense_pct ?? 0.02
+    (household as Record<string, unknown>).admin_expense_pct as number ?? 0.02
   )
   const [savingAdminExpense, setSavingAdminExpense] = useState(false)
-  const [savingBusinessId, setSavingBusinessId] = useState<string | null>(null)
   const [savingInsuranceId, setSavingInsuranceId] = useState<string | null>(null)
-  const [bizInclusionStatus, setBizInclusionStatus] = useState<Record<string, string>>(
-    Object.fromEntries(
-      (businesses ?? []).map(b => [b.id, (b as any).estate_inclusion_status ?? 'included'])
-    )
-  )
   const [insInclusionStatus, setInsInclusionStatus] = useState<Record<string, string>>(
     Object.fromEntries(
-      (insurancePolicies ?? []).map(p => [p.id, (p as any).estate_inclusion_status ?? 'included'])
+      (insurancePolicies ?? []).map((p: InsuranceEstateRow) => [p.id, p.estate_inclusion_status ?? 'included'])
     )
   )
   const [expandedBeneficiaryGroups, setExpandedBeneficiaryGroups] = useState<Record<string, boolean>>({})
@@ -67,7 +114,7 @@ export default function EstateTab({
     0,
   )
   const realEstateEquityTotal = (realEstate ?? []).reduce(
-    (s, r) => s + Number(r.current_value ?? 0) - Number(r.mortgage_balance ?? 0),
+    (s, r) => s + Number((r as RealEstateRowType).current_value ?? 0) - Number((r as RealEstateRowType).mortgage_balance ?? 0),
     0,
   )
   const businessValueTotal = computeBusinessOwnershipValue(
@@ -98,7 +145,8 @@ export default function EstateTab({
   const retirementAssets = (assets ?? []).filter(a =>
     ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(assetAccountType(a))
   )
-  const beneficiaryGroups = (beneficiaries ?? []).reduce<Record<string, any[]>>((acc, b) => {
+  const beneficiaryRows = (beneficiaries ?? []) as BeneficiaryRowType[]
+  const beneficiaryGroups = beneficiaryRows.reduce<Record<string, BeneficiaryRowType[]>>((acc, b) => {
     const key = (b.account_type ?? 'unassigned').toString().toLowerCase()
     if (!acc[key]) acc[key] = []
     acc[key].push(b)
@@ -109,7 +157,8 @@ export default function EstateTab({
     if (b === 'unassigned') return -1
     return a.localeCompare(b)
   })
-  const accountGroups = (assets ?? []).reduce<Record<string, any[]>>((acc, a) => {
+  const assetRows = (assets ?? []) as AssetRowType[]
+  const accountGroups = assetRows.reduce<Record<string, AssetRowType[]>>((acc, a) => {
     const key = assetAccountType(a) || 'unassigned'
     if (!acc[key]) acc[key] = []
     acc[key].push(a)
@@ -121,9 +170,11 @@ export default function EstateTab({
     return a.localeCompare(b)
   })
 
-  const totalRE       = (realEstate ?? []).reduce((s, r) => s + (r.current_value   ?? 0), 0)
-  const totalMortgage = (realEstate ?? []).reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
+  const realEstateRows = (realEstate ?? []) as RealEstateRowType[]
+  const totalRE = realEstateRows.reduce((s, r) => s + (r.current_value ?? 0), 0)
+  const totalMortgage = realEstateRows.reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
 
+  const beneficiaryGroupKeysDep = beneficiaryGroupKeys.join('|')
   useEffect(() => {
     let mounted = true
     const supabase = createClient()
@@ -160,8 +211,9 @@ export default function EstateTab({
       })
       return next
     })
-  }, [beneficiaryGroupKeys.join('|')])
+  }, [beneficiaryGroupKeysDep, beneficiaryGroupKeys])
 
+  const accountGroupKeysDep = accountGroupKeys.join('|')
   useEffect(() => {
     setExpandedAccountGroups((prev) => {
       const next: Record<string, boolean> = {}
@@ -170,7 +222,7 @@ export default function EstateTab({
       })
       return next
     })
-  }, [accountGroupKeys.join('|')])
+  }, [accountGroupKeysDep, accountGroupKeys])
 
   // ── Save helpers ─────────────────────────────────────────────────────────
   async function saveAdminExpense(pct: number) {
@@ -201,17 +253,13 @@ export default function EstateTab({
     field: 'dloc_pct' | 'dlom_pct' | 'estate_inclusion_status',
     value: number | string,
   ) {
-    if (field === 'estate_inclusion_status') {
-      setBizInclusionStatus(prev => ({ ...prev, [businessId]: value as string }))
-    }
-    setSavingBusinessId(businessId)
     try {
       const businessPatchResponse = await fetch(`/api/businesses/${businessId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
       })
-      const businessPatchBody = await businessPatchResponse.json()
+      await businessPatchResponse.json()
       const compositionRefreshResponse = await fetch('/api/estate-composition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -222,7 +270,7 @@ export default function EstateTab({
         setComposition(data.success === false ? null : data)
       }
     } finally {
-      setSavingBusinessId(null)
+      // no-op
     }
   }
 
@@ -506,8 +554,8 @@ export default function EstateTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(businesses ?? []).map(b => {
-                  const biz = b as any
+                {(businesses ?? []).map((b: BusinessEstateRow) => {
+                  const biz = b
                   const ownershipPct = (biz.ownership_pct ?? 100) / 100
                   const grossValue = (biz.estimated_value ?? 0) * ownershipPct
                   const dloc = biz.dloc_pct ?? 0
@@ -600,7 +648,7 @@ export default function EstateTab({
           </div>
         </div>
 
-        {(realEstate ?? []).length === 0 ? (
+        {realEstateRows.length === 0 ? (
           <p className="text-sm text-slate-400">No real estate on file</p>
         ) : (
           <div className="overflow-x-auto">
@@ -618,7 +666,7 @@ export default function EstateTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(realEstate ?? []).map(r => {
+                {realEstateRows.map(r => {
                   const equity     = (r.current_value ?? 0) - (r.mortgage_balance ?? 0)
                   const soleOwner  = household.has_spouse && (r.owner === 'person1' || r.owner === 'person2')
                   return (
@@ -673,8 +721,8 @@ export default function EstateTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(insurancePolicies ?? []).map(p => {
-                  const pol = p as any
+                {(insurancePolicies ?? []).map((p: InsuranceEstateRow) => {
+                  const pol = p
                   const isExcluded = pol.estate_inclusion_status === 'excluded_irrevocable'
                   return (
                     <tr key={p.id} className="hover:bg-slate-50">
@@ -798,7 +846,7 @@ export default function EstateTab({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function BeneficiaryRow({ b }: { b: any }) {
+function BeneficiaryRow({ b }: { b: BeneficiaryRowType }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50">
       <div>
@@ -818,7 +866,7 @@ function BeneficiaryRow({ b }: { b: any }) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatOwner(owner: string | null, household: any) {
+function formatOwner(owner: string | null | undefined, household: ClientViewShellProps['household']) {
   if (!owner) return '—'
   if (owner === 'person1') return household.person1_first_name ?? 'Person 1'
   if (owner === 'person2') return household.person2_first_name ?? 'Person 2'
@@ -826,7 +874,7 @@ function formatOwner(owner: string | null, household: any) {
   return owner
 }
 
-function formatPropertyType(t: string | null) {
+function formatPropertyType(t: string | null | undefined) {
   if (!t) return '—'
   return t.replace(/_/g, ' ')
 }

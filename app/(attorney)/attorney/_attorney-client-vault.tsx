@@ -78,7 +78,7 @@ export function AttorneyClientVault({ householdId, attorneyId, documents }: Prop
     }
   }
 
-  async function handleDownload(documentId: string, fileName: string) {
+  async function handleDownload(documentId: string) {
     try {
       const res  = await fetch(`/api/documents/download/${documentId}`)
       const data = await res.json()
@@ -165,7 +165,7 @@ export function AttorneyClientVault({ householdId, attorneyId, documents }: Prop
                 </div>
               </div>
               <button
-                onClick={() => handleDownload(doc.id, doc.file_name)}
+                onClick={() => handleDownload(doc.id)}
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3
                            py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50"
               >

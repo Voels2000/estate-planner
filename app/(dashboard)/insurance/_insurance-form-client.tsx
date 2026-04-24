@@ -423,11 +423,11 @@ export default function InsuranceFormClient({
                     <input
                       type="checkbox"
                       id="ilit_transfer_complete"
-                      checked={(form as any).estate_inclusion_status === 'excluded_irrevocable'}
+                      checked={form.estate_inclusion_status === 'excluded_irrevocable'}
                       onChange={e => setForm(f => ({
                         ...f,
                         estate_inclusion_status: e.target.checked ? 'excluded_irrevocable' : 'included'
-                      } as any))}
+                      }))}
                       className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-green-600"
                     />
                     <div>

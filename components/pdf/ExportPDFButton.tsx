@@ -53,9 +53,9 @@ export function ExportPDFButton({ householdId, role, className }: ExportPDFButto
       a.click()
       URL.revokeObjectURL(url)
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[ExportPDFButton]', err)
-      setError(err.message ?? 'Export failed. Please try again.')
+      setError(err instanceof Error ? err.message : 'Export failed. Please try again.')
     } finally {
       setLoading(false)
     }

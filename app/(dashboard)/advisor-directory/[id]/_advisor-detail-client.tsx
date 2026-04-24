@@ -178,7 +178,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
           <div className="sticky top-6 rounded-2xl bg-neutral-900 p-6 text-white shadow-sm">
             <h2 className="text-lg font-semibold">Request Introduction</h2>
             <p className="mt-2 text-sm text-neutral-400">
-              We'll send {advisor.contact_name ?? advisor.firm_name} an introduction email on your behalf.
+              We&apos;ll send {advisor.contact_name ?? advisor.firm_name} an introduction email on your behalf.
             </p>
 
             {sent ? (

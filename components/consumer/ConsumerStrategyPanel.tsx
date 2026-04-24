@@ -295,6 +295,7 @@ export default function ConsumerStrategyPanel({
 
   const grossEstate            = ctx.grossEstate
   const federalExemption       = ctx.federalExemption
+  void federalExemption
   const estimatedFederalTax    = ctx.estimatedFederalTax
   const estimatedStateTax      = ctx.estimatedStateTax
   const person1BirthYear       = ctx.person1BirthYear
@@ -389,29 +390,33 @@ export default function ConsumerStrategyPanel({
   // Re-seed configs when estateContext changes (e.g. after async load)
   useEffect(() => {
     if (!estateContext) return
-    setGratConfig((c) => ({
-      ...c,
-      fundingAmount: Number(
-        advisorMeta('grat').funding_amount ??
-        Math.min(5_000_000, Math.round(estateContext.grossEstate * 0.25)),
-      ),
-      grantorAge: CURRENT_YEAR - estateContext.person1BirthYear,
-      deathYear: estateContext.person1BirthYear + 82,
-    }))
-    setLiquidityConfig((c) => ({
-      ...c,
-      liquidAssets: estateContext.liquidAssets,
-      illiquidAssets: estateContext.illiquidAssets,
-      estimatedFederalTax: estateContext.estimatedFederalTax,
-      estimatedStateTax: estateContext.estimatedStateTax,
-    }))
-    setRothConfig((c) => ({
-      ...c,
-      preIRABalance: estateContext.preIRABalance,
-      annualRMD: estateContext.annualRMD,
-      yearsUntilDeath: estateContext.person1BirthYear + 82 - CURRENT_YEAR,
-    }))
-  }, [estateContext?.grossEstate, estateContext?.person1BirthYear])
+    const gratMeta = advisorLineItems.find((i) => i.strategy_source === 'grat')?.metadata ?? {}
+    const timeoutId = window.setTimeout(() => {
+      setGratConfig((c) => ({
+        ...c,
+        fundingAmount: Number(
+          gratMeta.funding_amount ??
+          Math.min(5_000_000, Math.round(estateContext.grossEstate * 0.25)),
+        ),
+        grantorAge: CURRENT_YEAR - estateContext.person1BirthYear,
+        deathYear: estateContext.person1BirthYear + 82,
+      }))
+      setLiquidityConfig((c) => ({
+        ...c,
+        liquidAssets: estateContext.liquidAssets,
+        illiquidAssets: estateContext.illiquidAssets,
+        estimatedFederalTax: estateContext.estimatedFederalTax,
+        estimatedStateTax: estateContext.estimatedStateTax,
+      }))
+      setRothConfig((c) => ({
+        ...c,
+        preIRABalance: estateContext.preIRABalance,
+        annualRMD: estateContext.annualRMD,
+        yearsUntilDeath: estateContext.person1BirthYear + 82 - CURRENT_YEAR,
+      }))
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [advisorLineItems, estateContext])
 
   const PANELS = [
     { id: 'grat' as AdvancedPanel, label: 'GRAT' },

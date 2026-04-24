@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 const SPECIALIZATION_OPTIONS = [
@@ -113,9 +114,9 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="mb-6">
-        <a href="/advisor-directory" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
+        <Link href="/advisor-directory" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
           ← Back to Directory
-        </a>
+        </Link>
       </div>
 
       <div className="mb-8">

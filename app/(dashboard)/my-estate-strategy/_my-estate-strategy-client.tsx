@@ -89,7 +89,7 @@ export default function MyEstateStrategyClient({
   }
 
   const hasBaseCase = !!scenarioId
-  const { today, tenYear, twentyYear, atDeath, showProjectionMismatchNote } = horizons
+  const { today, tenYear, twentyYear, atDeath } = horizons
   const columns = useMemo(
     () => [today, tenYear, twentyYear, atDeath].filter((col) => !col.isPlaceholder || col.showGenerateCta),
     [today, tenYear, twentyYear, atDeath],

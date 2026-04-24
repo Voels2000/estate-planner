@@ -405,7 +405,7 @@ export default function FirmClient({
             className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-50"
           />
           <p className="text-sm text-neutral-500">
-            Enter an advisor's email address above to send them an invite. Each accepted invite
+            Enter an advisor&apos;s email address above to send them an invite. Each accepted invite
             adds one seat to your firm subscription.
           </p>
           <button

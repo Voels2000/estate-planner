@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 
 type ProjectionYear = {
@@ -50,6 +51,28 @@ type Household = {
   custom_deduction_amount: number
 }
 
+type ProjectionApiRow = {
+  year: number
+  age_person1: number
+  age_person2?: number | null
+  income_total: number
+  expenses_total: number
+  tax_total: number
+  assets_p1_total?: number | null
+  assets_p2_total?: number | null
+  assets_pooled_total?: number | null
+  net_worth?: number | null
+  income_ss_person1?: number | null
+  income_ss_person2?: number | null
+  income_rmd_p1?: number | null
+  income_rmd_p2?: number | null
+  income_earned_p1?: number | null
+  income_earned_p2?: number | null
+  income_other_p1?: number | null
+  income_other_p2?: number | null
+  income_other_pooled?: number | null
+}
+
 export default function ProjectionsPage() {
   const [household, setHousehold] = useState<Household | null>(null)
   const [projections, setProjections] = useState<ProjectionYear[]>([])
@@ -66,7 +89,7 @@ export default function ProjectionsPage() {
       if (!household) throw new Error('No household found')
       setHousehold(household)
       // Map YearRow to ProjectionYear
-      const mapped: ProjectionYear[] = rows.map((r: any) => ({
+      const mapped: ProjectionYear[] = (rows as ProjectionApiRow[]).map((r) => ({
         age: r.age_person1,
         year: r.year,
         income: r.income_total,
@@ -108,14 +131,12 @@ export default function ProjectionsPage() {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
           <div className="text-4xl mb-3">📈</div>
           <p className="text-sm font-medium text-neutral-600">Complete your profile first</p>
-          <a href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</a>
+          <Link href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</Link>
         </div>
       </div>
     )
   }
 
-  const currentYear = new Date().getFullYear()
-  const currentAge = currentYear - household.person1_birth_year
   const retirementRow = projections.find(p => p.phase === 'retirement')
   const finalRow = projections[projections.length - 1]
   const peakNetWorth = projections.length > 0 ? Math.max(...projections.map(p => p.net_worth)) : 0

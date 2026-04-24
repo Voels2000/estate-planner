@@ -113,11 +113,14 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
       try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
     })()
     if (!hasSaved && income.length > 0) {
-      const allOpen: Record<string, boolean> = {}
-      groupKeys.forEach((k) => { allOpen[k] = true })
-      setOpenGroups(allOpen)
+      const timeoutId = window.setTimeout(() => {
+        const allOpen: Record<string, boolean> = {}
+        groupKeys.forEach((k) => { allOpen[k] = true })
+        setOpenGroups(allOpen)
+      }, 0)
+      return () => window.clearTimeout(timeoutId)
     }
-  }, [income.length])
+  }, [income.length, groupKeys])
 
   async function handleDelete(id: string) {
     try {

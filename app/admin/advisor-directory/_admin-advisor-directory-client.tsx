@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type Advisor = {
   id: string
@@ -125,12 +126,12 @@ export function AdminAdvisorDirectoryClient({ advisors: initial }: Props) {
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Advisor Directory</h1>
           <p className="mt-1 text-neutral-500">{advisors.length} listings</p>
         </div>
-        <a
+        <Link
           href="/advisor-directory"
           className="text-sm text-neutral-500 hover:text-neutral-900 underline-offset-4 hover:underline"
         >
           View public directory
-        </a>
+        </Link>
       </div>
 
       {/* ── Pending Nominations ───────────────────────────── */}

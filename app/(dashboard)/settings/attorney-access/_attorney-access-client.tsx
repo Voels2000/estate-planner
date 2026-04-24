@@ -25,8 +25,9 @@ export function AttorneyAccessClient({
   attorneyConnections,
   advisorConnectionId,
   advisorPdfAccess: initialAdvisorPdfAccess,
-  householdId,
+  householdId: _householdId,
 }: Props) {
+  void _householdId
   const [connections, setConnections] = useState(attorneyConnections)
   const [advisorPdfAccess, setAdvisorPdfAccess] = useState(initialAdvisorPdfAccess)
   const [revoking, setRevoking] = useState<string | null>(null)

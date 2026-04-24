@@ -27,6 +27,27 @@ export type ConflictReport = {
   computedAt: string
 }
 
+type AssetRow = {
+  id: string
+  name: string | null
+  value: number | string | null
+  owner: string | null
+  titling: string | null
+}
+
+type RealEstateRow = {
+  id: string
+  name: string | null
+  current_value: number | string | null
+  owner: string | null
+}
+
+type BeneficiaryRow = {
+  asset_id: string | null
+  beneficiary_type: string | null
+  allocation_pct: number | string | null
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Format a list of account names naturally: "A", "A and B", "A, B, and C", "A, B, and 2 others" */
@@ -45,8 +66,8 @@ function formatAccountList(names: string[], maxShow = 3): string {
 }
 
 function getBeneficiaryGapAccounts(
-  assets: any[],
-  beneficiaries: any[],
+  assets: AssetRow[],
+  beneficiaries: BeneficiaryRow[],
 ): {
   missingPrimary: { id: string; name: string }[]
   missingContingent: { id: string; name: string }[]
@@ -75,7 +96,7 @@ function getBeneficiaryGapAccounts(
 
 // ─── Rule 1: No primary beneficiary ──────────────────────────────────────────
 
-function ruleNoBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
+function ruleNoBeneficiary(assets: AssetRow[], beneficiaries: BeneficiaryRow[]): Conflict[] {
   const { missingPrimary } = getBeneficiaryGapAccounts(assets, beneficiaries)
   if (missingPrimary.length === 0) return []
 
@@ -94,7 +115,7 @@ function ruleNoBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
 
 // ─── Rule 2: Primary beneficiary allocations ≠ 100% ──────────────────────────
 
-function ruleAllocationNotHundred(assets: any[], beneficiaries: any[]): Conflict[] {
+function ruleAllocationNotHundred(assets: AssetRow[], beneficiaries: BeneficiaryRow[]): Conflict[] {
   const conflicts: Conflict[] = []
 
   for (const asset of assets) {
@@ -102,7 +123,7 @@ function ruleAllocationNotHundred(assets: any[], beneficiaries: any[]): Conflict
       b => b.beneficiary_type === 'primary' && b.asset_id === asset.id,
     )
     if (primaries.length === 0) continue
-    const total = primaries.reduce((s: number, b: any) => s + Number(b.allocation_pct ?? 0), 0)
+    const total = primaries.reduce((s: number, b) => s + Number(b.allocation_pct ?? 0), 0)
     if (Math.abs(total - 100) <= 0.5) continue
 
     conflicts.push({
@@ -120,7 +141,7 @@ function ruleAllocationNotHundred(assets: any[], beneficiaries: any[]): Conflict
 
 // ─── Rule 3: No contingent beneficiary ───────────────────────────────────────
 
-function ruleNoContingentBeneficiary(assets: any[], beneficiaries: any[]): Conflict[] {
+function ruleNoContingentBeneficiary(assets: AssetRow[], beneficiaries: BeneficiaryRow[]): Conflict[] {
   const { missingContingent } = getBeneficiaryGapAccounts(assets, beneficiaries)
   if (missingContingent.length === 0) return []
 
@@ -140,8 +161,8 @@ function ruleNoContingentBeneficiary(assets: any[], beneficiaries: any[]): Confl
 // ─── Rule 4: Sole ownership on married estate ─────────────────────────────────
 
 function ruleSoleOwnershipMarried(
-  assets: any[],
-  realEstate: any[],
+  assets: AssetRow[],
+  realEstate: RealEstateRow[],
   hasSpouse: boolean,
 ): Conflict[] {
   if (!hasSpouse) return []
@@ -154,7 +175,7 @@ function ruleSoleOwnershipMarried(
   })
 
   if (soleOwnedAssets.length > 0) {
-    const accountList = formatAccountList(soleOwnedAssets.map(a => a.name))
+    const accountList = formatAccountList(soleOwnedAssets.map(a => a.name ?? 'Unnamed account'))
     conflicts.push({
       conflict_type: 'sole_ownership_married',
       severity: 'warning',
@@ -184,14 +205,14 @@ function ruleSoleOwnershipMarried(
 // ─── Rule 5: Large estate without a trust ────────────────────────────────────
 
 function ruleLargeEstateNoTrust(
-  assets: any[],
-  realEstate: any[],
+  assets: AssetRow[],
+  realEstate: RealEstateRow[],
   hasWill: boolean,
   hasTrust: boolean,
 ): Conflict[] {
   const totalAssets =
-    assets.reduce((s: number, a: any) => s + Number(a.value ?? 0), 0) +
-    realEstate.reduce((s: number, r: any) => s + Number(r.current_value ?? 0), 0)
+    assets.reduce((s: number, a) => s + Number(a.value ?? 0), 0) +
+    realEstate.reduce((s: number, r) => s + Number(r.current_value ?? 0), 0)
 
   if (totalAssets < 1_000_000 || hasTrust) return []
 

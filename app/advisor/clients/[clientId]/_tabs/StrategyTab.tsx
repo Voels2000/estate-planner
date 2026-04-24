@@ -14,6 +14,7 @@ import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strat
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 
 export default function StrategyTab({ household, scenario }: ClientViewShellProps) {
+  const householdId = household?.id ?? null
   const grossEstate = Number(scenario?.gross_estate ?? 0)
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
   const defaultExemption = filingStatus === 'mfj'
@@ -36,10 +37,12 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
-  const [advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
+  const [_advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
-  const [strategyConfigs, setStrategyConfigs] = useState<any[]>([])
+  type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
+  const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
+  void _advisorLineItems
 
   // Gifting actuals from RPC
   const [giftingActuals, setGiftingActuals] = useState<{
@@ -53,11 +56,11 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   } | null>(null)
 
   useEffect(() => {
-    if (!household?.id) return
+    if (!householdId) return
     fetch('/api/gifting-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId: household.id }),
+      body: JSON.stringify({ householdId }),
     })
       .then(r => r.json())
       .then(d => {
@@ -73,23 +76,23 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         })
       })
       .catch(() => null)
-  }, [household?.id])
+  }, [householdId])
 
   const loadConsumerData = useCallback(async () => {
-    if (!household?.id) return
+    if (!householdId) return
     Promise.all([
-      fetchStrategyLineItems(household.id, 'advisor'),
-      fetchStrategyLineItems(household.id, 'consumer'),
-      fetchStrategyConfigs(household.id),
+      fetchStrategyLineItems(householdId, 'advisor'),
+      fetchStrategyLineItems(householdId, 'consumer'),
+      fetchStrategyConfigs(householdId),
     ]).then(async ([adv, con, configs]) => {
       setAdvisorLineItems(adv)
       setConsumerLineItems(con)
-      setStrategyConfigs(configs)
+      setStrategyConfigs((configs as StrategyConfigSummary[]) ?? [])
       try {
         const r = await fetch('/api/estate-composition', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ householdId: household.id, sourceRole: 'consumer' }),
+          body: JSON.stringify({ householdId, sourceRole: 'consumer' }),
         })
         const d = await r.json()
         if (!d.error) setConsumerComposition(d)
@@ -97,7 +100,7 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         // non-fatal — ConsumerPlanStatus handles null gracefully
       }
     }).catch(() => null)
-  }, [household?.id])
+  }, [householdId])
 
   useEffect(() => {
     loadConsumerData()
@@ -114,27 +117,30 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
   useEffect(() => {
     if (!needsGeneration || hasTriggeredRef.current || generating) return
     hasTriggeredRef.current = true
-    setGenerating(true)
-    setGenerateError(null)
-    fetch('/api/advisor/generate-base-case', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId: household.id }),
-    })
-      .then(async (res) => {
-        const data = await res.json()
-        if (!res.ok || data.error) {
-          throw new Error(data.error ?? 'Failed to generate base case')
-        }
-        // Reload to refetch server-side household/scenario data
-        window.location.reload()
+    const timeoutId = window.setTimeout(() => {
+      setGenerating(true)
+      setGenerateError(null)
+      fetch('/api/advisor/generate-base-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
       })
-      .catch((err: Error) => {
-        setGenerateError(err.message)
-        setGenerating(false)
-        hasTriggeredRef.current = false
-      })
-  }, [needsGeneration, generating, household?.id])
+        .then(async (res) => {
+          const data = await res.json()
+          if (!res.ok || data.error) {
+            throw new Error(data.error ?? 'Failed to generate base case')
+          }
+          // Reload to refetch server-side household/scenario data
+          window.location.reload()
+        })
+        .catch((err: Error) => {
+          setGenerateError(err.message)
+          setGenerating(false)
+          hasTriggeredRef.current = false
+        })
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [needsGeneration, generating, householdId])
 
   function handleRetry() {
     hasTriggeredRef.current = false

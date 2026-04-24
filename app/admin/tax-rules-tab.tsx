@@ -492,7 +492,7 @@ export default function TaxRulesTab() {
           ) : stateEstateRules.length === 0 ? (
             <div className="rounded-xl border border-dashed border-neutral-300 py-10 text-center">
               <p className="text-sm text-neutral-500">{stateEstateFilter} has no estate tax rules for {yearFilter}.</p>
-              <p className="text-xs text-neutral-400 mt-1">Click "+ Add Bracket" to seed this state&apos;s rules.</p>
+              <p className="text-xs text-neutral-400 mt-1">Click &quot;+ Add Bracket&quot; to seed this state&apos;s rules.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -618,7 +618,7 @@ export default function TaxRulesTab() {
           </div>
           <p className="text-sm text-neutral-500 mb-5">
             Medicare Part B and Part D surcharges by MAGI threshold. Applied to retirement projections.
-            Use "Copy to {yearFilter + 1}" to duplicate this year&apos;s brackets and then update thresholds/surcharges.
+            Use &quot;Copy to {yearFilter + 1}&quot; to duplicate this year&apos;s brackets and then update thresholds/surcharges.
           </p>
 
           {loadingIrmaa ? (
@@ -636,7 +636,7 @@ export default function TaxRulesTab() {
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">
                       {fs === 'married_joint' ? 'Married Filing Jointly' : 'Single'}
                     </h3>
-                    {rows.map((row, idx) => {
+                    {rows.map((row) => {
                       const key = row.id ?? `irmaa-${fs}-${row.magi_threshold}`
                       return (
                         <div key={key} className="rounded-xl border border-neutral-200 p-3 mb-2">

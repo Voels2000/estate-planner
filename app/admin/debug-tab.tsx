@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-type UserOption = { id: string; email: string; full_name: string | null }
 
 type DebugTrace = {
   engine: string
@@ -47,13 +45,58 @@ const FEDERAL_EXEMPTION_2024 = 13_610_000
 const TAX_DEFERRED_TYPES = ['traditional_ira', 'traditional_401k']
 const ROTH_TYPES = ['roth_ira', 'roth_401k']
 
+type IncomeRow = {
+  start_year: number | null
+  end_year: number | null
+  inflation_adjust: boolean | null
+  amount: number | string | null
+  source: string | null
+}
+
+type BracketRow = {
+  filing_status: string | null
+  bracket_order: number
+  max_amount: number | null
+  min_amount: number
+  rate_pct: number
+}
+
+type StateRateRow = {
+  state_code: string | null
+  rate_pct: number | null
+}
+
+type AssetRow = {
+  type: string | null
+  value: number | string | null
+  name: string | null
+}
+
+type LiabilityRow = {
+  balance: number | string | null
+}
+
+type RmdRow = {
+  age: number
+  factor: number | null
+}
+
+type HouseholdRow = {
+  person1_birth_year: number | null
+  filing_status: string | null
+  inflation_rate: number | null
+  state_primary: string | null
+  person1_retirement_age: number | null
+  growth_rate_retirement: number | null
+  growth_rate_accumulation: number | null
+}
+
 export default function DebugTab({ profiles }: { profiles: { id: string; email: string; full_name: string | null }[] }) {
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [isRunning, setIsRunning] = useState(false)
   const [traces, setTraces] = useState<DebugTrace[]>([])
   const [expandedEngine, setExpandedEngine] = useState<string | null>(null)
-  const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function runDebug() {
@@ -71,40 +114,38 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         { data: assets },
         { data: liabilities },
         { data: income },
-        { data: expenses },
         { data: federalBrackets },
         { data: estateBrackets },
         { data: stateRates },
-        { data: irmaa },
         { data: rmdTable },
       ] = await Promise.all([
         supabase.from('households').select('*').eq('owner_id', selectedUserId).single(),
         supabase.from('assets').select('*').eq('owner_id', selectedUserId),
         supabase.from('liabilities').select('*').eq('owner_id', selectedUserId),
         supabase.from('income').select('*').eq('owner_id', selectedUserId),
-        supabase.from('expenses').select('*').eq('owner_id', selectedUserId),
         supabase.from('federal_tax_brackets').select('*').order('bracket_order'),
         supabase.from('federal_estate_tax_brackets').select('*').order('min_amount'),
         supabase.from('state_tax_rates').select('*'),
-        supabase.from('irmaa_brackets').select('*').eq('tax_year', 2024),
         supabase.from('irs_rmd_tables').select('*').eq('table_type', 'uniform').order('age'),
       ])
 
       if (!household) throw new Error('No household found for this user.')
+      const householdData = household as HouseholdRow
 
       const newTraces: DebugTrace[] = []
 
       // ── ENGINE 1: Income Projection ──────────────────────────────────────
       try {
         const year = selectedYear
-        const p1Birth = household.person1_birth_year ?? 1960
+        const p1Birth = householdData.person1_birth_year ?? 1960
         const p1Age = year - p1Birth
-        const fs = FS_MAP[household.filing_status] ?? household.filing_status
-        const inflationRate = (household.inflation_rate ?? 3) / 100
+        const filingStatus = householdData.filing_status ?? 'single'
+        const fs = FS_MAP[filingStatus] ?? filingStatus
+        const inflationRate = (householdData.inflation_rate ?? 3) / 100
         const baseYear = new Date().getFullYear()
         const inflFactor = Math.pow(1 + inflationRate, year - baseYear)
 
-        const incomeRows = (income ?? [])
+        const incomeRows = (income ?? []) as IncomeRow[]
         let salary = 0, ssIncome = 0, otherIncome = 0
 
         for (const row of incomeRows) {
@@ -123,8 +164,8 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
 
         // Federal tax
         const relevantBrackets = (federalBrackets ?? [])
-          .filter((b: any) => b.filing_status === fs)
-          .sort((a: any, b: any) => a.bracket_order - b.bracket_order)
+          .filter((b: BracketRow) => b.filing_status === fs)
+          .sort((a: BracketRow, b: BracketRow) => a.bracket_order - b.bracket_order)
         let federalTax = 0
         let remaining = taxableIncome
         for (const b of relevantBrackets) {
@@ -135,7 +176,9 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           remaining -= inBracket
         }
 
-        const stateRate = (stateRates ?? []).find((s: any) => s.state_code === household.state_primary)?.rate_pct ?? 0
+        const stateRate = ((stateRates ?? []) as StateRateRow[]).find(
+          (s) => s.state_code === householdData.state_primary,
+        )?.rate_pct ?? 0
         const stateTax = taxableIncome * (stateRate / 100)
 
         newTraces.push({
@@ -145,23 +188,31 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             user: profiles.find(p => p.id === selectedUserId)?.full_name ?? selectedUserId,
             year: String(year),
             person1_age: p1Age,
-            filing_status: household.filing_status,
-            state: household.state_primary,
-            inflation_rate: `${household.inflation_rate}%`,
+            filing_status: householdData.filing_status,
+            state: householdData.state_primary,
+            inflation_rate: `${householdData.inflation_rate}%`,
             income_rows: incomeRows.length,
           },
           steps: [
             { label: 'Inflation factor', value: inflFactor.toFixed(4), note: `(1 + ${inflationRate})^${year - baseYear}` },
             { label: 'Salary income', value: fmtDollars(salary), note: `From ${incomeRows.filter(r => r.source === 'salary').length} salary row(s)` },
             { label: 'Social Security income', value: fmtDollars(ssIncome), note: `From ${incomeRows.filter(r => r.source === 'social_security').length} SS row(s)` },
-            { label: 'Other income (total)', value: fmtDollars(otherIncome), note: incomeRows.filter((r: any) => r.source !== 'salary' && r.source !== 'social_security').map((r: any) => `${r.source}: ${fmtDollars(Number(r.amount))}`).join(', ') || 'None' },
+            {
+              label: 'Other income (total)',
+              value: fmtDollars(otherIncome),
+              note:
+                incomeRows
+                  .filter((r) => r.source !== 'salary' && r.source !== 'social_security')
+                  .map((r) => `${r.source}: ${fmtDollars(Number(r.amount))}`)
+                  .join(', ') || 'None',
+            },
             { label: 'Gross income', value: fmtDollars(grossIncome), note: 'salary + SS + other' },
             { label: 'Standard deduction', value: fmtDollars(deduction), note: fs === 'married_filing_jointly' ? 'MFJ 2024' : 'Single 2024' },
             { label: 'Taxable income', value: fmtDollars(taxableIncome), note: 'gross - deduction (floor 0)' },
             { label: 'Filing status (normalized)', value: fs },
             { label: 'Federal tax brackets matched', value: relevantBrackets.length },
             { label: 'Federal income tax', value: fmtDollars(federalTax) },
-            { label: 'State rate', value: fmtPct(stateRate), note: household.state_primary },
+            { label: 'State rate', value: fmtPct(stateRate), note: householdData.state_primary ?? undefined },
             { label: 'State income tax', value: fmtDollars(stateTax) },
           ],
           outputs: {
@@ -180,21 +231,25 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
       // ── ENGINE 2: Asset Projection ────────────────────────────────────────
       try {
         const year = selectedYear
-        const p1Birth = household.person1_birth_year ?? 1960
+        const p1Birth = householdData.person1_birth_year ?? 1960
         const p1Age = year - p1Birth
-        const isRetired = p1Age >= (household.person1_retirement_age ?? 65)
+        const isRetired = p1Age >= (householdData.person1_retirement_age ?? 65)
         const growthRate = isRetired
-          ? (household.growth_rate_retirement ?? 5) / 100
-          : (household.growth_rate_accumulation ?? 7) / 100
+          ? (householdData.growth_rate_retirement ?? 5) / 100
+          : (householdData.growth_rate_accumulation ?? 7) / 100
 
-        const assetList = assets ?? []
-        const totalAssets = assetList.reduce((s: number, a: any) => s + Number(a.value ?? 0), 0)
-        const taxDeferred = assetList.filter((a: any) => TAX_DEFERRED_TYPES.includes(a.type)).reduce((s: number, a: any) => s + Number(a.value), 0)
-        const roth = assetList.filter((a: any) => ROTH_TYPES.includes(a.type)).reduce((s: number, a: any) => s + Number(a.value), 0)
+        const assetList = (assets ?? []) as AssetRow[]
+        const totalAssets = assetList.reduce((s: number, a) => s + Number(a.value ?? 0), 0)
+        const taxDeferred = assetList
+          .filter((a) => a.type != null && TAX_DEFERRED_TYPES.includes(a.type))
+          .reduce((s: number, a) => s + Number(a.value), 0)
+        const roth = assetList
+          .filter((a) => a.type != null && ROTH_TYPES.includes(a.type))
+          .reduce((s: number, a) => s + Number(a.value), 0)
         const taxableAssets = totalAssets - taxDeferred - roth
 
         // RMD for this year
-        const rmdRow = (rmdTable ?? []).find((r: any) => r.age === p1Age)
+        const rmdRow = ((rmdTable ?? []) as RmdRow[]).find((r) => r.age === p1Age)
         const rmdFactor = rmdRow?.factor ?? null
         const rmdAmount = rmdFactor && p1Age >= 73 ? Math.round(taxDeferred / rmdFactor) : 0
 
@@ -204,7 +259,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           inputs: {
             year: String(selectedYear),
             person1_age: p1Age,
-            retirement_age: household.person1_retirement_age,
+            retirement_age: householdData.person1_retirement_age,
             is_retired: isRetired,
             total_assets: fmtDollars(totalAssets),
             asset_count: assetList.length,
@@ -234,15 +289,18 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
 
       // ── ENGINE 3: Federal Estate Tax ──────────────────────────────────────
       try {
-        const assetList = assets ?? []
-        const liabList = liabilities ?? []
-        const grossEstate = assetList.reduce((s: number, a: any) => s + Number(a.value ?? 0), 0)
-        const totalLiabilities = liabList.reduce((s: number, l: any) => s + Number(l.balance ?? 0), 0)
-        const fs = FS_MAP[household.filing_status] ?? household.filing_status
+        const assetList = (assets ?? []) as AssetRow[]
+        const liabList = (liabilities ?? []) as LiabilityRow[]
+        const grossEstate = assetList.reduce((s: number, a) => s + Number(a.value ?? 0), 0)
+        const totalLiabilities = liabList.reduce((s: number, l) => s + Number(l.balance ?? 0), 0)
+        const filingStatus = householdData.filing_status ?? 'single'
+        const fs = FS_MAP[filingStatus] ?? filingStatus
         const isMfj = fs === 'married_filing_jointly'
         const exemption = isMfj ? FEDERAL_EXEMPTION_2024 * 2 : FEDERAL_EXEMPTION_2024
         const taxableEstate = Math.max(0, grossEstate - totalLiabilities)
-        const brackets = (estateBrackets ?? []).sort((a: any, b: any) => a.min_amount - b.min_amount)
+        const brackets = ((estateBrackets ?? []) as BracketRow[]).sort(
+          (a, b) => a.min_amount - b.min_amount,
+        )
 
         function progressiveTax(base: number) {
           let tax = 0
@@ -262,7 +320,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           engine: 'Federal Estate Tax',
           icon: '🏛️',
           inputs: {
-            filing_status: household.filing_status,
+            filing_status: householdData.filing_status,
             gross_estate: fmtDollars(grossEstate),
             total_liabilities: fmtDollars(totalLiabilities),
             asset_count: assetList.length,
@@ -295,11 +353,13 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
       // ── ENGINE 4: RMD ─────────────────────────────────────────────────────
       try {
         const year = selectedYear
-        const p1Birth = household.person1_birth_year ?? 1960
+        const p1Birth = householdData.person1_birth_year ?? 1960
         const p1Age = year - p1Birth
-        const rmdEligibleAssets = (assets ?? []).filter((a: any) => TAX_DEFERRED_TYPES.includes(a.type))
-        const totalTaxDeferred = rmdEligibleAssets.reduce((s: number, a: any) => s + Number(a.value ?? 0), 0)
-        const rmdRow = (rmdTable ?? []).find((r: any) => r.age === p1Age)
+        const rmdEligibleAssets = ((assets ?? []) as AssetRow[]).filter(
+          (a) => a.type != null && TAX_DEFERRED_TYPES.includes(a.type),
+        )
+        const totalTaxDeferred = rmdEligibleAssets.reduce((s: number, a) => s + Number(a.value ?? 0), 0)
+        const rmdRow = ((rmdTable ?? []) as RmdRow[]).find((r) => r.age === p1Age)
         const factor = rmdRow?.factor ?? null
         const rmdRequired = p1Age >= 73
         const totalRmd = rmdRequired && factor ? Math.round(totalTaxDeferred / factor) : 0
@@ -309,7 +369,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           icon: '📋',
           inputs: {
             year: String(year),
-            person1_birth_year: household.person1_birth_year,
+            person1_birth_year: householdData.person1_birth_year,
             person1_age: p1Age,
             rmd_eligible_accounts: rmdEligibleAssets.length,
             total_tax_deferred: fmtDollars(totalTaxDeferred),
@@ -318,7 +378,11 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             { label: 'Person 1 age in selected year', value: p1Age },
             { label: 'RMD start age (SECURE Act 2.0)', value: 73 },
             { label: 'RMD required this year', value: rmdRequired ? 'Yes' : 'No' },
-            { label: 'RMD-eligible accounts', value: rmdEligibleAssets.length, note: rmdEligibleAssets.map((a: any) => a.name ?? a.type).join(', ') || 'None' },
+            {
+              label: 'RMD-eligible accounts',
+              value: rmdEligibleAssets.length,
+              note: rmdEligibleAssets.map((a) => a.name ?? a.type).join(', ') || 'None',
+            },
             { label: 'Total tax-deferred balance', value: fmtDollars(totalTaxDeferred) },
             { label: 'IRS Uniform Lifetime Factor', value: factor ?? 'N/A', note: factor ? `Age ${p1Age} from IRS table` : 'Age below 73' },
             { label: 'RMD calculation', value: factor ? `${fmtDollars(totalTaxDeferred)} ÷ ${factor}` : 'Not applicable' },

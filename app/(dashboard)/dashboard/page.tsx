@@ -6,7 +6,7 @@
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import type { ConflictReport } from '@/lib/conflict-detector'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
-import { getCompletionScore, type CompletionScore } from '@/lib/get-completion-score'
+import { getCompletionScore } from '@/lib/get-completion-score'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
   computeBusinessOwnershipValue,
@@ -16,6 +16,14 @@ import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { DashboardClient } from '../_dashboard-client'
+
+type HealthComponentLike = {
+  label?: string
+  score?: number
+  maxScore?: number
+  actionLabel?: string
+  actionHref?: string
+}
 
 // ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
 // FRA = 67 for born 1960+. Early = -6.67%/yr (first 3yr) then -5%/yr.
@@ -193,7 +201,10 @@ export default async function DashboardPage() {
     ? {
         score: healthScoreRow.score ?? 0,
         components: Object.entries(healthScoreRow.component_scores ?? {}).map(
-          ([key, val]: [string, any]) => ({
+          ([key, rawVal]: [string, unknown]) => {
+            const val: HealthComponentLike =
+              rawVal && typeof rawVal === 'object' ? (rawVal as HealthComponentLike) : {}
+            return ({
             key,
             label: val.label ?? key,
             score: val.score ?? 0,
@@ -205,7 +216,8 @@ export default async function DashboardPage() {
               : 'critical',
             actionLabel: val.actionLabel ?? '',
             actionHref: val.actionHref ?? '/health-check',
-          }),
+            })
+          },
         ),
         computedAt: healthScoreRow.computed_at ?? new Date().toISOString(),
       }

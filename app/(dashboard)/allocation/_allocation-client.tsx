@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Benchmark { stocks: number; bonds: number; cash: number }
@@ -40,11 +40,14 @@ const driftLabel = (d: number) => Math.abs(d) <= 3 ? 'On target' : d > 0 ? `+${d
 
 function DonutChart({ data }: { data: { label: string; pct: number; color: string }[] }) {
   const size = 160; const cx = size / 2; const cy = size / 2; const r = 62; const inner = 38
-  let cumulative = 0
-  const slices = data.filter(d => d.pct > 0).map(d => {
-    const start = cumulative; cumulative += d.pct
-    return { ...d, start, end: cumulative }
-  })
+  const slices = data
+    .filter(d => d.pct > 0)
+    .reduce<Array<{ label: string; pct: number; color: string; start: number; end: number }>>((acc, d) => {
+      const start = acc.length > 0 ? acc[acc.length - 1].end : 0
+      const end = start + d.pct
+      acc.push({ ...d, start, end })
+      return acc
+    }, [])
   function arc(startPct: number, endPct: number) {
     const s = (startPct / 100) * 2 * Math.PI - Math.PI / 2
     const e = (endPct   / 100) * 2 * Math.PI - Math.PI / 2
@@ -110,7 +113,8 @@ function BarRow({ label, current, target, color }: { label: string; current: num
   )
 }
 
-export default function AllocationClient({ userTier }: { userTier: number }) {
+export default function AllocationClient({ userTier: _userTier }: { userTier: number }) {
+  void _userTier
   const [data, setData] = useState<AllocationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -189,11 +193,6 @@ export default function AllocationClient({ userTier }: { userTier: number }) {
 
   // Use saved target for drift display, fall back to data.recommended
   const displayTarget = valid ? { stocks, bonds, cash } : (data?.recommended ?? null)
-  const displayDrift = data && displayTarget ? {
-    stocks: data.current_pct.stocks - displayTarget.stocks,
-    bonds:  data.current_pct.bonds  - displayTarget.bonds,
-    cash:   data.current_pct.cash   - displayTarget.cash,
-  } : null
   const displayRebalance = (data && displayTarget && data.total_portfolio > 0) ? {
     stocks: Math.round((displayTarget.stocks / 100) * data.total_portfolio) - data.current_amounts.stocks,
     bonds:  Math.round((displayTarget.bonds  / 100) * data.total_portfolio) - data.current_amounts.bonds,

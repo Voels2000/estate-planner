@@ -4,19 +4,27 @@
 // RLS enforces: advisor reads/writes own notes for linked clients only.
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { formatDate } from '../_utils'
 
-export default function NotesTab({ notes: initialNotes, clientId, advisorId }: ClientViewShellProps) {
-  const [notes, setNotes]       = useState<any[]>(initialNotes ?? [])
+type AdvisorNote = {
+  id: string
+  content: string
+  created_at: string
+  updated_at: string | null
+}
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Something went wrong.'
+
+export default function NotesTab({ notes: initialNotes, clientId }: ClientViewShellProps) {
+  const [notes, setNotes] = useState<AdvisorNote[]>((initialNotes ?? []) as AdvisorNote[])
   const [newNote, setNewNote]   = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
   const [saving, setSaving]     = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError]       = useState<string | null>(null)
-  const router = useRouter()
 
   // ── Add note ────────────────────────────────────────────────────────────────
   const handleAdd = useCallback(async () => {
@@ -33,15 +41,15 @@ export default function NotesTab({ notes: initialNotes, clientId, advisorId }: C
       const { note } = await res.json()
       setNotes(prev => [note, ...prev])
       setNewNote('')
-    } catch (e: any) {
-      setError(e.message)
+    } catch (error: unknown) {
+      setError(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
   }, [newNote, clientId])
 
   // ── Edit note ────────────────────────────────────────────────────────────────
-  const startEdit = (note: any) => {
+  const startEdit = (note: AdvisorNote) => {
     setEditingId(note.id)
     setEditContent(note.content)
   }
@@ -60,8 +68,8 @@ export default function NotesTab({ notes: initialNotes, clientId, advisorId }: C
       const { note } = await res.json()
       setNotes(prev => prev.map(n => n.id === id ? note : n))
       setEditingId(null)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (error: unknown) {
+      setError(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -76,8 +84,8 @@ export default function NotesTab({ notes: initialNotes, clientId, advisorId }: C
       const res = await fetch(`/api/advisor/notes?id=${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete note')
       setNotes(prev => prev.filter(n => n.id !== id))
-    } catch (e: any) {
-      setError(e.message)
+    } catch (error: unknown) {
+      setError(getErrorMessage(error))
     } finally {
       setDeletingId(null)
     }

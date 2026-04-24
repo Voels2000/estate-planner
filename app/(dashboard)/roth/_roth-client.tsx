@@ -9,7 +9,7 @@
 // Sprint 13 — Roth Optimizer UI
 
 import { useState } from "react";
-import { RothAnalysisResult, RothYearResult } from "@/lib/calculations/roth-analysis";
+import { RothAnalysisResult } from "@/lib/calculations/roth-analysis";
 
 interface Props {
   result: RothAnalysisResult;

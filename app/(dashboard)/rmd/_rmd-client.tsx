@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────
 
 import { useState, useEffect, Fragment } from 'react'
+import Link from 'next/link'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 
 type Household = {
@@ -148,15 +149,18 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       const p1 = p1Map.get(year); const p2 = p2Map.get(year)
       return { year, p1_age: household.person1_birth_year ? year - household.person1_birth_year : null, p2_age: household.person2_birth_year ? year - household.person2_birth_year : null, p1_rmd: p1?.rmd ?? 0, p2_rmd: p2?.rmd ?? 0, total_rmd: (p1?.rmd ?? 0) + (p2?.rmd ?? 0), p1_accounts: p1?.accounts ?? [], p2_accounts: p2?.accounts ?? [], is_first_year_p1: p1?.isFirstYear ?? false, is_first_year_p2: p2?.isFirstYear ?? false }
     })
-    setRows(combined)
-    // Reset to first page when data reloads — find page that contains current year
-    const currentYear = new Date().getFullYear()
-    const currentYearIdx = combined.findIndex(r => r.year === currentYear)
-    if (currentYearIdx >= 0) {
-      setPeriodOffset(Math.floor(currentYearIdx / ROWS_PER_PAGE))
-    } else {
-      setPeriodOffset(0)
-    }
+    const timeoutId = window.setTimeout(() => {
+      setRows(combined)
+      // Reset to first page when data reloads — find page that contains current year
+      const currentYear = new Date().getFullYear()
+      const currentYearIdx = combined.findIndex(r => r.year === currentYear)
+      if (currentYearIdx >= 0) {
+        setPeriodOffset(Math.floor(currentYearIdx / ROWS_PER_PAGE))
+      } else {
+        setPeriodOffset(0)
+      }
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [household, assets])
 
   if (!household) return (
@@ -164,7 +168,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
         <div className="text-4xl mb-3">📋</div>
         <p className="text-sm font-medium text-neutral-600">Complete your profile first</p>
-        <a href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</a>
+        <Link href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</Link>
       </div>
     </div>
   )
@@ -176,7 +180,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
         <div className="text-4xl mb-3">🏦</div>
         <p className="text-sm font-medium text-neutral-600">No RMD-eligible accounts found</p>
         <p className="text-xs text-neutral-400 mt-1">Add a Traditional IRA or Traditional 401(k) to your assets</p>
-        <a href="/assets" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Assets →</a>
+        <Link href="/assets" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Assets →</Link>
       </div>
     </div>
   )

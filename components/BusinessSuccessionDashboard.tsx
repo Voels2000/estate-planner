@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface BusinessSuccessionDashboardProps {
@@ -114,6 +114,9 @@ const readinessLabel = (score: number) => {
   if (score > 0)   return 'Needs Attention';
   return 'Not Started';
 };
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unexpected error';
 
 const emptyForm = {
   entity_name:                 '',
@@ -296,7 +299,6 @@ export default function BusinessSuccessionDashboard({
 
   // Notes state
   const [notes, setNotes]                   = useState<SuccessionNote[]>([]);
-  const [notesLoading, setNotesLoading]     = useState(false);
   const [expandedNotes, setExpandedNotes]   = useState<Set<string>>(new Set()); // biz ids + 'general'
 
   useEffect(() => { setHydrated(true); }, []);
@@ -304,7 +306,7 @@ export default function BusinessSuccessionDashboard({
   const supabaseRef = useRef(createClient());
   const supabase    = supabaseRef.current;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -313,15 +315,14 @@ export default function BusinessSuccessionDashboard({
       });
       if (rpcError) throw rpcError;
       setSummary(data);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load business succession summary');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error) || 'Failed to load business succession summary');
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, supabase]);
 
-  const loadNotes = async () => {
-    setNotesLoading(true);
+  const loadNotes = useCallback(async () => {
     try {
       const { data, error: notesError } = await supabase
         .from('business_succession_notes')
@@ -330,23 +331,22 @@ export default function BusinessSuccessionDashboard({
         .order('created_at', { ascending: true });
       if (notesError) throw notesError;
       setNotes(data ?? []);
-    } catch (e: any) {
+    } catch (error: unknown) {
       // non-fatal — notes failure shouldn't block the main view
-      console.error('Failed to load notes:', e.message);
-    } finally {
-      setNotesLoading(false);
+      console.error('Failed to load notes:', getErrorMessage(error));
     }
-  };
+  }, [householdId, supabase]);
 
   useEffect(() => {
-    load();
-    loadNotes();
-  }, [householdId]);
+    void load();
+    void loadNotes();
+  }, [load, loadNotes]);
 
   const toggleNotes = (key: string) => {
     setExpandedNotes(prev => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -426,8 +426,8 @@ export default function BusinessSuccessionDashboard({
         .eq('id', bizId);
       if (error) throw error;
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setDeleting(null);
     }
@@ -474,8 +474,8 @@ export default function BusinessSuccessionDashboard({
       setEditingId(null);
       setShowAddForm(false);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { validateNYCliffCases, type DbStateExemption } from '@/lib/projection/stateRegistry'
 
 interface Props {
@@ -13,18 +13,10 @@ function fmt(n: number) {
 }
 
 export default function NYCliffValidator({ year, dbExemptions }: Props) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const results = useMemo(
     () => validateNYCliffCases(year, dbExemptions),
     [year, dbExemptions]
   )
-
-  if (!mounted) return null
 
   const allPassed = results.every(r => r.passed)
 

@@ -5,7 +5,7 @@
 // Route: /titling
 // ─────────────────────────────────────────
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -589,7 +589,8 @@ export default function TitlingClient({
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage.getItem(PREREQ_BANNER_STORAGE_KEY) === '1') {
-        setPrereqBannerDismissed(true)
+        const timeoutId = window.setTimeout(() => setPrereqBannerDismissed(true), 0)
+        return () => window.clearTimeout(timeoutId)
       }
     } catch {
       /* ignore */
@@ -705,64 +706,13 @@ export default function TitlingClient({
       .eq('id', householdId)
   }
 
-  async function persistTitlingTitle(
-    kind: TitlingKind,
-    entityId: string,
-    nextRaw: string,
-    existing: AnyTitling | null,
-  ) {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const table =
-      kind === 'asset' ? 'asset_titling'
-      : kind === 're' ? 'real_estate_titling'
-        : kind === 'insurance' ? 'insurance_policy_titling'
-          : 'business_titling'
-    const fkCol =
-      kind === 'asset' ? 'asset_id'
-      : kind === 're' ? 'real_estate_id'
-        : kind === 'insurance' ? 'insurance_policy_id'
-          : 'business_id'
-
-    if (!nextRaw) {
-      if (existing?.id) {
-        const { error } = await supabase.from(table).delete().eq('id', existing.id)
-        if (error) throw error
-      }
-      await reloadData()
-      return
-    }
-
-    const payload = {
-      title_type: nextRaw,
-      notes: existing?.notes ?? null,
-      updated_at: new Date().toISOString(),
-    }
-
-    if (existing) {
-      const { error } = await supabase.from(table).update(payload).eq('id', existing.id)
-      if (error) throw error
-    } else {
-      const { error } = await supabase.from(table).insert({
-        ...payload,
-        owner_id: user.id,
-        [fkCol]: entityId,
-      })
-      if (error) throw error
-    }
-
-    await reloadData()
-  }
-
   async function handleDeleteBeneficiary(id: string) {
     const supabase = createClient()
     await supabase.from('asset_beneficiaries').delete().eq('id', id)
     await reloadData()
   }
 
-  function getBeneficiariesFor(kind: TitlingKind, id: string, type: 'primary' | 'contingent') {
+  const getBeneficiariesFor = useCallback((kind: TitlingKind, id: string, type: 'primary' | 'contingent') => {
     return beneficiaries.filter(b => {
       if (b.beneficiary_type !== type) return false
       if (kind === 'asset') return b.asset_id === id
@@ -770,14 +720,14 @@ export default function TitlingClient({
       if (kind === 'insurance') return b.insurance_policy_id === id
       return b.business_id === id
     })
-  }
+  }, [beneficiaries])
 
-  function getTitlingFor(kind: TitlingKind, id: string): AnyTitling | null {
+  const getTitlingFor = useCallback((kind: TitlingKind, id: string): AnyTitling | null => {
     if (kind === 'asset') return assetTitling.find(t => t.asset_id === id) ?? null
     if (kind === 're') return realEstateTitling.find(t => t.real_estate_id === id) ?? null
     if (kind === 'insurance') return insurancePolicyTitling.find(t => t.insurance_policy_id === id) ?? null
     return businessTitling.find(t => t.business_id === id) ?? null
-  }
+  }, [assetTitling, businessTitling, insurancePolicyTitling, realEstateTitling])
 
   function titlingExemptFromBeneficiaryGap(t: AnyTitling | null): boolean {
     return !!(t && ['joint_wros', 'community_property'].includes(t.title_type))
@@ -821,11 +771,8 @@ export default function TitlingClient({
     realEstate,
     insurance,
     businesses,
-    beneficiaries,
-    assetTitling,
-    realEstateTitling,
-    insurancePolicyTitling,
-    businessTitling,
+    getBeneficiariesFor,
+    getTitlingFor,
   ])
 
   async function refreshConflicts() {
@@ -1187,7 +1134,7 @@ export default function TitlingClient({
 // ─── Asset / RE card ──────────────────────────────────────────────────────────
 
 function AssetTitlingCard({
-  kind: _kind, id, name, subtitle, value, ownerLabel, titling,
+  kind, id, name, subtitle, value, ownerLabel, titling,
   primaryBens, contingentBens,
   onEditTitling, onAddBeneficiary, onEditBeneficiary, onDeleteBeneficiary,
 }: {
@@ -1205,6 +1152,8 @@ function AssetTitlingCard({
   onEditBeneficiary: (ben: Beneficiary) => void
   onDeleteBeneficiary: (id: string) => void
 }) {
+  void kind
+  void id
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const primaryTotal = primaryBens.reduce((s, b) => s + Number(b.allocation_pct), 0)
   const contingentTotal = contingentBens.reduce((s, b) => s + Number(b.allocation_pct), 0)
@@ -1872,7 +1821,7 @@ function BeneficiaryGapModal({
         return
       }
 
-      let working = [...beneficiaries]
+      const working = [...beneficiaries]
       let appliedCount = 0
       const applyErrors: string[] = []
 

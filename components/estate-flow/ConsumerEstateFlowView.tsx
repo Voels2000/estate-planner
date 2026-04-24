@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
+import type { EstateFlowGraph, FlowNode, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { createClient } from '@/lib/supabase/client'
 
@@ -185,11 +185,12 @@ export default function ConsumerEstateFlowView({
   const [activeStep, setActiveStep] = useState<number | null>(null)
 
   useEffect(() => {
-    setLoading(true)
+    const startTimeoutId = window.setTimeout(() => setLoading(true), 0)
     generateEstateFlow(householdId, scenarioId, deathView, supabase, false, horizon, liveNetWorth)
       .then(setGraph)
       .catch(console.error)
       .finally(() => setLoading(false))
+    return () => window.clearTimeout(startTimeoutId)
   }, [householdId, scenarioId, supabase, horizon, deathView, liveNetWorth])
 
   if (loading) {
@@ -240,7 +241,7 @@ export default function ConsumerEstateFlowView({
         <div>
           <h2 className="text-lg font-semibold text-gray-900">What happens when I die?</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Here's how your estate transfers to your heirs — in plain English.
+            Here&apos;s how your estate transfers to your heirs — in plain English.
           </p>
         </div>
       )}

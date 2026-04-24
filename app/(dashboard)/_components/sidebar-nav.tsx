@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, type SyntheticEvent } from 'react'
+import { useState, type SyntheticEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -108,7 +108,6 @@ export function SidebarNav({
 }) {
   const isLockedUser = hasHousehold === false
   const pathname = usePathname()
-  const [activePath, setActivePath] = useState('')
   const router = useRouter()
 
   function getActiveGroup(): string {
@@ -120,15 +119,13 @@ export function SidebarNav({
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
-  useEffect(() => {
-    setActivePath(pathname)
-    const activeGroup = getActiveGroup()
-    setOpenGroups(prev => ({
-      ...prev,
-      [activeGroup]: true,
-      'Overview': true,
-    }))
-  }, [pathname])
+  const activePath = pathname
+  const activeGroup = getActiveGroup()
+  const resolvedOpenGroups: Record<string, boolean> = {
+    ...openGroups,
+    [activeGroup]: true,
+    Overview: true,
+  }
 
   function toggleGroup(label: string) {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }))
@@ -181,7 +178,7 @@ export function SidebarNav({
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
-          const isOpen = openGroups[group.label] ?? false
+          const isOpen = resolvedOpenGroups[group.label] ?? false
           const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked =
             !isSuperuser &&

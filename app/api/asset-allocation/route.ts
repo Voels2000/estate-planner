@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
 
-const INVESTABLE_TYPES = ['brokerage', '401k', 'ira', 'roth', 'savings', 'cash', 'other', 'bank', 'hsa']
-
 function assetClass(type: string): 'stocks' | 'bonds' | 'cash' | 'other' {
   const t = type.toLowerCase()
   if (t.includes('brokerage') || t.includes('401k') || t.includes('ira') || t.includes('roth') || t === 'hsa') return 'stocks'

@@ -122,7 +122,12 @@ export default function AssetsPage() {
     setIsLoading(false)
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadData()
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [loadData])
 
   async function handleDelete(id: string) {
     const supabase = createClient()
@@ -165,11 +170,14 @@ export default function AssetsPage() {
       try { return !!localStorage.getItem(STORAGE_KEY) } catch { return false }
     })()
     if (!hasSaved && assets.length > 0) {
-      const allOpen: Record<string, boolean> = {}
-      groupKeys.forEach((k) => { allOpen[k] = true })
-      setOpenGroups(allOpen)
+      const timeoutId = window.setTimeout(() => {
+        const allOpen: Record<string, boolean> = {}
+        groupKeys.forEach((k) => { allOpen[k] = true })
+        setOpenGroups(allOpen)
+      }, 0)
+      return () => window.clearTimeout(timeoutId)
     }
-  }, [assets.length])
+  }, [assets.length, groupKeys])
 
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-neutral-500">Loading...</p></div>

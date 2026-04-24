@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -80,12 +81,12 @@ export default function MyAdvisorClient({ connection, listing, accessLog }: Prop
           <p className="mt-1 text-sm text-neutral-400">
             Your advisor can send you an invite by email, or you can find one in the directory.
           </p>
-          <a
+          <Link
             href="/advisor-directory"
             className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
           >
             Find an Advisor
-          </a>
+          </Link>
         </div>
       </div>
     )

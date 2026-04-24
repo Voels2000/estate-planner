@@ -11,6 +11,7 @@ import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyG
 import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditShelterTrust'
 import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
+import type { ProjectionScenario } from '@/lib/types/projection-scenario'
 
 type StrategyType = 'none' | 'gifting' | 'revocable_trust' | 'credit_shelter_trust'
 
@@ -42,6 +43,7 @@ const HORIZON_YEARS = [
   { label: 'In 20 Years', yearsFromNow: 20 },
 ]
 const CURRENT_YEAR = new Date().getFullYear()
+const EMPTY_PROJECTION_SCENARIO = {} as ProjectionScenario
 
 function projectEstateBlended(
   grossEstate: number,
@@ -141,12 +143,15 @@ export default function StrategyOverlay({
 
   useEffect(() => {
     if (!giftingActuals) return
-    setGiftingConfig((prev) => ({
-      ...prev,
-      annualGiftPerDonor: giftingActuals.perRecipientLimit,
-      numberOfRecipients: giftingActuals.uniqueRecipients,
-      giftSplitting: giftingActuals.splitElected,
-    }))
+    const timeoutId = window.setTimeout(() => {
+      setGiftingConfig((prev) => ({
+        ...prev,
+        annualGiftPerDonor: giftingActuals.perRecipientLimit,
+        numberOfRecipients: giftingActuals.uniqueRecipients,
+        giftSplitting: giftingActuals.splitElected,
+      }))
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [giftingActuals])
 
   // CST config state
@@ -174,11 +179,11 @@ export default function StrategyOverlay({
 
   // Compute strategy result for display
   const giftingResult = selectedStrategy === 'gifting'
-    ? applyGiftingProgram({} as any, giftingConfig, person1BirthYear + 80, lawScenario)
+    ? applyGiftingProgram(EMPTY_PROJECTION_SCENARIO, giftingConfig, person1BirthYear + 80, lawScenario)
     : null
 
   const cstResult = selectedStrategy === 'credit_shelter_trust'
-    ? applyCreditShelterTrust({} as any, {
+    ? applyCreditShelterTrust(EMPTY_PROJECTION_SCENARIO, {
         grossEstateAtFirstDeath: grossEstate,
         federalExemptionAtFirstDeath: federalExemption,
         cstGrowthRate: cstConfig.cstGrowthRate ?? 0.06,
@@ -190,7 +195,7 @@ export default function StrategyOverlay({
     : null
 
   const rtResult = selectedStrategy === 'revocable_trust'
-    ? applyRevocableTrust({} as any, rtConfig)
+    ? applyRevocableTrust(EMPTY_PROJECTION_SCENARIO, rtConfig)
     : null
 
   return (

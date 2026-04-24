@@ -8,7 +8,7 @@ import type { EstateComposition } from '@/lib/estate/types'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useState, useTransition } from 'react'
 import { TabSkeleton, StrategyTabSkeleton, DomicileTabSkeleton } from '@/components/ui/TabSkeleton'
 import OverviewTab from './_tabs/OverviewTab'
 import EstateTab from './_tabs/EstateTab'
@@ -19,7 +19,7 @@ import DocumentsTab from './_tabs/DocumentsTab'
 import NotesTab from './_tabs/NotesTab'
 import StrategyTab from './_tabs/StrategyTab'
 import MeetingPrepTab from './_tabs/MeetingPrepTab'
-import { getComplexityStyle, getAge, formatCurrency } from './_utils'
+import { getComplexityStyle, getAge } from './_utils'
 
 const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; comingSoon?: boolean }[] = [
   { id: 'overview',   label: 'Overview',   icon: '◎' },
@@ -73,15 +73,11 @@ export default function ClientViewShell(props: ClientViewShellProps) {
     [tab, setTab],
   )
 
-  useEffect(() => {
-    if (pendingTab !== null && pendingTab === tab) {
-      setPendingTab(null)
-    }
-  }, [tab, pendingTab])
-
   const navigatingTo = pendingTab !== null && pendingTab !== tab ? pendingTab : null
 
-  const { complexity, complexityColor, complexityBg } = getComplexityStyle(household.estate_complexity_flag)
+  const { complexity, complexityColor, complexityBg } = getComplexityStyle(
+    household.estate_complexity_flag ?? null,
+  )
   const currentYear = new Date().getFullYear()
   const p1Age = getAge(household.person1_birth_year, currentYear)
   const p2Age = household.has_spouse ? getAge(household.person2_birth_year, currentYear) : null
@@ -218,9 +214,43 @@ export interface ClientViewShellProps {
   advisorId: string
   clientId: string
   clientStatus?: string | null
-  household: any
-  assets: any[]
-  realEstate: any[]
+  household: {
+    id: string
+    person1_first_name: string | null
+    person1_last_name: string | null
+    person1_birth_year: number | null
+    person2_first_name: string | null
+    person2_last_name: string | null
+    person2_birth_year: number | null
+    has_spouse: boolean
+    filing_status: string | null
+    state_primary: string | null
+    estate_complexity_flag?: string
+    estate_complexity_score: number | null
+    base_case_scenario_id?: string | null
+    target_stocks_pct?: number | null
+    target_bonds_pct?: number | null
+    target_cash_pct?: number | null
+    person1_retirement_age?: number | null
+    person2_retirement_age?: number | null
+    person1_longevity_age?: number | null
+    person2_longevity_age?: number | null
+    person1_ss_pia?: number | null
+    person2_ss_pia?: number | null
+    person1_ss_claiming_age?: number | null
+    person2_ss_claiming_age?: number | null
+    growth_rate_accumulation?: number | null
+    growth_rate_retirement?: number | null
+    inflation_rate?: number | null
+    admin_expense_pct?: number | null
+    gross_estate?: number | null
+    estimated_federal_tax?: number | null
+    estimated_state_tax?: number | null
+    federal_exemption?: number | null
+    risk_tolerance?: string | null
+  }
+  assets: Record<string, unknown>[]
+  realEstate: Record<string, unknown>[]
   businesses?: Array<{
     id: string
     name: string
@@ -259,11 +289,11 @@ export interface ClientViewShellProps {
     balance: number | null
     owner: string | null
   }>
-  beneficiaries: any[]
-  estateDocuments: any[]
-  legalDocuments: any[]
-  notes: any[]
-  estateTax: any | null
+  beneficiaries: Record<string, unknown>[]
+  estateDocuments: Record<string, unknown>[]
+  legalDocuments: Record<string, unknown>[]
+  notes: Record<string, unknown>[]
+  estateTax: Record<string, unknown> | null
   scenario?: {
     id?: string
     gross_estate?: number
@@ -295,9 +325,9 @@ export interface ClientViewShellProps {
   }
   projectionRowsDomicile?: Array<{ year: number; gross_estate: number; estate_incl_home?: number }>
   beneficiaryGrants?: BeneficiaryAccessGrant[]
-  domicileAnalysis: any | null
+  domicileAnalysis: Record<string, unknown> | null
   domicileSchedule: DomicileScheduleRow[] | null
-  domicileChecklist: any[]
+  domicileChecklist: Record<string, unknown>[]
   stateExemptions: DbStateExemption[]
   conflictReport?: {
     conflicts: Array<{

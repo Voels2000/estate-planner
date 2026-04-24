@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
-import { saveEstateFlowSnapshot, generateShareLink, loadSnapshotHistory } from '@/lib/estate-flow/snapshotFlow'
+import { saveEstateFlowSnapshot, generateShareLink } from '@/lib/estate-flow/snapshotFlow'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Color palette ────────────────────────────────────────────────────────────
@@ -47,7 +47,6 @@ interface PositionedNode extends FlowNode {
 
 function layoutNodes(
   nodes: FlowNode[],
-  edges: FlowEdge[],
 ): { positioned: PositionedNode[]; svgWidth: number } {
   const NODE_W = 160
   const NODE_H = 60
@@ -355,7 +354,7 @@ export default function EstateFlowDiagram({
     )
   }
 
-  const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes, graph.edges)
+  const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes)
   const nodeMap = new Map(positioned.map(n => [n.id, n]))
 
   // SVG viewport

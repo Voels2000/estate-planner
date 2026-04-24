@@ -52,7 +52,9 @@ export default function SLATILITPanel({
   const [isSavingLedger, setIsSavingLedger] = useState(false)
   const [ledgerMessage, setLedgerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const slatResult = activePanel === 'slat' ? applySLAT({} as any, slatConfig) : null
+  const slatResult = activePanel === 'slat'
+    ? applySLAT({} as unknown as import('@/lib/types/projection-scenario').ProjectionScenario, slatConfig)
+    : null
   const ilitResult = activePanel === 'ilit' ? applyILIT(ilitConfig) : null
 
   const incomeDragResult = activePanel === 'slat' && slatResult

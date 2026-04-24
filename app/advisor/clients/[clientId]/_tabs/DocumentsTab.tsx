@@ -32,10 +32,21 @@ const DOC_ICONS: Record<string, string> = {
 }
 
 export default function DocumentsTab({ legalDocuments, household }: ClientViewShellProps) {
-  const docs = legalDocuments ?? []
+  type LegalDocumentRow = {
+    id: string
+    document_type?: string | null
+    created_at?: string | null
+    uploader_role?: string | null
+    file_name?: string | null
+    version?: number | null
+    is_current?: boolean | null
+    is_signed?: boolean | null
+  }
+
+  const docs = (legalDocuments ?? []) as LegalDocumentRow[]
 
   // Group by document type
-  const byType = docs.reduce<Record<string, any[]>>((acc, doc) => {
+  const byType = docs.reduce<Record<string, LegalDocumentRow[]>>((acc, doc) => {
     const key = doc.document_type ?? 'other'
     if (!acc[key]) acc[key] = []
     acc[key].push(doc)

@@ -3,10 +3,16 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+type AdvisorNote = {
+  id: string
+  note: string
+  created_at: string
+}
+
 function NotesPanel({ advisorId, clientId, initialNotes }: {
   advisorId: string
   clientId: string
-  initialNotes: any[]
+  initialNotes: AdvisorNote[]
 }) {
   const [notes, setNotes] = useState(initialNotes)
   const [newNote, setNewNote] = useState('')

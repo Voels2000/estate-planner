@@ -103,7 +103,6 @@ export default function EstatePlanningDashboard({
   embedded = false,
   afterHeaderContent,
 }: EstatePlanningDashboardProps) {
-  const supabase = createClient();
   const [recommendations, setRecommendations] = useState<RecommendationsResult | null>(null);
   const [completeness, setCompleteness] = useState<CompletenessResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +114,7 @@ export default function EstatePlanningDashboard({
     async function loadDashboard() {
       try {
         setLoading(true);
+        const supabase = createClient();
 
         const { data: recData, error: recError } = await supabase.rpc(
           'generate_estate_recommendations',
@@ -129,8 +129,8 @@ export default function EstatePlanningDashboard({
         );
         if (compError) throw compError;
         setCompleteness(compData);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load estate planning data.');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load estate planning data.');
       } finally {
         setLoading(false);
       }

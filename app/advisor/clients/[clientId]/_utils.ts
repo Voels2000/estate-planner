@@ -46,12 +46,42 @@ export interface Gap {
   detail: string
 }
 
+type HouseholdGapInput = {
+  estate_complexity_score?: number | null
+  has_spouse?: boolean | null
+  target_stocks_pct?: number | null
+  risk_tolerance?: string | null
+  person1_birth_year?: number | null
+  person1_ss_claiming_age?: number | null
+}
+
+type AssetGapInput = {
+  value?: number | null
+  type?: string | null
+  account_type?: string | null
+}
+
+type RealEstateGapInput = {
+  current_value?: number | null
+  mortgage_balance?: number | null
+  owner?: string | null
+}
+
+type BeneficiaryGapInput = {
+  contingent?: boolean | null
+}
+
+type EstateDocumentGapInput = {
+  document_type?: string | null
+  exists?: boolean | null
+}
+
 export function computeGaps(params: {
-  household: any
-  assets: any[]
-  realEstate: any[]
-  beneficiaries: any[]
-  estateDocuments: any[]
+  household: HouseholdGapInput
+  assets: AssetGapInput[]
+  realEstate: RealEstateGapInput[]
+  beneficiaries: BeneficiaryGapInput[]
+  estateDocuments: EstateDocumentGapInput[]
 }): Gap[] {
   const { household, assets, realEstate, beneficiaries, estateDocuments } = params
   const gaps: Gap[] = []

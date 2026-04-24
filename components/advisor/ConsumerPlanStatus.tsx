@@ -33,7 +33,7 @@ const fmt = (n: number) =>
 interface Props {
   consumerComposition: EstateComposition | null
   consumerLineItems: Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>[]
-  strategyConfigs: any[]
+  strategyConfigs: Array<{ strategy_source: StrategyLineItem['strategy_source'] }>
 }
 
 export default function ConsumerPlanStatus({
@@ -42,7 +42,7 @@ export default function ConsumerPlanStatus({
   strategyConfigs,
 }: Props) {
   const recommendedSources = new Set(
-    strategyConfigs.map((c: any) => c.strategy_source)
+    strategyConfigs.map((c) => c.strategy_source)
   )
   const consumerSources = new Set(
     consumerLineItems.map((i) => i.strategy_source)

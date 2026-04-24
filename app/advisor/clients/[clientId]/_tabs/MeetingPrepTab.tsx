@@ -54,7 +54,11 @@ export default function MeetingPrepTab({
   const latestOnlyExportPanelProps = exportPanelProps
     ? { ...exportPanelProps, scenarioHistory: exportPanelProps.scenarioHistory.slice(0, 1) }
     : null
-  const latestNote = (notes ?? [])[0] ?? null
+  const latestNote = (notes ?? [])[0] as Record<string, unknown> | null
+  const latestNoteContent =
+    latestNote && typeof latestNote.content === 'string' ? latestNote.content : null
+  const latestNoteCreatedAt =
+    latestNote && typeof latestNote.created_at === 'string' ? latestNote.created_at : null
   const initialBriefSeed = {
     health_score_today: exportPanelProps?.healthScore ?? null,
     top_alerts: (exportPanelProps?.actionItems ?? []).slice(0, 3).map((a) => ({
@@ -72,8 +76,8 @@ export default function MeetingPrepTab({
     cost_of_inaction:
       (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),
     recommended_strategies: exportPanelProps?.activeStrategies ?? [],
-    last_note: latestNote?.content ?? null,
-    last_note_date: latestNote?.created_at ?? null,
+    last_note: latestNoteContent,
+    last_note_date: latestNoteCreatedAt,
     has_projection: Boolean(scenario?.id),
   }
 

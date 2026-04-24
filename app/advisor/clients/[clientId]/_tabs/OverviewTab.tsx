@@ -60,7 +60,7 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Net Worth" value={formatCurrency(netWorth, true)} sub={`${formatCurrency(totalAssets, true)} assets`} />
         <StatCard label="Estate Score" value={String(household.estate_complexity_score ?? '—')} sub={household.estate_complexity_flag ?? '—'} scoreFlag={household.estate_complexity_flag} />
-        <StatCard label="Risk Tolerance" value={formatRisk(household.risk_tolerance)} sub={`${stocks}/${bonds}/${cash} target`} />
+        <StatCard label="Risk Tolerance" value={formatRisk(household.risk_tolerance ?? null)} sub={`${stocks}/${bonds}/${cash} target`} />
         <StatCard label="Planning Gaps" value={String(gaps.length)} sub={`${criticalCount} critical · ${highCount} high`} alert={criticalCount > 0} />
       </div>
 

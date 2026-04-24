@@ -318,9 +318,7 @@ function getSalaryIncomeForYear(
   year: number,
   incomeRows: IncomeRow[],
   inflationPct: number,
-  baseYear: number,
-  person1Age: number,
-  retirementAge: number | null
+  baseYear: number
 ): number {
   return getIncomeForYearBySource(
     year,
@@ -424,8 +422,6 @@ export async function runProjection(
 
   const startYear = options.start_year ?? CURRENT_YEAR
   const endYear = options.end_year ?? startYear + 40
-  const growthRateAccumulation = (household.growth_rate_accumulation ?? 7) / 100
-  const growthRateRetirement = (household.growth_rate_retirement ?? 5) / 100
   const inflationPct = household.inflation_rate ?? 3
   const baseYear = startYear
 
@@ -444,7 +440,7 @@ export async function runProjection(
 
   const result: ProjectionYear[] = []
   const assetIds = assets.map((a) => a.id)
-  let balances: Record<string, number> = {}
+  const balances: Record<string, number> = {}
   for (const a of assets) {
     balances[a.id] = a.value
   }
@@ -455,9 +451,7 @@ export async function runProjection(
       year,
       incomeRows,
       inflationPct,
-      baseYear,
-      person1Age,
-      person1RetirementAge
+      baseYear
     )
     const ssIncome = getSSIncomeForYear(
       year,

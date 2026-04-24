@@ -24,10 +24,9 @@ import {
   type StateEstateTaxBracket,
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
-import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
-import type { EstateComposition, OutsideStrategyItem } from '@/lib/estate/types'
+import type { EstateComposition } from '@/lib/estate/types'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -159,9 +158,6 @@ export type EstateTaxTrustRow = {
   updated_at?: string
 }
 
-const inputClass =
-  'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
-
 // ─────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────
@@ -174,11 +170,6 @@ export default function EstateTaxClient({
   stateEstateTaxRules: stateEstateTaxRows,
   stateInheritanceTaxRules: stateInheritanceTaxRuleRows,
   giftingAnnualUsed,
-  giftingAnnualRemaining,
-  giftingAnnualLoggedTotal,
-  giftingTaxYear,
-  giftingSplitSelected,
-  giftingPerRecipientLimit,
   giftingExcessOverLimit,
   // Pre-fetched from page.tsx via classifyEstateAssets
   composition: compositionProp,
@@ -210,15 +201,10 @@ export default function EstateTaxClient({
   const [compositionLoading, setCompositionLoading] = useState(!compositionProp)
 
   useEffect(() => {
-    if (compositionProp) {
-      setComposition(compositionProp)
-      setCompositionLoading(false)
-      return
-    }
+    if (compositionProp) return
     // Fallback: fetch client-side if page didn't pass it as a prop
     const householdId = household?.id as string | null
     if (!householdId) return
-    setCompositionLoading(true)
     fetch('/api/estate-composition', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -231,14 +217,6 @@ export default function EstateTaxClient({
       .catch(console.error)
       .finally(() => setCompositionLoading(false))
   }, [compositionProp, household?.id])
-
-  // Strategy line items — load to show strategy impact section
-  const [strategyItems, setStrategyItems] = useState<OutsideStrategyItem[]>([])
-  useEffect(() => {
-    if (composition?.outside_strategy_items?.length) {
-      setStrategyItems(composition.outside_strategy_items)
-    }
-  }, [composition])
 
   // ── Inheritance tax: beneficiary allocation sliders ──────────
   const [inheritShares, setInheritShares] = useState<Record<BeneficiaryClass, number>>({
@@ -640,7 +618,7 @@ export default function EstateTaxClient({
                       <p className="mt-1.5 leading-relaxed">
                         At second death, {statePrimary.toUpperCase()} applies a{' '}
                         <span className="font-semibold">{formatDollars(primaryStateTax.state_exemption)}</span>{' '}
-                        exemption. Without a Credit Shelter Trust, the first spouse's exemption is
+                        exemption. Without a Credit Shelter Trust, the first spouse&apos;s exemption is
                         permanently lost — worth discussing with your estate attorney.
                       </p>
                     </div>
@@ -737,7 +715,7 @@ export default function EstateTaxClient({
           storageKey="estate-tax-state-inheritance"
         >
           <p className="text-xs text-neutral-500 mb-5">
-            Inheritance tax is assessed on the beneficiary's share. Allocate the estate below to see
+            Inheritance tax is assessed on the beneficiary&apos;s share. Allocate the estate below to see
             estimated tax by beneficiary class.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

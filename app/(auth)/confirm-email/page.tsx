@@ -20,7 +20,7 @@ export default function ConfirmEmailPage() {
         </p>
 
         <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-500">
-          Didn't receive it? Check your spam folder, or{' '}
+          Didn&apos;t receive it? Check your spam folder, or{' '}
           <Link
             href="/signup"
             className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"

@@ -78,7 +78,7 @@ export default function SharePageClient({ flowData, householdName, expiresAt }: 
         {/* Intro */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
           <p className="text-sm text-blue-800 leading-relaxed">
-            You've been given access to view this estate planning summary. This view shows the
+            You&apos;ve been given access to view this estate planning summary. This view shows the
             estate structure — how assets are planned to transfer at death — but does not show
             specific financial values or tax details.
           </p>

@@ -48,12 +48,14 @@ function DonutChart({ data }: { data: { label: string; pct: number; color: strin
   const r = 70
   const inner = 44
 
-  let cumulative = 0
-  const slices = data.filter(d => d.pct > 0).map(d => {
-    const start = cumulative
-    cumulative += d.pct
-    return { ...d, start, end: cumulative }
-  })
+  const slices = data
+    .filter(d => d.pct > 0)
+    .reduce<Array<{ label: string; pct: number; color: string; start: number; end: number }>>((acc, d) => {
+      const start = acc.length > 0 ? acc[acc.length - 1].end : 0
+      const end = start + d.pct
+      acc.push({ ...d, start, end })
+      return acc
+    }, [])
 
   function arc(startPct: number, endPct: number) {
     const s = (startPct / 100) * 2 * Math.PI - Math.PI / 2
@@ -169,7 +171,7 @@ export default function AllocationClient() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Asset Allocation</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {name}'s portfolio review — {riskLabel} risk profile
+          {name}&apos;s portfolio review — {riskLabel} risk profile
           {data.age ? `, age ${data.age}` : ''}
         </p>
       </div>

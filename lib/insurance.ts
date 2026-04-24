@@ -63,7 +63,6 @@ export function calcLifeGap(profile: HouseholdProfile, policies: InsurancePolicy
     .filter(p => p.insurance_type === 'life')
     .reduce((sum, p) => sum + (p.death_benefit || p.coverage_amount || 0), 0)
   const gap = Math.max(0, recommended - current)
-  const status = current >= recommended ? 'adequate' : current >= recommended * 0.8 ? 'gap' : 'gap'
 
   return {
     type: 'life',
@@ -133,7 +132,6 @@ export function calcPCGap(profile: HouseholdProfile, policies: InsurancePolicy[]
   const hasAuto = policies.some(p => p.insurance_type === 'property_casualty' && p.property_type === 'auto')
   const hasUmbrella = policies.some(p => p.insurance_type === 'property_casualty' && p.property_type === 'umbrella')
 
-  const needed = 2 + (profile.has_spouse ? 1 : 0) // home + auto + umbrella if assets > 500k
   const needsUmbrella = profile.total_assets > 500000
   const current = [hasHome, hasAuto, hasUmbrella && needsUmbrella].filter(Boolean).length
   const recommended = needsUmbrella ? 3 : 2

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface CharitableGivingDashboardProps {
@@ -104,10 +104,12 @@ const priorityLabel: Record<number, string> = {
   3: 'LOW',
 };
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unexpected error';
+
 export default function CharitableGivingDashboard({
   householdId,
   userRole,
-  consumerTier,
 }: CharitableGivingDashboardProps) {
   const CURRENT_YEAR = new Date().getFullYear();
 
@@ -139,7 +141,7 @@ export default function CharitableGivingDashboard({
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -148,14 +150,14 @@ export default function CharitableGivingDashboard({
       });
       if (rpcError) throw rpcError;
       setSummary(data);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load charitable giving summary');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error) ?? 'Failed to load charitable giving summary');
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, supabase]);
 
-  useEffect(() => { load(); }, [householdId]);
+  useEffect(() => { void load(); }, [load]);
 
   const isAppreciatedVehicle = ['appreciated_asset', 'daf_asset', 'crt'].includes(form.vehicle_type);
   const isQcdVehicle = form.vehicle_type === 'qcd';
@@ -184,8 +186,8 @@ export default function CharitableGivingDashboard({
       setForm(emptyForm);
       setShowAddForm(false);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -197,8 +199,8 @@ export default function CharitableGivingDashboard({
       const { error: delError } = await supabase.from('charitable_donations').delete().eq('id', id);
       if (delError) throw delError;
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setDeleteId(null);
     }

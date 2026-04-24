@@ -16,12 +16,29 @@ const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
 export default function DomicileTab({
   domicileAnalysis,
   household,
-  clientId,
   domicileSchedule,
   domicileChecklist,
   stateExemptions,
   projectionRowsDomicile = [],
 }: ClientViewShellProps) {
+  type DomicileAnalysisRow = {
+    claimed_domicile_state?: string | null
+    risk_score?: number | null
+    risk_level?: string | null
+    conflict_states?: string[] | null
+    recommendations?: string[] | null
+    drivers_license_state?: string | null
+    voter_registration_state?: string | null
+    vehicle_registration_state?: string | null
+    primary_home_titled_state?: string | null
+    spouse_children_state?: string | null
+    estate_docs_declare_state?: string | null
+    files_taxes_in_state?: string | null
+    business_interests_state?: string | null
+    states?: Array<{ state?: string | null; days_per_year?: number | null }> | null
+    updated_at?: string | null
+    gross_estate?: number | null
+  }
 
   if (!domicileAnalysis) {
     return (
@@ -36,6 +53,7 @@ export default function DomicileTab({
     )
   }
 
+  const analysis = domicileAnalysis as DomicileAnalysisRow
   const {
     claimed_domicile_state,
     risk_score,
@@ -52,7 +70,7 @@ export default function DomicileTab({
     business_interests_state,
     states,
     updated_at,
-  } = domicileAnalysis
+  } = analysis
 
   const score = risk_score ?? 0
   const level = risk_level ?? 'unknown'
@@ -65,7 +83,7 @@ export default function DomicileTab({
     (projectionRowsDomicile.length > 0
       ? (projectionRowsDomicile[0]?.estate_incl_home ?? projectionRowsDomicile[0]?.gross_estate)
       : undefined) ??
-    (typeof domicileAnalysis?.gross_estate === 'number' ? domicileAnalysis.gross_estate : undefined) ??
+    (typeof analysis.gross_estate === 'number' ? analysis.gross_estate : undefined) ??
     0
 
   const grossEstateByYear = Object.fromEntries(
@@ -221,7 +239,7 @@ export default function DomicileTab({
             <div className="bg-white rounded-xl border border-slate-200 p-5">
               <h3 className="text-sm font-semibold text-slate-700 mb-3">Days Present by State</h3>
               <div className="space-y-2">
-                {states.map((s: any, i: number) => {
+                {states.map((s: { state?: string | null; days_per_year?: number | null }, i: number) => {
                   const days = s.days_per_year ?? 0
                   const pct = Math.min(100, Math.round((days / 365) * 100))
                   const isRisky = days > 183
@@ -274,7 +292,17 @@ export default function DomicileTab({
           grossEstateByYear={grossEstateByYear}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           initialSchedule={domicileSchedule ?? []}
-          initialChecklist={domicileChecklist ?? []}
+          initialChecklist={
+            (domicileChecklist ?? []) as Array<{
+              id: string
+              category?: string | null
+              label?: string | null
+              description?: string | null
+              priority?: string | null
+              completed?: boolean | null
+              completed_at?: string | null
+            }>
+          }
           dbExemptions={stateExemptions}
         />
       </div>
@@ -329,7 +357,7 @@ function getRiskStyle(level: string) {
   }
 }
 
-function getDaysLabel(states: any): string | null {
+function getDaysLabel(states: Array<{ state?: string | null; days_per_year?: number | null }> | null | undefined): string | null {
   if (!states || !Array.isArray(states)) return null
   const sorted = [...states].sort((a, b) => (b.days_per_year ?? 0) - (a.days_per_year ?? 0))
   if (sorted.length === 0) return null

@@ -339,7 +339,7 @@ export default function AdvisorClientPage({
                       <p className="text-sm font-medium text-neutral-900">{displayName}</p>
                       <p className="text-xs text-neutral-500">{displayEmail}</p>
                       {c.request_message && (
-                        <p className="mt-1 text-xs text-neutral-600 italic">"{c.request_message}"</p>
+                        <p className="mt-1 text-xs text-neutral-600 italic">&quot;{c.request_message}&quot;</p>
                       )}
                       <p className="mt-1 text-xs text-neutral-400">
                         Requested {formatDate(c.invited_at)}
@@ -505,7 +505,7 @@ export default function AdvisorClientPage({
               Add a Client by Email
             </h2>
             <p className="text-sm text-neutral-600 mb-4">
-              Enter your client's email address. If they already have an account they'll be linked instantly. If not, they'll be linked automatically when they sign up.
+              Enter your client&apos;s email address. If they already have an account they&apos;ll be linked instantly. If not, they&apos;ll be linked automatically when they sign up.
             </p>
             <div className="space-y-3">
               <input
