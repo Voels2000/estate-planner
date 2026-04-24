@@ -218,8 +218,9 @@ export async function generateBaseCase(householdId: string): Promise<{
       calculated_at: new Date().toISOString(),
     }
 
-    // Upsert projection scenario
+    // Save one base-case row per household per UTC day.
     const now = new Date().toISOString()
+    const baseCaseDay = now.slice(0, 10)
     const label = `Base Case - ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
 
     const { data: existing } = await admin
@@ -236,12 +237,13 @@ export async function generateBaseCase(householdId: string): Promise<{
 
     const { data: savedScenario, error: saveError } = await admin
       .from('projection_scenarios')
-      .insert({
+      .upsert({
         household_id: householdId,
         created_by: user.id,
         label,
         version: nextVersion,
         scenario_type: 'base_case',
+        base_case_day: baseCaseDay,
         assumption_snapshot: assumptionSnapshot,
         outputs: s1_first.rows,
         outputs_s1_first: s1_first.rows,
@@ -249,6 +251,8 @@ export async function generateBaseCase(householdId: string): Promise<{
         status: 'saved',
         calculated_at: now,
         updated_at: now,
+      }, {
+        onConflict: 'household_id,base_case_day',
       })
       .select('id')
       .single()
