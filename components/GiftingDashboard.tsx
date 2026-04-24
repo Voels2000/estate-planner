@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 
@@ -42,7 +42,7 @@ export interface GiftingSummary {
   annual_used_pct: number;
   tcja_in_effect: boolean;
   gifts: GiftRow[];
-  annual_by_recipient: any[];
+  annual_by_recipient: unknown[];
   recommendations: { type: string; priority: string; title: string; detail: string }[];
   gross_estate: number;
 }
@@ -70,10 +70,11 @@ const priorityBadge: Record<string, string> = {
   low: 'bg-green-100 text-green-700',
 };
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unexpected error';
+
 export default function GiftingDashboard({
   householdId,
-  userRole,
-  consumerTier,
   initialGiftingSummary,
 }: GiftingDashboardProps) {
   const CURRENT_YEAR = new Date().getFullYear();
@@ -99,7 +100,7 @@ export default function GiftingDashboard({
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -108,17 +109,17 @@ export default function GiftingDashboard({
       });
       if (rpcError) throw rpcError;
       setSummary(data);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load gifting summary');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, supabase]);
 
   useEffect(() => {
     if (refreshCount === 0) return;
     void load();
-  }, [refreshCount, householdId]);
+  }, [refreshCount, load]);
 
   const handleAdd = async () => {
     if (!form.recipient_name || !form.amount) return;
@@ -141,8 +142,8 @@ export default function GiftingDashboard({
       setForm(emptyForm);
       setShowAddForm(false);
       setRefreshCount((c) => c + 1);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -154,8 +155,8 @@ export default function GiftingDashboard({
       const { error: delError } = await supabase.from('gift_history').delete().eq('id', id);
       if (delError) throw delError;
       setRefreshCount((c) => c + 1);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setDeleteId(null);
     }
@@ -181,10 +182,10 @@ export default function GiftingDashboard({
   // summary.split_elected and summary.per_recipient_limit come from
   // calculate_gifting_summary which correctly handles all edge cases
   const annualSplitSelected =
-    (summary as any).split_elected ??
+    summary.split_elected ??
     (summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true));
   const annualPerRecipientLimit =
-    (summary as any).per_recipient_limit ?? (annualSplitSelected ? 38000 : 19000);
+    summary.per_recipient_limit ?? (annualSplitSelected ? 38000 : 19000);
   const uniqueAnnualRecipients = new Set(
     annualGiftRows
       .map(g => (g.recipient_name ?? '').trim().toLowerCase())

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
@@ -113,10 +113,10 @@ export default function MyEstateTrustStrategyClient({
   const [trustDocsLoading, setTrustDocsLoading] = useState(false)
   const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
   const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null)
-  const [annualGifting, setAnnualGifting] = useState(19000)
+  const [annualGiftingInput, setAnnualGiftingInput] = useState<number | null>(null)
   const [giftingYears, setGiftingYears] = useState(10)
 
-  async function loadTrustDocuments() {
+  const loadTrustDocuments = useCallback(async () => {
     if (activeTab !== 'trusts') return
     setTrustDocsLoading(true)
     setTrustDocsError(null)
@@ -140,11 +140,14 @@ export default function MyEstateTrustStrategyClient({
       setTrustDocs((data as TrustDocumentRow[]) ?? [])
     }
     setTrustDocsLoading(false)
-  }
+  }, [activeTab])
 
   useEffect(() => {
-    void loadTrustDocuments()
-  }, [activeTab])
+    const timeoutId = window.setTimeout(() => {
+      void loadTrustDocuments()
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [loadTrustDocuments])
 
   const trustDocCountLabel = useMemo(() => {
     if (trustDocs.length === 1) return '1 trust document saved'
@@ -184,13 +187,11 @@ export default function MyEstateTrustStrategyClient({
   const recommendedAnnualGifting =
     giftingScenario.filing === 'married_joint' && giftingScenario.giftingSplitSelected ? 38000 : 19000
 
-  useEffect(() => {
-    if (giftingScenario.giftingAnnualUsed != null && giftingScenario.giftingAnnualUsed > 0) {
-      setAnnualGifting(Math.round(giftingScenario.giftingAnnualUsed))
-      return
-    }
-    setAnnualGifting(recommendedAnnualGifting)
-  }, [giftingScenario.giftingAnnualUsed, recommendedAnnualGifting])
+  const annualGifting =
+    annualGiftingInput ??
+    (giftingScenario.giftingAnnualUsed != null && giftingScenario.giftingAnnualUsed > 0
+      ? Math.round(giftingScenario.giftingAnnualUsed)
+      : recommendedAnnualGifting)
 
   const syncedEligibleAnnual = Math.max(0, giftingScenario.giftingAnnualUsed ?? 0)
   const syncedLifetimeOverflow = Math.max(0, giftingScenario.giftingExcessOverLimit ?? 0)
@@ -284,7 +285,7 @@ export default function MyEstateTrustStrategyClient({
                   min="0"
                   step="1000"
                   value={annualGifting}
-                  onChange={(e) => setAnnualGifting(Math.max(0, Number(e.target.value) || 0))}
+                  onChange={(e) => setAnnualGiftingInput(Math.max(0, Number(e.target.value) || 0))}
                   className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
                 />
               </div>
