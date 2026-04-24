@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'
 import StrategyOverlay from '@/components/advisor/StrategyOverlay'
@@ -348,7 +347,6 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
         />
       </section>
 
-      <DisclaimerBanner />
     </div>
   )
 }

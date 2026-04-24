@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
 import { ClientViewShellProps } from '../_client-view-shell'
@@ -48,8 +47,6 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
 
   return (
     <div className="space-y-8">
-      <DisclaimerBanner />
-
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Meeting Preparation</h2>
         <p className="text-sm text-gray-500 mb-6">

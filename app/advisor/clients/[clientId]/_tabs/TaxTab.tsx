@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import FederalStateWaterfall from '@/components/advisor/FederalStateWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
@@ -54,8 +53,6 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
 
   return (
     <div className="space-y-8">
-      <DisclaimerBanner />
-
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Law Scenario</h2>
         <p className="text-sm text-gray-500 mb-4">

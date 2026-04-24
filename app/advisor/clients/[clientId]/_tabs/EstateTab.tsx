@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react'
 import { ClientViewShellProps } from '../_client-view-shell'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { formatCurrency, formatDate } from '../_utils'
 import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
@@ -242,8 +241,6 @@ export default function EstateTab({
 
   return (
     <div className="space-y-6">
-      <DisclaimerBanner />
-
       {/* ── Estate Composition — Inside / Outside view ── */}
       {composition && (
         <EstateCompositionCard
@@ -469,9 +466,6 @@ export default function EstateTab({
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="px-5 py-3 border-t border-slate-100">
-            <DisclaimerBanner context="conflict analysis" />
           </div>
         </div>
       )}
