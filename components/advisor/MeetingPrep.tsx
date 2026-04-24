@@ -49,6 +49,7 @@ interface Props {
   clientId: string
   householdId: string
   clientName: string
+  initialHealthScore?: number | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -70,11 +71,11 @@ async function generateMeetingBrief(
   clientId: string,
   householdId: string,
   clientName: string,
+  initialHealthScore?: number | null,
 ): Promise<MeetingBrief> {
   const supabase = createClient()
 
   const [
-    healthScoreRes,
     alertsRes,
     projectionRes,
     notesRes,
@@ -82,12 +83,6 @@ async function generateMeetingBrief(
     advisorLineItemsRes,
     compositionRes,
   ] = await Promise.all([
-    supabase
-      .from('estate_health_scores')
-      .select('score, last_calculated')
-      .eq('household_id', householdId)
-      .order('last_calculated', { ascending: false })
-      .limit(2),
     supabase
       .from('household_alerts')
       .select('title, severity, description')
@@ -126,17 +121,16 @@ async function generateMeetingBrief(
     supabase.rpc('calculate_estate_composition', { p_household_id: householdId }),
   ])
 
-  const healthScores = healthScoreRes.data ?? []
   const alerts = alertsRes.data ?? []
   const projection = projectionRes.data
   const lastNote = notesRes.data
   const strategyConfigs = strategyConfigsRes.data ?? []
   const advisorLineItems = advisorLineItemsRes.data ?? []
 
-  // Health score
-  const scoreToday = healthScores[0]?.score ?? null
-  const scoreLast = healthScores[1]?.score ?? null
-  const scoreDelta = scoreToday !== null && scoreLast !== null ? scoreToday - scoreLast : null
+  // Health score (server-provided for consistency across advisor contexts)
+  const scoreToday = initialHealthScore ?? null
+  const scoreLast = null
+  const scoreDelta = null
 
   // Current estate from RPC — handles both single object and array response
   let currentGrossEstate: number | null = null
@@ -217,7 +211,7 @@ function BriefSection({ title, children }: { title: string; children: React.Reac
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function MeetingPrep({ clientId, householdId, clientName }: Props) {
+export default function MeetingPrep({ clientId, householdId, clientName, initialHealthScore = null }: Props) {
   const [brief, setBrief] = useState<MeetingBrief | null>(null)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
@@ -225,7 +219,7 @@ export default function MeetingPrep({ clientId, householdId, clientName }: Props
   const handleGenerate = async () => {
     setLoading(true)
     setOpen(true)
-    const b = await generateMeetingBrief(clientId, householdId, clientName)
+    const b = await generateMeetingBrief(clientId, householdId, clientName, initialHealthScore)
     setBrief(b)
     setLoading(false)
   }

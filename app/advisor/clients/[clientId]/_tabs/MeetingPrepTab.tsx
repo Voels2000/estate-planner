@@ -59,6 +59,7 @@ export default function MeetingPrepTab({ clientId, household, exportPanelProps }
           clientId={clientId}
           householdId={household.id}
           clientName={clientName}
+          initialHealthScore={exportPanelProps?.healthScore ?? null}
         />
       </section>
 
