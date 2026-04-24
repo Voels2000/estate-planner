@@ -1,15 +1,21 @@
 // Facts-only estate snapshots for My Estate Strategy (four horizons).
 // Federal constants come from OBBBA 2026 — see lib/tax/estate-tax-constants.ts.
 // No sunset scenario: the One Big Beautiful Bill Act made the exemption permanent.
+//
+// Session 34: State tax now uses unified calculateStateEstateTax engine.
+// Replaces computeStateEstateTaxFromBrackets + stateRegistry blended-rate approximation.
+// All horizon columns now correctly model portability gap and NY cliff.
 
-import { computeStateEstateTaxFromBrackets, type StateBracket } from '@/lib/calculations/estate-tax-projection'
-import { calculateStateEstateTax, parseStateTaxCode } from '@/lib/projection/stateRegistry'
+import {
+  calculateStateEstateTax,
+  isMFJFilingStatus,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
 
 function isMarriedFilingJoint(filingStatus: string | null | undefined): boolean {
-  const fs = (filingStatus ?? '').toLowerCase()
-  return fs === 'mfj' || fs === 'married_filing_jointly' || fs === 'married filing jointly'
+  return isMFJFilingStatus(filingStatus)
 }
 
 /** Returns OBBBA 2026 basic exclusion for the household. */
@@ -111,52 +117,73 @@ export function computeBusinessOwnershipValue(
 
 export function computeColumnTaxes(params: {
   grossEstate: number
-  calendarYear: number
   statePrimary: string | null | undefined
   filingStatus: string | null | undefined
   hasSpouse: boolean
-  stateBrackets?: StateBracket[]
+  stateBrackets: StateBracket[]
 }): {
   federalExemption: number
   federalExposure: number
   federalTax: number
-  stateExposure: number
+  // State — no CST (status quo / worst case)
+  stateTax: number
+  // State — with CST (best case for no-portability MFJ)
+  stateTaxWithCST: number
+  // Dollar benefit of implementing a CST
+  cstBenefit: number
+  // True if state has no portability AND household is MFJ
+  hasPortabilityGap: boolean
+  // NY cliff triggered
+  nyCliffTriggered: boolean
+  // Combined total (no CST)
   totalTax: number
+  // Combined total (with CST)
+  totalTaxWithCST: number
+  // Legacy alias kept so existing UI destructuring doesn't break
+  stateExposure: number
 } {
-  const { grossEstate, calendarYear, statePrimary, filingStatus, hasSpouse } = params
-  const exemption = householdFederalExemption(filingStatus, hasSpouse)
+  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets } = params
+
+  const isMFJ = isMFJFilingStatus(filingStatus)
+  const { exemption: federalExemption, federalExposure, federalTax } =
+    estimateFederalEstateTaxSnapshot({ grossEstate, filingStatus, hasSpouse })
+
   if (grossEstate <= 0) {
     return {
-      federalExemption: exemption,
+      federalExemption,
       federalExposure: 0,
       federalTax: 0,
-      stateExposure: 0,
+      stateTax: 0,
+      stateTaxWithCST: 0,
+      cstBenefit: 0,
+      hasPortabilityGap: false,
+      nyCliffTriggered: false,
       totalTax: 0,
+      totalTaxWithCST: 0,
+      stateExposure: 0,
     }
   }
-  const { federalExposure, federalTax } = estimateFederalEstateTaxSnapshot({
+
+  const stateResult = calculateStateEstateTax(
     grossEstate,
-    filingStatus,
-    hasSpouse,
-  })
-  const brackets = params.stateBrackets ?? []
-  const stateTax = brackets.length > 0
-    ? computeStateEstateTaxFromBrackets(grossEstate, brackets)
-    : (() => {
-        const stateCode = parseStateTaxCode(statePrimary)
-        return calculateStateEstateTax({
-          grossEstate,
-          stateCode,
-          year: calendarYear,
-          federalExemption: exemption,
-        }).stateTax
-      })()
+    statePrimary ?? '',
+    stateBrackets,
+    isMFJ,
+  )
+
   return {
-    federalExemption: exemption,
+    federalExemption,
     federalExposure,
     federalTax,
-    stateExposure: stateTax,
-    totalTax: federalTax + stateTax,
+    stateTax: stateResult.stateTax,
+    stateTaxWithCST: stateResult.stateTaxWithCST,
+    cstBenefit: stateResult.cstBenefit,
+    hasPortabilityGap: stateResult.hasPortabilityGap,
+    nyCliffTriggered: stateResult.nyCliffTriggered,
+    totalTax: federalTax + stateResult.stateTax,
+    totalTaxWithCST: federalTax + stateResult.stateTaxWithCST,
+    // Legacy alias — UI reads stateExposure today; keep it working
+    stateExposure: stateResult.stateTax,
   }
 }
 
@@ -168,8 +195,15 @@ export type StrategyHorizonColumn = {
   federalExemption: number | null
   federalExposure: number | null
   federalTaxEstimate: number | null
-  stateExposure: number | null
+  stateTax: number | null
+  stateTaxWithCST: number | null
+  cstBenefit: number | null
+  hasPortabilityGap: boolean
+  nyCliffTriggered: boolean
   totalTaxLiability: number | null
+  totalTaxWithCST: number | null
+  /** @deprecated use stateTax */
+  stateExposure: number | null
   /** No values to show (empty column) */
   isPlaceholder: boolean
   /** No base case — prompt user to generate a plan */
@@ -193,7 +227,6 @@ export type BuildHorizonsInput = {
     confidence_level: 'certain' | 'probable' | 'illustrative'
     effective_year: number | null
     is_active: boolean
-    /** Reductions (default) vs additions; matches `strategy_line_items.sign`. */
     sign?: number
   }>
   household: {
@@ -214,11 +247,6 @@ export type BuildHorizonsInput = {
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
 
-/**
- * Sums strategy line items into outside-estate buckets for a calendar horizon.
- * Illustrative items always count toward illustrative (Session 27 / horizon cards).
- * Certain/probable items count only once effective_year has passed (or is unset).
- */
 function computeOutsideForHorizon(
   strategyLineItems: BuildHorizonsInput['strategyLineItems'],
   horizonCalendarYear: number,
@@ -231,12 +259,10 @@ function computeOutsideForHorizon(
     const amt = Number(item.amount) || 0
     const transferred =
       item.effective_year === null || item.effective_year <= horizonCalendarYear
-
     if (item.confidence_level === 'illustrative') {
       illustrative += amt
       continue
     }
-
     if (!transferred) continue
     certainProbable += amt
   }
@@ -256,7 +282,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     currentYear,
     currentMonthYearLabel,
     liveNetWorth,
-    stateBrackets,
+    stateBrackets = [],
     household,
     scenarioRows,
     survivorFirstName,
@@ -290,16 +316,16 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   const showProjectionMismatchNote =
     hasBaseCase && Math.abs(grossAtDeathByLongevity - grossAtDeathFinalRow) > 10_000
 
-  // ── Today column ──────────────────────────────────────────────────────
-  const todayTax = computeColumnTaxes({
-    grossEstate: liveNetWorth,
-    calendarYear: currentYear,
+  // Shared tax params
+  const taxParams = {
     statePrimary,
     filingStatus: fs,
     hasSpouse,
     stateBrackets,
-  })
+  }
 
+  // ── Today column ───────────────────────────────────────────────────────────
+  const todayTax = computeColumnTaxes({ grossEstate: liveNetWorth, ...taxParams })
   const todayOutside = computeOutsideForHorizon(strategyLineItems, currentYear)
 
   const today: StrategyHorizonColumn = {
@@ -310,19 +336,36 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     federalExemption: todayTax.federalExemption,
     federalExposure: todayTax.federalExposure,
     federalTaxEstimate: todayTax.federalTax,
-    stateExposure: todayTax.stateExposure,
+    stateTax: todayTax.stateTax,
+    stateTaxWithCST: todayTax.stateTaxWithCST,
+    cstBenefit: todayTax.cstBenefit,
+    hasPortabilityGap: todayTax.hasPortabilityGap,
+    nyCliffTriggered: todayTax.nyCliffTriggered,
     totalTaxLiability: todayTax.totalTax,
+    totalTaxWithCST: todayTax.totalTaxWithCST,
+    stateExposure: todayTax.stateTax,
     isPlaceholder: false,
     showGenerateCta: false,
-    insideTotal: Math.max(
-      0,
-      liveNetWorth - todayOutside.certainProbable - todayOutside.illustrative,
-    ),
+    insideTotal: Math.max(0, liveNetWorth - todayOutside.certainProbable - todayOutside.illustrative),
     outsideCertainProbableTotal: todayOutside.certainProbable,
     outsideIllustrativeTotal: todayOutside.illustrative,
   }
 
-  // ── Helper to build projected horizon columns ─────────────────────────
+  // ── Helper to build projected horizon columns ──────────────────────────────
+  const emptyTaxFields = {
+    federalExemption: null,
+    federalExposure: null,
+    federalTaxEstimate: null,
+    stateTax: null,
+    stateTaxWithCST: null,
+    cstBenefit: null,
+    hasPortabilityGap: false,
+    nyCliffTriggered: false,
+    totalTaxLiability: null,
+    totalTaxWithCST: null,
+    stateExposure: null,
+  }
+
   function buildProjectedColumn(
     headerTitle: string,
     headerClassName: string,
@@ -335,11 +378,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         headerClassName,
         narrative: `Your projected estate in ${targetYear}. All figures are estimates.`,
         grossEstate: null,
-        federalExemption: null,
-        federalExposure: null,
-        federalTaxEstimate: null,
-        stateExposure: null,
-        totalTaxLiability: null,
+        ...emptyTaxFields,
         isPlaceholder: true,
         showGenerateCta: true,
       }
@@ -350,14 +389,10 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       gross !== null
         ? Math.max(0, gross - outside.certainProbable - outside.illustrative)
         : null
-    const tax = gross !== null ? computeColumnTaxes({
-      grossEstate: gross,
-      calendarYear: targetYear,
-      statePrimary,
-      filingStatus: fs,
-      hasSpouse,
-      stateBrackets,
-    }) : null
+    const tax = gross !== null
+      ? computeColumnTaxes({ grossEstate: gross, ...taxParams })
+      : null
+
     return {
       headerTitle,
       headerClassName,
@@ -366,8 +401,14 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       federalExemption: tax?.federalExemption ?? null,
       federalExposure: tax?.federalExposure ?? null,
       federalTaxEstimate: tax?.federalTax ?? null,
-      stateExposure: tax?.stateExposure ?? null,
+      stateTax: tax?.stateTax ?? null,
+      stateTaxWithCST: tax?.stateTaxWithCST ?? null,
+      cstBenefit: tax?.cstBenefit ?? null,
+      hasPortabilityGap: tax?.hasPortabilityGap ?? false,
+      nyCliffTriggered: tax?.nyCliffTriggered ?? false,
       totalTaxLiability: tax?.totalTax ?? null,
+      totalTaxWithCST: tax?.totalTaxWithCST ?? null,
+      stateExposure: tax?.stateTax ?? null,
       isPlaceholder: !row,
       showGenerateCta: false,
       showMissingRowNote: !row,
@@ -381,7 +422,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   const tenYear = buildProjectedColumn('In 10 Years', 'bg-blue-600 text-white', currentYear + 10, y10)
   const twentyYear = buildProjectedColumn('In 20 Years', 'bg-indigo-600 text-white', currentYear + 20, y20)
 
-  // ── At Death column ───────────────────────────────────────────────────
+  // ── At Death column ────────────────────────────────────────────────────────
   const atDeathCalendarYear = atDeathRow?.year ?? currentYear
   const atDeathGross = atDeathRow ? grossEstateFromRow(atDeathRow) : null
   const atDeathOutside = computeOutsideForHorizon(strategyLineItems, atDeathCalendarYear)
@@ -391,14 +432,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       : null
   const atDeathTax =
     atDeathGross !== null && hasBaseCase
-      ? computeColumnTaxes({
-          grossEstate: atDeathGross,
-          calendarYear: atDeathCalendarYear,
-          statePrimary,
-          filingStatus: fs,
-          hasSpouse,
-          stateBrackets,
-        })
+      ? computeColumnTaxes({ grossEstate: atDeathGross, ...taxParams })
       : null
 
   const atDeath: StrategyHorizonColumn = hasBaseCase
@@ -410,8 +444,14 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         federalExemption: atDeathTax?.federalExemption ?? null,
         federalExposure: atDeathTax?.federalExposure ?? null,
         federalTaxEstimate: atDeathTax?.federalTax ?? null,
-        stateExposure: atDeathTax?.stateExposure ?? null,
+        stateTax: atDeathTax?.stateTax ?? null,
+        stateTaxWithCST: atDeathTax?.stateTaxWithCST ?? null,
+        cstBenefit: atDeathTax?.cstBenefit ?? null,
+        hasPortabilityGap: atDeathTax?.hasPortabilityGap ?? false,
+        nyCliffTriggered: atDeathTax?.nyCliffTriggered ?? false,
         totalTaxLiability: atDeathTax?.totalTax ?? null,
+        totalTaxWithCST: atDeathTax?.totalTaxWithCST ?? null,
+        stateExposure: atDeathTax?.stateTax ?? null,
         isPlaceholder: false,
         showGenerateCta: false,
         insideTotal: atDeathInsideTotal,
@@ -423,11 +463,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         headerClassName: 'bg-violet-900 text-white',
         narrative: `Your projected estate at age ${longevityAge} (${survivorFirstName}), based on your current growth assumptions. All figures are estimates.`,
         grossEstate: null,
-        federalExemption: null,
-        federalExposure: null,
-        federalTaxEstimate: null,
-        stateExposure: null,
-        totalTaxLiability: null,
+        ...emptyTaxFields,
         isPlaceholder: true,
         showGenerateCta: true,
       }

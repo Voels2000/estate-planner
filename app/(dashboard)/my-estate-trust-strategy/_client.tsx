@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
+import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
@@ -44,6 +45,7 @@ interface Props {
   householdId: string
   userRole: 'consumer' | 'advisor'
   consumerTier: number
+  estateContext?: EstateContext
   initialTab: string
   advisorRecommendations: { strategy_type: string; label: string | null }[]
   advisorLineItems: AdvisorLineItem[]
@@ -94,6 +96,7 @@ export default function MyEstateTrustStrategyClient({
   householdId,
   userRole,
   consumerTier,
+  estateContext,
   initialTab,
   advisorRecommendations,
   advisorLineItems,
@@ -431,6 +434,7 @@ export default function MyEstateTrustStrategyClient({
             householdId={householdId}
             userRole={userRole}
             advisorLineItems={advisorLineItems}
+            estateContext={estateContext}
           />
         </div>
       )}

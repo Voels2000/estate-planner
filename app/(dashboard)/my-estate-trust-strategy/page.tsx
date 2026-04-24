@@ -6,6 +6,7 @@ import MyEstateTrustStrategyClient from './_client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { computeFederalEstateTax, type EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
+import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
   gifting: 'Annual Gifting Program',
@@ -72,7 +73,7 @@ export default async function MyEstateTrustStrategyPage({
 
   const { data: householdRow } = await supabase
     .from('households')
-    .select('id, filing_status')
+    .select('id, filing_status, person1_birth_year')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -209,6 +210,42 @@ export default async function MyEstateTrustStrategyPage({
           1,
         ).net_estate_tax
       : 0
+  // ── Estate context for ConsumerStrategyPanel ──────────────────────────────
+  // Replaces hardcoded DEFAULT_GROSS_ESTATE and other constants in the panel.
+  // Derives liquid/illiquid split from classifyEstateAssets composition.
+  const insideFinancial = Number((composition as any).inside_financial ?? 0)
+  const insideLiquid = Number((composition as any).inside_liquid ?? 0)
+  const insideIlliquid = Number((composition as any).inside_illiquid ?? 0)
+  const insideRE = Number((composition as any).inside_real_estate ?? 0)
+  const insideBusiness = Number((composition as any).inside_business_gross ?? 0)
+
+  // Financial assets split by liquidity tag; RE and business always illiquid
+  const liquidAssets = insideLiquid
+  const illiquidAssets = insideIlliquid + insideRE + insideBusiness
+
+  // Pre-tax IRA balance for Roth modeling — sum traditional_401k + traditional_ira assets
+  // These are already fetched via classifyEstateAssets; use 0 as safe fallback
+  const preIRABalance = 0 // TODO Session 35: pass from assets query
+  const rothBalance = 0 // TODO Session 35: pass from assets query
+  const annualRMD = 0 // TODO Session 35: pass from households
+
+  const estateContext: EstateContext = {
+    grossEstate: grossEstate,
+    federalExemption:
+      federalBrackets.length > 0
+        ? filing === 'married_joint'
+          ? 30_000_000
+          : 15_000_000
+        : 13_990_000,
+    estimatedFederalTax: taxWithoutStrategies,
+    estimatedStateTax: 0, // TODO Session 35: wire from stateEstateTax engine
+    person1BirthYear: householdRow.person1_birth_year ?? new Date().getFullYear() - 50,
+    liquidAssets,
+    illiquidAssets,
+    preIRABalance,
+    rothBalance,
+    annualRMD,
+  }
 
   const currentTaxYear = new Date().getFullYear()
   const giftingData = giftingSummaryError
@@ -258,6 +295,7 @@ export default async function MyEstateTrustStrategyPage({
         initialTab={searchParams.tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
         advisorLineItems={advisorLineItemRows ?? []}
+        estateContext={estateContext}
         strategyImpact={{
           strategyItems,
           strategyReductionTotal,

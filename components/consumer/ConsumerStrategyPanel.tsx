@@ -1,5 +1,9 @@
 'use client'
 
+// Session 34: Replaced hardcoded DEFAULT_GROSS_ESTATE and other constants with
+// real household data passed via the new `estateContext` prop.
+// All strategy pre-population (GRAT funding, liquidity, Roth) now uses actual figures.
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
@@ -21,19 +25,51 @@ type AdvancedPanel = 'grat' | 'crt' | 'clat' | 'daf' | 'liquidity' | 'roth' | nu
 
 type ConsumerStatus = 'not_started' | 'in_progress' | 'complete'
 
-interface ConsumerStrategyPanelProps {
-  householdId: string
-  userRole: 'consumer' | 'advisor'
-  advisorLineItems?: AdvisorLineItem[]
+// ─── Estate context prop ──────────────────────────────────────────────────────
+// Replaces all hardcoded DEFAULT_* constants. Passed from the page server component.
+
+export interface EstateContext {
+  grossEstate: number
+  federalExemption: number
+  estimatedFederalTax: number
+  estimatedStateTax: number
+  person1BirthYear: number
+  /** Liquid assets = financial assets that are liquid */
+  liquidAssets: number
+  /** Illiquid assets = real estate + businesses + illiquid financial */
+  illiquidAssets: number
+  /** Pre-tax IRA/401k balance for Roth modeling */
+  preIRABalance: number
+  /** Current Roth balance */
+  rothBalance: number
+  /** Annual RMD if already in distribution */
+  annualRMD: number
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_7520_RATE = 0.052
-const DEFAULT_GROSS_ESTATE = 5_000_000
-const DEFAULT_EXEMPTION = 13_990_000
-const DEFAULT_ESTIMATED_FEDERAL_TAX = 0
-const DEFAULT_ESTIMATED_STATE_TAX = 0
-const DEFAULT_PERSON1_BIRTH_YEAR = CURRENT_YEAR - 50
+
+// Fallback used only when estateContext is not provided (should not happen in prod)
+const FALLBACK_CONTEXT: EstateContext = {
+  grossEstate: 5_000_000,
+  federalExemption: 13_990_000,
+  estimatedFederalTax: 0,
+  estimatedStateTax: 0,
+  person1BirthYear: CURRENT_YEAR - 50,
+  liquidAssets: 1_500_000,
+  illiquidAssets: 3_500_000,
+  preIRABalance: 0,
+  rothBalance: 0,
+  annualRMD: 0,
+}
+
+interface ConsumerStrategyPanelProps {
+  householdId: string
+  userRole: 'consumer' | 'advisor'
+  advisorLineItems?: AdvisorLineItem[]
+  /** Real household data — replaces hardcoded defaults */
+  estateContext?: EstateContext
+}
 
 const CONFIDENCE_DISPLAY: Record<string, string> = {
   illustrative: 'Modeled',
@@ -60,12 +96,7 @@ const STATUS_COLORS: Record<ConsumerStatus, string> = {
 }
 
 async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  console.log(
-    '[writeStrategyLineItem] called with:',
-    input.household_id,
-    input.strategy_source,
-    input.source_role,
-  )
+  console.log('[writeStrategyLineItem] called with:', input.household_id, input.strategy_source, input.source_role)
   const configRes = await fetch('/api/strategy-configs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -115,7 +146,6 @@ function useRecommendAdvanced(householdId: string) {
   const [statuses, setStatuses] = useState<Record<string, ConsumerStatus>>({})
   const [loadingInitial, setLoadingInitial] = useState(true)
 
-  // Seed saved + statuses from DB on mount
   useEffect(() => {
     if (!householdId) return
     const supabase = createClient()
@@ -203,13 +233,7 @@ function AdvisorHintBanner({
 // ─── Recommend + status button row ───────────────────────────────────────────
 
 function RecommendButton({
-  strategySource,
-  saved,
-  saving,
-  userRole,
-  status,
-  onToggle,
-  onCycleStatus,
+  strategySource, saved, saving, userRole, status, onToggle, onCycleStatus,
 }: {
   strategySource: string
   saved: Set<string>
@@ -220,10 +244,9 @@ function RecommendButton({
   onCycleStatus: () => void
 }) {
   const isRecommended = saved.has(strategySource)
-  const label =
-    userRole === 'advisor'
-      ? 'Mark this strategy as recommended for client'
-      : 'Save this strategy to your plan'
+  const label = userRole === 'advisor'
+    ? 'Mark this strategy as recommended for client'
+    : 'Save this strategy to your plan'
 
   return (
     <div className="pt-2 border-t border-gray-200 space-y-2">
@@ -242,7 +265,6 @@ function RecommendButton({
           {isRecommended ? '✓ Saved' : 'Save strategy'}
         </button>
       </div>
-
       {isRecommended && userRole === 'consumer' && status !== undefined && (
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400">Your progress</span>
@@ -259,11 +281,29 @@ function RecommendButton({
   )
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function ConsumerStrategyPanel({
   householdId,
   userRole,
   advisorLineItems = [],
+  estateContext,
 }: ConsumerStrategyPanelProps) {
+
+  // Use real data when provided, fall back gracefully if not
+  const ctx = estateContext ?? FALLBACK_CONTEXT
+
+  const grossEstate            = ctx.grossEstate
+  const federalExemption       = ctx.federalExemption
+  const estimatedFederalTax    = ctx.estimatedFederalTax
+  const estimatedStateTax      = ctx.estimatedStateTax
+  const person1BirthYear       = ctx.person1BirthYear
+  const liquidAssets           = ctx.liquidAssets
+  const illiquidAssets         = ctx.illiquidAssets
+  const preIRABalance          = ctx.preIRABalance
+  const rothBalance            = ctx.rothBalance
+  const annualRMD              = ctx.annualRMD
+
   function advisorMeta(strategySource: string): Record<string, unknown> {
     return advisorLineItems.find((i) => i.strategy_source === strategySource)?.metadata ?? {}
   }
@@ -271,21 +311,20 @@ export default function ConsumerStrategyPanel({
     return advisorLineItems.find((i) => i.strategy_source === strategySource)?.amount ?? 0
   }
 
-  const grossEstate = DEFAULT_GROSS_ESTATE
-  const federalExemption = DEFAULT_EXEMPTION
-  const estimatedFederalTax = DEFAULT_ESTIMATED_FEDERAL_TAX
-  const estimatedStateTax = DEFAULT_ESTIMATED_STATE_TAX
-  const person1BirthYear = DEFAULT_PERSON1_BIRTH_YEAR
-  const annualRMD = 0
-  const preIRABalance = 0
-  const rothBalance = 0
+  const { saved, saving, toggle, statuses, cycleStatus, loadingInitial } =
+    useRecommendAdvanced(householdId)
 
-  const { saved, saving, toggle, statuses, cycleStatus, loadingInitial } = useRecommendAdvanced(householdId)
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82
 
+  // ── GRAT defaults ─────────────────────────────────────────────────────────
+  // Funding amount: advisor override → 25% of gross estate (real data)
+  const defaultGRATFunding = Number(
+    advisorMeta('grat').funding_amount ?? Math.min(5_000_000, Math.round(grossEstate * 0.25)),
+  )
+
   const [gratConfig, setGratConfig] = useState<GRATConfig>({
-    fundingAmount: Number(advisorMeta('grat').funding_amount ?? Math.min(5_000_000, grossEstate * 0.25)),
+    fundingAmount: defaultGRATFunding,
     termYears: Number(advisorMeta('grat').term_years ?? 5),
     expectedGrowthRate: 0.08,
     section7520Rate: DEFAULT_7520_RATE,
@@ -323,9 +362,10 @@ export default function ConsumerStrategyPanel({
     capitalGainsRate: 0.238,
   })
 
+  // ── Liquidity defaults — use real estate composition ──────────────────────
   const [liquidityConfig, setLiquidityConfig] = useState<LiquidityConfig>({
-    liquidAssets: grossEstate * 0.3,
-    illiquidAssets: grossEstate * 0.7,
+    liquidAssets,
+    illiquidAssets,
     estimatedFederalTax,
     estimatedStateTax,
     ilitDeathBenefit: 0,
@@ -333,6 +373,7 @@ export default function ConsumerStrategyPanel({
     otherLiquiditySources: 0,
   })
 
+  // ── Roth defaults — use real IRA balances ─────────────────────────────────
   const [rothConfig, setRothConfig] = useState<RothConversionConfig>({
     preIRABalance,
     annualRMD,
@@ -345,6 +386,33 @@ export default function ConsumerStrategyPanel({
     yearsUntilDeath: defaultDeathYear - CURRENT_YEAR,
   })
 
+  // Re-seed configs when estateContext changes (e.g. after async load)
+  useEffect(() => {
+    if (!estateContext) return
+    setGratConfig((c) => ({
+      ...c,
+      fundingAmount: Number(
+        advisorMeta('grat').funding_amount ??
+        Math.min(5_000_000, Math.round(estateContext.grossEstate * 0.25)),
+      ),
+      grantorAge: CURRENT_YEAR - estateContext.person1BirthYear,
+      deathYear: estateContext.person1BirthYear + 82,
+    }))
+    setLiquidityConfig((c) => ({
+      ...c,
+      liquidAssets: estateContext.liquidAssets,
+      illiquidAssets: estateContext.illiquidAssets,
+      estimatedFederalTax: estateContext.estimatedFederalTax,
+      estimatedStateTax: estateContext.estimatedStateTax,
+    }))
+    setRothConfig((c) => ({
+      ...c,
+      preIRABalance: estateContext.preIRABalance,
+      annualRMD: estateContext.annualRMD,
+      yearsUntilDeath: estateContext.person1BirthYear + 82 - CURRENT_YEAR,
+    }))
+  }, [estateContext?.grossEstate, estateContext?.person1BirthYear])
+
   const PANELS = [
     { id: 'grat' as AdvancedPanel, label: 'GRAT' },
     { id: 'crt' as AdvancedPanel, label: 'CRT' },
@@ -354,15 +422,14 @@ export default function ConsumerStrategyPanel({
     { id: 'roth' as AdvancedPanel, label: 'Roth Conversion' },
   ]
 
-  const gratResult = activePanel === 'grat' ? applyGRAT(gratConfig) : null
-  const crtResult = activePanel === 'crt' ? applyCRT(crtConfig) : null
-  const clatResult = activePanel === 'clat' ? applyCLAT(clatConfig) : null
-  const dafResult = activePanel === 'daf' ? applyDAF(dafConfig) : null
-  const liquidityResult =
-    activePanel === 'liquidity'
-      ? analyzeLiquidity({ ...liquidityConfig, estimatedFederalTax, estimatedStateTax })
-      : null
-  const rothResult = activePanel === 'roth' ? modelRothConversion(rothConfig) : null
+  const gratResult     = activePanel === 'grat'      ? applyGRAT(gratConfig) : null
+  const crtResult      = activePanel === 'crt'       ? applyCRT(crtConfig) : null
+  const clatResult     = activePanel === 'clat'      ? applyCLAT(clatConfig) : null
+  const dafResult      = activePanel === 'daf'       ? applyDAF(dafConfig) : null
+  const liquidityResult = activePanel === 'liquidity'
+    ? analyzeLiquidity({ ...liquidityConfig, estimatedFederalTax, estimatedStateTax })
+    : null
+  const rothResult     = activePanel === 'roth'      ? modelRothConversion(rothConfig) : null
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
 
@@ -389,10 +456,7 @@ export default function ConsumerStrategyPanel({
             >
               {p.label}
               {advisorLineItems.some((i) => i.strategy_source === (p.id ?? '')) && (
-                <span
-                  className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400"
-                  title="Advisor modeled"
-                />
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400" title="Advisor modeled" />
               )}
               {saved.has(p.id ?? '') && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
@@ -402,10 +466,16 @@ export default function ConsumerStrategyPanel({
         </div>
       </div>
 
+      {/* ── GRAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'grat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Grantor Retained Annuity Trust (GRAT)</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="grat" />
+          {estateContext && (
+            <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+              Pre-populated from your estate: gross estate {fmt(grossEstate)}, funding at 25% = {fmt(Math.round(grossEstate * 0.25))}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Funding Amount', key: 'fundingAmount', value: gratConfig.fundingAmount },
@@ -452,13 +522,15 @@ export default function ConsumerStrategyPanel({
             onToggle={() => toggle('grat', {
               scenario_id: 'current_law', metric_target: 'gross_estate', category: 'trust_exclusion',
               strategy_source: 'grat', amount: gratResult?.projectedRemainder ?? 0, sign: -1,
-              confidence_level: 'illustrative', effective_year: new Date().getFullYear() + (gratConfig.termYears ?? 5),
+              confidence_level: 'illustrative',
+              effective_year: new Date().getFullYear() + (gratConfig.termYears ?? 5),
               metadata: { funding_amount: gratConfig.fundingAmount, term_years: gratConfig.termYears, projected_remainder: gratResult?.projectedRemainder ?? 0 },
             })}
           />
         </div>
       )}
 
+      {/* ── CRT ──────────────────────────────────────────────────────────── */}
       {activePanel === 'crt' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Charitable Remainder Trust (CRT)</h4>
@@ -503,6 +575,7 @@ export default function ConsumerStrategyPanel({
         </div>
       )}
 
+      {/* ── CLAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'clat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Charitable Lead Annuity Trust (CLAT)</h4>
@@ -550,6 +623,7 @@ export default function ConsumerStrategyPanel({
         </div>
       )}
 
+      {/* ── DAF ──────────────────────────────────────────────────────────── */}
       {activePanel === 'daf' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Donor Advised Fund (DAF)</h4>
@@ -606,10 +680,16 @@ export default function ConsumerStrategyPanel({
         </div>
       )}
 
+      {/* ── Liquidity ─────────────────────────────────────────────────────── */}
       {activePanel === 'liquidity' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Estate Liquidity Analysis</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="liquidity" />
+          {estateContext && (
+            <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+              Pre-populated from your estate: {fmt(liquidAssets)} liquid, {fmt(illiquidAssets)} illiquid
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Liquid Assets', key: 'liquidAssets', value: liquidityConfig.liquidAssets },
@@ -664,6 +744,7 @@ export default function ConsumerStrategyPanel({
         </div>
       )}
 
+      {/* ── Roth ─────────────────────────────────────────────────────────── */}
       {activePanel === 'roth' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h4 className="text-sm font-semibold text-gray-800">Roth Conversion Analysis</h4>
@@ -672,9 +753,9 @@ export default function ConsumerStrategyPanel({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1">
               <p className="font-semibold text-blue-800">Client actuals (from base case)</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-700">
-                <span>Current Roth balance</span><span className="text-right font-medium">${Math.round(rothBalance).toLocaleString()}</span>
-                <span>Pre-tax IRA balance</span><span className="text-right font-medium">${Math.round(preIRABalance).toLocaleString()}</span>
-                <span>Annual RMD</span><span className="text-right font-medium">${Math.round(annualRMD).toLocaleString()}</span>
+                <span>Current Roth balance</span><span className="text-right font-medium">{fmt(rothBalance)}</span>
+                <span>Pre-tax IRA balance</span><span className="text-right font-medium">{fmt(preIRABalance)}</span>
+                <span>Annual RMD</span><span className="text-right font-medium">{fmt(annualRMD)}</span>
               </div>
             </div>
           )}

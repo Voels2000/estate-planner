@@ -10,6 +10,7 @@
 // The single source of truth for OBBBA constants is lib/tax/estate-tax-constants.ts.
 
 import type { YearRow } from '@/lib/calculations/projection-complete'
+import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/stateEstateTax'
 
 export type StateBracket = {
   min_amount: number
@@ -222,25 +223,6 @@ function computeProgressiveEstateTax(taxableEstate: number, topRate: number): nu
   // For the projection engine we use the top rate directly since
   // the full bracket table is applied in the estate-tax page
   return Math.round(taxableEstate * topRate)
-}
-
-export function computeStateEstateTaxFromBrackets(
-  grossEstate: number,
-  brackets: StateBracket[],
-): number {
-  if (brackets.length === 0) return 0
-  const exemption = brackets[0].exemption_amount ?? 0
-  const taxable = Math.max(0, grossEstate - exemption)
-  if (taxable <= 0) return 0
-  let tax = 0
-  for (const bracket of brackets) {
-    const bracketMin = bracket.min_amount
-    const bracketMax = bracket.max_amount >= 9_999_999_999 ? Infinity : bracket.max_amount
-    if (taxable <= bracketMin) break
-    const inBracket = Math.min(taxable, bracketMax) - bracketMin
-    if (inBracket > 0) tax += inBracket * (bracket.rate_pct / 100)
-  }
-  return Math.round(tax)
 }
 
 // -- Scenario comparison ------------------------------------------------------

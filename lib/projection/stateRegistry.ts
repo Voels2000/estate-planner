@@ -1,6 +1,11 @@
 // Sprint 66 - Updated to use database exemptions from state_estate_tax_rules
 // Hardcoded fallbacks retained for offline/test use only
 
+import {
+  calculateStateEstateTax as calculateCanonicalStateEstateTax,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
+
 export type StateTaxCode = 'WA' | 'MA' | 'OR' | 'NY' | 'CT' | 'AZ' | 'other'
 
 export type InheritanceTaxCode = 'PA' | 'NJ' | 'KY' | 'NE' | 'IA' | 'MD'
@@ -170,42 +175,34 @@ export function calculateStateEstateTax(params: {
     return { stateTax: 0, exemptionUsed: 0, taxableEstate: 0, nyCliffTriggered: false, effectiveRate: 0 }
   }
 
+  // stateRegistry only has exemption + top-rate rows; construct a minimal bracket set
+  // and delegate tax logic to the canonical calculator.
+  const topRate = getStateTopRate(stateCode, year, dbExemptions)
+  const brackets: StateBracket[] = [{
+    min_amount: 0,
+    max_amount: 9_999_999_999,
+    rate_pct: topRate * 100,
+    exemption_amount: baseExemption,
+  }]
+
   const hasPortability = !SPECIAL_RULES[stateCode]?.includes('no_portability')
+  const isMFJ = dsue > 0
+  const canonical = calculateCanonicalStateEstateTax(
+    grossEstate,
+    stateCode,
+    brackets,
+    isMFJ,
+    false,
+  )
+
   const effectiveExemption = hasPortability ? baseExemption + dsue : baseExemption
 
-  let taxableEstate = 0
-  let nyCliffTriggered = false
-
-  if (stateCode === 'NY') {
-    const cliffThreshold = effectiveExemption * 1.05
-    if (grossEstate > cliffThreshold) {
-      taxableEstate = grossEstate
-      nyCliffTriggered = true
-    } else {
-      taxableEstate = Math.max(0, grossEstate - effectiveExemption)
-    }
-  } else {
-    taxableEstate = Math.max(0, grossEstate - effectiveExemption)
-  }
-
-  if (taxableEstate <= 0) {
-    return { stateTax: 0, exemptionUsed: effectiveExemption, taxableEstate: 0, nyCliffTriggered, effectiveRate: 0 }
-  }
-
-  const topRate = getStateTopRate(stateCode, year, dbExemptions)
-  const blendedRate = topRate * 0.65
-  let stateTax = taxableEstate * blendedRate
-
-  if (stateCode === 'CT') stateTax = Math.min(stateTax, 15_000_000)
-
-  const effectiveRate = grossEstate > 0 ? stateTax / grossEstate : 0
-
   return {
-    stateTax: Math.round(stateTax),
+    stateTax: Math.round(canonical.stateTax),
     exemptionUsed: effectiveExemption,
-    taxableEstate: Math.round(taxableEstate),
-    nyCliffTriggered,
-    effectiveRate,
+    taxableEstate: Math.round(canonical.taxableEstate),
+    nyCliffTriggered: canonical.nyCliffTriggered,
+    effectiveRate: canonical.effectiveRate,
   }
 }
 
