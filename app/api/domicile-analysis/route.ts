@@ -84,12 +84,21 @@ export async function POST(request: Request) {
 
   const access = await assertAccessToUser(supabase, user.id, effectiveUserId)
   if (!access.ok) return access.response
+  let resolvedHouseholdId = (household_id as string | null | undefined) ?? null
+  if (!resolvedHouseholdId) {
+    const { data: household } = await supabase
+      .from('households')
+      .select('id')
+      .eq('owner_id', effectiveUserId)
+      .maybeSingle()
+    resolvedHouseholdId = household?.id ?? null
+  }
 
   const { data: analysis, error: insertError } = await supabase
     .from('domicile_analysis')
     .insert({
       user_id: effectiveUserId,
-      household_id: household_id ?? null,
+      household_id: resolvedHouseholdId,
       claimed_domicile_state,
       states: states ?? [],
       drivers_license_state: drivers_license_state ?? null,

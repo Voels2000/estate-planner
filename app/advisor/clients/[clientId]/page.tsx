@@ -169,6 +169,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       created_at, updated_at
     `)
       .eq('household_id', household.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle(),
     supabase
       .from('domicile_schedule')
