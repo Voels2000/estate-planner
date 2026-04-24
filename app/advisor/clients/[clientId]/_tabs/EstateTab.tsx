@@ -54,6 +54,7 @@ export default function EstateTab({
       (insurancePolicies ?? []).map(p => [p.id, (p as any).estate_inclusion_status ?? 'included'])
     )
   )
+  const [expandedBeneficiaryGroups, setExpandedBeneficiaryGroups] = useState<Record<string, boolean>>({})
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -94,8 +95,17 @@ export default function EstateTab({
   const retirementAssets = (assets ?? []).filter(a =>
     ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(assetAccountType(a))
   )
-  const primaryBeneficiaries   = (beneficiaries ?? []).filter(b => !b.contingent)
-  const contingentBeneficiaries = (beneficiaries ?? []).filter(b =>  b.contingent)
+  const beneficiaryGroups = (beneficiaries ?? []).reduce<Record<string, any[]>>((acc, b) => {
+    const key = (b.account_type ?? 'unassigned').toString().toLowerCase()
+    if (!acc[key]) acc[key] = []
+    acc[key].push(b)
+    return acc
+  }, {})
+  const beneficiaryGroupKeys = Object.keys(beneficiaryGroups).sort((a, b) => {
+    if (a === 'unassigned') return 1
+    if (b === 'unassigned') return -1
+    return a.localeCompare(b)
+  })
 
   const totalRE       = (realEstate ?? []).reduce((s, r) => s + (r.current_value   ?? 0), 0)
   const totalMortgage = (realEstate ?? []).reduce((s, r) => s + (r.mortgage_balance ?? 0), 0)
@@ -142,6 +152,16 @@ export default function EstateTab({
       mounted = false
     }
   }, [household.id])
+
+  useEffect(() => {
+    setExpandedBeneficiaryGroups((prev) => {
+      const next: Record<string, boolean> = {}
+      beneficiaryGroupKeys.forEach((key, idx) => {
+        next[key] = prev[key] ?? idx === 0
+      })
+      return next
+    })
+  }, [beneficiaryGroupKeys.join('|')])
 
   // ── Save helpers ─────────────────────────────────────────────────────────
   async function saveAdminExpense(pct: number) {
@@ -348,27 +368,42 @@ export default function EstateTab({
             </div>
           ) : (
             <div className="space-y-4">
-              {primaryBeneficiaries.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Primary</p>
-                  <div className="space-y-1.5">
-                    {primaryBeneficiaries.map(b => (
-                      <BeneficiaryRow key={b.id} b={b} />
-                    ))}
+              {beneficiaryGroupKeys.map((groupKey) => {
+                const groupItems = beneficiaryGroups[groupKey] ?? []
+                const isOpen = expandedBeneficiaryGroups[groupKey] ?? false
+                const primaryCount = groupItems.filter((b) => !b.contingent).length
+                const contingentCount = groupItems.filter((b) => b.contingent).length
+                return (
+                  <div key={groupKey} className="rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedBeneficiaryGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
+                      }
+                      className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          {formatAccountTypeLabel(groupKey)}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {primaryCount} primary{contingentCount > 0 ? ` · ${contingentCount} contingent` : ''}
+                        </p>
+                      </div>
+                      <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'} ({groupItems.length})</span>
+                    </button>
+                    {isOpen && (
+                      <div className="px-2 pb-2 space-y-1.5">
+                        {groupItems.map((b) => (
+                          <BeneficiaryRow key={b.id} b={b} />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-              {contingentBeneficiaries.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contingent</p>
-                  <div className="space-y-1.5">
-                    {contingentBeneficiaries.map(b => (
-                      <BeneficiaryRow key={b.id} b={b} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {primaryBeneficiaries.length > 0 && contingentBeneficiaries.length === 0 && (
+                )
+              })}
+              {(beneficiaries ?? []).some((b) => !b.contingent) &&
+                !(beneficiaries ?? []).some((b) => b.contingent) && (
                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                   <p className="text-xs text-amber-700 font-medium">No contingent beneficiary designated</p>
                   <p className="text-xs text-amber-600 mt-0.5">Recommend adding contingent beneficiary to avoid lapse risk.</p>
@@ -739,6 +774,9 @@ function BeneficiaryRow({ b }: { b: any }) {
       <div>
         <span className="text-sm font-medium text-slate-800">{b.name}</span>
         <span className="text-xs text-slate-400 ml-2">{b.relationship}</span>
+        {b.contingent && (
+          <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Contingent</span>
+        )}
       </div>
       <div className="text-right">
         <span className="text-sm font-semibold text-slate-700">{b.allocation_pct ? `${b.allocation_pct}%` : '—'}</span>
@@ -761,4 +799,14 @@ function formatOwner(owner: string | null, household: any) {
 function formatPropertyType(t: string | null) {
   if (!t) return '—'
   return t.replace(/_/g, ' ')
+}
+
+function formatAccountTypeLabel(t: string) {
+  if (!t || t === 'unassigned') return 'Unassigned'
+  return t
+    .replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
