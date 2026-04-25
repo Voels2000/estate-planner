@@ -340,6 +340,7 @@ export default function EstateTaxClient({
     !!stateCompare &&
     stateCompare.toUpperCase() !== statePrimary?.toUpperCase() &&
     (compareStateTax !== null || true)
+  const engineStateEstateTaxAtSecondDeath = composition?.estimated_tax_state ?? 0
 
   // ── State inheritance tax ────────────────────────────────────
   const totalForInheritance = isMFJ ? grossEstate * 0.5 : grossEstate
@@ -520,6 +521,16 @@ export default function EstateTaxClient({
                     </div>
                   )}
                   <div className="space-y-2 text-sm">
+                    {isMFJ && hasSpouse && (
+                      <div className="flex justify-between pt-2 border-t border-neutral-100">
+                        <span className="font-semibold text-neutral-900">
+                          State estate tax (first death)
+                        </span>
+                        <span className="text-lg font-bold tabular-nums text-green-600">
+                          $0 — marital deduction
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-neutral-600">State exemption {isMFJ ? '(at second death)' : ''}</span>
                       <span className="font-medium tabular-nums">{formatDollars(primaryStateTax.state_exemption)}</span>
@@ -530,14 +541,22 @@ export default function EstateTaxClient({
                         <span className="font-medium tabular-nums">{formatDollars(primaryStateTax.state_taxable)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between pt-2 border-t border-neutral-100">
-                      <span className="font-semibold text-neutral-900">
-                        State estate tax {isMFJ ? '(first death)' : ''}
-                      </span>
-                      <span className={`text-lg font-bold tabular-nums ${primaryStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {isMFJ && hasSpouse ? '$0 — marital deduction' : formatDollars(primaryStateTax.state_estate_tax)}
-                      </span>
-                    </div>
+                    {isMFJ && hasSpouse && (
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">State estate tax (at second death)</span>
+                        <span className={`font-medium tabular-nums ${engineStateEstateTaxAtSecondDeath > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatDollars(engineStateEstateTaxAtSecondDeath)}
+                        </span>
+                      </div>
+                    )}
+                    {!isMFJ && (
+                      <div className="flex justify-between pt-2 border-t border-neutral-100">
+                        <span className="font-semibold text-neutral-900">State estate tax</span>
+                        <span className={`text-lg font-bold tabular-nums ${primaryStateTax.state_estate_tax > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatDollars(primaryStateTax.state_estate_tax)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
