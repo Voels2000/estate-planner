@@ -14,7 +14,6 @@
 //   • Federal section shows "no tax" state clearly when under exemption
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 import {
   computeFederalEstateTax,
   computeStateEstateTax,
@@ -686,8 +685,7 @@ export default function EstateTaxClient({
       )}
 
       <p className="text-xs text-neutral-400 mt-6">
-        Illustrative only — not tax or legal advice. Consult a qualified estate planning attorney.{' '}
-        <Link href="/trust-will" className="text-indigo-600 hover:underline">Manage trusts →</Link>
+        Illustrative only — not tax or legal advice. Consult a qualified estate planning attorney.
       </p>
     </div>
   )
