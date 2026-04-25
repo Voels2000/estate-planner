@@ -272,7 +272,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const scenarioForStrategy = scenario
     ? {
         id: scenario.id,
-        gross_estate: Number(latestOutput?.estate_incl_home ?? 0),
+        gross_estate: Number(
+          estateComposition?.gross_estate ?? latestOutput?.estate_incl_home ?? 0
+        ),
         federal_exemption: Number(assumptionSnapshot.estate_exemption_individual ?? 15_000_000),
         annual_rmd: Number(latestOutput?.income_rmd ?? 0),
         pre_ira_balance: Number(latestOutput?.assets_tax_deferred ?? 0),
