@@ -242,6 +242,12 @@ export default function EstateTaxClient({
       )
     : null
 
+  // Keep federal summary display in sync with "Your Estate" snapshot source.
+  const grossEstateDisplay = composition?.gross_estate ?? grossEstate
+  const taxableEstateDisplay = composition?.taxable_estate ?? federalResult?.taxable_estate ?? 0
+  const federalExemptionDisplay = composition?.exemption_available ?? federalResult?.exemption_used ?? 0
+  const federalTaxDisplay = composition?.estimated_tax_federal ?? composition?.estimated_tax ?? federalResult?.net_estate_tax ?? 0
+
 
   // ── State estate tax brackets ────────────────────────────────
   const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(() => {
@@ -417,37 +423,37 @@ export default function EstateTaxClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <SummaryCard
                 label="Gross Estate"
-                value={formatDollars(grossEstate)}
+                value={formatDollars(grossEstateDisplay)}
                 sub="Financial + real estate FMV + business + insurance"
               />
               <SummaryCard
                 label="Taxable Estate"
-                value={federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
-                sub="After liabilities, trusts & gifting"
+                value={formatDollars(taxableEstateDisplay)}
+                sub="From your estate composition snapshot"
               />
               <SummaryCard
                 label="Federal Exemption"
-                value={federalResult ? formatDollars(federalResult.exemption_used) : '—'}
+                value={formatDollars(federalExemptionDisplay)}
                 sub={filing === 'married_joint' ? '$30M MFJ (OBBBA 2026)' : '$15M single (OBBBA 2026)'}
               />
               <SummaryCard
                 label="Federal Estate Tax"
-                value={federalResult ? formatDollars(federalResult.net_estate_tax) : '—'}
+                value={formatDollars(federalTaxDisplay)}
                 sub={
-                  federalResult && federalResult.net_estate_tax > 0
+                  federalTaxDisplay > 0
                     ? 'Estimated federal transfer tax'
                     : 'No estimated federal tax due'
                 }
-                highlight={!federalResult ? undefined : federalResult.net_estate_tax > 0 ? 'red' : 'green'}
+                highlight={federalTaxDisplay > 0 ? 'red' : 'green'}
               />
             </div>
 
             {/* No-tax green state */}
-            {federalResult && federalResult.net_estate_tax === 0 && (
+            {federalTaxDisplay === 0 && (
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 mb-4">
                 <p className="font-semibold">No federal estate tax estimated</p>
                 <p className="mt-1 leading-relaxed">
-                  Your taxable estate of {formatDollars(federalResult.taxable_estate)} is below the{' '}
+                  Your taxable estate of {formatDollars(taxableEstateDisplay)} is below the{' '}
                   {filing === 'married_joint' ? '$30,000,000 MFJ' : '$15,000,000 single'} federal exemption
                   under the OBBBA 2026. Federal estate tax becomes a consideration only when your taxable
                   estate exceeds this threshold.
