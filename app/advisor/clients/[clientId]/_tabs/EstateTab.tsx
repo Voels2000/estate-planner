@@ -105,6 +105,14 @@ export default function EstateTab({
   )
   const [expandedBeneficiaryGroups, setExpandedBeneficiaryGroups] = useState<Record<string, boolean>>({})
   const [expandedAccountGroups, setExpandedAccountGroups] = useState<Record<string, boolean>>({})
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    coreEstateDocuments: false,
+    beneficiaryDesignations: false,
+    estateConflicts: false,
+    businessInterests: false,
+    realEstateTitling: false,
+    retirementInvestmentAccounts: false,
+  })
   const docMap = Object.fromEntries((estateDocuments ?? []).map(d => [d.document_type, d]))
 
   // Live net worth — matches the consumer dashboard calculation exactly.
@@ -297,6 +305,10 @@ export default function EstateTab({
     }
   }
 
+  function toggleSection(sectionKey: keyof typeof expandedSections) {
+    setExpandedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }))
+  }
+
   return (
     <div className="space-y-6">
       {/* ── Estate Composition — Inside / Outside view ── */}
@@ -381,104 +393,131 @@ export default function EstateTab({
 
         {/* ── Estate Documents ── */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Core Estate Documents</h3>
-          <div className="space-y-2.5">
-            {ESTATE_DOC_TYPES.map(({ type, label, critical }) => {
-              const doc       = docMap[type]
-              const confirmed = doc?.exists === true
-              return (
-                <div key={type} className={`flex items-center justify-between p-3 rounded-lg ${
-                  confirmed ? 'bg-emerald-50' : critical ? 'bg-red-50' : 'bg-slate-50'
-                }`}>
-                  <div className="flex items-center gap-2.5">
-                    <span className={`text-base ${confirmed ? 'text-emerald-600' : critical ? 'text-red-400' : 'text-slate-300'}`}>
-                      {confirmed ? '✓' : critical ? '✗' : '○'}
-                    </span>
-                    <span className={`text-sm font-medium ${confirmed ? 'text-emerald-800' : critical ? 'text-red-700' : 'text-slate-500'}`}>
-                      {label}
-                    </span>
-                    {critical && !confirmed && (
-                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Required</span>
-                    )}
+          <button
+            type="button"
+            onClick={() => toggleSection('coreEstateDocuments')}
+            className="w-full flex items-center justify-between text-left mb-4"
+          >
+            <h3 className="text-sm font-semibold text-slate-700">Core Estate Documents</h3>
+            <span className="text-xs text-slate-500">
+              {expandedSections.coreEstateDocuments ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {expandedSections.coreEstateDocuments && (
+            <div className="space-y-2.5">
+              {ESTATE_DOC_TYPES.map(({ type, label, critical }) => {
+                const doc       = docMap[type]
+                const confirmed = doc?.exists === true
+                return (
+                  <div key={type} className={`flex items-center justify-between p-3 rounded-lg ${
+                    confirmed ? 'bg-emerald-50' : critical ? 'bg-red-50' : 'bg-slate-50'
+                  }`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`text-base ${confirmed ? 'text-emerald-600' : critical ? 'text-red-400' : 'text-slate-300'}`}>
+                        {confirmed ? '✓' : critical ? '✗' : '○'}
+                      </span>
+                      <span className={`text-sm font-medium ${confirmed ? 'text-emerald-800' : critical ? 'text-red-700' : 'text-slate-500'}`}>
+                        {label}
+                      </span>
+                      {critical && !confirmed && (
+                        <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Required</span>
+                      )}
+                    </div>
+                    {confirmed && doc?.confirmed_at
+                      ? <span className="text-xs text-slate-400">{formatDate(doc.confirmed_at)}</span>
+                      : <span className="text-xs text-slate-400">Not confirmed</span>
+                    }
                   </div>
-                  {confirmed && doc?.confirmed_at
-                    ? <span className="text-xs text-slate-400">{formatDate(doc.confirmed_at)}</span>
-                    : <span className="text-xs text-slate-400">Not confirmed</span>
-                  }
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Beneficiary Designations ── */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Beneficiary Designations</h3>
-
-          {(beneficiaries ?? []).length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 rounded-lg bg-red-50 border border-red-200">
-              <span className="text-2xl text-red-400 mb-1">!</span>
-              <p className="text-sm font-medium text-red-700">No beneficiaries on file</p>
-              <p className="text-xs text-red-500 mt-0.5">Review retirement accounts immediately</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {beneficiaryGroupKeys.map((groupKey) => {
-                const groupItems = beneficiaryGroups[groupKey] ?? []
-                const isOpen = expandedBeneficiaryGroups[groupKey] ?? false
-                const primaryCount = groupItems.filter((b) => !b.contingent).length
-                const contingentCount = groupItems.filter((b) => b.contingent).length
-                return (
-                  <div key={groupKey} className="rounded-lg border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedBeneficiaryGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
-                      }
-                      className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                          {formatAccountTypeLabel(groupKey)}
-                        </p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          {primaryCount} primary{contingentCount > 0 ? ` · ${contingentCount} contingent` : ''}
-                        </p>
+          <button
+            type="button"
+            onClick={() => toggleSection('beneficiaryDesignations')}
+            className="w-full flex items-center justify-between text-left mb-4"
+          >
+            <h3 className="text-sm font-semibold text-slate-700">Beneficiary Designations</h3>
+            <span className="text-xs text-slate-500">
+              {expandedSections.beneficiaryDesignations ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {expandedSections.beneficiaryDesignations && (
+            <>
+              {(beneficiaries ?? []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 rounded-lg bg-red-50 border border-red-200">
+                  <span className="text-2xl text-red-400 mb-1">!</span>
+                  <p className="text-sm font-medium text-red-700">No beneficiaries on file</p>
+                  <p className="text-xs text-red-500 mt-0.5">Review retirement accounts immediately</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {beneficiaryGroupKeys.map((groupKey) => {
+                    const groupItems = beneficiaryGroups[groupKey] ?? []
+                    const isOpen = expandedBeneficiaryGroups[groupKey] ?? false
+                    const primaryCount = groupItems.filter((b) => !b.contingent).length
+                    const contingentCount = groupItems.filter((b) => b.contingent).length
+                    return (
+                      <div key={groupKey} className="rounded-lg border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedBeneficiaryGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
+                          }
+                          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                              {formatAccountTypeLabel(groupKey)}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {primaryCount} primary{contingentCount > 0 ? ` · ${contingentCount} contingent` : ''}
+                            </p>
+                          </div>
+                          <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'} ({groupItems.length})</span>
+                        </button>
+                        {isOpen && (
+                          <div className="px-2 pb-2 space-y-1.5">
+                            {groupItems.map((b) => (
+                              <BeneficiaryRow key={b.id} b={b} />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'} ({groupItems.length})</span>
-                    </button>
-                    {isOpen && (
-                      <div className="px-2 pb-2 space-y-1.5">
-                        {groupItems.map((b) => (
-                          <BeneficiaryRow key={b.id} b={b} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-              {(beneficiaries ?? []).some((b) => !b.contingent) &&
-                !(beneficiaries ?? []).some((b) => b.contingent) && (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-xs text-amber-700 font-medium">No contingent beneficiary designated</p>
-                  <p className="text-xs text-amber-600 mt-0.5">Recommend adding contingent beneficiary to avoid lapse risk.</p>
+                    )
+                  })}
+                  {(beneficiaries ?? []).some((b) => !b.contingent) &&
+                    !(beneficiaries ?? []).some((b) => b.contingent) && (
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <p className="text-xs text-amber-700 font-medium">No contingent beneficiary designated</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Recommend adding contingent beneficiary to avoid lapse risk.</p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="mt-4 border-t border-slate-100 pt-3">
-            <p className="text-xs text-slate-500">
-              Retirement accounts on file: <span className="font-semibold text-slate-700">{retirementAssets.length}</span>
-            </p>
-          </div>
+              <div className="mt-4 border-t border-slate-100 pt-3">
+                <p className="text-xs text-slate-500">
+                  Retirement accounts on file: <span className="font-semibold text-slate-700">{retirementAssets.length}</span>
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* -- Conflict Detector Panel (Sprint 58) -- */}
       {conflictReport && conflictReport.conflicts.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => toggleSection('estateConflicts')}
+            className="w-full px-5 py-4 border-b border-slate-100 flex items-center justify-between text-left"
+          >
             <div className="flex items-center gap-3">
               <h3 className="text-sm font-semibold text-slate-700">Estate Conflicts</h3>
               {conflictReport.critical > 0 && (
@@ -492,46 +531,53 @@ export default function EstateTab({
                 </span>
               )}
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-5 py-3">Severity</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Issue</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Recommended Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {conflictReport.conflicts.map((c, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
-                    <td className="px-5 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          c.severity === 'critical'
-                            ? 'bg-red-100 text-red-700'
-                            : c.severity === 'warning'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-blue-100 text-blue-700'
-                        }`}
-                      >
-                        {c.severity}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-slate-700 max-w-xs">{c.description}</td>
-                    <td className="py-3 pr-5 text-slate-500 text-xs max-w-xs">{c.recommended_action}</td>
+            <span className="text-xs text-slate-500">{expandedSections.estateConflicts ? 'Hide' : 'Show'}</span>
+          </button>
+          {expandedSections.estateConflicts && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-5 py-3">Severity</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Issue</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Recommended Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {conflictReport.conflicts.map((c, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-5 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            c.severity === 'critical'
+                              ? 'bg-red-100 text-red-700'
+                              : c.severity === 'warning'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
+                          {c.severity}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-slate-700 max-w-xs">{c.description}</td>
+                      <td className="py-3 pr-5 text-slate-500 text-xs max-w-xs">{c.recommended_action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
       {/* ── Business Interests & Valuation Discounts ── */}
       {(businesses ?? []).length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={() => toggleSection('businessInterests')}
+            className="w-full flex items-center justify-between mb-4 text-left"
+          >
             <div>
               <h3 className="text-sm font-semibold text-slate-700">Business Interests</h3>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -539,161 +585,176 @@ export default function EstateTab({
                 Appraiser-supplied values only — requires qualified appraisal for Form 706.
               </p>
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Business</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">FMV (Gross)</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Ownership</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-3">DLOC %</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-2">DLOM %</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Taxable Value</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-3">Estate Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {(businesses ?? []).map((b: BusinessEstateRow) => {
-                  const biz = b
-                  const ownershipPct = (biz.ownership_pct ?? 100) / 100
-                  const grossValue = (biz.estimated_value ?? 0) * ownershipPct
-                  const dloc = biz.dloc_pct ?? 0
-                  const dlom = biz.dlom_pct ?? 0
-                  const combinedDiscount = 1 - (1 - dloc) * (1 - dlom)
-                  const taxableValue = grossValue * (1 - combinedDiscount)
-                  const isExcluded = biz.estate_inclusion_status !== 'included'
-                  return (
-                    <tr key={b.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 font-medium text-slate-800">
-                        {b.name}
-                        {isExcluded && (
-                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Outside estate</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 text-right text-slate-700">{formatCurrency(grossValue)}</td>
-                      <td className="py-2.5 text-right text-slate-500">{biz.ownership_pct ?? 100}%</td>
-                      <td className="py-2.5 text-right pl-3">
-                        <input
-                          type="number"
-                          min="0"
-                          max="99"
-                          step="1"
-                          disabled={isExcluded}
-                          defaultValue={+(dloc * 100).toFixed(1)}
-                          onBlur={e => saveBusinessDiscount(b.id, 'dloc_pct', Number(e.target.value) / 100)}
-                          className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
-                          title="Discount for Lack of Control — appraiser-supplied"
-                        />
-                        <span className="text-xs text-slate-400 ml-0.5">%</span>
-                      </td>
-                      <td className="py-2.5 text-right pl-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="99"
-                          step="1"
-                          disabled={isExcluded}
-                          defaultValue={+(dlom * 100).toFixed(1)}
-                          onBlur={e => saveBusinessDiscount(b.id, 'dlom_pct', Number(e.target.value) / 100)}
-                          className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
-                          title="Discount for Lack of Marketability — appraiser-supplied"
-                        />
-                        <span className="text-xs text-slate-400 ml-0.5">%</span>
-                      </td>
-                      <td className="py-2.5 text-right font-medium text-slate-800">
-                        {isExcluded ? (
-                          <span className="text-slate-400 text-xs">—</span>
-                        ) : (
-                          formatCurrency(taxableValue)
-                        )}
-                        {combinedDiscount > 0 && !isExcluded && (
-                          <span className="block text-[10px] text-green-600">
-                            {(combinedDiscount * 100).toFixed(1)}% discount
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 pl-3">
-                        {isExcluded ? (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                            ✓ Outside estate
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                            Inside estate
-                          </span>
-                        )}
-                        <p className="text-[10px] text-slate-400 mt-0.5">Client sets in /businesses</p>
-                      </td>
+            <span className="text-xs text-slate-500">{expandedSections.businessInterests ? 'Hide' : 'Show'}</span>
+          </button>
+          {expandedSections.businessInterests && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2">Business</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">FMV (Gross)</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">Ownership</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-3">DLOC %</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2 pl-2">DLOM %</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">Taxable Value</th>
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-3">Estate Status</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-slate-400 mt-3">
-            DLOC + DLOM are applied multiplicatively: combined = 1 − (1−DLOC) × (1−DLOM).
-            Requires qualified appraisal per IRC §2031. Do not use estimated discounts.
-          </p>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {(businesses ?? []).map((b: BusinessEstateRow) => {
+                      const biz = b
+                      const ownershipPct = (biz.ownership_pct ?? 100) / 100
+                      const grossValue = (biz.estimated_value ?? 0) * ownershipPct
+                      const dloc = biz.dloc_pct ?? 0
+                      const dlom = biz.dlom_pct ?? 0
+                      const combinedDiscount = 1 - (1 - dloc) * (1 - dlom)
+                      const taxableValue = grossValue * (1 - combinedDiscount)
+                      const isExcluded = biz.estate_inclusion_status !== 'included'
+                      return (
+                        <tr key={b.id} className="hover:bg-slate-50">
+                          <td className="py-2.5 font-medium text-slate-800">
+                            {b.name}
+                            {isExcluded && (
+                              <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Outside estate</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-right text-slate-700">{formatCurrency(grossValue)}</td>
+                          <td className="py-2.5 text-right text-slate-500">{biz.ownership_pct ?? 100}%</td>
+                          <td className="py-2.5 text-right pl-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="99"
+                              step="1"
+                              disabled={isExcluded}
+                              defaultValue={+(dloc * 100).toFixed(1)}
+                              onBlur={e => saveBusinessDiscount(b.id, 'dloc_pct', Number(e.target.value) / 100)}
+                              className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
+                              title="Discount for Lack of Control — appraiser-supplied"
+                            />
+                            <span className="text-xs text-slate-400 ml-0.5">%</span>
+                          </td>
+                          <td className="py-2.5 text-right pl-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="99"
+                              step="1"
+                              disabled={isExcluded}
+                              defaultValue={+(dlom * 100).toFixed(1)}
+                              onBlur={e => saveBusinessDiscount(b.id, 'dlom_pct', Number(e.target.value) / 100)}
+                              className="w-16 border border-slate-200 rounded px-2 py-1 text-xs text-right disabled:opacity-40"
+                              title="Discount for Lack of Marketability — appraiser-supplied"
+                            />
+                            <span className="text-xs text-slate-400 ml-0.5">%</span>
+                          </td>
+                          <td className="py-2.5 text-right font-medium text-slate-800">
+                            {isExcluded ? (
+                              <span className="text-slate-400 text-xs">—</span>
+                            ) : (
+                              formatCurrency(taxableValue)
+                            )}
+                            {combinedDiscount > 0 && !isExcluded && (
+                              <span className="block text-[10px] text-green-600">
+                                {(combinedDiscount * 100).toFixed(1)}% discount
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 pl-3">
+                            {isExcluded ? (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                ✓ Outside estate
+                              </span>
+                            ) : (
+                              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                                Inside estate
+                              </span>
+                            )}
+                            <p className="text-[10px] text-slate-400 mt-0.5">Client sets in /businesses</p>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-400 mt-3">
+                DLOC + DLOM are applied multiplicatively: combined = 1 − (1−DLOC) × (1−DLOM).
+                Requires qualified appraisal per IRC §2031. Do not use estimated discounts.
+              </p>
+            </>
+          )}
         </div>
       )}
 
       {/* ── Real Estate & Titling ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={() => toggleSection('realEstateTitling')}
+          className="w-full flex items-center justify-between mb-4 text-left"
+        >
           <h3 className="text-sm font-semibold text-slate-700">Real Estate & Titling</h3>
-          <div className="text-right">
-            <span className="text-sm font-bold text-slate-800">{formatCurrency(totalRE - totalMortgage)}</span>
-            <span className="text-xs text-slate-400 ml-1">equity</span>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="text-sm font-bold text-slate-800">{formatCurrency(totalRE - totalMortgage)}</span>
+              <span className="text-xs text-slate-400 ml-1">equity</span>
+            </div>
+            <span className="text-xs text-slate-500">{expandedSections.realEstateTitling ? 'Hide' : 'Show'}</span>
           </div>
-        </div>
-
-        {realEstateRows.length === 0 ? (
-          <p className="text-sm text-slate-400">No real estate on file</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Property</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Type</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Value</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Mortgage</th>
-                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Equity</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Owner</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">State</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Flag</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {realEstateRows.map(r => {
-                  const equity     = (r.current_value ?? 0) - (r.mortgage_balance ?? 0)
-                  const soleOwner  = household.has_spouse && (r.owner === 'person1' || r.owner === 'person2')
-                  return (
-                    <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 font-medium text-slate-800">
-                        {r.name}
-                        {r.is_primary_residence && (
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Primary</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 text-slate-500 capitalize">{formatPropertyType(r.property_type)}</td>
-                      <td className="py-2.5 text-right text-slate-800">{formatCurrency(r.current_value)}</td>
-                      <td className="py-2.5 text-right text-slate-500">{r.mortgage_balance ? formatCurrency(r.mortgage_balance) : '—'}</td>
-                      <td className="py-2.5 text-right font-medium text-emerald-700">{formatCurrency(equity)}</td>
-                      <td className="py-2.5 pl-4 text-slate-500">{formatOwner(r.owner, household)}</td>
-                      <td className="py-2.5 pl-4 text-slate-500">{r.situs_state ?? '—'}</td>
-                      <td className="py-2.5 pl-4">
-                        {soleOwner && (
-                          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Review titling</span>
-                        )}
-                      </td>
+        </button>
+        {expandedSections.realEstateTitling && (
+          <>
+            {realEstateRows.length === 0 ? (
+              <p className="text-sm text-slate-400">No real estate on file</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2">Property</th>
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2">Type</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">Value</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">Mortgage</th>
+                      <th className="text-right text-xs font-semibold text-slate-500 pb-2">Equity</th>
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Owner</th>
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">State</th>
+                      <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4">Flag</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {realEstateRows.map(r => {
+                      const equity     = (r.current_value ?? 0) - (r.mortgage_balance ?? 0)
+                      const soleOwner  = household.has_spouse && (r.owner === 'person1' || r.owner === 'person2')
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-50">
+                          <td className="py-2.5 font-medium text-slate-800">
+                            {r.name}
+                            {r.is_primary_residence && (
+                              <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Primary</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-slate-500 capitalize">{formatPropertyType(r.property_type)}</td>
+                          <td className="py-2.5 text-right text-slate-800">{formatCurrency(r.current_value)}</td>
+                          <td className="py-2.5 text-right text-slate-500">{r.mortgage_balance ? formatCurrency(r.mortgage_balance) : '—'}</td>
+                          <td className="py-2.5 text-right font-medium text-emerald-700">{formatCurrency(equity)}</td>
+                          <td className="py-2.5 pl-4 text-slate-500">{formatOwner(r.owner, household)}</td>
+                          <td className="py-2.5 pl-4 text-slate-500">{r.situs_state ?? '—'}</td>
+                          <td className="py-2.5 pl-4">
+                            {soleOwner && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Review titling</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -771,70 +832,83 @@ export default function EstateTab({
 
       {/* ── Retirement & Investment Accounts ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Retirement & Investment Accounts</h3>
-        {(assets ?? []).length === 0 ? (
-          <p className="text-sm text-slate-400">No assets on file</p>
-        ) : (
-          <div className="space-y-3">
-            {accountGroupKeys.map((groupKey) => {
-              const groupItems = (accountGroups[groupKey] ?? []).sort(
-                (a, b) => (b.value ?? 0) - (a.value ?? 0)
-              )
-              const isOpen = expandedAccountGroups[groupKey] ?? false
-              const groupTotal = groupItems.reduce((s, a) => s + Number(a.value ?? 0), 0)
-              return (
-                <div key={groupKey} className="rounded-lg border border-slate-200 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedAccountGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
-                    }
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-slate-50 hover:bg-slate-100"
-                  >
-                    <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                        {formatAccountTypeLabel(groupKey)}
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {groupItems.length} account{groupItems.length !== 1 ? 's' : ''} · {formatCurrency(groupTotal)}
-                      </p>
+        <button
+          type="button"
+          onClick={() => toggleSection('retirementInvestmentAccounts')}
+          className="w-full flex items-center justify-between text-left mb-4"
+        >
+          <h3 className="text-sm font-semibold text-slate-700">Retirement & Investment Accounts</h3>
+          <span className="text-xs text-slate-500">
+            {expandedSections.retirementInvestmentAccounts ? 'Hide' : 'Show'}
+          </span>
+        </button>
+        {expandedSections.retirementInvestmentAccounts && (
+          <>
+            {(assets ?? []).length === 0 ? (
+              <p className="text-sm text-slate-400">No assets on file</p>
+            ) : (
+              <div className="space-y-3">
+                {accountGroupKeys.map((groupKey) => {
+                  const groupItems = (accountGroups[groupKey] ?? []).sort(
+                    (a, b) => (b.value ?? 0) - (a.value ?? 0)
+                  )
+                  const isOpen = expandedAccountGroups[groupKey] ?? false
+                  const groupTotal = groupItems.reduce((s, a) => s + Number(a.value ?? 0), 0)
+                  return (
+                    <div key={groupKey} className="rounded-lg border border-slate-200 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedAccountGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
+                        }
+                        className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-slate-50 hover:bg-slate-100"
+                      >
+                        <div>
+                          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                            {formatAccountTypeLabel(groupKey)}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {groupItems.length} account{groupItems.length !== 1 ? 's' : ''} · {formatCurrency(groupTotal)}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'}</span>
+                      </button>
+                      {isOpen && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-slate-100">
+                                <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-3 pt-2">Account</th>
+                                <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Owner</th>
+                                <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Titling</th>
+                                <th className="text-right text-xs font-semibold text-slate-500 pb-2 pt-2">Value</th>
+                                <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4 pt-2">Liquidity</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                              {groupItems.map((a) => (
+                                <tr key={a.id} className="hover:bg-slate-50">
+                                  <td className="py-2.5 px-3 font-medium text-slate-800">{a.name}</td>
+                                  <td className="py-2.5 text-slate-500">{formatOwner(a.owner, household)}</td>
+                                  <td className="py-2.5 text-slate-500">{a.titling ?? a.institution ?? '—'}</td>
+                                  <td className="py-2.5 text-right font-medium text-slate-800">{formatCurrency(a.value)}</td>
+                                  <td className="py-2.5 pl-4">
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                      {a.liquidity ?? '—'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'}</span>
-                  </button>
-                  {isOpen && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-100">
-                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-3 pt-2">Account</th>
-                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Owner</th>
-                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pt-2">Titling</th>
-                            <th className="text-right text-xs font-semibold text-slate-500 pb-2 pt-2">Value</th>
-                            <th className="text-left text-xs font-semibold text-slate-500 pb-2 pl-4 pt-2">Liquidity</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {groupItems.map((a) => (
-                            <tr key={a.id} className="hover:bg-slate-50">
-                              <td className="py-2.5 px-3 font-medium text-slate-800">{a.name}</td>
-                              <td className="py-2.5 text-slate-500">{formatOwner(a.owner, household)}</td>
-                              <td className="py-2.5 text-slate-500">{a.titling ?? a.institution ?? '—'}</td>
-                              <td className="py-2.5 text-right font-medium text-slate-800">{formatCurrency(a.value)}</td>
-                              <td className="py-2.5 pl-4">
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                                  {a.liquidity ?? '—'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
