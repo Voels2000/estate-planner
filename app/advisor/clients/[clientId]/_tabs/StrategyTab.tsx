@@ -13,7 +13,7 @@ import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 
-export default function StrategyTab({ household, scenario, exportPanelProps }: ClientViewShellProps) {
+export default function StrategyTab({ household, scenario, advisorHorizons }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const grossEstate = Number(scenario?.gross_estate ?? 0)
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
@@ -22,7 +22,8 @@ export default function StrategyTab({ household, scenario, exportPanelProps }: C
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
   const federalExemption = Number(scenario?.federal_exemption ?? defaultExemption)
   const estimatedFederalTax = Number(scenario?.estimated_federal_tax ?? 0)
-  const estimatedStateTax = Number(scenario?.estimated_state_tax ?? 0)
+  // Unified engine source: today column from advisor horizons.
+  const estimatedStateTax = Number(advisorHorizons?.today.stateTax ?? 0)
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
     rawLawScenario === 'no_exemption' ? 'no_exemption' : 'current_law'
@@ -237,12 +238,8 @@ export default function StrategyTab({ household, scenario, exportPanelProps }: C
               person2BirthYear={person2BirthYear}
               lawScenario={lawScenario}
               filingStatus={filingStatus}
-              person1RetirementAge={household?.person1_retirement_age ?? 65}
-              growthRateAccumulation={household?.growth_rate_accumulation ?? 7}
-              growthRateRetirement={household?.growth_rate_retirement ?? 5}
               giftingActuals={giftingActuals}
-              projectionData={exportPanelProps?.projectionData ?? []}
-              statePrimary={household?.state_primary ?? null}
+              advisorHorizons={advisorHorizons}
             />
           </>
         )}

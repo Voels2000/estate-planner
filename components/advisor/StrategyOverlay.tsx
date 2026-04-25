@@ -12,6 +12,7 @@ import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditSh
 import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import type { ProjectionScenario } from '@/lib/types/projection-scenario'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 type StrategyType = 'none' | 'gifting' | 'revocable_trust' | 'credit_shelter_trust'
 
@@ -23,9 +24,6 @@ interface StrategyOverlayProps {
   person2BirthYear?: number
   lawScenario: EstateScenario
   filingStatus: FilingStatus
-  person1RetirementAge: number
-  growthRateAccumulation: number
-  growthRateRetirement: number
   giftingActuals?: {
     annualUsed: number
     annualCapacity: number
@@ -35,13 +33,9 @@ interface StrategyOverlayProps {
     splitElected: boolean
     uniqueRecipients: number
   } | null
-  projectionData?: Array<{
-    year: number
-    gross_estate: number
-    federal_tax: number
-    state_tax: number
-  }>
-  statePrimary?: string | null
+  // Pre-computed horizon data from buildStrategyHorizons (server-side).
+  // Tax values come from calculateStateEstateTax — never from stale projection rows.
+  advisorHorizons?: MyEstateStrategyHorizonsResult
 }
 
 const BASE_HORIZON_YEARS = [
@@ -51,30 +45,8 @@ const BASE_HORIZON_YEARS = [
 ]
 const CURRENT_YEAR = new Date().getFullYear()
 const EMPTY_PROJECTION_SCENARIO = {} as ProjectionScenario
-const STATE_ESTATE_TAX_STATES = new Set([
-  'CT', 'DC', 'HI', 'IL', 'ME', 'MD', 'MA', 'MN', 'NY', 'OR', 'RI', 'VT', 'WA',
-])
-
-function projectEstateBlended(
-  grossEstate: number,
-  yearsFromNow: number,
-  person1BirthYear: number,
-  person1RetirementAge: number,
-  growthRateAccumulation: number,
-  growthRateRetirement: number
-): number {
-  if (yearsFromNow <= 0) return grossEstate
-  const accumRate = growthRateAccumulation / 100
-  const retireRate = growthRateRetirement / 100
-  const retirementYear = person1BirthYear + person1RetirementAge
-  let value = grossEstate
-  for (let i = 1; i <= yearsFromNow; i++) {
-    const year = CURRENT_YEAR + i
-    const rate = year >= retirementYear ? retireRate : accumRate
-    value = value * (1 + rate)
-  }
-  return value
-}
+// STATE_ESTATE_TAX_STATES removed — state tax visibility is derived from
+// advisorHorizons columns rather than a hardcoded state list.
 
 function calcNetToHeirs(
   estate: number,
@@ -134,12 +106,8 @@ export default function StrategyOverlay({
   person2BirthYear,
   lawScenario,
   filingStatus,
-  person1RetirementAge,
-  growthRateAccumulation,
-  growthRateRetirement,
   giftingActuals,
-  projectionData = [],
-  statePrimary,
+  advisorHorizons,
 }: StrategyOverlayProps) {
   const { savedStrategies, saving, toggleRecommended } = useRecommendStrategy(householdId)
 
@@ -210,25 +178,14 @@ export default function StrategyOverlay({
     ? applyRevocableTrust(EMPTY_PROJECTION_SCENARIO, rtConfig)
     : null
 
-  const showStateTaxColumn = !!statePrimary && STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())
-  const sortedProjectionData = [...projectionData].sort((a, b) => a.year - b.year)
-  const atDeathYear = sortedProjectionData.length > 0 ? sortedProjectionData[sortedProjectionData.length - 1].year : null
-  const horizons = [
-    ...BASE_HORIZON_YEARS,
-    { label: 'At Death', yearsFromNow: atDeathYear != null ? Math.max(0, atDeathYear - CURRENT_YEAR) : 0 },
-  ]
-
-  function getEngineProjectionForYear(year: number) {
-    const exact = sortedProjectionData.find((row) => row.year === year)
-    if (exact) return exact
-    return sortedProjectionData.reduce<{ year: number; gross_estate: number; federal_tax: number; state_tax: number } | null>(
-      (closest, row) => {
-        if (!closest) return row
-        return Math.abs(row.year - year) < Math.abs(closest.year - year) ? row : closest
-      },
-      null,
-    )
-  }
+  // Map pre-computed horizon columns to the four display slots.
+  // All tax values come from buildStrategyHorizons → calculateStateEstateTax.
+  // Gross estate growth comes from projection scenario rows via horizonSnapshots.
+  const h = advisorHorizons
+  const horizonColumns = h ? [h.today, h.tenYear, h.twentyYear, h.atDeath] : null
+  const showStateTaxColumn = !!horizonColumns?.some(
+    (col) => col.stateTax !== null && col.stateTax > 0,
+  )
 
   return (
     <div className="space-y-6">
@@ -495,53 +452,55 @@ export default function StrategyOverlay({
               </tr>
             </thead>
             <tbody>
-              {horizons.map(({ label, yearsFromNow }) => {
-                const targetYear = CURRENT_YEAR + yearsFromNow
-                const engineProjection = getEngineProjectionForYear(targetYear)
-                const projected = projectEstateBlended(
-                  grossEstate,
-                  yearsFromNow,
-                  person1BirthYear,
-                  person1RetirementAge,
-                  growthRateAccumulation,
-                  growthRateRetirement,
-                )
-                const baseGrossEstate = engineProjection?.gross_estate ?? projected
-                const federalTaxBase = engineProjection?.federal_tax ?? (projected - calcNetToHeirs(projected, filingStatus, lawScenario))
-                const stateTaxBase = engineProjection?.state_tax ?? 0
-                const netBase = Math.max(0, baseGrossEstate - federalTaxBase - (showStateTaxColumn ? stateTaxBase : 0))
+              {horizonColumns
+                ? horizonColumns.map((col) => {
+                    const baseGrossEstate = col.grossEstate ?? grossEstate
+                    const federalTaxBase = col.federalTaxEstimate ?? 0
+                    const stateTaxBase = col.stateTax ?? 0
+                    const netBase = Math.max(0, baseGrossEstate - federalTaxBase - (showStateTaxColumn ? stateTaxBase : 0))
 
-                // Strategy-adjusted net (gifting reduces gross estate)
-                let netWithStrategy = netBase
-                if (selectedStrategy === 'gifting' && giftingResult) {
-                  const adjustedEstate = Math.max(0, projected - giftingResult.netEstateReduction)
-                  netWithStrategy = calcNetToHeirs(adjustedEstate, filingStatus, lawScenario)
-                } else if (selectedStrategy === 'credit_shelter_trust' && cstResult) {
-                  netWithStrategy = cstResult.netToHeirsWithCST
-                }
+                    // Strategy-adjusted net
+                    const projected = baseGrossEstate
+                    let netWithStrategy = netBase
+                    if (selectedStrategy === 'gifting' && giftingResult) {
+                      const adjustedEstate = Math.max(0, projected - giftingResult.netEstateReduction)
+                      netWithStrategy = calcNetToHeirs(adjustedEstate, filingStatus, lawScenario)
+                    } else if (selectedStrategy === 'credit_shelter_trust' && cstResult) {
+                      netWithStrategy = cstResult.netToHeirsWithCST
+                    }
 
-                return (
-                  <tr key={label} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-3 text-gray-700">{label}</td>
-                    <td className="py-2 px-3 text-right text-gray-700">${Math.round(baseGrossEstate).toLocaleString()}</td>
-                    <td className="py-2 px-3 text-right text-red-600">${Math.round(federalTaxBase).toLocaleString()}</td>
-                    {showStateTaxColumn && (
-                      <td className="py-2 px-3 text-right text-red-600">${Math.round(stateTaxBase).toLocaleString()}</td>
-                    )}
-                    <td className="py-2 px-3 text-right font-medium">${Math.round(netBase).toLocaleString()}</td>
-                    {selectedStrategy !== 'none' && (
-                      <td className="py-2 px-3 text-right font-medium text-blue-700">
-                        ${Math.round(netWithStrategy).toLocaleString()}
-                      </td>
-                    )}
-                  </tr>
-                )
-              })}
+                    return (
+                      <tr key={col.headerTitle} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-2 px-3 text-gray-700">{col.headerTitle}</td>
+                        <td className="py-2 px-3 text-right text-gray-700">${Math.round(baseGrossEstate).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-600">${Math.round(federalTaxBase).toLocaleString()}</td>
+                        {showStateTaxColumn && (
+                          <td className="py-2 px-3 text-right text-red-600">${Math.round(stateTaxBase).toLocaleString()}</td>
+                        )}
+                        <td className="py-2 px-3 text-right font-medium">${Math.round(netBase).toLocaleString()}</td>
+                        {selectedStrategy !== 'none' && (
+                          <td className="py-2 px-3 text-right font-medium text-blue-700">
+                            ${Math.round(netWithStrategy).toLocaleString()}
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })
+                : BASE_HORIZON_YEARS.map(({ label }) => (
+                    <tr key={label} className="border-b border-gray-100">
+                      <td className="py-2 px-3 text-gray-700">{label}</td>
+                      <td className="py-2 px-3 text-right text-gray-400">—</td>
+                      <td className="py-2 px-3 text-right text-gray-400">—</td>
+                      {showStateTaxColumn && <td className="py-2 px-3 text-right text-gray-400">—</td>}
+                      <td className="py-2 px-3 text-right text-gray-400">—</td>
+                      {selectedStrategy !== 'none' && <td className="py-2 px-3 text-right text-gray-400">—</td>}
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Horizons use engine projection outputs when available (including federal/state tax); fallback is profile growth assumptions ({growthRateAccumulation}% accumulation before retirement, {growthRateRetirement}% after). Federal exemption reflects OBBBA 2026: $15M single / $30M MFJ under Current Law. No-Exemption scenario is a stress test only.
+          Gross estate growth uses projection scenario outputs. Federal and state tax computed from live tax rules via the unified engine — same calculation used on the consumer My Estate Strategy page. Federal exemption reflects OBBBA 2026: $15M single / $30M MFJ under Current Law.
         </p>
       </div>
     </div>

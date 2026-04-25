@@ -4,6 +4,13 @@ import { detectConflicts } from '@/lib/conflict-detector'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
+import {
+  buildStrategyHorizons,
+  longevityAndSurvivor,
+  type MyEstateStrategyHorizonsResult,
+} from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { AnnualOutput } from '@/lib/types/projection-scenario'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
@@ -109,6 +116,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     businessInterestsResult,
     insurancePoliciesResult,
     stateExemptionsResult,
+    stateBracketsResult,
     healthScore,
     liquidAssets,
     activeStrategies,
@@ -199,6 +207,12 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       p_states: statesToFetch,
       p_years: projectionYears,
     }),
+    supabase
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', household.state_primary ?? '')
+      .eq('tax_year', new Date().getFullYear())
+      .order('min_amount', { ascending: true }),
     fetchHealthScore(household.id),
     fetchLiquidAssets(clientId),
     fetchActiveStrategies(household.id),
@@ -247,6 +261,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const businessInterests = businessInterestsResult.data ?? []
   const insurancePolicies = insurancePoliciesResult.data ?? []
   const stateExemptions = (stateExemptionsResult.data ?? []) as DbStateExemption[]
+  const stateBrackets = (stateBracketsResult.data ?? []) as StateBracket[]
   const beneficiaryGrants = (beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[]
 
   const domicileChecklist = domicileAnalysis?.id
@@ -269,6 +284,56 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[0] : null
   const assumptionSnapshot = (scenario?.assumption_snapshot ?? {}) as Record<string, unknown>
 
+  // ── Build strategy horizons server-side ────────────────────────────────────
+  // Tax is computed fresh from live state brackets (unified engine path).
+  const currentMonthYearLabel = new Date().toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+  const advisorScenarioOutputs = (
+    scenario && Array.isArray(scenario.outputs_s1_first) && scenario.outputs_s1_first.length > 0
+      ? scenario.outputs_s1_first
+      : scenario && Array.isArray(scenario.outputs)
+        ? scenario.outputs
+        : []
+  ) as AnnualOutput[]
+  const { longevityAge, survivorIsPerson1 } = longevityAndSurvivor({
+    hasSpouse: household.has_spouse ?? false,
+    person1Longevity: household.person1_longevity_age ?? null,
+    person2Longevity: household.person2_longevity_age ?? null,
+  })
+  const survivorFirstName = !(household.has_spouse ?? false)
+    ? displayPersonFirstName(
+        [household.person1_first_name, household.person1_last_name].filter(Boolean).join(' ').trim() || null,
+      )
+    : survivorIsPerson1
+      ? displayPersonFirstName(
+          [household.person1_first_name, household.person1_last_name].filter(Boolean).join(' ').trim() || null,
+        )
+      : displayPersonFirstName(
+          [household.person2_first_name, household.person2_last_name].filter(Boolean).join(' ').trim() || null,
+        )
+  const advisorHorizons: MyEstateStrategyHorizonsResult = buildStrategyHorizons({
+    currentYear,
+    currentMonthYearLabel,
+    liveNetWorth: Number(estateComposition?.gross_estate ?? 0),
+    stateBrackets,
+    household: {
+      state_primary: household.state_primary,
+      filing_status: household.filing_status,
+      has_spouse: household.has_spouse ?? false,
+      person1_name: household.person1_first_name,
+      person2_name: household.person2_first_name,
+      person1_birth_year: household.person1_birth_year,
+      person2_birth_year: household.person2_birth_year,
+      person1_longevity_age: household.person1_longevity_age ?? null,
+      person2_longevity_age: household.person2_longevity_age ?? null,
+    },
+    scenarioRows: advisorScenarioOutputs.length > 0 ? advisorScenarioOutputs : null,
+    survivorFirstName,
+    longevityAge,
+  })
+
   const scenarioForStrategy = scenario
     ? {
         id: scenario.id,
@@ -283,12 +348,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
           latestOutput?.estate_tax_federal ??
           latestOutput?.federal_tax ??
           latestOutput?.federal_estate_tax ??
-          0
-        ),
-        estimated_state_tax: Number(
-          latestOutput?.estate_tax_state ??
-          latestOutput?.state_tax ??
-          latestOutput?.state_estate_tax ??
           0
         ),
         law_scenario: 'current_law' as 'current_law' | 'no_exemption',
@@ -473,6 +532,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       stateExemptions={stateExemptions}
       conflictReport={conflictReport}
       estateComposition={estateComposition}
+      advisorHorizons={advisorHorizons}
     />
   )
 }
