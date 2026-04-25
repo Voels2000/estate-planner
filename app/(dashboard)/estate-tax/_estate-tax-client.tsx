@@ -108,36 +108,6 @@ function SummaryCard({
   )
 }
 
-function BreakdownRow({
-  label,
-  value,
-  muted,
-  sub,
-  bold,
-  color,
-}: {
-  label: string
-  value: number
-  muted?: boolean
-  sub?: string
-  bold?: boolean
-  color?: string
-}) {
-  return (
-    <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3 border-b border-neutral-100 last:border-0 ${muted ? 'text-neutral-500' : ''}`}>
-      <div>
-        <span className={bold ? 'text-sm font-semibold text-neutral-900' : muted ? 'text-sm' : 'text-sm font-medium text-neutral-800'}>
-          {label}
-        </span>
-        {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
-      </div>
-      <span className={`text-sm font-semibold tabular-nums ${color ?? (muted ? 'text-neutral-500' : 'text-neutral-900')}`}>
-        {muted && value >= 0 ? '−' : ''}{formatDollars(Math.abs(value))}
-      </span>
-    </div>
-  )
-}
-
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
@@ -502,85 +472,6 @@ export default function EstateTaxClient({
             )}
           </>
         )}
-      </CollapsibleSection>
-
-      {/* ── Federal Breakdown ── */}
-      <CollapsibleSection
-        title="Federal estate breakdown"
-        defaultOpen={false}
-        storageKey="estate-tax-federal-breakdown"
-      >
-        <div className="mt-0">
-          <BreakdownRow label="Gross estate (FMV)" value={grossEstate}
-            sub="Financial assets + real estate FMV + business interests + insurance death benefit" />
-          <BreakdownRow label="Liabilities" value={totalLiabilities} muted
-            sub="Mortgages, loans, and other debts" />
-          {trustsExcluded > 0 && (
-            <BreakdownRow label="Trusts excluded" value={trustsExcluded} muted />
-          )}
-          {composition?.admin_expense != null && composition.admin_expense > 0 && (
-            <BreakdownRow label="Admin expense (est.)" value={composition.admin_expense} muted
-              sub={`${((composition.admin_expense_pct ?? 0.02) * 100).toFixed(0)}% of gross estate — executor fees, legal, accounting`} />
-          )}
-          {syncedGiftTotalReduction > 0 ? (
-            <>
-              {syncedEligibleAnnual > 0 && (
-                <BreakdownRow label="Annual exclusion gifts (current year)" value={syncedEligibleAnnual} muted
-                  sub="Applied using per-recipient annual exclusion limits" />
-              )}
-              {syncedLifetimeOverflow > 0 && (
-                <BreakdownRow label="Taxable gifts using lifetime exemption" value={syncedLifetimeOverflow} muted
-                  sub="Amounts above annual exclusion limits still reduce the estate" />
-              )}
-            </>
-          ) : null}
-          {/* Certain/Probable strategy reductions — current or committed transfers */}
-          {(composition?.outside_strategy_items ?? [])
-            .filter(s => s.confidence_level === 'certain' || s.confidence_level === 'probable')
-            .map((item, i) => (
-              <BreakdownRow
-                key={i}
-                label={`− ${item.strategy_source.replace(/_/g, ' ').replace(/\w/g, (c: string) => c.toUpperCase())}`}
-                value={item.amount}
-                muted
-                sub={`${item.confidence_level === 'certain' ? 'Completed transfer' : 'In progress'} — reduces taxable estate`}
-              />
-            ))
-          }
-
-          {/* Illustrative strategies — shown separately, NOT as current deductions */}
-          {(composition?.outside_strategy_items ?? []).filter(s => s.confidence_level === 'illustrative').length > 0 && (
-            <div className="py-3 border-b border-neutral-100">
-              <p className="text-xs font-medium text-neutral-500 mb-1">Illustrative strategies (not yet reducing taxable estate)</p>
-              {(composition?.outside_strategy_items ?? [])
-                .filter(s => s.confidence_level === 'illustrative')
-                .map((item, i) => (
-                  <div key={i} className="flex justify-between text-xs text-neutral-400 py-0.5">
-                    <span className="italic capitalize">
-                      {item.strategy_source.replace(/_/g, ' ').replace(/\w/g, (c: string) => c.toUpperCase())}
-                      {item.effective_year ? ` (est. ${item.effective_year})` : ''}
-                    </span>
-                    <span>{formatDollars(item.amount)} projected</span>
-                  </div>
-                ))
-              }
-              <p className="text-[10px] text-neutral-400 mt-1 italic">
-                Projected future transfers — assets remain in estate until conditions are met.
-              </p>
-            </div>
-          )}
-
-          {composition?.adjusted_taxable_gifts != null && composition.adjusted_taxable_gifts > 0 && (
-            <BreakdownRow label="+ Adjusted taxable gifts" value={composition.adjusted_taxable_gifts}
-              sub="Post-1976 taxable gifts added back per IRC §2001(b)" color="text-red-600" />
-          )}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-4 border-t border-neutral-200">
-            <span className="text-base font-semibold text-neutral-900">Taxable estate</span>
-            <span className="text-base font-bold text-neutral-900 tabular-nums">
-              {federalResult ? formatDollars(federalResult.taxable_estate) : '—'}
-            </span>
-          </div>
-        </div>
       </CollapsibleSection>
 
       {/* ── State Estate Tax ── */}
