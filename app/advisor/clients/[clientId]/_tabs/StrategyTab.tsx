@@ -13,7 +13,7 @@ import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 
-export default function StrategyTab({ household, scenario }: ClientViewShellProps) {
+export default function StrategyTab({ household, scenario, exportPanelProps }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const grossEstate = Number(scenario?.gross_estate ?? 0)
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
@@ -241,6 +241,8 @@ export default function StrategyTab({ household, scenario }: ClientViewShellProp
               growthRateAccumulation={household?.growth_rate_accumulation ?? 7}
               growthRateRetirement={household?.growth_rate_retirement ?? 5}
               giftingActuals={giftingActuals}
+              projectionData={exportPanelProps?.projectionData ?? []}
+              statePrimary={household?.state_primary ?? null}
             />
           </>
         )}
