@@ -79,6 +79,21 @@ export default function DomicileTab({
   const recs: string[] = recommendations ?? []
 
   const { scoreColor, scoreBg, levelColor, levelBg, levelLabel } = getRiskStyle(level)
+  const currentYear = new Date().getFullYear()
+  const projectedTransition = getProjectedTransitionRisk({
+    schedule: domicileSchedule ?? [],
+    currentState: claimed_domicile_state ?? household?.state_primary ?? null,
+    states: states ?? [],
+    driversLicense: drivers_license_state,
+    voterRegistration: voter_registration_state,
+    vehicleRegistration: vehicle_registration_state,
+    primaryHome: primary_home_titled_state,
+    spouseChildren: spouse_children_state,
+    estateDocs: estate_docs_declare_state,
+    filesTaxes: files_taxes_in_state,
+    businessState: business_interests_state,
+    currentYear,
+  })
 
   const grossEstateForStateTax =
     (projectionRowsDomicile.length > 0
@@ -145,6 +160,29 @@ export default function DomicileTab({
           <span>71–100 Critical</span>
         </div>
       </div>
+
+      {projectedTransition && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">Projected transition risk</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Scenario: move to <span className="font-medium text-slate-700">{projectedTransition.targetState}</span> in{' '}
+                <span className="font-medium text-slate-700">{projectedTransition.transitionYear}</span>.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className={`text-3xl font-bold ${projectedTransition.style.scoreColor}`}>{projectedTransition.score}</div>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${projectedTransition.style.levelBg} ${projectedTransition.style.levelColor}`}>
+                {projectedTransition.style.levelLabel}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-3">
+            Uses current domicile factors and day-counts against the planned target state. Update legal/registration/tax ties and day-counts to reduce transition risk.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
 
@@ -286,6 +324,7 @@ export default function DomicileTab({
           stateAbbrev={claimed_domicile_state ?? household?.state_primary}
           stateEstateTaxRules={stateEstateTaxRules}
           isMFJ={household?.filing_status === 'mfj'}
+          projectedGrossEstateByYear={projectionRowsDomicile}
         />
         <InheritanceTaxWaterfall
           inheritanceAmount={grossEstateForStateTax}
@@ -315,6 +354,77 @@ export default function DomicileTab({
       </div>
     </div>
   )
+}
+
+function mapRiskLevel(score: number): 'low' | 'moderate' | 'high' | 'critical' {
+  if (score <= 20) return 'low'
+  if (score <= 45) return 'moderate'
+  if (score <= 70) return 'high'
+  return 'critical'
+}
+
+function normalizedState(value: string | null | undefined): string | null {
+  const v = value?.trim().toUpperCase()
+  return v ? v : null
+}
+
+function getProjectedTransitionRisk(params: {
+  schedule: Array<{ effective_year: number; state_code: string }>
+  currentState: string | null
+  states: Array<{ state?: string | null; days_per_year?: number | null }>
+  driversLicense: string | null | undefined
+  voterRegistration: string | null | undefined
+  vehicleRegistration: string | null | undefined
+  primaryHome: string | null | undefined
+  spouseChildren: string | null | undefined
+  estateDocs: string | null | undefined
+  filesTaxes: string | null | undefined
+  businessState: string | null | undefined
+  currentYear: number
+}) {
+  const currentState = normalizedState(params.currentState)
+  const transition = params.schedule
+    .filter((r) => r.effective_year >= params.currentYear)
+    .find((r) => normalizedState(r.state_code) && normalizedState(r.state_code) !== currentState)
+  if (!transition) return null
+
+  const targetState = normalizedState(transition.state_code)!
+  const weightedFactors: Array<{ value: string | null; weight: number }> = [
+    { value: normalizedState(params.driversLicense), weight: 15 },
+    { value: normalizedState(params.voterRegistration), weight: 15 },
+    { value: normalizedState(params.primaryHome), weight: 15 },
+    { value: normalizedState(params.estateDocs), weight: 10 },
+    { value: normalizedState(params.spouseChildren), weight: 10 },
+    { value: normalizedState(params.vehicleRegistration), weight: 5 },
+    { value: normalizedState(params.filesTaxes), weight: 5 },
+    { value: normalizedState(params.businessState), weight: 5 },
+  ]
+
+  let score = weightedFactors.reduce((sum, factor) => {
+    if (!factor.value) return sum
+    return sum + (factor.value === targetState ? 0 : factor.weight)
+  }, 0)
+
+  const targetDays = (params.states ?? [])
+    .filter((s) => normalizedState(s.state) === targetState)
+    .reduce((sum, s) => sum + Number(s.days_per_year ?? 0), 0)
+  const maxOtherDays = Math.max(
+    0,
+    ...(params.states ?? [])
+      .filter((s) => normalizedState(s.state) !== targetState)
+      .map((s) => Number(s.days_per_year ?? 0)),
+  )
+  const hasDaysConflict = targetDays < 183 || maxOtherDays >= 183 || maxOtherDays > targetDays
+  if (hasDaysConflict) score += 20
+
+  const clamped = Math.max(0, Math.min(100, score))
+  const level = mapRiskLevel(clamped)
+  return {
+    targetState,
+    transitionYear: transition.effective_year,
+    score: clamped,
+    style: getRiskStyle(level),
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

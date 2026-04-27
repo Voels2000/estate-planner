@@ -179,7 +179,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       conflict_states, recommendations,
       created_at, updated_at
     `)
-      .eq('household_id', household.id)
+      .eq('user_id', clientId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
