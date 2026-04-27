@@ -414,7 +414,7 @@ export function DashboardClient(props: Props) {
           <div className="mb-6 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">By Source</p>
             <NetWorthBar label="Financial Assets" value={netWorthBySource.financial} total={totalNetWorthSources} color="bg-blue-500" />
-            <NetWorthBar label="Real Estate Equity" value={netWorthBySource.realEstateEquity} total={totalNetWorthSources} color="bg-emerald-500" />
+            <NetWorthBar label="Real Estate (FMV)" value={netWorthBySource.realEstateEquity} total={totalNetWorthSources} color="bg-emerald-500" />
             <NetWorthBar label="Business Interests" value={netWorthBySource.business} total={totalNetWorthSources} color="bg-violet-500" />
             <NetWorthBar label="Insurance (non-ILIT)" value={netWorthBySource.insurance} total={totalNetWorthSources} color="bg-amber-400" />
             <div className="flex items-center gap-3 pt-1 border-t border-neutral-100 mt-2">

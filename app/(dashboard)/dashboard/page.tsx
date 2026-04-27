@@ -88,19 +88,15 @@ export default async function DashboardPage() {
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
   ])
 
-  // ── Financial calculations ───────────────────────────────────────────────
-  const financialAssets = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
-  const realEstateEquity = (realEstate ?? []).reduce(
+  // ── Financial calculations (legacy fallback path) ────────────────────────
+  const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
+  const realEstateEquityFallback = (realEstate ?? []).reduce(
     (s, r) => s + Number(r.current_value) - Number(r.mortgage_balance ?? 0), 0,
   )
-  const businessValue = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
-  const insuranceValue = (insurance ?? [])
+  const businessValueFallback = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
+  const insuranceValueFallback = (insurance ?? [])
     .filter(p => !p.is_ilit)
     .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
-
-  const totalAssets = financialAssets + realEstateEquity + businessValue + insuranceValue
-  const totalLiabilities = (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
-  const netWorth = totalAssets - totalLiabilities
 
   const currentYear = new Date().getFullYear()
 
@@ -185,6 +181,17 @@ export default async function DashboardPage() {
     isConsumerTier2 ? getCompletionScore(user!.id) : Promise.resolve(null),
     household?.id ? classifyEstateAssets(supabase, household.id) : Promise.resolve(null),
   ])
+
+  // ── Financial calculations (engine-aligned primary path) ─────────────────
+  // Use composition rollups so Dashboard net worth matches estate engine:
+  // gross estate at FMV minus total liabilities.
+  const financialAssets = composition?.inside_financial ?? financialAssetsFallback
+  const realEstateFMV = composition?.inside_real_estate ?? realEstateEquityFallback
+  const businessValue = composition?.inside_business_gross ?? businessValueFallback
+  const insuranceValue = composition?.inside_insurance ?? insuranceValueFallback
+  const totalAssets = composition?.gross_estate ?? (financialAssets + realEstateFMV + businessValue + insuranceValue)
+  const totalLiabilities = composition?.total_liabilities ?? (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
+  const netWorth = composition?.net_estate ?? (totalAssets - totalLiabilities)
 
   const { data: initialRecsData } = household?.id
     ? await supabase.rpc('generate_estate_recommendations', {
@@ -409,7 +416,7 @@ export default async function DashboardPage() {
       netWorth={netWorth}
       netWorthBySource={{
         financial: financialAssets,
-        realEstateEquity,
+        realEstateEquity: realEstateFMV,
         business: businessValue,
         insurance: insuranceValue,
       }}
