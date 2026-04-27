@@ -137,6 +137,28 @@ export default function ProjectionsPage() {
     )
   }
 
+  if (projections.length === 0) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-12">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
+          <div className="text-4xl mb-3">📈</div>
+          <p className="text-sm font-medium text-neutral-600">No projection data yet</p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Complete profile, income, and assets, then run your estate plan to generate projections.
+          </p>
+          <div className="mt-4 flex items-center gap-3">
+            <Link href="/profile" className="text-sm text-indigo-600 hover:underline">
+              Complete profile →
+            </Link>
+            <Link href="/my-estate-strategy" className="text-sm text-indigo-600 hover:underline">
+              Generate estate plan →
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const retirementRow = projections.find(p => p.phase === 'retirement')
   const finalRow = projections[projections.length - 1]
   const peakNetWorth = projections.length > 0 ? Math.max(...projections.map(p => p.net_worth)) : 0

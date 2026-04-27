@@ -33,7 +33,14 @@ function estimateFederalTaxStress(grossEstate: number, federalExemption: number)
   return Math.round(taxable * OBBBA_2026.TOP_RATE)
 }
 
-export default function TaxTab({ household, estateTax, stateExemptions, estateComposition, stateEstateTaxRules }: ClientViewShellProps) {
+export default function TaxTab({
+  household,
+  estateTax,
+  stateExemptions,
+  estateComposition,
+  stateEstateTaxRules,
+  projectionRowsDomicile,
+}: ClientViewShellProps) {
   const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
 
@@ -51,6 +58,7 @@ export default function TaxTab({ household, estateTax, stateExemptions, estateCo
 
   const stateCode = parseStateTaxCode((household?.state_primary ?? 'WA').toUpperCase())
   const currentYear = new Date().getFullYear()
+  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
 
   return (
     <div className="space-y-8">
@@ -104,11 +112,13 @@ export default function TaxTab({ household, estateTax, stateExemptions, estateCo
           grossEstate={grossEstate}
           stateCode={stateCode}
           profileStateAbbrev={household?.state_primary}
+          projectionYears={projectionYears}
           federalExemption={federalExemption}
           dbExemptions={stateExemptions}
           stateAbbrev={household?.state_primary}
           stateEstateTaxRules={stateEstateTaxRules}
           isMFJ={filingStatus === 'mfj'}
+          projectedGrossEstateByYear={projectionRowsDomicile ?? []}
         />
       </section>
 
