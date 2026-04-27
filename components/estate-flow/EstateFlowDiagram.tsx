@@ -282,7 +282,6 @@ export default function EstateFlowDiagram({
   advisorHorizons,
   onShareLinkGenerated,
 }: Props) {
-  console.log('isAdvisor prop:', isAdvisor)
   const supabase = useMemo(() => createClient(), [])
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
@@ -325,7 +324,6 @@ export default function EstateFlowDiagram({
     async function fetchGraph() {
       setLoading(true)
       setError(null)
-      console.log('fetchGraph called with deathView:', internalDeathView)
       try {
         const g = await generateEstateFlow(
           householdId,

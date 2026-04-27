@@ -1,6 +1,6 @@
 'use client'
 
-import type { DbStateExemption, StateTaxCode } from '@/lib/projection/stateRegistry'
+import type { StateTaxCode } from '@/lib/projection/stateRegistry'
 import {
   getEstateTaxDisplayStateName,
 } from '@/lib/projection/stateRegistry'
@@ -19,7 +19,6 @@ interface Props {
   profileStateAbbrev?: string | null
   year: number
   dsue?: number
-  dbExemptions?: DbStateExemption[]
   scenarioLabel?: string
   stateAbbrev?: string | null
   stateEstateTaxRules?: Array<{
@@ -50,7 +49,6 @@ export default function FederalStateWaterfall({
   profileStateAbbrev,
   year,
   dsue = 0,
-  dbExemptions,
   scenarioLabel = 'Current Law',
   stateAbbrev,
   stateEstateTaxRules,

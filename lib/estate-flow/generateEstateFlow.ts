@@ -280,19 +280,6 @@ export async function generateEstateFlow(
       .order('min_amount', { ascending: true }),
   ])
 
-  console.log('households error:', householdRes.error)
-  console.log('assets error:', assetsRes.error)
-  console.log('real_estate error:', realEstateRes.error)
-  console.log('digital_assets error:', digitalAssetsRes.error)
-  console.log('trusts error:', trustsRes.error)
-  console.log('businesses error:', businessesRes.error)
-  console.log('business_interests error:', businessInterestsRes.error)
-  console.log('asset_beneficiaries error:', beneficiariesRes.error)
-  console.log('household_people error:', householdPeopleRes.error)
-  console.log('estate_documents error:', estateDocsRes.error)
-  console.log('scenario meta error:', scenarioMetaRes.error)
-  console.log('scenario s2 error:', scenarioS2Res.error)
-  console.log('scenario meta data:', scenarioMetaRes.data)
 
   const assets = (assetsRes.data ?? []) as RawAsset[]
   const realEstate = (realEstateRes.data ?? []) as RawRealEstate[]
@@ -316,16 +303,12 @@ export async function generateEstateFlow(
         outputs_s2_first: scenarioS2Res.data ?? null,
       }
     : null
-  console.log('scenario keys:', Object.keys(scenario ?? {}))
-  console.log('s2_first length:', scenario?.outputs_s2_first?.length)
-  console.log('s2 via RPC length:', Array.isArray(scenarioS2Res.data) ? scenarioS2Res.data.length : 'not array')
 
   // Pull tax amounts from scenario
   const rawOutputs = deathView === 'second_death'
     ? (scenario?.outputs_s2_first ?? scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
     : (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
   const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
-  console.log('deathView:', deathView, 'horizon:', horizon, 'rawOutputs length:', rawOutputs?.length)
 
   const currentCalendarYear = new Date().getFullYear()
   const lastOutput = outputs.length > 0 ? outputs[outputs.length - 1] : null
@@ -345,8 +328,6 @@ export async function generateEstateFlow(
     // 'at_longevity' — use the final row
     horizonRow = lastOutput
   }
-
-  console.log('EstateFlow scenario:', scenario?.id, 'outputs length:', outputs.length, 'lastOutput:', lastOutput)
 
   const grossEstateFromHorizon = Number(horizonRow?.estate_incl_home ?? 0)
   const liveNetWorthValue = Number(liveNetWorth)

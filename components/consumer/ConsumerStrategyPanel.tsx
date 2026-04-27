@@ -4,7 +4,7 @@
 // real household data passed via the new `estateContext` prop.
 // All strategy pre-population (GRAT funding, liquidity, Roth) now uses actual figures.
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
@@ -96,7 +96,6 @@ const STATUS_COLORS: Record<ConsumerStatus, string> = {
 }
 
 async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  console.log('[writeStrategyLineItem] called with:', input.household_id, input.strategy_source, input.source_role)
   const configRes = await fetch('/api/strategy-configs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -106,13 +105,13 @@ async function writeStrategyLineItem(input: StrategyLineItemInput) {
       label: input.strategy_source.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
     }),
   })
-  console.log('[writeStrategyLineItem] strategy-configs response:', configRes.status)
   const lineRes = await fetch('/api/strategy-line-items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
   })
-  console.log('[writeStrategyLineItem] strategy-line-items response:', lineRes.status)
+  void configRes
+  void lineRes
 }
 
 async function removeStrategyLineItem(householdId: string, strategySource: string) {
@@ -304,12 +303,20 @@ export default function ConsumerStrategyPanel({
   const preIRABalance          = ctx.preIRABalance
   const rothBalance            = ctx.rothBalance
   const annualRMD              = ctx.annualRMD
+  const advisorLineItemBySource = useMemo(
+    () => new Map(advisorLineItems.map((item) => [item.strategy_source, item])),
+    [advisorLineItems],
+  )
+  const advisorLineItemSources = useMemo(
+    () => new Set(advisorLineItems.map((item) => item.strategy_source)),
+    [advisorLineItems],
+  )
 
   function advisorMeta(strategySource: string): Record<string, unknown> {
-    return advisorLineItems.find((i) => i.strategy_source === strategySource)?.metadata ?? {}
+    return advisorLineItemBySource.get(strategySource)?.metadata ?? {}
   }
   function advisorAmount(strategySource: string): number {
-    return advisorLineItems.find((i) => i.strategy_source === strategySource)?.amount ?? 0
+    return advisorLineItemBySource.get(strategySource)?.amount ?? 0
   }
 
   const { saved, saving, toggle, statuses, cycleStatus, loadingInitial } =
@@ -390,7 +397,7 @@ export default function ConsumerStrategyPanel({
   // Re-seed configs when estateContext changes (e.g. after async load)
   useEffect(() => {
     if (!estateContext) return
-    const gratMeta = advisorLineItems.find((i) => i.strategy_source === 'grat')?.metadata ?? {}
+    const gratMeta = advisorLineItemBySource.get('grat')?.metadata ?? {}
     const timeoutId = window.setTimeout(() => {
       setGratConfig((c) => ({
         ...c,
@@ -416,7 +423,7 @@ export default function ConsumerStrategyPanel({
       }))
     }, 0)
     return () => window.clearTimeout(timeoutId)
-  }, [advisorLineItems, estateContext])
+  }, [advisorLineItemBySource, estateContext])
 
   const PANELS = [
     { id: 'grat' as AdvancedPanel, label: 'GRAT' },
@@ -460,7 +467,7 @@ export default function ConsumerStrategyPanel({
               }`}
             >
               {p.label}
-              {advisorLineItems.some((i) => i.strategy_source === (p.id ?? '')) && (
+              {advisorLineItemSources.has(p.id ?? '') && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400" title="Advisor modeled" />
               )}
               {saved.has(p.id ?? '') && (

@@ -127,6 +127,7 @@ export function calculateMoveBreakeven(params: {
     stateEstateTaxRules,
     estimatedMoveCost = 25_000,
   } = params
+  void federalExemption
 
   const years = Object.keys(grossEstateByYear).map(Number).sort((a, b) => a - b)
   const rows: MoveBreakevenRow[] = []

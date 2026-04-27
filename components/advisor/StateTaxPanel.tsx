@@ -6,7 +6,6 @@ import {
   STATE_HAS_ESTATE_TAX,
   STATE_SPECIAL_RULES,
   getEstateTaxDisplayStateName,
-  type DbStateExemption,
   type StateTaxCode,
 } from '@/lib/projection/stateRegistry'
 import {
@@ -21,9 +20,6 @@ interface Props {
   /** Household profile `state_primary` — resolves display name when modeled code is `other` (e.g. CA → California). */
   profileStateAbbrev?: string | null
   projectionYears?: number[]
-  federalExemption?: number
-  dsue?:            number
-  dbExemptions?:    DbStateExemption[]
   stateAbbrev?: string | null
   stateEstateTaxRules?: Array<{
     state: string
@@ -56,9 +52,6 @@ export default function StateTaxPanel({
   stateCode,
   profileStateAbbrev,
   projectionYears = DEFAULT_YEARS,
-  federalExemption,
-  dsue = 0,
-  dbExemptions,
   stateAbbrev,
   stateEstateTaxRules,
   isMFJ = false,

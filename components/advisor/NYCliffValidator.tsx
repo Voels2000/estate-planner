@@ -66,7 +66,7 @@ export default function NYCliffValidator({ year, dbExemptions, stateEstateTaxRul
         }
       })
     },
-    [year, bracketsForYear]
+    [bracketsForYear]
   )
 
   const allPassed = results.every(r => r.passed)

@@ -23,7 +23,6 @@ import {
 } from '@/lib/calculations/estate-tax'
 import {
   calculateStateEstateTax as calculateUnifiedStateEstateTax,
-  type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
@@ -249,19 +248,6 @@ export default function EstateTaxClient({
   const federalExemptionDisplay = composition?.exemption_available ?? federalResult?.exemption_used ?? 0
   const federalTaxDisplay = composition?.estimated_tax_federal ?? composition?.estimated_tax ?? federalResult?.net_estate_tax ?? 0
 
-
-  // ── State estate tax brackets ────────────────────────────────
-  const stateEstateBrackets: StateBracket[] = useMemo(() => {
-    const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
-    return stateEstateTaxRows
-      .filter(r => num(r.tax_year) === latestYear)
-      .map((r) => ({
-        min_amount:       num(r.min_amount),
-        max_amount:       num(r.max_amount),
-        rate_pct:         num(r.rate_pct),
-        exemption_amount: num(r.exemption_amount),
-      }))
-  }, [stateEstateTaxRows])
 
   // ── State inheritance tax rules ──────────────────────────────
   const stateInheritanceRules: StateInheritanceTaxRule[] = useMemo(() => {
