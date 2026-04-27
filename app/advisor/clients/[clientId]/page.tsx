@@ -24,6 +24,7 @@ import {
   fetchScenarioHistoryForExport,
 } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
+import type { StateIncomeTaxRate } from '@/lib/domicile/moveBreakeven'
 import ClientViewShell from './_client-view-shell'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
@@ -118,6 +119,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     stateExemptionsResult,
     stateBracketsResult,
     stateTaxRulesAllYearsResult,
+    stateIncomeTaxRatesResult,
     healthScore,
     liquidAssets,
     activeStrategies,
@@ -220,6 +222,11 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .order('tax_year', { ascending: true })
       .order('state', { ascending: true })
       .order('min_amount', { ascending: true }),
+    supabase
+      .from('state_income_tax_rates')
+      .select('state_code, rate_pct, tax_year')
+      .gte('tax_year', currentYear - 1)
+      .order('tax_year', { ascending: false }),
     fetchHealthScore(household.id),
     fetchLiquidAssets(clientId),
     fetchActiveStrategies(household.id),
@@ -277,6 +284,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     rate_pct: number
     exemption_amount: number
   }>
+  const stateIncomeTaxRates = (stateIncomeTaxRatesResult.data ?? []) as StateIncomeTaxRate[]
   const beneficiaryGrants = (beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[]
 
   const domicileChecklist = domicileAnalysis?.id
@@ -551,6 +559,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       domicileChecklist={domicileChecklist}
       stateExemptions={stateExemptions}
       stateEstateTaxRules={stateTaxRulesAllYears}
+      stateIncomeTaxRates={stateIncomeTaxRates}
       conflictReport={conflictReport}
       estateComposition={estateComposition}
       advisorHorizons={advisorHorizons}

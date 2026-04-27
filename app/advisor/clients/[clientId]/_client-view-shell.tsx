@@ -6,6 +6,7 @@ import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
 import type { EstateComposition } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { StateIncomeTaxRate } from '@/lib/domicile/moveBreakeven'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import dynamic from 'next/dynamic'
@@ -348,6 +349,8 @@ export interface ClientViewShellProps {
     rate_pct: number
     exemption_amount: number
   }>
+  /** Top marginal state income tax rates (same source as consumer domicile flow) */
+  stateIncomeTaxRates?: StateIncomeTaxRate[]
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string

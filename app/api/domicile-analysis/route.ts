@@ -175,9 +175,9 @@ export async function GET(request: Request) {
     .eq('user_id', targetUserId)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

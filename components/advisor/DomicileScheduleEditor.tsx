@@ -16,7 +16,7 @@ import {
   type MoveBreakevenResult,
 } from '@/lib/projection/domicileEngine'
 import { parseStateTaxCode, type DbStateExemption } from '@/lib/projection/stateRegistry'
-import MoveBreakevenPanel from './MoveBreakevenPanel'
+import MoveBreakevenLegacyPanel from './MoveBreakevenLegacyPanel'
 
 const STATE_OPTIONS = [
   'AK','AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA','HI','IA','ID',
@@ -346,7 +346,7 @@ export default function DomicileScheduleEditor({
 
       {/* Breakeven tab */}
       {activeTab === 'breakeven' && (
-        <MoveBreakevenPanel result={breakeven} />
+        <MoveBreakevenLegacyPanel result={breakeven} />
       )}
 
       {/* Checklist tab */}

@@ -76,6 +76,7 @@ export interface DomicileFormPayload {
   files_taxes_in_state: string | null
 }
 
+// days_per_year from JSONB can be a numeric string (e.g. "183"). Number() handles both.
 function statesFromAnalysis(ex: DomicileAnalysisRow | null | undefined): StateEntry[] {
   const raw = ex?.states
   if (!Array.isArray(raw) || raw.length === 0) {
@@ -85,9 +86,9 @@ function statesFromAnalysis(ex: DomicileAnalysisRow | null | undefined): StateEn
   if (typeof first === 'string') {
     return (raw as string[]).map((state) => ({ state, days_per_year: 0 }))
   }
-  return (raw as StateEntry[]).map((s) => ({
+  return (raw as Array<{ state?: unknown; days_per_year?: unknown }>).map((s) => ({
     state: typeof s?.state === 'string' ? s.state : '',
-    days_per_year: typeof s?.days_per_year === 'number' ? s.days_per_year : 0,
+    days_per_year: Number(s?.days_per_year ?? 0),
   }))
 }
 

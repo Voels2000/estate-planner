@@ -8,6 +8,7 @@ import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
 import InheritanceTaxWaterfall from '@/components/advisor/InheritanceTaxWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
+import MoveBreakevenPanel from '@/components/advisor/MoveBreakevenPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
 
@@ -22,6 +23,7 @@ export default function DomicileTab({
   domicileChecklist,
   stateExemptions,
   stateEstateTaxRules,
+  stateIncomeTaxRates = [],
   projectionRowsDomicile = [],
 }: ClientViewShellProps) {
   type DomicileAnalysisRow = {
@@ -132,6 +134,18 @@ export default function DomicileTab({
   const grossEstateByYear = Object.fromEntries(
     projectionRowsDomicile.map((r) => [r.year, r.estate_incl_home ?? r.gross_estate ?? 0]),
   )
+
+  const clientStatesForBreakeven = (states ?? [])
+    .filter((s) => typeof s?.state === 'string' && s.state.trim().length > 0)
+    .map((s) => ({
+      state: String(s.state).trim().toUpperCase().slice(0, 2),
+      days_per_year: Number(s.days_per_year ?? 0),
+    }))
+
+  const breakevenCurrentState = (claimed_domicile_state ?? household?.state_primary ?? 'WA')
+    .trim()
+    .slice(0, 2)
+    .toUpperCase()
 
   const factors = [
     { label: "Driver's License",       value: drivers_license_state,      weight: 15 },
@@ -306,7 +320,7 @@ export default function DomicileTab({
               <h3 className="text-sm font-semibold text-slate-700 mb-3">Days Present by State</h3>
               <div className="space-y-2">
                 {states.map((s: { state?: string | null; days_per_year?: number | null }, i: number) => {
-                  const days = s.days_per_year ?? 0
+                  const days = Number(s.days_per_year ?? 0)
                   const pct = Math.min(100, Math.round((days / 365) * 100))
                   const isRisky = days > 183
                   return (
@@ -332,6 +346,15 @@ export default function DomicileTab({
           )}
         </div>
       </div>
+
+      <MoveBreakevenPanel
+        currentState={breakevenCurrentState}
+        grossEstate={grossEstateForStateTax}
+        isMFJ={household?.filing_status === 'mfj'}
+        clientStates={clientStatesForBreakeven}
+        incomeTaxRates={stateIncomeTaxRates}
+        estateTaxRules={stateEstateTaxRules ?? []}
+      />
 
       {/* Sprint 74: projection-backed gross estate; NY cliff first, then tax panels, then schedule */}
       <div className="space-y-6">
@@ -503,10 +526,12 @@ function getRiskStyle(level: string) {
 
 function getDaysLabel(states: Array<{ state?: string | null; days_per_year?: number | null }> | null | undefined): string | null {
   if (!states || !Array.isArray(states)) return null
-  const sorted = [...states].sort((a, b) => (b.days_per_year ?? 0) - (a.days_per_year ?? 0))
+  const sorted = [...states].sort(
+    (a, b) => Number(b.days_per_year ?? 0) - Number(a.days_per_year ?? 0),
+  )
   if (sorted.length === 0) return null
   const top = sorted[0]
-  return `${top.state} (${top.days_per_year} days)`
+  return `${top.state} (${Number(top.days_per_year ?? 0)} days)`
 }
 
 function formatDate(iso: string) {
