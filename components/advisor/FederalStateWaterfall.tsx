@@ -1,6 +1,6 @@
 'use client'
 
-import type { StateTaxCode } from '@/lib/projection/stateRegistry'
+import type { DbStateExemption, StateTaxCode } from '@/lib/projection/stateRegistry'
 import {
   getEstateTaxDisplayStateName,
 } from '@/lib/projection/stateRegistry'
@@ -19,6 +19,8 @@ interface Props {
   profileStateAbbrev?: string | null
   year: number
   dsue?: number
+  /** Legacy prop kept for compatibility with existing tab callers. */
+  dbExemptions?: DbStateExemption[]
   scenarioLabel?: string
   stateAbbrev?: string | null
   stateEstateTaxRules?: Array<{
