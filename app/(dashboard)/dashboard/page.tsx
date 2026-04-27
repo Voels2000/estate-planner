@@ -150,6 +150,7 @@ export default async function DashboardPage() {
   const annualMortgagePayments = (realEstate ?? [])
     .filter(re => Number(re.mortgage_balance ?? 0) > 0 && Number(re.monthly_payment ?? 0) > 0)
     .reduce((s, re) => s + Number(re.monthly_payment) * 12, 0)
+  const totalMortgageBalance = (realEstate ?? []).reduce((s, re) => s + Number(re.mortgage_balance ?? 0), 0)
 
   const totalExpenses = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0) + annualMortgagePayments
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
@@ -440,6 +441,7 @@ export default async function DashboardPage() {
       consumerTier={profile?.consumer_tier ?? 1}
       isAdvisor={profile?.role === 'advisor'}
       rmdStatus={rmdStatus}
+      mortgageBalance={totalMortgageBalance}
       initialRecommendations={initialRecommendations}
     />
   )

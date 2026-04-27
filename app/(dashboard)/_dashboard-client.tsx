@@ -97,6 +97,7 @@ type Props = {
     p2StartYear: number | null
     hasSpouse: boolean
   } | null
+  mortgageBalance: number
   composition?: EstateComposition | null
   initialRecommendations?: Array<{
     branch: string
@@ -123,6 +124,14 @@ function fmt(n: number) {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
   return `$${Math.round(n).toLocaleString()}`
+}
+
+function fmtExact(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
 }
 
 function firstName(name: string | null | undefined) {
@@ -303,6 +312,7 @@ export function DashboardClient(props: Props) {
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
+    mortgageBalance,
     composition,
     initialRecommendations,
   } = props
@@ -320,7 +330,7 @@ export function DashboardClient(props: Props) {
   })
 
   const debtToAsset = totalAssets > 0 ? Math.round((totalLiabilities / totalAssets) * 100) : 0
-  const totalNetWorthSources = netWorthBySource.financial + netWorthBySource.realEstateEquity + netWorthBySource.business + netWorthBySource.insurance
+  const totalNetWorthSources = netWorthBySource.financial + netWorthBySource.realEstateEquity + netWorthBySource.business
 
   // Non-SS income = totalIncome - SS component (for breakdown display)
   const nonSSIncome = totalIncome - annualSSFromPIA
@@ -396,7 +406,7 @@ export function DashboardClient(props: Props) {
       {/* ══════════════════════════════════════════════════════════════════ */}
       <CollapsibleSection
         title="Financial Summary"
-        subtitle={hasFinancialData(props) ? `Net worth ${fmt(netWorth)}` : 'Add assets and income to see your summary'}
+        subtitle={hasFinancialData(props) ? `Net worth ${fmtExact(netWorth)}` : 'Add assets and income to see your summary'}
         defaultOpen={true}
         storageKey={SECTION_KEYS.financial}
         locked={!hasFinancialData(props)}
@@ -406,7 +416,7 @@ export function DashboardClient(props: Props) {
       >
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-1">Net Worth</p>
-          <p className={`text-4xl font-bold mb-1 ${netWorth >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>{fmt(netWorth)}</p>
+          <p className={`text-4xl font-bold mb-1 ${netWorth >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>{fmtExact(netWorth)}</p>
           <p className="text-xs text-neutral-400">Total assets minus liabilities</p>
         </div>
 
@@ -416,7 +426,11 @@ export function DashboardClient(props: Props) {
             <NetWorthBar label="Financial Assets" value={netWorthBySource.financial} total={totalNetWorthSources} color="bg-blue-500" />
             <NetWorthBar label="Real Estate (FMV)" value={netWorthBySource.realEstateEquity} total={totalNetWorthSources} color="bg-emerald-500" />
             <NetWorthBar label="Business Interests" value={netWorthBySource.business} total={totalNetWorthSources} color="bg-violet-500" />
-            <NetWorthBar label="Insurance (non-ILIT)" value={netWorthBySource.insurance} total={totalNetWorthSources} color="bg-amber-400" />
+            <div className="flex items-center gap-3 pt-1 border-t border-neutral-100 mt-2">
+              <span className="w-36 text-xs text-neutral-400 shrink-0">Mortgage Balance</span>
+              <div className="flex-1" />
+              <span className="w-20 text-right text-xs font-semibold text-red-500">− {fmt(mortgageBalance)}</span>
+            </div>
             <div className="flex items-center gap-3 pt-1 border-t border-neutral-100 mt-2">
               <span className="w-36 text-xs text-neutral-400 shrink-0">Total Liabilities</span>
               <div className="flex-1" />
@@ -617,9 +631,9 @@ export function DashboardClient(props: Props) {
         title="Estate Summary"
         subtitle={
           hasEstateData(props) && estateHealthScore
-            ? `Readiness score ${estateHealthScore.score}/100 · ${fmt(netWorth)} estate`
+            ? `Readiness score ${estateHealthScore.score}/100 · ${fmtExact(netWorth)} estate`
             : hasEstateData(props)
-              ? `${fmt(netWorth)} estate · complete health check for score`
+              ? `${fmtExact(netWorth)} estate · complete health check for score`
               : 'Add assets to see your estate summary'
         }
         badge={
