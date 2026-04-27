@@ -87,6 +87,13 @@ export interface EstateFlowGraph {
   }
 }
 
+export interface EstateFlowHorizonOverride {
+  grossEstate: number
+  federalTax: number
+  stateTax: number
+  netToHeirs: number
+}
+
 // ─── Raw data shapes from Supabase ───────────────────────────────────────────
 
 interface RawAsset {
@@ -203,6 +210,7 @@ export async function generateEstateFlow(
   hasCSTStrategy = false,
   horizon: EstateHorizon = 'at_longevity',
   liveNetWorth?: number | null,
+  horizonOverride?: EstateFlowHorizonOverride | null,
 ): Promise<EstateFlowGraph> {
   if (!supabase) {
     supabase = createClient()
@@ -342,10 +350,11 @@ export async function generateEstateFlow(
 
   const grossEstateFromHorizon = Number(horizonRow?.estate_incl_home ?? 0)
   const liveNetWorthValue = Number(liveNetWorth)
-  const grossEstate =
+  const computedGrossEstate =
     horizon === 'today' && liveNetWorth != null && !Number.isNaN(liveNetWorthValue)
       ? liveNetWorthValue
       : grossEstateFromHorizon
+  const grossEstate = Number(horizonOverride?.grossEstate ?? computedGrossEstate)
 
   // Compute "if death occurred at selected horizon" taxes consistently across all horizons.
   // Avoid relying on scenario row fields that may be absent in some generated outputs.
@@ -356,9 +365,12 @@ export async function generateEstateFlow(
     hasSpouse: Boolean(household.has_spouse),
     stateBrackets,
   })
-  const estateTaxFederal = hypothetical.federalTax
-  const estateTaxState = hypothetical.stateExposure
-  const netToHeirs = Math.max(0, grossEstate - estateTaxFederal - estateTaxState)
+  const computedEstateTaxFederal = hypothetical.federalTax
+  const computedEstateTaxState = hypothetical.stateExposure
+  const computedNetToHeirs = Math.max(0, grossEstate - computedEstateTaxFederal - computedEstateTaxState)
+  const estateTaxFederal = Number(horizonOverride?.federalTax ?? computedEstateTaxFederal)
+  const estateTaxState = Number(horizonOverride?.stateTax ?? computedEstateTaxState)
+  const netToHeirs = Number(horizonOverride?.netToHeirs ?? computedNetToHeirs)
 
   // Determine which documents exist
   const hasTrust = trusts.length > 0 ||

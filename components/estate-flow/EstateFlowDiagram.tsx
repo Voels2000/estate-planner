@@ -6,10 +6,18 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import type { EstateFlowGraph, FlowNode, FlowEdge, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
+import type {
+  EstateFlowGraph,
+  FlowNode,
+  FlowEdge,
+  DeathView,
+  EstateHorizon,
+  EstateFlowHorizonOverride,
+} from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
 import { saveEstateFlowSnapshot, generateShareLink } from '@/lib/estate-flow/snapshotFlow'
 import { createClient } from '@/lib/supabase/client'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 
@@ -257,6 +265,8 @@ interface Props {
   liveNetWorth?: number
   /** Planned domicile change from StrategyTab / domicile_schedule */
   domicileTransition?: DomicileTransitionNote
+  /** Unified strategy horizon values from advisor shell (source of truth). */
+  advisorHorizons?: MyEstateStrategyHorizonsResult
   onShareLinkGenerated?: (url: string) => void
 }
 
@@ -269,6 +279,7 @@ export default function EstateFlowDiagram({
   hasCSTStrategy = false,
   liveNetWorth,
   domicileTransition,
+  advisorHorizons,
   onShareLinkGenerated,
 }: Props) {
   console.log('isAdvisor prop:', isAdvisor)
@@ -291,6 +302,23 @@ export default function EstateFlowDiagram({
     if (deathView) setInternalDeathView(deathView)
   }, [deathView])
 
+  const horizonOverride = useMemo<EstateFlowHorizonOverride | null>(() => {
+    if (!advisorHorizons) return null
+    const source =
+      horizon === 'today'
+        ? advisorHorizons.today
+        : horizon === 'ten_year'
+          ? advisorHorizons.tenYear
+          : horizon === 'twenty_year'
+            ? advisorHorizons.twentyYear
+            : advisorHorizons.atDeath
+    const grossEstate = Number(source.grossEstate ?? 0)
+    const federalTax = Number(source.federalTaxEstimate ?? 0)
+    const stateTax = Number(source.stateTax ?? source.stateExposure ?? 0)
+    const netToHeirs = Math.max(0, grossEstate - federalTax - stateTax)
+    return { grossEstate, federalTax, stateTax, netToHeirs }
+  }, [advisorHorizons, horizon])
+
   useEffect(() => {
     let cancelled = false
 
@@ -299,7 +327,16 @@ export default function EstateFlowDiagram({
       setError(null)
       console.log('fetchGraph called with deathView:', internalDeathView)
       try {
-        const g = await generateEstateFlow(householdId, scenarioId, internalDeathView, supabase, hasCSTStrategy, horizon, liveNetWorth)
+        const g = await generateEstateFlow(
+          householdId,
+          scenarioId,
+          internalDeathView,
+          supabase,
+          hasCSTStrategy,
+          horizon,
+          liveNetWorth,
+          horizonOverride,
+        )
         if (!cancelled) {
           setGraph(g)
           const snap = await saveEstateFlowSnapshot(g)
@@ -318,7 +355,7 @@ export default function EstateFlowDiagram({
     return () => {
       cancelled = true
     }
-  }, [householdId, scenarioId, internalDeathView, supabase, horizon, hasCSTStrategy, liveNetWorth])
+  }, [householdId, scenarioId, internalDeathView, supabase, horizon, hasCSTStrategy, liveNetWorth, horizonOverride])
 
   const handleGenerateShareLink = async () => {
     if (!snapshotId || !advisorId) return

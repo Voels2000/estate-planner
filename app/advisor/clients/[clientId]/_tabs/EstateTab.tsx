@@ -85,6 +85,7 @@ export default function EstateTab({
   beneficiaries,
   estateDocuments,
   estateComposition,
+  advisorHorizons,
   conflictReport,
   beneficiaryGrants = [],
 }: ClientViewShellProps) {
@@ -386,6 +387,7 @@ export default function EstateTab({
           deathView={deathView}
           hasCSTStrategy={hasCSTStrategy}
           liveNetWorth={liveNetWorth}
+          advisorHorizons={advisorHorizons}
         />
       </section>
 
