@@ -3,14 +3,17 @@
 'use client'
 
 import {
-  getStateExemptionForYear,
-  calculateStateEstateTax,
   STATE_HAS_ESTATE_TAX,
   STATE_SPECIAL_RULES,
   getEstateTaxDisplayStateName,
   type DbStateExemption,
   type StateTaxCode,
 } from '@/lib/projection/stateRegistry'
+import {
+  calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  type StateBracket,
+  getPortabilityGapLabel,
+} from '@/lib/calculations/stateEstateTax'
 
 interface Props {
   grossEstate:      number
@@ -21,6 +24,16 @@ interface Props {
   federalExemption?: number
   dsue?:            number
   dbExemptions?:    DbStateExemption[]
+  stateAbbrev?: string | null
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
+  isMFJ?: boolean
 }
 
 const DEFAULT_YEARS = [2025, 2026, 2027, 2028, 2029, 2030]
@@ -42,8 +55,15 @@ export default function StateTaxPanel({
   federalExemption,
   dsue = 0,
   dbExemptions,
+  stateAbbrev,
+  stateEstateTaxRules,
+  isMFJ = false,
 }: Props) {
-  const hasStateTax = Boolean(STATE_HAS_ESTATE_TAX[stateCode])
+  const unifiedStateCode = (stateAbbrev ?? '').toUpperCase()
+  const hasUnifiedRules =
+    !!unifiedStateCode &&
+    (stateEstateTaxRules ?? []).some((r) => r.state.toUpperCase() === unifiedStateCode)
+  const hasStateTax = hasUnifiedRules ? true : Boolean(STATE_HAS_ESTATE_TAX[stateCode])
   const stateName = getEstateTaxDisplayStateName(stateCode, profileStateAbbrev)
 
   if (!hasStateTax) {
@@ -59,9 +79,48 @@ export default function StateTaxPanel({
   }
 
   const rows = projectionYears.map(year => {
-    const result = calculateStateEstateTax({ grossEstate, stateCode, year, federalExemption, dsue, dbExemptions })
-    const exemption = getStateExemptionForYear(stateCode, year, federalExemption, dbExemptions)
-    return { year, exemption, ...result }
+    const byYear = (stateEstateTaxRules ?? [])
+      .filter((r) => r.state.toUpperCase() === unifiedStateCode && r.tax_year === year)
+      .map((r) => ({
+        min_amount: Number(r.min_amount ?? 0),
+        max_amount: Number(r.max_amount ?? 9_999_999_999),
+        rate_pct: Number(r.rate_pct ?? 0),
+        exemption_amount: Number(r.exemption_amount ?? 0),
+      }))
+    const latestYear = Math.max(
+      ...(stateEstateTaxRules ?? [])
+        .filter((r) => r.state.toUpperCase() === unifiedStateCode)
+        .map((r) => Number(r.tax_year ?? 0)),
+      0,
+    )
+    const fallback = (stateEstateTaxRules ?? [])
+      .filter((r) => r.state.toUpperCase() === unifiedStateCode && Number(r.tax_year ?? 0) === latestYear)
+      .map((r) => ({
+        min_amount: Number(r.min_amount ?? 0),
+        max_amount: Number(r.max_amount ?? 9_999_999_999),
+        rate_pct: Number(r.rate_pct ?? 0),
+        exemption_amount: Number(r.exemption_amount ?? 0),
+      }))
+    const brackets = (byYear.length > 0 ? byYear : fallback) as StateBracket[]
+    if (brackets.length === 0) {
+      return {
+        year,
+        exemption: 0,
+        stateTax: 0,
+        taxableEstate: 0,
+        nyCliffTriggered: false,
+        effectiveRate: 0,
+      }
+    }
+    const result = calculateUnifiedStateEstateTax(grossEstate, unifiedStateCode, brackets, isMFJ)
+    return {
+      year,
+      exemption: brackets[0]?.exemption_amount ?? 0,
+      stateTax: result.stateTax,
+      taxableEstate: result.taxableEstate,
+      nyCliffTriggered: result.nyCliffTriggered,
+      effectiveRate: result.effectiveRate,
+    }
   })
 
   const specialRules = STATE_SPECIAL_RULES[stateCode] ?? []
@@ -94,6 +153,11 @@ export default function StateTaxPanel({
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
           <strong>NY Cliff Triggered</strong> — Estate exceeds 105% of exemption in one or more years.
           The full estate is subject to tax with no exemption offset. Immediate planning action recommended.
+        </div>
+      )}
+      {hasUnifiedRules && getPortabilityGapLabel(unifiedStateCode) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
+          {getPortabilityGapLabel(unifiedStateCode)}
         </div>
       )}
 
@@ -143,7 +207,10 @@ export default function StateTaxPanel({
 
       <p className="text-xs text-slate-400">
         Based on current gross estate of {fmt(grossEstate)}.
-        {stateName} estate tax rates are approximate; consult a qualified estate attorney for precise calculations.
+        {hasUnifiedRules
+          ? ` ${stateName} estate tax uses unified live state brackets.`
+          : ` ${stateName} estate tax unavailable for selected year/rules.`
+        } Consult a qualified estate attorney for precise calculations.
       </p>
     </div>
   )

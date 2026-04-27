@@ -1,10 +1,14 @@
 // Sprint 65 - Domicile Schedule + Multi-State Transition Engine
 
 import {
-  calculateStateEstateTax,
   type DbStateExemption,
   type StateTaxCode,
 } from './stateRegistry'
+import {
+  calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  type StateBracket,
+  isMFJFilingStatus,
+} from '@/lib/calculations/stateEstateTax'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -97,8 +101,17 @@ export function calculateMoveBreakeven(params: {
   toState:            StateTaxCode
   transitionYear:     number
   federalExemption?:  number
+  filingStatus?:      string | null
   dsue?:              number
   dbExemptions?:      DbStateExemption[]
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
   estimatedMoveCost?: number
   deathYear?:         number
 }): MoveBreakevenResult {
@@ -108,8 +121,10 @@ export function calculateMoveBreakeven(params: {
     toState,
     transitionYear,
     federalExemption,
+    filingStatus,
     dsue = 0,
     dbExemptions,
+    stateEstateTaxRules,
     estimatedMoveCost = 25_000,
   } = params
 
@@ -118,28 +133,43 @@ export function calculateMoveBreakeven(params: {
   let crossoverYear: number | null = null
   let cumulativeSavings = -estimatedMoveCost  // start negative (move costs)
 
+  function getBracketsFor(state: StateTaxCode, year: number): StateBracket[] {
+    const stateKey = String(state).toUpperCase()
+    const fromRules = (stateEstateTaxRules ?? [])
+      .filter((r) => r.state.toUpperCase() === stateKey && r.tax_year === year)
+      .map((r) => ({
+        min_amount: Number(r.min_amount ?? 0),
+        max_amount: Number(r.max_amount ?? 9_999_999_999),
+        rate_pct: Number(r.rate_pct ?? 0),
+        exemption_amount: Number(r.exemption_amount ?? 0),
+      }))
+    if (fromRules.length > 0) return fromRules
+    const fallbackDb = (dbExemptions ?? []).find((r) => r.state === stateKey && r.tax_year === year)
+    if (fallbackDb) {
+      return [{
+        min_amount: 0,
+        max_amount: 9_999_999_999,
+        rate_pct: Number(fallbackDb.top_rate ?? 0) * 100,
+        exemption_amount: Number(fallbackDb.exemption_amount ?? 0),
+      }]
+    }
+    return []
+  }
+  function computeStateTax(grossEstate: number, state: StateTaxCode, year: number) {
+    const isMFJ = isMFJFilingStatus(filingStatus) || dsue > 0
+    const brackets = getBracketsFor(state, year)
+    if (brackets.length === 0) return 0
+    return calculateUnifiedStateEstateTax(grossEstate, String(state), brackets, isMFJ).stateTax
+  }
+
   for (const year of years) {
     const grossEstate = grossEstateByYear[year]
     const domicile = year < transitionYear ? fromState : toState
 
-    const taxResult = calculateStateEstateTax({
-      grossEstate,
-      stateCode: domicile,
-      year,
-      federalExemption,
-      dsue,
-      dbExemptions,
-    })
+    const taxResult = { stateTax: computeStateTax(grossEstate, domicile, year) }
 
     // What would tax have been without moving?
-    const noMoveTax = calculateStateEstateTax({
-      grossEstate,
-      stateCode: fromState,
-      year,
-      federalExemption,
-      dsue,
-      dbExemptions,
-    })
+    const noMoveTax = { stateTax: computeStateTax(grossEstate, fromState, year) }
 
     const annualSaving = noMoveTax.stateTax - taxResult.stateTax
     cumulativeSavings += annualSaving

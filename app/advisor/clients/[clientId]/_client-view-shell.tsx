@@ -330,6 +330,14 @@ export interface ClientViewShellProps {
   domicileSchedule: DomicileScheduleRow[] | null
   domicileChecklist: Record<string, unknown>[]
   stateExemptions: DbStateExemption[]
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string

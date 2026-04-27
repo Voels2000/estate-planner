@@ -19,6 +19,7 @@ export default function DomicileTab({
   domicileSchedule,
   domicileChecklist,
   stateExemptions,
+  stateEstateTaxRules,
   projectionRowsDomicile = [],
 }: ClientViewShellProps) {
   type DomicileAnalysisRow = {
@@ -273,6 +274,7 @@ export default function DomicileTab({
           <NYCliffValidator
             year={new Date().getFullYear() + 1}
             dbExemptions={stateExemptions}
+            stateEstateTaxRules={stateEstateTaxRules}
           />
         )}
         <StateTaxPanel
@@ -281,6 +283,9 @@ export default function DomicileTab({
           profileStateAbbrev={claimed_domicile_state ?? household?.state_primary}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           dbExemptions={stateExemptions}
+          stateAbbrev={claimed_domicile_state ?? household?.state_primary}
+          stateEstateTaxRules={stateEstateTaxRules}
+          isMFJ={household?.filing_status === 'mfj'}
         />
         <InheritanceTaxWaterfall
           inheritanceAmount={grossEstateForStateTax}
@@ -291,6 +296,7 @@ export default function DomicileTab({
           currentState={claimed_domicile_state ?? 'WA'}
           grossEstateByYear={grossEstateByYear}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
+          filingStatus={household?.filing_status}
           initialSchedule={domicileSchedule ?? []}
           initialChecklist={
             (domicileChecklist ?? []) as Array<{
@@ -304,6 +310,7 @@ export default function DomicileTab({
             }>
           }
           dbExemptions={stateExemptions}
+          stateEstateTaxRules={stateEstateTaxRules}
         />
       </div>
     </div>

@@ -2,10 +2,13 @@
 
 import type { DbStateExemption, StateTaxCode } from '@/lib/projection/stateRegistry'
 import {
-  calculateStateEstateTax,
   getEstateTaxDisplayStateName,
-  getStateExemptionForYear,
 } from '@/lib/projection/stateRegistry'
+import {
+  calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  type StateBracket,
+  getPortabilityGapLabel,
+} from '@/lib/calculations/stateEstateTax'
 
 interface Props {
   grossEstate: number
@@ -18,6 +21,16 @@ interface Props {
   dsue?: number
   dbExemptions?: DbStateExemption[]
   scenarioLabel?: string
+  stateAbbrev?: string | null
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
+  isMFJ?: boolean
 }
 
 function fmt(n: number) {
@@ -39,19 +52,51 @@ export default function FederalStateWaterfall({
   dsue = 0,
   dbExemptions,
   scenarioLabel = 'Current Law',
+  stateAbbrev,
+  stateEstateTaxRules,
+  isMFJ = false,
 }: Props) {
   const stateDisplayName = getEstateTaxDisplayStateName(stateCode, profileStateAbbrev)
-
-  const stateResult = calculateStateEstateTax({
-    grossEstate,
-    stateCode,
-    year,
-    federalExemption,
-    dsue,
-    dbExemptions,
-  })
-
-  const stateExemption = getStateExemptionForYear(stateCode, year, federalExemption, dbExemptions)
+  const unifiedStateCode = (stateAbbrev ?? '').toUpperCase()
+  const hasUnifiedRules =
+    !!unifiedStateCode &&
+    (stateEstateTaxRules ?? []).some((r) => r.state.toUpperCase() === unifiedStateCode)
+  const stateRulesForYear = hasUnifiedRules
+    ? (
+      stateEstateTaxRules
+        ?.filter((r) => r.tax_year === year)
+        .map((r) => ({
+          min_amount: Number(r.min_amount ?? 0),
+          max_amount: Number(r.max_amount ?? 9_999_999_999),
+          rate_pct: Number(r.rate_pct ?? 0),
+          exemption_amount: Number(r.exemption_amount ?? 0),
+        })) ?? []
+    )
+    : []
+  const fallbackRules = hasUnifiedRules
+    ? (
+      [...(stateEstateTaxRules ?? [])]
+        .sort((a, b) => b.tax_year - a.tax_year)
+        .slice(0, 1)
+        .map((r) => ({
+          min_amount: Number(r.min_amount ?? 0),
+          max_amount: Number(r.max_amount ?? 9_999_999_999),
+          rate_pct: Number(r.rate_pct ?? 0),
+          exemption_amount: Number(r.exemption_amount ?? 0),
+        })) ?? []
+    )
+    : []
+  const unifiedBrackets: StateBracket[] = stateRulesForYear.length > 0 ? stateRulesForYear : fallbackRules
+  const unifiedStateResult = hasUnifiedRules && unifiedBrackets.length > 0
+    ? calculateUnifiedStateEstateTax(grossEstate, unifiedStateCode, unifiedBrackets, isMFJ)
+    : null
+  const stateResult = {
+    stateTax: unifiedStateResult?.stateTax ?? 0,
+    nyCliffTriggered: unifiedStateResult?.nyCliffTriggered ?? false,
+  }
+  const stateExemption = unifiedStateResult
+    ? (unifiedBrackets[0]?.exemption_amount ?? 0)
+    : 0
 
   const totalTax = federalTax + stateResult.stateTax
   const netToHeirs = Math.max(0, grossEstate - totalTax)
@@ -90,6 +135,11 @@ export default function FederalStateWaterfall({
       {stateResult.nyCliffTriggered && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-800">
           ⚠ NY Cliff triggered — full estate taxable at state level
+        </div>
+      )}
+      {unifiedStateResult && getPortabilityGapLabel(unifiedStateCode) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-xs text-amber-800">
+          {getPortabilityGapLabel(unifiedStateCode)}
         </div>
       )}
 
@@ -155,8 +205,10 @@ export default function FederalStateWaterfall({
       </div>
 
       <p className="text-xs text-slate-400">
-        {stateDisplayName} state tax uses blended effective rate. Actual tax depends on asset composition and distribution.
-        Consult a qualified estate attorney for precise calculations.
+        {unifiedStateResult
+          ? `${stateDisplayName} state tax uses the unified live bracket engine.`
+          : `${stateDisplayName} state tax unavailable for selected year/rules.`
+        } Consult a qualified estate attorney for precise calculations.
       </p>
     </div>
   )

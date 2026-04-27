@@ -40,7 +40,16 @@ interface Props {
   currentState:        string
   grossEstateByYear:   Record<number, number>
   federalExemption?:   number
+  filingStatus?:       string | null
   dbExemptions?:       DbStateExemption[]
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
   initialSchedule:     DomicileScheduleRow[]
   initialChecklist:    ChecklistDbRow[]
 }
@@ -50,7 +59,9 @@ export default function DomicileScheduleEditor({
   currentState,
   grossEstateByYear,
   federalExemption,
+  filingStatus,
   dbExemptions,
+  stateEstateTaxRules,
   initialSchedule,
   initialChecklist,
 }: Props) {
@@ -156,7 +167,9 @@ export default function DomicileScheduleEditor({
       toState:         parseStateTaxCode(transition.state_code),
       transitionYear:  transition.effective_year,
       federalExemption,
+      filingStatus,
       dbExemptions,
+      stateEstateTaxRules,
     })
     setBreakeven(result)
     setActiveTab('breakeven')

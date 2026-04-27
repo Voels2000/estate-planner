@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import FederalStateWaterfall from '@/components/advisor/FederalStateWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
@@ -28,25 +28,26 @@ function getFederalExemption(lawScenario: EstateScenario, filingStatus: FilingSt
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
 }
 
-function estimateFederalTax(grossEstate: number, federalExemption: number) {
+function estimateFederalTaxStress(grossEstate: number, federalExemption: number) {
   const taxable = Math.max(0, grossEstate - federalExemption)
   return Math.round(taxable * OBBBA_2026.TOP_RATE)
 }
 
-export default function TaxTab({ household, estateTax, stateExemptions }: ClientViewShellProps) {
+export default function TaxTab({ household, estateTax, stateExemptions, estateComposition, stateEstateTaxRules }: ClientViewShellProps) {
   const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
 
   const grossEstate =
+    (typeof estateComposition?.gross_estate === 'number' ? estateComposition.gross_estate : null) ??
     (typeof estateTax?.gross_estate === 'number' ? estateTax.gross_estate : null) ??
     (typeof household?.gross_estate === 'number' ? household.gross_estate : null) ??
     0
 
   const federalExemption = getFederalExemption(lawScenario, filingStatus)
-  const federalTax = useMemo(
-    () => estimateFederalTax(grossEstate, federalExemption),
-    [grossEstate, federalExemption]
-  )
+  const federalTax =
+    lawScenario === 'current_law'
+      ? Number(estateComposition?.estimated_tax_federal ?? 0)
+      : estimateFederalTaxStress(grossEstate, federalExemption)
 
   const stateCode = parseStateTaxCode((household?.state_primary ?? 'WA').toUpperCase())
   const currentYear = new Date().getFullYear()
@@ -91,6 +92,9 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
           year={currentYear}
           dbExemptions={stateExemptions}
           scenarioLabel={LAW_SCENARIO_OPTIONS.find((o) => o.value === lawScenario)?.label}
+          stateAbbrev={household?.state_primary}
+          stateEstateTaxRules={stateEstateTaxRules}
+          isMFJ={filingStatus === 'mfj'}
         />
       </section>
 
@@ -102,13 +106,20 @@ export default function TaxTab({ household, estateTax, stateExemptions }: Client
           profileStateAbbrev={household?.state_primary}
           federalExemption={federalExemption}
           dbExemptions={stateExemptions}
+          stateAbbrev={household?.state_primary}
+          stateEstateTaxRules={stateEstateTaxRules}
+          isMFJ={filingStatus === 'mfj'}
         />
       </section>
 
       {household?.state_primary === 'NY' && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">NY Cliff Analysis</h2>
-          <NYCliffValidator year={currentYear} dbExemptions={stateExemptions} />
+          <NYCliffValidator
+            year={currentYear}
+            dbExemptions={stateExemptions}
+            stateEstateTaxRules={stateEstateTaxRules}
+          />
         </section>
       )}
     </div>

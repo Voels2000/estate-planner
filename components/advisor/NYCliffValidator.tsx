@@ -1,21 +1,72 @@
 'use client'
 
 import { useMemo } from 'react'
-import { validateNYCliffCases, type DbStateExemption } from '@/lib/projection/stateRegistry'
+import { type DbStateExemption } from '@/lib/projection/stateRegistry'
+import { calculateStateEstateTax, type StateBracket } from '@/lib/calculations/stateEstateTax'
 
 interface Props {
   year: number
   dbExemptions?: DbStateExemption[]
+  stateEstateTaxRules?: Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
 }
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
-export default function NYCliffValidator({ year, dbExemptions }: Props) {
+export default function NYCliffValidator({ year, dbExemptions, stateEstateTaxRules }: Props) {
+  const bracketsForYear = useMemo<StateBracket[]>(() => {
+    const fromRules = (stateEstateTaxRules ?? [])
+      .filter((r) => r.state === 'NY' && r.tax_year === year)
+      .map((r) => ({
+        min_amount: Number(r.min_amount ?? 0),
+        max_amount: Number(r.max_amount ?? 9_999_999_999),
+        rate_pct: Number(r.rate_pct ?? 0),
+        exemption_amount: Number(r.exemption_amount ?? 0),
+      }))
+    if (fromRules.length > 0) return fromRules
+    const fromDb = (dbExemptions ?? []).find((r) => r.state === 'NY' && r.tax_year === year)
+    if (!fromDb) return []
+    return [{
+      min_amount: 0,
+      max_amount: 9_999_999_999,
+      rate_pct: Number(fromDb.top_rate ?? 0) * 100,
+      exemption_amount: Number(fromDb.exemption_amount ?? 0),
+    }]
+  }, [stateEstateTaxRules, dbExemptions, year])
+
   const results = useMemo(
-    () => validateNYCliffCases(year, dbExemptions),
-    [year, dbExemptions]
+    () => {
+      const exemption = bracketsForYear[0]?.exemption_amount ?? 0
+      if (exemption <= 0) return []
+      const cases = [
+        { label: '100% of exemption', estateAsMultiple: 1.00, expectedCliff: false },
+        { label: '104% of exemption', estateAsMultiple: 1.04, expectedCliff: false },
+        { label: '105% of exemption', estateAsMultiple: 1.05, expectedCliff: false },
+        { label: '106% of exemption', estateAsMultiple: 1.06, expectedCliff: true },
+        { label: '150% of exemption', estateAsMultiple: 1.50, expectedCliff: true },
+        { label: '200% of exemption', estateAsMultiple: 2.00, expectedCliff: true },
+      ]
+      return cases.map((tc) => {
+        const estate = Math.round(exemption * tc.estateAsMultiple)
+        const actual = calculateStateEstateTax(estate, 'NY', bracketsForYear, false).nyCliffTriggered
+        return {
+          label: tc.label,
+          passed: actual === tc.expectedCliff,
+          expected: tc.expectedCliff,
+          actual,
+          estate,
+        }
+      })
+    },
+    [year, bracketsForYear]
   )
 
   const allPassed = results.every(r => r.passed)

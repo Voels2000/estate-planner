@@ -16,13 +16,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   computeFederalEstateTax,
-  computeStateEstateTax,
   computeStateInheritanceTaxTotal,
   type BeneficiaryClass,
   type EstateTaxBracket,
-  type StateEstateTaxBracket,
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
+import {
+  calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import type { EstateComposition } from '@/lib/estate/types'
@@ -249,12 +251,11 @@ export default function EstateTaxClient({
 
 
   // ── State estate tax brackets ────────────────────────────────
-  const stateEstateBrackets: StateEstateTaxBracket[] = useMemo(() => {
+  const stateEstateBrackets: StateBracket[] = useMemo(() => {
     const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
     return stateEstateTaxRows
       .filter(r => num(r.tax_year) === latestYear)
       .map((r) => ({
-        state:            String(r.state ?? '').trim().toUpperCase(),
         min_amount:       num(r.min_amount),
         max_amount:       num(r.max_amount),
         rate_pct:         num(r.rate_pct),
@@ -283,10 +284,17 @@ export default function EstateTaxClient({
   const isMFJ = filing === 'married_joint'
   const hasSpouse = household?.has_spouse === true
 
-  const primaryStateBrackets = useMemo(
-    () => stateEstateBrackets.filter(b => b.state === statePrimary?.toUpperCase()),
-    [stateEstateBrackets, statePrimary],
-  )
+  const primaryStateBrackets = useMemo(() => {
+    const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
+    return stateEstateTaxRows
+      .filter(r => num(r.tax_year) === latestYear && String(r.state ?? '').trim().toUpperCase() === statePrimary?.toUpperCase())
+      .map((r) => ({
+        min_amount:       num(r.min_amount),
+        max_amount:       num(r.max_amount),
+        rate_pct:         num(r.rate_pct),
+        exemption_amount: num(r.exemption_amount),
+      }))
+  }, [stateEstateTaxRows, statePrimary])
 
   const primaryStateExemption = primaryStateBrackets[0]?.exemption_amount ?? 0
 
@@ -302,20 +310,32 @@ export default function EstateTaxClient({
         is_first_death:   true,
       }
     }
+    const unified = calculateUnifiedStateEstateTax(
+      grossEstate,
+      statePrimary.toUpperCase(),
+      primaryStateBrackets,
+      isMFJ && hasSpouse,
+    )
     return {
-      ...computeStateEstateTax(
-        statePrimary.toUpperCase(),
-        num(federalResult?.taxable_estate),
-        stateEstateBrackets,
-      ),
+      state: statePrimary.toUpperCase(),
+      state_taxable: unified.taxableEstate,
+      state_exemption: unified.exemptionUsed,
+      state_estate_tax: unified.stateTax,
       is_first_death: false,
     }
-  }, [statePrimary, isMFJ, hasSpouse, federalResult, stateEstateBrackets, primaryStateExemption])
+  }, [statePrimary, isMFJ, hasSpouse, grossEstate, primaryStateBrackets, primaryStateExemption])
 
-  const compareStateBrackets = useMemo(
-    () => stateEstateBrackets.filter(b => b.state === stateCompare?.toUpperCase()),
-    [stateEstateBrackets, stateCompare],
-  )
+  const compareStateBrackets = useMemo(() => {
+    const latestYear = Math.max(...stateEstateTaxRows.map(r => num(r.tax_year)), 0)
+    return stateEstateTaxRows
+      .filter(r => num(r.tax_year) === latestYear && String(r.state ?? '').trim().toUpperCase() === stateCompare?.toUpperCase())
+      .map((r) => ({
+        min_amount:       num(r.min_amount),
+        max_amount:       num(r.max_amount),
+        rate_pct:         num(r.rate_pct),
+        exemption_amount: num(r.exemption_amount),
+      }))
+  }, [stateEstateTaxRows, stateCompare])
 
   const compareStateTax = useMemo(() => {
     const sc = stateCompare?.toUpperCase()
@@ -330,11 +350,20 @@ export default function EstateTaxClient({
         is_first_death:   true,
       }
     }
+    const unified = calculateUnifiedStateEstateTax(
+      grossEstate,
+      sc,
+      compareStateBrackets,
+      isMFJ && hasSpouse,
+    )
     return {
-      ...computeStateEstateTax(sc, num(federalResult?.taxable_estate), stateEstateBrackets),
+      state: sc,
+      state_taxable: unified.taxableEstate,
+      state_exemption: unified.exemptionUsed,
+      state_estate_tax: unified.stateTax,
       is_first_death: false,
     }
-  }, [stateCompare, statePrimary, isMFJ, hasSpouse, federalResult, stateEstateBrackets, compareStateBrackets])
+  }, [stateCompare, statePrimary, isMFJ, hasSpouse, grossEstate, compareStateBrackets])
 
   const showComparison =
     !!stateCompare &&

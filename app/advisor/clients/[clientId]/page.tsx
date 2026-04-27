@@ -117,6 +117,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     insurancePoliciesResult,
     stateExemptionsResult,
     stateBracketsResult,
+    stateTaxRulesAllYearsResult,
     healthScore,
     liquidAssets,
     activeStrategies,
@@ -213,6 +214,12 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       .eq('state', household.state_primary ?? '')
       .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
+    supabase
+      .from('state_estate_tax_rules')
+      .select('state, tax_year, min_amount, max_amount, rate_pct, exemption_amount')
+      .order('tax_year', { ascending: true })
+      .order('state', { ascending: true })
+      .order('min_amount', { ascending: true }),
     fetchHealthScore(household.id),
     fetchLiquidAssets(clientId),
     fetchActiveStrategies(household.id),
@@ -262,6 +269,14 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const insurancePolicies = insurancePoliciesResult.data ?? []
   const stateExemptions = (stateExemptionsResult.data ?? []) as DbStateExemption[]
   const stateBrackets = (stateBracketsResult.data ?? []) as StateBracket[]
+  const stateTaxRulesAllYears = (stateTaxRulesAllYearsResult.data ?? []) as Array<{
+    state: string
+    tax_year: number
+    min_amount: number
+    max_amount: number
+    rate_pct: number
+    exemption_amount: number
+  }>
   const beneficiaryGrants = (beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[]
 
   const domicileChecklist = domicileAnalysis?.id
@@ -530,6 +545,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}
       stateExemptions={stateExemptions}
+      stateEstateTaxRules={stateTaxRulesAllYears}
       conflictReport={conflictReport}
       estateComposition={estateComposition}
       advisorHorizons={advisorHorizons}
