@@ -236,6 +236,15 @@ export default function MonteCarloPanel({
           Runs {simulationCount} market scenarios to show the range of possible estate tax outcomes.
           Based on current estate of {fmt(grossEstate)} projected {yearsUntilDeath} years.
         </p>
+        <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Model assumptions</p>
+          <ul className="mt-1 space-y-1 text-xs text-slate-600">
+            <li>Market returns: normal distribution (mean 7.0%, std dev 12.0%).</li>
+            <li>Federal estate tax: 40% above exemption (or 0 exemption in no-exemption mode).</li>
+            <li>State estate tax: effective rate estimated from current state tax and gross estate.</li>
+            <li>Horizon to death: max(5 years, 85 − current age).</li>
+          </ul>
+        </div>
 
         {/* Controls */}
         <div className="flex flex-wrap items-end gap-4 mb-4">
