@@ -25,6 +25,12 @@ type NavGroup = {
   locked?: boolean
 }
 
+const DEFAULT_CLOSED_GROUPS = new Set([
+  'Financial Planning',
+  'Retirement Planning',
+  'Estate Planning',
+])
+
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
@@ -121,11 +127,13 @@ export function SidebarNav({
 
   const activePath = pathname
   const activeGroup = getActiveGroup()
-  const resolvedOpenGroups: Record<string, boolean> = {
-    ...openGroups,
-    [activeGroup]: true,
-    Overview: true,
-  }
+  const resolvedOpenGroups: Record<string, boolean> = Object.fromEntries(
+    NAV_GROUPS.map((group) => [
+      group.label,
+      openGroups[group.label] ??
+        (group.label === 'Overview' || (!DEFAULT_CLOSED_GROUPS.has(group.label) && group.label === activeGroup)),
+    ]),
+  )
 
   function toggleGroup(label: string) {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }))
