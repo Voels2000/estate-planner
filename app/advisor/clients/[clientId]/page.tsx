@@ -163,7 +163,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioId
       ? supabase
           .from('projection_scenarios')
-          .select('id, scenario_type, outputs, outputs_s1_first, assumption_snapshot')
+          .select('id, scenario_type, outputs, outputs_s1_first, outputs_s2_first, assumption_snapshot')
           .eq('id', scenarioId)
           .single()
       : Promise.resolve({ data: null, error: null }),
@@ -296,6 +296,11 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         ? scenario.outputs
         : []
   ) as Array<Record<string, unknown>>
+  const scenarioOutputsSecondDeath = (
+    scenario && Array.isArray(scenario.outputs_s2_first) && scenario.outputs_s2_first.length > 0
+      ? scenario.outputs_s2_first
+      : scenarioOutputs
+  ) as Array<Record<string, unknown>>
   const latestOutput = scenarioOutputs.length > 0 ? scenarioOutputs[0] : null
   const assumptionSnapshot = (scenario?.assumption_snapshot ?? {}) as Record<string, unknown>
 
@@ -369,7 +374,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       }
     : null
 
-  const projectionRowsDomicile = scenarioOutputs.map((r) => ({
+  const projectionRowsDomicile = scenarioOutputsSecondDeath.map((r) => ({
     year: Number(r.year ?? 0),
     gross_estate: Number(r.estate_incl_home ?? r.gross_estate ?? 0),
   }))

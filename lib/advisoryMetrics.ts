@@ -42,6 +42,7 @@ export interface AdvisoryMetricsInput {
 export interface AdvisoryMetric {
   id: string
   label: string
+  scope: 'federal' | 'state' | 'both' | 'strategy'
   value: string
   subtext: string
   status: 'good' | 'warning' | 'critical' | 'neutral'
@@ -80,6 +81,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'effective_rate',
     label: 'Effective Estate Tax Rate',
+    scope: 'both',
     value: `${effectiveRate.toFixed(1)}%`,
     subtext: `$${Math.round(totalTax).toLocaleString()} on $${
       Math.round((grossEstate / 1_000_000) * 10) / 10
@@ -99,6 +101,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'cost_of_inaction',
     label: 'Cost of Inaction',
+    scope: 'both',
     value: costOfInaction > 0 ? `$${Math.round(costOfInaction).toLocaleString()}/yr` : '$0/yr',
     subtext:
       noExemptionStressTax !== undefined && noExemptionStressTax > 0
@@ -118,6 +121,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'exemption_utilization',
     label: 'Exemption Utilization',
+    scope: 'federal',
     value: `${Math.min(100, exemptionUtilPct).toFixed(0)}%`,
     subtext:
       unusedExemption > 0
@@ -135,6 +139,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'dsue_at_risk',
     label: 'DSUE at Risk',
+    scope: 'federal',
     value: dsueAvailable > 0 ? `$${Math.round((dsueAvailable / 1_000_000) * 10) / 10}M` : 'None',
     subtext: dsueAtRisk
       ? 'Portability elected — at risk if survivor remarries'
@@ -153,6 +158,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'liquidity_coverage',
     label: 'Liquidity Coverage',
+    scope: 'both',
     value: totalTax === 0 ? 'N/A' : `${coverageRatio.toFixed(1)}x`,
     subtext:
       totalTax === 0
@@ -180,6 +186,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'strategy_npv',
     label: 'Best Strategy NPV',
+    scope: 'strategy',
     value: bestStrategyNPV !== undefined ? `$${Math.round(bestStrategyNPV).toLocaleString()}` : 'Not run',
     subtext: bestStrategyName ?? 'Run strategy modules to calculate',
     status: bestStrategyNPV !== undefined ? (bestStrategyNPV > 0 ? 'good' : 'warning') : 'neutral',
@@ -194,6 +201,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'grat_breakeven',
     label: 'GRAT Breakeven Rate',
+    scope: 'strategy',
     value: `${(gratBreakeven * 100).toFixed(1)}%`,
     subtext: 'Current §7520 rate — assets must beat this',
     status: gratBreakeven < 0.05 ? 'good' : gratBreakeven < 0.065 ? 'warning' : 'critical',
@@ -214,6 +222,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
   metrics.push({
     id: 'cst_crossover',
     label: 'CST Crossover Year',
+    scope: 'strategy',
     value: cstCrossoverYear ? `${cstCrossoverYear}` : 'Not modeled',
     subtext: cstCrossoverYear
       ? "CST assets projected to exceed survivor exemption"

@@ -15,14 +15,14 @@ import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 
 export default function StrategyTab({ household, scenario, advisorHorizons }: ClientViewShellProps) {
   const householdId = household?.id ?? null
-  const grossEstate = Number(scenario?.gross_estate ?? 0)
+  const grossEstate = Number(advisorHorizons?.today.grossEstate ?? scenario?.gross_estate ?? 0)
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
   const defaultExemption = filingStatus === 'mfj'
     ? OBBBA_2026.BASIC_EXCLUSION_MFJ
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
-  const federalExemption = Number(scenario?.federal_exemption ?? defaultExemption)
-  const estimatedFederalTax = Number(scenario?.estimated_federal_tax ?? 0)
   // Unified engine source: today column from advisor horizons.
+  const federalExemption = Number(advisorHorizons?.today.federalExemption ?? scenario?.federal_exemption ?? defaultExemption)
+  const estimatedFederalTax = Number(advisorHorizons?.today.federalTaxEstimate ?? scenario?.estimated_federal_tax ?? 0)
   const estimatedStateTax = Number(advisorHorizons?.today.stateTax ?? 0)
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
