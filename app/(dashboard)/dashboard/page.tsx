@@ -190,9 +190,14 @@ export default async function DashboardPage() {
   const realEstateFMV = composition?.inside_real_estate ?? realEstateEquityFallback
   const businessValue = composition?.inside_business_gross ?? businessValueFallback
   const insuranceValue = composition?.inside_insurance ?? insuranceValueFallback
-  const totalAssets = composition?.gross_estate ?? (financialAssets + realEstateFMV + businessValue + insuranceValue)
+  const totalAssets = composition
+    ? Math.max(0, (composition.gross_estate ?? 0) - insuranceValue)
+    : (financialAssets + realEstateFMV + businessValue)
   const totalLiabilities = composition?.total_liabilities ?? (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
   const netWorth = composition?.net_estate ?? (totalAssets - totalLiabilities)
+  const netWorthExcludingInsurance = composition
+    ? totalAssets - totalLiabilities
+    : netWorth
 
   const { data: initialRecsData } = household?.id
     ? await supabase.rpc('generate_estate_recommendations', {
@@ -414,7 +419,7 @@ export default async function DashboardPage() {
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}
       totalLiabilities={totalLiabilities}
-      netWorth={netWorth}
+      netWorth={netWorthExcludingInsurance}
       netWorthBySource={{
         financial: financialAssets,
         realEstateEquity: realEstateFMV,
