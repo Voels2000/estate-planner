@@ -260,13 +260,6 @@ export default async function MyEstateStrategyPage() {
 
   return (
     <div className="min-h-screen">
-      <EstatePlanningDashboard
-        householdId={household.id}
-        userRole={access.isAdvisor ? 'advisor' : 'consumer'}
-        consumerTier={access.tier}
-        showCompleteness={false}
-        showGaps={false}
-      />
       <MyEstateStrategyClient
         householdId={household.id}
         scenarioId={household.base_case_scenario_id}

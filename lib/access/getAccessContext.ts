@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cache } from 'react'
 
 export type AccessContext = {
   user: { id: string; email: string } | null
@@ -26,7 +27,7 @@ export type AccessContext = {
   isFirmOwner: boolean
 }
 
-export async function getAccessContext(): Promise<AccessContext> {
+export const getAccessContext = cache(async (): Promise<AccessContext> => {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -90,4 +91,4 @@ export async function getAccessContext(): Promise<AccessContext> {
     seat_count: firm?.seat_count ?? null,
     isFirmOwner: profile?.firm_role === 'owner',
   }
-}
+})

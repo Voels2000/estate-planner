@@ -8,6 +8,7 @@ import type { EstateComposition } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
+import dynamic from 'next/dynamic'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
 import { TabSkeleton, StrategyTabSkeleton, DomicileTabSkeleton } from '@/components/ui/TabSkeleton'
@@ -15,12 +16,21 @@ import OverviewTab from './_tabs/OverviewTab'
 import EstateTab from './_tabs/EstateTab'
 import RetirementTab from './_tabs/RetirementTab'
 import TaxTab from './_tabs/TaxTab'
-import DomicileTab from './_tabs/DomicileTab'
-import DocumentsTab from './_tabs/DocumentsTab'
 import NotesTab from './_tabs/NotesTab'
-import StrategyTab from './_tabs/StrategyTab'
-import MeetingPrepTab from './_tabs/MeetingPrepTab'
 import { getComplexityStyle, getAge } from './_utils'
+
+const StrategyTab = dynamic(() => import('./_tabs/StrategyTab'), {
+  loading: () => <StrategyTabSkeleton />,
+})
+const DomicileTab = dynamic(() => import('./_tabs/DomicileTab'), {
+  loading: () => <DomicileTabSkeleton />,
+})
+const DocumentsTabDynamic = dynamic(() => import('./_tabs/DocumentsTab'), {
+  loading: () => <TabSkeleton rows={3} />,
+})
+const MeetingPrepTab = dynamic(() => import('./_tabs/MeetingPrepTab'), {
+  loading: () => <TabSkeleton rows={2} showHeader={false} />,
+})
 
 const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; comingSoon?: boolean }[] = [
   { id: 'overview',   label: 'Overview',   icon: '◎' },
@@ -187,7 +197,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
             {tab === 'retirement' && <RetirementTab  {...props} />}
             {tab === 'tax'        && <TaxTab         {...props} />}
             {tab === 'domicile'   && <DomicileTab    {...props} />}
-            {tab === 'documents'  && <DocumentsTab   {...props} />}
+            {tab === 'documents'  && <DocumentsTabDynamic {...props} />}
             {tab === 'notes'      && <NotesTab       {...props} />}
             {tab === 'strategy'   && <StrategyTab    {...props} />}
             {tab === 'meeting-prep' && <MeetingPrepTab {...props} />}

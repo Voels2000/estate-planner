@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveConsumerTier } from '@/lib/tiers'
+import { cache } from 'react'
 
 export type UserAccess = {
   tier: number
@@ -11,7 +12,7 @@ export type UserAccess = {
   subscriptionStatus: string | null
 }
 
-export async function getUserAccess(): Promise<UserAccess> {
+export const getUserAccess = cache(async (): Promise<UserAccess> => {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -70,4 +71,4 @@ export async function getUserAccess(): Promise<UserAccess> {
     profile?.consumer_tier ?? null,
   )
   return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
-}
+})
