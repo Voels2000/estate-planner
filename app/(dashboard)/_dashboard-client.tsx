@@ -98,6 +98,7 @@ type Props = {
     hasSpouse: boolean
   } | null
   mortgageBalance: number
+  otherLiabilities: number
   composition?: EstateComposition | null
   initialRecommendations?: Array<{
     branch: string
@@ -313,6 +314,7 @@ export function DashboardClient(props: Props) {
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
     mortgageBalance,
+    otherLiabilities,
     composition,
     initialRecommendations,
   } = props
@@ -432,9 +434,9 @@ export function DashboardClient(props: Props) {
               <span className="w-20 text-right text-xs font-semibold text-red-500">− {fmt(mortgageBalance)}</span>
             </div>
             <div className="flex items-center gap-3 pt-1 border-t border-neutral-100 mt-2">
-              <span className="w-36 text-xs text-neutral-400 shrink-0">Total Liabilities</span>
+              <span className="w-36 text-xs text-neutral-400 shrink-0">Other Liabilities</span>
               <div className="flex-1" />
-              <span className="w-20 text-right text-xs font-semibold text-red-500">− {fmt(totalLiabilities)}</span>
+              <span className="w-20 text-right text-xs font-semibold text-red-500">− {fmt(otherLiabilities)}</span>
             </div>
           </div>
         )}
