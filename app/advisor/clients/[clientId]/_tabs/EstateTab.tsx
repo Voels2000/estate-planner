@@ -150,9 +150,15 @@ export default function EstateTab({
 
   const assetAccountType = (a: { type?: string | null; account_type?: string | null }) =>
     (a.type ?? a.account_type ?? '').toLowerCase()
+  const normalizedRetirementType = (a: { type?: string | null; account_type?: string | null }) => {
+    const raw = assetAccountType(a)
+    if (raw === 'traditional_401k') return '401k'
+    if (raw === 'traditional_ira' || raw === 'rollover_ira') return 'ira'
+    return raw
+  }
 
   const retirementAssets = (assets ?? []).filter(a =>
-    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(assetAccountType(a))
+    ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(normalizedRetirementType(a))
   )
   const beneficiaryRows = (beneficiaries ?? []) as BeneficiaryRowType[]
   const beneficiaryGroups = beneficiaryRows.reduce<Record<string, BeneficiaryRowType[]>>((acc, b) => {

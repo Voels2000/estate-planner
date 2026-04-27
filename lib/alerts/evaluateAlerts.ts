@@ -413,7 +413,14 @@ function evalIraTrustNoConduit(
 ): RuleResult {
   const iraBenes = data.beneficiaries.filter(b => {
     const asset = data.assets.find(a => a.id === b.asset_id)
-    return asset && ['ira', 'roth_ira', '401k', '403b'].includes(asset.type as string)
+    const assetType = String(asset?.type ?? '').toLowerCase()
+    const normalizedAssetType =
+      assetType === 'traditional_ira'
+        ? 'ira'
+        : assetType === 'traditional_401k'
+          ? '401k'
+          : assetType
+    return asset && ['ira', 'roth_ira', '401k', '403b'].includes(normalizedAssetType)
       && (b.full_name as string)?.toLowerCase().includes('trust')
   })
 
@@ -451,7 +458,14 @@ function evalMissingBeneficiary(
 ): RuleResult {
   const requiresBene = ['ira', 'roth_ira', '401k', '403b', 'life_insurance']
   const assetsMissingBene = data.assets.filter(asset => {
-    if (!requiresBene.includes(asset.type as string)) return false
+    const assetType = String(asset.type ?? '').toLowerCase()
+    const normalizedAssetType =
+      assetType === 'traditional_ira'
+        ? 'ira'
+        : assetType === 'traditional_401k'
+          ? '401k'
+          : assetType
+    if (!requiresBene.includes(normalizedAssetType)) return false
     const hasBene = data.beneficiaries.some(b => b.asset_id === asset.id)
     return !hasBene
   })

@@ -151,8 +151,14 @@ export function computeGaps(params: {
 
   // ── Beneficiary gaps ──────────────────────────────────────────────────────
   const retirementAssets = (assets ?? []).filter(a => {
-    const t = ((a as { type?: string; account_type?: string }).type ?? a.account_type ?? '').toLowerCase()
-    return ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(t)
+    const raw = ((a as { type?: string; account_type?: string }).type ?? a.account_type ?? '').toLowerCase()
+    const normalized =
+      raw === 'traditional_401k'
+        ? '401k'
+        : raw === 'traditional_ira' || raw === 'rollover_ira'
+          ? 'ira'
+          : raw
+    return ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(normalized)
   })
 
   if (retirementAssets.length > 0 && (beneficiaries ?? []).length === 0) {

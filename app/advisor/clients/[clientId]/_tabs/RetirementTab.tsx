@@ -39,10 +39,16 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
 
   const accountType = (a: { type?: string | null; account_type?: string | null }) =>
     (a.type ?? a.account_type ?? '').toLowerCase()
+  const normalizedRetirementType = (a: { type?: string | null; account_type?: string | null }) => {
+    const raw = accountType(a)
+    if (raw === 'traditional_401k') return '401k'
+    if (raw === 'traditional_ira' || raw === 'rollover_ira') return 'ira'
+    return raw
+  }
 
   const assetRows = (assets ?? []) as RetirementAssetRow[]
   const retirementAssets = assetRows.filter(a =>
-    ['401k','ira','roth_ira','sep_ira','403b','457','pension'].includes(accountType(a))
+    ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(normalizedRetirementType(a))
   )
   const totalRetirement   = retirementAssets.reduce((s, a) => s + Number(a.value ?? 0), 0)
   const traditionalAssets = retirementAssets.filter(a => accountType(a) !== 'roth_ira')
