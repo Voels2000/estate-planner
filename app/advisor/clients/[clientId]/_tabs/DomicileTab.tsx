@@ -3,6 +3,7 @@
 // Domicile risk analysis — read-only advisor view
 // Data comes from domicile_analysis table, pre-scored by calculate_domicile_risk() RPC
 
+import { useEffect, useState } from 'react'
 import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
 import InheritanceTaxWaterfall from '@/components/advisor/InheritanceTaxWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'
@@ -16,6 +17,7 @@ const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
 export default function DomicileTab({
   domicileAnalysis,
   household,
+  clientId,
   domicileSchedule,
   domicileChecklist,
   stateExemptions,
@@ -41,7 +43,32 @@ export default function DomicileTab({
     gross_estate?: number | null
   }
 
-  if (!domicileAnalysis) {
+  const [liveAnalysis, setLiveAnalysis] = useState(domicileAnalysis)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadLatest() {
+      if (!clientId) return
+      try {
+        const res = await fetch(`/api/domicile-analysis?client_id=${encodeURIComponent(clientId)}`, {
+          cache: 'no-store',
+        })
+        if (!res.ok) return
+        const payload = (await res.json()) as { analysis?: DomicileAnalysisRow | null }
+        if (!cancelled && payload.analysis) {
+          setLiveAnalysis(payload.analysis)
+        }
+      } catch {
+        // Keep server-provided analysis as fallback.
+      }
+    }
+    void loadLatest()
+    return () => {
+      cancelled = true
+    }
+  }, [clientId])
+
+  if (!liveAnalysis) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 flex flex-col items-center text-slate-400">
         <span className="text-4xl mb-3">⊙</span>
@@ -54,7 +81,7 @@ export default function DomicileTab({
     )
   }
 
-  const analysis = domicileAnalysis as DomicileAnalysisRow
+  const analysis = liveAnalysis as DomicileAnalysisRow
   const {
     claimed_domicile_state,
     risk_score,
