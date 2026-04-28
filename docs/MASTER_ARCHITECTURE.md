@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 42 / dashboard loaders + mappers extraction)
+# Last updated: April 28, 2026 (Session 43 / dashboard route cleanup)
 
 ---
 
@@ -166,6 +166,7 @@ Runtime behavior:
 - Shared projection route types are centralized in `lib/projections/types.ts`
 - This refactor is structure-only (no behavior/calculation change); projection math still comes from `projection-complete.ts`
 - Dashboard route `app/(dashboard)/dashboard/page.tsx` is decomposed into helper modules under `lib/dashboard/*` (calculations, loaders, and mappers) with no behavior changes.
+- Dashboard empty-state rendering is componentized under `app/(dashboard)/dashboard/_components/*` to keep the route file orchestration-focused.
 
 ---
 
