@@ -60,7 +60,7 @@ export default async function MyEstateTrustStrategyPage({
 
   if (access.tier < 3) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">My Estate & Trust Strategy</h1>
         <UpgradeBanner
           requiredTier={3}
@@ -79,7 +79,7 @@ export default async function MyEstateTrustStrategyPage({
 
   if (!householdRow?.id) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <p className="text-sm text-neutral-500">No household found. Please complete your profile first.</p>
       </div>
     )
@@ -322,7 +322,7 @@ export default async function MyEstateTrustStrategyPage({
   })
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <MyEstateTrustStrategyClient
         householdId={householdRow.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}

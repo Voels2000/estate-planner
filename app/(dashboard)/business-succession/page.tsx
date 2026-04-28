@@ -29,7 +29,7 @@ export default async function BusinessSuccessionPage() {
 
   if (!household) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
           <p className="text-2xl mb-3">🏢</p>
           <h2 className="text-lg font-semibold text-amber-900 mb-2">Your household profile isn&apos;t set up yet</h2>
@@ -40,7 +40,7 @@ export default async function BusinessSuccessionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <BusinessSuccessionClient
         householdId={household.id}
         userRole={profile.role}

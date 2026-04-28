@@ -61,7 +61,7 @@ export default async function PricingPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 text-center mb-8">
             For Individuals & Families
           </h2>
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          <div className="grid gap-6 md:grid-cols-3 max-w-7xl mx-auto">
             {CONSUMER_PLANS.map((plan) => (
               <div
                 key={plan.id}
@@ -131,7 +131,7 @@ export default async function PricingPage() {
             Full access to all features. Pricing based on number of clients.
             Client dashboard access is always free.
           </p>
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          <div className="grid gap-6 md:grid-cols-3 max-w-7xl mx-auto">
             {ADVISOR_PLANS.map((plan, i) => (
               <div
                 key={plan.name}

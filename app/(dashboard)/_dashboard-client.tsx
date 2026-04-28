@@ -338,7 +338,7 @@ export function DashboardClient(props: Props) {
   const nonSSIncome = totalIncome - annualSSFromPIA
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
 
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

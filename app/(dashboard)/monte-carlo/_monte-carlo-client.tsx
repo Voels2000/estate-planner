@@ -463,7 +463,7 @@ export function MonteCarloClient() {
 
   if (prefilling) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 flex items-center justify-center h-64 text-gray-400 text-sm gap-3">
+      <div className="max-w-7xl mx-auto px-4 py-8 flex items-center justify-center h-64 text-gray-400 text-sm gap-3">
         <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
         <p>Loading your profile data...</p>
       </div>
@@ -471,7 +471,7 @@ export function MonteCarloClient() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Monte Carlo Simulations</h1>

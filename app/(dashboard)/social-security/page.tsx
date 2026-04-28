@@ -21,7 +21,7 @@ export default async function SocialSecurityPage() {
   if (!household) redirect('/profile')
 
   return (
-    <div className='max-w-5xl mx-auto px-4 py-8'>
+    <div className='max-w-7xl mx-auto px-4 py-8'>
       <div className='mb-6'>
         <h1 className='text-2xl font-bold text-neutral-900'>Social Security Report</h1>
         <p className='text-sm text-neutral-500 mt-1'>

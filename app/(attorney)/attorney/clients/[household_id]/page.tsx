@@ -90,7 +90,7 @@ export default async function AttorneyClientPage({
     .single()
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <a href="/attorney" className="text-sm text-neutral-400 hover:text-neutral-600 mb-1 block">

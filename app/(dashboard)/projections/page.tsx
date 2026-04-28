@@ -127,7 +127,7 @@ export default function ProjectionsPage() {
 
   if (!household) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
           <div className="text-4xl mb-3">📈</div>
           <p className="text-sm font-medium text-neutral-600">Complete your profile first</p>
@@ -139,7 +139,7 @@ export default function ProjectionsPage() {
 
   if (projections.length === 0) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
           <div className="text-4xl mb-3">📈</div>
           <p className="text-sm font-medium text-neutral-600">No projection data yet</p>
@@ -171,7 +171,7 @@ export default function ProjectionsPage() {
   const p2 = household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Projections</h1>

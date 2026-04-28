@@ -260,7 +260,7 @@ export default function RealEstateClient({
   const primaryResidences = rows.filter(r => r.is_primary_residence && num(r.years_lived_in) >= 2)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Real Estate</h1>

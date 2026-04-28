@@ -116,7 +116,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Import Data</h1>
         <p className="mt-1 text-sm text-neutral-600">

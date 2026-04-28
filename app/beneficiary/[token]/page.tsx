@@ -65,7 +65,7 @@ export default async function BeneficiaryTokenPage({ params }: PageProps) {
 
       {/* Header */}
       <header className="bg-white border-b px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Shared Estate Plan</p>
             <h1 className="text-xl font-semibold text-gray-900">Hello, {grant.grantee_name}</h1>
@@ -79,7 +79,7 @@ export default async function BeneficiaryTokenPage({ params }: PageProps) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         <BeneficiaryEstateView
           granteeRelationship={grant.relationship}
           accessLevel={grant.access_level}

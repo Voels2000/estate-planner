@@ -159,7 +159,7 @@ export default function ExpensesClient({
   }, [expenses.length, groupKeys])
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Expenses</h1>

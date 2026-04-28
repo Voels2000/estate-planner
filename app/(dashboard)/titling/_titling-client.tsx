@@ -800,7 +800,7 @@ export default function TitlingClient({
   }))
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-12">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Account Titling & Beneficiaries</h1>
