@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026 (Session 41)
+# Last updated: April 28, 2026 (Session 42)
 
 ---
 
@@ -186,8 +186,8 @@ After each schema-affecting session:
 
 ---
 
-## Session 41 Note
+## Session 42 Note
 
-- No database schema or migration changes were introduced in Session 41.
-- Changes in this session are application-layer refactors only (consumer projections and dashboard modularization).
+- No database schema or migration changes were introduced in Session 42.
+- Changes in this session are application-layer refactors only (dashboard loader/mapper modularization).
 

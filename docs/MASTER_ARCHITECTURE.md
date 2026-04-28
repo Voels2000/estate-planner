@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 41 / consumer projections + dashboard modularization)
+# Last updated: April 28, 2026 (Session 42 / dashboard loaders + mappers extraction)
 
 ---
 
@@ -147,6 +147,8 @@ Runtime behavior:
 - `lib/dashboard/retirementSnapshot.ts` (retirement horizon snapshot derivation)
 - `lib/dashboard/rmdStatus.ts` (RMD requirement/planned rollup derivation)
 - `lib/dashboard/incomeSnapshot.ts` (income, expense, SS, and savings snapshot derivation)
+- `lib/dashboard/loaders.ts` (dashboard Supabase/admin query orchestration)
+- `lib/dashboard/mappers.ts` (dashboard health/conflict/allocation view-model mapping)
 
 ### APIs
 
@@ -163,7 +165,7 @@ Runtime behavior:
 - Local UI components are split under `app/(dashboard)/projections/_components/*`
 - Shared projection route types are centralized in `lib/projections/types.ts`
 - This refactor is structure-only (no behavior/calculation change); projection math still comes from `projection-complete.ts`
-- Dashboard route `app/(dashboard)/dashboard/page.tsx` is being decomposed into pure helper modules under `lib/dashboard/*` with no behavior changes.
+- Dashboard route `app/(dashboard)/dashboard/page.tsx` is decomposed into helper modules under `lib/dashboard/*` (calculations, loaders, and mappers) with no behavior changes.
 
 ---
 

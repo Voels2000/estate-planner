@@ -5,8 +5,6 @@
 
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import Link from 'next/link'
-import type { ConflictReport } from '@/lib/conflict-detector'
-import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { getCompletionScore } from '@/lib/get-completion-score'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
@@ -19,19 +17,23 @@ import {
 } from '@/lib/dashboard/retirementSnapshot'
 import { buildRmdStatus } from '@/lib/dashboard/rmdStatus'
 import { buildIncomeSnapshot } from '@/lib/dashboard/incomeSnapshot'
+import {
+  loadBaseCaseScenario,
+  loadDashboardCoreInputs,
+  loadDashboardRmdInputs,
+  loadLatestInputChangeMs,
+  loadProjectionCalculatedAt,
+} from '@/lib/dashboard/loaders'
+import {
+  buildAllocationContext,
+  mapConflictReport,
+  mapEstateHealthScore,
+} from '@/lib/dashboard/mappers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { DashboardClient } from '../_dashboard-client'
-
-type HealthComponentLike = {
-  label?: string
-  score?: number
-  maxScore?: number
-  actionLabel?: string
-  actionHref?: string
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -68,77 +70,14 @@ export default async function DashboardPage() {
 
   // Background staleness check for base-case projection:
   // regenerate asynchronously when user inputs or tax brackets are newer than the last run.
-  const { data: baseCaseCalcRow } = household.base_case_scenario_id
-    ? await admin
-        .from('projection_scenarios')
-        .select('calculated_at')
-        .eq('id', household.base_case_scenario_id)
-        .single()
-    : { data: null }
-  const projectionCalculatedAt = baseCaseCalcRow?.calculated_at ?? null
+  const projectionCalculatedAt = await loadProjectionCalculatedAt(admin, household.base_case_scenario_id)
   const projectionCalculatedMs = projectionCalculatedAt ? new Date(projectionCalculatedAt).getTime() : 0
 
-  const getLatestChangeTs = async (
-    table: string,
-    ownerColumn: string,
-    ownerValue: string,
-  ): Promise<string | null> => {
-    const { data } = await supabase
-      .from(table)
-      .select('updated_at, created_at')
-      .eq(ownerColumn, ownerValue)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-    const row = (data?.[0] ?? null) as { updated_at?: string | null; created_at?: string | null } | null
-    return row?.updated_at ?? row?.created_at ?? null
-  }
-
-  const [
-    assetsChangedAt,
-    liabilitiesChangedAt,
-    incomeChangedAt,
-    expensesChangedAt,
-    realEstateChangedAt,
-    businessesChangedAt,
-    businessInterestsChangedAt,
-    insuranceChangedAt,
-    stateIncomeTaxBracketsChangedAt,
-  ] = await Promise.all([
-    getLatestChangeTs('assets', 'owner_id', user!.id),
-    getLatestChangeTs('liabilities', 'owner_id', user!.id),
-    getLatestChangeTs('income', 'owner_id', user!.id),
-    getLatestChangeTs('expenses', 'owner_id', user!.id),
-    getLatestChangeTs('real_estate', 'owner_id', user!.id),
-    getLatestChangeTs('businesses', 'owner_id', user!.id),
-    getLatestChangeTs('business_interests', 'owner_id', user!.id),
-    getLatestChangeTs('insurance_policies', 'user_id', user!.id),
-    (async () => {
-      const { data } = await supabase
-        .from('state_income_tax_brackets')
-        .select('created_at')
-        .order('created_at', { ascending: false })
-        .limit(1)
-      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
-      return row?.created_at ?? null
-    })(),
-  ])
-
-  const latestInputChangeMs = [
+  const latestInputChangeMs = await loadLatestInputChangeMs(
+    supabase,
+    user!.id,
     household.updated_at ?? null,
-    assetsChangedAt,
-    liabilitiesChangedAt,
-    incomeChangedAt,
-    expensesChangedAt,
-    realEstateChangedAt,
-    businessesChangedAt,
-    businessInterestsChangedAt,
-    insuranceChangedAt,
-    stateIncomeTaxBracketsChangedAt,
-  ].reduce((max, ts) => {
-    if (!ts) return max
-    const ms = new Date(ts).getTime()
-    return Number.isFinite(ms) ? Math.max(max, ms) : max
-  }, 0)
+  )
 
   const isStale =
     !household.base_case_scenario_id ||
@@ -158,42 +97,22 @@ export default async function DashboardPage() {
     })()
   }
 
-  const { data: baseCaseScenario } = household?.base_case_scenario_id
-    ? await admin
-        .from('projection_scenarios')
-        .select('outputs_s1_first, assumption_snapshot')
-        .eq('id', household.base_case_scenario_id)
-        .single()
-    : { data: null }
+  const baseCaseScenario = await loadBaseCaseScenario(admin, household?.base_case_scenario_id)
 
   // ── Parallel data fetch ──────────────────────────────────────────────────
   // Income query now includes ALL sources (including social_security) so the
   // current-year net income calculation is complete.
-  const [
-    { data: profile },
-    { data: assets },
-    { data: liabilities },
-    { data: income },           // ALL sources including SS rows if entered manually
-    { data: expenses },
-    { data: realEstate },
-    { data: businesses },
-    { data: businessInterests },
-    { data: insurance },
-  ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user!.id).single(),
-    supabase.from('assets').select('value').eq('owner_id', user!.id),
-    supabase.from('liabilities').select('balance').eq('owner_id', user!.id),
-    // Removed .neq('source', 'social_security') — include all income sources
-    supabase.from('income').select('amount, source, start_year, end_year').eq('owner_id', user!.id),
-    supabase.from('expenses').select('amount').eq('owner_id', user!.id),
-    supabase.from('real_estate').select('current_value, mortgage_balance, monthly_payment, titling').eq('owner_id', user!.id),
-    supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', user!.id),
-    supabase
-      .from('business_interests')
-      .select('fmv_estimated, total_entity_value, ownership_pct')
-      .eq('owner_id', user!.id),
-    supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', user!.id),
-  ])
+  const {
+    profile,
+    assets,
+    liabilities,
+    income,
+    expenses,
+    realEstate,
+    businesses,
+    businessInterests,
+    insurance,
+  } = await loadDashboardCoreInputs(supabase, user!.id)
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
   const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -293,31 +212,7 @@ export default async function DashboardPage() {
         .maybeSingle()
     : { data: null }
 
-  const estateHealthScore: EstateHealthScore | null = healthScoreRow
-    ? {
-        score: healthScoreRow.score ?? 0,
-        components: Object.entries(healthScoreRow.component_scores ?? {}).map(
-          ([key, rawVal]: [string, unknown]) => {
-            const val: HealthComponentLike =
-              rawVal && typeof rawVal === 'object' ? (rawVal as HealthComponentLike) : {}
-            return ({
-            key,
-            label: val.label ?? key,
-            score: val.score ?? 0,
-            maxScore: val.maxScore ?? 0,
-            status: (val.score ?? 0) >= (val.maxScore ?? 1)
-              ? 'good'
-              : (val.score ?? 0) >= (val.maxScore ?? 1) * 0.5
-              ? 'warning'
-              : 'critical',
-            actionLabel: val.actionLabel ?? '',
-            actionHref: val.actionHref ?? '/health-check',
-            })
-          },
-        ),
-        computedAt: healthScoreRow.computed_at ?? new Date().toISOString(),
-      }
-    : null
+  const estateHealthScore = mapEstateHealthScore(healthScoreRow)
 
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
   const baseCaseRows: YearRow[] = baseCaseScenario?.outputs_s1_first ?? []
@@ -331,31 +226,14 @@ export default async function DashboardPage() {
         .eq('household_id', household.id)
     : { data: null }
 
-  const conflictReport: ConflictReport | null = conflictRows
-    ? {
-        conflicts: conflictRows,
-        critical: conflictRows.filter(c => c.severity === 'critical').length,
-        warnings: conflictRows.filter(c => c.severity === 'warning').length,
-        computedAt: new Date().toISOString(),
-      }
-    : null
+  const conflictReport = mapConflictReport(conflictRows)
 
   // ── RMD Status for current year ──────────────────────────────────────
 
-  const { data: taxDeferredAssets } = await supabase
-    .from('assets')
-    .select('value, owner, type')
-    .eq('owner_id', user!.id)
-    .in('type', [
-      'traditional_401k', 'traditional_ira', '401k', 'ira',
-      'traditional_403b', 'sep_ira', 'simple_ira', '457', 'sep',
-    ])
-
-  const { data: currentYearWithdrawals } = await supabase
-    .from('income')
-    .select('amount, source, ss_person, start_year, end_year')
-    .eq('owner_id', user!.id)
-    .in('source', ['traditional_401k', 'traditional_ira'])
+  const { taxDeferredAssets, currentYearWithdrawals } = await loadDashboardRmdInputs(
+    supabase,
+    user!.id,
+  )
 
   const rmdStatus = buildRmdStatus({
     currentYear,
@@ -400,16 +278,10 @@ export default async function DashboardPage() {
   } : null
 
   // ── Allocation context ───────────────────────────────────────────────────
-  const allocationContext: AssetAllocationContext = {
-    currentAge: profile?.current_age ?? null,
-    birthYear: household?.person1_birth_year ?? null,
-    riskTolerance: household?.risk_tolerance ?? profile?.risk_tolerance ?? null,
-    retirementAge: profile?.retirement_age ?? household?.person1_retirement_age ?? null,
-    maritalStatus: profile?.marital_status ?? null,
-    dependents: profile?.dependents ?? null,
-    hasSpouse: household?.has_spouse ?? null,
-    filingStatus: household?.filing_status != null ? String(household.filing_status) : null,
-  }
+  const allocationContext: AssetAllocationContext = buildAllocationContext({
+    profile,
+    household,
+  })
 
   return (
     <DashboardClient
