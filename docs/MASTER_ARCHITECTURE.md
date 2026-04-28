@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 74 / consumer strategy path simplified)
+# Last updated: April 28, 2026 (Session 75 / monte carlo consumer accept-revert)
 
 ---
 
@@ -112,12 +112,15 @@ Important:
 - Defaults live in code: `MONTE_CARLO_SYSTEM_DEFAULTS`.
 - Advisor assumptions saved in `advisor_projection_assumptions`.
 - Advisor-side comparison flow exists.
-- Consumer accept/revert flow is planned.
+- Consumer accept/revert flow is implemented via `advisor_projection_assumptions.accepted_by_client` + `accepted_at`.
+- Consumer endpoint: `/api/monte-carlo/advisor-assumptions` (read latest shared + accepted scenario, accept, revert).
+- Consumer UI (`/monte-carlo`) applies accepted advisor assumptions to page-level assumption inputs (inflation and simulation count).
 
 ### Target
 
 - Consumer remains on defaults until advisor scenario is explicitly accepted.
 - Engine remains pure (`runMonteCarloSimulation(input, assumptions)`).
+- Expand consumer Monte Carlo engine parity so all advisor assumption fields are consumed uniformly across both advisor and consumer Monte Carlo surfaces.
 
 ---
 
@@ -213,6 +216,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `app/api/advisor/strategy-recommendations-read/route.ts`
 - `app/api/projection/monte-carlo/route.ts`
 - `app/api/advisor/monte-carlo-assumptions/route.ts`
+- `app/api/monte-carlo/advisor-assumptions/route.ts`
 
 ### Consumer UI Composition (Current)
 
@@ -287,6 +291,6 @@ Safe-delete gate:
 
 1. Delete deprecated `lib/calculations/projection.ts` after one clean release cycle with zero imports.
 2. Decide whether to keep `/api/strategy-line-items` as canonical consumer path or introduce `/api/consumer/strategy-*` endpoints.
-3. Finish Monte Carlo consumer acceptance flow.
+3. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
 4. Keep this file updated with **Current vs Target** deltas each session.
 

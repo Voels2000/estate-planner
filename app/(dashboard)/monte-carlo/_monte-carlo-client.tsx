@@ -51,6 +51,22 @@ interface PrefillSummary {
   has_expenses: boolean
 }
 
+interface AdvisorAssumptionScenario {
+  id: string
+  scenarioName: string
+  sharedAt?: string | null
+  acceptedAt?: string | null
+  assumptions: {
+    returnMeanPct: number
+    volatilityPct: number
+    withdrawalRatePct: number
+    successThreshold: number
+    simulationCount: number
+    planningHorizonYr: number
+    inflationRatePct: number
+  }
+}
+
 const STEPS: { key: Step; label: string }[] = [
   { key: 'portfolio',   label: 'Portfolio' },
   { key: 'spending',    label: 'Spending' },
@@ -374,6 +390,9 @@ export function MonteCarloClient() {
   const [label, setLabel]           = useState('')
   const [p1Name, setP1Name]         = useState('Person 1')
   const [p2Name, setP2Name]         = useState('Person 2')
+  const [acceptedAdvisorScenario, setAcceptedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(null)
+  const [latestSharedAdvisorScenario, setLatestSharedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(null)
+  const [assumptionActionLoading, setAssumptionActionLoading] = useState(false)
 
   const [activeTab, setActiveTab] = useState<'simulate' | 'compare'>('simulate')
   const [compareA, setCompareA] = useState<SavedRun | null>(null)
@@ -429,6 +448,77 @@ export function MonteCarloClient() {
     }).catch(() => setPrefilling(false))
   }, [])
 
+  useEffect(() => {
+    fetch('/api/monte-carlo/advisor-assumptions')
+      .then((r) => r.json())
+      .then((data) => {
+        const accepted = data?.acceptedScenario ?? null
+        const shared = data?.latestSharedScenario ?? null
+        setAcceptedAdvisorScenario(accepted)
+        setLatestSharedAdvisorScenario(shared)
+        if (accepted?.assumptions) {
+          setInputs((prev) => ({
+            ...prev,
+            inflation_rate: Number(accepted.assumptions.inflationRatePct ?? prev.inflation_rate),
+            simulation_count: Number(accepted.assumptions.simulationCount ?? prev.simulation_count),
+          }))
+        }
+      })
+      .catch(() => null)
+  }, [])
+
+  async function acceptAdvisorAssumptions() {
+    if (!latestSharedAdvisorScenario?.id) return
+    setAssumptionActionLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/monte-carlo/advisor-assumptions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'accept', scenarioId: latestSharedAdvisorScenario.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Unable to accept advisor assumptions')
+      const accepted = data?.acceptedScenario ?? null
+      setAcceptedAdvisorScenario(accepted)
+      if (accepted?.assumptions) {
+        setInputs((prev) => ({
+          ...prev,
+          inflation_rate: Number(accepted.assumptions.inflationRatePct ?? prev.inflation_rate),
+          simulation_count: Number(accepted.assumptions.simulationCount ?? prev.simulation_count),
+        }))
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unable to accept advisor assumptions')
+    } finally {
+      setAssumptionActionLoading(false)
+    }
+  }
+
+  async function revertAdvisorAssumptions() {
+    setAssumptionActionLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/monte-carlo/advisor-assumptions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revert' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Unable to revert assumptions')
+      setAcceptedAdvisorScenario(null)
+      setInputs((prev) => ({
+        ...prev,
+        inflation_rate: Number(data?.systemDefaults?.inflationRatePct ?? prev.inflation_rate),
+        simulation_count: Number(data?.systemDefaults?.simulationCount ?? prev.simulation_count),
+      }))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unable to revert assumptions')
+    } finally {
+      setAssumptionActionLoading(false)
+    }
+  }
+
   async function runSimulation() {
     if (!allocationValid) { setError('Allocation must sum to 100%'); return }
     setLoading(true)
@@ -482,6 +572,46 @@ export function MonteCarloClient() {
           <button onClick={() => setActiveTab('compare')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'compare' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Compare {history.length >= 2 ? `(${history.length})` : ''}</button>
         </div>
       </div>
+
+      {latestSharedAdvisorScenario && !acceptedAdvisorScenario && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <p className="text-sm font-semibold text-indigo-900">
+            Advisor assumptions available: {latestSharedAdvisorScenario.scenarioName}
+          </p>
+          <p className="mt-1 text-xs text-indigo-700">
+            Accept to apply advisor Monte Carlo assumptions to this page (inflation and simulation count).
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={acceptAdvisorAssumptions}
+              disabled={assumptionActionLoading}
+              className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+            >
+              {assumptionActionLoading ? 'Applying…' : 'Accept advisor assumptions'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {acceptedAdvisorScenario && (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+          <p className="text-sm font-semibold text-green-900">
+            Using accepted advisor assumptions: {acceptedAdvisorScenario.scenarioName}
+          </p>
+          <p className="mt-1 text-xs text-green-700">
+            Applied fields on this page: inflation rate and simulation count.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={revertAdvisorAssumptions}
+              disabled={assumptionActionLoading}
+              className="rounded border border-green-300 bg-white px-3 py-1.5 text-xs font-medium text-green-800 disabled:opacity-60"
+            >
+              {assumptionActionLoading ? 'Reverting…' : 'Revert to system defaults'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'compare' && (
         <CompareView history={history} compareA={compareA} compareB={compareB} setCompareA={setCompareA} setCompareB={setCompareB} />

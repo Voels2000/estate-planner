@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026 (Session 62)
+# Last updated: April 28, 2026 (Session 75)
 
 ---
 
@@ -31,7 +31,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts` | Cached analytics + notifications |
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
-| Monte Carlo assumptions | `advisor_projection_assumptions`, `projection_assumption_audit` | Advisor override workflow |
+| Monte Carlo assumptions | `advisor_projection_assumptions`, `projection_assumption_audit` | Advisor override + consumer accept/revert workflow |
 
 ---
 
@@ -100,8 +100,9 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `advisor_projection_assumptions`
 
-- **Key columns:** `advisor_id`, `client_household_id`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`
-- **Purpose:** advisor Monte Carlo scenario assumptions.
+- **Key columns:** `advisor_id`, `client_household_id`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`, `accepted_at`
+- **Purpose:** advisor Monte Carlo scenario assumptions and consumer acceptance state.
+- **Acceptance behavior:** consumer accept/revert toggles `accepted_by_client`/`accepted_at` on household-linked rows; latest accepted row is consumer-effective state.
 
 ### `projection_assumption_audit`
 
@@ -140,7 +141,7 @@ This is a developer reference, not a full SQL DDL dump.
 ### Legacy/transition
 
 - `state_income_tax_rates` (still read in some non-engine surfaces)
-- mixed strategy write APIs (`strategy-line-items`/`strategy-configs` vs advisor recommendation route)
+- consumer path still uses legacy-named `/api/strategy-line-items` endpoint (single canonical consumer path today)
 
 ---
 
@@ -285,4 +286,9 @@ After each schema-affecting session:
 
 - No database schema or migration changes were introduced in Session 62.
 - Changes in this session are application-layer readability refactors only (advisor client route orchestration comments/import grouping; no behavior change).
+
+## Session 75 Note
+
+- No new schema migration required.
+- Existing `advisor_projection_assumptions` acceptance fields (`accepted_by_client`, `accepted_at`) are now actively used by the consumer Monte Carlo accept/revert flow.
 
