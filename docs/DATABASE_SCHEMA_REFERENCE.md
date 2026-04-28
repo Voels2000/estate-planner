@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026
+# Last updated: April 28, 2026 (Session 41)
 
 ---
 
@@ -183,4 +183,11 @@ After each schema-affecting session:
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
 - `20260428000002_strategy_line_items_acceptance_fields.sql`
+
+---
+
+## Session 41 Note
+
+- No database schema or migration changes were introduced in Session 41.
+- Changes in this session are application-layer refactors only (consumer projections and dashboard modularization).
 

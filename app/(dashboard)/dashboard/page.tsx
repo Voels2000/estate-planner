@@ -12,6 +12,13 @@ import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
   computeBusinessOwnershipValue,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { buildDashboardSetupProgress } from '@/lib/dashboard/setupProgress'
+import {
+  computeYearsToRetirement,
+  getRetirementIncomeProjection,
+} from '@/lib/dashboard/retirementSnapshot'
+import { buildRmdStatus } from '@/lib/dashboard/rmdStatus'
+import { buildIncomeSnapshot } from '@/lib/dashboard/incomeSnapshot'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
@@ -24,21 +31,6 @@ type HealthComponentLike = {
   maxScore?: number
   actionLabel?: string
   actionHref?: string
-}
-
-// ── SS benefit adjustment for claiming age vs FRA ────────────────────────────
-// FRA = 67 for born 1960+. Early = -6.67%/yr (first 3yr) then -5%/yr.
-// Delayed past FRA = +8%/yr up to age 70.
-function adjustSSForClaimingAge(pia: number, claimingAge: number, birthYear: number): number {
-  if (!pia || !claimingAge) return pia ?? 0
-  const fra = birthYear >= 1960 ? 67 : 66
-  const diff = claimingAge - fra
-  if (diff === 0) return pia
-  if (diff > 0) return Math.round(pia * (1 + Math.min(diff, 3) * 0.08))
-  const early = Math.abs(diff)
-  const first3 = Math.min(early, 3) * (1 / 15)
-  const beyond = Math.max(early - 3, 0) * (1 / 20)
-  return Math.round(pia * (1 - first3 - beyond))
 }
 
 export default async function DashboardPage() {
@@ -215,17 +207,6 @@ export default async function DashboardPage() {
 
   const currentYear = new Date().getFullYear()
 
-  // Current year income from income table (all sources, date-filtered)
-  const totalIncomeFromTable = (income ?? []).reduce((s, i) => {
-    if (i.start_year && i.start_year > currentYear) return s
-    if (i.end_year && i.end_year < currentYear) return s
-    return s + Number(i.amount)
-  }, 0)
-
-  // SS income from household PIA fields (canonical source — projection engine uses these)
-  // Only add SS from PIA if NOT already in the income table to avoid double-counting
-  const hasSSInIncomeTable = (income ?? []).some(i => i.source === 'social_security')
-
   const p1BirthYear = household?.person1_birth_year ?? null
   const p1SSClaimingAge = household?.person1_ss_claiming_age ?? null
   const p1SSPia = household?.person1_ss_pia ? Number(household.person1_ss_pia) : null
@@ -234,62 +215,44 @@ export default async function DashboardPage() {
   const p2SSPia = household?.person2_ss_pia ? Number(household.person2_ss_pia) : null
   const hasSpouse = household?.has_spouse ?? false
 
-  const p1MonthlyBenefit = p1SSPia && p1SSClaimingAge && p1BirthYear
-    ? adjustSSForClaimingAge(p1SSPia, p1SSClaimingAge, p1BirthYear)
-    : p1SSPia ?? null
-
-  const p2MonthlyBenefit = hasSpouse && p2SSPia && p2SSClaimingAge && p2BirthYear
-    ? adjustSSForClaimingAge(p2SSPia, p2SSClaimingAge, p2BirthYear)
-    : hasSpouse ? (p2SSPia ?? null) : null
-
-  // combinedSSMonthly = full future SS value — used in retirement snapshot display
-  const combinedSSMonthly = (p1MonthlyBenefit ?? 0) + (p2MonthlyBenefit ?? 0)
-
-  // Age gate — only include SS in current year income if the person
-  // has reached their claiming age this year or earlier.
-  const p1CurrentAge = p1BirthYear ? currentYear - p1BirthYear : null
-  const p2CurrentAge = p2BirthYear ? currentYear - p2BirthYear : null
-  const p1IsClaimingNow = p1CurrentAge !== null && p1SSClaimingAge !== null && p1CurrentAge >= p1SSClaimingAge
-  const p2IsClaimingNow = hasSpouse && p2CurrentAge !== null && p2SSClaimingAge !== null && p2CurrentAge >= p2SSClaimingAge
-
-  // annualSSFromPIA = SS actually in payment today (age-gated for current year net)
-  const annualSSFromPIA =
-    ((p1IsClaimingNow ? (p1MonthlyBenefit ?? 0) : 0) +
-     (p2IsClaimingNow ? (p2MonthlyBenefit ?? 0) : 0)) * 12
-
-  // Total income = table income + age-gated SS (if not already in income table)
-  const totalIncome = hasSSInIncomeTable
-    ? totalIncomeFromTable
-    : totalIncomeFromTable + annualSSFromPIA
-
-  const annualMortgagePayments = (realEstate ?? [])
-    .filter(re => Number(re.mortgage_balance ?? 0) > 0 && Number(re.monthly_payment ?? 0) > 0)
-    .reduce((s, re) => s + Number(re.monthly_payment) * 12, 0)
-  const totalMortgageBalance = (realEstate ?? []).reduce((s, re) => s + Number(re.mortgage_balance ?? 0), 0)
-
-  const totalExpenses = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0) + annualMortgagePayments
-  const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0
-
-  // Current year net = total income (all sources incl SS) - total expenses
-  // This is the live metric — updates as income/expense data changes.
-  // E.g. when expenses drop $110K in 2030 after moving, this reflects it.
-  const currentYearNet = totalIncome - totalExpenses
+  const baseExpenses = (expenses ?? []).reduce((sum, expense) => sum + Number(expense.amount), 0)
+  const {
+    totalIncome,
+    totalExpenses,
+    savingsRate,
+    currentYearNet,
+    annualSSFromPIA,
+    totalMortgageBalance,
+    combinedSSMonthly,
+    p1MonthlyBenefit,
+    p2MonthlyBenefit,
+  } = buildIncomeSnapshot({
+    currentYear,
+    incomeRows: income ?? [],
+    realEstateRows: realEstate ?? [],
+    hasSpouse,
+    p1BirthYear,
+    p1SSClaimingAge,
+    p1SSPia,
+    p2BirthYear,
+    p2SSClaimingAge,
+    p2SSPia,
+    expensesTotal: baseExpenses,
+  })
   // Derive from baseCaseScenario already loaded above — no HTTP roundtrip needed
   const hasLiveProjectionOutput =
     Array.isArray(baseCaseScenario?.outputs_s1_first) &&
     (baseCaseScenario.outputs_s1_first as unknown[]).length > 0
 
   // ── Setup steps — "Compare scenarios" removed (no longer a gate) ─────────
-  const setupSteps = [
-    { key: 'profile', label: 'Complete your profile', href: '/profile', done: !!(household?.person1_name && household?.person1_birth_year) },
-    { key: 'assets', label: 'Add your assets', href: '/assets', done: (assets ?? []).length > 0 },
-    { key: 'liabilities', label: 'Add your liabilities', href: '/liabilities', done: (liabilities ?? []).length > 0 },
-    { key: 'income', label: 'Add income sources', href: '/income', done: (income ?? []).length > 0 },
-    { key: 'expenses', label: 'Add your expenses', href: '/expenses', done: (expenses ?? []).length > 0 },
-    { key: 'projections', label: 'Run a projection', href: '/projections', done: hasLiveProjectionOutput },
-  ]
-  const completedSteps = setupSteps.filter(s => s.done).length
-  const progressPct = Math.round((completedSteps / setupSteps.length) * 100)
+  const { setupSteps, completedSteps, progressPct } = buildDashboardSetupProgress({
+    hasProfileBasics: !!(household?.person1_name && household?.person1_birth_year),
+    assetsCount: (assets ?? []).length,
+    liabilitiesCount: (liabilities ?? []).length,
+    incomeCount: (income ?? []).length,
+    expensesCount: (expenses ?? []).length,
+    hasLiveProjectionOutput,
+  })
 
   // ── Tier / completion ────────────────────────────────────────────────────
   const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
@@ -378,21 +341,6 @@ export default async function DashboardPage() {
     : null
 
   // ── RMD Status for current year ──────────────────────────────────────
-  function getRmdStartAge(birthYear: number): number {
-    if (birthYear >= 1960) return 75
-    if (birthYear >= 1951) return 73
-    return 72
-  }
-
-  function getRmdFactor(age: number): number {
-    return Math.max(1, 27.4 - (age - 72))
-  }
-
-  function calcRmdAmount(age: number, balance: number, birthYear: number): number {
-    const rmdAge = getRmdStartAge(birthYear)
-    if (age < rmdAge || balance <= 0) return 0
-    return Math.round(balance / getRmdFactor(age))
-  }
 
   const { data: taxDeferredAssets } = await supabase
     .from('assets')
@@ -409,89 +357,27 @@ export default async function DashboardPage() {
     .eq('owner_id', user!.id)
     .in('source', ['traditional_401k', 'traditional_ira'])
 
-  const p1TaxDeferred = (taxDeferredAssets ?? [])
-    .filter(a => a.owner === 'person1' ||
-      a.owner === (household?.person1_name ?? '').trim().toLowerCase())
-    .reduce((s, a) => s + Number(a.value), 0)
-
-  const p2TaxDeferred = hasSpouse ? (taxDeferredAssets ?? [])
-    .filter(a => a.owner === 'person2' ||
-      a.owner === (household?.person2_name ?? '').trim().toLowerCase())
-    .reduce((s, a) => s + Number(a.value), 0) : 0
-
-  const p1AgeNow = p1BirthYear ? currentYear - p1BirthYear : null
-  const p2AgeNow = p2BirthYear ? currentYear - p2BirthYear : null
-
-  const p1RmdRequired = p1AgeNow && p1BirthYear
-    ? calcRmdAmount(p1AgeNow, p1TaxDeferred, p1BirthYear) : 0
-
-  const p2RmdRequired = p2AgeNow && p2BirthYear && hasSpouse
-    ? calcRmdAmount(p2AgeNow, p2TaxDeferred, p2BirthYear) : 0
-
-  const activeWithdrawals = (currentYearWithdrawals ?? []).filter(w => {
-    if (w.start_year && w.start_year > currentYear) return false
-    if (w.end_year && w.end_year < currentYear) return false
-    return true
-  })
-
-  const p1RmdPlanned = activeWithdrawals
-    .filter(w => w.ss_person === 'person1')
-    .reduce((s, w) => s + Number(w.amount), 0)
-
-  const p2RmdPlanned = activeWithdrawals
-    .filter(w => w.ss_person === 'person2')
-    .reduce((s, w) => s + Number(w.amount), 0)
-
-  const rmdStatus = {
-    p1Name: displayPersonFirstName(household?.person1_name, 'Person 1'),
-    p2Name: hasSpouse
-      ? displayPersonFirstName(household?.person2_name, 'Person 2')
-      : null,
-    p1Required: p1RmdRequired,
-    p1Planned: p1RmdPlanned,
-    p1StartYear: p1BirthYear ? p1BirthYear + getRmdStartAge(p1BirthYear) : null,
-    p2Required: p2RmdRequired,
-    p2Planned: p2RmdPlanned,
-    p2StartYear: p2BirthYear && hasSpouse
-      ? p2BirthYear + getRmdStartAge(p2BirthYear)
-      : null,
+  const rmdStatus = buildRmdStatus({
+    currentYear,
     hasSpouse,
-  }
+    p1BirthYear,
+    p2BirthYear,
+    p1NameRaw: household?.person1_name ?? null,
+    p2NameRaw: household?.person2_name ?? null,
+    p1DisplayName: displayPersonFirstName(household?.person1_name, 'Person 1'),
+    p2DisplayName: hasSpouse ? displayPersonFirstName(household?.person2_name, 'Person 2') : null,
+    taxDeferredAssets: taxDeferredAssets ?? [],
+    currentYearWithdrawals: currentYearWithdrawals ?? [],
+  })
 
   // ── Retirement snapshot — from households table ──────────────────────────
   const p1RetirementAge = household?.person1_retirement_age ?? null
   const p2RetirementAge = household?.person2_retirement_age ?? null
   const p2SSClaimingAge2 = household?.person2_ss_claiming_age ?? null
 
-  const currentAge = p1BirthYear ? currentYear - p1BirthYear : null
-  const yearsToRetirement = p1RetirementAge && currentAge ? Math.max(0, p1RetirementAge - currentAge) : null
-
-  // If base case exists, find retirement year row for projected income at retirement
-  let projectedAnnualIncome: number | null = null
-  let projectedAnnualExpenses: number | null = null
-  let projectedIncomeGap: number | null = null
-
-  if (baseCaseRows.length > 0 && p1BirthYear && p1RetirementAge) {
-    const retirementYear = p1BirthYear + p1RetirementAge
-
-    // Use the FIRST FULL retirement year (retirementYear + 1) rather than
-    // the transition year itself. The transition year blends working and
-    // retired income making it an unreliable snapshot.
-    // Fall back to the retirement year itself if +1 is not in the projection.
-    const firstFullRetirementYear = retirementYear + 1
-    const retirementRow =
-      baseCaseRows.find(r => r.year === firstFullRetirementYear)
-      ?? baseCaseRows.find(r => r.year === retirementYear)
-      ?? baseCaseRows.find(r => (r.age_person1 ?? 0) >= p1RetirementAge)
-
-    if (retirementRow) {
-      // Use income_total from projection — already includes SS, RMD,
-      // and all other income correctly for that year
-      projectedAnnualIncome = retirementRow.income_total ?? 0
-      projectedAnnualExpenses = retirementRow.expenses_total ?? totalExpenses
-      projectedIncomeGap = projectedAnnualIncome - projectedAnnualExpenses
-    }
-  }
+  const yearsToRetirement = computeYearsToRetirement(currentYear, p1BirthYear, p1RetirementAge)
+  const { projectedAnnualIncome, projectedAnnualExpenses, projectedIncomeGap } =
+    getRetirementIncomeProjection(baseCaseRows, p1BirthYear, p1RetirementAge, totalExpenses)
 
   const hasRetirementInputs = !!(p1RetirementAge || p1SSPia || p2SSPia)
 
@@ -507,7 +393,7 @@ export default async function DashboardPage() {
     p2MonthlyBenefit: hasSpouse ? p2MonthlyBenefit : null,
     hasSpouse,
     yearsToRetirement,
-    combinedSSMonthly: combinedSSMonthly > 0 ? combinedSSMonthly : null,
+    combinedSSMonthly,
     projectedAnnualIncome,
     projectedAnnualExpenses,
     projectedIncomeGap,
