@@ -51,6 +51,10 @@ export default function SLATILITPanel({
   const [activePanel, setActivePanel] = useState<'slat' | 'ilit' | null>(null)
   const [isSavingLedger, setIsSavingLedger] = useState(false)
   const [ledgerMessage, setLedgerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [slatRecommendMessage, setSlatRecommendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isSavingSlatRecommend, setIsSavingSlatRecommend] = useState(false)
+  const [ilitRecommendMessage, setIlitRecommendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isSavingIlitRecommend, setIsSavingIlitRecommend] = useState(false)
 
   const slatResult = activePanel === 'slat'
     ? applySLAT({} as unknown as import('@/lib/types/projection-scenario').ProjectionScenario, slatConfig)
@@ -94,6 +98,88 @@ export default function SLATILITPanel({
       })
     } finally {
       setIsSavingLedger(false)
+    }
+  }
+
+  async function handleSlatRecommend() {
+    if (!slatResult) return
+    setIsSavingSlatRecommend(true)
+    setSlatRecommendMessage(null)
+    try {
+      const res = await fetch('/api/advisor/strategy-recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          strategySource: 'slat',
+          amount: Math.round(slatResult.netEstateReduction),
+          sign: -1,
+          confidenceLevel: 'medium',
+          scenarioName: `SLAT — $${(slatConfig.fundingAmount / 1_000_000).toFixed(1)}M funded`,
+          metadata: {
+            fundingAmount: slatConfig.fundingAmount,
+            growthRate: slatConfig.growthRate,
+            isGrantorTrust: slatConfig.isGrantorTrust,
+            hasReciprocalSLAT: slatConfig.hasReciprocalSLAT,
+            establishmentYear: slatConfig.establishmentYear,
+            deathYear: slatConfig.deathYear,
+            slatValueAtDeath: Math.round(slatResult.slatValueAtDeath),
+            totalGrantorDrag: Math.round(slatResult.totalGrantorDrag),
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSlatRecommendMessage({ type: 'error', text: data.error ?? 'Failed to save recommendation' })
+        return
+      }
+      setSlatRecommendMessage({ type: 'success', text: 'Recommendation saved — client will see this as pending.' })
+    } catch {
+      setSlatRecommendMessage({ type: 'error', text: 'Unexpected error saving recommendation' })
+    } finally {
+      setIsSavingSlatRecommend(false)
+    }
+  }
+
+  async function handleIlitRecommend() {
+    if (!ilitResult) return
+    setIsSavingIlitRecommend(true)
+    setIlitRecommendMessage(null)
+    try {
+      const res = await fetch('/api/advisor/strategy-recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          strategySource: 'ilit',
+          amount: Math.round(ilitResult.estateTaxSaved),
+          sign: -1,
+          confidenceLevel: 'medium',
+          scenarioName: `ILIT — $${(ilitConfig.deathBenefit / 1_000_000).toFixed(1)}M death benefit`,
+          metadata: {
+            annualPremium: ilitConfig.annualPremium,
+            deathBenefit: ilitConfig.deathBenefit,
+            policyTermYears: ilitConfig.policyTermYears,
+            crummeyBeneficiaries: ilitConfig.crummeyBeneficiaries,
+            establishmentYear: ilitConfig.establishmentYear,
+            deathYear: ilitConfig.deathYear,
+            irrPct: ilitResult.irrPct,
+            estateTaxSaved: Math.round(ilitResult.estateTaxSaved),
+            totalPremiumsPaid: Math.round(ilitResult.totalPremiumsPaid),
+            premiumsWithinExclusion: ilitResult.premiumsWithinExclusion,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setIlitRecommendMessage({ type: 'error', text: data.error ?? 'Failed to save recommendation' })
+        return
+      }
+      setIlitRecommendMessage({ type: 'success', text: 'Recommendation saved — client will see this as pending.' })
+    } catch {
+      setIlitRecommendMessage({ type: 'error', text: 'Unexpected error saving recommendation' })
+    } finally {
+      setIsSavingIlitRecommend(false)
     }
   }
 
@@ -234,24 +320,37 @@ export default function SLATILITPanel({
                 <span className="text-green-700">${Math.round(slatResult.netEstateReduction).toLocaleString()}</span>
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleSaveToGSTLedger}
-                  disabled={isSavingLedger}
-                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                >
-                  {isSavingLedger ? 'Saving…' : 'Save to GST Ledger'}
-                </button>
-                {ledgerMessage && (
-                  <p
-                    className={`mt-2 text-xs ${
-                      ledgerMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
-                    }`}
+              <div className="pt-2 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveToGSTLedger}
+                    disabled={isSavingLedger}
+                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                   >
-                    {ledgerMessage.text}
-                  </p>
-                )}
+                    {isSavingLedger ? 'Saving…' : 'Save to GST Ledger'}
+                  </button>
+                  {ledgerMessage && (
+                    <p className={`text-xs ${ledgerMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                      {ledgerMessage.text}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSlatRecommend}
+                    disabled={isSavingSlatRecommend}
+                    className="inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+                  >
+                    {isSavingSlatRecommend ? 'Saving…' : '★ Mark as Recommended'}
+                  </button>
+                  {slatRecommendMessage && (
+                    <p className={`text-xs ${slatRecommendMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                      {slatRecommendMessage.text}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {slatResult.advisoryNotes.map((note, i) => (
@@ -388,6 +487,21 @@ export default function SLATILITPanel({
                   {note}
                 </div>
               ))}
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleIlitRecommend}
+                  disabled={isSavingIlitRecommend}
+                  className="inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+                >
+                  {isSavingIlitRecommend ? 'Saving…' : '★ Mark as Recommended'}
+                </button>
+                {ilitRecommendMessage && (
+                  <p className={`text-xs ${ilitRecommendMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                    {ilitRecommendMessage.text}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

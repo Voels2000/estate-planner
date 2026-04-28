@@ -6,7 +6,7 @@
 // Validates no double-counting across strategy layers
 // Wires hasCSTStrategy to EstateFlowDiagram (replaces false placeholder from Sprint 67)
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   validateStrategyComposability,
   build30MArchetype,
@@ -19,6 +19,7 @@ interface CompositeOverlayProps {
   federalExemption: number
   estimatedFederalTax: number
   lawScenario: 'current_law' | 'no_exemption'
+  householdId?: string
 }
 
 const ESTATE_TAX_RATE = 0.40
@@ -31,19 +32,90 @@ function calcTax(estate: number, exemption: number, lawScenario: string): number
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
 
+function formatStrategyName(source: string, scenarioName: string | null): string {
+  const names: Record<string, string> = {
+    slat: 'SLAT',
+    ilit: 'ILIT Death Benefit',
+    grat: 'GRAT',
+    annual_gifting: 'Annual Gifting',
+    cst: 'Credit Shelter Trust',
+    roth: 'Roth Conversion',
+    daf: 'DAF',
+    crt: 'CRT',
+    clat: 'CLAT',
+  }
+  const base = names[source] ?? source
+  return scenarioName ? `${base} (${scenarioName})` : base
+}
+
+function strategySourceToAsset(source: string): StrategyLayer['assetSource'] {
+  const map: Record<string, StrategyLayer['assetSource']> = {
+    slat: 'investment_portfolio',
+    ilit: 'life_insurance',
+    grat: 'investment_portfolio',
+    annual_gifting: 'cash',
+    cst: 'investment_portfolio',
+    roth: 'pre_tax_retirement',
+  }
+  return map[source] ?? 'cash'
+}
+
 export default function CompositeOverlay({
   grossEstate,
   federalExemption,
   estimatedFederalTax,
   lawScenario,
+  householdId,
 }: CompositeOverlayProps) {
-  const [mode, setMode] = useState<'custom' | '30m' | '100m'>('custom')
+  const [mode, setMode] = useState<'custom' | 'recommendations' | '30m' | '100m'>('custom')
   const [customStrategies, setCustomStrategies] = useState<StrategyLayer[]>([
     { name: 'Annual Gifting', estateReduction: 0, assetSource: 'cash' },
     { name: 'Credit Shelter Trust', estateReduction: 0, assetSource: 'investment_portfolio' },
     { name: 'SLAT', estateReduction: 0, assetSource: 'real_estate' },
     { name: 'ILIT Death Benefit', estateReduction: 0, assetSource: 'life_insurance' },
   ])
+  const [recommendedItems, setRecommendedItems] = useState<Array<{
+    id: string
+    strategy_source: string
+    amount: number
+    sign: number
+    scenario_name: string | null
+  }>>([])
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
+  const [recommendationsError, setRecommendationsError] = useState<string | null>(null)
+
+  const loadRecommendations = useCallback(async () => {
+    if (!householdId) return
+    setIsLoadingRecommendations(true)
+    setRecommendationsError(null)
+    try {
+      const res = await fetch('/api/advisor/strategy-recommendations-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setRecommendationsError(data.error ?? 'Failed to load recommendations')
+        return
+      }
+      setRecommendedItems(data.items ?? [])
+    } catch {
+      setRecommendationsError('Unexpected error loading recommendations')
+    } finally {
+      setIsLoadingRecommendations(false)
+    }
+  }, [householdId])
+
+  useEffect(() => {
+    if (mode === 'recommendations') loadRecommendations()
+  }, [mode, loadRecommendations])
+
+  const recommendedStrategies: StrategyLayer[] = recommendedItems.map((item) => ({
+    name: formatStrategyName(item.strategy_source, item.scenario_name),
+    estateReduction: Math.abs(item.amount) * (item.sign < 0 ? 1 : -1),
+    assetSource: strategySourceToAsset(item.strategy_source),
+  }))
 
   // Get active strategies based on mode
   const activeConfig =
@@ -51,6 +123,8 @@ export default function CompositeOverlay({
       ? build30MArchetype(federalExemption)
       : mode === '100m'
         ? build100MArchetype(federalExemption)
+        : mode === 'recommendations'
+          ? { grossEstate, strategies: recommendedStrategies, federalExemption }
         : { grossEstate, strategies: customStrategies.filter((s) => s.estateReduction > 0), federalExemption }
 
   const result = validateStrategyComposability(
@@ -73,7 +147,8 @@ export default function CompositeOverlay({
         <h3 className="text-sm font-medium text-gray-700 mb-3">Composite Strategy View</h3>
         <div className="flex gap-2 flex-wrap">
           {[
-            { id: 'custom' as const, label: 'This Household' },
+            { id: 'custom' as const, label: 'Custom Inputs' },
+            ...(householdId ? [{ id: 'recommendations' as const, label: 'From Recommendations' }] : []),
             { id: '30m' as const, label: '$30M Archetype' },
             { id: '100m' as const, label: '$100M Archetype' },
           ].map((m) => (
@@ -118,6 +193,43 @@ export default function CompositeOverlay({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {mode === 'recommendations' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-800">Active Advisor Recommendations</h4>
+            <button type="button" onClick={loadRecommendations} className="text-xs text-blue-600 hover:text-blue-700">Refresh</button>
+          </div>
+          {isLoadingRecommendations && (
+            <div className="text-sm text-gray-500">Loading recommendations...</div>
+          )}
+          {recommendationsError && (
+            <p className="text-xs text-red-600">{recommendationsError}</p>
+          )}
+          {!isLoadingRecommendations && !recommendationsError && recommendedItems.length === 0 && (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-500">No advisor recommendations yet.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Use SLAT, ILIT, or Advanced Strategy panels and mark items as recommended.
+              </p>
+            </div>
+          )}
+          {recommendedItems.length > 0 && (
+            <div className="space-y-2">
+              {recommendedItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between text-sm bg-white rounded border border-gray-200 px-3 py-2">
+                  <span className="font-medium text-gray-800">
+                    {formatStrategyName(item.strategy_source, item.scenario_name)}
+                  </span>
+                  <span className={`text-sm font-medium ${item.sign < 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {item.sign < 0 ? '-' : '+'}${Math.abs(item.amount).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

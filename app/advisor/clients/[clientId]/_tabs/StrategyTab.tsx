@@ -8,10 +8,12 @@ import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
+import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptionsPanel'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
+import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
 export default function StrategyTab({ household, scenario, advisorHorizons }: ClientViewShellProps) {
   const householdId = household?.id ?? null
@@ -36,7 +38,9 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   const [slatIlitOpen, setSlatIlitOpen] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
+  const [monteCarloAssumptionsOpen, setMonteCarloAssumptionsOpen] = useState(false)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
+  const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
   const [_advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
@@ -308,6 +312,35 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
             federalExemption={federalExemption}
             estimatedFederalTax={estimatedFederalTax}
             lawScenario={lawScenario}
+            householdId={household.id}
+          />
+        )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Monte Carlo — Assumption Overrides
+            </h2>
+            {activeAssumptions && (
+              <p className="text-xs text-indigo-600 mt-0.5">
+                Active scenario: custom assumptions applied
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setMonteCarloAssumptionsOpen((o) => !o)}
+            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          >
+            {monteCarloAssumptionsOpen ? '▲ Collapse' : '▼ Expand'}
+          </button>
+        </div>
+        {monteCarloAssumptionsOpen && (
+          <MonteCarloAssumptionsPanel
+            householdId={household.id}
+            grossEstate={grossEstate}
+            onAssumptionsChange={setActiveAssumptions}
           />
         )}
       </section>
@@ -334,6 +367,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
             person1BirthYear={person1BirthYear}
             lawScenario={lawScenario}
             supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
+            assumptions={activeAssumptions ?? undefined}
           />
         )}
       </section>

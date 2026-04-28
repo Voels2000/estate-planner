@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
 interface MonteCarloResult {
   p10_estate: number
@@ -47,6 +48,7 @@ interface MonteCarloProps {
   person1BirthYear: number
   lawScenario: 'current_law' | 'no_exemption'
   supabaseUrl: string
+  assumptions?: MonteCarloAssumptions
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -61,6 +63,7 @@ export default function MonteCarloPanel({
   person1BirthYear,
   lawScenario,
   supabaseUrl,
+  assumptions,
 }: MonteCarloProps) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
   const [result, setResult] = useState<MonteCarloResult | null>(null)
@@ -105,6 +108,7 @@ export default function MonteCarloPanel({
           strategyEstateReduction: strategyReduction,
           lawScenario,
           simulationCount,
+          assumptions,
         }),
       })
 
