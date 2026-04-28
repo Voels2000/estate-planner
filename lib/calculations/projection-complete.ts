@@ -71,12 +71,6 @@ export type YearRow = {
   rmd_penalty: number         // rmd_shortfall * 0.25 (IRS 25% excise tax)
 }
 
-export type StateIncomeTaxRate = {
-  state_code: string
-  rate_pct: number
-  tax_year?: number
-}
-
 export type StateIncomeTaxBracket = {
   state: string
   tax_year: number
@@ -174,8 +168,6 @@ export type CompleteProjectionInput = {
     selling_costs_pct?: number | null
     owner: string
   }[]
-  // State income tax rates from DB — replaces hardcoded STATE_RATES
-  state_income_tax_rates?: StateIncomeTaxRate[]
   // Progressive state income tax brackets from DB (preferred when present)
   state_income_tax_brackets?: StateIncomeTaxBracket[]
   businesses?: Array<{
@@ -202,38 +194,6 @@ export type CompleteProjectionInput = {
     person2_retirement_age?: number | null
     person2_ss_claiming_age?: number | null
   }
-}
-
-// ─── Fallback state income tax rates (used only if DB rates not supplied) ────
-// These are approximate flat/top-marginal rates as a safety net.
-// The DB (state_income_tax_rates table) is the authoritative source.
-const FALLBACK_STATE_RATES: Record<string, number> = {
-  AL: 5.0,  AK: 0.0,  AZ: 2.5,  AR: 4.9,  CA: 9.3,  CO: 4.4,
-  CT: 6.5,  DE: 6.6,  FL: 0.0,  GA: 5.49, HI: 11.0, ID: 5.8,
-  IL: 4.95, IN: 3.15, IA: 6.0,  KS: 5.7,  KY: 4.5,  LA: 4.25,
-  ME: 7.15, MD: 5.75, MA: 5.0,  MI: 4.25, MN: 9.85, MS: 5.0,
-  MO: 4.8,  MT: 6.5,  NE: 6.64, NV: 0.0,  NH: 0.0,  NJ: 8.97,
-  NM: 5.9,  NY: 6.85, NC: 4.99, ND: 2.5,  OH: 4.0,  OK: 4.75,
-  OR: 9.9,  PA: 3.07, RI: 5.99, SC: 6.5,  SD: 0.0,  TN: 0.0,
-  TX: 0.0,  UT: 4.65, VT: 8.75, VA: 5.75, WA: 0.0,  WV: 6.5,
-  WI: 7.65, WY: 0.0,  DC: 8.95,
-}
-
-function getStateIncomeTaxRate(
-  stateCode: string | null,
-  dbRates: StateIncomeTaxRate[] | undefined
-): number {
-  if (!stateCode) return 0
-  const code = stateCode.toUpperCase()
-  if (dbRates && dbRates.length > 0) {
-    // Use most recent year available in DB
-    const stateRows = dbRates
-      .filter(r => r.state_code.toUpperCase() === code)
-      .sort((a, b) => (b.tax_year ?? 0) - (a.tax_year ?? 0))
-    if (stateRows.length > 0) return stateRows[0].rate_pct
-  }
-  // Fall back to hardcoded rates
-  return FALLBACK_STATE_RATES[code] ?? 5.0
 }
 
 function normalizeBracketFilingStatus(filingStatus: string): 'single' | 'mfj' {
@@ -366,13 +326,12 @@ function calcPayrollTax(earnedIncome: number): number {
 }
 
 // ─── State Income Tax ─────────────────────────────────────────────────────────
-// Now reads from DB rates passed in via input.state_income_tax_rates
+// Uses only progressive state brackets from DB.
 
 function calcStateTax(
   income: number,
   state: string | null,
   year: number,
-  dbRates: StateIncomeTaxRate[] | undefined,
   dbBrackets: StateIncomeTaxBracket[] | undefined,
   filingStatus: string,
   state_secondary?: string | null
@@ -383,26 +342,10 @@ function calcStateTax(
 
   const primaryFromBrackets = calcProgressiveStateTax(income, primaryBrackets)
   const secondaryFromBrackets = calcProgressiveStateTax(income, secondaryBrackets)
-
-  // If progressive brackets are loaded, they are authoritative:
-  // - states with no income tax intentionally have no rows => $0
-  // - no flat fallback is used in that case
-  if (dbBrackets && dbBrackets.length > 0) {
-    return {
-      primary: !state ? 0 : primaryFromBrackets,
-      secondary: !state_secondary ? 0 : secondaryFromBrackets,
-    }
-  }
-
-  const primaryRate   = getStateIncomeTaxRate(state, dbRates) / 100
-  const secondaryRate = state_secondary ? getStateIncomeTaxRate(state_secondary, dbRates) / 100 : 0
   return {
-    primary: !state
-      ? 0
-      : (primaryBrackets.length > 0 ? primaryFromBrackets : Math.round(income * primaryRate)),
-    secondary: !state_secondary
-      ? 0
-      : (secondaryBrackets.length > 0 ? secondaryFromBrackets : Math.round(income * secondaryRate)),
+    // No rows for a state/year => no state income tax for this engine.
+    primary: !state ? 0 : primaryFromBrackets,
+    secondary: !state_secondary ? 0 : secondaryFromBrackets,
   }
 }
 
@@ -660,7 +603,6 @@ function getYearFraction(
 export function computeCompleteProjection(input: CompleteProjectionInput): YearRow[] {
   const { household, assets, liabilities, income, expenses, irmaa_brackets } = input
   const realEstateInput    = input.real_estate ?? []
-  const dbStateRates       = input.state_income_tax_rates
   const dbStateBrackets    = input.state_income_tax_brackets
   const overrides          = input.overrides ?? {}
   const currentYear        = new Date().getFullYear()
@@ -945,7 +887,6 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       ordinaryIncome,
       effectiveState,
       year,
-      dbStateRates,
       dbStateBrackets,
       fs,
       household.state_secondary,

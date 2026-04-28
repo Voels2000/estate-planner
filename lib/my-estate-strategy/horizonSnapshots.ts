@@ -274,6 +274,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   tenYear: StrategyHorizonColumn
   twentyYear: StrategyHorizonColumn
   atDeath: StrategyHorizonColumn
+  cstBenefitAtDeath: number
   showProjectionMismatchNote: boolean
   grossAtDeathByLongevity: number
   grossAtDeathFinalRow: number
@@ -473,6 +474,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     tenYear,
     twentyYear,
     atDeath,
+    cstBenefitAtDeath: atDeath.cstBenefit ?? 0,
     showProjectionMismatchNote,
     grossAtDeathByLongevity,
     grossAtDeathFinalRow,

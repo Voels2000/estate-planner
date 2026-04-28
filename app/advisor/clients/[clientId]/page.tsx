@@ -188,22 +188,51 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       supabase
         .from('households')
         .select(
-          'person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_pia, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_pia',
+          'person1_name, person1_first_name, person1_last_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_pia, has_spouse, person2_name, person2_first_name, person2_last_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_pia',
         )
         .eq('id', household.id)
         .single(),
     ])
 
-    const h = householdFull
+    const h = householdFull as {
+      person1_name?: string | null
+      person1_first_name?: string | null
+      person1_last_name?: string | null
+      person1_birth_year?: number | null
+      person1_retirement_age?: number | null
+      person1_longevity_age?: number | null
+      person1_ss_pia?: number | null
+      has_spouse?: boolean | null
+      person2_name?: string | null
+      person2_first_name?: string | null
+      person2_last_name?: string | null
+      person2_birth_year?: number | null
+      person2_retirement_age?: number | null
+      person2_longevity_age?: number | null
+      person2_ss_pia?: number | null
+    } | null
+    const hasName = (
+      fullName: string | null | undefined,
+      firstName: string | null | undefined,
+      lastName: string | null | undefined,
+    ) => Boolean(
+      (fullName && fullName.trim().length > 0) ||
+      (
+        firstName &&
+        firstName.trim().length > 0 &&
+        lastName &&
+        lastName.trim().length > 0
+      ),
+    )
     const p1Complete = !!(
-      h?.person1_name &&
+      hasName(h?.person1_name, h?.person1_first_name, h?.person1_last_name) &&
       h?.person1_birth_year &&
       h?.person1_retirement_age &&
       h?.person1_longevity_age &&
       h?.person1_ss_pia
     )
     const p2Complete = !h?.has_spouse || !!(
-      h?.person2_name &&
+      hasName(h?.person2_name, h?.person2_first_name, h?.person2_last_name) &&
       h?.person2_birth_year &&
       h?.person2_retirement_age &&
       h?.person2_longevity_age &&

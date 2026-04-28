@@ -19,6 +19,7 @@ export default function MeetingPrepTab({
   notes,
   scenario,
   estateComposition,
+  advisorHorizons,
 }: ClientViewShellProps) {
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
@@ -69,6 +70,7 @@ export default function MeetingPrepTab({
     current_gross_estate: estateComposition?.gross_estate ?? null,
     current_taxable_estate: estateComposition?.taxable_estate ?? null,
     current_estimated_tax: estateComposition?.estimated_tax ?? null,
+    cst_benefit_at_death: advisorHorizons?.cstBenefitAtDeath ?? null,
     gross_estate: scenario?.gross_estate ?? null,
     estate_tax:
       (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),

@@ -341,7 +341,7 @@ export default function TaxRulesTab() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const SECTIONS: { key: ActiveSection; label: string; description: string }[] = [
-    { key: 'state_income',  label: 'State Income Tax Rates',   description: 'Flat/effective income tax rate per state. Used in all projections and scenarios.' },
+    { key: 'state_income',  label: 'State Income Tax Rates (Deprecated)',   description: 'Legacy flat/effective rate table. Projection engines now use progressive state_income_tax_brackets.' },
     { key: 'state_estate',  label: 'State Estate Tax Rules',   description: 'Progressive estate tax brackets by state. Select a state to view and edit its brackets.' },
     { key: 'federal_estate', label: 'Federal Estate Tax',      description: 'Federal estate tax brackets used in estate tax calculations.' },
     { key: 'irmaa',         label: 'IRMAA Brackets',           description: 'Medicare premium surcharges by income level. Used in retirement projections.' },
@@ -388,19 +388,37 @@ export default function TaxRulesTab() {
       {/* ── State Income Tax Rates ───────────────────────────────────────────── */}
       {activeSection === 'state_income' && (
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-base font-semibold text-neutral-900">State Income Tax Rates — {yearFilter}</h2>
-            <button onClick={() => setAddingStateIncome(true)}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
-              + Add / Update State
-            </button>
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-medium">Deprecated: flat-rate state income tax table</p>
+            <p className="mt-1 text-xs">
+              Projection and strategy engines now use progressive brackets from
+              <code className="mx-1">state_income_tax_brackets</code>. Updates here no longer affect projection outputs.
+            </p>
           </div>
-          <p className="text-sm text-neutral-500 mb-5">
-            Effective income tax rate per state. These override the built-in fallback rates in all projection engines.
-          </p>
+          <div className="relative rounded-xl">
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
+              <div className="max-w-sm rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                <p className="text-sm font-medium text-amber-800">Legacy Table — Deprecated</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  State income tax is managed via the progressive brackets table
+                  (<code className="mx-1">state_income_tax_brackets</code>). This flat-rate section is retired.
+                </p>
+              </div>
+            </div>
+            <div className="pointer-events-none opacity-40">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-base font-semibold text-neutral-900">State Income Tax Rates (Legacy) — {yearFilter}</h2>
+                <button onClick={() => setAddingStateIncome(true)}
+                  className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
+                  + Add / Update State
+                </button>
+              </div>
+              <p className="text-sm text-neutral-500 mb-5">
+                Legacy effective income tax rate per state retained for backward compatibility and historical admin reference.
+              </p>
 
-          {addingStateIncome && (
-            <div className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+              {addingStateIncome && (
+                <div className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
               <p className="text-xs font-semibold text-indigo-700 mb-3">Add / Update State Rate for {yearFilter}</p>
               <div className="grid grid-cols-3 gap-3 mb-3">
                 <div>
@@ -434,37 +452,39 @@ export default function TaxRulesTab() {
                   Cancel
                 </button>
               </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {loadingStateIncome ? (
-            <p className="text-sm text-neutral-400 py-8 text-center animate-pulse">Loading…</p>
-          ) : stateIncomeRates.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-neutral-300 py-10 text-center">
-              <p className="text-sm text-neutral-500">No rates for {yearFilter}.</p>
-              <p className="text-xs text-neutral-400 mt-1">Add a state above, or the engine will use built-in fallback rates.</p>
+              {loadingStateIncome ? (
+                <p className="text-sm text-neutral-400 py-8 text-center animate-pulse">Loading…</p>
+              ) : stateIncomeRates.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-neutral-300 py-10 text-center">
+                  <p className="text-sm text-neutral-500">No rates for {yearFilter}.</p>
+                  <p className="text-xs text-neutral-400 mt-1">No legacy flat rates found for this year.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {stateIncomeRates.map(row => {
+                    const key = `${row.state_code}-${row.tax_year}`
+                    return (
+                      <div key={key} className="rounded-xl border border-neutral-200 p-3 flex items-center gap-2">
+                        <span className="text-sm font-mono font-bold text-neutral-700 w-8">{row.state_code}</span>
+                        <input type="number" step="0.01" min="0" max="20"
+                          value={row.rate_pct}
+                          onChange={e => setStateIncomeRates(prev => prev.map(r => r.state_code === row.state_code ? { ...r, rate_pct: Number(e.target.value) } : r))}
+                          className="w-16 rounded-lg border border-neutral-300 px-2 py-1 text-sm text-center focus:border-neutral-500 focus:outline-none" />
+                        <span className="text-xs text-neutral-400">%</span>
+                        <button onClick={() => handleSaveStateIncome(row)} disabled={savingStateIncome === key}
+                          className="ml-auto rounded-lg bg-neutral-900 px-2 py-1 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
+                          {savingStateIncome === key ? '…' : savedStateIncome === key ? '✓' : 'Save'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {stateIncomeRates.map(row => {
-                const key = `${row.state_code}-${row.tax_year}`
-                return (
-                  <div key={key} className="rounded-xl border border-neutral-200 p-3 flex items-center gap-2">
-                    <span className="text-sm font-mono font-bold text-neutral-700 w-8">{row.state_code}</span>
-                    <input type="number" step="0.01" min="0" max="20"
-                      value={row.rate_pct}
-                      onChange={e => setStateIncomeRates(prev => prev.map(r => r.state_code === row.state_code ? { ...r, rate_pct: Number(e.target.value) } : r))}
-                      className="w-16 rounded-lg border border-neutral-300 px-2 py-1 text-sm text-center focus:border-neutral-500 focus:outline-none" />
-                    <span className="text-xs text-neutral-400">%</span>
-                    <button onClick={() => handleSaveStateIncome(row)} disabled={savingStateIncome === key}
-                      className="ml-auto rounded-lg bg-neutral-900 px-2 py-1 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
-                      {savingStateIncome === key ? '…' : savedStateIncome === key ? '✓' : 'Save'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          </div>
         </div>
       )}
 

@@ -115,6 +115,13 @@ export type StrategyLineItemInput = {
   effective_year?: number | null
   metadata?: Record<string, unknown>
   source_role?: StrategySourceRole
+  advisor_id?: string | null
+  consumer_accepted?: boolean
+  consumer_rejected?: boolean
+  accepted_at?: string | null
+  rejected_at?: string | null
+  scenario_name?: string | null
+  rejection_reason?: string | null
 }
 
 export type StrategyLineItem = StrategyLineItemInput & {

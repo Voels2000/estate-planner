@@ -36,6 +36,7 @@ interface MeetingBrief {
   estimated_tax_state: number | null
   estimated_tax_state_with_cst: number | null
   cst_benefit: number | null
+  cst_benefit_at_death: number | null
   has_portability_gap: boolean | null
   // At-death projection (from projection_scenarios)
   gross_estate: number | null
@@ -58,6 +59,7 @@ interface MeetingBriefSeed {
   estimated_tax_state?: number | null
   estimated_tax_state_with_cst?: number | null
   cst_benefit?: number | null
+  cst_benefit_at_death?: number | null
   has_portability_gap?: boolean | null
   gross_estate?: number | null
   estate_tax?: number | null
@@ -103,6 +105,7 @@ function buildBriefFromSeed(clientName: string, seed: MeetingBriefSeed): Meeting
     estimated_tax_state: seed.estimated_tax_state ?? null,
     estimated_tax_state_with_cst: seed.estimated_tax_state_with_cst ?? null,
     cst_benefit: seed.cst_benefit ?? null,
+    cst_benefit_at_death: seed.cst_benefit_at_death ?? null,
     has_portability_gap: seed.has_portability_gap ?? null,
     gross_estate: seed.gross_estate ?? null,
     estate_tax: seed.estate_tax ?? null,
@@ -245,6 +248,7 @@ async function generateMeetingBrief(
     estimated_tax_state: estimatedTaxState,
     estimated_tax_state_with_cst: estimatedTaxStateWithCst,
     cst_benefit: cstBenefit,
+    cst_benefit_at_death: null,
     has_portability_gap: hasPortabilityGap,
     gross_estate: grossEstate,
     estate_tax: estateTax,
@@ -303,7 +307,14 @@ export default function MeetingPrep({
     }
     setLoading(true)
     const b = await generateMeetingBrief(clientId, householdId, clientName, initialHealthScore)
-    setBrief(b)
+    setBrief((prev) => ({
+      ...b,
+      cst_benefit_at_death:
+        b.cst_benefit_at_death ??
+        prev?.cst_benefit_at_death ??
+        initialBriefSeed?.cst_benefit_at_death ??
+        null,
+    }))
     setLoading(false)
   }
 
@@ -439,6 +450,11 @@ export default function MeetingPrep({
                                 <strong>{fmt(brief.cst_benefit)}</strong> in state estate tax
                                 for this household.
                               </p>
+                              {brief.cst_benefit_at_death !== null && brief.cst_benefit_at_death > 0 && (
+                                <p className="text-xs text-emerald-700 mt-0.5">
+                                  At projected death year: <strong>{fmt(brief.cst_benefit_at_death)}</strong>
+                                </p>
+                              )}
                             </div>
                           </div>
                           {brief.estimated_tax_state !== null && brief.estimated_tax_state_with_cst !== null && (

@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
     { data: expenses },
     { data: irmaa_brackets },
     { data: real_estate },
-    { data: state_income_tax_rates },
     { data: state_income_tax_brackets },
     { data: businesses_data },
     { data: insurance_policies },
@@ -58,8 +57,6 @@ export async function GET(request: NextRequest) {
     supabase.from('expenses').select('id, category, amount, start_year, end_year, start_month, end_month, inflation_adjust, owner').eq('owner_id', user.id),
     supabase.from('irmaa_brackets').select('magi_threshold, part_b_surcharge, part_d_surcharge, filing_status').order('tax_year', { ascending: false }).limit(20),
     supabase.from('real_estate').select('id, name, current_value, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, planned_sale_year, selling_costs_pct, owner').eq('owner_id', user.id),
-    // Fetch state income tax rates from DB — no hardcoding
-    supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),
     supabase
       .from('state_income_tax_brackets')
       .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
@@ -100,7 +97,6 @@ export async function GET(request: NextRequest) {
       selling_costs_pct: (r as { selling_costs_pct?: number | null }).selling_costs_pct ?? 6,
       owner: (r as { owner?: string | null }).owner ?? '',
     })),
-    state_income_tax_rates:   state_income_tax_rates ?? [],
     state_income_tax_brackets: (state_income_tax_brackets ?? []) as {
       state: string
       tax_year: number

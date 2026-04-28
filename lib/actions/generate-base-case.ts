@@ -46,7 +46,6 @@ export async function generateBaseCase(householdId: string): Promise<{
       { data: expenses },
       { data: irmaa_brackets },
       { data: real_estate },
-      { data: state_income_tax_rates },
       { data: state_income_tax_brackets },
       { data: taxConfigs },
       { data: business_interests },
@@ -79,10 +78,6 @@ export async function generateBaseCase(householdId: string): Promise<{
           'id, name, current_value, mortgage_balance, monthly_payment, interest_rate, planned_sale_year, selling_costs_pct, is_primary_residence, owner',
         )
         .eq('owner_id', clientOwnerId),
-      admin
-        .from('state_income_tax_rates')
-        .select('state_code, rate_pct, tax_year')
-        .order('tax_year', { ascending: false }),
       admin
         .from('state_income_tax_brackets')
         .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
@@ -139,7 +134,6 @@ export async function generateBaseCase(householdId: string): Promise<{
         is_primary_residence: boolean
         owner: string
       }[],
-      state_income_tax_rates: state_income_tax_rates ?? [],
       state_income_tax_brackets: (state_income_tax_brackets ?? []) as {
         state: string
         tax_year: number
