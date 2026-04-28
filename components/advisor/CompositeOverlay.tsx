@@ -147,7 +147,7 @@ export default function CompositeOverlay({
         <h3 className="text-sm font-medium text-gray-700 mb-3">Composite Strategy View</h3>
         <div className="flex gap-2 flex-wrap">
           {[
-            { id: 'custom' as const, label: 'Custom Inputs' },
+            { id: 'custom' as const, label: 'This Household' },
             ...(householdId ? [{ id: 'recommendations' as const, label: 'From Recommendations' }] : []),
             { id: '30m' as const, label: '$30M Archetype' },
             { id: '100m' as const, label: '$100M Archetype' },
