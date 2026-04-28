@@ -81,7 +81,7 @@ function buildFlowSteps(
     steps.push({
       icon: '📋',
       title: 'Your estate tax estimate',
-      body: `Based on your current estate size, your estimated estate tax is ${fmt(totalTax)} (${fmt(s.estate_tax_federal)} federal${s.estate_tax_state > 0 ? ` + ${fmt(s.estate_tax_state)} state` : ''}). Your advisor can show you strategies to reduce this amount.`,
+      body: `Based on your current estate size, your estimated total estate tax is ${fmt(totalTax)} (${fmt(s.estate_tax_federal)} federal estate tax${s.estate_tax_state > 0 ? ` + ${fmt(s.estate_tax_state)} state estate tax` : ''}). Your advisor can show you strategies to reduce this amount.`,
       value: fmt(totalTax),
       highlight: true,
     })
@@ -89,7 +89,7 @@ function buildFlowSteps(
     steps.push({
       icon: '✅',
       title: 'Your estate tax estimate',
-      body: 'Based on your current estate size, your estate currently falls below the federal estate tax threshold. Your advisor can show you how to protect this position.',
+      body: 'Based on your current estate size, your estate currently falls below the federal estate tax threshold (and no state estate tax applies in this view). Your advisor can show you how to protect this position.',
     })
   }
 

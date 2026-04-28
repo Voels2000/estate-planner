@@ -184,10 +184,10 @@ export default function MyEstateStrategyClient({
                     <div className="mt-4 space-y-3 text-sm">
                       <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
                       <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
-                      <MetricRow label="Federal exposure" value={fmtEst(col.federalExposure)} />
-                      <MetricRow label="Federal tax estimate" value={fmtEst(col.federalTaxEstimate)} />
+                      <MetricRow label="Federal estate tax exposure" value={fmtEst(col.federalExposure)} />
+                      <MetricRow label="Federal estate tax estimate" value={fmtEst(col.federalTaxEstimate)} />
                       <div className="my-3 border-t border-neutral-200" />
-                      <MetricRow label="State exposure" value={fmtEst(col.stateExposure)} />
+                      <MetricRow label="State estate tax exposure" value={fmtEst(col.stateExposure)} />
                       {col === atDeath &&
                         primaryResidenceValue != null &&
                         primaryResidenceValue > 0 && (
@@ -197,7 +197,7 @@ export default function MyEstateStrategyClient({
                           </p>
                         )}
                       <MetricRow
-                        label="Est. total tax liability"
+                        label="Est. total estate tax liability"
                         value={fmtEst(col.totalTaxLiability)}
                         emphasized
                       />

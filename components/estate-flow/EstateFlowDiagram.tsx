@@ -225,7 +225,7 @@ function Legend() {
     { type: 'trust', label: 'Trust vehicle' },
     { type: 'probate', label: 'Probate estate' },
     { type: 'beneficiary', label: 'Beneficiaries' },
-    { type: 'tax_deduction', label: 'Estate tax' },
+    { type: 'tax_deduction', label: 'Federal/state estate tax' },
   ]
 
   return (
@@ -518,7 +518,7 @@ export default function EstateFlowDiagram({
         {[
           { label: 'Gross estate', value: fmt(graph.summary.gross_estate) },
           {
-            label: 'Total estate tax',
+            label: 'Total estate tax (federal + state)',
             value: fmt(graph.summary.estate_tax_federal + graph.summary.estate_tax_state),
             accent: true,
           },

@@ -409,14 +409,14 @@ export default function MoveBreakevenPanel({
             </div>
           </div>
 
-          {/* Tax comparison */}
+          {/* State tax comparison */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-4">
-              Tax comparison
+              State tax comparison
             </h4>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-xs text-slate-400 mb-1">Income tax — {result.currentState}</p>
+                <p className="text-xs text-slate-400 mb-1">State income tax — {result.currentState}</p>
                 <p className="text-lg font-semibold text-slate-700">{fmt$(result.currentIncomeTax)}</p>
                 <p className="text-xs text-slate-400">{fmtPct(result.currentIncomeTaxRate)} top rate</p>
               </div>
@@ -424,13 +424,13 @@ export default function MoveBreakevenPanel({
                 <span className="text-slate-300 text-2xl">→</span>
               </div>
               <div>
-                <p className="text-xs text-slate-400 mb-1">Income tax — {result.targetState}</p>
+                <p className="text-xs text-slate-400 mb-1">State income tax — {result.targetState}</p>
                 <p className="text-lg font-semibold text-slate-700">{fmt$(result.targetIncomeTax)}</p>
                 <p className="text-xs text-slate-400">{fmtPct(result.targetIncomeTaxRate)} top rate</p>
               </div>
 
               <div>
-                <p className="text-xs text-slate-400 mb-1">Estate tax — {result.currentState}</p>
+                <p className="text-xs text-slate-400 mb-1">State estate tax — {result.currentState}</p>
                 <p className="text-xl font-semibold text-slate-700">
                   {fmt$(result.currentEstateTax)}
                 </p>
@@ -439,7 +439,7 @@ export default function MoveBreakevenPanel({
                 <span className="text-slate-300 text-2xl">→</span>
               </div>
               <div>
-                <p className="text-xs text-slate-400 mb-1">Estate tax — {result.targetState}</p>
+                <p className="text-xs text-slate-400 mb-1">State estate tax — {result.targetState}</p>
                 <p className="text-xl font-semibold text-slate-700">
                   {fmt$(result.targetEstateTax)}
                 </p>
@@ -455,12 +455,12 @@ export default function MoveBreakevenPanel({
             <div className="space-y-3">
               {[
                 {
-                  label: 'Income tax savings/yr',
+                  label: 'State income tax savings/yr',
                   value: result.annualIncomeTaxSavings,
                   note: `Progressive brackets on ${fmt$(annualIncome)} income`,
                 },
                 {
-                  label: 'Estate tax savings (amortized/yr)',
+                  label: 'State estate tax savings (amortized/yr)',
                   value: result.estateTaxAnnualEquivalent,
                   note: `${fmt$(result.estateTaxDeltaTotal)} total ÷ ${horizonYears} yrs`,
                 },

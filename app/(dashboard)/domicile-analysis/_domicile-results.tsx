@@ -164,14 +164,14 @@ export default function DomicileResults({
       )}
 
       <div>
-        <h2 className="mb-3 text-base font-medium text-gray-900">State tax comparison</h2>
+        <h2 className="mb-3 text-base font-medium text-gray-900">State tax comparison (income vs estate)</h2>
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-4 py-3 text-left font-medium text-gray-700">State</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Income tax</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Estate tax</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">State income tax</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">State estate tax</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-700">Threshold</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-700">Inheritance tax</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-700">Notes</th>

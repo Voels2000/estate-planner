@@ -133,13 +133,13 @@ export function ProjectionsView({ projection, error }: ProjectionsViewProps) {
                 scope="col"
                 className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
               >
-                Federal tax
+                Federal income tax
               </th>
               <th
                 scope="col"
                 className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
               >
-                State tax
+                State income tax
               </th>
               <th
                 scope="col"
