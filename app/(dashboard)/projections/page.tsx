@@ -241,8 +241,9 @@ export default function ProjectionsPage() {
       </div>
 
       <p className="mt-4 text-xs text-neutral-400">
-        * Taxes are estimated using current year federal brackets for deduction and filing status
-        slected and state taxes are estimateed using a flat rate.
+        * Projection tax estimates include federal income tax, state income tax, capital gains tax,
+        NIIT, payroll tax, and IRMAA surcharges. Federal tax uses filing status and your selected
+        deduction mode; state income tax uses progressive state bracket tables by filing status and year.
       </p>
     </div>
   )
