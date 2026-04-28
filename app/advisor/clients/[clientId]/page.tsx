@@ -133,6 +133,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     businessesChangedAt,
     businessInterestsChangedAt,
     insuranceChangedAt,
+    stateIncomeTaxBracketsChangedAt,
   ] = await Promise.all([
     getLatestChangeTs('assets', 'owner_id', ownerId),
     getLatestChangeTs('liabilities', 'owner_id', ownerId),
@@ -142,6 +143,15 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     getLatestChangeTs('businesses', 'owner_id', ownerId),
     getLatestChangeTs('business_interests', 'owner_id', ownerId),
     getLatestChangeTs('insurance_policies', 'user_id', ownerId),
+    (async () => {
+      const { data } = await supabase
+        .from('state_income_tax_brackets')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+      return row?.created_at ?? null
+    })(),
   ])
 
   const latestInputChangeMs = [
@@ -154,6 +164,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     businessesChangedAt,
     businessInterestsChangedAt,
     insuranceChangedAt,
+    stateIncomeTaxBracketsChangedAt,
   ].reduce((max, ts) => {
     if (!ts) return max
     const ms = new Date(ts).getTime()
@@ -202,22 +213,16 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     const hasAssets = (assetRows ?? []).length > 0
 
     if (p1Complete && p2Complete && hasIncome && hasAssets) {
-      try {
-        const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
-        await generateBaseCase(household.id)
-        const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
-        triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
-        const { data: refreshed } = await supabase
-          .from('households')
-          .select('base_case_scenario_id')
-          .eq('id', household.id)
-          .single()
-        if (refreshed?.base_case_scenario_id) {
-          household.base_case_scenario_id = refreshed.base_case_scenario_id
+      void (async () => {
+        try {
+          const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
+          await generateBaseCase(household.id)
+          const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
+          triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+        } catch (e) {
+          console.error('[advisor-client] background base case regeneration failed, using cached data', e)
         }
-      } catch (e) {
-        console.error('[advisor-client] base case regeneration (staleness) failed, using cached data', e)
-      }
+      })()
     }
   }
 

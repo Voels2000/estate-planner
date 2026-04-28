@@ -73,6 +73,99 @@ export default async function DashboardPage() {
   }
 
   const admin = createAdminClient()
+
+  // Background staleness check for base-case projection:
+  // regenerate asynchronously when user inputs or tax brackets are newer than the last run.
+  const { data: baseCaseCalcRow } = household.base_case_scenario_id
+    ? await admin
+        .from('projection_scenarios')
+        .select('calculated_at')
+        .eq('id', household.base_case_scenario_id)
+        .single()
+    : { data: null }
+  const projectionCalculatedAt = baseCaseCalcRow?.calculated_at ?? null
+  const projectionCalculatedMs = projectionCalculatedAt ? new Date(projectionCalculatedAt).getTime() : 0
+
+  const getLatestChangeTs = async (
+    table: string,
+    ownerColumn: string,
+    ownerValue: string,
+  ): Promise<string | null> => {
+    const { data } = await supabase
+      .from(table)
+      .select('updated_at, created_at')
+      .eq(ownerColumn, ownerValue)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+    const row = (data?.[0] ?? null) as { updated_at?: string | null; created_at?: string | null } | null
+    return row?.updated_at ?? row?.created_at ?? null
+  }
+
+  const [
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+    stateIncomeTaxBracketsChangedAt,
+  ] = await Promise.all([
+    getLatestChangeTs('assets', 'owner_id', user!.id),
+    getLatestChangeTs('liabilities', 'owner_id', user!.id),
+    getLatestChangeTs('income', 'owner_id', user!.id),
+    getLatestChangeTs('expenses', 'owner_id', user!.id),
+    getLatestChangeTs('real_estate', 'owner_id', user!.id),
+    getLatestChangeTs('businesses', 'owner_id', user!.id),
+    getLatestChangeTs('business_interests', 'owner_id', user!.id),
+    getLatestChangeTs('insurance_policies', 'user_id', user!.id),
+    (async () => {
+      const { data } = await supabase
+        .from('state_income_tax_brackets')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+      return row?.created_at ?? null
+    })(),
+  ])
+
+  const latestInputChangeMs = [
+    household.updated_at ?? null,
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+    stateIncomeTaxBracketsChangedAt,
+  ].reduce((max, ts) => {
+    if (!ts) return max
+    const ms = new Date(ts).getTime()
+    return Number.isFinite(ms) ? Math.max(max, ms) : max
+  }, 0)
+
+  const isStale =
+    !household.base_case_scenario_id ||
+    !projectionCalculatedAt ||
+    latestInputChangeMs > projectionCalculatedMs
+
+  if (isStale) {
+    void (async () => {
+      try {
+        const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
+        await generateBaseCase(household.id)
+        const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
+        triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+      } catch (e) {
+        console.error('[dashboard] background base case regeneration failed', e)
+      }
+    })()
+  }
+
   const { data: baseCaseScenario } = household?.base_case_scenario_id
     ? await admin
         .from('projection_scenarios')
