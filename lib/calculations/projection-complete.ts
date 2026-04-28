@@ -1,4 +1,8 @@
 import { resolveDeduction } from '@/lib/tax/resolve-deduction'
+import {
+  calculateStateIncomeTax,
+  type StateIncomeTaxBracket as SharedStateIncomeTaxBracket,
+} from '@/lib/calculations/stateIncomeTax'
 
 export type YearRow = {
   year: number
@@ -71,13 +75,15 @@ export type YearRow = {
   rmd_penalty: number         // rmd_shortfall * 0.25 (IRS 25% excise tax)
 }
 
-export type StateIncomeTaxBracket = {
-  state: string
-  tax_year: number
-  filing_status: 'single' | 'mfj'
+export type StateIncomeTaxBracket = SharedStateIncomeTaxBracket
+
+export type FederalIncomeTaxBracket = {
+  filing_status: string
   min_amount: number
   max_amount: number | null
   rate_pct: number
+  tax_year?: number | null
+  bracket_order?: number | null
 }
 
 export type CompleteProjectionInput = {
@@ -168,6 +174,8 @@ export type CompleteProjectionInput = {
     selling_costs_pct?: number | null
     owner: string
   }[]
+  // Federal income tax brackets from DB (canonical required source)
+  federal_income_tax_brackets: FederalIncomeTaxBracket[]
   // Progressive state income tax brackets from DB (preferred when present)
   state_income_tax_brackets?: StateIncomeTaxBracket[]
   businesses?: Array<{
@@ -196,87 +204,81 @@ export type CompleteProjectionInput = {
   }
 }
 
-function normalizeBracketFilingStatus(filingStatus: string): 'single' | 'mfj' {
-  return filingStatus === 'married_joint' ? 'mfj' : 'single'
-}
-
-function calcProgressiveStateTax(
-  income: number,
-  brackets: Array<{
-    min_amount: number
-    max_amount: number | null
-    rate_pct: number
-  }>,
-): number {
-  if (income <= 0 || brackets.length === 0) return 0
-
-  let tax = 0
-  for (const bracket of brackets) {
-    const lower = Math.max(0, Number(bracket.min_amount ?? 0))
-    const upper = bracket.max_amount == null ? Number.POSITIVE_INFINITY : Number(bracket.max_amount)
-    if (income <= lower) continue
-    const taxableInBracket = Math.max(0, Math.min(income, upper) - lower)
-    if (taxableInBracket <= 0) continue
-    tax += taxableInBracket * (Number(bracket.rate_pct ?? 0) / 100)
-  }
-  return Math.round(tax)
-}
-
-function getStateBracketsForYear(
-  stateCode: string | null,
-  filingStatus: string,
-  year: number,
-  dbBrackets: StateIncomeTaxBracket[] | undefined,
-): StateIncomeTaxBracket[] {
-  if (!stateCode || !dbBrackets?.length) return []
-  const code = stateCode.toUpperCase()
-  const normalizedFilingStatus = normalizeBracketFilingStatus(filingStatus)
-  const matches = dbBrackets.filter(
-    (r) => r.state.toUpperCase() === code && r.filing_status === normalizedFilingStatus,
-  )
-  if (matches.length === 0) return []
-  const years = Array.from(new Set(matches.map((r) => Number(r.tax_year ?? 0)))).sort((a, b) => a - b)
-  const selectedYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
-  return matches
-    .filter((r) => Number(r.tax_year ?? 0) === selectedYear)
-    .sort((a, b) => Number(a.min_amount ?? 0) - Number(b.min_amount ?? 0))
-}
-
-// ─── Federal Tax Brackets 2024 ────────────────────────────────────────────────
-
-const FEDERAL_BRACKETS_MFJ = [
-  { limit: 23200,    rate: 0.10 },
-  { limit: 94300,    rate: 0.12 },
-  { limit: 201050,   rate: 0.22 },
-  { limit: 383900,   rate: 0.24 },
-  { limit: 487450,   rate: 0.32 },
-  { limit: 731200,   rate: 0.35 },
-  { limit: Infinity, rate: 0.37 },
-]
-
-const FEDERAL_BRACKETS_SINGLE = [
-  { limit: 11600,    rate: 0.10 },
-  { limit: 47150,    rate: 0.12 },
-  { limit: 100525,   rate: 0.22 },
-  { limit: 191950,   rate: 0.24 },
-  { limit: 243725,   rate: 0.32 },
-  { limit: 609350,   rate: 0.35 },
-  { limit: Infinity, rate: 0.37 },
-]
-
 const STANDARD_DEDUCTION_MFJ    = 29200
 const STANDARD_DEDUCTION_SINGLE = 14600
 
-function calcFederalTax(taxableIncome: number, filingStatus: string, deductionOverride?: number): number {
+function normalizeFederalFilingStatus(filingStatus: string): 'single' | 'mfj' | null {
+  const normalized = String(filingStatus ?? '').toLowerCase()
+  if (['single', 's', 'mfs', 'married_filing_separately', 'head_of_household', 'hoh'].includes(normalized)) {
+    return 'single'
+  }
+  if (['mfj', 'married_joint', 'married_filing_jointly', 'joint', 'qw', 'qualifying_widow'].includes(normalized)) {
+    return 'mfj'
+  }
+  return null
+}
+
+function getFederalBracketsForYear(
+  filingStatus: string,
+  year: number,
+  dbBrackets: FederalIncomeTaxBracket[],
+): Array<{ min_amount: number; max_amount: number | null; rate_pct: number }> {
+  if (!dbBrackets.length) return []
+  const targetFs = normalizeFederalFilingStatus(filingStatus)
+  if (!targetFs) return []
+
+  const byStatus = dbBrackets.filter((r) => normalizeFederalFilingStatus(r.filing_status) === targetFs)
+  if (!byStatus.length) return []
+
+  const yearRows = byStatus.filter((r) => Number(r.tax_year ?? 0) > 0)
+  const selected = yearRows.length
+    ? (() => {
+        const years = Array.from(new Set(yearRows.map((r) => Number(r.tax_year ?? 0)))).sort((a, b) => a - b)
+        const selectedYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
+        return yearRows.filter((r) => Number(r.tax_year ?? 0) === selectedYear)
+      })()
+    : byStatus
+
+  return selected
+    .slice()
+    .sort((a, b) => {
+      const minDiff = Number(a.min_amount ?? 0) - Number(b.min_amount ?? 0)
+      if (minDiff !== 0) return minDiff
+      return Number(a.bracket_order ?? 0) - Number(b.bracket_order ?? 0)
+    })
+    .map((r) => ({
+      min_amount: Number(r.min_amount ?? 0),
+      max_amount: r.max_amount == null ? null : Number(r.max_amount),
+      rate_pct: Number(r.rate_pct ?? 0),
+    }))
+}
+
+function calcFederalTax(
+  taxableIncome: number,
+  filingStatus: string,
+  deductionOverride: number | undefined,
+  year: number,
+  dbBrackets: FederalIncomeTaxBracket[],
+): number {
   if (taxableIncome <= 0) return 0
-  const brackets  = filingStatus === 'married_joint' ? FEDERAL_BRACKETS_MFJ : FEDERAL_BRACKETS_SINGLE
   const deduction = deductionOverride ?? (filingStatus === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE)
   const agi = Math.max(0, taxableIncome - deduction)
-  let tax = 0, prev = 0
-  for (const bracket of brackets) {
-    if (agi <= prev) break
-    tax += (Math.min(agi, bracket.limit) - prev) * bracket.rate
-    prev = bracket.limit
+  const dbFederalBracketsForYear = getFederalBracketsForYear(filingStatus, year, dbBrackets)
+  if (dbFederalBracketsForYear.length === 0) {
+    throw new Error(
+      `Missing federal income tax brackets for filing status "${filingStatus}" and year ${year}. ` +
+      'Populate federal_tax_brackets before running projections.',
+    )
+  }
+
+  let tax = 0
+  for (const bracket of dbFederalBracketsForYear) {
+    const lower = Math.max(0, Number(bracket.min_amount ?? 0))
+    const upper = bracket.max_amount == null ? Number.POSITIVE_INFINITY : Number(bracket.max_amount)
+    if (agi <= lower) continue
+    const taxableInBracket = Math.max(0, Math.min(agi, upper) - lower)
+    if (taxableInBracket <= 0) continue
+    tax += taxableInBracket * (Number(bracket.rate_pct ?? 0) / 100)
   }
   return Math.round(tax)
 }
@@ -337,11 +339,27 @@ function calcStateTax(
   state_secondary?: string | null
 ): { primary: number; secondary: number } {
   if (income <= 0) return { primary: 0, secondary: 0 }
-  const primaryBrackets = getStateBracketsForYear(state, filingStatus, year, dbBrackets)
-  const secondaryBrackets = getStateBracketsForYear(state_secondary ?? null, filingStatus, year, dbBrackets)
-
-  const primaryFromBrackets = calcProgressiveStateTax(income, primaryBrackets)
-  const secondaryFromBrackets = calcProgressiveStateTax(income, secondaryBrackets)
+  const normalizedFilingStatus: 'single' | 'mfj' =
+    filingStatus === 'married_joint' ? 'mfj' : 'single'
+  const brackets = dbBrackets ?? []
+  const primaryFromBrackets = Math.round(
+    calculateStateIncomeTax({
+      stateCode: state,
+      ordinaryIncome: income,
+      filingStatus: normalizedFilingStatus,
+      brackets,
+      taxYear: year,
+    }).stateTax,
+  )
+  const secondaryFromBrackets = Math.round(
+    calculateStateIncomeTax({
+      stateCode: state_secondary ?? null,
+      ordinaryIncome: income,
+      filingStatus: normalizedFilingStatus,
+      brackets,
+      taxYear: year,
+    }).stateTax,
+  )
   return {
     // No rows for a state/year => no state income tax for this engine.
     primary: !state ? 0 : primaryFromBrackets,
@@ -603,6 +621,7 @@ function getYearFraction(
 export function computeCompleteProjection(input: CompleteProjectionInput): YearRow[] {
   const { household, assets, liabilities, income, expenses, irmaa_brackets } = input
   const realEstateInput    = input.real_estate ?? []
+  const dbFederalBrackets  = input.federal_income_tax_brackets
   const dbStateBrackets    = input.state_income_tax_brackets
   const overrides          = input.overrides ?? {}
   const currentYear        = new Date().getFullYear()
@@ -879,7 +898,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     // Exclude Roth withdrawals and capital gains from ordinary taxable income
     // Roth = tax-free; cap gains/dividends/interest = preferential rates
     const ordinaryIncome = income_total - userEnteredRoth - userCapGains
-    const tax_federal = calcFederalTax(ordinaryIncome, fs, deduction)
+    const tax_federal = calcFederalTax(ordinaryIncome, fs, deduction, year, dbFederalBrackets)
     const ordinaryTaxableIncome = Math.max(0, ordinaryIncome - deduction)
 
     // State tax now uses DB rates via effectiveState (supports scenario overrides)

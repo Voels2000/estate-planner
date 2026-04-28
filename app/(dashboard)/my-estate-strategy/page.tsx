@@ -74,6 +74,7 @@ export default async function MyEstateStrategyPage() {
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ] = await Promise.all([
     getLatestChangeTs('assets', 'owner_id', ownerId),
     getLatestChangeTs('liabilities', 'owner_id', ownerId),
@@ -86,6 +87,15 @@ export default async function MyEstateStrategyPage() {
     (async () => {
       const { data } = await supabase
         .from('state_income_tax_brackets')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+      return row?.created_at ?? null
+    })(),
+    (async () => {
+      const { data } = await supabase
+        .from('federal_tax_brackets')
         .select('created_at')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -105,6 +115,7 @@ export default async function MyEstateStrategyPage() {
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ].reduce((max, ts) => {
     if (!ts) return max
     const ms = new Date(ts).getTime()

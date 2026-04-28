@@ -66,26 +66,63 @@ function calcNetToHeirs(
 function useRecommendStrategy(householdId: string) {
   const [savedStrategies, setSavedStrategies] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
+  const strategySourceByType: Record<string, string> = {
+    gifting: 'annual_gifting',
+    credit_shelter_trust: 'cst',
+    revocable_trust: 'revocable_trust',
+  }
 
   useEffect(() => {
     if (!householdId) return
-    fetch(`/api/strategy-configs?householdId=${householdId}`)
+    fetch('/api/advisor/strategy-recommendations-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
       .then((r) => r.json())
       .then((d) => {
-        if (Array.isArray(d)) setSavedStrategies(new Set(d.map((s: { strategy_type: string }) => s.strategy_type)))
+        const items = Array.isArray(d?.items) ? d.items : []
+        const mappedTypes = items
+          .map((item: { strategy_source: string }) => {
+            if (item.strategy_source === 'annual_gifting') return 'gifting'
+            if (item.strategy_source === 'cst') return 'credit_shelter_trust'
+            if (item.strategy_source === 'revocable_trust') return 'revocable_trust'
+            return null
+          })
+          .filter((v: string | null): v is string => !!v)
+        setSavedStrategies(new Set(mappedTypes))
       })
-      .catch(() => null)
+      .catch(() => setSavedStrategies(new Set()))
   }, [householdId])
 
-  async function toggleRecommended(strategyType: string, label: string) {
+  async function toggleRecommended(strategyType: string, amount: number, metadata: Record<string, unknown> = {}) {
     setSaving(true)
     const isActive = savedStrategies.has(strategyType)
-    const method = isActive ? 'DELETE' : 'POST'
-    await fetch('/api/strategy-configs', {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId, strategyType, label }),
-    })
+    const strategySource = strategySourceByType[strategyType]
+    if (!strategySource) {
+      setSaving(false)
+      return
+    }
+    if (isActive) {
+      await fetch('/api/advisor/strategy-recommendation', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId, strategySource }),
+      })
+    } else {
+      await fetch('/api/advisor/strategy-recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          strategySource,
+          amount: Math.round(Math.abs(amount)),
+          sign: -1,
+          confidenceLevel: 'medium',
+          metadata,
+        }),
+      })
+    }
     setSavedStrategies((prev) => {
       const next = new Set(prev)
       if (isActive) next.delete(strategyType)
@@ -290,7 +327,18 @@ export default function StrategyOverlay({
             <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
             <button
               type="button"
-              onClick={() => toggleRecommended('gifting', 'Annual Gifting Program')}
+              onClick={() =>
+                toggleRecommended(
+                  'gifting',
+                  giftingResult?.netEstateReduction ?? 0,
+                  {
+                    annualGiftPerDonor: giftingConfig.annualGiftPerDonor,
+                    numberOfRecipients: giftingConfig.numberOfRecipients,
+                    startYear: giftingConfig.startYear,
+                    giftSplitting: giftingConfig.giftSplitting,
+                  },
+                )
+              }
               disabled={saving}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 savedStrategies.has('gifting')
@@ -362,7 +410,17 @@ export default function StrategyOverlay({
             <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
             <button
               type="button"
-              onClick={() => toggleRecommended('credit_shelter_trust', 'Credit Shelter Trust (CST)')}
+              onClick={() =>
+                toggleRecommended(
+                  'credit_shelter_trust',
+                  cstResult?.taxSavingsVsPortability ?? 0,
+                  {
+                    cstGrowthRate: cstConfig.cstGrowthRate ?? 0.06,
+                    yearsBetweenDeaths: cstConfig.yearsBetweenDeaths ?? 5,
+                    lawScenario: cstConfig.lawScenario ?? lawScenario,
+                  },
+                )
+              }
               disabled={saving}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 savedStrategies.has('credit_shelter_trust')
@@ -418,7 +476,18 @@ export default function StrategyOverlay({
             <span className="text-xs text-gray-500">Mark this strategy as recommended for client</span>
             <button
               type="button"
-              onClick={() => toggleRecommended('revocable_trust', 'Revocable Living Trust')}
+              onClick={() =>
+                toggleRecommended(
+                  'revocable_trust',
+                  rtConfig.trustFundedAmount,
+                  {
+                    trustFundedAmount: rtConfig.trustFundedAmount,
+                    isFunded: rtConfig.isFunded,
+                    hasPourOverWill: rtConfig.hasPourOverWill,
+                    hasSuccessorTrustee: rtConfig.hasSuccessorTrustee,
+                  },
+                )
+              }
               disabled={saving}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 savedStrategies.has('revocable_trust')

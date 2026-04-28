@@ -4,27 +4,32 @@
 // SS age gates, RMDs, and taxes. This file only adds conversion logic.
 
 import type { YearRow } from '@/lib/calculations/projection-complete'
+import {
+  calculateStateIncomeTax,
+  getTopMarginalRate,
+  type StateIncomeTaxBracket,
+} from '@/lib/calculations/stateIncomeTax'
 
 export interface RothAnalysisInputs {
-  rows: YearRow[]                  // full projection rows from computeCompleteProjection
-  filingStatus: string             // household filing_status
-  stateMarginalRate: number        // flat state income tax rate (0–1), e.g. 0.093 for CA
+  rows: YearRow[]
+  filingStatus: string
   stateCode?: string | null
-  stateIncomeTaxBrackets?: Array<{
-    state: string
-    tax_year: number
-    filing_status: 'single' | 'mfj'
+  stateIncomeTaxBrackets: StateIncomeTaxBracket[]
+  federalIncomeTaxBrackets: Array<{
+    filing_status: string
     min_amount: number
     max_amount: number | null
     rate_pct: number
+    tax_year?: number | null
+    bracket_order?: number | null
   }>
-  taxDeferredBalance: number       // current total tax-deferred balance
-  rothBalance: number              // current Roth balance
-  taxableBalance: number           // current taxable account balance
-  growthRateRetirement: number     // for projecting balances forward
-  maxAnnualConversion: number      // cap per year, e.g. 500000
-  standardDeduction: number        // resolved deduction for this household
-  inflationRate: number            // for inflating brackets
+  taxDeferredBalance: number
+  rothBalance: number
+  taxableBalance: number
+  growthRateRetirement: number
+  maxAnnualConversion: number
+  standardDeduction: number
+  inflationRate: number
   person1BirthYear: number
   person2BirthYear: number | null
   rmdStartAge: number
@@ -34,31 +39,25 @@ export interface RothYearResult {
   year: number
   age1: number
   age2: number | null
-  // Income from projection (already correct)
   totalIncome: number
   ssIncome: number
   rmdAmount: number
   earnedIncome: number
   otherIncome: number
-  // Tax from projection
   federalTax: number
   stateTax: number
   totalTax: number
-  // Marginal rates
   federalMarginalRate: number
   stateMarginalRate: number
   combinedMarginalRate: number
-  // Conversion analysis
   recommendedConversion: number
   conversionRationale: string
   incrementalFederalTax: number
   incrementalStateTax: number
   incrementalTotalTax: number
-  // Balances
   taxDeferredEnd: number
   rothEnd: number
   taxableEnd: number
-  // Lifetime tracking
   cumulativeConversions: number
   cumulativeLifetimeTaxSavings: number
 }
@@ -71,50 +70,49 @@ export interface RothAnalysisResult {
   summary: string
 }
 
-// ─── Federal bracket helpers ──────────────────────────────────────────────────
-
-const BRACKETS_MFJ = [
-  { min: 0,       max: 23200,  rate: 0.10 },
-  { min: 23200,   max: 94300,  rate: 0.12 },
-  { min: 94300,   max: 201050, rate: 0.22 },
-  { min: 201050,  max: 383900, rate: 0.24 },
-  { min: 383900,  max: 487450, rate: 0.32 },
-  { min: 487450,  max: 731200, rate: 0.35 },
-  { min: 731200,  max: Infinity, rate: 0.37 },
-]
-
-const BRACKETS_SINGLE = [
-  { min: 0,       max: 11600,  rate: 0.10 },
-  { min: 11600,   max: 47150,  rate: 0.12 },
-  { min: 47150,   max: 100525, rate: 0.22 },
-  { min: 100525,  max: 191950, rate: 0.24 },
-  { min: 191950,  max: 243725, rate: 0.32 },
-  { min: 243725,  max: 609350, rate: 0.35 },
-  { min: 609350,  max: Infinity, rate: 0.37 },
-]
-
-function getBrackets(filingStatus: string) {
-  const isMfj = ['mfj', 'married_joint', 'married_filing_jointly', 'qw'].includes(filingStatus)
-  return isMfj ? BRACKETS_MFJ : BRACKETS_SINGLE
+function normalizeFederalFilingStatus(filingStatus: string): 'single' | 'mfj' | null {
+  const normalized = String(filingStatus ?? '').toLowerCase()
+  if (['single', 's', 'mfs', 'married_filing_separately', 'head_of_household', 'hoh'].includes(normalized)) return 'single'
+  if (['mfj', 'married_joint', 'married_filing_jointly', 'joint', 'qw', 'qualifying_widow'].includes(normalized)) return 'mfj'
+  return null
 }
 
-function inflateBrackets(
-  brackets: { min: number; max: number; rate: number }[],
-  rate: number,
-  years: number
-): { min: number; max: number; rate: number }[] {
-  const f = Math.pow(1 + rate, years)
-  return brackets.map(b => ({
-    min: Math.round(b.min * f),
-    max: b.max === Infinity ? Infinity : Math.round(b.max * f),
-    rate: b.rate,
-  }))
+function getFederalBracketsForYear(
+  filingStatus: string,
+  year: number,
+  allBrackets: RothAnalysisInputs['federalIncomeTaxBrackets'],
+): Array<{ min: number; max: number; rate: number }> {
+  const targetFs = normalizeFederalFilingStatus(filingStatus)
+  if (!targetFs || !allBrackets.length) return []
+
+  const byStatus = allBrackets.filter((r) => normalizeFederalFilingStatus(r.filing_status) === targetFs)
+  if (!byStatus.length) return []
+
+  const yearRows = byStatus.filter((r) => Number(r.tax_year ?? 0) > 0)
+  const selected = yearRows.length
+    ? (() => {
+        const years = Array.from(new Set(yearRows.map((r) => Number(r.tax_year ?? 0)))).sort((a, b) => a - b)
+        const selectedYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
+        return yearRows.filter((r) => Number(r.tax_year ?? 0) === selectedYear)
+      })()
+    : byStatus
+
+  return selected
+    .slice()
+    .sort((a, b) => {
+      const minDiff = Number(a.min_amount ?? 0) - Number(b.min_amount ?? 0)
+      if (minDiff !== 0) return minDiff
+      return Number(a.bracket_order ?? 0) - Number(b.bracket_order ?? 0)
+    })
+    .map((r) => ({
+      min: Number(r.min_amount ?? 0),
+      max: r.max_amount == null ? Infinity : Number(r.max_amount),
+      rate: Number(r.rate_pct ?? 0) / 100,
+    }))
 }
 
-function getFederalMarginalRate(
-  taxableIncome: number,
-  brackets: { min: number; max: number; rate: number }[]
-): number {
+function getFederalMarginalRate(taxableIncome: number, brackets: { min: number; max: number; rate: number }[]): number {
+  if (!brackets.length) return 0
   if (taxableIncome <= 0) return brackets[0].rate
   for (let i = brackets.length - 1; i >= 0; i--) {
     if (taxableIncome > brackets[i].min) return brackets[i].rate
@@ -126,64 +124,12 @@ function normalizeFilingStatusForState(filingStatus: string): 'single' | 'mfj' {
   return ['mfj', 'married_joint', 'married_filing_jointly', 'qw'].includes(filingStatus) ? 'mfj' : 'single'
 }
 
-function getStateBracketsForYear(
-  stateCode: string | null | undefined,
-  filingStatus: string,
-  year: number,
-  allBrackets: RothAnalysisInputs['stateIncomeTaxBrackets'],
-): Array<{ min: number; max: number; rate: number }> {
-  if (!stateCode || !allBrackets?.length) return []
-  const code = stateCode.toUpperCase()
-  const fs = normalizeFilingStatusForState(filingStatus)
-  const matching = allBrackets.filter((b) => b.state.toUpperCase() === code && b.filing_status === fs)
-  if (matching.length === 0) return []
-
-  const years = Array.from(new Set(matching.map((b) => b.tax_year))).sort((a, b) => a - b)
-  const chosenYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
-  return matching
-    .filter((b) => b.tax_year === chosenYear)
-    .sort((a, b) => a.min_amount - b.min_amount)
-    .map((b) => ({
-      min: b.min_amount,
-      max: b.max_amount ?? Infinity,
-      rate: b.rate_pct / 100,
-    }))
-}
-
-function calcProgressiveTax(
-  taxableIncome: number,
-  brackets: Array<{ min: number; max: number; rate: number }>,
-): number {
-  if (taxableIncome <= 0 || brackets.length === 0) return 0
-  let tax = 0
-  for (const b of brackets) {
-    if (taxableIncome <= b.min) continue
-    const taxableInBracket = Math.max(0, Math.min(taxableIncome, b.max) - b.min)
-    tax += taxableInBracket * b.rate
-  }
-  return tax
-}
-
-function getStateMarginalRateFromBrackets(
-  taxableIncome: number,
-  brackets: Array<{ min: number; max: number; rate: number }>,
-): number {
-  if (taxableIncome <= 0 || brackets.length === 0) return 0
-  for (let i = brackets.length - 1; i >= 0; i--) {
-    if (taxableIncome > brackets[i].min) return brackets[i].rate
-  }
-  return brackets[0].rate
-}
-
 function getBracketHeadroom(
   taxableIncome: number,
   brackets: { min: number; max: number; rate: number }[],
   peakRate: number,
-  maxConversion: number
+  maxConversion: number,
 ): number {
-  // Find the highest bracket BELOW the peak rate
-  // and calculate headroom to the TOP of that bracket
-  // This fills all lower brackets in one conversion
   let targetCeiling = 0
   for (const b of brackets) {
     if (b.rate >= peakRate) break
@@ -192,45 +138,42 @@ function getBracketHeadroom(
   return Math.max(0, targetCeiling - taxableIncome)
 }
 
-// ─── Main analysis function ───────────────────────────────────────────────────
-
 export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult {
   const {
     rows,
     filingStatus,
-    stateMarginalRate,
     stateCode,
     stateIncomeTaxBrackets,
+    federalIncomeTaxBrackets,
     taxDeferredBalance: initTaxDeferred,
     rothBalance: initRoth,
     taxableBalance: initTaxable,
     growthRateRetirement,
     maxAnnualConversion,
     standardDeduction,
-    inflationRate,
     person1BirthYear,
     rmdStartAge,
   } = inputs
 
-  const currentYear = new Date().getFullYear()
-  const baseBrackets = getBrackets(filingStatus)
-
-  // ── Step 1: Find peak combined marginal rate at RMD start ────────────────
-  // Look ahead to the first year RMDs are significant and get the marginal rate
-  let peakRmdCombinedRate = 0.22 + stateMarginalRate // default fallback
+  const stateFilingStatus = normalizeFilingStatusForState(filingStatus)
+  let peakRmdCombinedRate = 0.22
   for (const row of rows) {
-    const age1 = row.age_person1
-    if (age1 >= rmdStartAge && row.income_rmd > 0) {
-      const yearsOut = row.year - currentYear
-      const brackets = inflateBrackets(baseBrackets, inflationRate, yearsOut)
+    if (row.age_person1 >= rmdStartAge && row.income_rmd > 0) {
+      const federalBrackets = getFederalBracketsForYear(filingStatus, row.year, federalIncomeTaxBrackets)
       const taxableIncome = Math.max(0, row.income_total - standardDeduction)
-      const fedRate = getFederalMarginalRate(taxableIncome, brackets)
-      peakRmdCombinedRate = fedRate + stateMarginalRate
+      const fedRate = getFederalMarginalRate(taxableIncome, federalBrackets)
+      const stateRate = (getTopMarginalRate(
+        stateCode,
+        taxableIncome,
+        stateFilingStatus,
+        stateIncomeTaxBrackets,
+        row.year,
+      ) ?? 0) / 100
+      peakRmdCombinedRate = fedRate + stateRate
       break
     }
   }
 
-  // ── Step 2: Year-by-year conversion analysis ─────────────────────────────
   let taxDeferred = initTaxDeferred
   let roth = initRoth
   let taxable = initTaxable
@@ -239,95 +182,81 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
   const results: RothYearResult[] = []
 
   for (const row of rows) {
-    const yearsOut = row.year - currentYear
     const age1 = row.age_person1
     const age2 = row.age_person2
-    const brackets = inflateBrackets(baseBrackets, inflationRate, yearsOut)
-
-    // Use income_total from projection — already correct
+    const federalBrackets = getFederalBracketsForYear(filingStatus, row.year, federalIncomeTaxBrackets)
     const totalIncome = row.income_total
     const ssIncome = row.income_ss_person1 + row.income_ss_person2
     const rmdAmount = row.income_rmd
     const earnedIncome = row.income_earned
     const otherIncome = row.income_other
-
-    // Taxable income for marginal rate calculation
     const taxableIncome = Math.max(0, totalIncome - standardDeduction)
-    const fedMarginal = getFederalMarginalRate(taxableIncome, brackets)
-    const stateBracketsForYear = getStateBracketsForYear(
+    const fedMarginal = getFederalMarginalRate(taxableIncome, federalBrackets)
+    const stateMarginalForYear = (getTopMarginalRate(
       stateCode,
-      filingStatus,
-      row.year,
+      taxableIncome,
+      stateFilingStatus,
       stateIncomeTaxBrackets,
-    )
-    const stateMarginalForYear = stateBracketsForYear.length > 0
-      ? getStateMarginalRateFromBrackets(taxableIncome, stateBracketsForYear)
-      : stateMarginalRate
+      row.year,
+    ) ?? 0) / 100
     const combinedMarginal = fedMarginal + stateMarginalForYear
-
-    // Use actual tax from projection rows
     const federalTax = row.tax_federal
     const stateTax = row.tax_state
     const totalTax = row.tax_total
 
-    // ── Conversion logic ────────────────────────────────────────────────────
-    // Eligibility: both people must be 59.5+ (use 60 as proxy)
-    const p1Age = age1
     const p2Age = age2 ?? 60
-    const eligible = p1Age >= 60 && p2Age >= 60
-
+    const eligible = age1 >= 60 && p2Age >= 60
     let conv = 0
     let rationale = ''
 
     if (!eligible) {
-      rationale = p1Age < 60
-        ? `Deferred — Person 1 is ${p1Age}, under 60`
-        : `Deferred — Person 2 is ${p2Age}, under 60`
+      rationale = age1 < 60 ? `Deferred — Person 1 is ${age1}, under 60` : `Deferred — Person 2 is ${p2Age}, under 60`
     } else if (taxDeferred <= 0) {
       rationale = 'No tax-deferred balance remaining'
     } else if (combinedMarginal >= peakRmdCombinedRate) {
       rationale = `Rate ${Math.round(combinedMarginal * 100)}% already at or above projected RMD rate ${Math.round(peakRmdCombinedRate * 100)}%`
     } else {
-      // Find headroom to fill current bracket
-      const headroom = getBracketHeadroom(taxableIncome, brackets, peakRmdCombinedRate, maxAnnualConversion)
+      const headroom = getBracketHeadroom(taxableIncome, federalBrackets, peakRmdCombinedRate, maxAnnualConversion)
       if (headroom <= 0) {
         rationale = 'Already at top of current bracket'
-        conv = 0
       } else {
         conv = Math.min(headroom, taxDeferred, maxAnnualConversion)
-        const stateNote = stateMarginalRate > 0
-          ? ` (${Math.round(fedMarginal * 100)}% fed + ${Math.round(stateMarginalRate * 100)}% state)`
+        const stateNote = stateMarginalForYear > 0
+          ? ` (${Math.round(fedMarginal * 100)}% fed + ${Math.round(stateMarginalForYear * 100)}% state)`
           : ''
-        rationale = `Convert to top of ${Math.round((peakRmdCombinedRate - stateMarginalRate) * 100)}% bracket${stateNote} — projected RMD rate ${Math.round(peakRmdCombinedRate * 100)}%`
+        rationale = `Convert while below projected RMD combined rate${stateNote} — projected RMD rate ${Math.round(peakRmdCombinedRate * 100)}%`
       }
     }
 
-    // Incremental tax cost of conversion
     const incrementalFederalTax = Math.round(conv * fedMarginal)
-    const incrementalStateTax = stateBracketsForYear.length > 0
-      ? Math.round(
-          calcProgressiveTax(taxableIncome + conv, stateBracketsForYear) -
-            calcProgressiveTax(taxableIncome, stateBracketsForYear),
-        )
-      : Math.round(conv * stateMarginalForYear)
+    const stateBefore = calculateStateIncomeTax({
+      stateCode,
+      ordinaryIncome: taxableIncome,
+      filingStatus: stateFilingStatus,
+      brackets: stateIncomeTaxBrackets,
+      taxYear: row.year,
+    }).stateTax
+    const stateAfter = calculateStateIncomeTax({
+      stateCode,
+      ordinaryIncome: taxableIncome + conv,
+      filingStatus: stateFilingStatus,
+      brackets: stateIncomeTaxBrackets,
+      taxYear: row.year,
+    }).stateTax
+    const incrementalStateTax = Math.round(stateAfter - stateBefore)
     const incrementalTotalTax = incrementalFederalTax + incrementalStateTax
 
-    // Lifetime savings estimate
-    // Future value of converted amount at RMD time × rate differential
     const yearsToRmdStart = Math.max(0, (person1BirthYear + rmdStartAge) - row.year)
     const futureValue = conv * Math.pow(1 + growthRateRetirement, yearsToRmdStart)
-    const rmdDistributionFactor = 24.6 // approximate factor at RMD start age 75
-    const annualRmdReduction = futureValue / rmdDistributionFactor
+    const annualRmdReduction = futureValue / 24.6
     const rateDiff = Math.max(0, peakRmdCombinedRate - combinedMarginal)
     const yearSavings = annualRmdReduction * rateDiff - incrementalTotalTax
     cumulativeLifetimeTaxSavings += yearSavings
     cumulativeConversions += conv
 
-    // Update balances
-    const growthRate = growthRateRetirement
-    taxDeferred = Math.max(0, taxDeferred - rmdAmount - conv) * (1 + growthRate)
-    roth = (roth + conv) * (1 + growthRate)
-    taxable = Math.max(0, taxable - incrementalTotalTax) * (1 + growthRate)
+    taxDeferred = Math.max(0, taxDeferred - rmdAmount - conv) * (1 + growthRateRetirement)
+    roth = (roth + conv) * (1 + growthRateRetirement)
+    taxable = Math.max(0, taxable - incrementalTotalTax) * (1 + growthRateRetirement)
 
     results.push({
       year: row.year,
@@ -357,7 +286,6 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     })
   }
 
-  // ── Step 3: Summary ──────────────────────────────────────────────────────
   let windowStart: number | null = null
   let windowEnd: number | null = null
   for (const r of results) {
@@ -369,7 +297,6 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
 
   const totalConversions = Math.round(cumulativeConversions)
   const totalSavings = Math.round(cumulativeLifetimeTaxSavings)
-
   const summary = totalConversions > 0
     ? `Converting ${totalConversions.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} over ${windowStart}–${windowEnd} is estimated to save ${totalSavings.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} in lifetime taxes by reducing future RMDs.`
     : 'No conversions recommended — current combined tax rate meets or exceeds projected RMD rate.'
@@ -378,9 +305,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     rows: results,
     totalConversions,
     totalLifetimeTaxSavings: totalSavings,
-    optimalConversionWindow: windowStart && windowEnd
-      ? { startYear: windowStart, endYear: windowEnd }
-      : null,
+    optimalConversionWindow: windowStart && windowEnd ? { startYear: windowStart, endYear: windowEnd } : null,
     summary,
   }
 }

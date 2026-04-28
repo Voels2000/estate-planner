@@ -87,6 +87,7 @@ export async function loadAdvisorProjectionStaleness(
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ] = await Promise.all([
     loadLatestChangeTs(supabase, 'assets', 'owner_id', params.ownerId),
     loadLatestChangeTs(supabase, 'liabilities', 'owner_id', params.ownerId),
@@ -99,6 +100,15 @@ export async function loadAdvisorProjectionStaleness(
     (async () => {
       const { data } = await supabase
         .from('state_income_tax_brackets')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+      return row?.created_at ?? null
+    })(),
+    (async () => {
+      const { data } = await supabase
+        .from('federal_tax_brackets')
         .select('created_at')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -118,6 +128,7 @@ export async function loadAdvisorProjectionStaleness(
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ])
 
   return {

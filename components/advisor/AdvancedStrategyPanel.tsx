@@ -30,35 +30,35 @@ interface AdvancedStrategyPanelProps {
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_7520_RATE = 0.052
 
-// ── Strategy line item writer ─────────────────────────────────────────────────
-async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  await fetch('/api/strategy-configs', {
+function toAdvisorConfidence(
+  confidence?: StrategyLineItemInput['confidence_level'],
+): 'low' | 'medium' | 'high' {
+  if (confidence === 'certain') return 'high'
+  if (confidence === 'probable') return 'medium'
+  return 'low'
+}
+
+async function writeAdvisorRecommendation(input: StrategyLineItemInput) {
+  await fetch('/api/advisor/strategy-recommendation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       householdId: input.household_id,
-      strategyType: input.strategy_source,
-      label: input.strategy_source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      strategySource: input.strategy_source,
+      amount: Math.abs(input.amount ?? 0),
+      sign: input.sign ?? -1,
+      confidenceLevel: toAdvisorConfidence(input.confidence_level),
+      effectiveYear: input.effective_year ?? undefined,
+      metadata: input.metadata ?? {},
     }),
-  })
-  // Also write strategy_line_items for the composition card
-  await fetch('/api/strategy-line-items', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
   })
 }
 
-async function removeStrategyLineItem(householdId: string, strategySource: string) {
-  await fetch('/api/strategy-configs', {
+async function removeAdvisorRecommendation(householdId: string, strategySource: string) {
+  await fetch('/api/advisor/strategy-recommendation', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ householdId, strategyType: strategySource }),
-  })
-  await fetch('/api/strategy-line-items', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ householdId, strategySource, source_role: 'advisor' }),
+    body: JSON.stringify({ householdId, strategySource }),
   })
 }
 
@@ -71,12 +71,17 @@ function useRecommendAdvanced(
 
   useEffect(() => {
     if (!householdId) return
-    fetch(`/api/strategy-configs?householdId=${householdId}`)
-      .then(r => r.json())
-      .then(d => {
-        if (Array.isArray(d)) setSaved(new Set(d.map((s: { strategy_type: string }) => s.strategy_type)))
+    fetch('/api/advisor/strategy-recommendations-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        const items = Array.isArray(d?.items) ? d.items : []
+        setSaved(new Set(items.map((s: { strategy_source: string }) => s.strategy_source)))
       })
-      .catch(() => null)
+      .catch(() => setSaved(new Set()))
   }, [householdId])
 
   async function toggle(
@@ -87,9 +92,9 @@ function useRecommendAdvanced(
     setSaving(true)
     const isActive = saved.has(strategySource)
     if (isActive) {
-      await removeStrategyLineItem(householdId, strategySource)
+      await removeAdvisorRecommendation(householdId, strategySource)
     } else {
-      await writeStrategyLineItem({ ...lineItemInput, household_id: householdId, source_role: sourceRole })
+      await writeAdvisorRecommendation({ ...lineItemInput, household_id: householdId, source_role: sourceRole })
     }
     setSaved(prev => {
       const next = new Set(prev)

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 62 / advisor route orchestration polish)
+# Last updated: April 28, 2026 (Session 74 / consumer strategy path simplified)
 
 ---
 
@@ -20,14 +20,14 @@ It documents both:
 |-----|-------------|--------|-------|
 | Federal estate tax | `federal_tax_config` | `lib/calculations/estate-tax.ts` | Admin-managed |
 | State estate tax | `state_estate_tax_rules` | `lib/calculations/stateEstateTax.ts` | Admin-managed |
-| Federal income tax | Code constants | `computeCompleteProjection()` | Annual code update required |
-| State income tax | `state_income_tax_brackets` (target canonical source) | Current: projection + roth internal logic; shared engine used by breakeven | Transition still in progress |
+| Federal income tax | `federal_tax_brackets` (canonical) | `computeCompleteProjection()` | Admin-managed only; canonical engine now requires DB brackets |
+| State income tax | `state_income_tax_brackets` (canonical) | `stateIncomeTax.ts` (shared) | Canonical for user-facing calculations |
 | State inheritance tax | `state_inheritance_tax_rules` | `InheritanceTaxWaterfall.tsx` | Admin-managed |
 
 Important:
 
-- `state_income_tax_rates` is **legacy** and should be phased out.
-- Projection and breakeven are bracket-based; some non-engine surfaces still read legacy rates.
+- `state_income_tax_rates` is **legacy** and retained only as a read-only admin archive.
+- User-facing calculations are bracket-based; remaining legacy table usage is admin archive/maintenance only.
 
 ---
 
@@ -46,12 +46,12 @@ Important:
 **Current (as built):**
 
 - `moveBreakeven.ts` uses `lib/calculations/stateIncomeTax.ts`.
-- `projection-complete.ts` uses internal progressive bracket logic.
-- `roth-analysis.ts` uses internal progressive logic (bracket-aware).
+- `projection-complete.ts` now calls `lib/calculations/stateIncomeTax.ts`.
+- `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic.
 
 **Target:**
 
-- Projection and Roth should call the shared `stateIncomeTax.ts` engine directly.
+- Keep all state income tax call paths on `stateIncomeTax.ts` shared logic.
 
 ### Projection Engine (Backbone)
 
@@ -60,19 +60,40 @@ Important:
 - Includes: federal income tax, state income tax, capital gains tax, NIIT, payroll tax, IRMAA.
 - Uses progressive state brackets by filing status and year.
 
+### Federal Income Tax Chain
+
+**Canonical path (production backbone):**
+
+- `lib/calculations/projection-complete.ts`
+  - Reads `federal_income_tax_brackets` input supplied from `federal_tax_brackets` table.
+  - Selects brackets by filing status and tax year (nearest available year <= projection year, else latest available year).
+  - No hardcoded federal fallback in canonical path; missing brackets are treated as a configuration error.
+
+**Loader wiring now in place:**
+
+- `app/api/projection/route.ts` loads `federal_tax_brackets` and passes rows into `computeCompleteProjection(...)`.
+- `lib/actions/generate-base-case.ts` loads `federal_tax_brackets` and passes rows into `computeCompleteProjection(...)` for saved base-case scenarios.
+
+**Legacy path note:**
+
+- `lib/calculations/projection.ts` still has its own federal bracket fetch path and should be treated as a legacy/alternate engine path.
+- No canonical runtime paths should import `runProjection(...)`; the module is explicitly marked deprecated in-code.
+
 ---
 
 ## Strategy Recommendation Workflow
 
 ### Current
 
-- Advisor recommendation writes are mixed:
-  - New path: `/api/advisor/strategy-recommendation`
-  - Legacy paths: `/api/strategy-line-items`, `/api/strategy-configs`
+- Advisor recommendation writes are unified:
+  - Canonical advisor write path: `/api/advisor/strategy-recommendation`
+  - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
+- Consumer save/progress now writes through `/api/strategy-line-items` only.
 
 ### Target
 
-- Single advisor write path through `/api/advisor/strategy-recommendation` with advisor-client link validation.
+- Keep advisor recommendation writes on `/api/advisor/strategy-recommendation` with advisor-client link validation.
+- Optionally migrate consumer save/progress to a dedicated consumer route family (or keep `/api/strategy-line-items` as canonical).
 
 ### Invariants
 
@@ -107,6 +128,7 @@ Projection snapshots are stale when `projection_scenarios.calculated_at` is olde
 - `households.updated_at`
 - latest changes in: assets, liabilities, income, expenses, real_estate, businesses, business_interests, insurance_policies
 - latest `state_income_tax_brackets.created_at`
+- latest `federal_tax_brackets.created_at`
 
 Runtime behavior:
 
@@ -124,8 +146,41 @@ Runtime behavior:
 | Advisor strategy horizons | State estate | `advisorHorizons` | Implemented |
 | Domicile State Tax panel | State estate | `state_estate_tax_rules` | Implemented |
 | Move breakeven | State income + estate | `stateIncomeTax.ts` + estate tax logic | Implemented |
-| Projection engine | State income | internal progressive logic | Implemented |
-| Roth optimizer | State income | internal progressive logic | Implemented |
+| Projection engine | State income | `stateIncomeTax.ts` shared engine | Implemented |
+| Roth optimizer | State income | `stateIncomeTax.ts` shared engine helpers | Implemented |
+
+---
+
+## Legacy State Income Tax Usage Trace (Current)
+
+This section enumerates the remaining place where the legacy flat-rate table is still read.
+
+### Still reading `state_income_tax_rates`
+
+- `app/admin/tax-rules-tab.tsx`
+  - Legacy archive view for `state_income_tax_rates` remains for historical reference.
+
+### Already on bracket-based path
+
+- `lib/calculations/projection-complete.ts`
+  - Uses `stateIncomeTax.ts` with `state_income_tax_brackets` inputs.
+- `lib/domicile/moveBreakeven.ts`
+  - Uses shared progressive engine in `lib/calculations/stateIncomeTax.ts`.
+- `app/(dashboard)/domicile-analysis/page.tsx` + `app/(dashboard)/domicile-analysis/_domicile-results.tsx`
+  - Now read/display from `state_income_tax_brackets` (no legacy `state_income_tax_rates` read).
+- `app/(dashboard)/roth/page.tsx` + `lib/calculations/roth-analysis.ts`
+  - Now read `state_income_tax_brackets` and use shared `stateIncomeTax.ts` functions for state marginal and incremental state tax.
+
+### Optional cleanup target
+
+1. Keep `state_income_tax_rates` as a compatibility archive only, or remove the table/admin archive surface once historical visibility is no longer needed.
+2. Continue retiring non-canonical/legacy helpers as part of the `projection.ts` deprecation cleanup path.
+
+### Federal income tax consistency target
+
+1. Keep admin-managed `federal_tax_brackets` as the single source of truth for federal income tax in the canonical projection engine.
+2. Continue using bracket-table timestamp staleness triggers so admin bracket edits regenerate projections.
+3. Ensure required bracket coverage by filing status/year in non-prod seed data and admin maintenance workflow.
 
 ---
 
@@ -190,9 +245,29 @@ Runtime behavior:
 
 ## Known Transitional Exceptions
 
-1. Some surfaces still query `state_income_tax_rates`.
-2. Projection and Roth are not yet importing shared `stateIncomeTax.ts` directly.
-3. Advisor strategy writes still run through mixed routes.
+1. User-facing Roth + Domicile surfaces are now bracket-based; remaining `state_income_tax_rates` usage is admin legacy maintenance only.
+2. Legacy `lib/calculations/projection.ts` remains as an alternate path; it is now explicitly deprecated in-code and should stay isolated.
+3. Consumer save/progress still uses legacy-named `/api/strategy-line-items` (single endpoint path).
+
+---
+
+## Legacy Projection Retirement Checklist (`lib/calculations/projection.ts`)
+
+Current status:
+
+- Module is explicitly marked deprecated in-code.
+- `runProjection(...)` has no active runtime imports/callers in the app.
+- Last UI type dependency has been removed (`_projections-view.tsx` now uses a local row type).
+
+Safe-delete gate:
+
+1. Keep one release cycle with zero imports (`rg "from '@/lib/calculations/projection'|runProjection\\("`).
+2. Confirm no dynamic imports or external scripts rely on this module.
+3. Delete `lib/calculations/projection.ts`.
+4. Run full validation:
+   - `npm run build`
+   - targeted smoke checks: `/projections`, `/dashboard`, advisor client pages.
+5. Update this document + `DATABASE_SCHEMA_REFERENCE.md` if any references remain.
 
 ---
 
@@ -210,8 +285,8 @@ Runtime behavior:
 
 ## Open Backlog (High Priority)
 
-1. Complete migration off `state_income_tax_rates`.
-2. Normalize advisor strategy write path.
+1. Delete deprecated `lib/calculations/projection.ts` after one clean release cycle with zero imports.
+2. Decide whether to keep `/api/strategy-line-items` as canonical consumer path or introduce `/api/consumer/strategy-*` endpoints.
 3. Finish Monte Carlo consumer acceptance flow.
 4. Keep this file updated with **Current vs Target** deltas each session.
 

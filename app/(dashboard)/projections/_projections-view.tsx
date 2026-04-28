@@ -10,10 +10,23 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import type { ProjectionYear } from '@/lib/calculations/projection'
+
+// Legacy projections table/chart row shape used by this standalone view.
+// Kept local to avoid importing from deprecated legacy engine module.
+type LegacyProjectionViewRow = {
+  year: number
+  person1_age: number
+  gross_income: number
+  taxable_income: number
+  federal_tax: number
+  state_tax: number
+  total_expenses: number
+  net_cash_flow: number
+  total_net_worth: number
+}
 
 type ProjectionsViewProps = {
-  projection: ProjectionYear[]
+  projection: LegacyProjectionViewRow[]
   error: string | null
 }
 

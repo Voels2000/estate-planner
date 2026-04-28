@@ -32,7 +32,7 @@ export default async function RothPage() {
   }
 
   // ── Fetch household and assets in parallel ──────────────────────────────
-  const [{ data: hh }, { data: assetRows }, { data: stateRates }, { data: stateBrackets }] = await Promise.all([
+  const [{ data: hh }, { data: assetRows }, { data: stateBrackets }, { data: federalBrackets }] = await Promise.all([
     supabase
       .from("households")
       .select("*")
@@ -43,16 +43,18 @@ export default async function RothPage() {
       .select("type, value, owner")
       .eq("owner_id", user.id),
     supabase
-      .from("state_income_tax_rates")
-      .select("state_code, rate_pct, tax_year")
-      .order("tax_year", { ascending: false }),
-    supabase
       .from("state_income_tax_brackets")
       .select("state, tax_year, filing_status, min_amount, max_amount, rate_pct")
       .order("tax_year", { ascending: false })
       .order("state", { ascending: true })
       .order("filing_status", { ascending: true })
       .order("min_amount", { ascending: true }),
+    supabase
+      .from("federal_tax_brackets")
+      .select("filing_status, min_amount, max_amount, rate_pct, tax_year, bracket_order")
+      .order("tax_year", { ascending: false })
+      .order("filing_status", { ascending: true })
+      .order("bracket_order", { ascending: true }),
   ]);
 
   if (!hh) {
@@ -127,16 +129,7 @@ export default async function RothPage() {
     .filter((a) => TAXABLE_TYPES.includes(a.type))
     .reduce((s, a) => s + (a.value ?? 0), 0);
 
-  // ── State income tax rate ───────────────────────────────────────────────
   const stateCode = hh.state_primary?.toUpperCase() ?? null;
-  const stateRate = stateCode && stateRates
-    ? (() => {
-        const rows = stateRates
-          .filter(r => r.state_code.toUpperCase() === stateCode)
-          .sort((a, b) => (b.tax_year ?? 0) - (a.tax_year ?? 0))
-        return rows.length > 0 ? (rows[0].rate_pct / 100) : 0
-      })()
-    : 0
 
   // ── RMD start age ───────────────────────────────────────────────────────
   const rmdStartAge = hh.person1_birth_year >= 1960 ? 75 : 73;
@@ -152,7 +145,6 @@ export default async function RothPage() {
   const result = runRothAnalysis({
     rows,
     filingStatus: hh.filing_status ?? "single",
-    stateMarginalRate: stateRate,
     stateCode,
     stateIncomeTaxBrackets: (stateBrackets ?? []) as Array<{
       state: string
@@ -161,6 +153,14 @@ export default async function RothPage() {
       min_amount: number
       max_amount: number | null
       rate_pct: number
+    }>,
+    federalIncomeTaxBrackets: (federalBrackets ?? []) as Array<{
+      filing_status: string
+      min_amount: number
+      max_amount: number | null
+      rate_pct: number
+      tax_year?: number | null
+      bracket_order?: number | null
     }>,
     taxDeferredBalance,
     rothBalance,

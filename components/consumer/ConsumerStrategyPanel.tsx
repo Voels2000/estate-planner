@@ -96,30 +96,15 @@ const STATUS_COLORS: Record<ConsumerStatus, string> = {
 }
 
 async function writeStrategyLineItem(input: StrategyLineItemInput) {
-  const configRes = await fetch('/api/strategy-configs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      householdId: input.household_id,
-      strategyType: input.strategy_source,
-      label: input.strategy_source.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-    }),
-  })
   const lineRes = await fetch('/api/strategy-line-items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, source_role: input.source_role ?? 'consumer' }),
   })
-  void configRes
   void lineRes
 }
 
 async function removeStrategyLineItem(householdId: string, strategySource: string) {
-  await fetch('/api/strategy-configs', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ householdId, strategyType: strategySource }),
-  })
   await fetch('/api/strategy-line-items', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },

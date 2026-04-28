@@ -71,6 +71,7 @@ export async function loadLatestInputChangeMs(
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ] = await Promise.all([
     getLatestChangeTs(supabase, 'assets', 'owner_id', userId),
     getLatestChangeTs(supabase, 'liabilities', 'owner_id', userId),
@@ -83,6 +84,15 @@ export async function loadLatestInputChangeMs(
     (async () => {
       const { data } = await supabase
         .from('state_income_tax_brackets')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+      return row?.created_at ?? null
+    })(),
+    (async () => {
+      const { data } = await supabase
+        .from('federal_tax_brackets')
         .select('created_at')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -102,6 +112,7 @@ export async function loadLatestInputChangeMs(
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
+    federalIncomeTaxBracketsChangedAt,
   ])
 }
 

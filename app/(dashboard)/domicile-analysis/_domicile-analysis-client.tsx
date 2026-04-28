@@ -16,7 +16,7 @@ import type {
   DomicileChecklistRow,
   StateEstateTaxRule,
   StateInheritanceTaxRule,
-  StateIncomeTaxRate,
+  StateIncomeTaxBracket,
 } from './types'
 
 export type { DomicileAnalysisRow, DomicileChecklistRow } from './types'
@@ -45,7 +45,7 @@ export default function DomicileAnalysisClient({
   userId,
   stateEstateTaxRules,
   stateInheritanceTaxRules,
-  stateIncomeTaxRates,
+  stateIncomeTaxBrackets,
 }: {
   initialAnalysis: DomicileAnalysisRow | null
   initialChecklist: DomicileChecklistRow[]
@@ -54,7 +54,7 @@ export default function DomicileAnalysisClient({
   userId: string
   stateEstateTaxRules: StateEstateTaxRule[]
   stateInheritanceTaxRules: StateInheritanceTaxRule[]
-  stateIncomeTaxRates: StateIncomeTaxRate[]
+  stateIncomeTaxBrackets: StateIncomeTaxBracket[]
 }) {
   const isAdvisor = role === 'advisor'
   const [subjectId, setSubjectId] = useState(userId)
@@ -259,7 +259,7 @@ export default function DomicileAnalysisClient({
             onViewChecklist={() => scrollToId('domicile-checklist')}
             stateEstateTaxRules={stateEstateTaxRules}
             stateInheritanceTaxRules={stateInheritanceTaxRules}
-            stateIncomeTaxRates={stateIncomeTaxRates}
+            stateIncomeTaxBrackets={stateIncomeTaxBrackets}
           />
         </CollapsibleSection>
       )}

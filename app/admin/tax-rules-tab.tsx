@@ -39,6 +39,17 @@ type IrmaaBracket = {
   part_d_surcharge: number
 }
 
+type FederalIncomeBracketCoverageRow = {
+  tax_year: number
+  filing_status: string
+}
+
+type StateIncomeBracketCoverageRow = {
+  tax_year: number
+  state: string
+  filing_status: string
+}
+
 type ActiveSection = 'state_income' | 'state_estate' | 'federal_estate' | 'irmaa'
 
 const US_STATES = [
@@ -47,6 +58,7 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
   'VA','WA','WV','WI','WY','DC'
 ]
+const NO_STATE_INCOME_TAX_STATES = new Set(['AK', 'FL', 'NV', 'NH', 'SD', 'TN', 'TX', 'WA', 'WY'])
 
 const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
@@ -65,10 +77,6 @@ export default function TaxRulesTab() {
   // State income tax rates
   const [stateIncomeRates, setStateIncomeRates] = useState<StateIncomeTaxRate[]>([])
   const [loadingStateIncome, setLoadingStateIncome] = useState(false)
-  const [savingStateIncome, setSavingStateIncome] = useState<string | null>(null)
-  const [savedStateIncome, setSavedStateIncome] = useState<string | null>(null)
-  const [addingStateIncome, setAddingStateIncome] = useState(false)
-  const [newStateIncome, setNewStateIncome] = useState<Partial<StateIncomeTaxRate>>({ tax_year: yearFilter })
 
   // State estate tax rules
   const [stateEstateRules, setStateEstateRules] = useState<StateEstateTaxRule[]>([])
@@ -88,6 +96,12 @@ export default function TaxRulesTab() {
   const [loadingIrmaa, setLoadingIrmaa] = useState(false)
   const [savingIrmaa, setSavingIrmaa] = useState<string | null>(null)
   const [savedIrmaa, setSavedIrmaa] = useState<string | null>(null)
+
+  // Federal income tax coverage status (read-only guardrail)
+  const [federalIncomeCoverageRows, setFederalIncomeCoverageRows] = useState<FederalIncomeBracketCoverageRow[]>([])
+  const [loadingFederalIncomeCoverage, setLoadingFederalIncomeCoverage] = useState(false)
+  const [stateIncomeCoverageRows, setStateIncomeCoverageRows] = useState<StateIncomeBracketCoverageRow[]>([])
+  const [loadingStateIncomeCoverage, setLoadingStateIncomeCoverage] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
 
@@ -143,56 +157,34 @@ export default function TaxRulesTab() {
     setLoadingIrmaa(false)
   }, [])
 
+  const loadFederalIncomeCoverage = useCallback(async () => {
+    setLoadingFederalIncomeCoverage(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('federal_tax_brackets')
+      .select('tax_year, filing_status')
+      .order('tax_year', { ascending: false })
+    setFederalIncomeCoverageRows((data ?? []) as FederalIncomeBracketCoverageRow[])
+    setLoadingFederalIncomeCoverage(false)
+  }, [])
+
+  const loadStateIncomeCoverage = useCallback(async () => {
+    setLoadingStateIncomeCoverage(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('state_income_tax_brackets')
+      .select('tax_year, state, filing_status')
+      .order('tax_year', { ascending: false })
+    setStateIncomeCoverageRows((data ?? []) as StateIncomeBracketCoverageRow[])
+    setLoadingStateIncomeCoverage(false)
+  }, [])
+
   useEffect(() => { loadStateIncomeRates(yearFilter) }, [yearFilter, loadStateIncomeRates])
   useEffect(() => { loadStateEstateRules(yearFilter, stateEstateFilter) }, [yearFilter, stateEstateFilter, loadStateEstateRules])
   useEffect(() => { loadFederalBrackets(yearFilter) }, [yearFilter, loadFederalBrackets])
   useEffect(() => { loadIrmaaBrackets(yearFilter) }, [yearFilter, loadIrmaaBrackets])
-
-  // ── State Income Tax Handlers ──────────────────────────────────────────────
-
-  async function handleSaveStateIncome(row: StateIncomeTaxRate) {
-    const key = `${row.state_code}-${row.tax_year}`
-    setSavingStateIncome(key)
-    setError(null)
-    const supabase = createClient()
-    try {
-      if (row.id) {
-        const { error } = await supabase.from('state_income_tax_rates').update({ rate_pct: row.rate_pct }).eq('id', row.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('state_income_tax_rates').upsert(
-          { state_code: row.state_code, rate_pct: row.rate_pct, tax_year: row.tax_year },
-          { onConflict: 'state_code,tax_year' }
-        )
-        if (error) throw error
-      }
-      setSavedStateIncome(key)
-      setTimeout(() => setSavedStateIncome(null), 2000)
-      loadStateIncomeRates(yearFilter)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save.')
-    } finally {
-      setSavingStateIncome(null)
-    }
-  }
-
-  async function handleAddStateIncome() {
-    if (!newStateIncome.state_code || newStateIncome.rate_pct === undefined) return
-    setError(null)
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.from('state_income_tax_rates').upsert(
-        { state_code: newStateIncome.state_code, rate_pct: newStateIncome.rate_pct, tax_year: newStateIncome.tax_year ?? yearFilter },
-        { onConflict: 'state_code,tax_year' }
-      )
-      if (error) throw error
-      setAddingStateIncome(false)
-      setNewStateIncome({ tax_year: yearFilter })
-      loadStateIncomeRates(yearFilter)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add.')
-    }
-  }
+  useEffect(() => { loadFederalIncomeCoverage() }, [loadFederalIncomeCoverage])
+  useEffect(() => { loadStateIncomeCoverage() }, [loadStateIncomeCoverage])
 
   // ── State Estate Tax Handlers ──────────────────────────────────────────────
 
@@ -348,6 +340,43 @@ export default function TaxRulesTab() {
   ]
 
   const years = [2023, 2024, 2025, 2026]
+  const normalizedFederalStatusesForYear = new Set(
+    federalIncomeCoverageRows
+      .filter((r) => Number(r.tax_year) === yearFilter)
+      .map((r) => {
+        const fs = String(r.filing_status ?? '').toLowerCase()
+        if (['single', 's', 'mfs', 'married_filing_separately', 'head_of_household', 'hoh'].includes(fs)) return 'single'
+        if (['mfj', 'married_joint', 'married_filing_jointly', 'joint', 'qw', 'qualifying_widow'].includes(fs)) return 'mfj'
+        return ''
+      })
+      .filter(Boolean),
+  )
+  const hasFederalSingle = normalizedFederalStatusesForYear.has('single')
+  const hasFederalMfj = normalizedFederalStatusesForYear.has('mfj')
+  const hasFederalCoverageForYear = hasFederalSingle && hasFederalMfj
+  const stateIncomeRowsForYear = stateIncomeCoverageRows.filter((r) => Number(r.tax_year) === yearFilter)
+  const normalizedStateCoverage = new Map<string, Set<string>>()
+  for (const row of stateIncomeRowsForYear) {
+    const state = String(row.state ?? '').toUpperCase()
+    if (!state) continue
+    if (NO_STATE_INCOME_TAX_STATES.has(state)) continue
+    const fs = String(row.filing_status ?? '').toLowerCase()
+    const normalizedFs = ['single', 's', 'mfs', 'married_filing_separately', 'head_of_household', 'hoh'].includes(fs)
+      ? 'single'
+      : ['mfj', 'married_joint', 'married_filing_jointly', 'joint', 'qw', 'qualifying_widow'].includes(fs)
+        ? 'mfj'
+        : ''
+    if (!normalizedFs) continue
+    if (!normalizedStateCoverage.has(state)) normalizedStateCoverage.set(state, new Set())
+    normalizedStateCoverage.get(state)?.add(normalizedFs)
+  }
+  const statesWithBothStateIncomeStatuses = Array.from(normalizedStateCoverage.entries()).filter(([, statuses]) =>
+    statuses.has('single') && statuses.has('mfj'),
+  ).length
+  const requiredIncomeTaxStates = US_STATES.filter((state) => !NO_STATE_INCOME_TAX_STATES.has(state))
+  const totalStatesInCoverage = requiredIncomeTaxStates.length
+  const hasStateIncomeCoverageForYear =
+    statesWithBothStateIncomeStatuses === totalStatesInCoverage
 
   return (
     <div className="space-y-6">
@@ -369,6 +398,48 @@ export default function TaxRulesTab() {
           ))}
         </div>
         <span className="text-xs text-neutral-400 ml-2">Changes apply to all projections and scenarios immediately.</span>
+      </div>
+
+      <div className={`rounded-lg border px-4 py-3 text-sm ${
+        loadingFederalIncomeCoverage
+          ? 'border-neutral-200 bg-neutral-50 text-neutral-600'
+          : hasFederalCoverageForYear
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-amber-200 bg-amber-50 text-amber-800'
+      }`}>
+        {loadingFederalIncomeCoverage ? (
+          <p>Checking federal income bracket coverage...</p>
+        ) : hasFederalCoverageForYear ? (
+          <p>
+            Federal income bracket coverage for <strong>{yearFilter}</strong> is complete (single + MFJ).
+          </p>
+        ) : (
+          <p>
+            Federal income bracket coverage for <strong>{yearFilter}</strong> is incomplete (single: {hasFederalSingle ? 'yes' : 'no'}, MFJ: {hasFederalMfj ? 'yes' : 'no'}).
+            Projections will use the latest earlier year available, but you should add {yearFilter} rows in <code className="mx-1">federal_tax_brackets</code> for accurate year-specific taxes.
+          </p>
+        )}
+      </div>
+
+      <div className={`rounded-lg border px-4 py-3 text-sm ${
+        loadingStateIncomeCoverage
+          ? 'border-neutral-200 bg-neutral-50 text-neutral-600'
+          : hasStateIncomeCoverageForYear
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-amber-200 bg-amber-50 text-amber-800'
+      }`}>
+        {loadingStateIncomeCoverage ? (
+          <p>Checking state income bracket coverage...</p>
+        ) : hasStateIncomeCoverageForYear ? (
+          <p>
+            State income bracket coverage for <strong>{yearFilter}</strong> is complete for loaded states ({statesWithBothStateIncomeStatuses}/{totalStatesInCoverage} with single + MFJ).
+          </p>
+        ) : (
+          <p>
+            State income bracket coverage for <strong>{yearFilter}</strong> is incomplete ({statesWithBothStateIncomeStatuses}/{totalStatesInCoverage} states with single + MFJ).
+            Add missing rows in <code className="mx-1">state_income_tax_brackets</code> so year-specific projection taxes stay accurate.
+          </p>
+        )}
       </div>
 
       {/* Section tabs */}
@@ -408,52 +479,13 @@ export default function TaxRulesTab() {
             <div className="pointer-events-none opacity-40">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-base font-semibold text-neutral-900">State Income Tax Rates (Legacy) — {yearFilter}</h2>
-                <button onClick={() => setAddingStateIncome(true)}
-                  className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 transition">
-                  + Add / Update State
-                </button>
+                <span className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-600 bg-white">
+                  Read-only archive
+                </span>
               </div>
               <p className="text-sm text-neutral-500 mb-5">
                 Legacy effective income tax rate per state retained for backward compatibility and historical admin reference.
               </p>
-
-              {addingStateIncome && (
-                <div className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-              <p className="text-xs font-semibold text-indigo-700 mb-3">Add / Update State Rate for {yearFilter}</p>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1">State</label>
-                  <select value={newStateIncome.state_code ?? ''} onChange={e => setNewStateIncome(p => ({ ...p, state_code: e.target.value }))} className={inputClass}>
-                    <option value="">Select…</option>
-                    {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1">Rate (%)</label>
-                  <input type="number" step="0.01" min="0" max="20"
-                    value={newStateIncome.rate_pct ?? ''}
-                    onChange={e => setNewStateIncome(p => ({ ...p, rate_pct: Number(e.target.value) }))}
-                    className={inputClass} placeholder="e.g. 7.0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1">Tax Year</label>
-                  <input type="number" value={newStateIncome.tax_year ?? yearFilter}
-                    onChange={e => setNewStateIncome(p => ({ ...p, tax_year: Number(e.target.value) }))}
-                    className={inputClass} />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleAddStateIncome}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
-                  Save Rate
-                </button>
-                <button onClick={() => setAddingStateIncome(false)}
-                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition">
-                  Cancel
-                </button>
-              </div>
-                </div>
-              )}
 
               {loadingStateIncome ? (
                 <p className="text-sm text-neutral-400 py-8 text-center animate-pulse">Loading…</p>
@@ -469,15 +501,13 @@ export default function TaxRulesTab() {
                     return (
                       <div key={key} className="rounded-xl border border-neutral-200 p-3 flex items-center gap-2">
                         <span className="text-sm font-mono font-bold text-neutral-700 w-8">{row.state_code}</span>
-                        <input type="number" step="0.01" min="0" max="20"
-                          value={row.rate_pct}
-                          onChange={e => setStateIncomeRates(prev => prev.map(r => r.state_code === row.state_code ? { ...r, rate_pct: Number(e.target.value) } : r))}
-                          className="w-16 rounded-lg border border-neutral-300 px-2 py-1 text-sm text-center focus:border-neutral-500 focus:outline-none" />
+                        <span className="w-16 rounded-lg border border-neutral-300 px-2 py-1 text-sm text-center bg-white">
+                          {row.rate_pct}
+                        </span>
                         <span className="text-xs text-neutral-400">%</span>
-                        <button onClick={() => handleSaveStateIncome(row)} disabled={savingStateIncome === key}
-                          className="ml-auto rounded-lg bg-neutral-900 px-2 py-1 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
-                          {savingStateIncome === key ? '…' : savedStateIncome === key ? '✓' : 'Save'}
-                        </button>
+                        <span className="ml-auto rounded-lg border border-neutral-300 px-2 py-1 text-xs text-neutral-500 bg-white">
+                          Archived
+                        </span>
                       </div>
                     )
                   })}

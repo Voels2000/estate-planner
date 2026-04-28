@@ -32,8 +32,11 @@ export type StateInheritanceTaxRule = {
   tax_year: number
 }
 
-export type StateIncomeTaxRate = {
-  state_code: string
+export type StateIncomeTaxBracket = {
+  state: string
+  filing_status: 'single' | 'mfj'
+  min_amount: number
+  max_amount: number | null
   rate_pct: number
   tax_year: number
 }

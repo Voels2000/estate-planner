@@ -32,7 +32,7 @@ export default async function DomicileAnalysisPage() {
     { data: analysis },
     { data: stateEstateTaxRows },
     { data: stateInheritanceTaxRows },
-    { data: stateIncomeTaxRows },
+    { data: stateIncomeTaxBracketRows },
   ] = await Promise.all([
     supabase
       .from('domicile_analysis')
@@ -54,8 +54,8 @@ export default async function DomicileAnalysisPage() {
       .gte('tax_year', currentYear - 1)
       .order('tax_year', { ascending: false }),
     supabase
-      .from('state_income_tax_rates')
-      .select('state_code, rate_pct, tax_year')
+      .from('state_income_tax_brackets')
+      .select('state, filing_status, min_amount, max_amount, rate_pct, tax_year')
       .gte('tax_year', currentYear - 1)
       .order('tax_year', { ascending: false }),
   ])
@@ -102,7 +102,7 @@ export default async function DomicileAnalysisPage() {
       userId={user.id}
       stateEstateTaxRules={stateEstateTaxRows ?? []}
       stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
-      stateIncomeTaxRates={stateIncomeTaxRows ?? []}
+      stateIncomeTaxBrackets={stateIncomeTaxBracketRows ?? []}
     />
   )
 }

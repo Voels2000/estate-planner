@@ -6,7 +6,7 @@ import type {
   DomicileAnalysisRow,
   StateEstateTaxRule,
   StateInheritanceTaxRule,
-  StateIncomeTaxRate,
+  StateIncomeTaxBracket,
   StateWithDays,
 } from './types'
 
@@ -34,7 +34,7 @@ export type DomicileResultsProps = {
   onViewChecklist: () => void
   stateEstateTaxRules: StateEstateTaxRule[]
   stateInheritanceTaxRules: StateInheritanceTaxRule[]
-  stateIncomeTaxRates: StateIncomeTaxRate[]
+  stateIncomeTaxBrackets: StateIncomeTaxBracket[]
 }
 
 export default function DomicileResults({
@@ -43,7 +43,7 @@ export default function DomicileResults({
   onViewChecklist,
   stateEstateTaxRules,
   stateInheritanceTaxRules,
-  stateIncomeTaxRates,
+  stateIncomeTaxBrackets,
 }: DomicileResultsProps) {
   const riskLevel = (analysis.risk_level ?? 'low') as keyof typeof RISK_CONFIG
   const config = RISK_CONFIG[riskLevel] ?? RISK_CONFIG.low
@@ -81,14 +81,21 @@ export default function DomicileResults({
       .map((r) => r.state)
   )
 
-  const latestIncomeTaxYear = Math.max(
-    ...stateIncomeTaxRates.map((r) => r.tax_year),
-    0
-  )
+  const latestIncomeTaxYear = Math.max(...stateIncomeTaxBrackets.map((r) => r.tax_year), 0)
   const incomeTaxByState = Object.fromEntries(
-    stateIncomeTaxRates
-      .filter((r) => r.tax_year === latestIncomeTaxYear)
-      .map((r) => [r.state_code, r.rate_pct])
+    Array.from(
+      new Set(
+        stateIncomeTaxBrackets
+          .filter((r) => r.tax_year === latestIncomeTaxYear)
+          .map((r) => r.state),
+      ),
+    ).map((state) => {
+      const stateRows = stateIncomeTaxBrackets
+        .filter((r) => r.tax_year === latestIncomeTaxYear && r.state === state)
+        .sort((a, b) => a.rate_pct - b.rate_pct)
+      const topRate = stateRows.length > 0 ? stateRows[stateRows.length - 1].rate_pct : null
+      return [state, topRate]
+    }),
   )
 
   const hasDualEstateTax =
@@ -186,12 +193,7 @@ export default function DomicileResults({
                   : null
                 const hasInheritanceTax = inheritanceTaxStates.has(state)
                 const incomeTaxRate = incomeTaxByState[state]
-                const incomeTaxDisplay =
-                  incomeTaxRate != null
-                    ? incomeTaxRate === 0
-                      ? 'None'
-                      : `${incomeTaxRate}%`
-                    : '—'
+                const incomeTaxDisplay = incomeTaxRate != null ? (incomeTaxRate === 0 ? 'None' : `Up to ${incomeTaxRate}%`) : '—'
                 const isClaimed = state === analysis.claimed_domicile_state
                 return (
                   <tr

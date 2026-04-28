@@ -1,4 +1,13 @@
 /**
+ * @deprecated Legacy alternate projection engine.
+ * Canonical projection flow uses `computeCompleteProjection` in
+ * `lib/calculations/projection-complete.ts` via:
+ * - `app/api/projection/route.ts`
+ * - `lib/actions/generate-base-case.ts`
+ *
+ * This file remains for backward compatibility only and should not gain
+ * new call sites.
+ *
  * Server-side projection engine: fetches household data from Supabase and
  * returns a year-by-year financial projection using the RMD uniform lifetime table.
  */
@@ -76,7 +85,7 @@ export type RmdUniformLifetimeRow = {
   distribution_period: number
 }
 
-/** One year in the projection output */
+/** @deprecated Legacy projection output row type from deprecated engine. */
 export type ProjectionYear = {
   year: number
   person1_age: number
@@ -384,6 +393,8 @@ function getExpensesForYear(
 }
 
 /**
+ * @deprecated Use `computeCompleteProjection` from `projection-complete.ts`.
+ *
  * Run the full projection for a household.
  * Fetches all data from Supabase (assets, income, expenses, tax tables, RMD table)
  * and returns a year-by-year projection array.
