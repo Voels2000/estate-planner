@@ -23,11 +23,14 @@ import {
   loadLatestInputChangeMs,
   loadProjectionCalculatedAt,
 } from '@/lib/dashboard/loaders'
+import { isProjectionStale } from '@/lib/projections/staleness'
 import {
   buildAllocationContext,
   mapConflictReport,
   mapEstateHealthScore,
 } from '@/lib/dashboard/mappers'
+import { buildNetWorthSummaryFromDashboardInput } from '@/lib/view-models/netWorthSummary'
+import { buildRetirementSnapshot } from '@/lib/view-models/retirementSnapshot'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
@@ -56,18 +59,17 @@ export default async function DashboardPage() {
   // Background staleness check for base-case projection:
   // regenerate asynchronously when user inputs or tax brackets are newer than the last run.
   const projectionCalculatedAt = await loadProjectionCalculatedAt(admin, household.base_case_scenario_id)
-  const projectionCalculatedMs = projectionCalculatedAt ? new Date(projectionCalculatedAt).getTime() : 0
-
   const latestInputChangeMs = await loadLatestInputChangeMs(
     supabase,
     user!.id,
     household.updated_at ?? null,
   )
 
-  const isStale =
-    !household.base_case_scenario_id ||
-    !projectionCalculatedAt ||
-    latestInputChangeMs > projectionCalculatedMs
+  const isStale = isProjectionStale({
+    baseCaseScenarioId: household.base_case_scenario_id,
+    projectionCalculatedAt,
+    latestInputChangeMs,
+  })
 
   if (isStale) {
     void (async () => {
@@ -168,15 +170,25 @@ export default async function DashboardPage() {
   // ── Financial calculations (engine-aligned primary path) ─────────────────
   // Use composition rollups so Dashboard net worth matches estate engine:
   // gross estate at FMV minus total liabilities.
-  const financialAssets = composition?.inside_financial ?? financialAssetsFallback
-  const realEstateFMV = composition?.inside_real_estate ?? realEstateEquityFallback
-  const businessValue = composition?.inside_business_gross ?? businessValueFallback
-  const insuranceValue = composition?.inside_insurance ?? insuranceValueFallback
-  void insuranceValue
-  const totalAssets = financialAssets + realEstateFMV + businessValue
   const otherLiabilities = (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
-  const totalLiabilities = totalMortgageBalance + otherLiabilities
-  const netWorth = totalAssets - totalLiabilities
+  const {
+    financialAssets,
+    realEstateValue: realEstateFMV,
+    businessValue,
+    insuranceValue,
+    totalAssets,
+    totalLiabilities,
+    netWorth,
+  } = buildNetWorthSummaryFromDashboardInput({
+    composition,
+    financialAssetsFallback,
+    realEstateValueFallback: realEstateEquityFallback,
+    businessValueFallback,
+    insuranceValueFallback,
+    mortgageBalance: totalMortgageBalance,
+    otherLiabilities,
+  })
+  void insuranceValue
 
   const { data: initialRecsData } = household?.id
     ? await supabase.rpc('generate_estate_recommendations', {
@@ -244,23 +256,24 @@ export default async function DashboardPage() {
 
   const hasRetirementInputs = !!(p1RetirementAge || p1SSPia || p2SSPia)
 
-  const retirementSnapshot = hasRetirementInputs ? {
+  const retirementSnapshot = buildRetirementSnapshot({
+    hasRetirementInputs,
+    hasSpouse,
     p1Name: household?.person1_name != null ? displayPersonFirstName(household.person1_name) : null,
     p1RetirementAge,
     p1SSClaimingAge,
     p1MonthlyBenefit,
     p1BirthYear,
-    p2Name: hasSpouse && household?.person2_name != null ? displayPersonFirstName(household.person2_name) : null,
-    p2RetirementAge: hasSpouse ? p2RetirementAge : null,
-    p2SSClaimingAge: hasSpouse ? p2SSClaimingAge2 : null,
-    p2MonthlyBenefit: hasSpouse ? p2MonthlyBenefit : null,
-    hasSpouse,
+    p2Name: household?.person2_name != null ? displayPersonFirstName(household.person2_name) : null,
+    p2RetirementAge,
+    p2SSClaimingAge: p2SSClaimingAge2,
+    p2MonthlyBenefit,
     yearsToRetirement,
     combinedSSMonthly,
     projectedAnnualIncome,
     projectedAnnualExpenses,
     projectedIncomeGap,
-  } : null
+  })
 
   // ── Allocation context ───────────────────────────────────────────────────
   const allocationContext: AssetAllocationContext = buildAllocationContext({

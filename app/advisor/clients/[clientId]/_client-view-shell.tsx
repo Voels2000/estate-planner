@@ -9,6 +9,7 @@ import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/ho
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
+import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import dynamic from 'next/dynamic'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
@@ -320,21 +321,7 @@ export interface ClientViewShellProps {
   scenarioHistory?: ScenarioVersion[]
   exportPdfData?: PDFReportData
   exportExcelData?: ExcelExportData
-  exportPanelProps?: {
-    householdId: string
-    scenarioId: string
-    advisorName: string
-    healthScore: number | null
-    liquidAssets: number
-    activeStrategies: string[]
-    actionItems: ActionItem[]
-    projectionData: ExportProjectionRow[]
-    taxSummary: TaxSummaryExport | null
-    monteCarloRun: boolean
-    monteCarloResults: MonteCarloSummary | null
-    liquidityShortfall: boolean
-    scenarioHistory: ScenarioVersion[]
-  }
+  exportPanelProps?: AdvisorExportPanelProps
   projectionRowsDomicile?: Array<{ year: number; gross_estate: number; estate_incl_home?: number }>
   beneficiaryGrants?: BeneficiaryAccessGrant[]
   domicileAnalysis: Record<string, unknown> | null

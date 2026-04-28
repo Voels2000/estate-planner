@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026 (Session 43)
+# Last updated: April 28, 2026 (Session 62)
 
 ---
 
@@ -190,4 +190,99 @@ After each schema-affecting session:
 
 - No database schema or migration changes were introduced in Session 43.
 - Changes in this session are application-layer refactors only (dashboard route UI componentization).
+
+## Session 44 Note
+
+- No database schema or migration changes were introduced in Session 44.
+- Changes in this session are application-layer refactors only (extraction of dashboard estate summary UI composition).
+
+## Session 45 Note
+
+- No database schema or migration changes were introduced in Session 45.
+- Changes in this session are application-layer refactors only (extraction of dashboard intro/setup UI composition).
+
+## Session 46 Note
+
+- No database schema or migration changes were introduced in Session 46.
+- Changes in this session are application-layer refactors only (new shared net worth view-model module and adoption in consumer/advisor UI paths).
+
+## Session 47 Note
+
+- No database schema or migration changes were introduced in Session 47.
+- Changes in this session are application-layer refactors only (new shared retirement snapshot view-model module and dashboard adoption).
+
+## Session 48 Note
+
+- No database schema or migration changes were introduced in Session 48.
+- Changes in this session are application-layer refactors only (shared tax scope badge mapper and advisor metrics UI adoption).
+
+## Session 49 Note
+
+- No database schema or migration changes were introduced in Session 49.
+- Changes in this session are application-layer refactors only (shared projection summary cards view-model and consumer projections page adoption).
+
+## Session 50 Note
+
+- No database schema or migration changes were introduced in Session 50.
+- Changes in this session are application-layer refactors only (shared projection staleness helper contract and adoption across consumer/advisor pages).
+
+## Session 51 Note
+
+- No database schema or migration changes were introduced in Session 51.
+- Changes in this session are application-layer refactors only (advisor staleness query orchestration extracted to `lib/advisor/loaders.ts`).
+
+## Session 52 Note
+
+- No database schema or migration changes were introduced in Session 52.
+- Changes in this session are application-layer refactors only (advisor client access/bootstrap query orchestration extracted to `lib/advisor/clientPageLoaders.ts`).
+
+## Session 53 Note
+
+- No database schema or migration changes were introduced in Session 53.
+- Changes in this session are application-layer refactors only (advisor bulk client dataset query orchestration extracted to `lib/advisor/loaders.ts`).
+
+## Session 54 Note
+
+- No database schema or migration changes were introduced in Session 54.
+- Changes in this session are application-layer refactors only (advisor dataset normalization/mapping extracted to `lib/advisor/mappers.ts`).
+
+## Session 55 Note
+
+- No database schema or migration changes were introduced in Session 55.
+- Changes in this session are application-layer refactors only (advisor export payload mapping extracted to `lib/advisor/exportMappers.ts`).
+
+## Session 56 Note
+
+- No database schema or migration changes were introduced in Session 56.
+- Changes in this session are application-layer refactors only (shared advisor export contract typing extracted to `lib/advisor/types.ts` and propagated to consumer modules).
+
+## Session 57 Note
+
+- No database schema or migration changes were introduced in Session 57.
+- Changes in this session are application-layer refactors only (advisor mapper input/output typing hardening and route-level typed consumption updates).
+
+## Session 58 Note
+
+- No database schema or migration changes were introduced in Session 58.
+- Changes in this session are application-layer refactors only (advisor route type-assertion cleanup after mapper type alignment).
+
+## Session 59 Note
+
+- No database schema or migration changes were introduced in Session 59.
+- Changes in this session are application-layer refactors only (shared advisor loader result contract introduced and mapper boundary aligned to it).
+
+## Session 60 Note
+
+- No database schema or migration changes were introduced in Session 60.
+- Changes in this session are application-layer refactors only (advisor strategy/horizon mapping extracted to `lib/advisor/strategyMappers.ts`).
+
+## Session 61 Note
+
+- No database schema or migration changes were introduced in Session 61.
+- Changes in this session are application-layer refactors only (advisor domicile checklist read and advisor access-log write extracted to shared advisor loaders).
+
+## Session 62 Note
+
+- No database schema or migration changes were introduced in Session 62.
+- Changes in this session are application-layer readability refactors only (advisor client route orchestration comments/import grouping; no behavior change).
 

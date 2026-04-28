@@ -6,6 +6,7 @@
 
 import { useMemo } from 'react'
 import { calculateAdvisoryMetrics } from '@/lib/advisoryMetrics'
+import { getTaxScopeBadge } from '@/lib/view-models/taxScopeBadges'
 
 interface AdvisoryMetricsDashboardProps {
   householdId: string
@@ -36,13 +37,6 @@ const STATUS_BADGE = {
   critical: 'bg-red-100 text-red-700',
   neutral: 'bg-gray-100 text-gray-600',
 }
-
-const SCOPE_BADGE = {
-  federal: { label: 'Federal', className: 'bg-blue-100 text-blue-700' },
-  state: { label: 'State', className: 'bg-emerald-100 text-emerald-700' },
-  both: { label: 'Fed + State', className: 'bg-violet-100 text-violet-700' },
-  strategy: { label: 'Strategy', className: 'bg-amber-100 text-amber-700' },
-} as const
 
 export default function AdvisoryMetricsDashboard({
   householdId,
@@ -94,6 +88,9 @@ export default function AdvisoryMetricsDashboard({
       {/* 8-Metric Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map((metric) => (
+          (() => {
+            const scopeBadge = getTaxScopeBadge(metric.scope)
+            return (
           <div
             key={metric.id}
             className={`border rounded-lg p-4 ${STATUS_COLORS[metric.status]}`}
@@ -102,8 +99,8 @@ export default function AdvisoryMetricsDashboard({
             <div className="flex items-start justify-between mb-2">
               <div className="space-y-1">
                 <span className="block text-xs font-medium text-gray-600 leading-tight">{metric.label}</span>
-                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${SCOPE_BADGE[metric.scope].className}`}>
-                  {SCOPE_BADGE[metric.scope].label}
+                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scopeBadge.className}`}>
+                  {scopeBadge.label}
                 </span>
               </div>
               <span
@@ -121,6 +118,8 @@ export default function AdvisoryMetricsDashboard({
             <div className="text-xl font-bold text-gray-900 mb-1">{metric.value}</div>
             <div className="text-xs text-gray-500 leading-tight">{metric.subtext}</div>
           </div>
+            )
+          })()
         ))}
       </div>
 
@@ -133,18 +132,23 @@ export default function AdvisoryMetricsDashboard({
         </div>
         <div className="divide-y divide-gray-100">
           {metrics.map((metric) => (
-            <div key={metric.id} className="px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-800">{metric.label}</span>
-                  <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${SCOPE_BADGE[metric.scope].className}`}>
-                    {SCOPE_BADGE[metric.scope].label}
-                  </span>
+            (() => {
+              const scopeBadge = getTaxScopeBadge(metric.scope)
+              return (
+                <div key={metric.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-800">{metric.label}</span>
+                      <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scopeBadge.className}`}>
+                        {scopeBadge.label}
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900">{metric.value}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{metric.detail}</p>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">{metric.value}</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">{metric.detail}</p>
-            </div>
+              )
+            })()
           ))}
         </div>
       </div>

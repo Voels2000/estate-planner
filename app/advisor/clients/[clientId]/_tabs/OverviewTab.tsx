@@ -4,6 +4,7 @@
 
 import { ClientViewShellProps } from '../_client-view-shell'
 import type { EstateComposition } from '@/lib/estate/types'
+import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
 import {
   formatCurrency, getAge, getComplexityStyle,
   computeGaps, severityBadge, severityDot, type Gap
@@ -13,9 +14,9 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
   const currentYear = new Date().getFullYear()
 
   // ── Net worth calc (matches My Estate Strategy estate composition source) ──
-  const totalAssets = estateComposition.gross_estate
-  const totalLiabilities = estateComposition.total_liabilities
-  const netWorth = estateComposition.net_estate
+  const { totalAssets, totalLiabilities, netWorth } = buildNetWorthSummaryFromComposition({
+    composition: estateComposition,
+  })
   const assetPct = totalAssets > 0 ? Math.round((totalAssets / (totalAssets + totalLiabilities)) * 100) : 100
 
   // ── Asset breakdown ──────────────────────────────────────────────────────

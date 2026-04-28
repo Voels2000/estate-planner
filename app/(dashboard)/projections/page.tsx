@@ -16,7 +16,7 @@ import { ProjectionTabs } from '@/app/(dashboard)/projections/_components/Projec
 import { ProjectionsHeader } from '@/app/(dashboard)/projections/_components/ProjectionsHeader'
 import { ProjectionAssumptions } from '@/app/(dashboard)/projections/_components/ProjectionAssumptions'
 import { formatDollars } from '@/app/(dashboard)/projections/_utils'
-import { getProjectionSummary } from '@/lib/projections/selectors/getProjectionSummary'
+import { buildProjectionSummaryCards } from '@/lib/view-models/projectionSummaryCards'
 
 export default function ProjectionsPage() {
   const [household, setHousehold] = useState<HouseholdProjectionProfile | null>(null)
@@ -66,7 +66,11 @@ export default function ProjectionsPage() {
     )
   }
 
-  const { retirementRow, peakNetWorth, fundsOutlast, avgRetirementTax } = getProjectionSummary(projections)
+  const { peakNetWorth, cards } = buildProjectionSummaryCards({
+    projections,
+    person1RetirementAge: household.person1_retirement_age ?? null,
+    formatDollars,
+  })
   const p1 = displayPersonFirstName(household.person1_name, 'Person 1')
   const p2 = household.has_spouse ? displayPersonFirstName(household.person2_name, 'Person 2') : null
 
@@ -81,18 +85,15 @@ export default function ProjectionsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <SummaryCard
-          label="Net Worth at Retirement"
-          value={formatDollars(retirementRow?.net_worth ?? 0)}
-          sub={`Age ${household.person1_retirement_age} · includes RE & business`}
-        />
-        <SummaryCard
-          label="Financial Portfolio at Retirement"
-          value={formatDollars(retirementRow?.portfolio ?? 0)}
-          sub={`Age ${household.person1_retirement_age} · investable assets only`}
-        />
-        <SummaryCard label="Avg Tax in Retirement" value={formatDollars(avgRetirementTax)} sub="Federal + state/yr" highlight="amber" />
-        <SummaryCard label="Funds Outlast" value={fundsOutlast ? 'Yes ✓' : 'No ✗'} sub={fundsOutlast ? 'On track' : 'Review plan'} highlight={fundsOutlast ? 'green' : 'red'} />
+        {cards.map((card) => (
+          <SummaryCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            sub={card.sub}
+            highlight={card.highlight}
+          />
+        ))}
       </div>
 
       {/* Chart / Table / Income tabs */}

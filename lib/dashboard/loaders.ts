@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { getLatestTimestampMs } from '@/lib/projections/staleness'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 type AdminSupabase = ReturnType<typeof createAdminClient>
@@ -46,6 +47,15 @@ async function getLatestChangeTs(
   return row?.updated_at ?? row?.created_at ?? null
 }
 
+export async function loadLatestChangeTs(
+  supabase: ServerSupabase,
+  table: string,
+  ownerColumn: string,
+  ownerValue: string,
+): Promise<string | null> {
+  return getLatestChangeTs(supabase, table, ownerColumn, ownerValue)
+}
+
 export async function loadLatestInputChangeMs(
   supabase: ServerSupabase,
   userId: string,
@@ -81,7 +91,7 @@ export async function loadLatestInputChangeMs(
     })(),
   ])
 
-  return [
+  return getLatestTimestampMs([
     householdUpdatedAt ?? null,
     assetsChangedAt,
     liabilitiesChangedAt,
@@ -92,11 +102,7 @@ export async function loadLatestInputChangeMs(
     businessInterestsChangedAt,
     insuranceChangedAt,
     stateIncomeTaxBracketsChangedAt,
-  ].reduce((max, ts) => {
-    if (!ts) return max
-    const ms = new Date(ts).getTime()
-    return Number.isFinite(ms) ? Math.max(max, ms) : max
-  }, 0)
+  ])
 }
 
 export async function loadDashboardCoreInputs(supabase: ServerSupabase, userId: string) {
