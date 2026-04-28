@@ -94,6 +94,133 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   if (!household) redirect('/advisor')
 
+  const ownerId = clientId
+
+  // Staleness check (same idea as /my-estate-strategy): regenerate when inputs changed after
+  // last projection. Uses the client as `ownerId` (not the advisor). On failure, continue with
+  // whatever scenario/household data we already have — advisor view should not hard-fail.
+  const { data: existingScenario } = household.base_case_scenario_id
+    ? await supabase
+        .from('projection_scenarios')
+        .select('calculated_at')
+        .eq('id', household.base_case_scenario_id)
+        .single()
+    : { data: null }
+
+  const projectionCalculatedAt = existingScenario?.calculated_at ?? null
+
+  const getLatestChangeTs = async (
+    table: string,
+    ownerColumn: string,
+    ownerValue: string,
+  ): Promise<string | null> => {
+    const { data } = await supabase
+      .from(table)
+      .select('updated_at, created_at')
+      .eq(ownerColumn, ownerValue)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+    const row = (data?.[0] ?? null) as { updated_at?: string | null; created_at?: string | null } | null
+    return row?.updated_at ?? row?.created_at ?? null
+  }
+
+  const [
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+  ] = await Promise.all([
+    getLatestChangeTs('assets', 'owner_id', ownerId),
+    getLatestChangeTs('liabilities', 'owner_id', ownerId),
+    getLatestChangeTs('income', 'owner_id', ownerId),
+    getLatestChangeTs('expenses', 'owner_id', ownerId),
+    getLatestChangeTs('real_estate', 'owner_id', ownerId),
+    getLatestChangeTs('businesses', 'owner_id', ownerId),
+    getLatestChangeTs('business_interests', 'owner_id', ownerId),
+    getLatestChangeTs('insurance_policies', 'user_id', ownerId),
+  ])
+
+  const latestInputChangeMs = [
+    household.updated_at ?? null,
+    assetsChangedAt,
+    liabilitiesChangedAt,
+    incomeChangedAt,
+    expensesChangedAt,
+    realEstateChangedAt,
+    businessesChangedAt,
+    businessInterestsChangedAt,
+    insuranceChangedAt,
+  ].reduce((max, ts) => {
+    if (!ts) return max
+    const ms = new Date(ts).getTime()
+    return Number.isFinite(ms) ? Math.max(max, ms) : max
+  }, 0)
+
+  const projectionCalculatedMs = projectionCalculatedAt ? new Date(projectionCalculatedAt).getTime() : 0
+  const isStale =
+    !household.base_case_scenario_id ||
+    !projectionCalculatedAt ||
+    latestInputChangeMs > projectionCalculatedMs
+
+  if (isStale) {
+    const [
+      { data: incomeRows },
+      { data: assetRows },
+      { data: householdFull },
+    ] = await Promise.all([
+      supabase.from('income').select('id').eq('owner_id', ownerId).limit(1),
+      supabase.from('assets').select('id').eq('owner_id', ownerId).limit(1),
+      supabase
+        .from('households')
+        .select(
+          'person1_name, person1_birth_year, person1_retirement_age, person1_longevity_age, person1_ss_pia, has_spouse, person2_name, person2_birth_year, person2_retirement_age, person2_longevity_age, person2_ss_pia',
+        )
+        .eq('id', household.id)
+        .single(),
+    ])
+
+    const h = householdFull
+    const p1Complete = !!(
+      h?.person1_name &&
+      h?.person1_birth_year &&
+      h?.person1_retirement_age &&
+      h?.person1_longevity_age &&
+      h?.person1_ss_pia
+    )
+    const p2Complete = !h?.has_spouse || !!(
+      h?.person2_name &&
+      h?.person2_birth_year &&
+      h?.person2_retirement_age &&
+      h?.person2_longevity_age &&
+      h?.person2_ss_pia
+    )
+    const hasIncome = (incomeRows ?? []).length > 0
+    const hasAssets = (assetRows ?? []).length > 0
+
+    if (p1Complete && p2Complete && hasIncome && hasAssets) {
+      try {
+        const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
+        await generateBaseCase(household.id)
+        const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
+        triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+        const { data: refreshed } = await supabase
+          .from('households')
+          .select('base_case_scenario_id')
+          .eq('id', household.id)
+          .single()
+        if (refreshed?.base_case_scenario_id) {
+          household.base_case_scenario_id = refreshed.base_case_scenario_id
+        }
+      } catch (e) {
+        console.error('[advisor-client] base case regeneration (staleness) failed, using cached data', e)
+      }
+    }
+  }
+
   const scenarioId = household.base_case_scenario_id
 
   const currentYear = new Date().getFullYear()

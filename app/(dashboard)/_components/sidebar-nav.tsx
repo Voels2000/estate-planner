@@ -166,7 +166,7 @@ export function SidebarNav({
   }
 
   return (
-    <aside className="ml-2 my-2 w-64 shrink-0 border border-neutral-200 bg-white flex flex-col rounded-xl overflow-hidden">
+    <aside className="ml-2 my-2 w-64 shrink-0 border border-neutral-200 bg-white flex flex-col">
       {/* Header */}
       <div className="px-6 py-5 border-b border-neutral-200">
         <div className="flex items-start justify-between gap-2">

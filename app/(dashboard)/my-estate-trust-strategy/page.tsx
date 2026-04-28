@@ -271,7 +271,8 @@ export default async function MyEstateTrustStrategyPage({
     grossEstate: grossEstate,
     federalExemption: federalExemptionForContext,
     estimatedFederalTax: taxWithoutStrategies,
-    estimatedStateTax: 0,
+    // `calculate_estate_composition` (via classifyEstateAssets) returns `estimated_tax_state`
+    estimatedStateTax: Number(compositionValues.estimated_tax_state ?? 0),
     person1BirthYear: p1BirthYear,
     liquidAssets,
     illiquidAssets,
