@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 40 / Sprint 97, accuracy pass)
+# Last updated: April 28, 2026 (Session 41 / consumer projections refactor)
 
 ---
 
@@ -139,6 +139,9 @@ Runtime behavior:
 - `lib/calculations/roth-analysis.ts`
 - `lib/domicile/moveBreakeven.ts`
 - `lib/my-estate-strategy/horizonSnapshots.ts`
+- `lib/projections/loaders/loadProjectionPageData.ts` (consumer projections data loading)
+- `lib/projections/mappers/mapProjectionRows.ts` (consumer projections API row mapping)
+- `lib/projections/selectors/getProjectionSummary.ts` (consumer projections derived metrics)
 
 ### APIs
 
@@ -148,6 +151,13 @@ Runtime behavior:
 - `app/api/advisor/strategy-recommendations-read/route.ts`
 - `app/api/projection/monte-carlo/route.ts`
 - `app/api/advisor/monte-carlo-assumptions/route.ts`
+
+### Consumer UI Composition (Current)
+
+- Route: `app/(dashboard)/projections/page.tsx`
+- Local UI components are split under `app/(dashboard)/projections/_components/*`
+- Shared projection route types are centralized in `lib/projections/types.ts`
+- This refactor is structure-only (no behavior/calculation change); projection math still comes from `projection-complete.ts`
 
 ---
 
