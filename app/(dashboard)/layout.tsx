@@ -45,7 +45,7 @@ export default async function DashboardLayout({
           isSuperuser
           hasHousehold={hasHousehold}
         />
-        <div className="flex flex-1 flex-col overflow-y-auto">
+        <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
           <main className="flex-1">{children}</main>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default async function DashboardLayout({
         isAttorney={isAttorneyResolved}
         hasHousehold={hasHousehold}
       />
-      <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
         {showBanner && (
           <TrialBanner
             secondsLeft={trialSecondsLeft}
