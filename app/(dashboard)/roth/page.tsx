@@ -32,7 +32,7 @@ export default async function RothPage() {
   }
 
   // ── Fetch household and assets in parallel ──────────────────────────────
-  const [{ data: hh }, { data: assetRows }, { data: stateRates }] = await Promise.all([
+  const [{ data: hh }, { data: assetRows }, { data: stateRates }, { data: stateBrackets }] = await Promise.all([
     supabase
       .from("households")
       .select("*")
@@ -46,6 +46,13 @@ export default async function RothPage() {
       .from("state_income_tax_rates")
       .select("state_code, rate_pct, tax_year")
       .order("tax_year", { ascending: false }),
+    supabase
+      .from("state_income_tax_brackets")
+      .select("state, tax_year, filing_status, min_amount, max_amount, rate_pct")
+      .order("tax_year", { ascending: false })
+      .order("state", { ascending: true })
+      .order("filing_status", { ascending: true })
+      .order("min_amount", { ascending: true }),
   ]);
 
   if (!hh) {
@@ -146,6 +153,15 @@ export default async function RothPage() {
     rows,
     filingStatus: hh.filing_status ?? "single",
     stateMarginalRate: stateRate,
+    stateCode,
+    stateIncomeTaxBrackets: (stateBrackets ?? []) as Array<{
+      state: string
+      tax_year: number
+      filing_status: 'single' | 'mfj'
+      min_amount: number
+      max_amount: number | null
+      rate_pct: number
+    }>,
     taxDeferredBalance,
     rothBalance,
     taxableBalance,

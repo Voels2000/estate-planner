@@ -49,7 +49,7 @@ function trustsExcludedSum(
 export default async function MyEstateTrustStrategyPage({
   searchParams,
 }: {
-  searchParams: { tab?: string }
+  searchParams: Promise<{ tab?: string }>
 }) {
   const access = await getUserAccess()
   const supabase = await createClient()
@@ -70,6 +70,8 @@ export default async function MyEstateTrustStrategyPage({
       </div>
     )
   }
+
+  const { tab } = await searchParams
 
   const { data: householdRow } = await supabase
     .from('households')
@@ -327,7 +329,7 @@ export default async function MyEstateTrustStrategyPage({
         householdId={householdRow.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
-        initialTab={searchParams.tab ?? 'gifting'}
+        initialTab={tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
         advisorLineItems={advisorLineItemRows ?? []}
         estateContext={estateContext}

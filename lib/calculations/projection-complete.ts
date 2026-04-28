@@ -77,6 +77,15 @@ export type StateIncomeTaxRate = {
   tax_year?: number
 }
 
+export type StateIncomeTaxBracket = {
+  state: string
+  tax_year: number
+  filing_status: 'single' | 'mfj'
+  min_amount: number
+  max_amount: number | null
+  rate_pct: number
+}
+
 export type CompleteProjectionInput = {
   household: {
     id: string
@@ -167,6 +176,8 @@ export type CompleteProjectionInput = {
   }[]
   // State income tax rates from DB — replaces hardcoded STATE_RATES
   state_income_tax_rates?: StateIncomeTaxRate[]
+  // Progressive state income tax brackets from DB (preferred when present)
+  state_income_tax_brackets?: StateIncomeTaxBracket[]
   businesses?: Array<{
     id: string
     name: string
@@ -223,6 +234,52 @@ function getStateIncomeTaxRate(
   }
   // Fall back to hardcoded rates
   return FALLBACK_STATE_RATES[code] ?? 5.0
+}
+
+function normalizeBracketFilingStatus(filingStatus: string): 'single' | 'mfj' {
+  return filingStatus === 'married_joint' ? 'mfj' : 'single'
+}
+
+function calcProgressiveStateTax(
+  income: number,
+  brackets: Array<{
+    min_amount: number
+    max_amount: number | null
+    rate_pct: number
+  }>,
+): number {
+  if (income <= 0 || brackets.length === 0) return 0
+
+  let tax = 0
+  for (const bracket of brackets) {
+    const lower = Math.max(0, Number(bracket.min_amount ?? 0))
+    const upper = bracket.max_amount == null ? Number.POSITIVE_INFINITY : Number(bracket.max_amount)
+    if (income <= lower) continue
+    const taxableInBracket = Math.max(0, Math.min(income, upper) - lower)
+    if (taxableInBracket <= 0) continue
+    tax += taxableInBracket * (Number(bracket.rate_pct ?? 0) / 100)
+  }
+  return Math.round(tax)
+}
+
+function getStateBracketsForYear(
+  stateCode: string | null,
+  filingStatus: string,
+  year: number,
+  dbBrackets: StateIncomeTaxBracket[] | undefined,
+): StateIncomeTaxBracket[] {
+  if (!stateCode || !dbBrackets?.length) return []
+  const code = stateCode.toUpperCase()
+  const normalizedFilingStatus = normalizeBracketFilingStatus(filingStatus)
+  const matches = dbBrackets.filter(
+    (r) => r.state.toUpperCase() === code && r.filing_status === normalizedFilingStatus,
+  )
+  if (matches.length === 0) return []
+  const years = Array.from(new Set(matches.map((r) => Number(r.tax_year ?? 0)))).sort((a, b) => a - b)
+  const selectedYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
+  return matches
+    .filter((r) => Number(r.tax_year ?? 0) === selectedYear)
+    .sort((a, b) => Number(a.min_amount ?? 0) - Number(b.min_amount ?? 0))
 }
 
 // ─── Federal Tax Brackets 2024 ────────────────────────────────────────────────
@@ -314,15 +371,38 @@ function calcPayrollTax(earnedIncome: number): number {
 function calcStateTax(
   income: number,
   state: string | null,
+  year: number,
   dbRates: StateIncomeTaxRate[] | undefined,
+  dbBrackets: StateIncomeTaxBracket[] | undefined,
+  filingStatus: string,
   state_secondary?: string | null
 ): { primary: number; secondary: number } {
   if (income <= 0) return { primary: 0, secondary: 0 }
+  const primaryBrackets = getStateBracketsForYear(state, filingStatus, year, dbBrackets)
+  const secondaryBrackets = getStateBracketsForYear(state_secondary ?? null, filingStatus, year, dbBrackets)
+
+  const primaryFromBrackets = calcProgressiveStateTax(income, primaryBrackets)
+  const secondaryFromBrackets = calcProgressiveStateTax(income, secondaryBrackets)
+
+  // If progressive brackets are loaded, they are authoritative:
+  // - states with no income tax intentionally have no rows => $0
+  // - no flat fallback is used in that case
+  if (dbBrackets && dbBrackets.length > 0) {
+    return {
+      primary: !state ? 0 : primaryFromBrackets,
+      secondary: !state_secondary ? 0 : secondaryFromBrackets,
+    }
+  }
+
   const primaryRate   = getStateIncomeTaxRate(state, dbRates) / 100
   const secondaryRate = state_secondary ? getStateIncomeTaxRate(state_secondary, dbRates) / 100 : 0
   return {
-    primary:   !state   ? 0 : Math.round(income * primaryRate),
-    secondary: !state_secondary ? 0 : Math.round(income * secondaryRate),
+    primary: !state
+      ? 0
+      : (primaryBrackets.length > 0 ? primaryFromBrackets : Math.round(income * primaryRate)),
+    secondary: !state_secondary
+      ? 0
+      : (secondaryBrackets.length > 0 ? secondaryFromBrackets : Math.round(income * secondaryRate)),
   }
 }
 
@@ -581,6 +661,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const { household, assets, liabilities, income, expenses, irmaa_brackets } = input
   const realEstateInput    = input.real_estate ?? []
   const dbStateRates       = input.state_income_tax_rates
+  const dbStateBrackets    = input.state_income_tax_brackets
   const overrides          = input.overrides ?? {}
   const currentYear        = new Date().getFullYear()
   const businessesInput    = input.businesses ?? []
@@ -861,7 +942,13 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
 
     // State tax now uses DB rates via effectiveState (supports scenario overrides)
     const { primary: tax_state, secondary: tax_state_secondary } = calcStateTax(
-      ordinaryIncome, effectiveState, dbStateRates, household.state_secondary
+      ordinaryIncome,
+      effectiveState,
+      year,
+      dbStateRates,
+      dbStateBrackets,
+      fs,
+      household.state_secondary,
     )
 
     const tax_capital_gains = calcCapitalGainsTax(

@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     { data: irmaa_brackets },
     { data: real_estate },
     { data: state_income_tax_rates },
+    { data: state_income_tax_brackets },
     { data: businesses_data },
     { data: insurance_policies },
   ] = await Promise.all([
@@ -59,6 +60,13 @@ export async function GET(request: NextRequest) {
     supabase.from('real_estate').select('id, name, current_value, mortgage_balance, monthly_payment, interest_rate, is_primary_residence, planned_sale_year, selling_costs_pct, owner').eq('owner_id', user.id),
     // Fetch state income tax rates from DB — no hardcoding
     supabase.from('state_income_tax_rates').select('state_code, rate_pct, tax_year').order('tax_year', { ascending: false }),
+    supabase
+      .from('state_income_tax_brackets')
+      .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
+      .order('tax_year', { ascending: false })
+      .order('state', { ascending: true })
+      .order('filing_status', { ascending: true })
+      .order('min_amount', { ascending: true }),
     supabase
       .from('businesses')
       .select('id, name, estimated_value, ownership_pct, owner')
@@ -93,6 +101,14 @@ export async function GET(request: NextRequest) {
       owner: (r as { owner?: string | null }).owner ?? '',
     })),
     state_income_tax_rates:   state_income_tax_rates ?? [],
+    state_income_tax_brackets: (state_income_tax_brackets ?? []) as {
+      state: string
+      tax_year: number
+      filing_status: 'single' | 'mfj'
+      min_amount: number
+      max_amount: number | null
+      rate_pct: number
+    }[],
     businesses: (businesses_data ?? []).map(b => ({
       id: b.id as string,
       name: b.name ?? 'Business',

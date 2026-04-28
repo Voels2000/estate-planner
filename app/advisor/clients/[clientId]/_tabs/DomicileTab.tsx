@@ -10,6 +10,7 @@ import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import MoveBreakevenPanel from '@/components/advisor/MoveBreakevenPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
+import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 /** Sprint 66: align with combined federal/state waterfall when available */
@@ -23,7 +24,7 @@ export default function DomicileTab({
   domicileChecklist,
   stateExemptions,
   stateEstateTaxRules,
-  stateIncomeTaxRates = [],
+  stateIncomeTaxBrackets = [],
   projectionRowsDomicile = [],
 }: ClientViewShellProps) {
   type DomicileAnalysisRow = {
@@ -352,7 +353,7 @@ export default function DomicileTab({
         grossEstate={grossEstateForStateTax}
         isMFJ={household?.filing_status === 'mfj'}
         clientStates={clientStatesForBreakeven}
-        incomeTaxRates={stateIncomeTaxRates}
+        incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
         estateTaxRules={stateEstateTaxRules ?? []}
       />
 

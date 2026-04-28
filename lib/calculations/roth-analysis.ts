@@ -9,6 +9,15 @@ export interface RothAnalysisInputs {
   rows: YearRow[]                  // full projection rows from computeCompleteProjection
   filingStatus: string             // household filing_status
   stateMarginalRate: number        // flat state income tax rate (0–1), e.g. 0.093 for CA
+  stateCode?: string | null
+  stateIncomeTaxBrackets?: Array<{
+    state: string
+    tax_year: number
+    filing_status: 'single' | 'mfj'
+    min_amount: number
+    max_amount: number | null
+    rate_pct: number
+  }>
   taxDeferredBalance: number       // current total tax-deferred balance
   rothBalance: number              // current Roth balance
   taxableBalance: number           // current taxable account balance
@@ -113,6 +122,59 @@ function getFederalMarginalRate(
   return brackets[0].rate
 }
 
+function normalizeFilingStatusForState(filingStatus: string): 'single' | 'mfj' {
+  return ['mfj', 'married_joint', 'married_filing_jointly', 'qw'].includes(filingStatus) ? 'mfj' : 'single'
+}
+
+function getStateBracketsForYear(
+  stateCode: string | null | undefined,
+  filingStatus: string,
+  year: number,
+  allBrackets: RothAnalysisInputs['stateIncomeTaxBrackets'],
+): Array<{ min: number; max: number; rate: number }> {
+  if (!stateCode || !allBrackets?.length) return []
+  const code = stateCode.toUpperCase()
+  const fs = normalizeFilingStatusForState(filingStatus)
+  const matching = allBrackets.filter((b) => b.state.toUpperCase() === code && b.filing_status === fs)
+  if (matching.length === 0) return []
+
+  const years = Array.from(new Set(matching.map((b) => b.tax_year))).sort((a, b) => a - b)
+  const chosenYear = years.filter((y) => y <= year).pop() ?? years[years.length - 1]
+  return matching
+    .filter((b) => b.tax_year === chosenYear)
+    .sort((a, b) => a.min_amount - b.min_amount)
+    .map((b) => ({
+      min: b.min_amount,
+      max: b.max_amount ?? Infinity,
+      rate: b.rate_pct / 100,
+    }))
+}
+
+function calcProgressiveTax(
+  taxableIncome: number,
+  brackets: Array<{ min: number; max: number; rate: number }>,
+): number {
+  if (taxableIncome <= 0 || brackets.length === 0) return 0
+  let tax = 0
+  for (const b of brackets) {
+    if (taxableIncome <= b.min) continue
+    const taxableInBracket = Math.max(0, Math.min(taxableIncome, b.max) - b.min)
+    tax += taxableInBracket * b.rate
+  }
+  return tax
+}
+
+function getStateMarginalRateFromBrackets(
+  taxableIncome: number,
+  brackets: Array<{ min: number; max: number; rate: number }>,
+): number {
+  if (taxableIncome <= 0 || brackets.length === 0) return 0
+  for (let i = brackets.length - 1; i >= 0; i--) {
+    if (taxableIncome > brackets[i].min) return brackets[i].rate
+  }
+  return brackets[0].rate
+}
+
 function getBracketHeadroom(
   taxableIncome: number,
   brackets: { min: number; max: number; rate: number }[],
@@ -137,6 +199,8 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     rows,
     filingStatus,
     stateMarginalRate,
+    stateCode,
+    stateIncomeTaxBrackets,
     taxDeferredBalance: initTaxDeferred,
     rothBalance: initRoth,
     taxableBalance: initTaxable,
@@ -190,7 +254,16 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     // Taxable income for marginal rate calculation
     const taxableIncome = Math.max(0, totalIncome - standardDeduction)
     const fedMarginal = getFederalMarginalRate(taxableIncome, brackets)
-    const combinedMarginal = fedMarginal + stateMarginalRate
+    const stateBracketsForYear = getStateBracketsForYear(
+      stateCode,
+      filingStatus,
+      row.year,
+      stateIncomeTaxBrackets,
+    )
+    const stateMarginalForYear = stateBracketsForYear.length > 0
+      ? getStateMarginalRateFromBrackets(taxableIncome, stateBracketsForYear)
+      : stateMarginalRate
+    const combinedMarginal = fedMarginal + stateMarginalForYear
 
     // Use actual tax from projection rows
     const federalTax = row.tax_federal
@@ -231,7 +304,12 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
 
     // Incremental tax cost of conversion
     const incrementalFederalTax = Math.round(conv * fedMarginal)
-    const incrementalStateTax = Math.round(conv * stateMarginalRate)
+    const incrementalStateTax = stateBracketsForYear.length > 0
+      ? Math.round(
+          calcProgressiveTax(taxableIncome + conv, stateBracketsForYear) -
+            calcProgressiveTax(taxableIncome, stateBracketsForYear),
+        )
+      : Math.round(conv * stateMarginalForYear)
     const incrementalTotalTax = incrementalFederalTax + incrementalStateTax
 
     // Lifetime savings estimate
@@ -264,7 +342,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
       stateTax,
       totalTax,
       federalMarginalRate: fedMarginal,
-      stateMarginalRate,
+      stateMarginalRate: stateMarginalForYear,
       combinedMarginalRate: combinedMarginal,
       recommendedConversion: Math.round(conv),
       conversionRationale: rationale,

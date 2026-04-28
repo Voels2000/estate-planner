@@ -47,6 +47,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       { data: irmaa_brackets },
       { data: real_estate },
       { data: state_income_tax_rates },
+      { data: state_income_tax_brackets },
       { data: taxConfigs },
       { data: business_interests },
       { data: insurance_policies },
@@ -82,6 +83,13 @@ export async function generateBaseCase(householdId: string): Promise<{
         .from('state_income_tax_rates')
         .select('state_code, rate_pct, tax_year')
         .order('tax_year', { ascending: false }),
+      admin
+        .from('state_income_tax_brackets')
+        .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
+        .order('tax_year', { ascending: false })
+        .order('state', { ascending: true })
+        .order('filing_status', { ascending: true })
+        .order('min_amount', { ascending: true }),
       admin.from('federal_tax_config').select('*').eq('is_active', true),
       Promise.all([
         admin
@@ -132,6 +140,14 @@ export async function generateBaseCase(householdId: string): Promise<{
         owner: string
       }[],
       state_income_tax_rates: state_income_tax_rates ?? [],
+      state_income_tax_brackets: (state_income_tax_brackets ?? []) as {
+        state: string
+        tax_year: number
+        filing_status: 'single' | 'mfj'
+        min_amount: number
+        max_amount: number | null
+        rate_pct: number
+      }[],
       businesses: (business_interests ?? []).map((b) => ({
         id: b.id as string,
         name: (b as { entity_name?: string }).entity_name ?? 'Business',

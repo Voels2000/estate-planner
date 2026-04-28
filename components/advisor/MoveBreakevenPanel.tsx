@@ -29,7 +29,7 @@ import {
   type MoveBreakevenInput,
   type MoveBreakevenResult,
   type StateEstateTaxRule,
-  type StateIncomeTaxRate,
+  type StateIncomeTaxBracket,
 } from '@/lib/domicile/moveBreakeven'
 
 // ─────────────────────────────────────────────────────────────────
@@ -37,18 +37,14 @@ import {
 // ─────────────────────────────────────────────────────────────────
 
 type Props = {
-  /** Current claimed domicile (2-letter) */
   currentState: string
-  /** Gross estate from projection / RPC */
   grossEstate: number
-  /** MFJ filing status */
   isMFJ: boolean
-  /** States the client has days in — populate target dropdown */
   clientStates: Array<{ state: string; days_per_year: number }>
-  /** From state_income_tax_rates table */
-  incomeTaxRates: StateIncomeTaxRate[]
-  /** From state_estate_tax_rules table */
+  incomeTaxBrackets: StateIncomeTaxBracket[]
   estateTaxRules: StateEstateTaxRule[]
+  scheduledTargetState?: string | null
+  defaultAnnualIncome?: number
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -145,18 +141,22 @@ export default function MoveBreakevenPanel({
   grossEstate,
   isMFJ,
   clientStates,
-  incomeTaxRates,
+  incomeTaxBrackets,
   estateTaxRules,
+  scheduledTargetState,
+  defaultAnnualIncome = 500_000,
 }: Props) {
-  // ── Inputs ───────────────────────────────────────────────────
   const otherClientStates = clientStates
     .filter((s) => s.state !== currentState)
     .sort((a, b) => b.days_per_year - a.days_per_year)
 
-  const defaultTarget = otherClientStates[0]?.state ?? (currentState === 'WA' ? 'FL' : 'WA')
+  const defaultTarget =
+    scheduledTargetState ??
+    otherClientStates[0]?.state ??
+    (currentState === 'WA' ? 'FL' : 'WA')
 
   const [targetState,            setTargetState]            = useState(defaultTarget)
-  const [annualIncome,           setAnnualIncome]           = useState(500_000)
+  const [annualIncome,           setAnnualIncome]           = useState(defaultAnnualIncome)
   const [moveCostTotal,          setMoveCostTotal]          = useState(75_000)
   const [annualComplianceDelta,  setAnnualComplianceDelta]  = useState(0)
   const [discountRate,           setDiscountRate]           = useState(0.05)
@@ -177,14 +177,14 @@ export default function MoveBreakevenPanel({
       discountRate,
       horizonYears,
       estateGrowthRate,
-      incomeTaxRates,
+      incomeTaxBrackets,
       estateTaxRules,
     }
     return calculateMoveBreakeven(inp)
   }, [
     currentState, targetState, annualIncome, grossEstate, isMFJ,
     moveCostTotal, annualComplianceDelta, discountRate, horizonYears,
-    estateGrowthRate, incomeTaxRates, estateTaxRules,
+    estateGrowthRate, incomeTaxBrackets, estateTaxRules,
   ])
 
   const verdictColor = !result
@@ -216,8 +216,8 @@ export default function MoveBreakevenPanel({
       <div>
         <h3 className="text-sm font-semibold text-slate-700">Move Breakeven Analysis</h3>
         <p className="text-xs text-slate-400 mt-0.5">
-          Compares income tax + estate tax burden between current and target domicile,
-          net of one-time move costs. Adjust inputs below.
+          Compares progressive income tax + estate tax burden between current and target domicile,
+          net of one-time move costs. Uses full 2026 state income tax brackets.
         </p>
       </div>
 
@@ -409,26 +409,24 @@ export default function MoveBreakevenPanel({
             </div>
           </div>
 
-          {/* Tax rate comparison */}
+          {/* Tax comparison */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-4">
-              Tax rate comparison
+              Tax comparison
             </h4>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-xs text-slate-400 mb-1">Income tax — {result.currentState}</p>
-                <p className="text-xl font-semibold text-slate-700">
-                  {fmtPct(result.currentIncomeTaxRate)}
-                </p>
+                <p className="text-lg font-semibold text-slate-700">{fmt$(result.currentIncomeTax)}</p>
+                <p className="text-xs text-slate-400">{fmtPct(result.currentIncomeTaxRate)} top rate</p>
               </div>
               <div className="flex items-center justify-center">
                 <span className="text-slate-300 text-2xl">→</span>
               </div>
               <div>
                 <p className="text-xs text-slate-400 mb-1">Income tax — {result.targetState}</p>
-                <p className="text-xl font-semibold text-slate-700">
-                  {fmtPct(result.targetIncomeTaxRate)}
-                </p>
+                <p className="text-lg font-semibold text-slate-700">{fmt$(result.targetIncomeTax)}</p>
+                <p className="text-xs text-slate-400">{fmtPct(result.targetIncomeTaxRate)} top rate</p>
               </div>
 
               <div>
@@ -459,7 +457,7 @@ export default function MoveBreakevenPanel({
                 {
                   label: 'Income tax savings/yr',
                   value: result.annualIncomeTaxSavings,
-                  note: `On ${fmt$(annualIncome)} income`,
+                  note: `Progressive brackets on ${fmt$(annualIncome)} income`,
                 },
                 {
                   label: 'Estate tax savings (amortized/yr)',
@@ -586,10 +584,9 @@ export default function MoveBreakevenPanel({
 
           {/* Disclaimer */}
           <p className="text-xs text-slate-400 leading-relaxed">
-            This analysis uses top marginal state income tax rates and progressive estate tax brackets
-            from the database. It does not account for federal deductions, local taxes, or non-financial
-            factors. Estate tax is modeled at the projected gross estate for each year using live
-            brackets from <code className="text-slate-500">state_estate_tax_rules</code>.
+            Income tax uses progressive 2026 state brackets from <code className="text-slate-500">state_income_tax_brackets</code>.
+            Estate tax uses progressive brackets from <code className="text-slate-500">state_estate_tax_rules</code>.
+            Does not account for federal deductions, local taxes, or non-financial factors.
             Consult an estate planning attorney before making domicile decisions.
           </p>
         </div>
