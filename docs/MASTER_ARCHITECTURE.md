@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 85 / billing entry-tier + trial download policy)
+# Last updated: April 29, 2026 (Session 86 / education guide architecture + progress tracking)
 
 ---
 
@@ -238,6 +238,39 @@ Runtime behavior:
   - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export.
   - `app/api/documents/download/[document_id]/route.ts` requires paid-active consumer status for document downloads.
   - `app/api/documents/[household_id]/route.ts` aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
+
+---
+
+## Education Guide Architecture
+
+**Current (as built):**
+
+- Education route family is implemented under `app/(education)/education/*`.
+- Education pages are auth-gated (`app/(education)/education/layout.tsx`); users must be logged in before viewing.
+- Content is markdown-first:
+  - Module files live under `content/education/modules/*.md`
+  - Additional long-form pages use `content/education/decision-tree.md` and `content/education/glossary.md`
+- Markdown ingestion is handled by `lib/education/loaders.ts` (frontmatter + body parsing).
+
+**Progress and learning UX:**
+
+- Progress is persisted per user in DB:
+  - `education_progress` table (migration: `20260429131500_create_education_progress.sql`)
+  - RLS policies enforce own-row access.
+- Progress API:
+  - `GET/POST /api/education/progress`
+- Catalog and module UI now include:
+  - Pillar/complexity filters
+  - Search by title/summary/tags
+  - Completion progress bar
+  - Next recommended + continue learning CTA
+  - Recently completed strip
+  - Module-level resume banner
+
+**Education download policy:**
+
+- Prep sheet page is visible on-screen for logged-in users.
+- Download endpoint (`/api/education/prep-sheet/download`) enforces paid-active consumer status (Tier 1+) and blocks trial download.
 
 ---
 
