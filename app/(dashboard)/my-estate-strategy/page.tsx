@@ -243,7 +243,7 @@ export default async function MyEstateStrategyPage() {
     classifyEstateAssets(supabase, household.id),
     supabase
       .from('strategy_line_items')
-      .select('amount, confidence_level, effective_year, is_active, sign')
+      .select('amount, confidence_level, effective_year, is_active, sign, source_role, consumer_accepted, consumer_rejected')
       .eq('household_id', household.id)
       .is('projection_year', null),
   ])
@@ -254,13 +254,46 @@ export default async function MyEstateStrategyPage() {
     effective_year: row.effective_year,
     is_active: row.is_active ?? true,
     sign: typeof row.sign === 'number' ? row.sign : -1,
+    source_role: String(row.source_role ?? 'consumer'),
+    consumer_accepted: Boolean(row.consumer_accepted),
+    consumer_rejected: Boolean(row.consumer_rejected),
   }))
+
+  const activeRows = strategyLineItems.filter((item) => item.is_active && !item.consumer_rejected)
+  const actualStrategyLineItems = activeRows.filter(
+    (item) => item.source_role === 'consumer' || (item.source_role === 'advisor' && item.consumer_accepted),
+  )
+  const pendingAdvisorStrategyLineItems = activeRows.filter(
+    (item) => item.source_role === 'advisor' && !item.consumer_accepted,
+  )
+  const projectedStrategyLineItems = [...actualStrategyLineItems, ...pendingAdvisorStrategyLineItems]
 
   const horizons = buildStrategyHorizons({
     currentYear,
     currentMonthYearLabel,
     liveNetWorth: composition.gross_estate,
-    strategyLineItems,
+    strategyLineItems: actualStrategyLineItems,
+    stateBrackets,
+    household: {
+      state_primary: household.state_primary,
+      filing_status: household.filing_status,
+      has_spouse: household.has_spouse,
+      person1_name: household.person1_name,
+      person2_name: household.person2_name,
+      person1_birth_year: household.person1_birth_year,
+      person2_birth_year: household.person2_birth_year,
+      person1_longevity_age: household.person1_longevity_age,
+      person2_longevity_age: household.person2_longevity_age,
+    },
+    scenarioRows,
+    survivorFirstName,
+    longevityAge,
+  })
+  const horizonsProjected = buildStrategyHorizons({
+    currentYear,
+    currentMonthYearLabel,
+    liveNetWorth: composition.gross_estate,
+    strategyLineItems: projectedStrategyLineItems,
     stateBrackets,
     household: {
       state_primary: household.state_primary,
@@ -287,6 +320,12 @@ export default async function MyEstateStrategyPage() {
           calculatedAt: scenario?.calculated_at ?? null,
         }}
         horizons={horizons}
+        horizonsProjected={horizonsProjected}
+        strategySetSummary={{
+          actualCount: actualStrategyLineItems.length,
+          pendingAdvisorCount: pendingAdvisorStrategyLineItems.length,
+          projectedCount: projectedStrategyLineItems.length,
+        }}
         estateAsOfLabel={currentMonthYearLabel}
         primaryResidenceValue={primaryResidenceValueForUi}
         hasSpouse={hasSpouse}

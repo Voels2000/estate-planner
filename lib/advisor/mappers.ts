@@ -40,6 +40,7 @@ type AdvisorMapperInput = Pick<
   | 'stateBracketsResult'
   | 'stateTaxRulesAllYearsResult'
   | 'stateIncomeTaxBracketsResult'
+  | 'strategyLineItemsResult'
   | 'beneficiaryGrantsResult'
 >
 
@@ -81,6 +82,18 @@ type AdvisorMappedDatasets = {
     exemption_amount: number
   }>
   stateIncomeTaxBrackets: StateIncomeTaxBracket[]
+  strategyLineItems: Array<{
+    id: string
+    strategy_source: string
+    source_role: string
+    amount: number
+    sign: number
+    confidence_level: 'certain' | 'probable' | 'illustrative'
+    effective_year: number | null
+    is_active: boolean
+    consumer_accepted: boolean
+    consumer_rejected: boolean
+  }>
   beneficiaryGrants: BeneficiaryAccessGrant[]
 }
 
@@ -143,6 +156,7 @@ export function mapAdvisorClientDatasets(results: AdvisorMapperInput): AdvisorMa
     stateBrackets: (results.stateBracketsResult.data ?? []) as StateBracket[],
     stateTaxRulesAllYears: (results.stateTaxRulesAllYearsResult.data ?? []) as AdvisorMappedDatasets['stateTaxRulesAllYears'],
     stateIncomeTaxBrackets: (results.stateIncomeTaxBracketsResult.data ?? []) as StateIncomeTaxBracket[],
+    strategyLineItems: (results.strategyLineItemsResult.data ?? []) as AdvisorMappedDatasets['strategyLineItems'],
     beneficiaryGrants: (results.beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[],
   }
 }

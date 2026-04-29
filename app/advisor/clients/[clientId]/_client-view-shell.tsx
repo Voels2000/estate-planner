@@ -357,4 +357,10 @@ export interface ClientViewShellProps {
   } | null
   estateComposition: EstateComposition
   advisorHorizons?: MyEstateStrategyHorizonsResult
+  advisorHorizonsProjected?: MyEstateStrategyHorizonsResult
+  strategySetSummary?: {
+    actualCount: number
+    pendingAdvisorCount: number
+    projectedCount: number
+  }
 }

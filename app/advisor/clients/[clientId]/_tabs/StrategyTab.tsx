@@ -11,7 +11,7 @@ import { ClientViewShellProps } from '../_client-view-shell'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
-import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
+import StrategyHorizonTable from '@/components/shared/StrategyHorizonTable'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptionsPanel'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
@@ -20,7 +20,7 @@ import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strat
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
-export default function StrategyTab({ household, scenario, advisorHorizons }: ClientViewShellProps) {
+export default function StrategyTab({ household, scenario, advisorHorizons, advisorHorizonsProjected, strategySetSummary }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
     Number.isFinite(Number(advisorHorizons?.today.grossEstate ?? NaN)) &&
@@ -42,6 +42,9 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   const estimatedStateTax = hasHorizonTodayInputs
     ? Number(advisorHorizons?.today.stateTax)
     : 0
+  const projectedGrossEstate = Number(advisorHorizonsProjected?.today.grossEstate ?? NaN)
+  const projectedEstimatedFederalTax = Number(advisorHorizonsProjected?.today.federalTaxEstimate ?? NaN)
+  const projectedEstimatedStateTax = Number(advisorHorizonsProjected?.today.stateTax ?? NaN)
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
     rawLawScenario === 'no_exemption' ? 'no_exemption' : 'current_law'
@@ -53,6 +56,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   const [slatIlitOpen, setSlatIlitOpen] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
+  const [combinedMode, setCombinedMode] = useState<'actual' | 'projected'>('actual')
   const [monteCarloAssumptionsOpen, setMonteCarloAssumptionsOpen] = useState(false)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
   const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
@@ -62,7 +66,6 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
   const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
-  const [recommendedItems, setRecommendedItems] = useState<PendingAdvisorItem[]>([])
   const missingHorizonTelemetrySent = useRef(false)
   void _advisorLineItems
 
@@ -146,25 +149,9 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
     }).catch(() => null)
   }, [householdId])
 
-  const loadRecommendedItems = useCallback(async () => {
-    if (!householdId) return
-    try {
-      const res = await fetch('/api/advisor/strategy-recommendations-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ householdId }),
-      })
-      const data = await res.json()
-      setRecommendedItems(Array.isArray(data?.items) ? data.items : [])
-    } catch {
-      // non-fatal
-    }
-  }, [householdId])
-
   useEffect(() => {
     loadConsumerData()
-    loadRecommendedItems()
-  }, [loadConsumerData, loadRecommendedItems])
+  }, [loadConsumerData])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)
@@ -275,9 +262,89 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
           federalExemption={federalExemption}
           estimatedFederalTax={estimatedFederalTax}
           estimatedStateTax={estimatedStateTax}
+          projectedGrossEstate={Number.isFinite(projectedGrossEstate) ? projectedGrossEstate : undefined}
+          projectedEstimatedFederalTax={Number.isFinite(projectedEstimatedFederalTax) ? projectedEstimatedFederalTax : undefined}
+          projectedEstimatedStateTax={Number.isFinite(projectedEstimatedStateTax) ? projectedEstimatedStateTax : undefined}
           hasSpouse={household?.has_spouse ?? false}
           section7520Rate={0.052}
         />
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Combined Strategy View</h2>
+          <button
+            onClick={() => setCompositeOpen((o) => !o)}
+            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          >
+            {compositeOpen ? '▲ Collapse' : '▼ Expand'}
+          </button>
+        </div>
+        {compositeOpen && (
+          <div className="space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setCombinedMode('actual')}
+                  className={`rounded-md px-3 py-1 text-xs font-medium ${
+                    combinedMode === 'actual'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Actual Estate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCombinedMode('projected')}
+                  className={`rounded-md px-3 py-1 text-xs font-medium ${
+                    combinedMode === 'projected'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Projected w/ Pending Advisor
+                </button>
+              </div>
+              {strategySetSummary && (
+                <div className="text-xs text-slate-600">
+                  Actual: <span className="font-semibold">{strategySetSummary.actualCount}</span> · Pending advisor:{' '}
+                  <span className="font-semibold">{strategySetSummary.pendingAdvisorCount}</span> · Projected:{' '}
+                  <span className="font-semibold">{strategySetSummary.projectedCount}</span>
+                </div>
+              )}
+            </div>
+
+            {combinedMode === 'actual' && advisorHorizons && (
+              <StrategyHorizonTable
+                horizons={advisorHorizons}
+                pendingItems={[]}
+                federalExemption={federalExemption}
+                mode="advisor"
+              />
+            )}
+            {combinedMode === 'projected' && advisorHorizonsProjected && (
+              <StrategyHorizonTable
+                horizons={advisorHorizonsProjected}
+                pendingItems={[]}
+                federalExemption={federalExemption}
+                mode="advisor"
+              />
+            )}
+
+            <CompositeOverlay
+              grossEstate={grossEstate}
+              federalExemption={federalExemption}
+              estimatedFederalTax={estimatedFederalTax}
+              lawScenario={lawScenario}
+              householdId={household.id}
+              advisorHorizons={advisorHorizons}
+              advisorHorizonsProjected={advisorHorizonsProjected}
+              estateViewMode={combinedMode}
+            />
+          </div>
+        )}
       </section>
 
       <section>
@@ -328,40 +395,8 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
             rothBalance={rothBalance}
             onRecommend={async () => {
               await loadConsumerData()
-              await loadRecommendedItems()
             }}
           />
-        )}
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Combined Strategy View</h2>
-          <button
-            onClick={() => setCompositeOpen((o) => !o)}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {compositeOpen ? '▲ Collapse' : '▼ Expand'}
-          </button>
-        </div>
-        {compositeOpen && (
-          <div className="space-y-8">
-            {advisorHorizons && (
-              <StrategyHorizonTable
-                horizons={advisorHorizons}
-                pendingItems={recommendedItems}
-                federalExemption={federalExemption}
-                mode="advisor"
-              />
-            )}
-            <CompositeOverlay
-              grossEstate={grossEstate}
-              federalExemption={federalExemption}
-              estimatedFederalTax={estimatedFederalTax}
-              lawScenario={lawScenario}
-              householdId={household.id}
-            />
-          </div>
         )}
       </section>
 

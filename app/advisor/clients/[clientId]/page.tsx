@@ -156,6 +156,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     stateBracketsResult,
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
+    strategyLineItemsResult,
     healthScore,
     liquidAssets,
     activeStrategies,
@@ -198,6 +199,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     stateBrackets,
     stateTaxRulesAllYears,
     stateIncomeTaxBrackets,
+    strategyLineItems,
     beneficiaryGrants,
   } = mapAdvisorClientDatasets({
     assetsResult,
@@ -218,6 +220,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     stateBracketsResult,
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
+    strategyLineItemsResult,
     beneficiaryGrantsResult,
   })
 
@@ -227,7 +230,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   )
 
   // 3) Strategy and export view models
-  const { advisorHorizons, scenarioForStrategy, projectionRowsDomicile } = buildAdvisorStrategyViewModels({
+  const { advisorHorizons, advisorHorizonsProjected, scenarioForStrategy, projectionRowsDomicile, strategySetSummary } = buildAdvisorStrategyViewModels({
     currentYear,
     household,
     stateBrackets,
@@ -237,6 +240,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioOutputsSecondDeath,
     latestOutput,
     assumptionSnapshot,
+    strategyLineItems,
   })
 
   const { exportPanelProps, exportPdfData, exportExcelData } = buildAdvisorExportPayloads({
@@ -292,6 +296,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       conflictReport={conflictReport}
       estateComposition={estateComposition}
       advisorHorizons={advisorHorizons}
+      advisorHorizonsProjected={advisorHorizonsProjected}
+      strategySetSummary={strategySetSummary}
     />
   )
 }

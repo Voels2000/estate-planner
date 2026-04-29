@@ -7,6 +7,7 @@
 // Wires hasCSTStrategy to EstateFlowDiagram (replaces false placeholder from Sprint 67)
 
 import { useCallback, useEffect, useState } from 'react'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import {
   validateStrategyComposability,
   build30MArchetype,
@@ -20,6 +21,9 @@ interface CompositeOverlayProps {
   estimatedFederalTax: number
   lawScenario: 'current_law' | 'no_exemption'
   householdId?: string
+  advisorHorizons?: MyEstateStrategyHorizonsResult
+  advisorHorizonsProjected?: MyEstateStrategyHorizonsResult
+  estateViewMode?: 'actual' | 'projected'
 }
 
 const ESTATE_TAX_RATE = 0.40
@@ -66,6 +70,9 @@ export default function CompositeOverlay({
   estimatedFederalTax,
   lawScenario,
   householdId,
+  advisorHorizons,
+  advisorHorizonsProjected,
+  estateViewMode = 'actual',
 }: CompositeOverlayProps) {
   const [mode, setMode] = useState<'custom' | 'recommendations' | '30m' | '100m'>('custom')
   const [customStrategies, setCustomStrategies] = useState<StrategyLayer[]>([
@@ -140,6 +147,9 @@ export default function CompositeOverlay({
 
   const baselineTax = calcTax(activeConfig.grossEstate, federalExemption, lawScenario)
   const strategyTax = calcTax(result.adjustedEstate, federalExemption, lawScenario)
+  const selectedHorizons =
+    estateViewMode === 'projected' && advisorHorizonsProjected ? advisorHorizonsProjected : advisorHorizons
+  const insideOutsideToday = selectedHorizons?.today
 
   // Waterfall bar width calculation
   const maxEstate = activeConfig.grossEstate
@@ -389,6 +399,34 @@ export default function CompositeOverlay({
           </tbody>
         </table>
       </div>
+
+      {insideOutsideToday && (
+        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+          <h5 className="text-sm font-semibold text-slate-800 mb-3">
+            Estate Boundary Snapshot ({estateViewMode === 'projected' ? 'Projected' : 'Actual'})
+          </h5>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div className="rounded border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs text-slate-500">Inside taxable estate</p>
+              <p className="font-semibold text-blue-700">
+                {fmt(Number(insideOutsideToday.insideTotal ?? 0))}
+              </p>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs text-slate-500">Outside taxable estate</p>
+              <p className="font-semibold text-green-700">
+                {fmt(Number(insideOutsideToday.outsideCertainProbableTotal ?? 0))}
+              </p>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs text-slate-500">Illustrative outside</p>
+              <p className="font-semibold text-slate-600">
+                {fmt(Number(insideOutsideToday.outsideIllustrativeTotal ?? 0))}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Advisory notes */}
       {result.advisoryNotes.map((note, i) => (

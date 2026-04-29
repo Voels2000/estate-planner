@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 82 / shared label-basis tax alignment)
+# Last updated: April 29, 2026 (Session 84 / overlay boundary parity)
 
 ---
 
@@ -90,6 +90,26 @@ Important:
 **Effect:**
 
 - The same label now maps to the same estate basis inside advisor tax surfaces (`FederalStateWaterfall` + `StateTaxPanel`), eliminating current-year basis drift.
+
+### Strategy Set Contract (Actual vs Projected)
+
+**Current (as built):**
+
+- Canonical strategy sets are now explicitly separated before horizon computation:
+  - `actualStrategies`: consumer-entered plus advisor items that are consumer-accepted.
+  - `pendingAdvisorStrategies`: advisor-entered items not yet accepted/rejected.
+  - `projectedAdvisorStrategies`: actual + pending advisor strategies.
+- Advisor Strategy tab now computes two horizon payloads from the same engine (`buildStrategyHorizons`):
+  - `advisorHorizons` (actual)
+  - `advisorHorizonsProjected` (projected with pending advisor recommendations)
+- Consumer My Estate Strategy now follows the same dual-horizon contract:
+  - Default view shows actual estate (entered/approved only).
+  - Read-only what-if toggle shows projected values if pending advisor recommendations were accepted.
+- Advisor Combined Strategy view now threads the selected mode (`actual` vs `projected`) into `CompositeOverlay`, and displays inside/outside estate boundary snapshot values from the same selected horizon payload.
+
+**Effect:**
+
+- Inside/outside estate totals for any given label are now driven by one strategy-set definition per mode (actual vs projected), avoiding mixed-path drift across advisor and consumer strategy surfaces.
 
 ### State Income Tax Chain
 

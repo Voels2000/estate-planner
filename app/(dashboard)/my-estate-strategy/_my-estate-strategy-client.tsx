@@ -40,6 +40,12 @@ type Props = {
     calculatedAt: string | null
   }
   horizons: Horizons
+  horizonsProjected?: Horizons
+  strategySetSummary?: {
+    actualCount: number
+    pendingAdvisorCount: number
+    projectedCount: number
+  }
   /** e.g. "April 2026" — matches My Estate Strategy "Today" column */
   estateAsOfLabel: string
   /** Sum of primary residence FMV; only non-null when married + primary home exists */
@@ -56,6 +62,8 @@ export default function MyEstateStrategyClient({
   scenarioId,
   scenarioMeta,
   horizons,
+  horizonsProjected,
+  strategySetSummary,
   estateAsOfLabel,
   primaryResidenceValue,
   hasSpouse,
@@ -66,6 +74,7 @@ export default function MyEstateStrategyClient({
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [horizonMode, setHorizonMode] = useState<'actual' | 'projected'>('actual')
 
   async function handleGenerateBaseCase() {
     setGenerating(true)
@@ -91,7 +100,8 @@ export default function MyEstateStrategyClient({
   }
 
   const hasBaseCase = !!scenarioId
-  const { today, tenYear, twentyYear, atDeath } = horizons
+  const selectedHorizons = horizonMode === 'projected' && horizonsProjected ? horizonsProjected : horizons
+  const { today, tenYear, twentyYear, atDeath } = selectedHorizons
   const columns = useMemo(
     () => [today, tenYear, twentyYear, atDeath].filter((col) => !col.isPlaceholder || col.showGenerateCta),
     [today, tenYear, twentyYear, atDeath],
@@ -143,6 +153,39 @@ export default function MyEstateStrategyClient({
         defaultOpen={true}
         storageKey="my-estate-strategy-horizons"
       >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
+          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setHorizonMode('actual')}
+              className={`rounded-md px-3 py-1 text-xs font-medium ${
+                horizonMode === 'actual'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100'
+              }`}
+            >
+              Actual Estate
+            </button>
+            <button
+              type="button"
+              onClick={() => setHorizonMode('projected')}
+              className={`rounded-md px-3 py-1 text-xs font-medium ${
+                horizonMode === 'projected'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100'
+              }`}
+            >
+              What-if Advisor Recommendations
+            </button>
+          </div>
+          {strategySetSummary && (
+            <div className="text-xs text-neutral-600">
+              Active now: <span className="font-semibold">{strategySetSummary.actualCount}</span> · Advisor pending:{' '}
+              <span className="font-semibold">{strategySetSummary.pendingAdvisorCount}</span> · What-if total:{' '}
+              <span className="font-semibold">{strategySetSummary.projectedCount}</span>
+            </div>
+          )}
+        </div>
         <div className={`grid grid-cols-1 gap-4 ${gridClassName}`}>
           {columns.map((col) => (
             <div

@@ -40,6 +40,7 @@ export type AdvisorClientDatasetsResult = {
   stateBracketsResult: { data: unknown[] | null; error?: unknown }
   stateTaxRulesAllYearsResult: { data: unknown[] | null; error?: unknown }
   stateIncomeTaxBracketsResult: { data: unknown[] | null; error?: unknown }
+  strategyLineItemsResult: { data: unknown[] | null; error?: unknown }
   healthScore: number | null
   liquidAssets: number
   activeStrategies: string[]
@@ -180,6 +181,7 @@ export async function loadAdvisorClientDatasets(
     stateBracketsResult,
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
+    strategyLineItemsResult,
     healthScore,
     liquidAssets,
     activeStrategies,
@@ -289,6 +291,11 @@ export async function loadAdvisorClientDatasets(
       .order('state', { ascending: true })
       .order('filing_status', { ascending: true })
       .order('min_amount', { ascending: true }),
+    supabase
+      .from('strategy_line_items')
+      .select('id, strategy_source, source_role, amount, sign, confidence_level, effective_year, is_active, consumer_accepted, consumer_rejected')
+      .eq('household_id', params.householdId)
+      .eq('is_active', true),
     fetchHealthScore(params.householdId),
     fetchLiquidAssets(params.clientId),
     fetchActiveStrategies(params.householdId),
@@ -326,6 +333,7 @@ export async function loadAdvisorClientDatasets(
     stateBracketsResult,
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
+    strategyLineItemsResult,
     healthScore,
     liquidAssets,
     activeStrategies,

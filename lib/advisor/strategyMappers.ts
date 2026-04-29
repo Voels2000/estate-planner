@@ -31,6 +31,15 @@ export function buildAdvisorStrategyViewModels(params: {
   scenarioOutputsSecondDeath: Array<Record<string, unknown>>
   latestOutput: Record<string, unknown> | null
   assumptionSnapshot: Record<string, unknown>
+  strategyLineItems: Array<{
+    source_role: string
+    amount: number
+    sign: number
+    confidence_level: 'certain' | 'probable' | 'illustrative'
+    effective_year: number | null
+    consumer_accepted: boolean
+    consumer_rejected: boolean
+  }>
 }) {
   const currentMonthYearLabel = new Date().toLocaleString('en-US', {
     month: 'long',
@@ -63,6 +72,27 @@ export function buildAdvisorStrategyViewModels(params: {
           [params.household.person2_first_name, params.household.person2_last_name].filter(Boolean).join(' ').trim() || null,
         )
 
+  const activeRows = (params.strategyLineItems ?? []).filter((item) => !item.consumer_rejected)
+  const actualStrategyLineItems = activeRows
+    .filter((item) => item.source_role === 'consumer' || (item.source_role === 'advisor' && item.consumer_accepted))
+    .map((item) => ({
+      amount: Math.abs(Number(item.amount ?? 0)),
+      confidence_level: item.confidence_level,
+      effective_year: item.effective_year,
+      is_active: true,
+      sign: typeof item.sign === 'number' ? item.sign : -1,
+    }))
+  const pendingAdvisorLineItems = activeRows
+    .filter((item) => item.source_role === 'advisor' && !item.consumer_accepted)
+    .map((item) => ({
+      amount: Math.abs(Number(item.amount ?? 0)),
+      confidence_level: item.confidence_level,
+      effective_year: item.effective_year,
+      is_active: true,
+      sign: typeof item.sign === 'number' ? item.sign : -1,
+    }))
+  const projectedStrategyLineItems = [...actualStrategyLineItems, ...pendingAdvisorLineItems]
+
   const advisorHorizons: MyEstateStrategyHorizonsResult = buildStrategyHorizons({
     currentYear: params.currentYear,
     currentMonthYearLabel,
@@ -82,6 +112,29 @@ export function buildAdvisorStrategyViewModels(params: {
     scenarioRows: advisorScenarioOutputs.length > 0 ? advisorScenarioOutputs : null,
     survivorFirstName,
     longevityAge,
+    strategyLineItems: actualStrategyLineItems,
+  })
+
+  const advisorHorizonsProjected: MyEstateStrategyHorizonsResult = buildStrategyHorizons({
+    currentYear: params.currentYear,
+    currentMonthYearLabel,
+    liveNetWorth: Number(params.estateCompositionGrossEstate ?? 0),
+    stateBrackets: params.stateBrackets,
+    household: {
+      state_primary: params.household.state_primary,
+      filing_status: params.household.filing_status,
+      has_spouse: params.household.has_spouse ?? false,
+      person1_name: params.household.person1_first_name,
+      person2_name: params.household.person2_first_name,
+      person1_birth_year: params.household.person1_birth_year,
+      person2_birth_year: params.household.person2_birth_year,
+      person1_longevity_age: params.household.person1_longevity_age ?? null,
+      person2_longevity_age: params.household.person2_longevity_age ?? null,
+    },
+    scenarioRows: advisorScenarioOutputs.length > 0 ? advisorScenarioOutputs : null,
+    survivorFirstName,
+    longevityAge,
+    strategyLineItems: projectedStrategyLineItems,
   })
 
   const scenarioForStrategy = params.scenario
@@ -111,7 +164,13 @@ export function buildAdvisorStrategyViewModels(params: {
 
   return {
     advisorHorizons,
+    advisorHorizonsProjected,
     scenarioForStrategy,
     projectionRowsDomicile,
+    strategySetSummary: {
+      actualCount: actualStrategyLineItems.length,
+      pendingAdvisorCount: pendingAdvisorLineItems.length,
+      projectedCount: projectedStrategyLineItems.length,
+    },
   }
 }
