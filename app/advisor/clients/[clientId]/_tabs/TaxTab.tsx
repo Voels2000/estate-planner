@@ -54,13 +54,10 @@ export default function TaxTab({
   const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
 
-  const grossEstate =
-    Number(advisorHorizons?.today.grossEstate ?? 0) ||
-    Number(estateComposition?.gross_estate ?? 0) ||
-    Number(estateTax?.gross_estate ?? 0) ||
-    Number(scenario?.gross_estate ?? 0) ||
-    Number(household?.gross_estate ?? 0) ||
-    0
+  // Canonical basis: today row from shared horizons.
+  const grossEstate = isFiniteNumber(advisorHorizons?.today.grossEstate)
+    ? Number(advisorHorizons?.today.grossEstate)
+    : 0
 
   const hasHorizonFederalInputs =
     isFiniteNumber(advisorHorizons?.today.grossEstate) &&

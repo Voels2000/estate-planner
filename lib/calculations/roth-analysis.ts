@@ -11,6 +11,7 @@ import {
   getTopMarginalRate,
   type StateIncomeTaxBracket,
 } from '@/lib/calculations/stateIncomeTax'
+import { buildIncomeTaxLabelsFromYears } from '@/lib/tax/incomeTaxTimeline'
 
 export interface RothAnalysisInputs {
   rows: YearRow[]
@@ -158,9 +159,11 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
   } = inputs
 
   const stateFilingStatus = normalizeFilingStatusForState(filingStatus)
+  const incomeTaxLabels = buildIncomeTaxLabelsFromYears(rows.map((row) => row.year))
   let peakRmdCombinedRate = 0.22
   for (const row of rows) {
     if (row.age_person1 >= rmdStartAge && row.income_rmd > 0) {
+      const taxYear = incomeTaxLabels.get(row.year) ?? row.year
       const federalBrackets = getFederalBracketsForYear(filingStatus, row.year, federalIncomeTaxBrackets)
       const taxableIncome = Math.max(0, row.income_total - standardDeduction)
       const fedRate = getFederalMarginalRate(taxableIncome, federalBrackets)
@@ -169,7 +172,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
         taxableIncome,
         stateFilingStatus,
         stateIncomeTaxBrackets,
-        row.year,
+        taxYear,
       ) ?? 0) / 100
       peakRmdCombinedRate = fedRate + stateRate
       break
@@ -184,6 +187,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
   const results: RothYearResult[] = []
 
   for (const row of rows) {
+    const taxYear = incomeTaxLabels.get(row.year) ?? row.year
     const age1 = row.age_person1
     const age2 = row.age_person2
     const federalBrackets = getFederalBracketsForYear(filingStatus, row.year, federalIncomeTaxBrackets)
@@ -199,7 +203,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
       taxableIncome,
       stateFilingStatus,
       stateIncomeTaxBrackets,
-      row.year,
+      taxYear,
     ) ?? 0) / 100
     const combinedMarginal = fedMarginal + stateMarginalForYear
     const federalTax = row.tax_federal
@@ -236,14 +240,14 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
       ordinaryIncome: taxableIncome,
       filingStatus: stateFilingStatus,
       brackets: stateIncomeTaxBrackets,
-      taxYear: row.year,
+      taxYear,
     }).stateTax
     const stateAfter = calculateStateIncomeTax({
       stateCode,
       ordinaryIncome: taxableIncome + conv,
       filingStatus: stateFilingStatus,
       brackets: stateIncomeTaxBrackets,
-      taxYear: row.year,
+      taxYear,
     }).stateTax
     const incrementalStateTax = Math.round(stateAfter - stateBefore)
     const incrementalTotalTax = incrementalFederalTax + incrementalStateTax

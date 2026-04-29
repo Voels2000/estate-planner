@@ -14,6 +14,7 @@ import {
   calcStateIncomeTaxDelta,
   type StateIncomeTaxBracket,
 } from '@/lib/calculations/stateIncomeTax'
+import { buildAnnualStateIncomeTaxSavingsSeries } from '@/lib/tax/incomeTaxTimeline'
 
 export type { StateIncomeTaxBracket }
 
@@ -59,6 +60,8 @@ export type MoveBreakevenInput = {
   discountRate: number
   /** Planning horizon in years */
   horizonYears: number
+  /** Base calendar year for year-labeled tax calculations */
+  currentYear: number
   /** Expected annual estate growth rate */
   estateGrowthRate: number
   /** All income tax bracket rows (all states, filtered internally) */
@@ -174,7 +177,9 @@ function runScenario(
   const currentBrackets = getBracketsForState(input.estateTaxRules, input.currentState)
   const targetBrackets  = getBracketsForState(input.estateTaxRules, input.targetState)
 
-  const incomeDelta = calcStateIncomeTaxDelta({
+  const annualIncomeSavings = buildAnnualStateIncomeTaxSavingsSeries({
+    currentYear: input.currentYear,
+    horizonYears: input.horizonYears,
     currentState: input.currentState,
     targetState: input.targetState,
     ordinaryIncome: input.annualIncome,
@@ -192,8 +197,9 @@ function runScenario(
     const targetEstateTax  = calcEstateTax(estateThisYear, targetBrackets)
     const estateSavingsThisYear = currentEstateTax - targetEstateTax
 
+    const yearIncomeSavings = annualIncomeSavings[yr - 1]?.annualSavings ?? 0
     const netSavingsThisYear =
-      incomeDelta.annualSavings +
+      yearIncomeSavings +
       estateSavingsThisYear -
       input.annualComplianceCostDelta
 
@@ -226,8 +232,18 @@ export function calculateMoveBreakeven(input: MoveBreakevenInput): MoveBreakeven
     ordinaryIncome: input.annualIncome,
     filingStatus,
     brackets: input.incomeTaxBrackets,
+    taxYear: input.currentYear,
   })
   const annualIncomeTaxSavings = incomeDelta.annualSavings
+  const annualIncomeSavingsSeries = buildAnnualStateIncomeTaxSavingsSeries({
+    currentYear: input.currentYear,
+    horizonYears: input.horizonYears,
+    currentState: input.currentState,
+    targetState: input.targetState,
+    ordinaryIncome: input.annualIncome,
+    filingStatus,
+    brackets: input.incomeTaxBrackets,
+  })
 
   const currentEstateTax = calcEstateTax(input.grossEstate, currentBrackets)
   const targetEstateTax  = calcEstateTax(input.grossEstate, targetBrackets)
@@ -250,8 +266,9 @@ export function calculateMoveBreakeven(input: MoveBreakevenInput): MoveBreakeven
     const currentETY = calcEstateTax(estateThisYear, currentBrackets)
     const targetETY  = calcEstateTax(estateThisYear, targetBrackets)
     const estateSavingsThisYear = currentETY - targetETY
+    const yearIncomeSavings = annualIncomeSavingsSeries[yr - 1]?.annualSavings ?? 0
     const netSavingsThisYear =
-      annualIncomeTaxSavings + estateSavingsThisYear - input.annualComplianceCostDelta
+      yearIncomeSavings + estateSavingsThisYear - input.annualComplianceCostDelta
 
     cashFlows.push(netSavingsThisYear)
 
@@ -272,7 +289,7 @@ export function calculateMoveBreakeven(input: MoveBreakevenInput): MoveBreakeven
       cumulativeSavings,
       netPosition: cumulativeSavings,
       estateTaxSavingsThisYear: estateSavingsThisYear,
-      incomeTaxSavingsThisYear: annualIncomeTaxSavings,
+      incomeTaxSavingsThisYear: yearIncomeSavings,
     })
   }
 

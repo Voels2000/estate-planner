@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 81 / federal + state parity alignment)
+# Last updated: April 29, 2026 (Session 82 / shared label-basis tax alignment)
 
 ---
 
@@ -69,11 +69,27 @@ Important:
 - Missing-input observability hooks are now in place:
   - Advisor Tax tab emits one client-side telemetry event to `/api/telemetry/horizon-input-missing`.
   - Consumer trust-strategy page emits a structured server log event when horizon federal inputs are missing.
+  - Advisor Strategy tab now emits telemetry when required `today` horizon tax inputs are missing.
 
 **Effect:**
 
 - Federal estate tax numbers are expected to match across advisor and consumer views when they are evaluating the same household/scenario snapshot.
 - Remaining differences should now only come from intentional scenario mode differences (for example, advisor stress-test law scenario toggles) rather than mixed data sources or fallback substitutions.
+
+### Shared Label-Basis Contract (Estate + Tax Panels)
+
+**Current (as built):**
+
+- Canonical helper: `lib/tax/labelTaxBasis.ts` (`buildEstateTaxYearBasis`).
+- Contract now enforced in advisor state tax detail:
+  - Current-year label uses today actual gross estate basis.
+  - Future-year labels use projection-row gross estate basis.
+  - Missing projection years remain unavailable instead of silently falling back to current estate.
+- Advisor Tax tab now uses horizon `today` basis for gross estate and federal tax parity checks.
+
+**Effect:**
+
+- The same label now maps to the same estate basis inside advisor tax surfaces (`FederalStateWaterfall` + `StateTaxPanel`), eliminating current-year basis drift.
 
 ### State Income Tax Chain
 
@@ -82,6 +98,11 @@ Important:
 - `moveBreakeven.ts` uses `lib/calculations/stateIncomeTax.ts`.
 - `projection-complete.ts` now calls `lib/calculations/stateIncomeTax.ts`.
 - `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic.
+- `moveBreakeven.ts` now evaluates state income tax deltas by labeled tax year (`currentYear + n`) rather than a single latest-year bracket snapshot.
+- Shared helper introduced for year-labeled income tax basis:
+  - `lib/tax/incomeTaxTimeline.ts`
+  - Builds canonical yearly labels and state-income-tax savings series used by move-breakeven.
+- Roth conversion year handling now also consumes the shared income-tax label mapping helper (`buildIncomeTaxLabelsFromYears`) so state marginal and incremental state-tax lookups use the same year-label contract.
 
 **Target:**
 
@@ -186,6 +207,7 @@ Runtime behavior:
 | Advisor strategy horizons | State estate | `advisorHorizons` | Implemented |
 | Advisor Strategy/Tax/Domicile parity | State estate | Shared `advisorHorizons.today.grossEstate` basis + `household.state_primary` state source | Implemented |
 | Advisor + Consumer federal parity | Federal estate | Shared horizon outputs (`federalExemption`, `federalTaxEstimate`) with guarded fallback only | Implemented |
+| Advisor tax label basis | Estate basis mapping | `buildEstateTaxYearBasis` (`today`=actual, future=projection) | Implemented |
 | Domicile State Tax panel | State estate | `state_estate_tax_rules` | Implemented |
 | Move breakeven | State income + estate | `stateIncomeTax.ts` + estate tax logic | Implemented |
 | Projection engine | State income | `stateIncomeTax.ts` shared engine | Implemented |

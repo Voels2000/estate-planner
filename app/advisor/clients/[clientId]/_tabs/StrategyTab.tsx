@@ -22,15 +22,26 @@ import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
 export default function StrategyTab({ household, scenario, advisorHorizons }: ClientViewShellProps) {
   const householdId = household?.id ?? null
-  const grossEstate = Number(advisorHorizons?.today.grossEstate ?? scenario?.gross_estate ?? 0)
+  const hasHorizonTodayInputs =
+    Number.isFinite(Number(advisorHorizons?.today.grossEstate ?? NaN)) &&
+    Number.isFinite(Number(advisorHorizons?.today.federalExemption ?? NaN)) &&
+    Number.isFinite(Number(advisorHorizons?.today.federalTaxEstimate ?? NaN)) &&
+    Number.isFinite(Number(advisorHorizons?.today.stateTax ?? NaN))
+  const grossEstate = hasHorizonTodayInputs ? Number(advisorHorizons?.today.grossEstate) : 0
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
   const defaultExemption = filingStatus === 'mfj'
     ? OBBBA_2026.BASIC_EXCLUSION_MFJ
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
   // Unified engine source: today column from advisor horizons.
-  const federalExemption = Number(advisorHorizons?.today.federalExemption ?? scenario?.federal_exemption ?? defaultExemption)
-  const estimatedFederalTax = Number(advisorHorizons?.today.federalTaxEstimate ?? scenario?.estimated_federal_tax ?? 0)
-  const estimatedStateTax = Number(advisorHorizons?.today.stateTax ?? 0)
+  const federalExemption = hasHorizonTodayInputs
+    ? Number(advisorHorizons?.today.federalExemption)
+    : defaultExemption
+  const estimatedFederalTax = hasHorizonTodayInputs
+    ? Number(advisorHorizons?.today.federalTaxEstimate)
+    : 0
+  const estimatedStateTax = hasHorizonTodayInputs
+    ? Number(advisorHorizons?.today.stateTax)
+    : 0
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
     rawLawScenario === 'no_exemption' ? 'no_exemption' : 'current_law'
@@ -52,6 +63,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
   const [recommendedItems, setRecommendedItems] = useState<PendingAdvisorItem[]>([])
+  const missingHorizonTelemetrySent = useRef(false)
   void _advisorLineItems
 
   // Gifting actuals from RPC
@@ -87,6 +99,28 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
       })
       .catch(() => null)
   }, [householdId])
+
+  useEffect(() => {
+    if (!householdId) return
+    if (hasHorizonTodayInputs) return
+    if (missingHorizonTelemetrySent.current) return
+    missingHorizonTelemetrySent.current = true
+    void fetch('/api/telemetry/horizon-input-missing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        surface: 'advisor_strategy_tab_today',
+        householdId,
+        lawScenario: rawLawScenario ?? 'current_law',
+        missingFields: [
+          Number.isFinite(Number(advisorHorizons?.today.grossEstate ?? NaN)) ? null : 'today.grossEstate',
+          Number.isFinite(Number(advisorHorizons?.today.federalExemption ?? NaN)) ? null : 'today.federalExemption',
+          Number.isFinite(Number(advisorHorizons?.today.federalTaxEstimate ?? NaN)) ? null : 'today.federalTaxEstimate',
+          Number.isFinite(Number(advisorHorizons?.today.stateTax ?? NaN)) ? null : 'today.stateTax',
+        ].filter(Boolean),
+      }),
+    }).catch(() => null)
+  }, [advisorHorizons?.today.federalExemption, advisorHorizons?.today.federalTaxEstimate, advisorHorizons?.today.grossEstate, advisorHorizons?.today.stateTax, hasHorizonTodayInputs, householdId, rawLawScenario])
 
   const loadConsumerData = useCallback(async () => {
     if (!householdId) return
@@ -227,6 +261,12 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
 
   return (
     <div className="space-y-10">
+      {!hasHorizonTodayInputs && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Today&apos;s horizon tax inputs are missing, so advisor strategy tax metrics are temporarily unavailable.
+          Regenerate the base-case projection to restore consistent values across views.
+        </div>
+      )}
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics Dashboard</h2>
         <AdvisoryMetricsDashboard

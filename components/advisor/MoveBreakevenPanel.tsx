@@ -176,6 +176,7 @@ export default function MoveBreakevenPanel({
       annualComplianceCostDelta: annualComplianceDelta,
       discountRate,
       horizonYears,
+      currentYear: new Date().getFullYear(),
       estateGrowthRate,
       incomeTaxBrackets,
       estateTaxRules,

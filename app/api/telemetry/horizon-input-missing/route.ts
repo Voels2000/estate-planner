@@ -3,9 +3,13 @@ import { NextRequest, NextResponse } from 'next/server'
 const ALLOWED_SURFACES = new Set([
   'advisor_tax_tab_current_law',
   'consumer_trust_strategy_context',
+  'advisor_strategy_tab_today',
 ] as const)
 
-type AllowedSurface = 'advisor_tax_tab_current_law' | 'consumer_trust_strategy_context'
+type AllowedSurface =
+  | 'advisor_tax_tab_current_law'
+  | 'consumer_trust_strategy_context'
+  | 'advisor_strategy_tab_today'
 
 export async function POST(req: NextRequest) {
   try {

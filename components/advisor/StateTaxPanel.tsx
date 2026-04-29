@@ -14,6 +14,7 @@ import {
   type StateBracket,
   getPortabilityGapLabel,
 } from '@/lib/calculations/stateEstateTax'
+import { buildEstateTaxYearBasis } from '@/lib/tax/labelTaxBasis'
 
 interface Props {
   grossEstate:      number
@@ -40,6 +41,7 @@ interface Props {
   projectedGrossEstateByYear?: Array<{
     year: number
     gross_estate: number
+    estate_incl_home?: number
   }>
 }
 
@@ -83,16 +85,29 @@ export default function StateTaxPanel({
     )
   }
 
-  const projectedEstateByYear = new Map<number, number>(
-    projectedGrossEstateByYear
-      .filter((row) => Number.isFinite(Number(row.year)))
-      .map((row) => [Number(row.year), Math.max(0, Number(row.gross_estate ?? 0))]),
-  )
+  const currentYear = new Date().getFullYear()
+  const yearBasis = buildEstateTaxYearBasis({
+    currentYear,
+    years: projectionYears,
+    todayGrossEstate: Number.isFinite(grossEstate) ? Math.max(0, Number(grossEstate)) : null,
+    projectionRows: projectedGrossEstateByYear,
+  })
 
-  const rows = projectionYears.map(year => {
-    // Advisor tax table assumes second-death modeling for projected years.
-    // Use projected gross estate when available; otherwise fall back to current gross estate.
-    const grossEstateForYear = projectedEstateByYear.get(year) ?? grossEstate
+  const rows = yearBasis.map((basis) => {
+    const year = basis.year
+    const grossEstateForYear = basis.grossEstate
+    if (grossEstateForYear === null) {
+      return {
+        year,
+        grossEstate: null,
+        exemption: 0,
+        stateTax: 0,
+        taxableEstate: 0,
+        nyCliffTriggered: false,
+        effectiveRate: 0,
+        source: basis.source,
+      }
+    }
     const byYear = (stateEstateTaxRules ?? [])
       .filter((r) => r.state.toUpperCase() === unifiedStateCode && r.tax_year === year)
       .map((r) => ({
@@ -125,6 +140,7 @@ export default function StateTaxPanel({
         taxableEstate: 0,
         nyCliffTriggered: false,
         effectiveRate: 0,
+        source: basis.source,
       }
     }
     const result = calculateUnifiedStateEstateTax(grossEstateForYear, unifiedStateCode, brackets, isMFJ)
@@ -136,6 +152,7 @@ export default function StateTaxPanel({
       taxableEstate: result.taxableEstate,
       nyCliffTriggered: result.nyCliffTriggered,
       effectiveRate: result.effectiveRate,
+      source: basis.source,
     }
   })
 
@@ -197,7 +214,9 @@ export default function StateTaxPanel({
             {rows.map(row => (
               <tr key={row.year} className={`hover:bg-slate-50 ${row.nyCliffTriggered ? 'bg-red-50' : ''}`}>
                 <td className="py-2.5 font-medium text-slate-800">{row.year}</td>
-                <td className="py-2.5 text-right text-slate-600">{fmt(row.grossEstate)}</td>
+                <td className="py-2.5 text-right text-slate-600">
+                  {row.grossEstate === null ? '—' : fmt(row.grossEstate)}
+                </td>
                 <td className="py-2.5 text-right text-slate-600">{fmt(row.exemption)}</td>
                 <td className="py-2.5 text-right text-slate-600">{fmt(row.taxableEstate)}</td>
                 <td className="py-2.5 text-right font-semibold text-slate-800">
@@ -224,7 +243,7 @@ export default function StateTaxPanel({
       </div>
 
       <p className="text-xs text-slate-400">
-        Based on projected gross estate by year (second-death assumption), falling back to current gross estate of {fmt(grossEstate)} when projections are unavailable.
+        Current-year row uses today&apos;s actual gross estate ({fmt(grossEstate)}). Future years use projected gross estate by year; missing projection years remain unavailable.
         {hasUnifiedRules
           ? ` ${stateName} estate tax uses unified live state brackets.`
           : ` ${stateName} estate tax unavailable for selected year/rules.`
