@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 75 / monte carlo consumer accept-revert)
+# Last updated: April 28, 2026 (Session 76 / removed legacy projection engine)
 
 ---
 
@@ -74,10 +74,7 @@ Important:
 - `app/api/projection/route.ts` loads `federal_tax_brackets` and passes rows into `computeCompleteProjection(...)`.
 - `lib/actions/generate-base-case.ts` loads `federal_tax_brackets` and passes rows into `computeCompleteProjection(...)` for saved base-case scenarios.
 
-**Legacy path note:**
-
-- `lib/calculations/projection.ts` still has its own federal bracket fetch path and should be treated as a legacy/alternate engine path.
-- No canonical runtime paths should import `runProjection(...)`; the module is explicitly marked deprecated in-code.
+Canonical projection path is `computeCompleteProjection` only; legacy `lib/calculations/projection.ts` has been removed.
 
 ---
 
@@ -250,28 +247,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 ## Known Transitional Exceptions
 
 1. User-facing Roth + Domicile surfaces are now bracket-based; remaining `state_income_tax_rates` usage is admin legacy maintenance only.
-2. Legacy `lib/calculations/projection.ts` remains as an alternate path; it is now explicitly deprecated in-code and should stay isolated.
+2. Legacy `lib/calculations/projection.ts` has been removed; canonical projection path is `projection-complete.ts`.
 3. Consumer save/progress still uses legacy-named `/api/strategy-line-items` (single endpoint path).
-
----
-
-## Legacy Projection Retirement Checklist (`lib/calculations/projection.ts`)
-
-Current status:
-
-- Module is explicitly marked deprecated in-code.
-- `runProjection(...)` has no active runtime imports/callers in the app.
-- Last UI type dependency has been removed (`_projections-view.tsx` now uses a local row type).
-
-Safe-delete gate:
-
-1. Keep one release cycle with zero imports (`rg "from '@/lib/calculations/projection'|runProjection\\("`).
-2. Confirm no dynamic imports or external scripts rely on this module.
-3. Delete `lib/calculations/projection.ts`.
-4. Run full validation:
-   - `npm run build`
-   - targeted smoke checks: `/projections`, `/dashboard`, advisor client pages.
-5. Update this document + `DATABASE_SCHEMA_REFERENCE.md` if any references remain.
 
 ---
 
@@ -289,8 +266,7 @@ Safe-delete gate:
 
 ## Open Backlog (High Priority)
 
-1. Delete deprecated `lib/calculations/projection.ts` after one clean release cycle with zero imports.
-2. Decide whether to keep `/api/strategy-line-items` as canonical consumer path or introduce `/api/consumer/strategy-*` endpoints.
-3. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
-4. Keep this file updated with **Current vs Target** deltas each session.
+1. Deferred cleanup: keep `/api/strategy-line-items` as canonical consumer path for now; revisit `/api/consumer/strategy-*` endpoint naming during a broader consumer API label cleanup.
+2. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
+3. Keep this file updated with **Current vs Target** deltas each session.
 

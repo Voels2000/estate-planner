@@ -292,3 +292,8 @@ After each schema-affecting session:
 - No new schema migration required.
 - Existing `advisor_projection_assumptions` acceptance fields (`accepted_by_client`, `accepted_at`) are now actively used by the consumer Monte Carlo accept/revert flow.
 
+## Session 76 Note
+
+- No database schema or migration changes were introduced in Session 76.
+- Legacy application module `lib/calculations/projection.ts` was removed after zero-caller validation; projection runtime remains on `projection-complete.ts`.
+
