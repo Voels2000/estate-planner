@@ -89,7 +89,8 @@ export default function EducationModuleCatalog({
     return modules.filter((module) => {
       const pillarOk = selectedPillar === 'all' || module.pillar === selectedPillar
       const complexityOk = selectedComplexity === 'all' || module.complexity === selectedComplexity
-      const bundleOk = !activeBundle || activeBundle.moduleSlugs.includes(module.slug)
+      const bundleOk =
+        !activeBundle || activeBundle.moduleSlugs.some((slug) => slug === module.slug)
       const queryOk =
         normalized.length === 0 ||
         module.title.toLowerCase().includes(normalized) ||
