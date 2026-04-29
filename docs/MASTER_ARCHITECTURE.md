@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 86 / education guide architecture + progress tracking)
+# Last updated: April 29, 2026 (Session 87 / education entry + guided paths)
 
 ---
 
@@ -262,6 +262,8 @@ Runtime behavior:
 - Catalog and module UI now include:
   - Pillar/complexity filters
   - Search by title/summary/tags
+  - Guided path bundles (Foundations, Estate Advanced, Scenario)
+  - Path-start CTA (jumps to first incomplete module in selected path)
   - Completion progress bar
   - Next recommended + continue learning CTA
   - Recently completed strip
@@ -271,6 +273,18 @@ Runtime behavior:
 
 - Prep sheet page is visible on-screen for logged-in users.
 - Download endpoint (`/api/education/prep-sheet/download`) enforces paid-active consumer status (Tier 1+) and blocks trial download.
+
+**Navigation + landing integration:**
+
+- Sidebar navigation now includes `Education Guide` under Overview.
+- Root route behavior (`app/page.tsx`) is now:
+  - Signed-out users: public education-first marketing landing page
+  - Signed-in users with profile: redirect to `/education`
+  - Signed-in users without profile: redirect to `/profile`
+
+**Content coverage status:**
+
+- Module library now includes core foundations, tax/probate/trust deep dives, advisor prep, scenario set, and advanced strategy education topics (ILIT, QPRT, FLP/FLLC, charitable trusts, asset protection, multi-state, business succession).
 
 ---
 

@@ -36,6 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Overview',
     icon: '🏠',
     items: [
+      { href: '/education', label: 'Education Guide', icon: '📚' },
       { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
       { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
     ],
@@ -272,7 +273,8 @@ export function SidebarNav({
                     if (
                       isLockedUser &&
                       item.href !== '/profile' &&
-                      item.href !== '/dashboard'
+                      item.href !== '/dashboard' &&
+                      item.href !== '/education'
                     ) {
                       return (
                         <div key={item.href}>

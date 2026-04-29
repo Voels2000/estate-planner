@@ -11,6 +11,44 @@ const PILLAR_LABEL: Record<string, string> = {
   estate: 'Estate Planning',
 }
 
+const BUNDLES = [
+  {
+    id: 'foundations',
+    label: 'Foundations Path',
+    moduleSlugs: [
+      'financial-foundations',
+      'retirement-foundations',
+      'estate-foundations',
+      'beneficiary-designations',
+    ],
+  },
+  {
+    id: 'estate-advanced',
+    label: 'Estate Advanced Path',
+    moduleSlugs: [
+      'trusts-deep-dive',
+      'estate-gift-tax-basics',
+      'charitable-trusts-overview',
+      'qprt-education-overview',
+      'flp-fllc-education-overview',
+      'asset-protection-education',
+      'multi-state-planning-basics',
+      'business-succession-education',
+    ],
+  },
+  {
+    id: 'scenario',
+    label: 'Scenario Path',
+    moduleSlugs: [
+      'scenario-library-overview',
+      'scenario-blended-family',
+      'scenario-business-owner',
+      'scenario-recent-retiree',
+      'scenario-digital-nomad',
+    ],
+  },
+] as const
+
 export default function EducationModuleCatalog({
   modules,
 }: {
@@ -18,6 +56,7 @@ export default function EducationModuleCatalog({
 }) {
   const [selectedPillar, setSelectedPillar] = useState<'all' | 'financial' | 'retirement' | 'estate'>('all')
   const [selectedComplexity, setSelectedComplexity] = useState<'all' | 'foundation' | 'intermediate' | 'advanced'>('all')
+  const [selectedBundle, setSelectedBundle] = useState<'all' | (typeof BUNDLES)[number]['id']>('all')
   const [query, setQuery] = useState('')
   const [completed, setCompleted] = useState<Set<string>>(new Set())
   const [recentCompleted, setRecentCompleted] = useState<CompletedEntry[]>([])
@@ -45,21 +84,34 @@ export default function EducationModuleCatalog({
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase()
+    const activeBundle =
+      selectedBundle === 'all' ? null : BUNDLES.find((bundle) => bundle.id === selectedBundle) ?? null
     return modules.filter((module) => {
       const pillarOk = selectedPillar === 'all' || module.pillar === selectedPillar
       const complexityOk = selectedComplexity === 'all' || module.complexity === selectedComplexity
+      const bundleOk = !activeBundle || activeBundle.moduleSlugs.includes(module.slug)
       const queryOk =
         normalized.length === 0 ||
         module.title.toLowerCase().includes(normalized) ||
         module.summary.toLowerCase().includes(normalized) ||
         module.tags.some((tag) => tag.toLowerCase().includes(normalized))
-      return pillarOk && complexityOk && queryOk
+      return pillarOk && complexityOk && bundleOk && queryOk
     })
-  }, [modules, query, selectedComplexity, selectedPillar])
+  }, [modules, query, selectedBundle, selectedComplexity, selectedPillar])
   const completionPct = modules.length > 0
     ? Math.round((completed.size / modules.length) * 100)
     : 0
   const nextRecommended = modules.find((module) => !completed.has(module.slug))
+  const selectedBundleMeta =
+    selectedBundle === 'all' ? null : BUNDLES.find((bundle) => bundle.id === selectedBundle) ?? null
+  const pathStartModule = useMemo(() => {
+    if (!selectedBundleMeta) return null
+    const inPath = selectedBundleMeta.moduleSlugs
+      .map((slug) => modules.find((m) => m.slug === slug))
+      .filter((m): m is EducationModuleMeta => !!m)
+    if (inPath.length === 0) return null
+    return inPath.find((m) => !completed.has(m.slug)) ?? inPath[0]
+  }, [completed, modules, selectedBundleMeta])
   const slugToTitle = useMemo(
     () => new Map(modules.map((module) => [module.slug, module.title])),
     [modules],
@@ -121,6 +173,20 @@ export default function EducationModuleCatalog({
             ) first.
           </p>
         )}
+        {selectedBundleMeta && pathStartModule && (
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-2">
+            <p className="text-xs text-indigo-900">
+              {selectedBundleMeta.label}: start with{' '}
+              <span className="font-semibold">{pathStartModule.title}</span>
+            </p>
+            <Link
+              href={`/education/modules/${pathStartModule.slug}`}
+              className="inline-flex rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+            >
+              Start this path
+            </Link>
+          </div>
+        )}
         {recentCompleted.length > 0 && (
           <div className="mt-2 border-t border-neutral-100 pt-2">
             <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
@@ -141,6 +207,18 @@ export default function EducationModuleCatalog({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        <select
+          value={selectedBundle}
+          onChange={(e) => setSelectedBundle(e.target.value as typeof selectedBundle)}
+          className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-700"
+        >
+          <option value="all">All paths</option>
+          {BUNDLES.map((bundle) => (
+            <option key={bundle.id} value={bundle.id}>
+              {bundle.label}
+            </option>
+          ))}
+        </select>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
