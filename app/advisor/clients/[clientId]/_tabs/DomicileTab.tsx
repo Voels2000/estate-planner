@@ -23,6 +23,9 @@ export default function DomicileTab({
   domicileAnalysis,
   household,
   clientId,
+  advisorHorizons,
+  estateComposition,
+  scenario,
   domicileSchedule,
   domicileChecklist,
   stateExemptions,
@@ -178,11 +181,13 @@ export default function DomicileTab({
   })
 
   const grossEstateForStateTax =
+    Number(advisorHorizons?.today.grossEstate ?? 0) ||
+    Number(estateComposition?.gross_estate ?? 0) ||
+    Number(scenario?.gross_estate ?? 0) ||
+    Number(analysis.gross_estate ?? 0) ||
     (projectionRowsDomicile.length > 0
-      ? (projectionRowsDomicile[0]?.estate_incl_home ?? projectionRowsDomicile[0]?.gross_estate)
-      : undefined) ??
-    (typeof analysis.gross_estate === 'number' ? analysis.gross_estate : undefined) ??
-    0
+      ? Number(projectionRowsDomicile[0]?.estate_incl_home ?? projectionRowsDomicile[0]?.gross_estate ?? 0)
+      : 0)
 
   const grossEstateByYear = Object.fromEntries(
     projectionRowsDomicile.map((r) => [r.year, r.estate_incl_home ?? r.gross_estate ?? 0]),
@@ -195,7 +200,7 @@ export default function DomicileTab({
       days_per_year: Number(s.days_per_year ?? 0),
     }))
 
-  const breakevenCurrentState = (claimed_domicile_state ?? household?.state_primary ?? 'WA')
+  const breakevenCurrentState = (household?.state_primary ?? claimed_domicile_state ?? 'WA')
     .trim()
     .slice(0, 2)
     .toUpperCase()
@@ -411,11 +416,11 @@ export default function DomicileTab({
         )}
         <StateTaxPanel
           grossEstate={grossEstateForStateTax}
-          stateCode={parseStateTaxCode(claimed_domicile_state ?? 'WA')}
-          profileStateAbbrev={claimed_domicile_state ?? household?.state_primary}
+          stateCode={parseStateTaxCode(household?.state_primary ?? claimed_domicile_state ?? 'WA')}
+          profileStateAbbrev={household?.state_primary ?? claimed_domicile_state}
           federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
           dbExemptions={stateExemptions}
-          stateAbbrev={claimed_domicile_state ?? household?.state_primary}
+          stateAbbrev={household?.state_primary ?? claimed_domicile_state}
           stateEstateTaxRules={stateEstateTaxRules}
           isMFJ={household?.filing_status === 'mfj'}
           projectedGrossEstateByYear={projectionRowsDomicile}

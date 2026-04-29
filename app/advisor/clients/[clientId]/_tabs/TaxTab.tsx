@@ -40,6 +40,8 @@ function estimateFederalTaxStress(grossEstate: number, federalExemption: number)
 export default function TaxTab({
   household,
   estateTax,
+  advisorHorizons,
+  scenario,
   stateExemptions,
   estateComposition,
   stateEstateTaxRules,
@@ -49,9 +51,11 @@ export default function TaxTab({
   const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
 
   const grossEstate =
-    (typeof estateComposition?.gross_estate === 'number' ? estateComposition.gross_estate : null) ??
-    (typeof estateTax?.gross_estate === 'number' ? estateTax.gross_estate : null) ??
-    (typeof household?.gross_estate === 'number' ? household.gross_estate : null) ??
+    Number(advisorHorizons?.today.grossEstate ?? 0) ||
+    Number(estateComposition?.gross_estate ?? 0) ||
+    Number(estateTax?.gross_estate ?? 0) ||
+    Number(scenario?.gross_estate ?? 0) ||
+    Number(household?.gross_estate ?? 0) ||
     0
 
   const federalExemption = getFederalExemption(lawScenario, filingStatus)
