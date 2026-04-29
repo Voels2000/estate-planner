@@ -4,7 +4,7 @@
  * Advisor Tax tab: federal/state estate waterfall, NY cliff helper, and state tax panel.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import FederalStateWaterfall from '@/components/advisor/FederalStateWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
@@ -37,6 +37,10 @@ function estimateFederalTaxStress(grossEstate: number, federalExemption: number)
   return Math.round(taxable * OBBBA_2026.TOP_RATE)
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
 export default function TaxTab({
   household,
   estateTax,
@@ -58,15 +62,41 @@ export default function TaxTab({
     Number(household?.gross_estate ?? 0) ||
     0
 
+  const hasHorizonFederalInputs =
+    isFiniteNumber(advisorHorizons?.today.grossEstate) &&
+    isFiniteNumber(advisorHorizons?.today.federalTaxEstimate)
+  const missingHorizonTelemetrySent = useRef(false)
+
   const federalExemption = getFederalExemption(lawScenario, filingStatus)
   const federalTax =
     lawScenario === 'current_law'
-      ? Number(estateComposition?.estimated_tax_federal ?? 0)
+      ? (hasHorizonFederalInputs ? Number(advisorHorizons?.today.federalTaxEstimate) : 0)
       : estimateFederalTaxStress(grossEstate, federalExemption)
 
   const stateCode = parseStateTaxCode((household?.state_primary ?? 'WA').toUpperCase())
   const currentYear = new Date().getFullYear()
   const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
+
+  useEffect(() => {
+    if (lawScenario !== 'current_law') return
+    if (hasHorizonFederalInputs) return
+    if (missingHorizonTelemetrySent.current) return
+
+    missingHorizonTelemetrySent.current = true
+    void fetch('/api/telemetry/horizon-input-missing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        surface: 'advisor_tax_tab_current_law',
+        householdId: household?.id ?? null,
+        lawScenario,
+        missingFields: [
+          !isFiniteNumber(advisorHorizons?.today.grossEstate) ? 'today.grossEstate' : null,
+          !isFiniteNumber(advisorHorizons?.today.federalTaxEstimate) ? 'today.federalTaxEstimate' : null,
+        ].filter(Boolean),
+      }),
+    }).catch(() => null)
+  }, [advisorHorizons?.today.federalTaxEstimate, advisorHorizons?.today.grossEstate, hasHorizonFederalInputs, household?.id, lawScenario])
 
   return (
     <div className="space-y-8">
@@ -99,6 +129,12 @@ export default function TaxTab({
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Federal & State Tax Waterfall</h2>
+        {lawScenario === 'current_law' && !hasHorizonFederalInputs && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Federal current-law estimate is unavailable because required horizon inputs are missing.
+            Regenerate the base-case projection to restore horizon-driven tax values.
+          </div>
+        )}
         <FederalStateWaterfall
           grossEstate={grossEstate}
           federalTax={federalTax}

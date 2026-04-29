@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 80 / advisor tax parity alignment)
+# Last updated: April 29, 2026 (Session 81 / federal + state parity alignment)
 
 ---
 
@@ -54,6 +54,26 @@ Important:
 
 - Cross-tab state estate tax numbers are now expected to match when viewing equivalent scenario conditions.
 - Planned domicile transitions still influence **domicile risk** and **breakeven target prefill**, but no longer silently change tab-to-tab state estate tax basis.
+
+### Federal Estate Tax Parity
+
+**Current (as built):**
+
+- Consumer and advisor strategy horizon outputs continue to come from shared `buildStrategyHorizons(...)` in `lib/my-estate-strategy/horizonSnapshots.ts`.
+- Advisor **Tax** tab now uses horizon-derived federal estimate for current-law mode:
+  - Require `advisorHorizons.today.federalTaxEstimate` + horizon gross-estate input for current-law display.
+  - If missing, show an explicit "horizon inputs missing" warning (no silent fallback substitution).
+- Consumer trust-strategy estate context now aligns to horizon-derived federal values:
+  - Require `advisorHorizons.today.federalExemption` and `advisorHorizons.today.federalTaxEstimate`.
+  - If missing, surface a page warning and keep federal context unavailable until horizon inputs are restored.
+- Missing-input observability hooks are now in place:
+  - Advisor Tax tab emits one client-side telemetry event to `/api/telemetry/horizon-input-missing`.
+  - Consumer trust-strategy page emits a structured server log event when horizon federal inputs are missing.
+
+**Effect:**
+
+- Federal estate tax numbers are expected to match across advisor and consumer views when they are evaluating the same household/scenario snapshot.
+- Remaining differences should now only come from intentional scenario mode differences (for example, advisor stress-test law scenario toggles) rather than mixed data sources or fallback substitutions.
 
 ### State Income Tax Chain
 
@@ -165,6 +185,7 @@ Runtime behavior:
 | My Estate Strategy horizons | State estate | `buildStrategyHorizons` + `calculateStateEstateTax` | Implemented |
 | Advisor strategy horizons | State estate | `advisorHorizons` | Implemented |
 | Advisor Strategy/Tax/Domicile parity | State estate | Shared `advisorHorizons.today.grossEstate` basis + `household.state_primary` state source | Implemented |
+| Advisor + Consumer federal parity | Federal estate | Shared horizon outputs (`federalExemption`, `federalTaxEstimate`) with guarded fallback only | Implemented |
 | Domicile State Tax panel | State estate | `state_estate_tax_rules` | Implemented |
 | Move breakeven | State income + estate | `stateIncomeTax.ts` + estate tax logic | Implemented |
 | Projection engine | State income | `stateIncomeTax.ts` shared engine | Implemented |

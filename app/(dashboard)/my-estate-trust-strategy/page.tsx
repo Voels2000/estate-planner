@@ -49,6 +49,10 @@ function trustsExcludedSum(
   }, 0)
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
 export default async function MyEstateTrustStrategyPage({
   searchParams,
 }: {
@@ -283,28 +287,6 @@ export default async function MyEstateTrustStrategyPage({
       ? Math.round(preIRABalance / getRMDFactor(p1CurrentAge))
       : 0
 
-  // Federal exemption from brackets or fallback
-  const federalExemptionForContext =
-    federalBrackets.length > 0
-      ? filing === 'married_joint'
-        ? 30_000_000
-        : 15_000_000
-      : 13_990_000
-
-  const estateContext: EstateContext = {
-    grossEstate: grossEstate,
-    federalExemption: federalExemptionForContext,
-    estimatedFederalTax: taxWithoutStrategies,
-    // `calculate_estate_composition` (via classifyEstateAssets) returns `estimated_tax_state`
-    estimatedStateTax: Number(compositionValues.estimated_tax_state ?? 0),
-    person1BirthYear: p1BirthYear,
-    liquidAssets,
-    illiquidAssets,
-    preIRABalance,
-    rothBalance,
-    annualRMD,
-  }
-
   const scenarioRows = (scenarioData?.outputs_s1_first ?? null) as AnnualOutput[] | null
   const stateBrackets = stateBracketRows ?? []
   const currentYear = new Date().getFullYear()
@@ -352,6 +334,45 @@ export default async function MyEstateTrustStrategyPage({
     longevityAge,
   }) : null
 
+  const hasHorizonFederalContext =
+    isFiniteNumber(advisorHorizons?.today.federalExemption) &&
+    isFiniteNumber(advisorHorizons?.today.federalTaxEstimate)
+
+  if (!hasHorizonFederalContext) {
+    console.error('[horizon-input-missing]', {
+      ts: new Date().toISOString(),
+      surface: 'consumer_trust_strategy_context',
+      householdId: householdRow.id,
+      missingFields: [
+        !isFiniteNumber(advisorHorizons?.today.federalExemption) ? 'today.federalExemption' : null,
+        !isFiniteNumber(advisorHorizons?.today.federalTaxEstimate) ? 'today.federalTaxEstimate' : null,
+      ].filter(Boolean),
+    })
+  }
+
+  // Enforce horizon-only federal parity context (no fallback substitution).
+  const federalExemptionForContext = hasHorizonFederalContext
+    ? Number(advisorHorizons?.today.federalExemption)
+    : 0
+
+  const estimatedFederalTaxForContext = hasHorizonFederalContext
+    ? Number(advisorHorizons?.today.federalTaxEstimate)
+    : 0
+
+  const estateContext: EstateContext = {
+    grossEstate: grossEstate,
+    federalExemption: federalExemptionForContext,
+    estimatedFederalTax: estimatedFederalTaxForContext,
+    // `calculate_estate_composition` (via classifyEstateAssets) returns `estimated_tax_state`
+    estimatedStateTax: Number(compositionValues.estimated_tax_state ?? 0),
+    person1BirthYear: p1BirthYear,
+    liquidAssets,
+    illiquidAssets,
+    preIRABalance,
+    rothBalance,
+    annualRMD,
+  }
+
   const currentTaxYear = new Date().getFullYear()
   const initialGiftingSummary = giftingSummaryError ? null : (giftingSummaryData ?? null)
   const giftingData = giftingSummaryError
@@ -394,6 +415,12 @@ export default async function MyEstateTrustStrategyPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
+      {!hasHorizonFederalContext && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Federal horizon inputs are missing, so federal estimates are temporarily unavailable on this page.
+          Regenerate your base-case projection to restore horizon-driven federal values.
+        </div>
+      )}
       <MyEstateTrustStrategyClient
         householdId={householdRow.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}
