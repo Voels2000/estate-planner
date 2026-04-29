@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 79 / strategy recommendation visibility + consumer accept/reject flow)
+# Last updated: April 29, 2026 (Session 80 / advisor tax parity alignment)
 
 ---
 
@@ -40,6 +40,20 @@ Important:
 3. Call `calculateStateEstateTax(...)` from `lib/calculations/stateEstateTax.ts`.
 4. Feed into `computeColumnTaxes(...)` and `buildStrategyHorizons(...)` in `lib/my-estate-strategy/horizonSnapshots.ts`.
 5. Pass typed horizon outputs to UI; UI should not recalculate estate tax.
+
+### Advisor Cross-Tab State Tax Parity
+
+**Current (as built):**
+
+- Advisor **Strategy**, **Tax**, and **Domicile** tabs now align on the same primary "today" estate base for state estate tax comparisons:
+  - Prefer `advisorHorizons.today.grossEstate` (from `buildStrategyHorizons(...)`).
+  - Fall back to mapped scenario/estate composition values when horizon data is unavailable.
+- Advisor tax calculations across these tabs now consistently use `household.state_primary` as the primary state source for state estate tax comparisons (with guarded fallback to claimed domicile where needed for non-tax domicile UX).
+
+**Effect:**
+
+- Cross-tab state estate tax numbers are now expected to match when viewing equivalent scenario conditions.
+- Planned domicile transitions still influence **domicile risk** and **breakeven target prefill**, but no longer silently change tab-to-tab state estate tax basis.
 
 ### State Income Tax Chain
 
@@ -150,6 +164,7 @@ Runtime behavior:
 | Estate composition card | State estate | `calculate_estate_composition` RPC | Implemented |
 | My Estate Strategy horizons | State estate | `buildStrategyHorizons` + `calculateStateEstateTax` | Implemented |
 | Advisor strategy horizons | State estate | `advisorHorizons` | Implemented |
+| Advisor Strategy/Tax/Domicile parity | State estate | Shared `advisorHorizons.today.grossEstate` basis + `household.state_primary` state source | Implemented |
 | Domicile State Tax panel | State estate | `state_estate_tax_rules` | Implemented |
 | Move breakeven | State income + estate | `stateIncomeTax.ts` + estate tax logic | Implemented |
 | Projection engine | State income | `stateIncomeTax.ts` shared engine | Implemented |
