@@ -478,6 +478,7 @@ export default function DomicileTab({
                 clientStates={clientStatesForBreakeven}
                 incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
                 estateTaxRules={stateEstateTaxRules ?? []}
+                scheduledTargetState={projectedTransition?.targetState ?? null}
               />
             </div>
           )}
