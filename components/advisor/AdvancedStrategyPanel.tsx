@@ -55,6 +55,9 @@ interface AdvancedStrategyPanelProps {
 
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_7520_RATE = 0.052
+const PANEL_TO_STRATEGY_SOURCE: Partial<Record<Exclude<AdvancedPanel, null>, string>> = {
+  credit_shelter_trust: 'cst',
+}
 
 function toAdvisorConfidence(
   confidence?: StrategyLineItemInput['confidence_level'],
@@ -311,6 +314,8 @@ export default function AdvancedStrategyPanel({
     : null
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
+  const isPanelSaved = (panelId: Exclude<AdvancedPanel, null>) =>
+    saved.has(PANEL_TO_STRATEGY_SOURCE[panelId] ?? panelId)
 
   return (
     <div className="space-y-6">
@@ -328,7 +333,7 @@ export default function AdvancedStrategyPanel({
               }`}
             >
               {p.label}
-              {saved.has(p.id ?? '') && (
+              {p.id && isPanelSaved(p.id) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
               )}
             </button>

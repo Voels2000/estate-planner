@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026 (Session 75)
+# Last updated: April 28, 2026 (Session 79)
 
 ---
 
@@ -79,8 +79,12 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `strategy_line_items`
 
-- **Key columns:** `household_id`, `source_role`, `strategy_source`, `amount`, `consumer_accepted`, `consumer_rejected`
+- **Key columns:** `id`, `household_id`, `source_role`, `strategy_source`, `amount`, `consumer_accepted`, `consumer_rejected`, `accepted_at`
 - **Purpose:** strategy recommendation and acceptance audit layer.
+- **Current behavior notes:**
+  - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
+  - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
+  - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
 
 ### `state_estate_tax_rules`
 
@@ -142,6 +146,7 @@ This is a developer reference, not a full SQL DDL dump.
 
 - `state_income_tax_rates` (still read in some non-engine surfaces)
 - consumer path still uses legacy-named `/api/strategy-line-items` endpoint (single canonical consumer path today)
+- consumer accept/reject path for advisor recommendations now lives in `/api/consumer/strategy-recommendation` (application-layer route only; no schema change)
 
 ---
 
@@ -296,4 +301,9 @@ After each schema-affecting session:
 
 - No database schema or migration changes were introduced in Session 76.
 - Legacy application module `lib/calculations/projection.ts` was removed after zero-caller validation; projection runtime remains on `projection-complete.ts`.
+
+## Session 79 Note
+
+- No database schema or migration changes were introduced in Session 79.
+- Application-layer strategy workflow updates now use existing `strategy_line_items` acceptance fields (`consumer_accepted`, `consumer_rejected`, `accepted_at`) for consumer accept/reject and advisor declined-visibility behavior.
 

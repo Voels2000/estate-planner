@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 28, 2026 (Session 77 / high-impact comment audit completed)
+# Last updated: April 28, 2026 (Session 79 / strategy recommendation visibility + consumer accept/reject flow)
 
 ---
 
@@ -85,7 +85,12 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Advisor recommendation writes are unified:
   - Canonical advisor write path: `/api/advisor/strategy-recommendation`
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
-- Consumer save/progress now writes through `/api/strategy-line-items` only.
+- Consumer save/progress writes through `/api/strategy-line-items`.
+- Consumer accept/reject of advisor recommendations is now handled by `/api/consumer/strategy-recommendation`:
+  - `PATCH` marks advisor item accepted (`consumer_accepted=true`, `accepted_at` set, `consumer_rejected=false`)
+  - `DELETE` marks advisor item rejected (`consumer_rejected=true`, `consumer_accepted=false`)
+- Advisor read path now includes both active and client-rejected advisor items for visibility;
+  composability/waterfall calculations exclude rejected rows.
 
 ### Target
 
@@ -99,6 +104,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
    - advisor rows with `consumer_accepted=true`.
 2. Keep acceptance/rejection history (do not hard-delete for audit).
 3. Accepted recommendation amounts should be immutable; revisions create new rows.
+4. Advisor surfaces may display rejected rows as declined history, but rejected rows must be excluded from active strategy impact calculations.
 
 ---
 
@@ -211,6 +217,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `app/api/advisor/generate-base-case/route.ts`
 - `app/api/advisor/strategy-recommendation/route.ts`
 - `app/api/advisor/strategy-recommendations-read/route.ts`
+- `app/api/consumer/strategy-recommendation/route.ts`
 - `app/api/projection/monte-carlo/route.ts`
 - `app/api/advisor/monte-carlo-assumptions/route.ts`
 - `app/api/monte-carlo/advisor-assumptions/route.ts`
@@ -242,6 +249,9 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Advisor route side-effect and auxiliary fetches are further centralized in `lib/advisor/loaders.ts` via `loadAdvisorDomicileChecklist` and `logAdvisorClientAccess`, reducing remaining route-level Supabase plumbing.
 - Advisor client route orchestration readability was polished in `app/advisor/clients/[clientId]/page.tsx` (grouped imports + explicit phase comments) with no behavior or query changes.
 - High-impact comment/header audit is complete for core projection/dashboard/advisor routes, loaders, tabs, and APIs; sprint-specific file headers were replaced with stable purpose comments to improve maintainability without changing behavior.
+- Shared strategy horizon impact table is now introduced at `components/shared/StrategyHorizonTable.tsx` and used in advisor combined strategy view plus consumer trust-strategy review flow.
+- Advisor combined recommendations view now separates active vs declined recommendations; declined items remain visible for advisor context but are excluded from composite impact calculations.
+- Strategy source normalization now treats `cst`, `roth`, and `liquidity` as canonical strategy sources in recommendation save/read and saved-state indicators.
 
 ---
 
