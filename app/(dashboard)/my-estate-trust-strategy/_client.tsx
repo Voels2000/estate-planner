@@ -5,18 +5,24 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
+import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type { GiftingSummary } from '@/components/GiftingDashboard'
 
 type AdvisorLineItem = {
+  id?: string
   strategy_source: string
   amount: number
   sign: number
   confidence_level: string
   effective_year: number | null
   metadata: Record<string, unknown> | null
+  scenario_name?: string | null
+  consumer_accepted?: boolean
+  consumer_rejected?: boolean
 }
 
 const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), { ssr: false })
@@ -50,6 +56,7 @@ interface Props {
   initialTab: string
   advisorRecommendations: { strategy_type: string; label: string | null }[]
   advisorLineItems: AdvisorLineItem[]
+  advisorHorizons?: MyEstateStrategyHorizonsResult | null
   strategyImpact: {
     strategyItems: OutsideStrategyItem[]
     strategyReductionTotal: number
@@ -102,6 +109,7 @@ export default function MyEstateTrustStrategyClient({
   initialTab,
   advisorRecommendations,
   advisorLineItems,
+  advisorHorizons,
   strategyImpact,
   giftingScenario,
   initialGiftingSummary,
@@ -115,6 +123,18 @@ export default function MyEstateTrustStrategyClient({
   const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null)
   const [annualGiftingInput, setAnnualGiftingInput] = useState<number | null>(null)
   const [giftingYears, setGiftingYears] = useState(10)
+  const [pendingItems, setPendingItems] = useState<PendingAdvisorItem[]>(
+    (advisorLineItems ?? []).map((item) => ({
+      id: item.id ?? '',
+      strategy_source: item.strategy_source,
+      amount: item.amount,
+      sign: item.sign,
+      scenario_name: item.scenario_name ?? null,
+      consumer_accepted: item.consumer_accepted ?? false,
+      consumer_rejected: item.consumer_rejected ?? false,
+    })),
+  )
+  const [actionSaving, setActionSaving] = useState<string | null>(null)
 
   const loadTrustDocuments = useCallback(async () => {
     if (activeTab !== 'trusts') return
@@ -200,8 +220,52 @@ export default function MyEstateTrustStrategyClient({
   const effectiveAnnualGifting = useSyncedGifting ? syncedGiftTotalReduction : annualGifting
   const effectiveGiftingYears = useSyncedGifting ? 1 : giftingYears
 
+  async function handleAccept(item: PendingAdvisorItem) {
+    setActionSaving(item.id)
+    await fetch('/api/consumer/strategy-recommendation', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineItemId: item.id, householdId }),
+    })
+    setPendingItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, consumer_accepted: true } : i)),
+    )
+    setActionSaving(null)
+  }
+
+  async function handleReject(item: PendingAdvisorItem) {
+    setActionSaving(item.id)
+    await fetch('/api/consumer/strategy-recommendation', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineItemId: item.id, householdId }),
+    })
+    setPendingItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, consumer_rejected: true } : i)),
+    )
+    setActionSaving(null)
+  }
+
   return (
     <div className="space-y-6">
+      {advisorHorizons && pendingItems.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-1 text-lg font-semibold text-gray-900">Estate Strategy Impact</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Review how your advisor&apos;s recommendations affect your estate across each planning horizon.
+          </p>
+          <StrategyHorizonTable
+            horizons={advisorHorizons}
+            pendingItems={pendingItems}
+            federalExemption={estateContext?.federalExemption ?? 15_000_000}
+            mode="consumer"
+            onAccept={handleAccept}
+            onReject={handleReject}
+            actionSaving={actionSaving}
+          />
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Gifting, Strategies & Trusts</h1>
         <p className="mt-1 text-sm text-gray-500">

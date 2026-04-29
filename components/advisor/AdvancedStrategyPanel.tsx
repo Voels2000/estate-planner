@@ -9,9 +9,24 @@ import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
 import { modelRothConversion, RothConversionConfig } from '@/lib/strategy/modelRothConversion'
+import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyGiftingProgram'
+import { applyCreditShelterTrust, CSTConfig } from '@/lib/strategy/applyCreditShelterTrust'
+import { applyRevocableTrust, RevocableTrustConfig } from '@/lib/strategy/applyRevocableTrust'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { FilingStatus } from '@/lib/tax/estate-tax-constants'
 import type { StrategyLineItemInput } from '@/lib/estate/types'
 
-type AdvancedPanel = 'grat' | 'crt' | 'clat' | 'daf' | 'liquidity' | 'roth' | null
+type AdvancedPanel =
+  | 'grat'
+  | 'crt'
+  | 'clat'
+  | 'daf'
+  | 'liquidity'
+  | 'roth'
+  | 'annual_gifting'
+  | 'revocable_trust'
+  | 'credit_shelter_trust'
+  | null
 
 interface AdvancedStrategyPanelProps {
   householdId: string
@@ -20,6 +35,18 @@ interface AdvancedStrategyPanelProps {
   estimatedFederalTax: number
   estimatedStateTax: number
   person1BirthYear: number
+  person2BirthYear?: number
+  filingStatus?: FilingStatus
+  giftingActuals?: {
+    annualUsed: number
+    annualCapacity: number
+    lifetimeUsed: number
+    lifetimeRemaining: number
+    perRecipientLimit: number
+    splitElected: boolean
+    uniqueRecipients: number
+  } | null
+  advisorHorizons?: MyEstateStrategyHorizonsResult
   annualRMD?: number
   preIRABalance?: number
   rothBalance?: number
@@ -144,16 +171,22 @@ function RecommendButton({
 export default function AdvancedStrategyPanel({
   householdId,
   grossEstate,
-  federalExemption: _federalExemption,
+  federalExemption,
   estimatedFederalTax,
   estimatedStateTax,
   person1BirthYear,
+  person2BirthYear,
+  filingStatus,
+  giftingActuals,
+  advisorHorizons,
   annualRMD = 0,
   preIRABalance = 0,
   rothBalance = 0,
   onRecommend,
 }: AdvancedStrategyPanelProps) {
-  void _federalExemption
+  void person2BirthYear
+  void filingStatus
+  void advisorHorizons
   const { saved, saving, toggle } = useRecommendAdvanced(householdId, onRecommend)
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82
@@ -219,7 +252,30 @@ export default function AdvancedStrategyPanel({
     yearsUntilDeath: defaultDeathYear - CURRENT_YEAR,
   })
 
+  const [giftingConfig, setGiftingConfig] = useState<GiftingProgramConfig>({
+    annualGiftPerDonor: giftingActuals?.perRecipientLimit ?? 19000,
+    numberOfRecipients: giftingActuals?.uniqueRecipients ?? 2,
+    startYear: CURRENT_YEAR,
+    giftSplitting: giftingActuals?.splitElected ?? !!person2BirthYear,
+  })
+
+  const [cstConfig, setCstConfig] = useState<Partial<CSTConfig>>({
+    cstGrowthRate: 0.06,
+    yearsBetweenDeaths: 5,
+  })
+
+  const [rtConfig, setRtConfig] = useState<RevocableTrustConfig>({
+    trustFundedAmount: grossEstate * 0.8,
+    grossEstate,
+    hasPourOverWill: false,
+    isFunded: false,
+    hasSuccessorTrustee: false,
+  })
+
   const PANELS = [
+    { id: 'annual_gifting' as AdvancedPanel, label: 'Annual Gifting' },
+    { id: 'revocable_trust' as AdvancedPanel, label: 'Revocable Trust' },
+    { id: 'credit_shelter_trust' as AdvancedPanel, label: 'Credit Shelter Trust' },
     { id: 'grat' as AdvancedPanel, label: 'GRAT' },
     { id: 'crt' as AdvancedPanel, label: 'CRT' },
     { id: 'clat' as AdvancedPanel, label: 'CLAT' },
@@ -236,6 +292,23 @@ export default function AdvancedStrategyPanel({
     ? analyzeLiquidity({ ...liquidityConfig, estimatedFederalTax, estimatedStateTax })
     : null
   const rothResult = activePanel === 'roth' ? modelRothConversion(rothConfig) : null
+  const giftingResult = activePanel === 'annual_gifting'
+    ? applyGiftingProgram({} as never, giftingConfig, person1BirthYear + 80, 'current_law')
+    : null
+  const cstResult = activePanel === 'credit_shelter_trust'
+    ? applyCreditShelterTrust({} as never, {
+      grossEstateAtFirstDeath: grossEstate,
+      federalExemptionAtFirstDeath: federalExemption ?? 15_000_000,
+      cstGrowthRate: cstConfig.cstGrowthRate ?? 0.06,
+      yearsBetweenDeaths: cstConfig.yearsBetweenDeaths ?? 5,
+      federalExemptionAtSecondDeath: federalExemption ?? 15_000_000,
+      survivingSpouseAssets: grossEstate * 0.1,
+      lawScenario: 'current_law',
+    })
+    : null
+  const rtResult = activePanel === 'revocable_trust'
+    ? applyRevocableTrust({} as never, rtConfig)
+    : null
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
 
@@ -262,6 +335,200 @@ export default function AdvancedStrategyPanel({
           ))}
         </div>
       </div>
+
+      {/* ── Annual Gifting Panel ── */}
+      {activePanel === 'annual_gifting' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-semibold text-gray-800">Annual Gifting Program</h4>
+          {giftingActuals && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1">
+              <p className="font-semibold text-blue-800">Client actuals (this calendar year)</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-700">
+                <span>Annual used</span>
+                <span className="text-right font-medium">
+                  ${giftingActuals.annualUsed.toLocaleString()} / ${giftingActuals.annualCapacity.toLocaleString()}
+                </span>
+                <span>Lifetime used</span>
+                <span className="text-right font-medium">${giftingActuals.lifetimeUsed.toLocaleString()}</span>
+                <span>Lifetime remaining</span>
+                <span className="text-right font-medium">${Math.round(giftingActuals.lifetimeRemaining).toLocaleString()}</span>
+                <span>Split elected</span>
+                <span className="text-right font-medium">{giftingActuals.splitElected ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Annual Gift Per Donor</label>
+              <input type="number" value={giftingConfig.annualGiftPerDonor}
+                onChange={(e) => setGiftingConfig((c) => ({ ...c, annualGiftPerDonor: Number(e.target.value) }))}
+                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Number of Recipients</label>
+              <input type="number" value={giftingConfig.numberOfRecipients}
+                onChange={(e) => setGiftingConfig((c) => ({ ...c, numberOfRecipients: Number(e.target.value) }))}
+                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Start Year</label>
+              <input type="number" value={giftingConfig.startYear}
+                onChange={(e) => setGiftingConfig((c) => ({ ...c, startYear: Number(e.target.value) }))}
+                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <input type="checkbox" id="adv_giftSplitting" checked={giftingConfig.giftSplitting}
+                onChange={(e) => setGiftingConfig((c) => ({ ...c, giftSplitting: e.target.checked }))}
+                className="rounded" />
+              <label htmlFor="adv_giftSplitting" className="text-sm text-gray-600">Gift Splitting</label>
+            </div>
+          </div>
+          {giftingResult && (
+            <div className="border-t border-gray-200 pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total Gifts Out</span>
+                <span className="font-medium">${giftingResult.totalGiftsOut.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Net Estate Reduction</span>
+                <span className="font-medium text-green-700">
+                  ${giftingResult.netEstateReduction.toLocaleString()}
+                </span>
+              </div>
+              {giftingResult.section2035Flag && (
+                <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800">
+                  {giftingResult.section2035Warning}
+                </div>
+              )}
+            </div>
+          )}
+          <RecommendButton strategySource="annual_gifting" saved={saved} saving={saving}
+            onToggle={() => toggle('annual_gifting', {
+              scenario_id: 'current_law',
+              metric_target: 'gross_estate',
+              category: 'gifting',
+              strategy_source: 'annual_gifting',
+              amount: giftingResult?.netEstateReduction ?? 0,
+              sign: -1,
+              confidence_level: 'probable',
+              metadata: {
+                annualGiftPerDonor: giftingConfig.annualGiftPerDonor,
+                numberOfRecipients: giftingConfig.numberOfRecipients,
+                startYear: giftingConfig.startYear,
+                giftSplitting: giftingConfig.giftSplitting,
+              },
+            }, 'advisor')} />
+        </div>
+      )}
+
+      {/* ── Revocable Trust Panel ── */}
+      {activePanel === 'revocable_trust' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-semibold text-gray-800">Revocable Trust Assessment</h4>
+          <div className="space-y-2">
+            {[
+              { label: 'Trust Funded', key: 'isFunded' as const },
+              { label: 'Pour-Over Will', key: 'hasPourOverWill' as const },
+              { label: 'Successor Trustee Named', key: 'hasSuccessorTrustee' as const },
+            ].map(({ label, key }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">{label}</span>
+                <button
+                  onClick={() => setRtConfig((c) => ({ ...c, [key]: !c[key] }))}
+                  className={`px-3 py-1 rounded text-xs font-medium ${rtConfig[key] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                >
+                  {rtConfig[key] ? 'Yes' : 'No'}
+                </button>
+              </div>
+            ))}
+          </div>
+          {rtResult && rtResult.actionItems.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-red-700">Action Items:</p>
+              {rtResult.actionItems.map((item, i) => (
+                <div key={i} className="text-xs text-red-600 flex gap-1">
+                  <span>•</span><span>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {rtResult && rtResult.advisoryNotes.map((note, i) => (
+            <div key={i} className="bg-blue-50 border border-blue-100 rounded p-3 text-xs text-blue-800">
+              {note}
+            </div>
+          ))}
+          <RecommendButton strategySource="revocable_trust" saved={saved} saving={saving}
+            onToggle={() => toggle('revocable_trust', {
+              scenario_id: 'current_law',
+              metric_target: 'gross_estate',
+              category: 'trust_exclusion',
+              strategy_source: 'revocable_trust',
+              amount: rtConfig.trustFundedAmount,
+              sign: -1,
+              confidence_level: 'illustrative',
+              metadata: {
+                trustFundedAmount: rtConfig.trustFundedAmount,
+                isFunded: rtConfig.isFunded,
+                hasPourOverWill: rtConfig.hasPourOverWill,
+                hasSuccessorTrustee: rtConfig.hasSuccessorTrustee,
+              },
+            }, 'advisor')} />
+        </div>
+      )}
+
+      {/* ── Credit Shelter Trust Panel ── */}
+      {activePanel === 'credit_shelter_trust' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-semibold text-gray-800">Credit Shelter Trust (CST)</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">CST Growth Rate</label>
+              <input type="number" step="0.01" value={cstConfig.cstGrowthRate}
+                onChange={(e) => setCstConfig((c) => ({ ...c, cstGrowthRate: Number(e.target.value) }))}
+                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Years Between Deaths</label>
+              <input type="number" value={cstConfig.yearsBetweenDeaths}
+                onChange={(e) => setCstConfig((c) => ({ ...c, yearsBetweenDeaths: Number(e.target.value) }))}
+                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
+            </div>
+          </div>
+          {cstResult && (
+            <div className="border-t border-gray-200 pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">CST Funding Amount</span>
+                <span className="font-medium">${cstResult.cstFundingAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Tax Savings vs Portability</span>
+                <span className={`font-medium ${cstResult.cstBeatPortability ? 'text-green-700' : 'text-gray-500'}`}>
+                  ${Math.round(cstResult.taxSavingsVsPortability).toLocaleString()}
+                </span>
+              </div>
+              {cstResult.advisoryNotes.map((note, i) => (
+                <div key={i} className="bg-blue-50 border border-blue-100 rounded p-3 text-xs text-blue-800">
+                  {note}
+                </div>
+              ))}
+            </div>
+          )}
+          <RecommendButton strategySource="cst" saved={saved} saving={saving}
+            onToggle={() => toggle('cst', {
+              scenario_id: 'current_law',
+              metric_target: 'taxable_estate',
+              category: 'trust_exclusion',
+              strategy_source: 'cst',
+              amount: cstResult?.taxSavingsVsPortability ?? 0,
+              sign: -1,
+              confidence_level: 'probable',
+              metadata: {
+                cstGrowthRate: cstConfig.cstGrowthRate ?? 0.06,
+                yearsBetweenDeaths: cstConfig.yearsBetweenDeaths ?? 5,
+              },
+            }, 'advisor')} />
+        </div>
+      )}
 
       {/* ── GRAT Panel ── */}
       {activePanel === 'grat' && (
@@ -543,7 +810,7 @@ export default function AdvancedStrategyPanel({
               scenario_id: 'current_law',
               metric_target: 'gross_estate',
               category: 'other' as never,
-              strategy_source: 'other',
+              strategy_source: 'liquidity',
               amount: liquidityConfig.ilitDeathBenefit,
               sign: -1,
               confidence_level: 'illustrative',
@@ -605,7 +872,7 @@ export default function AdvancedStrategyPanel({
               scenario_id: 'current_law',
               metric_target: 'taxable_estate',
               category: 'trust_exclusion',
-              strategy_source: 'other',
+              strategy_source: 'roth',
               amount: rothResult?.estateReductionFromTaxPayment ?? rothConfig.annualConversionAmount * rothConfig.conversionYears,
               sign: -1,
               confidence_level: 'illustrative',

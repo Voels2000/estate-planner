@@ -7,6 +7,9 @@ import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { computeFederalEstateTax, type EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
+import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { displayPersonFirstName } from '@/lib/display-person-name'
+import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
   gifting: 'Annual Gifting Program',
@@ -75,7 +78,7 @@ export default async function MyEstateTrustStrategyPage({
 
   const { data: householdRow } = await supabase
     .from('households')
-    .select('id, filing_status, person1_birth_year')
+    .select('id, filing_status, person1_birth_year, base_case_scenario_id, state_primary')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -139,6 +142,9 @@ export default async function MyEstateTrustStrategyPage({
     { data: giftHistoryRows },
     { data: advisorLineItemRows },
     { data: retirementAssetRows },
+    { data: scenarioData },
+    { data: stateBracketRows },
+    { data: householdFull },
   ] = await Promise.all([
     classifyEstateAssets(supabase, householdRow.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
@@ -159,7 +165,7 @@ export default async function MyEstateTrustStrategyPage({
       .eq('tax_year', new Date().getFullYear()),
     supabase
       .from('strategy_line_items')
-      .select('strategy_source, amount, sign, confidence_level, effective_year, metadata')
+      .select('id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_accepted, consumer_rejected')
       .eq('household_id', householdRow.id)
       .eq('source_role', 'advisor')
       .eq('is_active', true),
@@ -168,6 +174,22 @@ export default async function MyEstateTrustStrategyPage({
       .select('type, value, owner')
       .eq('owner_id', user.id)
       .in('type', ['traditional_ira', 'traditional_401k', 'sep_account', 'roth_ira', 'roth_401k']),
+    supabase
+      .from('projection_scenarios')
+      .select('outputs_s1_first')
+      .eq('id', householdRow.base_case_scenario_id ?? '')
+      .single(),
+    supabase
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', householdRow.state_primary ?? '')
+      .eq('tax_year', new Date().getFullYear())
+      .order('min_amount', { ascending: true }),
+    supabase
+      .from('households')
+      .select('person1_name, person2_name, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age, has_spouse, filing_status, state_primary, base_case_scenario_id')
+      .eq('owner_id', user.id)
+      .single(),
   ])
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]
@@ -283,6 +305,53 @@ export default async function MyEstateTrustStrategyPage({
     annualRMD,
   }
 
+  const scenarioRows = (scenarioData?.outputs_s1_first ?? null) as AnnualOutput[] | null
+  const stateBrackets = stateBracketRows ?? []
+  const currentYear = new Date().getFullYear()
+  const currentMonthYearLabel = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  const { longevityAge, survivorIsPerson1 } = longevityAndSurvivor({
+    hasSpouse: householdFull?.has_spouse ?? false,
+    person1Longevity: householdFull?.person1_longevity_age,
+    person2Longevity: householdFull?.person2_longevity_age,
+  })
+  const survivorFirstName = !householdFull?.has_spouse
+    ? displayPersonFirstName(householdFull?.person1_name, 'You')
+    : survivorIsPerson1
+      ? displayPersonFirstName(householdFull?.person1_name, 'You')
+      : displayPersonFirstName(householdFull?.person2_name, 'You')
+
+  const horizonStrategyItems = (advisorLineItemRows ?? [])
+    .filter((item) => !item.consumer_rejected)
+    .map((item) => ({
+      amount: Math.abs(Number(item.amount ?? 0)),
+      confidence_level: item.confidence_level as 'certain' | 'probable' | 'illustrative',
+      effective_year: item.effective_year,
+      is_active: true,
+      sign: typeof item.sign === 'number' ? item.sign : -1,
+    }))
+
+  const advisorHorizons = householdFull ? buildStrategyHorizons({
+    currentYear,
+    currentMonthYearLabel,
+    liveNetWorth: grossEstate,
+    strategyLineItems: horizonStrategyItems,
+    stateBrackets,
+    household: {
+      state_primary: householdFull.state_primary,
+      filing_status: householdFull.filing_status,
+      has_spouse: householdFull.has_spouse,
+      person1_name: householdFull.person1_name,
+      person2_name: householdFull.person2_name,
+      person1_birth_year: householdFull.person1_birth_year,
+      person2_birth_year: householdFull.person2_birth_year,
+      person1_longevity_age: householdFull.person1_longevity_age,
+      person2_longevity_age: householdFull.person2_longevity_age,
+    },
+    scenarioRows,
+    survivorFirstName,
+    longevityAge,
+  }) : null
+
   const currentTaxYear = new Date().getFullYear()
   const initialGiftingSummary = giftingSummaryError ? null : (giftingSummaryData ?? null)
   const giftingData = giftingSummaryError
@@ -332,6 +401,7 @@ export default async function MyEstateTrustStrategyPage({
         initialTab={tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
         advisorLineItems={advisorLineItemRows ?? []}
+        advisorHorizons={advisorHorizons}
         estateContext={estateContext}
         strategyImpact={{
           strategyItems,

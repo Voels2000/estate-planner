@@ -80,6 +80,8 @@ export default function CompositeOverlay({
     amount: number
     sign: number
     scenario_name: string | null
+    consumer_accepted?: boolean
+    consumer_rejected?: boolean
   }>>([])
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null)
@@ -111,7 +113,10 @@ export default function CompositeOverlay({
     if (mode === 'recommendations') loadRecommendations()
   }, [mode, loadRecommendations])
 
-  const recommendedStrategies: StrategyLayer[] = recommendedItems.map((item) => ({
+  const activeRecommendedItems = recommendedItems.filter((item) => !item.consumer_rejected)
+  const rejectedRecommendedItems = recommendedItems.filter((item) => item.consumer_rejected)
+
+  const recommendedStrategies: StrategyLayer[] = activeRecommendedItems.map((item) => ({
     name: formatStrategyName(item.strategy_source, item.scenario_name),
     estateReduction: Math.abs(item.amount) * (item.sign < 0 ? 1 : -1),
     assetSource: strategySourceToAsset(item.strategy_source),
@@ -197,10 +202,16 @@ export default function CompositeOverlay({
       )}
 
       {mode === 'recommendations' && (
-        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-800">Active Advisor Recommendations</h4>
-            <button type="button" onClick={loadRecommendations} className="text-xs text-blue-600 hover:text-blue-700">Refresh</button>
+            <h4 className="text-sm font-semibold text-gray-800">Advisor Recommendations</h4>
+            <button
+              type="button"
+              onClick={loadRecommendations}
+              className="text-xs text-blue-600 hover:text-blue-700"
+            >
+              Refresh
+            </button>
           </div>
           {isLoadingRecommendations && (
             <div className="text-sm text-gray-500">Loading recommendations...</div>
@@ -212,22 +223,72 @@ export default function CompositeOverlay({
             <div className="text-center py-6">
               <p className="text-sm text-gray-500">No advisor recommendations yet.</p>
               <p className="text-xs text-gray-400 mt-1">
-                Use SLAT, ILIT, or Advanced Strategy panels and mark items as recommended.
+                Use the strategy panels above and mark items as recommended.
               </p>
             </div>
           )}
-          {recommendedItems.length > 0 && (
+          {activeRecommendedItems.length > 0 && (
             <div className="space-y-2">
-              {recommendedItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between text-sm bg-white rounded border border-gray-200 px-3 py-2">
-                  <span className="font-medium text-gray-800">
-                    {formatStrategyName(item.strategy_source, item.scenario_name)}
-                  </span>
-                  <span className={`text-sm font-medium ${item.sign < 0 ? 'text-green-700' : 'text-red-600'}`}>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Active — pending client approval
+              </p>
+              {activeRecommendedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">
+                      {formatStrategyName(item.strategy_source, item.scenario_name)}
+                    </span>
+                    {item.consumer_accepted ? (
+                      <span className="rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 text-xs font-semibold text-green-700">
+                        ✓ Client accepted
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-600">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm font-medium ${
+                      item.sign < 0 ? 'text-green-700' : 'text-red-600'
+                    }`}
+                  >
                     {item.sign < 0 ? '-' : '+'}${Math.abs(item.amount).toLocaleString()}
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+          {rejectedRecommendedItems.length > 0 && (
+            <div className="space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-gray-500">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+                Declined by client
+              </p>
+              {rejectedRecommendedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded border border-red-100 bg-red-50 px-3 py-2 text-sm opacity-75"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-500 line-through">
+                      {formatStrategyName(item.strategy_source, item.scenario_name)}
+                    </span>
+                    <span className="rounded-full border border-red-200 bg-red-100 px-1.5 py-0.5 text-xs text-red-500">
+                      Client declined
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-400">
+                    ${Math.abs(item.amount).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+              <p className="mt-1 text-xs text-gray-400">
+                Declined strategies are excluded from waterfall/composability output.
+              </p>
             </div>
           )}
         </div>

@@ -8,10 +8,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'
-import StrategyOverlay from '@/components/advisor/StrategyOverlay'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
+import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptionsPanel'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
@@ -39,7 +39,6 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   const annualRMD = Number(scenario?.annual_rmd ?? 0)
   const preIRABalance = Number(scenario?.pre_ira_balance ?? 0)
   const rothBalance = Number(scenario?.roth_balance ?? 0)
-  const [strategyOverlayOpen, setStrategyOverlayOpen] = useState(true)
   const [slatIlitOpen, setSlatIlitOpen] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
@@ -52,6 +51,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
   type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
   const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
+  const [recommendedItems, setRecommendedItems] = useState<PendingAdvisorItem[]>([])
   void _advisorLineItems
 
   // Gifting actuals from RPC
@@ -112,9 +112,25 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
     }).catch(() => null)
   }, [householdId])
 
+  const loadRecommendedItems = useCallback(async () => {
+    if (!householdId) return
+    try {
+      const res = await fetch('/api/advisor/strategy-recommendations-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      })
+      const data = await res.json()
+      setRecommendedItems(Array.isArray(data?.items) ? data.items : [])
+    } catch {
+      // non-fatal
+    }
+  }, [householdId])
+
   useEffect(() => {
     loadConsumerData()
-  }, [loadConsumerData])
+    loadRecommendedItems()
+  }, [loadConsumerData, loadRecommendedItems])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)
@@ -225,36 +241,6 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
       </section>
 
       <section>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-semibold text-gray-900">Strategy Modeling</h2>
-          <button
-            onClick={() => setStrategyOverlayOpen((o) => !o)}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {strategyOverlayOpen ? '▲ Collapse' : '▼ Expand'}
-          </button>
-        </div>
-        {strategyOverlayOpen && (
-          <>
-            <p className="text-sm text-gray-500 mb-6">
-              Model gifting programs, revocable trusts, and credit shelter trusts against the base case.
-            </p>
-            <StrategyOverlay
-              householdId={household.id}
-              grossEstate={grossEstate}
-              federalExemption={federalExemption}
-              person1BirthYear={person1BirthYear}
-              person2BirthYear={person2BirthYear}
-              lawScenario={lawScenario}
-              filingStatus={filingStatus}
-              giftingActuals={giftingActuals}
-              advisorHorizons={advisorHorizons}
-            />
-          </>
-        )}
-      </section>
-
-      <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Irrevocable Trust Strategies</h2>
           <button
@@ -293,10 +279,17 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
             estimatedFederalTax={estimatedFederalTax}
             estimatedStateTax={estimatedStateTax}
             person1BirthYear={person1BirthYear}
+            person2BirthYear={person2BirthYear}
+            filingStatus={filingStatus}
+            giftingActuals={giftingActuals}
+            advisorHorizons={advisorHorizons}
             annualRMD={annualRMD}
             preIRABalance={preIRABalance}
             rothBalance={rothBalance}
-            onRecommend={loadConsumerData}
+            onRecommend={async () => {
+              await loadConsumerData()
+              await loadRecommendedItems()
+            }}
           />
         )}
       </section>
@@ -312,14 +305,38 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
           </button>
         </div>
         {compositeOpen && (
-          <CompositeOverlay
-            grossEstate={grossEstate}
-            federalExemption={federalExemption}
-            estimatedFederalTax={estimatedFederalTax}
-            lawScenario={lawScenario}
-            householdId={household.id}
-          />
+          <div className="space-y-8">
+            {advisorHorizons && (
+              <StrategyHorizonTable
+                horizons={advisorHorizons}
+                pendingItems={recommendedItems}
+                federalExemption={federalExemption}
+                mode="advisor"
+              />
+            )}
+            <CompositeOverlay
+              grossEstate={grossEstate}
+              federalExemption={federalExemption}
+              estimatedFederalTax={estimatedFederalTax}
+              lawScenario={lawScenario}
+              householdId={household.id}
+            />
+          </div>
         )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Client&apos;s Confirmed Plan</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+            Read-only — client owns this
+          </span>
+        </div>
+        <ConsumerPlanStatus
+          consumerComposition={consumerComposition}
+          consumerLineItems={consumerLineItems}
+          strategyConfigs={strategyConfigs}
+        />
       </section>
 
       <section>
@@ -375,20 +392,6 @@ export default function StrategyTab({ household, scenario, advisorHorizons }: Cl
             assumptions={activeAssumptions ?? undefined}
           />
         )}
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Client&apos;s Confirmed Plan</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-            Read-only — client owns this
-          </span>
-        </div>
-        <ConsumerPlanStatus
-          consumerComposition={consumerComposition}
-          consumerLineItems={consumerLineItems}
-          strategyConfigs={strategyConfigs}
-        />
       </section>
 
     </div>

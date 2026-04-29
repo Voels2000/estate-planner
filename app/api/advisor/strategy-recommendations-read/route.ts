@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     .eq('household_id', householdId)
     .eq('source_role', 'advisor')
     .eq('is_active', true)
-    .eq('consumer_rejected', false)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

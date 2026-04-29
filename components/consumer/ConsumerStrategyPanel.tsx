@@ -731,11 +731,11 @@ export default function ConsumerStrategyPanel({
             </div>
           )}
           <RecommendButton
-            strategySource="other" saved={saved} saving={saving} userRole={userRole}
-            status={statuses['other']} onCycleStatus={() => cycleStatus('other')}
-            onToggle={() => toggle('other', {
+            strategySource="liquidity" saved={saved} saving={saving} userRole={userRole}
+            status={statuses.liquidity} onCycleStatus={() => cycleStatus('liquidity')}
+            onToggle={() => toggle('liquidity', {
               scenario_id: 'current_law', metric_target: 'gross_estate', category: 'trust_exclusion',
-              strategy_source: 'other', amount: liquidityConfig.ilitDeathBenefit, sign: -1, confidence_level: 'illustrative',
+              strategy_source: 'liquidity', amount: liquidityConfig.ilitDeathBenefit, sign: -1, confidence_level: 'illustrative',
             })}
           />
         </div>
@@ -795,11 +795,11 @@ export default function ConsumerStrategyPanel({
             </div>
           )}
           <RecommendButton
-            strategySource="other" saved={saved} saving={saving} userRole={userRole}
-            status={statuses['other']} onCycleStatus={() => cycleStatus('other')}
-            onToggle={() => toggle('other', {
+            strategySource="roth" saved={saved} saving={saving} userRole={userRole}
+            status={statuses.roth} onCycleStatus={() => cycleStatus('roth')}
+            onToggle={() => toggle('roth', {
               scenario_id: 'current_law', metric_target: 'taxable_estate', category: 'trust_exclusion',
-              strategy_source: 'other',
+              strategy_source: 'roth',
               amount: rothResult?.estateReductionFromTaxPayment ?? rothConfig.annualConversionAmount * rothConfig.conversionYears,
               sign: -1, confidence_level: 'illustrative',
             })}
