@@ -97,8 +97,41 @@ export default function GiftingDashboard({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview'); // default: overview
+  const [donorNames, setDonorNames] = useState<{ person1: string; person2: string; hasSpouse: boolean }>({
+    person1: 'Person 1',
+    person2: 'Person 2',
+    hasSpouse: false,
+  });
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDonorNames = async () => {
+      const { data, error } = await supabase
+        .from('households')
+        .select('person1_name, person2_name, has_spouse')
+        .eq('id', householdId)
+        .maybeSingle();
+      if (!isMounted || error || !data) return;
+
+      const first = (name: string | null | undefined, fallback: string) => {
+        const trimmed = (name ?? '').trim();
+        if (!trimmed) return fallback;
+        return trimmed.split(/\s+/)[0] || fallback;
+      };
+
+      setDonorNames({
+        person1: first(data.person1_name, 'Person 1'),
+        person2: first(data.person2_name, 'Person 2'),
+        hasSpouse: !!data.has_spouse,
+      });
+    };
+    void loadDonorNames();
+    return () => {
+      isMounted = false;
+    };
+  }, [householdId, supabase]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -268,9 +301,10 @@ export default function GiftingDashboard({
                     onChange={e => setForm(f => ({ ...f, donor_person: e.target.value }))}
                     style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', fontSize: '14px' }}
                   >
-                    <option value="person1">Person 1</option>
-                    <option value="person2">Person 2</option>
-                    <option value="joint">Joint</option>
+                    <option value="person1">{donorNames.person1}</option>
+                    {donorNames.hasSpouse && (
+                      <option value="person2">{donorNames.person2}</option>
+                    )}
                   </select>
                 </div>
               </div>
