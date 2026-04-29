@@ -422,27 +422,6 @@ export default function DomicileTab({
         />
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">Inheritance Tax by State</h3>
-            <button
-              type="button"
-              onClick={() => setIsInheritanceOpen((v) => !v)}
-              className="text-xs text-slate-500 hover:text-slate-700"
-            >
-              {isInheritanceOpen ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          {isInheritanceOpen && (
-            <div className="mt-4">
-              <InheritanceTaxWaterfall
-                inheritanceAmount={grossEstateForStateTax}
-                year={new Date().getFullYear() + 1}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-700">Domicile Schedule</h3>
             <button
               type="button"
@@ -499,6 +478,27 @@ export default function DomicileTab({
                 clientStates={clientStatesForBreakeven}
                 incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
                 estateTaxRules={stateEstateTaxRules ?? []}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">Inheritance Tax by State</h3>
+            <button
+              type="button"
+              onClick={() => setIsInheritanceOpen((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              {isInheritanceOpen ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {isInheritanceOpen && (
+            <div className="mt-4">
+              <InheritanceTaxWaterfall
+                inheritanceAmount={grossEstateForStateTax}
+                year={new Date().getFullYear() + 1}
               />
             </div>
           )}
