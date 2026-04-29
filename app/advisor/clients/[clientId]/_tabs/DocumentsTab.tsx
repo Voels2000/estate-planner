@@ -1,6 +1,9 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/DocumentsTab.tsx
-// Legal document vault — read-only for advisor, shows vault contents and metadata
+
+/**
+ * Advisor Documents tab: read-only view of client legal-document vault contents,
+ * document types, and upload metadata.
+ */
 
 import { ClientViewShellProps } from '../_client-view-shell'
 import { formatDate } from '../_utils'

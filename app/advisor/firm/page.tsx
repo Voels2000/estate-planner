@@ -1,3 +1,9 @@
+/**
+ * Advisor firm management page (server).
+ *
+ * Validates firm-owner access and loads roster/billing context for the firm client UI.
+ */
+
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'

@@ -1,9 +1,11 @@
 'use client'
 
-// Sprint 71 — MonteCarloPanel
-// Calls the estate-monte-carlo Supabase Edge Function
-// Displays P10/P50/P90 fan chart and 3-variable sensitivity matrix
-// Lives in StrategyTab below CompositeOverlay
+/**
+ * Advisor Monte Carlo visualization panel.
+ *
+ * Calls the Monte Carlo edge function for a household/scenario and renders fan-chart
+ * and sensitivity outputs used in advisor strategy review.
+ */
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'

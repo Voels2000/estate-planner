@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * Advisor Meeting Prep tab: meeting agenda context plus export/recalculation tools
+ * for advisor-client session preparation.
+ */
+
 import { useState } from 'react'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'

@@ -1,9 +1,8 @@
 'use client'
 
-// components/advisor/AdvancedStrategyPanel.tsx
-// Sprint 69 — GRAT, CRT, CLAT, DAF, Liquidity, Roth panels
-// Session 27 — Added recommend buttons to all 6 panels
-// Each panel writes a strategy_line_items row when marked as recommended
+// Advisor advanced strategy modeling panel (GRAT/CRT/CLAT/DAF/Liquidity/Roth).
+// Recommendation toggles persist advisor-owned strategy recommendations via
+// canonical advisor endpoints.
 
 import { useState, useEffect } from 'react'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'

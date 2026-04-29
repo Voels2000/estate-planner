@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * Advisor Strategy tab: overlays, SLAT/ILIT, advanced strategies, Monte Carlo,
+ * and consumer plan status; reads ledger/config for display alongside advisor tools.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
 import { ClientViewShellProps } from '../_client-view-shell'

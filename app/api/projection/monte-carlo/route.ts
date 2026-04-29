@@ -1,3 +1,10 @@
+/**
+ * Advisor Monte Carlo run API.
+ *
+ * POST runs a Monte Carlo simulation for an advisor-linked household using merged
+ * system-default and request-provided assumption overrides.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {

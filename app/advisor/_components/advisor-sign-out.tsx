@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * Advisor sign-out action button.
+ *
+ * Executes Supabase auth sign-out and redirects to login.
+ */
+
 import { useState } from 'react'
 
 export function AdvisorSignOut() {

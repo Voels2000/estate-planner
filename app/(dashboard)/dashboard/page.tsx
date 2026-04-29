@@ -1,7 +1,11 @@
-// ─────────────────────────────────────────
-// Menu: Dashboard
-// Route: /dashboard
-// ─────────────────────────────────────────
+/**
+ * Consumer dashboard (server).
+ *
+ * Loads household inputs, projection staleness, RMD and income snapshots, and maps
+ * view models for `DashboardClient`.
+ *
+ * Route: `/dashboard`
+ */
 
 import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { getCompletionScore } from '@/lib/get-completion-score'

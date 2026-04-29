@@ -1,3 +1,8 @@
+/**
+ * Derives headline metrics (peak net worth, retirement-phase average tax, etc.)
+ * from mapped `ProjectionYear` arrays for summary cards.
+ */
+
 import type { ProjectionYear } from '@/lib/projections/types'
 
 type ProjectionSummary = {

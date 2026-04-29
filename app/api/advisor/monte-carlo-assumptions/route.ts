@@ -1,3 +1,9 @@
+/**
+ * Advisor Monte Carlo assumptions management API.
+ *
+ * Supports advisor CRUD + activation/share operations for
+ * `advisor_projection_assumptions` rows tied to a client household.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'

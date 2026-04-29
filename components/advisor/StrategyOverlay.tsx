@@ -1,10 +1,8 @@
 'use client'
 
-// Strategy Overlay UI
-// Side-by-side comparison of base case vs strategy scenarios
-// Renders in StrategyTab
-// Net-to-heirs table at Today / +10 years / +20 years horizons
-// Federal constants come from lib/tax/estate-tax-constants.ts (OBBBA 2026)
+// Advisor strategy overlay for baseline vs strategy horizon comparisons.
+// Uses server-computed advisor horizons and writes advisor recommendations
+// through canonical advisor recommendation endpoints.
 
 import { useState, useEffect } from 'react'
 import { applyGiftingProgram, GiftingProgramConfig } from '@/lib/strategy/applyGiftingProgram'

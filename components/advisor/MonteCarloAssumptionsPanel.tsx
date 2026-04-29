@@ -1,5 +1,12 @@
 'use client'
 
+/**
+ * Advisor Monte Carlo assumptions panel.
+ *
+ * Manages scenario CRUD/share state and assumption comparisons for advisor-driven
+ * consumer Monte Carlo recommendation workflows.
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MONTE_CARLO_SYSTEM_DEFAULTS, type MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 

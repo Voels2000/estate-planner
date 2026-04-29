@@ -1,6 +1,9 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/OverviewTab.tsx
-// Advisor client snapshot — net worth, gap analysis, quick stats
+
+/**
+ * Advisor Overview tab: client snapshot metrics, net worth composition, planning
+ * gap signals, and target allocation context.
+ */
 
 import { ClientViewShellProps } from '../_client-view-shell'
 import type { EstateComposition } from '@/lib/estate/types'

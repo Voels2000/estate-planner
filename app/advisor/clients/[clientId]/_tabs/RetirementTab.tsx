@@ -1,6 +1,9 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/RetirementTab.tsx
-// Retirement planning view — SS optimization, RMD, allocation, planning inputs
+
+/**
+ * Advisor Retirement tab: Social Security timing, RMD context, retirement account
+ * composition, and plan-level retirement assumptions.
+ */
 
 import { getSsBenefitFromPia, getFraFromBirthYear } from '@/lib/calculations/projection-complete'
 import { ClientViewShellProps } from '../_client-view-shell'

@@ -1,6 +1,8 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/EstateTab.tsx
-// Estate planning view — documents, beneficiaries, titling, accounts
+
+/**
+ * Advisor Estate tab: document checklist, estate flow diagram, composition, beneficiaries.
+ */
 
 import { useEffect, useState } from 'react'
 import { ClientViewShellProps } from '../_client-view-shell'

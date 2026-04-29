@@ -1,8 +1,9 @@
 /**
- * lib/calculations/stateIncomeTax.ts
- * Session 38 — Shared State Income Tax Engine
+ * Shared progressive state income tax calculation.
  *
- * SINGLE SOURCE OF TRUTH for all state income tax calculations.
+ * Used by the canonical projection engine, Roth conversion analysis, domicile
+ * breakeven, and other flows that need ordinary-income state tax from
+ * `state_income_tax_brackets` rows.
  */
 
 export type StateIncomeTaxBracket = {

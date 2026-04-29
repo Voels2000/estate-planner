@@ -1,3 +1,10 @@
+/**
+ * Canonical projection API route.
+ *
+ * Loads household financial inputs + tax rule tables and computes projection
+ * rows via `computeCompleteProjection`. Optional query params can override a
+ * subset of household assumptions for scenario modeling.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { computeCompleteProjection } from '@/lib/calculations/projection-complete'

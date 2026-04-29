@@ -1,3 +1,7 @@
+/**
+ * Maps canonical `/api/projection` JSON rows into chart/table `ProjectionYear` rows.
+ */
+
 import type {
   HouseholdProjectionProfile,
   ProjectionApiRow,

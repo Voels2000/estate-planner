@@ -1,3 +1,9 @@
+/**
+ * Advisor strategy recommendation write API.
+ *
+ * Canonical advisor write path for creating/deactivating advisor-sourced
+ * `strategy_line_items` recommendations after advisor-client authorization.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 

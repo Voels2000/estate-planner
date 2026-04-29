@@ -1,9 +1,11 @@
 'use client'
 
-// ─────────────────────────────────────────
-// Menu: Financial Planning > Projections
-// Route: /projections
-// ─────────────────────────────────────────
+/**
+ * Consumer projections page: loads `/api/projection` via `loadProjectionPageData`,
+ * summary cards, chart/table/income tabs, and assumptions footer.
+ *
+ * Route: `/projections`
+ */
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'

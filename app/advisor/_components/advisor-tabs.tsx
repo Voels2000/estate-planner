@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * Advisor top-level section tabs.
+ *
+ * Highlights active route and conditionally shows firm settings tab for owners.
+ */
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 

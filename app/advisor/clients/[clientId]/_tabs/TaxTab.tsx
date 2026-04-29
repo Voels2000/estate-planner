@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * Advisor Tax tab: federal/state estate waterfall, NY cliff helper, and state tax panel.
+ */
+
 import { useState } from 'react'
 import FederalStateWaterfall from '@/components/advisor/FederalStateWaterfall'
 import NYCliffValidator from '@/components/advisor/NYCliffValidator'

@@ -1,3 +1,10 @@
+/**
+ * Client-side projection row shapes for `/projections` and related UI.
+ *
+ * Populated from `/api/projection` responses via `mapProjectionRows`; distinct
+ * from `YearRow` in `projection-complete.ts` (engine output vs. chart/table view).
+ */
+
 export type ProjectionYear = {
   age: number
   year: number

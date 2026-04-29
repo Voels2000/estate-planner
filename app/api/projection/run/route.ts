@@ -1,9 +1,12 @@
-// Sprint 73 — External API Endpoint
-// POST /api/projection/run
-// Accepts household data and returns a ProjectionScenario JSON
-//
-// Authentication: Bearer token (service role key or Supabase user JWT with access)
-// Rate limiting: 100 requests/hour per bearer token (best-effort per instance)
+/**
+ * External projection API endpoint.
+ *
+ * POST `/api/projection/run` accepts authenticated projection inputs and returns
+ * projection scenario outputs for integration use cases.
+ *
+ * Auth: Bearer token (service-role key or Supabase JWT with access)
+ * Rate limit: best-effort in-memory 100 requests/hour per token hash.
+ */
 
 import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'

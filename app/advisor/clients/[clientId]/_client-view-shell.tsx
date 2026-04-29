@@ -1,4 +1,10 @@
 'use client'
+
+/**
+ * Advisor client tab shell: routing, lazy-loaded tabs (strategy/domicile/documents),
+ * export wiring, and shared props for Overview/Estate/Retirement/Tax/Notes.
+ */
+
 import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'

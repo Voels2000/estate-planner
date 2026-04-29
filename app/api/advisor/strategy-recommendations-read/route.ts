@@ -1,3 +1,9 @@
+/**
+ * Read API for active advisor-sourced `strategy_line_items` on a household.
+ *
+ * POST `{ householdId }` — advisor-only; verifies `advisor_clients` link before returning rows.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 

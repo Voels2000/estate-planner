@@ -1,5 +1,12 @@
 'use client'
 
+/**
+ * Advisor client-roster UI.
+ *
+ * Supports invite/remove/status actions, quick client search/filtering, and
+ * per-client summary cards (net worth, health, alerts).
+ */
+
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'

@@ -1,8 +1,8 @@
 'use client'
 
-// Session 34: Replaced hardcoded DEFAULT_GROSS_ESTATE and other constants with
-// real household data passed via the new `estateContext` prop.
-// All strategy pre-population (GRAT funding, liquidity, Roth) now uses actual figures.
+// Consumer strategy modeling and progress panel.
+// Reads advisor-modeled hints, pre-populates assumptions from household context,
+// and persists consumer save/progress state through `/api/strategy-line-items`.
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'

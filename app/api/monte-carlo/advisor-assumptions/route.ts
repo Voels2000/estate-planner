@@ -1,3 +1,10 @@
+/**
+ * Consumer Monte Carlo advisor-assumption acceptance API.
+ *
+ * Reads latest shared/accepted advisor scenarios for the consumer household
+ * and handles accept/revert by toggling `accepted_by_client` + `accepted_at`
+ * in `advisor_projection_assumptions`.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'

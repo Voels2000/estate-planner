@@ -1,8 +1,10 @@
-// Sprint 62 — Book-of-Business Analytics client component
-// 6 panels: health distribution, tax bands, stale docs, large-estate exposure,
-// unplanned exposure, open conflicts. All sortable and exportable as CSV.
-
 'use client'
+
+/**
+ * Advisor book-of-business analytics client UI.
+ *
+ * Renders portfolio-level exposure and health panels with sorting and CSV export.
+ */
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'

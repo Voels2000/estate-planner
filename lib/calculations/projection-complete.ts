@@ -1,3 +1,10 @@
+/**
+ * Canonical household projection engine.
+ *
+ * Produces year-by-year financial outputs (income, taxes, expenses, assets,
+ * liabilities, estate snapshots) using admin-managed federal/state tax tables
+ * and shared state income tax calculation logic.
+ */
 import { resolveDeduction } from '@/lib/tax/resolve-deduction'
 import {
   calculateStateIncomeTax,

@@ -1,3 +1,9 @@
+/**
+ * Client loader for the consumer projections page.
+ *
+ * Fetches `/api/projection` (no-store) and maps API rows into `ProjectionYear[]`.
+ */
+
 import { mapProjectionRows } from '@/lib/projections/mappers/mapProjectionRows'
 import type {
   HouseholdProjectionProfile,

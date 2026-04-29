@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * Legacy-style projection chart/table view (standalone table row shape).
+ *
+ * Uses a local row type so this UI stays decoupled from engine internals.
+ */
+
 import {
   LineChart,
   Line,
@@ -11,8 +17,7 @@ import {
   Legend,
 } from 'recharts'
 
-// Legacy projections table/chart row shape used by this standalone view.
-// Kept local to avoid importing from deprecated legacy engine module.
+// Row shape for this chart/table only (not the canonical `YearRow` engine type).
 type LegacyProjectionViewRow = {
   year: number
   person1_age: number

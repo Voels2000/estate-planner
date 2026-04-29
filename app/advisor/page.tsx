@@ -1,3 +1,10 @@
+/**
+ * Advisor home page (server) for client roster management.
+ *
+ * Loads advisor-linked clients plus household/health/net-worth context and passes
+ * hydrated data into the advisor client workspace UI.
+ */
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'

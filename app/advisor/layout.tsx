@@ -1,3 +1,9 @@
+/**
+ * Advisor portal layout (server).
+ *
+ * Enforces advisor access, renders top navigation/tabs, and wraps advisor routes.
+ */
+
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'

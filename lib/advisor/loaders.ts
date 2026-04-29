@@ -1,3 +1,10 @@
+/**
+ * Advisor client workspace data loaders.
+ *
+ * Fetches household-linked datasets, projection staleness signals, domicile artifacts,
+ * and export/supporting data for advisor client tabs.
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { loadLatestChangeTs } from '@/lib/dashboard/loaders'
 import { getLatestTimestampMs, isProjectionStale } from '@/lib/projections/staleness'

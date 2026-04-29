@@ -1,3 +1,12 @@
+/**
+ * Advisor client workspace (server).
+ *
+ * Loads authorized household datasets, optional projection regeneration when stale,
+ * maps advisor view models, and renders tabbed `ClientViewShell`.
+ *
+ * Route: `/advisor/clients/[clientId]`
+ */
+
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import {

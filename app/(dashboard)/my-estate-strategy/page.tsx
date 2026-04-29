@@ -1,7 +1,9 @@
-// ─────────────────────────────────────────
-// Menu: Estate Planning > My Estate Strategy
-// Route: /my-estate-strategy
-// ─────────────────────────────────────────
+/**
+ * My Estate Strategy (server): horizons, estate composition, optional staleness-based
+ * base-case regeneration, and consumer strategy UI via `MyEstateStrategyClient`.
+ *
+ * Route: `/my-estate-strategy`
+ */
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'

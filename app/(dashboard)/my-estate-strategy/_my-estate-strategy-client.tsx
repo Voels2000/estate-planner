@@ -1,9 +1,11 @@
 'use client'
 
-// ─────────────────────────────────────────
-// Menu: Estate Planning > My Estate Strategy
-// Route: /my-estate-strategy
-// ─────────────────────────────────────────
+/**
+ * Consumer estate strategy page client: horizon snapshots, estate flow, links to
+ * related planning areas.
+ *
+ * Route: `/my-estate-strategy`
+ */
 
 import { useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'

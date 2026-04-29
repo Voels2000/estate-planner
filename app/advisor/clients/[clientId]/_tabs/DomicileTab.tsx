@@ -1,7 +1,9 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/DomicileTab.tsx
-// Domicile risk analysis — read-only advisor view
-// Data comes from domicile_analysis table, pre-scored by calculate_domicile_risk() RPC
+
+/**
+ * Advisor Domicile tab: residency-risk signals, tax impact comparisons, domicile
+ * checklist/schedule context, and move breakeven tools.
+ */
 
 import { useEffect, useState } from 'react'
 import DomicileScheduleEditor from '@/components/advisor/DomicileScheduleEditor'
@@ -13,7 +15,7 @@ import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import { ClientViewShellProps } from '../_client-view-shell'
 
-/** Sprint 66: align with combined federal/state waterfall when available */
+/** Temporary federal exemption input for inheritance waterfall rendering. */
 const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
 
 export default function DomicileTab({

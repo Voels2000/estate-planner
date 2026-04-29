@@ -1,9 +1,8 @@
 'use client'
 
-// ─────────────────────────────────────────
-// Menu: Retirement Planning > Monte Carlo
-// Route: /monte-carlo
-// ─────────────────────────────────────────
+// Consumer Monte Carlo experience.
+// Supports profile-prefill simulation runs, historical run comparison, and
+// advisor assumption accept/revert actions from consumer-safe API endpoints.
 
 import { useState, useEffect } from 'react'
 import {

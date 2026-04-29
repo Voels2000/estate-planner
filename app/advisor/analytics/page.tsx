@@ -1,5 +1,9 @@
-// Sprint 62 — Book-of-Business Analytics dashboard
-// Server component — fetches advisor ID then renders client component
+/**
+ * Advisor analytics dashboard page (server).
+ *
+ * Enforces advisor access, loads advisor identity, and renders the analytics
+ * client experience.
+ */
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'

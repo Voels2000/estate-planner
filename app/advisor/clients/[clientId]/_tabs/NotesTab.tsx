@@ -1,7 +1,10 @@
 'use client'
-// app/advisor/clients/[clientId]/_tabs/NotesTab.tsx
-// Advisor-only notes — consumer NEVER sees these.
-// RLS enforces: advisor reads/writes own notes for linked clients only.
+
+/**
+ * Advisor Notes tab: advisor-private note CRUD for a linked client workspace.
+ *
+ * Notes are scoped to advisor/client relationship and are not consumer-visible.
+ */
 
 import { useState, useCallback } from 'react'
 import { ClientViewShellProps } from '../_client-view-shell'

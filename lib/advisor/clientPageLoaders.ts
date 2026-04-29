@@ -1,3 +1,10 @@
+/**
+ * Advisor page access guards and scoped household loaders.
+ *
+ * Centralizes advisor auth/role checks and advisor-client relationship enforcement
+ * for `/advisor/clients/[clientId]` server pages.
+ */
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 

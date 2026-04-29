@@ -1,7 +1,9 @@
-// lib/calculations/roth-analysis.ts
-// Roth conversion analysis layer — runs on top of projection rows.
-// The projection engine (projection-complete.ts) handles all income,
-// SS age gates, RMDs, and taxes. This file only adds conversion logic.
+/**
+ * Roth conversion analysis on top of canonical projection rows.
+ *
+ * `projection-complete.ts` supplies income, SS/RMDs, and taxes; this module layers
+ * conversion bands and bracket-based federal/state tax estimates for what-if flows.
+ */
 
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import {

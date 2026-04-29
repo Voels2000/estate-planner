@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * Advisor firm management client UI.
+ *
+ * Handles roster interactions, invite/status actions, and seat-cost display.
+ */
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ADVISOR_FIRM_SEAT_RATES } from '@/lib/tiers'

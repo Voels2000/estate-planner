@@ -1,9 +1,11 @@
 'use client'
 
-// ─────────────────────────────────────────
-// Menu: Dashboard
-// Route: /dashboard
-// ─────────────────────────────────────────
+/**
+ * Consumer dashboard client UI: intro, financial summary, retirement, estate summary,
+ * and allocation context. Data is prepared on the server page.
+ *
+ * Route: `/dashboard`
+ */
 
 import { useState } from 'react'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
