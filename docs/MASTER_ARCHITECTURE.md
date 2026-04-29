@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 84 / overlay boundary parity)
+# Last updated: April 29, 2026 (Session 85 / billing entry-tier + trial download policy)
 
 ---
 
@@ -215,6 +215,29 @@ Runtime behavior:
 
 - Pages render from stored snapshots for speed.
 - If stale, trigger background base-case regeneration.
+
+---
+
+## Consumer Billing + Access Contract
+
+**Current (as built):**
+
+- Consumer billing page now shows all consumer subscription tiers at initial purchase entry:
+  - Financial
+  - Retirement
+  - Estate
+- Tier-based feature gating remains enforced by `lib/tiers.ts` (`FEATURE_TIERS`) and dashboard/layout access checks.
+- Missing-data guardrails remain in place across core planning surfaces (generate/retry flows, unavailable-state banners, and horizon-missing telemetry).
+
+**Download policy (explicit):**
+
+- Educational/on-screen content may be available during trial.
+- Trial users **cannot** download exports/PDF artifacts.
+- Download endpoints must require paid-active subscription state (not `trialing`), with minimum paid tier checks applied per surface.
+- Enforcement now wired in:
+  - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export.
+  - `app/api/documents/download/[document_id]/route.ts` requires paid-active consumer status for document downloads.
+  - `app/api/documents/[household_id]/route.ts` aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
 
 ---
 

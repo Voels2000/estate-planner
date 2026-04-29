@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
 
 export async function GET(
   _req: NextRequest,
@@ -38,11 +39,25 @@ export async function GET(
   // ── 3. Get caller role ─────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, consumer_tier, subscription_status')
     .eq('id', user.id)
     .single()
 
   const callerRole = profile?.role
+
+  // Download policy: consumer trial users cannot download artifacts.
+  if (
+    !hasPaidDownloadAccess({
+      role: profile?.role ?? null,
+      consumer_tier: profile?.consumer_tier ?? null,
+      subscription_status: profile?.subscription_status ?? null,
+    }, 1)
+  ) {
+    return NextResponse.json(
+      { error: 'Paid active subscription required for downloads' },
+      { status: 403 },
+    )
+  }
 
   // ── 4. Advisor download permission check ───────────────────
   // Consumers and attorneys can always download (RLS already confirmed access).

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
 
 export async function GET(
   _req: NextRequest,
@@ -21,7 +22,7 @@ export async function GET(
   // ── 2. Get caller role ─────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, consumer_tier, subscription_status')
     .eq('id', user.id)
     .single()
 
@@ -87,16 +88,25 @@ export async function GET(
   // For advisors — include metadata but flag download permission.
   // For consumers and attorneys — full access.
   type DocumentRow = {
-  id: string
-  document_type: string
-  file_name: string
-  version: number
-  is_current: boolean
-  uploader_role: string
-  created_at: string
-}
+    id: string
+    document_type: string
+    file_name: string
+    version: number
+    is_current: boolean
+    uploader_role: string
+    created_at: string
+  }
 
-const shaped = (documents ?? [] as DocumentRow[]).map((doc: DocumentRow) => {
+  const consumerCanDownload = hasPaidDownloadAccess(
+    {
+      role: profile?.role ?? null,
+      consumer_tier: profile?.consumer_tier ?? null,
+      subscription_status: profile?.subscription_status ?? null,
+    },
+    1,
+  )
+
+  const shaped = ((documents ?? []) as DocumentRow[]).map((doc: DocumentRow) => {
     const base = {
       id: doc.id,
       document_type: doc.document_type,
@@ -116,7 +126,7 @@ const shaped = (documents ?? [] as DocumentRow[]).map((doc: DocumentRow) => {
 
     return {
       ...base,
-      can_download: true,
+      can_download: callerRole === 'consumer' ? consumerCanDownload : true,
     }
   })
 

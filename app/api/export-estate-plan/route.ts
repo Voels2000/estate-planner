@@ -3,6 +3,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
 
 export const runtime = 'nodejs'
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Verify the user has access to this household (advisor or owner)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role, consumer_tier, full_name')
+      .select('role, consumer_tier, subscription_status, full_name')
       .eq('id', user.id)
       .single()
 
@@ -51,9 +52,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Consumers must be Tier 3+ to export
-    if (profile.role === 'consumer' && profile.consumer_tier < 3) {
-      return NextResponse.json({ error: 'Tier 3 subscription required for PDF export' }, { status: 403 })
+    // Download policy: trial users cannot export. Consumers must be paid-active.
+    if (!hasPaidDownloadAccess(profile, 3)) {
+      return NextResponse.json(
+        { error: 'Paid active Tier 3 subscription required for PDF export' },
+        { status: 403 },
+      )
     }
 
     const isAdvisor = profile.role === 'advisor'

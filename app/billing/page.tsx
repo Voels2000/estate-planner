@@ -144,9 +144,7 @@ export default async function BillingPage() {
     .maybeSingle()
   const isAdvisorClient = !!clientRow
 
-  const priceIdsToShow = isActive
-    ? CONSUMER_PRICE_IDS
-    : [CONSUMER_PRICE_IDS[0]]
+  const priceIdsToShow = CONSUMER_PRICE_IDS
 
   const plans = await Promise.all(
     priceIdsToShow.map(async id => {
