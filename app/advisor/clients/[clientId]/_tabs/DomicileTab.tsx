@@ -17,6 +17,7 @@ import { ClientViewShellProps } from '../_client-view-shell'
 
 /** Temporary federal exemption input for inheritance waterfall rendering. */
 const FEDERAL_EXEMPTION_PLACEHOLDER = 13_610_000
+const COLLAPSE_STATE_VERSION = 'v1'
 
 export default function DomicileTab({
   domicileAnalysis,
@@ -49,6 +50,14 @@ export default function DomicileTab({
   }
 
   const [liveAnalysis, setLiveAnalysis] = useState(domicileAnalysis)
+  const [isInheritanceOpen, setIsInheritanceOpen] = useState(false)
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [isBreakevenOpen, setIsBreakevenOpen] = useState(false)
+
+  const collapseStoragePrefix = `advisor:domicile:${COLLAPSE_STATE_VERSION}:${clientId ?? household?.id ?? 'unknown'}`
+  const inheritanceKey = `${collapseStoragePrefix}:inheritance-open`
+  const scheduleKey = `${collapseStoragePrefix}:schedule-open`
+  const breakevenKey = `${collapseStoragePrefix}:breakeven-open`
 
   useEffect(() => {
     let cancelled = false
@@ -72,6 +81,47 @@ export default function DomicileTab({
       cancelled = true
     }
   }, [clientId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const storedInheritance = window.localStorage.getItem(inheritanceKey)
+      const storedSchedule = window.localStorage.getItem(scheduleKey)
+      const storedBreakeven = window.localStorage.getItem(breakevenKey)
+      if (storedInheritance != null) setIsInheritanceOpen(storedInheritance === '1')
+      if (storedSchedule != null) setIsScheduleOpen(storedSchedule === '1')
+      if (storedBreakeven != null) setIsBreakevenOpen(storedBreakeven === '1')
+    } catch {
+      // Ignore storage access errors and keep defaults.
+    }
+  }, [inheritanceKey, scheduleKey, breakevenKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(inheritanceKey, isInheritanceOpen ? '1' : '0')
+    } catch {
+      // Ignore storage access errors.
+    }
+  }, [inheritanceKey, isInheritanceOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(scheduleKey, isScheduleOpen ? '1' : '0')
+    } catch {
+      // Ignore storage access errors.
+    }
+  }, [scheduleKey, isScheduleOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(breakevenKey, isBreakevenOpen ? '1' : '0')
+    } catch {
+      // Ignore storage access errors.
+    }
+  }, [breakevenKey, isBreakevenOpen])
 
   if (!liveAnalysis) {
     return (
@@ -350,16 +400,7 @@ export default function DomicileTab({
         </div>
       </div>
 
-      <MoveBreakevenPanel
-        currentState={breakevenCurrentState}
-        grossEstate={grossEstateForStateTax}
-        isMFJ={household?.filing_status === 'mfj'}
-        clientStates={clientStatesForBreakeven}
-        incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
-        estateTaxRules={stateEstateTaxRules ?? []}
-      />
-
-      {/* Sprint 74: projection-backed gross estate; NY cliff first, then tax panels, then schedule */}
+      {/* Projection-backed gross estate panels */}
       <div className="space-y-6">
         {household?.state_primary === 'NY' && (
           <NYCliffValidator
@@ -379,31 +420,89 @@ export default function DomicileTab({
           isMFJ={household?.filing_status === 'mfj'}
           projectedGrossEstateByYear={projectionRowsDomicile}
         />
-        <InheritanceTaxWaterfall
-          inheritanceAmount={grossEstateForStateTax}
-          year={new Date().getFullYear() + 1}
-        />
-        <DomicileScheduleEditor
-          householdId={household.id}
-          currentState={claimed_domicile_state ?? 'WA'}
-          grossEstateByYear={grossEstateByYear}
-          federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
-          filingStatus={household?.filing_status}
-          initialSchedule={domicileSchedule ?? []}
-          initialChecklist={
-            (domicileChecklist ?? []) as Array<{
-              id: string
-              category?: string | null
-              label?: string | null
-              description?: string | null
-              priority?: string | null
-              completed?: boolean | null
-              completed_at?: string | null
-            }>
-          }
-          dbExemptions={stateExemptions}
-          stateEstateTaxRules={stateEstateTaxRules}
-        />
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">Inheritance Tax by State</h3>
+            <button
+              type="button"
+              onClick={() => setIsInheritanceOpen((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              {isInheritanceOpen ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {isInheritanceOpen && (
+            <div className="mt-4">
+              <InheritanceTaxWaterfall
+                inheritanceAmount={grossEstateForStateTax}
+                year={new Date().getFullYear() + 1}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">Domicile Schedule</h3>
+            <button
+              type="button"
+              onClick={() => setIsScheduleOpen((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              {isScheduleOpen ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {isScheduleOpen && (
+            <div className="mt-4">
+              <DomicileScheduleEditor
+                householdId={household.id}
+                currentState={claimed_domicile_state ?? 'WA'}
+                grossEstateByYear={grossEstateByYear}
+                federalExemption={FEDERAL_EXEMPTION_PLACEHOLDER}
+                filingStatus={household?.filing_status}
+                initialSchedule={domicileSchedule ?? []}
+                initialChecklist={
+                  (domicileChecklist ?? []) as Array<{
+                    id: string
+                    category?: string | null
+                    label?: string | null
+                    description?: string | null
+                    priority?: string | null
+                    completed?: boolean | null
+                    completed_at?: string | null
+                  }>
+                }
+                dbExemptions={stateExemptions}
+                stateEstateTaxRules={stateEstateTaxRules}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">Move Breakeven Analysis</h3>
+            <button
+              type="button"
+              onClick={() => setIsBreakevenOpen((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              {isBreakevenOpen ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {isBreakevenOpen && (
+            <div className="mt-4">
+              <MoveBreakevenPanel
+                currentState={breakevenCurrentState}
+                grossEstate={grossEstateForStateTax}
+                isMFJ={household?.filing_status === 'mfj'}
+                clientStates={clientStatesForBreakeven}
+                incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
+                estateTaxRules={stateEstateTaxRules ?? []}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
