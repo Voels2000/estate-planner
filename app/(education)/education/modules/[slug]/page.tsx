@@ -32,12 +32,12 @@ export default async function EducationModulePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <ButtonLink href="/education" variant="link">
+      <ButtonLink href="/education" variant="link" className="text-[#1a3460]">
         ← Back to Education Guide
       </ButtonLink>
 
-      <Card className="mt-4 overflow-hidden p-0">
-        <div className="border-b border-neutral-100 bg-neutral-50/60 px-6 py-5">
+      <Card className="education-surface mt-4 overflow-hidden p-0">
+        <div className="education-module-header px-6 py-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
               <EducationMetaBadges
@@ -45,7 +45,7 @@ export default async function EducationModulePage({
                 complexity={module.complexity}
                 estimatedTime={module.estimatedTime}
               />
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-neutral-900">{module.title}</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight">{module.title}</h1>
             </div>
             <div className="shrink-0">
               <ModuleProgressToggle slug={module.slug} />

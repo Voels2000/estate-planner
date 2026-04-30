@@ -1,0 +1,133 @@
+.education-shell {
+  --edu-navy: #0f1f3d;
+  --edu-navy-light: #1a3460;
+  --edu-gold: #c9a84c;
+  --edu-gold-light: #e8c97a;
+  --edu-gold-pale: #fdf6e3;
+  --edu-sage: #4a7c6f;
+  --edu-sage-pale: #eef6f4;
+  --edu-border: #e2e8f0;
+  --edu-text-primary: #1a202c;
+  --edu-text-secondary: #4a5568;
+  --edu-text-muted: #718096;
+  --edu-white: #ffffff;
+  --edu-off-white: #fafaf8;
+  --edu-shadow: 0 4px 20px rgba(15, 31, 61, 0.08);
+  --edu-shadow-lg: 0 8px 40px rgba(15, 31, 61, 0.14);
+}
+
+.education-shell {
+  background: var(--edu-off-white);
+  color: var(--edu-text-primary);
+}
+
+.education-nav {
+  background: var(--edu-navy);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+}
+
+.education-nav-brand {
+  color: var(--edu-white);
+}
+
+.education-nav-logo {
+  background: var(--edu-gold);
+  color: var(--edu-navy);
+}
+
+.education-title {
+  color: var(--edu-navy);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+}
+
+.education-subtitle {
+  color: var(--edu-text-secondary);
+}
+
+.education-surface {
+  background: var(--edu-white);
+  border: 1px solid var(--edu-border);
+  box-shadow: var(--edu-shadow);
+}
+
+.education-surface-hover:hover {
+  border-color: var(--edu-gold-light);
+  box-shadow: var(--edu-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.education-hero {
+  background: linear-gradient(180deg, rgba(15, 31, 61, 0.04) 0%, transparent 100%);
+  border: 1px solid var(--edu-border);
+}
+
+.education-hero-badge {
+  background: var(--edu-gold-pale);
+  border: 1px solid var(--edu-gold-light);
+  color: var(--edu-navy);
+}
+
+.education-primary-btn {
+  background: var(--edu-navy);
+  color: var(--edu-white);
+}
+
+.education-primary-btn:hover {
+  background: var(--edu-navy-light);
+}
+
+.education-pillars {
+  border: 1px solid var(--edu-border);
+  background: var(--edu-white);
+}
+
+.education-disclaimer {
+  background: var(--edu-navy-light);
+  border-left: 4px solid var(--edu-gold);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.education-disclaimer strong {
+  color: var(--edu-gold);
+}
+
+.education-module-header {
+  background: linear-gradient(135deg, var(--edu-navy) 0%, #2a4a7f 100%);
+  color: var(--edu-white);
+}
+
+.education-module-header h1 {
+  color: var(--edu-white);
+}
+
+.education-meta-chip {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.education-prose {
+  color: var(--edu-text-secondary);
+}
+
+.education-prose h2,
+.education-prose h3,
+.education-prose h4 {
+  color: var(--edu-navy);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.education-prose blockquote {
+  background: var(--edu-sage-pale);
+  border-left: 4px solid var(--edu-sage);
+}
+
+.education-prose table th {
+  background: var(--edu-navy);
+  color: var(--edu-white);
+}
+
+.education-prose table td {
+  border-color: var(--edu-border);
+}

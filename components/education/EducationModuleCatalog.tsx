@@ -140,16 +140,16 @@ export default function EducationModuleCatalog({
 
   return (
     <div>
-      <Card className="p-3">
+      <Card className="education-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-neutral-600">
             Progress: {completed.size} of {modules.length} modules completed
           </span>
           <span className="text-xs font-semibold text-neutral-700">{completionPct}%</span>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200">
           <div
-            className="h-full rounded-full bg-indigo-600 transition-all"
+            className="h-full rounded-full bg-[#4a7c6f] transition-all"
             style={{ width: `${completionPct}%` }}
           />
         </div>
@@ -177,8 +177,8 @@ export default function EducationModuleCatalog({
           </p>
         )}
         {selectedBundleMeta && pathStartModule && (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-2">
-            <p className="text-xs text-indigo-900">
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[#e8c97a] bg-[#fdf6e3] px-2.5 py-2">
+            <p className="text-xs text-[#0f1f3d]">
               {selectedBundleMeta.label}: start with{' '}
               <span className="font-semibold">{pathStartModule.title}</span>
             </p>
@@ -206,7 +206,7 @@ export default function EducationModuleCatalog({
         )}
       </Card>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="education-pillars mt-4 flex flex-wrap items-center gap-2 rounded-md p-2">
         <select
           value={selectedBundle}
           onChange={(e) => setSelectedBundle(e.target.value as typeof selectedBundle)}
@@ -245,7 +245,7 @@ export default function EducationModuleCatalog({
           <option value="intermediate">Intermediate</option>
           <option value="advanced">Advanced</option>
         </select>
-        <span className="text-xs text-neutral-500">
+        <span className="ml-auto text-xs text-neutral-500">
           Showing {filtered.length} module{filtered.length === 1 ? '' : 's'}
         </span>
       </div>
@@ -261,7 +261,7 @@ export default function EducationModuleCatalog({
         ) : (
           filtered.map((module) => (
             <Link key={module.slug} href={`/education/modules/${module.slug}`} className="block h-full">
-              <Card hover className="h-full p-4">
+              <Card hover className="education-surface education-surface-hover h-full p-4 transition">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
                     {PILLAR_LABEL[module.pillar]} · {module.complexity}
@@ -272,7 +272,7 @@ export default function EducationModuleCatalog({
                     </span>
                   )}
                 </div>
-                <h3 className="mt-1 text-lg font-semibold text-neutral-900">{module.title}</h3>
+                <h3 className="education-title mt-1 text-lg">{module.title}</h3>
                 <p className="mt-2 text-sm text-neutral-600">{module.summary}</p>
                 {module.tags.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1">

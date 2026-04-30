@@ -12,10 +12,14 @@ export default async function EducationDecisionTreePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <ButtonLink href="/education" variant="link">
+      <ButtonLink href="/education" variant="link" className="text-[#1a3460]">
         ← Back to Education Guide
       </ButtonLink>
-      <Card className="mt-4 p-6">
+      <Card className="education-surface mt-4 p-6">
+        <h1 className="education-title mb-2 text-2xl">Your Planning Education Path</h1>
+        <p className="education-subtitle mb-5 text-sm">
+          Answer questions to discover which concepts are most relevant to your situation.
+        </p>
         <EducationProse>
           <ReactMarkdown>{body}</ReactMarkdown>
         </EducationProse>

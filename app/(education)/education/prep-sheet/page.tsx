@@ -10,11 +10,11 @@ export default async function EducationPrepSheetPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <ButtonLink href="/education" variant="link">
+      <ButtonLink href="/education" variant="link" className="text-[#1a3460]">
         ← Back to Education Guide
       </ButtonLink>
 
-      <Card className="mt-4 p-6">
+      <Card className="education-surface mt-4 p-6">
         <SectionHeader
           as="h1"
           title="Advisor Prep Sheet"
@@ -22,24 +22,24 @@ export default async function EducationPrepSheetPage() {
         />
 
         <div className="mt-6 grid gap-4 sm:grid-cols-1">
-          <Card className="border-neutral-200 bg-neutral-50/50 p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Financial</h2>
+          <Card className="education-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Financial</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Top 3 near-term money priorities</li>
               <li>Income, expenses, and debt pressure points</li>
               <li>Insurance and risk-management gaps</li>
             </ul>
           </Card>
-          <Card className="border-neutral-200 bg-neutral-50/50 p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Retirement</h2>
+          <Card className="education-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Retirement</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Target retirement age and income goals</li>
               <li>Social Security and RMD timing questions</li>
               <li>Tax-aware withdrawal sequencing concerns</li>
             </ul>
           </Card>
-          <Card className="border-neutral-200 bg-neutral-50/50 p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Estate</h2>
+          <Card className="education-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Estate</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Status of will/trust, POA, healthcare docs</li>
               <li>Beneficiary designation review checklist</li>

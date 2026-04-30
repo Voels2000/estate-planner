@@ -5,12 +5,11 @@ import { Card } from '@/components/ui/Card'
  */
 export function EducationDisclaimer() {
   return (
-    <Card className="border-amber-200/90 bg-amber-50/60 px-4 py-3">
-      <p className="text-xs leading-relaxed text-amber-950/85">
-        <span className="font-semibold text-amber-950">Disclaimer: </span>
-        This education guide is for informational and planning purposes only. It does not constitute legal,
-        tax, financial, or investment advice. Consult a qualified attorney, CPA, or financial advisor before
-        making decisions based on this material.
+    <Card className="education-disclaimer rounded-r-md border-0 px-4 py-3">
+      <p className="text-xs leading-relaxed">
+        ⚠️ <strong>Educational purposes only.</strong> Nothing on this platform constitutes financial, legal,
+        tax, or investment advice. Consult a licensed professional for guidance specific to your situation
+        before making planning decisions.
       </p>
     </Card>
   )

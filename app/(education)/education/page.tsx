@@ -10,39 +10,36 @@ export default async function EducationGuidePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <SectionHeader
-        title="Education Guide"
-        subtitle="Learn core planning concepts before making planning decisions."
-      />
-      <Card className="mt-4 border-indigo-200 bg-indigo-50 px-4 py-3">
-        <p className="text-sm font-medium text-indigo-900">
-          This guide is educational; your living plan is built in the planning suite.
+      <Card className="education-hero rounded-xl p-8 text-center">
+        <div className="education-hero-badge inline-flex items-center rounded-full px-4 py-1 text-[11px] font-medium uppercase tracking-wide">
+          Educational Platform
+        </div>
+        <h1 className="education-title mt-5 text-4xl leading-tight">
+          Plan with Confidence.
+          <br />
+          Learn Before You Leap.
+        </h1>
+        <p className="education-subtitle mx-auto mt-4 max-w-2xl text-base leading-relaxed">
+          Understand financial, retirement, and estate planning concepts in plain English. Explore options
+          without pressure and prepare for informed conversations with licensed professionals.
         </p>
-        <p className="mt-1 text-xs text-indigo-900/80">
-          Use this education hub to learn and prepare. Then use the planning workflows across financial,
-          retirement, and estate areas to build, review, and update your living plan over time.
-        </p>
-        <div className="mt-3">
-          <ButtonLink href="/dashboard" size="sm">Open Planning Suite</ButtonLink>
+        <div className="mt-7 flex flex-wrap justify-center gap-2">
+          <ButtonLink href="/education/decision-tree" className="education-primary-btn border-transparent">
+            Take the Decision Tree
+          </ButtonLink>
+          <ButtonLink href="/education/glossary" variant="secondary">
+            Browse Glossary
+          </ButtonLink>
+          <ButtonLink href="/education/prep-sheet" variant="secondary">
+            Advisor Prep Sheet
+          </ButtonLink>
         </div>
       </Card>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <ButtonLink href="/education/decision-tree" variant="secondary" size="sm">
-          Decision Tree
-        </ButtonLink>
-        <ButtonLink href="/education/glossary" variant="secondary" size="sm">
-          Glossary
-        </ButtonLink>
-        <ButtonLink href="/education/prep-sheet" variant="secondary" size="sm">
-          Advisor Prep Sheet
-        </ButtonLink>
-      </div>
-
       <div className="mt-10 border-t border-neutral-200 pt-8">
         <SectionHeader
-          title="Module library"
-          subtitle="Track progress, choose a learning path, and open any topic."
+          title="Educational Modules"
+          subtitle="Explore key concepts across financial, retirement, and estate planning pillars."
           className="mb-6"
         />
       </div>
