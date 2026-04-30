@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { formControlClass, formLabelClass } from '@/components/ui/form'
 
 // FIX: canonical role values — 'advisor' not 'financial_advisor'
 type Role = 'consumer' | 'advisor' | 'attorney'
@@ -193,18 +196,18 @@ export function SignupForm() {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
         </svg>
-        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Setting up your account…</p>
+        <p className="text-sm font-medium text-neutral-600 dark:text-zinc-400">Setting up your account…</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-zinc-950">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 font-sans dark:bg-zinc-950">
+      <Card className="w-full max-w-md rounded-2xl p-8 shadow-sm ring-1 ring-neutral-200 dark:border-zinc-800 dark:bg-zinc-900 dark:ring-zinc-800">
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-zinc-50">
           Create your account
         </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-neutral-600 dark:text-zinc-400">
           Get started with your estate planning workspace.
         </p>
 
@@ -223,7 +226,7 @@ export function SignupForm() {
 
         <div className="mt-6 space-y-5">
           <div className="space-y-1.5">
-            <label htmlFor="fullName" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <label htmlFor="fullName" className={formLabelClass}>
               Full name
             </label>
             <input
@@ -232,13 +235,13 @@ export function SignupForm() {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className={formControlClass}
               placeholder="Jane Doe"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <label htmlFor="email" className={formLabelClass}>
               Email address
             </label>
             <input
@@ -249,17 +252,15 @@ export function SignupForm() {
               readOnly={hasAdvisorInvite}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 ${
-                hasAdvisorInvite
-                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400'
-                  : 'bg-white dark:bg-zinc-950'
+              className={`${formControlClass} ${
+                hasAdvisorInvite ? 'cursor-not-allowed bg-neutral-100 text-neutral-600 dark:bg-zinc-900 dark:text-zinc-400' : ''
               }`}
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <label htmlFor="password" className={formLabelClass}>
               Password
             </label>
             <input
@@ -270,7 +271,7 @@ export function SignupForm() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className={formControlClass}
               placeholder="At least 6 characters"
             />
           </div>
@@ -281,7 +282,7 @@ export function SignupForm() {
             </p>
           ) : (
             <div className="space-y-1.5">
-              <p className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">Role</p>
+              <p className={formLabelClass}>Role</p>
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
@@ -306,8 +307,8 @@ export function SignupForm() {
                         isDisabled ? 'cursor-not-allowed opacity-50' : ''
                       } ${
                         isSelected
-                          ? 'border-zinc-900 bg-zinc-900 text-zinc-50 dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                          : 'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
+                          ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm dark:border-indigo-500 dark:bg-indigo-500'
+                          : 'border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
                       }`}
                     >
                       <span className="font-medium">{label}</span>
@@ -321,11 +322,12 @@ export function SignupForm() {
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <button
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-700 active:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            variant="primary"
+            className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium shadow-sm"
           >
             {isSubmitting ? (
               <>
@@ -338,16 +340,19 @@ export function SignupForm() {
             ) : (
               'Create account'
             )}
-          </button>
+          </Button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-6 text-center text-sm text-neutral-600 dark:text-zinc-400">
           Already have an account?{' '}
-          <a href="/login" className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100">
+          <a
+            href="/login"
+            className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
             Sign in
           </a>
         </p>
-      </div>
+      </Card>
     </div>
   )
 }

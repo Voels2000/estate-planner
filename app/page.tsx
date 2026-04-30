@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { SectionHeader } from '@/components/ui/SectionHeader'
@@ -88,33 +87,33 @@ export default async function HomePage() {
           </section>
 
           <section className="mt-12">
-            <h3 className="text-xl font-semibold text-neutral-900">Three planning pillars</h3>
-            <p className="mt-2 text-sm text-neutral-600">
-              Start with education modules and build context before entering paid plan workflows.
-            </p>
+            <SectionHeader
+              title="Three planning pillars"
+              subtitle="Start with education modules and build context before entering paid plan workflows."
+            />
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+              <Card className="p-4">
                 <p className="text-sm font-semibold text-neutral-900">Financial Planning</p>
                 <p className="mt-1 text-xs text-neutral-600">
                   Cash flow, insurance, taxes, and investment foundations.
                 </p>
-              </div>
-              <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+              </Card>
+              <Card className="p-4">
                 <p className="text-sm font-semibold text-neutral-900">Retirement Planning</p>
                 <p className="mt-1 text-xs text-neutral-600">
                   Income sequencing, RMDs, Social Security, and longevity concepts.
                 </p>
-              </div>
-              <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+              </Card>
+              <Card className="p-4">
                 <p className="text-sm font-semibold text-neutral-900">Estate Planning</p>
                 <p className="mt-1 text-xs text-neutral-600">
                   Documents, beneficiary coordination, transfer strategy, and tax context.
                 </p>
-              </div>
+              </Card>
             </div>
           </section>
 
-          <section className="mt-12 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <Card className="mt-12 rounded-2xl p-6">
             <h3 className="text-xl font-semibold text-neutral-900">How access works</h3>
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
@@ -133,9 +132,9 @@ export default async function HomePage() {
                 <p className="mt-1 text-xs text-neutral-600">Paid plan unlocks planning workflows and downloadable artifacts.</p>
               </div>
             </div>
-          </section>
+          </Card>
 
-          <section className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+          <Card className="mt-10 border-indigo-200 bg-indigo-50 p-6 rounded-2xl">
             <h3 className="text-lg font-semibold text-indigo-900">
               Education first. Living plan next.
             </h3>
@@ -155,7 +154,7 @@ export default async function HomePage() {
                 Ongoing living-plan updates
               </span>
             </div>
-          </section>
+          </Card>
         </div>
       </main>
     )

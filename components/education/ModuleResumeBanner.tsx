@@ -1,9 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { EducationModuleMeta } from '@/lib/education/loaders'
 import { fetchCompletedModules } from '@/lib/education/progressClient'
+import { ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 export default function ModuleResumeBanner({
   currentSlug,
@@ -38,12 +39,23 @@ export default function ModuleResumeBanner({
   if (!nextIncomplete || nextIncomplete.slug === currentSlug) return null
 
   return (
-    <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-      Resume where you left off:{' '}
-      <Link href={`/education/modules/${nextIncomplete.slug}`} className="font-semibold underline">
-        {nextIncomplete.title}
-      </Link>
-    </div>
+    <Card className="mt-4 border-indigo-200 bg-indigo-50 px-4 py-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <p className="text-sm text-indigo-900">
+          Resume where you left off:{' '}
+          <ButtonLink
+            href={`/education/modules/${nextIncomplete.slug}`}
+            variant="link"
+            className="font-semibold text-indigo-900 hover:text-indigo-950"
+          >
+            {nextIncomplete.title}
+          </ButtonLink>
+        </p>
+        <ButtonLink href={`/education/modules/${nextIncomplete.slug}`} size="sm">
+          Continue
+        </ButtonLink>
+      </div>
+    </Card>
   )
 }
 

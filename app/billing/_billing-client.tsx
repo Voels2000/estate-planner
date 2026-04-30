@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 type Plan = {
   priceId: string
@@ -72,14 +74,18 @@ export function BillingClient({
   if (isAdvisorClient) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <div className="mb-4 text-4xl">🎉</div>
-        <h1 className="text-2xl font-bold text-neutral-900">You&apos;re all set</h1>
-        <p className="mt-3 text-neutral-600">
-          Your plan is managed by your advisor. There&apos;s nothing to do here.
-        </p>
-        <a href="/dashboard" className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
-          ← Back to Dashboard
-        </a>
+        <Card className="p-8">
+          <div className="mb-4 text-4xl">🎉</div>
+          <h1 className="text-2xl font-bold text-neutral-900">You&apos;re all set</h1>
+          <p className="mt-3 text-neutral-600">
+            Your plan is managed by your advisor. There&apos;s nothing to do here.
+          </p>
+          <div className="mt-8">
+            <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
+              ← Back to Dashboard
+            </ButtonLink>
+          </div>
+        </Card>
       </div>
     )
   }
@@ -88,9 +94,13 @@ export function BillingClient({
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6">
-        <a href="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
+        <ButtonLink
+          href="/dashboard"
+          variant="link"
+          className="text-sm text-neutral-500 hover:text-neutral-900"
+        >
           ← Back to Dashboard
-        </a>
+        </ButtonLink>
       </div>
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Choose your plan</h1>
@@ -113,10 +123,13 @@ export function BillingClient({
           const { price, period } = formatPrice(plan.amount, plan.currency, plan.interval)
           const isCurrentPlan = currentPlan === plan.priceId
           return (
-            <div
+            <Card
               key={plan.priceId}
-              className={`relative rounded-2xl p-8 shadow-sm ring-1 ${
-                plan.highlighted ? 'bg-neutral-900 ring-neutral-900' : 'bg-white ring-neutral-200'
+              hover={!plan.highlighted}
+              className={`relative rounded-2xl p-8 shadow-md ring-1 ${
+                plan.highlighted
+                  ? 'border-neutral-900 bg-neutral-900 ring-neutral-900'
+                  : 'ring-neutral-200'
               }`}
             >
               {plan.highlighted && (
@@ -153,16 +166,16 @@ export function BillingClient({
                   ))}
                 </ul>
               )}
-              <button
+              <Button
+                type="button"
                 onClick={() => handleSubscribe(plan.priceId)}
                 disabled={loadingPriceId === plan.priceId || isCurrentPlan}
-                className={`mt-8 w-full rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                  plan.highlighted ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                }`}
+                variant={plan.highlighted ? 'primary' : 'dark'}
+                className="mt-8 w-full rounded-lg py-2.5 text-sm font-medium"
               >
                 {isCurrentPlan && isActive ? 'Current Plan' : loadingPriceId === plan.priceId ? 'Redirecting...' : 'Get started'}
-              </button>
-            </div>
+              </Button>
+            </Card>
           )
         })}
       </div>

@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { useMemo, useState, useEffect } from 'react'
 import type { EducationModuleMeta } from '@/lib/education/loaders'
 import { fetchCompletedEntries, fetchCompletedModules, type CompletedEntry } from '@/lib/education/progressClient'
+import { ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { formControlClass } from '@/components/ui/form'
 
 const PILLAR_LABEL: Record<string, string> = {
   financial: 'Financial Planning',
@@ -133,9 +136,11 @@ export default function EducationModuleCatalog({
   }, [completed, modules])
   const nextPillarFocus = foundationByPillar.find((item) => !item.isDone && item.firstFoundation)
 
+  const compactControl = `${formControlClass} py-1.5 text-xs`
+
   return (
     <div>
-      <div className="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
+      <Card className="mt-4 p-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-neutral-600">
             Progress: {completed.size} of {modules.length} modules completed
@@ -153,12 +158,9 @@ export default function EducationModuleCatalog({
             <p className="text-xs text-neutral-600">
               Next recommended: <span className="font-medium text-neutral-800">{nextRecommended.title}</span>
             </p>
-            <Link
-              href={`/education/modules/${nextRecommended.slug}`}
-              className="inline-flex rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
-            >
+            <ButtonLink href={`/education/modules/${nextRecommended.slug}`} size="sm">
               Continue learning
-            </Link>
+            </ButtonLink>
           </div>
         )}
         {nextPillarFocus?.firstFoundation && (
@@ -180,12 +182,9 @@ export default function EducationModuleCatalog({
               {selectedBundleMeta.label}: start with{' '}
               <span className="font-semibold">{pathStartModule.title}</span>
             </p>
-            <Link
-              href={`/education/modules/${pathStartModule.slug}`}
-              className="inline-flex rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
-            >
+            <ButtonLink href={`/education/modules/${pathStartModule.slug}`} size="sm">
               Start this path
-            </Link>
+            </ButtonLink>
           </div>
         )}
         {recentCompleted.length > 0 && (
@@ -205,13 +204,13 @@ export default function EducationModuleCatalog({
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select
           value={selectedBundle}
           onChange={(e) => setSelectedBundle(e.target.value as typeof selectedBundle)}
-          className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-700"
+          className={compactControl}
         >
           <option value="all">All paths</option>
           {BUNDLES.map((bundle) => (
@@ -224,12 +223,12 @@ export default function EducationModuleCatalog({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search modules, topics, tags..."
-          className="min-w-[220px] flex-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-700"
+          className={`min-w-[220px] flex-1 ${compactControl}`}
         />
         <select
           value={selectedPillar}
           onChange={(e) => setSelectedPillar(e.target.value as typeof selectedPillar)}
-          className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-700"
+          className={compactControl}
         >
           <option value="all">All pillars</option>
           <option value="financial">Financial</option>
@@ -239,7 +238,7 @@ export default function EducationModuleCatalog({
         <select
           value={selectedComplexity}
           onChange={(e) => setSelectedComplexity(e.target.value as typeof selectedComplexity)}
-          className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-700"
+          className={compactControl}
         >
           <option value="all">All levels</option>
           <option value="foundation">Foundation</option>
@@ -253,11 +252,8 @@ export default function EducationModuleCatalog({
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {filtered.map((module) => (
-          <Link
-            key={module.slug}
-            href={`/education/modules/${module.slug}`}
-            className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm hover:border-neutral-300"
-          >
+          <Link key={module.slug} href={`/education/modules/${module.slug}`} className="block h-full">
+            <Card hover className="h-full p-4">
             <div className="flex items-start justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
                 {PILLAR_LABEL[module.pillar]} · {module.complexity}
@@ -283,6 +279,7 @@ export default function EducationModuleCatalog({
               </div>
             )}
             <p className="mt-3 text-xs text-neutral-500">Estimated time: {module.estimatedTime}</p>
+            </Card>
           </Link>
         ))}
       </div>

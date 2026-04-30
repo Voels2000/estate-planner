@@ -3,6 +3,8 @@ import { BillingClient } from './_billing-client'
 import { FirmBillingClient } from './_firm-billing-client'
 import Stripe from 'stripe'
 import { redirect } from 'next/navigation'
+import { ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import {
   TIER_FEATURES,
   ADVISOR_FIRM_PRICE_IDS,
@@ -25,18 +27,19 @@ export default async function BillingPage() {
     if (!access.isFirmOwner) {
       return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
-          <div className="mb-4 text-4xl">🏢</div>
-          <h1 className="text-2xl font-bold text-neutral-900">Billing</h1>
-          <p className="mt-4 text-neutral-600 leading-relaxed">
-            Your billing is managed by your firm owner. Contact your firm
-            administrator for billing questions.
-          </p>
-          <a
-            href="/dashboard"
-            className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
-          >
-            ← Back to Dashboard
-          </a>
+          <Card className="p-8">
+            <div className="mb-4 text-4xl">🏢</div>
+            <h1 className="text-2xl font-bold text-neutral-900">Billing</h1>
+            <p className="mt-4 text-neutral-600 leading-relaxed">
+              Your billing is managed by your firm owner. Contact your firm
+              administrator for billing questions.
+            </p>
+            <div className="mt-10">
+              <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
+                ← Back to Dashboard
+              </ButtonLink>
+            </div>
+          </Card>
         </div>
       )
     }
@@ -44,20 +47,21 @@ export default async function BillingPage() {
     if (!access.firm_id) {
       return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
-          <div className="mb-4 text-4xl">⚠️</div>
-          <h1 className="text-2xl font-bold text-neutral-900">
-            Firm not linked
-          </h1>
-          <p className="mt-4 text-neutral-600">
-            Your account is not associated with a firm. Contact support if this
-            is unexpected.
-          </p>
-          <a
-            href="/dashboard"
-            className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
-          >
-            ← Back to Dashboard
-          </a>
+          <Card className="p-8">
+            <div className="mb-4 text-4xl">⚠️</div>
+            <h1 className="text-2xl font-bold text-neutral-900">
+              Firm not linked
+            </h1>
+            <p className="mt-4 text-neutral-600">
+              Your account is not associated with a firm. Contact support if this
+              is unexpected.
+            </p>
+            <div className="mt-10">
+              <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
+                ← Back to Dashboard
+              </ButtonLink>
+            </div>
+          </Card>
         </div>
       )
     }
@@ -120,16 +124,16 @@ export default async function BillingPage() {
 
   if (isAdvisorManaged) {
     return (
-      <div className="max-w-2xl mx-auto mt-16 px-6">
-        <div className="rounded-md border border-blue-200 bg-blue-50 px-6 py-5">
-          <h2 className="text-lg font-semibold text-blue-900 mb-1">
+      <div className="mx-auto mt-16 max-w-2xl px-6">
+        <Card className="border-blue-200 bg-blue-50 px-6 py-5">
+          <h2 className="mb-1 text-lg font-semibold text-blue-900">
             Your plan is managed by your advisor
           </h2>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-blue-800">
             No payment required. Your advisor covers access to MyWealthMaps on
             your behalf. Contact your advisor if you have billing questions.
           </p>
-        </div>
+        </Card>
       </div>
     )
   }

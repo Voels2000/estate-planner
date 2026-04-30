@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import ReactMarkdown from 'react-markdown'
-import Link from 'next/link'
+import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
@@ -11,9 +11,9 @@ export default async function EducationGlossaryPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/education" className="text-sm text-indigo-600 hover:text-indigo-700">
+      <ButtonLink href="/education" variant="link">
         ← Back to Education Guide
-      </Link>
+      </ButtonLink>
       <Card className="mt-4 p-6">
         <article className="prose prose-neutral max-w-none">
           <ReactMarkdown>{body}</ReactMarkdown>

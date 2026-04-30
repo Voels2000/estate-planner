@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
-import Link from 'next/link'
+import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { getEducationModule, listEducationModules } from '@/lib/education/loaders'
@@ -30,9 +30,9 @@ export default async function EducationModulePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/education" className="text-sm text-indigo-600 hover:text-indigo-700">
+      <ButtonLink href="/education" variant="link">
         ← Back to Education Guide
-      </Link>
+      </ButtonLink>
 
       <Card className="mt-4 p-6">
         <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">

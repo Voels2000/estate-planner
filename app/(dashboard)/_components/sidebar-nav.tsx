@@ -204,8 +204,8 @@ export function SidebarNav({
                 onClick={() => toggleGroup(group.label)}
                 className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                   hasActive
-                    ? 'text-neutral-900 bg-neutral-50'
-                    : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'
+                    ? 'bg-indigo-50 text-indigo-900'
+                    : 'text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600'
                 } ${groupIsLocked ? 'cursor-not-allowed' : ''} disabled:cursor-not-allowed disabled:opacity-100`}
               >
                 <span className="flex-1 text-left text-neutral-900">{group.label}</span>
@@ -305,7 +305,7 @@ export function SidebarNav({
                     const greyedLeaf = locked || attorneyTierGate
                     const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-neutral-900 text-white'
+                        ? 'bg-indigo-600 text-white shadow-sm'
                         : locked || attorneyTierGate
                           ? 'text-neutral-400 hover:bg-neutral-50'
                           : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
@@ -362,7 +362,7 @@ export function SidebarNav({
               href="/advisor"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/advisor' || activePath.startsWith('/advisor/')
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -389,7 +389,7 @@ export function SidebarNav({
               href="/attorney"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/attorney' || activePath.startsWith('/attorney/')
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -416,7 +416,7 @@ export function SidebarNav({
               href="/admin"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/admin'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -444,7 +444,7 @@ export function SidebarNav({
               href="/admin/advisor-directory"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/admin/advisor-directory'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -500,7 +500,7 @@ export function SidebarNav({
               href="/my-advisor"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/my-advisor'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -531,7 +531,7 @@ export function SidebarNav({
               activePath === '/settings/attorney-access' && !attorneyTierGate
             const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-indigo-600 text-white shadow-sm'
                 : attorneyTierGate
                   ? 'text-neutral-400 hover:bg-neutral-50'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
@@ -571,7 +571,7 @@ export function SidebarNav({
             href="/print"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               activePath === '/print'
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >
@@ -610,7 +610,7 @@ export function SidebarNav({
               href="/import"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/import'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               }`}
             >
@@ -648,7 +648,7 @@ export function SidebarNav({
             href="/settings/security"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               activePath === '/settings/security'
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >
@@ -674,7 +674,7 @@ export function SidebarNav({
             href="/billing"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               activePath === '/billing'
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             }`}
           >

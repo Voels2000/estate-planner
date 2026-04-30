@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { listEducationModules } from '@/lib/education/loaders'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import EducationModuleCatalog from '@/components/education/EducationModuleCatalog'
@@ -29,24 +28,15 @@ export default async function EducationGuidePage() {
       </Card>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link
-          href="/education/decision-tree"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-        >
+        <ButtonLink href="/education/decision-tree" variant="secondary" size="sm">
           Decision Tree
-        </Link>
-        <Link
-          href="/education/glossary"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-        >
+        </ButtonLink>
+        <ButtonLink href="/education/glossary" variant="secondary" size="sm">
           Glossary
-        </Link>
-        <Link
-          href="/education/prep-sheet"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-        >
+        </ButtonLink>
+        <ButtonLink href="/education/prep-sheet" variant="secondary" size="sm">
           Advisor Prep Sheet
-        </Link>
+        </ButtonLink>
       </div>
 
       <EducationModuleCatalog modules={modules} />

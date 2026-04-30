@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import { ButtonAnchor } from '@/components/ui/Button'
+import { ButtonAnchor, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { getUserAccess } from '@/lib/get-user-access'
@@ -11,9 +10,9 @@ export default async function EducationPrepSheetPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/education" className="text-sm text-indigo-600 hover:text-indigo-700">
+      <ButtonLink href="/education" variant="link">
         ← Back to Education Guide
-      </Link>
+      </ButtonLink>
 
       <Card className="mt-4 p-6">
         <SectionHeader

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 const TIER_LABEL: Record<string, string> = {
   starter: 'Starter (1–10 advisors)',
@@ -70,12 +72,13 @@ export function FirmBillingClient({
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6">
-        <a
+        <ButtonLink
           href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+          variant="link"
+          className="text-sm text-neutral-500 hover:text-neutral-900"
         >
           ← Back to Dashboard
-        </a>
+        </ButtonLink>
       </div>
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
@@ -92,7 +95,7 @@ export function FirmBillingClient({
         </div>
       )}
 
-      <div className="rounded-2xl bg-white border border-neutral-200 shadow-sm p-6 space-y-6">
+      <Card className="space-y-6 rounded-2xl p-6">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
             Firm
@@ -130,25 +133,23 @@ export function FirmBillingClient({
 
         <div className="flex flex-wrap gap-3 pt-2">
           {isActive && (
-            <a
-              href="/advisor/firm"
-              className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition-colors"
-            >
+            <ButtonLink href="/advisor/firm" variant="dark" className="rounded-lg px-4 py-2.5 text-sm">
               Manage Subscription
-            </a>
+            </ButtonLink>
           )}
           {!isActive && (
-            <button
+            <Button
               type="button"
               onClick={handleFirmCheckout}
               disabled={loadingSubscribe}
-              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              variant="secondary"
+              className="rounded-lg px-4 py-2.5 text-sm"
             >
               {loadingSubscribe ? 'Redirecting…' : 'Subscribe Now'}
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

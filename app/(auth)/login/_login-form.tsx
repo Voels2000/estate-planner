@@ -3,6 +3,9 @@
 import { FormEvent, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { formControlClass, formLabelClass } from '@/components/ui/form'
 
 export function LoginForm() {
   const router = useRouter()
@@ -74,18 +77,18 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-zinc-950">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 font-sans dark:bg-zinc-950">
+      <Card className="w-full max-w-md rounded-2xl p-8 shadow-sm ring-1 ring-neutral-200 dark:border-zinc-800 dark:bg-zinc-900 dark:ring-zinc-800">
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-zinc-50">
           Sign in to your account
         </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-neutral-600 dark:text-zinc-400">
           Welcome back. Enter your details to access your estate planner.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <label htmlFor="email" className={formLabelClass}>
               Email address
             </label>
             <input
@@ -95,13 +98,13 @@ export function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-100 dark:focus:ring-zinc-100"
+              className={formControlClass}
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <label htmlFor="password" className={formLabelClass}>
               Password
             </label>
             <input
@@ -111,7 +114,7 @@ export function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-100 dark:focus:ring-zinc-100"
+              className={formControlClass}
               placeholder="Enter your password"
             />
           </div>
@@ -123,30 +126,31 @@ export function LoginForm() {
           <div className="text-right">
             <a
               href="/forgot-password"
-              className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               Forgot password?
             </a>
           </div>
-          <button
+          <Button
             type="submit"
+            variant="primary"
             disabled={isSubmitting}
-            className="flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            className="w-full rounded-lg py-2.5 text-sm font-medium shadow-sm"
           >
             {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
+          </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-6 text-center text-sm text-neutral-600 dark:text-zinc-400">
           Don&apos;t have an account?{' '}
           <a
             href="/signup"
-            className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"
+            className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
           >
             Create one
           </a>
         </p>
-      </div>
+      </Card>
     </div>
   )
 }

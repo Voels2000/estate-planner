@@ -1,6 +1,7 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TIER_FEATURES } from '@/lib/tiers'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 const CONSUMER_PLANS = [
   {
@@ -63,12 +64,13 @@ export default async function PricingPage() {
           </h2>
           <div className="grid gap-6 md:grid-cols-3 max-w-7xl mx-auto">
             {CONSUMER_PLANS.map((plan) => (
-              <div
+              <Card
                 key={plan.id}
-                className={`relative rounded-2xl bg-white p-8 shadow-sm transition hover:shadow-md ${
+                hover
+                className={`relative rounded-2xl p-8 ${
                   plan.highlighted
                     ? 'border-2 border-indigo-500 ring-2 ring-indigo-500/20'
-                    : 'border border-neutral-200'
+                    : ''
                 }`}
               >
                 {plan.highlighted && (
@@ -93,31 +95,25 @@ export default async function PricingPage() {
                   ))}
                 </ul>
                 {user ? (
-                <form action={`/api/stripe/checkout?plan=${plan.id}`} method="POST">
-                    <button
+                  <form action={`/api/stripe/checkout?plan=${plan.id}`} method="POST">
+                    <Button
                       type="submit"
-                      className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition ${
-                        plan.highlighted
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                      }`}
+                      variant={plan.highlighted ? 'primary' : 'dark'}
+                      className="w-full rounded-lg py-3 text-sm font-semibold"
                     >
                       Get started
-                    </button>
+                    </Button>
                   </form>
                 ) : (
-                  <Link
+                  <ButtonLink
                     href="/signup"
-                    className={`block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition ${
-                      plan.highlighted
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                    }`}
+                    variant={plan.highlighted ? 'primary' : 'dark'}
+                    className="w-full justify-center rounded-lg py-3 text-sm font-semibold"
                   >
                     Start free trial
-                  </Link>
+                  </ButtonLink>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -133,11 +129,10 @@ export default async function PricingPage() {
           </p>
           <div className="grid gap-6 md:grid-cols-3 max-w-7xl mx-auto">
             {ADVISOR_PLANS.map((plan, i) => (
-              <div
+              <Card
                 key={plan.name}
-                className={`relative rounded-2xl bg-white p-8 shadow-sm transition hover:shadow-md border ${
-                  i === 1 ? 'border-2 border-neutral-900' : 'border-neutral-200'
-                }`}
+                hover
+                className={`relative rounded-2xl p-8 ${i === 1 ? 'border-2 border-neutral-900' : ''}`}
               >
                 {i === 1 && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-0.5 text-sm font-medium text-white">
@@ -169,22 +164,24 @@ export default async function PricingPage() {
                 {user ? (
                   <form action={`/api/stripe/checkout`} method="POST">
                     <input type="hidden" name="priceId" value={plan.priceId} />
-                    <button
+                    <Button
                       type="submit"
-                      className="w-full rounded-lg px-4 py-3 text-sm font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+                      variant="dark"
+                      className="w-full rounded-lg py-3 text-sm font-semibold"
                     >
                       Get started
-                    </button>
+                    </Button>
                   </form>
                 ) : (
-                  <Link
+                  <ButtonLink
                     href="/signup"
-                    className="block w-full rounded-lg px-4 py-3 text-center text-sm font-sebold bg-neutral-900 text-white hover:bg-neutral-800 transition"
+                    variant="dark"
+                    className="w-full justify-center rounded-lg py-3 text-sm font-semibold"
                   >
                     Start free trial
-                  </Link>
+                  </ButtonLink>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         </div>
