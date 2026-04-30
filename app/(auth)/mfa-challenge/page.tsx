@@ -84,7 +84,7 @@ function MfaChallengeForm() {
               width: '100%', padding: '14px',
               borderRadius: 8, border: '1.5px solid #e2e8f0',
               fontSize: 28, textAlign: 'center',
-              letteracing: '0.3em', fontFamily: 'monospace',
+              letterSpacing: '0.3em', fontFamily: 'monospace',
               outline: 'none', color: '#0f1f3d',
             }}
             onKeyDown={e => { if (e.key === 'Enter' && code.length === 6) handleVerify() }}
