@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 29, 2026 (Session 87 / education entry + guided paths)
+# Last updated: April 30, 2026 (Session 89 / education prose typography polish)
 
 ---
 
@@ -281,6 +281,15 @@ Runtime behavior:
   - Signed-out users: public education-first marketing landing page
   - Signed-in users with profile: redirect to `/education`
   - Signed-in users without profile: redirect to `/profile`
+- Root middleware guard behavior (`proxy.ts`) now explicitly allows unauthenticated `/` requests to pass through after login redirect checks, preventing profile lookups for signed-out landing-page traffic.
+
+**Design system + education UI refresh:**
+
+- Shared visual system artifacts are now documented and versioned in:
+  - `DESIGN_SYSTEM.md`
+  - `assets/design-system.css`
+- The education route family and root landing surface now share the same updated visual language (typography, spacing, cards, badges, and call-to-action treatment) for consistent signed-out and signed-in transitions.
+- Education markdown rendering now has explicit prose styling hooks in `app/(education)/education/education-theme.css` under `.education-prose-content*` selectors (headings, paragraph/list rhythm, links, blockquotes, table chrome, and inline/preformatted code treatment) so module/decision-tree/glossary content remains visually consistent with the design system.
 
 **Content coverage status:**
 

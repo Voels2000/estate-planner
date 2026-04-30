@@ -22,11 +22,11 @@ export default async function EducationLayout({
       <header className="nav">
         <div className="app flex items-center justify-between gap-3 px-0 py-0">
           <div className="flex items-center gap-3">
-            <div className="nav-logo">P</div>
+            <div className="nav-logo">M</div>
             <Link href="/education" className="text-white">
-              <div className="text-base font-semibold">PlanWise Guide</div>
+              <div className="text-base font-semibold">My Wealth Maps</div>
               <div className="text-[10px] uppercase tracking-wide text-white/60">
-                Educational platform only
+                mywealthmaps.com
               </div>
             </Link>
           </div>

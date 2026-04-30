@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 28, 2026 (Session 79)
+# Last updated: April 30, 2026 (Session 88 / design-system rollout + proxy root auth guard)
 
 ---
 
@@ -306,4 +306,11 @@ After each schema-affecting session:
 
 - No database schema or migration changes were introduced in Session 79.
 - Application-layer strategy workflow updates now use existing `strategy_line_items` acceptance fields (`consumer_accepted`, `consumer_rejected`, `accepted_at`) for consumer accept/reject and advisor declined-visibility behavior.
+
+## Session 88 Note
+
+- No database schema or migration changes were introduced in Session 88.
+- Changes in this session are application-layer only:
+  - Design-system/UX refresh across education and landing surfaces.
+  - Middleware guard update in `proxy.ts` to allow unauthenticated root (`/`) pass-through before profile queries.
 
