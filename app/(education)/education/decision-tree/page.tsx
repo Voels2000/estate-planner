@@ -3,7 +3,8 @@ import path from 'node:path'
 import ReactMarkdown from 'react-markdown'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { EducationProse } from '@/components/education/EducationProse'
+import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 
 export default async function EducationDecisionTreePage() {
   const fullPath = path.join(process.cwd(), 'content', 'education', 'decision-tree.md')
@@ -15,12 +16,12 @@ export default async function EducationDecisionTreePage() {
         ← Back to Education Guide
       </ButtonLink>
       <Card className="mt-4 p-6">
-        <article className="prose prose-neutral max-w-none">
+        <EducationProse>
           <ReactMarkdown>{body}</ReactMarkdown>
-        </article>
+        </EducationProse>
       </Card>
       <div className="mt-8">
-        <DisclaimerBanner context="education guide" />
+        <EducationDisclaimer />
       </div>
     </div>
   )

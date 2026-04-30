@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { ButtonLink } from '@/components/ui/Button'
 
 export function TrialBanner({
   expiryTimestamp,
@@ -48,16 +49,18 @@ export function TrialBanner({
         </span>
         {' '}— subscribe to keep access.
       </span>
-      <a
+      <ButtonLink
         href="/billing"
-        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+        variant="secondary"
+        size="sm"
+        className={`rounded-full border-transparent px-3 py-1 text-xs font-semibold shadow-sm ${
           isUrgent
             ? 'bg-white text-red-600 hover:bg-red-50'
-            : 'bg-white text-amber-600 hover:bg-amber-50'
+            : 'bg-white text-amber-700 hover:bg-amber-50'
         }`}
       >
         Subscribe now →
-      </a>
+      </ButtonLink>
     </div>
   )
 }

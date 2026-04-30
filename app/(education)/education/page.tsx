@@ -1,5 +1,5 @@
 import { listEducationModules } from '@/lib/education/loaders'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 import EducationModuleCatalog from '@/components/education/EducationModuleCatalog'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -39,10 +39,18 @@ export default async function EducationGuidePage() {
         </ButtonLink>
       </div>
 
+      <div className="mt-10 border-t border-neutral-200 pt-8">
+        <SectionHeader
+          title="Module library"
+          subtitle="Track progress, choose a learning path, and open any topic."
+          className="mb-6"
+        />
+      </div>
+
       <EducationModuleCatalog modules={modules} />
 
       <div className="mt-8">
-        <DisclaimerBanner context="education guide" />
+        <EducationDisclaimer />
       </div>
     </div>
   )

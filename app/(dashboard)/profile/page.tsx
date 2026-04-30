@@ -8,6 +8,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { formControlClass, formLabelClass } from '@/components/ui/form'
 
 const FILING_STATUSES = ['single', 'mfj', 'mfs', 'hoh', 'qw']
 const FILING_STATUS_LABELS: Record<string, string> = {
@@ -270,7 +273,7 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
 
-        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+        <Card className="rounded-2xl p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Personal Information
           </h2>
@@ -291,9 +294,9 @@ export default function ProfilePage() {
                 className={inputClass} placeholder="The Smith Household" />
             </Field>
           </div>
-        </section>
+        </Card>
 
-        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+        <Card className="rounded-2xl p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Your Information
           </h2>
@@ -324,7 +327,7 @@ export default function ProfilePage() {
                 className={inputClass} placeholder="90" />
             </Field>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className={`${formLabelClass} mb-1 block`}>
                 Your Monthly SS Benefit at Full Retirement Age (PIA)
               </label>
               <div className="relative">
@@ -334,7 +337,7 @@ export default function ProfilePage() {
                   min="0"
                   value={person1SSPia}
                   onChange={(e) => setPerson1SSPia(e.target.value)}
-                  className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className={`${formControlClass} pl-7`}
                   placeholder="e.g. 2400"
                 />
               </div>
@@ -345,9 +348,9 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
-        </section>
+        </Card>
 
-        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+        <Card className="rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <input id="hasSpouse" type="checkbox" checked={hasSpouse}
               onChange={(e) => setHasSpouse(e.target.checked)}
@@ -384,7 +387,7 @@ export default function ProfilePage() {
                   className={inputClass} placeholder="88" />
               </Field>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className={`${formLabelClass} mb-1 block`}>
                   Spouse Monthly SS Benefit at Full Retirement Age (PIA)
                 </label>
                 <div className="relative">
@@ -394,7 +397,7 @@ export default function ProfilePage() {
                     min="0"
                     value={person2SSPia}
                     onChange={(e) => setPerson2SSPia(e.target.value)}
-                    className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={`${formControlClass} pl-7`}
                     placeholder="e.g. 1800"
                   />
                 </div>
@@ -404,9 +407,9 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
-        </section>
+        </Card>
 
-        <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+        <Card className="rounded-2xl p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Tax &amp; Location
           </h2>
@@ -470,7 +473,7 @@ export default function ProfilePage() {
                     onClick={() => setDeductionMode(mode)}
                     className={`rounded-lg px-3 py-2 text-sm font-medium transition capitalize ${
                       deductionMode === mode
-                        ? 'bg-neutral-900 text-white'
+                        ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                     }`}
                   >
@@ -495,7 +498,7 @@ export default function ProfilePage() {
               </Field>
             )}
           </div>
-        </section>
+        </Card>
 
         {validationErrors.length > 0 && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 space-y-1">
@@ -515,21 +518,25 @@ export default function ProfilePage() {
           </p>
         )}
 
-        <button type="submit" disabled={isSubmitting}
-          className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isSubmitting}
+          className="w-full rounded-lg py-3 text-sm font-medium"
+        >
           {isSubmitting ? 'Saving...' : 'Save Profile'}
-        </button>
+        </Button>
       </form>
     </div>
   )
 }
 
-const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+const inputClass = formControlClass
 
 function Field({ label, children, required }: { label: string, children: React.ReactNode, required?: boolean }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-neutral-700 mb-1">
+      <label className={`${formLabelClass} mb-1 block`}>
         {label}{required && <span className="text-red-500 ml-1">*</span>}
       </label>
       {children}

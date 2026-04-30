@@ -2,10 +2,12 @@ import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
+import { EducationMetaBadges } from '@/components/education/EducationMetaBadges'
 import { getEducationModule, listEducationModules } from '@/lib/education/loaders'
 import ModuleProgressToggle from '@/components/education/ModuleProgressToggle'
 import ModuleResumeBanner from '@/components/education/ModuleResumeBanner'
+import { EducationProse } from '@/components/education/EducationProse'
 
 const PILLAR_LABEL: Record<string, string> = {
   financial: 'Financial Planning',
@@ -34,22 +36,32 @@ export default async function EducationModulePage({
         ← Back to Education Guide
       </ButtonLink>
 
-      <Card className="mt-4 p-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-          {PILLAR_LABEL[module.pillar]} · {module.complexity} · {module.estimatedTime}
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold text-neutral-900">{module.title}</h1>
-        <div className="mt-4">
-          <ModuleProgressToggle slug={module.slug} />
+      <Card className="mt-4 overflow-hidden p-0">
+        <div className="border-b border-neutral-100 bg-neutral-50/60 px-6 py-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <EducationMetaBadges
+                pillarLabel={PILLAR_LABEL[module.pillar]}
+                complexity={module.complexity}
+                estimatedTime={module.estimatedTime}
+              />
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-neutral-900">{module.title}</h1>
+            </div>
+            <div className="shrink-0">
+              <ModuleProgressToggle slug={module.slug} />
+            </div>
+          </div>
         </div>
-        <article className="prose prose-neutral mt-6 max-w-none">
-          <ReactMarkdown>{module.body}</ReactMarkdown>
-        </article>
+        <div className="px-6 py-6">
+          <EducationProse>
+            <ReactMarkdown>{module.body}</ReactMarkdown>
+          </EducationProse>
+        </div>
       </Card>
       <ModuleResumeBanner currentSlug={module.slug} modules={modules} />
 
       <div className="mt-8">
-        <DisclaimerBanner context="education guide" />
+        <EducationDisclaimer />
       </div>
     </div>
   )

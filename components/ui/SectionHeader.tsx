@@ -5,15 +5,17 @@ export function SectionHeader({
   subtitle,
   right,
   as = 'h2',
+  className = '',
 }: {
   title: string
   subtitle?: string
   right?: ReactNode
   as?: 'h1' | 'h2'
+  className?: string
 }) {
   const Heading = as === 'h1' ? 'h1' : 'h2'
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className={`flex items-start justify-between gap-4 ${className}`.trim()}>
       <div>
         <Heading className="text-2xl font-semibold text-neutral-900">{title}</Heading>
         {subtitle && <p className="mt-1 text-sm text-neutral-600">{subtitle}</p>}

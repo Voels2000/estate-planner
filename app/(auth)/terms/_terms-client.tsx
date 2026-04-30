@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 type Section = {
   title: string
@@ -57,7 +59,6 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-12">
       <div className="mx-auto max-w-2xl">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-neutral-900">Terms & Conditions</h1>
           <p className="mt-1 text-sm text-neutral-500">
@@ -65,8 +66,7 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
           </p>
         </div>
 
-        {/* T&C Content */}
-        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <Card className="overflow-hidden rounded-2xl">
           <div className="divide-y divide-neutral-100">
             {loading ? (
               <div className="px-6 py-10 text-center text-sm text-neutral-400">
@@ -90,8 +90,7 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
             )}
           </div>
 
-          {/* Accept footer */}
-          <div className="rounded-b-2xl border-t border-neutral-200 bg-neutral-50 px-6 py-5">
+          <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-5">
             <p className="mb-4 text-xs text-neutral-500">
               By clicking Accept, you agree to the Estate Planner Terms & Conditions
               version {version}. The date and version of your acceptance will
@@ -102,16 +101,17 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
                 {error}
               </p>
             )}
-            <button
+            <Button
+              type="button"
               onClick={handleAccept}
               disabled={accepting || loading}
-              className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium
-                         text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+              variant="primary"
+              className="w-full rounded-lg py-2.5 text-sm font-medium"
             >
               {accepting ? 'Recording acceptance...' : 'I Accept the Terms & Conditions'}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )

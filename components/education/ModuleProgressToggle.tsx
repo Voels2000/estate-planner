@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { fetchCompletedModules, saveModuleProgress } from '@/lib/education/progressClient'
+import { Button } from '@/components/ui/Button'
 
 export default function ModuleProgressToggle({ slug }: { slug: string }) {
   const [done, setDone] = useState(false)
@@ -31,18 +32,20 @@ export default function ModuleProgressToggle({ slug }: { slug: string }) {
   }
 
   return (
-    <button
+    <Button
       type="button"
       onClick={toggle}
       disabled={saving}
-      className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+      variant="secondary"
+      size="sm"
+      className={
         done
-          ? 'border border-green-300 bg-green-50 text-green-700'
-          : 'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
-      }`}
+          ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+          : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
+      }
     >
       {saving ? 'Saving...' : done ? '✓ Marked complete' : 'Mark module complete'}
-    </button>
+    </Button>
   )
 }
 

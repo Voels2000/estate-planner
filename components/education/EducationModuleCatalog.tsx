@@ -140,7 +140,7 @@ export default function EducationModuleCatalog({
 
   return (
     <div>
-      <Card className="mt-4 p-3">
+      <Card className="p-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-neutral-600">
             Progress: {completed.size} of {modules.length} modules completed
@@ -251,37 +251,46 @@ export default function EducationModuleCatalog({
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {filtered.map((module) => (
-          <Link key={module.slug} href={`/education/modules/${module.slug}`} className="block h-full">
-            <Card hover className="h-full p-4">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                {PILLAR_LABEL[module.pillar]} · {module.complexity}
-              </p>
-              {completed.has(module.slug) && (
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
-                  Completed
-                </span>
-              )}
-            </div>
-            <h2 className="mt-1 text-lg font-semibold text-neutral-900">{module.title}</h2>
-            <p className="mt-2 text-sm text-neutral-600">{module.summary}</p>
-            {module.tags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1">
-                {module.tags.slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] text-neutral-600"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-            <p className="mt-3 text-xs text-neutral-500">Estimated time: {module.estimatedTime}</p>
-            </Card>
-          </Link>
-        ))}
+        {filtered.length === 0 ? (
+          <Card className="col-span-full border-dashed border-neutral-300 py-12 text-center">
+            <p className="text-sm font-medium text-neutral-700">No modules match your filters</p>
+            <p className="mt-2 text-xs text-neutral-500">
+              Clear the search box or set Path, Pillar, and Level back to “All” to see modules again.
+            </p>
+          </Card>
+        ) : (
+          filtered.map((module) => (
+            <Link key={module.slug} href={`/education/modules/${module.slug}`} className="block h-full">
+              <Card hover className="h-full p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    {PILLAR_LABEL[module.pillar]} · {module.complexity}
+                  </p>
+                  {completed.has(module.slug) && (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                      Completed
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-1 text-lg font-semibold text-neutral-900">{module.title}</h3>
+                <p className="mt-2 text-sm text-neutral-600">{module.summary}</p>
+                {module.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {module.tags.slice(0, 4).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] text-neutral-600"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-3 text-xs text-neutral-500">Estimated time: {module.estimatedTime}</p>
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   )
