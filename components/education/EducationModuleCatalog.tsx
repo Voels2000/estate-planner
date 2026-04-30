@@ -140,7 +140,7 @@ export default function EducationModuleCatalog({
 
   return (
     <div>
-      <Card className="education-surface p-4">
+      <Card className="card-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-neutral-600">
             Progress: {completed.size} of {modules.length} modules completed
@@ -149,7 +149,7 @@ export default function EducationModuleCatalog({
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200">
           <div
-            className="h-full rounded-full bg-[#4a7c6f] transition-all"
+            className="h-full rounded-full bg-[color:var(--sage-light)] transition-all"
             style={{ width: `${completionPct}%` }}
           />
         </div>
@@ -177,8 +177,8 @@ export default function EducationModuleCatalog({
           </p>
         )}
         {selectedBundleMeta && pathStartModule && (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[#e8c97a] bg-[#fdf6e3] px-2.5 py-2">
-            <p className="text-xs text-[#0f1f3d]">
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[color:var(--gold-light)] bg-[color:var(--gold-pale)] px-2.5 py-2">
+            <p className="text-xs text-[color:var(--navy)]">
               {selectedBundleMeta.label}: start with{' '}
               <span className="font-semibold">{pathStartModule.title}</span>
             </p>
@@ -206,7 +206,7 @@ export default function EducationModuleCatalog({
         )}
       </Card>
 
-      <div className="education-pillars mt-4 flex flex-wrap items-center gap-2 rounded-md p-2">
+      <div className="pillar-tabs mt-4 flex flex-wrap items-center gap-2 rounded-md p-2">
         <select
           value={selectedBundle}
           onChange={(e) => setSelectedBundle(e.target.value as typeof selectedBundle)}
@@ -261,7 +261,7 @@ export default function EducationModuleCatalog({
         ) : (
           filtered.map((module) => (
             <Link key={module.slug} href={`/education/modules/${module.slug}`} className="block h-full">
-              <Card hover className="education-surface education-surface-hover h-full p-4 transition">
+              <Card hover className="card-surface card-surface-hover h-full p-4 transition">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
                     {PILLAR_LABEL[module.pillar]} · {module.complexity}

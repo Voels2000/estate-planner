@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 import { EducationMetaBadges } from '@/components/education/EducationMetaBadges'
 import { getEducationModule, listEducationModules } from '@/lib/education/loaders'
 import ModuleProgressToggle from '@/components/education/ModuleProgressToggle'
@@ -32,12 +31,12 @@ export default async function EducationModulePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <ButtonLink href="/education" variant="link" className="text-[#1a3460]">
+      <ButtonLink href="/education" variant="link" className="text-[color:var(--navy)]">
         ← Back to Education Guide
       </ButtonLink>
 
-      <Card className="education-surface mt-4 overflow-hidden p-0">
-        <div className="education-module-header px-6 py-6">
+      <Card className="card-surface mt-4 overflow-hidden p-0">
+        <div className="module-header px-6 py-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
               <EducationMetaBadges
@@ -60,9 +59,6 @@ export default async function EducationModulePage({
       </Card>
       <ModuleResumeBanner currentSlug={module.slug} modules={modules} />
 
-      <div className="mt-8">
-        <EducationDisclaimer />
-      </div>
     </div>
   )
 }

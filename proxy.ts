@@ -70,7 +70,7 @@ export async function proxy(request: NextRequest) {
 
   // Check 1 — must be logged in
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!user && pathname !== '/') {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     const redirect = NextResponse.redirect(loginUrl)
@@ -78,6 +78,12 @@ export async function proxy(request: NextRequest) {
       redirect.cookies.set(c.name, c.value)
     }
     return redirect
+  }
+
+  // Allow unauthenticated users on the landing page
+  // to pass through without hitting profile queries
+  if (!user) {
+    return supabaseResponse
   }
 
   const { data: profile } = await supabase

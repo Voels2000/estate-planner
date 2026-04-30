@@ -1,5 +1,4 @@
 import { listEducationModules } from '@/lib/education/loaders'
-import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 import EducationModuleCatalog from '@/components/education/EducationModuleCatalog'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -9,9 +8,9 @@ export default async function EducationGuidePage() {
   const modules = await listEducationModules()
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <Card className="education-hero rounded-xl p-8 text-center">
-        <div className="education-hero-badge inline-flex items-center rounded-full px-4 py-1 text-[11px] font-medium uppercase tracking-wide">
+    <div className="px-7 py-7">
+      <Card className="hero card-surface border p-8 text-center">
+        <div className="hero-badge">
           Educational Platform
         </div>
         <h1 className="education-title mt-5 text-4xl leading-tight">
@@ -19,7 +18,7 @@ export default async function EducationGuidePage() {
           <br />
           Learn Before You Leap.
         </h1>
-        <p className="education-subtitle mx-auto mt-4 max-w-2xl text-base leading-relaxed">
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[color:var(--text-secondary)]">
           Understand financial, retirement, and estate planning concepts in plain English. Explore options
           without pressure and prepare for informed conversations with licensed professionals.
         </p>
@@ -36,7 +35,8 @@ export default async function EducationGuidePage() {
         </div>
       </Card>
 
-      <div className="mt-10 border-t border-neutral-200 pt-8">
+      <div className="divider mt-8" />
+      <div className="pt-0">
         <SectionHeader
           title="Educational Modules"
           subtitle="Explore key concepts across financial, retirement, and estate planning pillars."
@@ -45,10 +45,6 @@ export default async function EducationGuidePage() {
       </div>
 
       <EducationModuleCatalog modules={modules} />
-
-      <div className="mt-8">
-        <EducationDisclaimer />
-      </div>
     </div>
   )
 }

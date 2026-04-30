@@ -2,7 +2,6 @@ import { ButtonAnchor, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { getUserAccess } from '@/lib/get-user-access'
-import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 
 export default async function EducationPrepSheetPage() {
   const access = await getUserAccess()
@@ -10,11 +9,11 @@ export default async function EducationPrepSheetPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <ButtonLink href="/education" variant="link" className="text-[#1a3460]">
+      <ButtonLink href="/education" variant="link" className="text-[color:var(--navy)]">
         ← Back to Education Guide
       </ButtonLink>
 
-      <Card className="education-surface mt-4 p-6">
+      <Card className="card-surface mt-4 p-6">
         <SectionHeader
           as="h1"
           title="Advisor Prep Sheet"
@@ -22,24 +21,24 @@ export default async function EducationPrepSheetPage() {
         />
 
         <div className="mt-6 grid gap-4 sm:grid-cols-1">
-          <Card className="education-surface border-neutral-200 bg-white p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Financial</h2>
+          <Card className="card-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--navy)]">Financial</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Top 3 near-term money priorities</li>
               <li>Income, expenses, and debt pressure points</li>
               <li>Insurance and risk-management gaps</li>
             </ul>
           </Card>
-          <Card className="education-surface border-neutral-200 bg-white p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Retirement</h2>
+          <Card className="card-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--navy)]">Retirement</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Target retirement age and income goals</li>
               <li>Social Security and RMD timing questions</li>
               <li>Tax-aware withdrawal sequencing concerns</li>
             </ul>
           </Card>
-          <Card className="education-surface border-neutral-200 bg-white p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3460]">Estate</h2>
+          <Card className="card-surface border-neutral-200 bg-white p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--navy)]">Estate</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700">
               <li>Status of will/trust, POA, healthcare docs</li>
               <li>Beneficiary designation review checklist</li>
@@ -67,9 +66,6 @@ export default async function EducationPrepSheetPage() {
         </div>
       </Card>
 
-      <div className="mt-8">
-        <EducationDisclaimer />
-      </div>
     </div>
   )
 }

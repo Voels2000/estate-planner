@@ -7,17 +7,26 @@ export function EducationMetaBadges({
   complexity: string
   estimatedTime: string
 }) {
+  const complexityClass =
+    complexity === 'foundation'
+      ? 'c-foundation'
+      : complexity === 'intermediate'
+        ? 'c-intermediate'
+        : complexity === 'advanced'
+          ? 'c-advanced'
+          : ''
+
   return (
     <div className="flex flex-wrap gap-2">
       {pillarLabel ? (
-        <span className="education-meta-chip rounded-full px-2.5 py-0.5 text-xs font-medium">
+        <span className="meta-chip">
           {pillarLabel}
         </span>
       ) : null}
-      <span className="education-meta-chip rounded-full px-2.5 py-0.5 text-xs font-medium capitalize">
+      <span className={`meta-chip capitalize ${complexityClass}`.trim()}>
         {complexity}
       </span>
-      <span className="education-meta-chip rounded-full px-2.5 py-0.5 text-xs">
+      <span className="meta-chip">
         {estimatedTime}
       </span>
     </div>

@@ -22,6 +22,23 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    --mwm-navy: #0f1f3d;
+    --mwm-navy-light: #1a3460;
+    --mwm-navy-mid: #2a4a7f;
+    --mwm-gold: #c9a84c;
+    --mwm-gold-light: #e8c97a;
+    --mwm-gold-pale: #fdf6e3;
+    --mwm-sage: #4a7c6f;
+    --mwm-sage-light: #6aab9a;
+    --mwm-sage-pale: #eef6f4;
+    --mwm-off-white: #fafaf8;
+    --mwm-text-secondary: #4a5568;
+    --mwm-text-muted: #718096;
+    --mwm-border: #e2e8f0;
+    --mwm-shadow: 0 4px 20px rgba(15,31,61,0.08);
+    --mwm-shadow-lg: 0 8px 40px rgba(15,31,61,0.14);
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
   }
 
   .dark {
@@ -54,5 +71,14 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .mwm-display {
+    font-family: var(--font-display);
+  }
+  .mwm-body {
+    font-family: var(--font-body);
   }
 }

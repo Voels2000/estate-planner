@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
+import { EducationDisclaimer } from '@/components/education/EducationDisclaimer'
 import './education-theme.css'
 
 export default async function EducationLayout({
@@ -18,13 +19,11 @@ export default async function EducationLayout({
 
   return (
     <div className="education-shell min-h-screen">
-      <header className="education-nav sticky top-0 z-20 border-b border-transparent">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+      <header className="nav">
+        <div className="app flex items-center justify-between gap-3 px-0 py-0">
           <div className="flex items-center gap-3">
-            <div className="education-nav-logo flex h-9 w-9 items-center justify-center rounded-full text-base font-semibold">
-              P
-            </div>
-            <Link href="/education" className="education-nav-brand">
+            <div className="nav-logo">P</div>
+            <Link href="/education" className="text-white">
               <div className="text-base font-semibold">PlanWise Guide</div>
               <div className="text-[10px] uppercase tracking-wide text-white/60">
                 Educational platform only
@@ -38,7 +37,10 @@ export default async function EducationLayout({
           </div>
         </div>
       </header>
-      {children}
+      <div className="app">
+        <EducationDisclaimer />
+        {children}
+      </div>
     </div>
   )
 }

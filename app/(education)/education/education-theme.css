@@ -1,133 +1,246 @@
-.education-shell {
-  --edu-navy: #0f1f3d;
-  --edu-navy-light: #1a3460;
-  --edu-gold: #c9a84c;
-  --edu-gold-light: #e8c97a;
-  --edu-gold-pale: #fdf6e3;
-  --edu-sage: #4a7c6f;
-  --edu-sage-pale: #eef6f4;
-  --edu-border: #e2e8f0;
-  --edu-text-primary: #1a202c;
-  --edu-text-secondary: #4a5568;
-  --edu-text-muted: #718096;
-  --edu-white: #ffffff;
-  --edu-off-white: #fafaf8;
-  --edu-shadow: 0 4px 20px rgba(15, 31, 61, 0.08);
-  --edu-shadow-lg: 0 8px 40px rgba(15, 31, 61, 0.14);
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
 
 .education-shell {
-  background: var(--edu-off-white);
-  color: var(--edu-text-primary);
+  --navy: #0f1f3d;
+  --navy-light: #1a3460;
+  --navy-mid: #2a4a7f;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-pale: #fdf6e3;
+  --sage: #4a7c6f;
+  --sage-light: #6aab9a;
+  --sage-pale: #eef6f4;
+  --slate: #4a5568;
+  --slate-light: #718096;
+  --slate-pale: #f7f8fa;
+  --white: #ffffff;
+  --off-white: #fafaf8;
+  --border: #e2e8f0;
+  --border-dark: #cbd5e0;
+  --danger: #c53030;
+  --danger-pale: #fff5f5;
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --shadow: 0 4px 20px rgba(15, 31, 61, 0.08);
+  --shadow-lg: 0 8px 40px rgba(15, 31, 61, 0.14);
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  background: var(--off-white);
+  color: var(--text-primary);
+  font-family: var(--font-body);
 }
 
-.education-nav {
-  background: var(--edu-navy);
+.education-shell .app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 0 80px;
+}
+
+.education-shell .nav {
+  background: var(--navy);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 }
 
-.education-nav-brand {
-  color: var(--edu-white);
-}
-
-.education-nav-logo {
-  background: var(--edu-gold);
-  color: var(--edu-navy);
-}
-
-.education-title {
-  color: var(--edu-navy);
-  font-family: Georgia, 'Times New Roman', serif;
+.education-shell .nav-logo {
+  width: 36px;
+  height: 36px;
+  background: var(--gold);
+  border-radius: 50%;
+  font-family: var(--font-display);
   font-weight: 600;
+  font-size: 16px;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.education-subtitle {
-  color: var(--edu-text-secondary);
+.education-shell .disclaimer {
+  background: var(--navy-light);
+  border-left: 4px solid var(--gold);
+  margin: 20px 28px 0;
+  padding: 14px 18px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-.education-surface {
-  background: var(--edu-white);
-  border: 1px solid var(--edu-border);
-  box-shadow: var(--edu-shadow);
+.education-shell .disclaimer p {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
 }
 
-.education-surface-hover:hover {
-  border-color: var(--edu-gold-light);
-  box-shadow: var(--edu-shadow-lg);
+.education-shell .disclaimer strong {
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.education-shell .hero {
+  text-align: center;
+  padding: 48px 20px 40px;
+  background: linear-gradient(180deg, rgba(15, 31, 61, 0.04) 0%, transparent 100%);
+  border-radius: var(--radius);
+}
+
+.education-shell .hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-pale);
+  border: 1px solid var(--gold-light);
+  color: var(--navy);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 40px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.education-shell .section-title,
+.education-shell .lesson-title,
+.education-shell .education-title {
+  font-family: var(--font-display);
+  color: var(--navy);
+}
+
+.education-shell .section-title {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.education-shell .section-sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.education-shell .card-surface {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.education-shell .card-hover {
+  transition: all 0.2s;
+}
+
+.education-shell .card-hover:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
-.education-hero {
-  background: linear-gradient(180deg, rgba(15, 31, 61, 0.04) 0%, transparent 100%);
-  border: 1px solid var(--edu-border);
+.education-shell .module-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  color: var(--white);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
-.education-hero-badge {
-  background: var(--edu-gold-pale);
-  border: 1px solid var(--edu-gold-light);
-  color: var(--edu-navy);
+.education-shell .meta-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 40px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.24);
 }
 
-.education-primary-btn {
-  background: var(--edu-navy);
-  color: var(--edu-white);
+.education-shell .c-foundation {
+  background: #e6f6ed;
+  color: #2d6a4f;
+  border: none;
 }
 
-.education-primary-btn:hover {
-  background: var(--edu-navy-light);
+.education-shell .c-intermediate {
+  background: #fff4de;
+  color: #8a5f00;
+  border: none;
 }
 
-.education-pillars {
-  border: 1px solid var(--edu-border);
-  background: var(--edu-white);
+.education-shell .c-advanced {
+  background: #fde8e8;
+  color: #9b1c1c;
+  border: none;
 }
 
-.education-disclaimer {
-  background: var(--edu-navy-light);
-  border-left: 4px solid var(--edu-gold);
-  color: rgba(255, 255, 255, 0.78);
+.education-shell .lesson-content {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
 }
 
-.education-disclaimer strong {
-  color: var(--edu-gold);
+.education-shell .lesson-content h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--navy);
+  margin: 28px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gold-pale);
 }
 
-.education-module-header {
-  background: linear-gradient(135deg, var(--edu-navy) 0%, #2a4a7f 100%);
-  color: var(--edu-white);
+.education-shell .lesson-content h3:first-child {
+  margin-top: 0;
 }
 
-.education-module-header h1 {
-  color: var(--edu-white);
+.education-shell .lesson-content p {
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.75;
 }
 
-.education-meta-chip {
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+.education-shell .lesson-content ul {
+  padding-left: 22px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
 }
 
-.education-prose {
-  color: var(--edu-text-secondary);
+.education-shell .lesson-content ul li {
+  margin-bottom: 8px;
+  line-height: 1.65;
 }
 
-.education-prose h2,
-.education-prose h3,
-.education-prose h4 {
-  color: var(--edu-navy);
-  font-family: Georgia, 'Times New Roman', serif;
+.education-shell .lesson-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
 }
 
-.education-prose blockquote {
-  background: var(--edu-sage-pale);
-  border-left: 4px solid var(--edu-sage);
+.education-shell .lesson-content table th {
+  background: var(--navy);
+  color: var(--white);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
 }
 
-.education-prose table th {
-  background: var(--edu-navy);
-  color: var(--edu-white);
+.education-shell .lesson-content table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
-.education-prose table td {
-  border-color: var(--edu-border);
+.education-shell .lesson-content table tr:nth-child(even) td {
+  background: var(--slate-pale);
 }
