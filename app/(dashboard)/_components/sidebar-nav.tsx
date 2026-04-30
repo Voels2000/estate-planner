@@ -35,11 +35,13 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     icon: '🏠',
-    items: [
-      { href: '/education', label: 'Education Guide', icon: '📚' },
-      { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
-      { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
-    ],
+  items: [
+    { href: '/', label: 'Home', icon: '🏠' },
+    { href: '/education', label: 'Education Guide', icon: '📚' },
+    { href: '/assess', label: 'Planning Assessment', icon: '🔍' },
+    { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
+    { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
+  ],
   },
   {
     label: 'Financial Planning',
@@ -172,7 +174,21 @@ export function SidebarNav({
       <div className="px-6 py-5 border-b border-neutral-200">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <div style={{
+                width: 28, height: 28,
+                background: '#c9a84c',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 600, fontSize: 13,
+                color: '#0f1f3d',
+                flexShrink: 0,
+              }}>M</div>
+              <h1 className="text-base font-bold text-neutral-900">
+                My Wealth Maps
+              </h1>
+            </div>
             <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
             {!isAdvisor && (
               <span className="mt-1.5 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">

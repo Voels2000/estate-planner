@@ -19,6 +19,7 @@ import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard
 import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboard/RetirementSummarySection'
 import { EstateSummarySection } from '@/app/(dashboard)/_components/dashboard/EstateSummarySection'
 import { DashboardIntroSection } from '@/app/(dashboard)/_components/dashboard/DashboardIntroSection'
+import { AssessmentHistoryWidget } from '@/app/(dashboard)/_components/dashboard/AssessmentHistoryWidget'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -168,6 +169,8 @@ export function DashboardClient(props: Props) {
         setupSteps={setupSteps}
         completionScore={completionScore}
       />
+
+      <AssessmentHistoryWidget />
 
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* SECTION 1 — Financial Summary                                     */}

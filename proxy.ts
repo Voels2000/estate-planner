@@ -13,6 +13,13 @@ const PUBLIC_PATHS = [
   '/api/',
   '/share/',
   '/beneficiary/',
+  '/assess',
+  '/advisor-directory',
+  '/pricing',
+  '/find-advisor',
+  '/find-attorney',
+  '/mfa-enroll',
+  '/mfa-challenge',
 ]
 
 const ATTORNEY_ONLY_PATHS = [

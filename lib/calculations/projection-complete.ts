@@ -211,8 +211,20 @@ export type CompleteProjectionInput = {
   }
 }
 
-const STANDARD_DEDUCTION_MFJ    = 29200
-const STANDARD_DEDUCTION_SINGLE = 14600
+/** Tax year 2025 and earlier — historical engine defaults */
+const STANDARD_DEDUCTION_MFJ_LEGACY = 29200
+const STANDARD_DEDUCTION_SINGLE_LEGACY = 14600
+/** Tax year 2026+ — IRS Rev. Proc. 2025-32 */
+const STANDARD_DEDUCTION_MFJ_2026 = 32200
+const STANDARD_DEDUCTION_SINGLE_2026 = 16100
+
+function defaultStandardDeduction(filingStatus: string, year: number): number {
+  const mfj = filingStatus === 'married_joint'
+  if (year >= 2026) {
+    return mfj ? STANDARD_DEDUCTION_MFJ_2026 : STANDARD_DEDUCTION_SINGLE_2026
+  }
+  return mfj ? STANDARD_DEDUCTION_MFJ_LEGACY : STANDARD_DEDUCTION_SINGLE_LEGACY
+}
 
 function normalizeFederalFilingStatus(filingStatus: string): 'single' | 'mfj' | null {
   const normalized = String(filingStatus ?? '').toLowerCase()
@@ -268,7 +280,7 @@ function calcFederalTax(
   dbBrackets: FederalIncomeTaxBracket[],
 ): number {
   if (taxableIncome <= 0) return 0
-  const deduction = deductionOverride ?? (filingStatus === 'married_joint' ? STANDARD_DEDUCTION_MFJ : STANDARD_DEDUCTION_SINGLE)
+  const deduction = deductionOverride ?? defaultStandardDeduction(filingStatus, year)
   const agi = Math.max(0, taxableIncome - deduction)
   const dbFederalBracketsForYear = getFederalBracketsForYear(filingStatus, year, dbBrackets)
   if (dbFederalBracketsForYear.length === 0) {

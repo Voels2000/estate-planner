@@ -60,7 +60,7 @@ export default async function DashboardLayout({
 
   // Check trial status
   const trialStarted = profileFull?.trial_started_at ? new Date(profileFull.trial_started_at) : null
-  const trialExpiry = trialStarted ? new Date(trialStarted.getTime() + 15 * 60 * 1000) : null
+  const trialExpiry = trialStarted ? new Date(trialStarted.getTime() + 3 * 24 * 60 * 60 * 1000) : null
   const now = new Date()
   const trialActive = trialExpiry ? now < trialExpiry : false
   const trialMinutesLeft = trialExpiry ? Math.max(0, Math.ceil((trialExpiry.getTime() - now.getTime()) / 60000)) : 0

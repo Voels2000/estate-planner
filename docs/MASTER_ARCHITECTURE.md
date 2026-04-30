@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: April 30, 2026 (Session 90 / planning readiness assessment route)
+# Last updated: April 30, 2026 (Session 91 / assessment persistence + trial policy update)
 
 ---
 
@@ -279,13 +279,14 @@ Runtime behavior:
 - Sidebar navigation now includes `Education Guide` under Overview.
 - Root route behavior (`app/page.tsx`) is now:
   - Signed-out users: public education-first marketing landing page
-  - Signed-in users with profile: redirect to `/education`
+  - Signed-in users with profile: redirect to `/dashboard`
   - Signed-in users without profile: redirect to `/profile`
 - Root middleware guard behavior (`proxy.ts`) now explicitly allows unauthenticated `/` requests to pass through after login redirect checks, preventing profile lookups for signed-out landing-page traffic.
 - New public assessment route is available at `/assess`:
   - File: `app/assess/page.tsx`
   - Client-rendered 20-question planning readiness flow across financial, retirement, and estate pillars
   - Includes intro, guided question progression with progress bar, and results with pillar-level gap scoring
+- Public middleware path exceptions now include `/advisor-directory` so directory discovery remains available without forced auth redirect.
 
 **Design system + education UI refresh:**
 

@@ -83,7 +83,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   'my-family':           3,
 }
 // Free trial gets tier 2 access
-export const TRIAL_TIER = 2
+export const TRIAL_TIER = 3
 /** Resolve which consumer tier a profile maps to */
 export function resolveConsumerTier(
   subscriptionPlan: string | null,

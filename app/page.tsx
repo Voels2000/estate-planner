@@ -500,7 +500,7 @@ export default async function HomePage() {
             </div>
           </div>
           <ButtonLink
-            href="/advisor"
+            href="/advisor-directory"
             variant="primary"
             className="!bg-[#c9a84c] !text-[#0f1f3d] hover:!bg-[#e8c97a] font-semibold whitespace-nowrap"
           >
@@ -523,5 +523,5 @@ export default async function HomePage() {
     redirect('/profile')
   }
 
-  redirect('/education')
+    redirect('/dashboard')
 }

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 const QUESTIONS = [
   {
@@ -242,6 +243,19 @@ export default function AssessPage() {
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Answers>({})
 
+  useEffect(() => {
+    if (screen !== 'results') return
+    const { financial, retirement, estate } = computeScores()
+    const fp = Math.round((financial / MAX_SCORES.financial) * 100)
+    const rp = Math.round((retirement / MAX_SCORES.retirement) * 100)
+    const ep = Math.round((estate / MAX_SCORES.estate) * 100)
+    const overall = Math.round(
+      ((financial + retirement + estate) /
+      (MAX_SCORES.financial + MAX_SCORES.retirement + MAX_SCORES.estate)) * 100
+    )
+    saveResults(fp, rp, ep, overall, answers)
+  }, [screen])
+
   function selectOption(qId: string, optionIndex: number) {
     setAnswers(prev => ({ ...prev, [qId]: optionIndex }))
   }
@@ -286,6 +300,31 @@ export default function AssessPage() {
     return { financial, retirement, estate, raw }
   }
 
+  async function saveResults(
+    fp: number, rp: number, ep: number,
+    overall: number, answers: Answers
+  ) {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return // Not logged in — skip silently
+
+      await supabase.from('assessment_results').insert({
+        user_id: user.id,
+        overall_score: overall,
+        financial_score: fp,
+        retirement_score: rp,
+        estate_score: ep,
+        financial_pct: fp,
+        retirement_pct: rp,
+        estate_pct: ep,
+        answers: answers,
+      })
+    } catch {
+      // Fail silently — don't interrupt the user experience
+    }
+  }
+
   const q = QUESTIONS[current]
   const pct = Math.round(((current + 1) / QUESTIONS.length) * 100)
   const hasAnswer = answers[q?.id] !== undefined
@@ -328,7 +367,7 @@ export default function AssessPage() {
               }}>Planning Readiness Assessment</div>
             </div>
           </div>
-          <Link href="/" style={{
+          <Link href="/dashboard" style={{
             color: 'rgba(255,255,255,0.6)', fontSize: 12,
             textDecoration: 'none', border: '1.5px solid rgba(255,255,255,0.2)',
             padding: '6px 14px', borderRadius: 6, transition: 'all 0.2s',
@@ -677,6 +716,7 @@ export default function AssessPage() {
   const ep = Math.round((estate / MAX_SCORES.estate) * 100)
   const overall = Math.round(((financial + retirement + estate) /
     (MAX_SCORES.financial + MAX_SCORES.retirement + MAX_SCORES.estate)) * 100)
+
   const level = getLevel(overall)
   const fl = getLevel(fp)
   const rl = getLevel(rp)
@@ -838,7 +878,7 @@ export default function AssessPage() {
             fontSize: 20, color: '#0f1f3d', marginBottom: 18,
           }}>Your Recommended Next Steps</h3>
           {[
-            { num: 1, title: 'Review your gaps with a professional', desc: 'Share this report with your estate attorney, financial advisor, and CPA. Your gaps become the agenda for your next meeting.', cta: 'Find an Advisor →', href: '/advisor' },
+            { num: 1, title: 'Review your gaps with a professional', desc: 'Share this report with your estate attorney, financial advisor, and CPA. Your gaps become the agenda for your next meeting.', cta: 'Find an Advisor →', href: '/advisor-directory' },
             { num: 2, title: 'Complete relevant education modules', desc: 'The My Wealth Maps education library has modules covering every gap identified in your assessment.', cta: 'Go to Education →', href: '/education' },
             { num: 3, title: 'Build your plan', desc: 'Use what you\'ve learned to start building your financial, retirement, and estate plan.', cta: 'Go to My Plan →', href: '/dashboard' },
           ].map(step => (
@@ -897,6 +937,22 @@ export default function AssessPage() {
                 cursor: 'pointer',
               }}
             >🖨️ Print Report</button>
+            <Link href="/dashboard" style={{
+              background: 'white', color: '#0f1f3d',
+              border: 'none', borderRadius: 8,
+              padding: '10px 20px', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center',
+            }}>📊 My Dashboard</Link>
+            <Link href="/" style={{
+              background: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1.5px solid rgba(255,255,255,0.25)',
+              borderRadius: 8, padding: '10px 20px',
+              fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center',
+            }}>🏠 Home</Link>
             <button
               onClick={retake}
               style={{

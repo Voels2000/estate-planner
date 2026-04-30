@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 30, 2026 (Session 88 / design-system rollout + proxy root auth guard)
+# Last updated: April 30, 2026 (Session 91 / assessment results + federal bracket seed)
 
 ---
 
@@ -28,7 +28,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Estate composition | `calculate_estate_composition` RPC + related tables | Derived values |
 | Estate tax rules | `federal_tax_config`, `state_estate_tax_rules` | Estate transfer tax calculations |
 | Income tax rules | `state_income_tax_brackets` | Progressive state income rules (canonical target) |
-| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts` | Cached analytics + notifications |
+| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results` | Cached analytics + user assessment history |
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
 | Monte Carlo assumptions | `advisor_projection_assumptions`, `projection_assumption_audit` | Advisor override + consumer accept/revert workflow |
@@ -85,6 +85,12 @@ This is a developer reference, not a full SQL DDL dump.
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
   - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
+
+### `assessment_results`
+
+- **Key columns:** `id`, `user_id`, `taken_at`, `overall_score`, `financial_score`, `retirement_score`, `estate_score`, `financial_pct`, `retirement_pct`, `estate_pct`, `answers`
+- **Purpose:** persist planning-readiness assessment runs so dashboard and assessment history surfaces can show latest and prior scores.
+- **RLS policy:** users can insert/select only rows where `user_id = auth.uid()`.
 
 ### `state_estate_tax_rules`
 
@@ -189,6 +195,8 @@ After each schema-affecting session:
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
 - `20260428000002_strategy_line_items_acceptance_fields.sql`
+- `20260430000000_create_assessment_results.sql`
+- `20260430100000_seed_federal_tax_brackets_2026.sql`
 
 ---
 
@@ -313,4 +321,12 @@ After each schema-affecting session:
 - Changes in this session are application-layer only:
   - Design-system/UX refresh across education and landing surfaces.
   - Middleware guard update in `proxy.ts` to allow unauthenticated root (`/`) pass-through before profile queries.
+
+## Session 91 Note
+
+- Schema/migration changes introduced:
+  - Added `assessment_results` table + index + RLS policies for per-user assessment persistence.
+  - Seeded 2026 federal income tax brackets for `single` and `married_joint` in `federal_tax_brackets`.
+- Compatibility note:
+  - Seed migration includes `tax_year` compatibility handling for environments that previously used `year`.
 
