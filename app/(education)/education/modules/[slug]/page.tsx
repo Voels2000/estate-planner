@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import Link from 'next/link'
+import { Card } from '@/components/ui/Card'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import { getEducationModule, listEducationModules } from '@/lib/education/loaders'
 import ModuleProgressToggle from '@/components/education/ModuleProgressToggle'
@@ -33,7 +34,7 @@ export default async function EducationModulePage({
         ← Back to Education Guide
       </Link>
 
-      <div className="mt-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <Card className="mt-4 p-6">
         <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
           {PILLAR_LABEL[module.pillar]} · {module.complexity} · {module.estimatedTime}
         </p>
@@ -44,7 +45,7 @@ export default async function EducationModulePage({
         <article className="prose prose-neutral mt-6 max-w-none">
           <ReactMarkdown>{module.body}</ReactMarkdown>
         </article>
-      </div>
+      </Card>
       <ModuleResumeBanner currentSlug={module.slug} modules={modules} />
 
       <div className="mt-8">

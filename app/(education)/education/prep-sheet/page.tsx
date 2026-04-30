@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { ButtonAnchor } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { SectionHeader } from '@/components/ui/SectionHeader'
 import { getUserAccess } from '@/lib/get-user-access'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
@@ -12,11 +15,12 @@ export default async function EducationPrepSheetPage() {
         ← Back to Education Guide
       </Link>
 
-      <div className="mt-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-neutral-900">Advisor Prep Sheet</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Use this checklist to prepare for financial, retirement, and estate planning meetings.
-        </p>
+      <Card className="mt-4 p-6">
+        <SectionHeader
+          as="h1"
+          title="Advisor Prep Sheet"
+          subtitle="Use this checklist to prepare for financial, retirement, and estate planning meetings."
+        />
 
         <div className="mt-5 space-y-4 text-sm text-neutral-700">
           <section>
@@ -47,12 +51,7 @@ export default async function EducationPrepSheetPage() {
 
         <div className="mt-6">
           {canDownload ? (
-            <a
-              href="/api/education/prep-sheet/download"
-              className="inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Download Prep Sheet
-            </a>
+            <ButtonAnchor href="/api/education/prep-sheet/download">Download Prep Sheet</ButtonAnchor>
           ) : (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               A paid active subscription is required to download prep sheets. Trial access supports
@@ -60,7 +59,7 @@ export default async function EducationPrepSheetPage() {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       <div className="mt-8">
         <DisclaimerBanner context="education guide" />

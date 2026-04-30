@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { SectionHeader } from '@/components/ui/SectionHeader'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -16,18 +19,8 @@ export default async function HomePage() {
               <p className="text-sm text-neutral-500">Financial, Retirement, and Estate Education</p>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-              >
-                Create account
-              </Link>
+              <ButtonLink href="/login" variant="secondary">Log in</ButtonLink>
+              <ButtonLink href="/signup">Create account</ButtonLink>
             </div>
           </header>
 
@@ -46,25 +39,15 @@ export default async function HomePage() {
                 Then move into paid planning workflows when you are ready.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  href="/signup"
-                  className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                  Start free education
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="rounded-md border border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-                >
-                  View plans
-                </Link>
+                <ButtonLink href="/signup">Start free education</ButtonLink>
+                <ButtonLink href="/pricing" variant="secondary">View plans</ButtonLink>
               </div>
               <p className="mt-3 text-xs text-neutral-500">
                 Create an account to access the full education guide and track your progress.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <Card className="rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-neutral-900">What you get</h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-700">
                 <li>📚 Structured education modules with progress tracking</li>
@@ -75,32 +58,32 @@ export default async function HomePage() {
               <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 Educational content is informational only and not legal, tax, financial, or investment advice.
               </p>
-            </div>
+            </Card>
           </section>
 
           <section className="mt-10">
-            <h3 className="text-xl font-semibold text-neutral-900">Featured learning modules</h3>
+            <SectionHeader title="Featured learning modules" />
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              <Card className="rounded-lg px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Foundation</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">Financial Planning Foundations</p>
                 <p className="mt-1 text-xs text-neutral-600">Understand the six connected pillars of planning.</p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              </Card>
+              <Card className="rounded-lg px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Intermediate</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">Probate vs Trust Comparison</p>
                 <p className="mt-1 text-xs text-neutral-600">Compare transfer pathways and coordination gaps.</p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              </Card>
+              <Card className="rounded-lg px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Advanced</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">Estate and Gift Tax Basics</p>
                 <p className="mt-1 text-xs text-neutral-600">Review exemption, basis, and state-level themes.</p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              </Card>
+              <Card className="rounded-lg px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Advisor prep</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">Questions to Ask Your Professionals</p>
                 <p className="mt-1 text-xs text-neutral-600">Bring better questions into each planning meeting.</p>
-              </div>
+              </Card>
             </div>
           </section>
 
@@ -149,6 +132,28 @@ export default async function HomePage() {
                 <p className="mt-1 text-sm font-medium text-neutral-900">Upgrade when ready</p>
                 <p className="mt-1 text-xs text-neutral-600">Paid plan unlocks planning workflows and downloadable artifacts.</p>
               </div>
+            </div>
+          </section>
+
+          <section className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+            <h3 className="text-lg font-semibold text-indigo-900">
+              Education first. Living plan next.
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-indigo-900/90">
+              PlanWise Guide teaches core concepts so you can make informed decisions. When you are ready,
+              MyWealthMaps unlocks a connected planning suite to build and maintain a living plan across
+              financial, retirement, and estate priorities.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-indigo-700">
+                Educational modules
+              </span>
+              <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-indigo-700">
+                Guided planning workflows
+              </span>
+              <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-indigo-700">
+                Ongoing living-plan updates
+              </span>
             </div>
           </section>
         </div>
