@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 7, 2026 (Session 92 / directory request-flow + assessment UX updates)
+# Last updated: May 7, 2026 (Session 93 / advisor public route split + assessment restore persistence)
 
 ---
 
@@ -92,6 +92,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** persist planning-readiness assessment runs so dashboard and assessment history surfaces can show latest and prior scores.
 - **RLS policy:** users can insert/select only rows where `user_id = auth.uid()`.
 - **Application behavior note:** when assessment results are generated while signed out, UI now prompts for account creation/sign-in before persistence; authenticated users continue to write rows to `assessment_results`.
+- **Restore behavior note:** signed-out runs are cached client-side under `mwm_pending_assessment` and inserted after auth return (within 30-minute freshness window), then cache is cleared.
 
 ### `connection_requests`
 
@@ -345,4 +346,11 @@ After each schema-affecting session:
 - Changes in this session are application-layer only:
   - Attorney directory route/client moved to `app/find-attorney/*` and aligned to the existing attorney connection-request API path.
   - Assessment results UX now surfaces a signed-out save CTA before persistence.
+
+## Session 93 Note
+
+- No database schema or migration changes were introduced in Session 93.
+- Changes in this session are application-layer only:
+  - Public advisor directory moved to `app/find-advisor/*` with legacy `/advisor-directory` redirecting to `/find-advisor`.
+  - Assessment results flow now includes local-storage pending payload restore (`mwm_pending_assessment`) after authentication.
 

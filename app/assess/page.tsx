@@ -243,6 +243,7 @@ export default function AssessPage() {
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Answers>({})
   const [showSaveCTA, setShowSaveCTA] = useState(false)
+  const [showRestoredBanner, setShowRestoredBanner] = useState(false)
 
   useEffect(() => {
     if (screen !== 'results') return
@@ -256,6 +257,42 @@ export default function AssessPage() {
     )
     saveResults(fp, rp, ep, overall, answers)
   }, [screen])
+
+  useEffect(() => {
+    async function restorePendingAssessment() {
+      try {
+        const raw = localStorage.getItem('mwm_pending_assessment')
+        if (!raw) return
+        const pending = JSON.parse(raw)
+        // Discard if older than 30 minutes
+        if (Date.now() - pending.savedAt > 30 * 60 * 1000) {
+          localStorage.removeItem('mwm_pending_assessment')
+          return
+        }
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        // User is now logged in — save the pending results
+        await supabase.from('assessment_results').insert({
+          user_id: user.id,
+          overall_score: pending.overall,
+          financial_score: pending.financialScore,
+          retirement_score: pending.retirementScore,
+          estate_score: pending.estateScore,
+          financial_pct: pending.financialScore,
+          retirement_pct: pending.retirementScore,
+          estate_pct: pending.estateScore,
+          answers: pending.answers,
+        })
+        localStorage.removeItem('mwm_pending_assessment')
+        setShowSaveCTA(false)
+        setShowRestoredBanner(true)
+      } catch {
+        // Fail silently
+      }
+    }
+    restorePendingAssessment()
+  }, [])
 
   function selectOption(qId: string, optionIndex: number) {
     setAnswers(prev => ({ ...prev, [qId]: optionIndex }))
@@ -310,6 +347,18 @@ export default function AssessPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setShowSaveCTA(true)
+        try {
+          localStorage.setItem('mwm_pending_assessment', JSON.stringify({
+            overall,
+            financialScore: fp,
+            retirementScore: rp,
+            estateScore: ep,
+            answers,
+            savedAt: Date.now(),
+          }))
+        } catch {
+          // localStorage unavailable — fail silently
+        }
         return
       }
 
@@ -913,6 +962,17 @@ export default function AssessPage() {
           ))}
         </div>
 
+        {showRestoredBanner && (
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #bbf7d0',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+            fontSize: 13, color: '#16a34a', display: 'flex',
+            alignItems: 'center', gap: 8,
+          }}>
+            ✓ Your assessment results have been saved to your account.
+          </div>
+        )}
+
         {showSaveCTA && (
           <div style={{
             background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',
@@ -934,13 +994,13 @@ export default function AssessPage() {
               advisors and attorneys.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a href={`/signup?redirectTo=/assess`}
+              <a href={`/signup?redirectTo=/assess&restored=1`}
                 style={{ padding: '10px 20px', borderRadius: 8,
                   background: '#c9a84c', color: '#0f1f3d',
                   fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                 Create free account →
               </a>
-              <a href={`/login?redirectTo=/assess`}
+              <a href={`/login?redirectTo=/assess&restored=1`}
                 style={{ padding: '10px 20px', borderRadius: 8,
                   border: '1px solid rgba(255,255,255,0.3)',
                   color: 'rgba(255,255,255,0.85)',

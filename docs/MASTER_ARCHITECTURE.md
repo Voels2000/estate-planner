@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 7, 2026 (Session 92 / attorney directory route + assessment save CTA updates)
+# Last updated: May 7, 2026 (Session 93 / advisor public route split + assessment restore persistence)
 
 ---
 
@@ -287,11 +287,16 @@ Runtime behavior:
   - Client-rendered 20-question planning readiness flow across financial, retirement, and estate pillars
   - Includes intro, guided question progression with progress bar, and results with pillar-level gap scoring
   - Results save behavior now shows a soft capture CTA banner for signed-out users (instead of silent non-persistence) with `signup/login` redirects back to `/assess`
+  - Signed-out assessment results are now cached in browser local storage (`mwm_pending_assessment`) and restored/auto-persisted after auth return, with a success banner after restore
 - Public middleware path exceptions now include `/advisor-directory` so directory discovery remains available without forced auth redirect.
 - Public attorney discovery route now lives at `/find-attorney`:
   - Files: `app/find-attorney/page.tsx`, `app/find-attorney/_attorney-directory-client.tsx`
   - Sidebar Overview navigation now links to both `/find-advisor` and `/find-attorney`
   - Connection requests from the attorney directory client post to `/api/attorney-directory/request-connect`
+- Public advisor discovery now lives at `/find-advisor`:
+  - Files: `app/find-advisor/page.tsx`, `app/find-advisor/_advisor-directory-client.tsx`
+  - Connection requests from the public advisor directory client post to `/api/advisor-directory/request-connect`
+  - Legacy public route `/advisor-directory` now redirects server-side to `/find-advisor`
 
 **Design system + education UI refresh:**
 
