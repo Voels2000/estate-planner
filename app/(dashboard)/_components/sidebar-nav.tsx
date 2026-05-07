@@ -39,6 +39,8 @@ const NAV_GROUPS: NavGroup[] = [
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/education', label: 'Education Guide', icon: '📚' },
     { href: '/assess', label: 'Planning Assessment', icon: '🔍' },
+    { href: '/find-advisor', label: 'Find an Advisor', icon: '🤝' },
+    { href: '/find-attorney', label: 'Find an Attorney', icon: '⚖️' },
     { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
     { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
   ],

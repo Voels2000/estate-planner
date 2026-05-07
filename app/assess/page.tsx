@@ -242,6 +242,7 @@ export default function AssessPage() {
   const [screen, setScreen] = useState<'intro' | 'questions' | 'results'>('intro')
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Answers>({})
+  const [showSaveCTA, setShowSaveCTA] = useState(false)
 
   useEffect(() => {
     if (screen !== 'results') return
@@ -307,7 +308,10 @@ export default function AssessPage() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return // Not logged in — skip silently
+      if (!user) {
+        setShowSaveCTA(true)
+        return
+      }
 
       await supabase.from('assessment_results').insert({
         user_id: user.id,
@@ -908,6 +912,44 @@ export default function AssessPage() {
             </div>
           ))}
         </div>
+
+        {showSaveCTA && (
+          <div style={{
+            background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',
+            borderRadius: 12, padding: '24px 28px', marginBottom: 24,
+            border: '1px solid rgba(201,168,76,0.3)',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+              color: '#c9a84c', textTransform: 'uppercase', marginBottom: 8 }}>
+              Save Your Results
+            </div>
+            <div style={{ fontFamily: 'Playfair Display, Georgia, serif',
+              fontSize: 18, fontWeight: 500, color: 'white', marginBottom: 8 }}>
+              Create a free account to save your score
+            </div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)',
+              lineHeight: 1.6, marginBottom: 20 }}>
+              Your results won't be saved without an account. Sign up free to track
+              your planning progress, access education modules, and connect with
+              advisors and attorneys.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <a href={`/signup?redirectTo=/assess`}
+                style={{ padding: '10px 20px', borderRadius: 8,
+                  background: '#c9a84c', color: '#0f1f3d',
+                  fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                Create free account →
+              </a>
+              <a href={`/login?redirectTo=/assess`}
+                style={{ padding: '10px 20px', borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                Sign in
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{

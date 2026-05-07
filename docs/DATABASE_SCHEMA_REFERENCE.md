@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: April 30, 2026 (Session 91 / assessment results + federal bracket seed)
+# Last updated: May 7, 2026 (Session 92 / directory request-flow + assessment UX updates)
 
 ---
 
@@ -91,6 +91,15 @@ This is a developer reference, not a full SQL DDL dump.
 - **Key columns:** `id`, `user_id`, `taken_at`, `overall_score`, `financial_score`, `retirement_score`, `estate_score`, `financial_pct`, `retirement_pct`, `estate_pct`, `answers`
 - **Purpose:** persist planning-readiness assessment runs so dashboard and assessment history surfaces can show latest and prior scores.
 - **RLS policy:** users can insert/select only rows where `user_id = auth.uid()`.
+- **Application behavior note:** when assessment results are generated while signed out, UI now prompts for account creation/sign-in before persistence; authenticated users continue to write rows to `assessment_results`.
+
+### `connection_requests`
+
+- **Key columns:** `id`, `listing_type`, `listing_id`, `profile_id`, `consumer_id`, `message`, `status`, `claim_token`, `created_at`
+- **Purpose:** canonical connection-request ledger across advisor and attorney listing flows.
+- **Current application routes using this table:**
+  - `POST /api/advisor-directory/request-connect`
+  - `POST /api/attorney-directory/request-connect`
 
 ### `state_estate_tax_rules`
 
@@ -329,4 +338,11 @@ After each schema-affecting session:
   - Seeded 2026 federal income tax brackets for `single` and `married_joint` in `federal_tax_brackets`.
 - Compatibility note:
   - Seed migration includes `tax_year` compatibility handling for environments that previously used `year`.
+
+## Session 92 Note
+
+- No database schema or migration changes were introduced in Session 92.
+- Changes in this session are application-layer only:
+  - Attorney directory route/client moved to `app/find-attorney/*` and aligned to the existing attorney connection-request API path.
+  - Assessment results UX now surfaces a signed-out save CTA before persistence.
 
