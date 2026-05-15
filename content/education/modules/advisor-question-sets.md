@@ -6,6 +6,7 @@ estimatedTime: "15 min"
 order: 9
 summary: "Use curated question sets to improve planning meetings with your advisor, attorney, and CPA."
 tags: "advisor prep, attorney questions, cpa questions, meeting prep"
+published: false
 ---
 
 ## Estate Attorney Questions

@@ -131,7 +131,7 @@ export default async function HomePage() {
           marginBottom: 24,
         }}>
           {[
-            '20 guided learning modules',
+            '20+ learning modules',
             'Planning readiness assessment',
             'Advisor-ready tools',
             '100% private',
@@ -286,7 +286,7 @@ export default async function HomePage() {
               title: 'Educate Myself',
               desc: 'Explore planning concepts in plain English before making any decisions.',
               features: [
-                '12 guided learning modules',
+                '20+ learning modules',
                 'Interactive decision tree',
                 'Strategy library with pros & cons',
                 'Advisor prep tools',
@@ -439,6 +439,120 @@ export default async function HomePage() {
           </div>
         </Card>
 
+        {/* FIND A PROFESSIONAL */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600,
+            color: 'var(--mwm-text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.5px',
+            marginBottom: 12,
+          }}>
+            Find a professional
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 16,
+          }}>
+            {[
+              {
+                icon: '🤝',
+                accentColor: '#0f1f3d',
+                badgeBg: '#e6edf8',
+                badgeColor: '#0f1f3d',
+                label: 'Advisor Directory',
+                title: 'Find a Financial Advisor',
+                desc: 'Browse verified financial advisors who specialize in estate, retirement, and wealth planning.',
+                features: [
+                  'Fiduciary and fee-only options',
+                  'Filter by state and specialty',
+                  'Remote-friendly advisors',
+                  'Send a connection request',
+                ],
+                checkColor: '#0f1f3d',
+                cta: 'Browse Advisors →',
+                href: '/find-advisor',
+                btnClass: '!bg-[#0f1f3d] !text-white hover:!bg-[#1a3460] w-full justify-center text-xs',
+              },
+              {
+                icon: '⚖️',
+                accentColor: '#4a7c6f',
+                badgeBg: '#eef6f4',
+                badgeColor: '#2d6a4f',
+                label: 'Attorney Directory',
+                title: 'Find an Estate Attorney',
+                desc: 'Connect with verified estate planning attorneys who can draft wills, trusts, and legal documents.',
+                features: [
+                  'Licensed by state',
+                  'Estate planning specialists',
+                  'Remote consultations available',
+                  'Send a connection request',
+                ],
+                checkColor: '#4a7c6f',
+                cta: 'Browse Attorneys →',
+                href: '/find-attorney',
+                btnClass: '!bg-[#4a7c6f] !text-white hover:!bg-[#6aab9a] w-full justify-center text-xs',
+              },
+            ].map((card) => (
+              <Card key={card.title} className="overflow-hidden" hover>
+                <div style={{
+                  height: 4,
+                  background: card.accentColor,
+                  borderRadius: '12px 12px 0 0',
+                }} />
+                <div style={{ padding: '20px 18px' }}>
+                  <div style={{
+                    display: 'inline-block',
+                    fontSize: 9, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.6px',
+                    padding: '3px 10px', borderRadius: 20,
+                    background: card.badgeBg,
+                    color: card.badgeColor,
+                    marginBottom: 10,
+                  }}>
+                    {card.label}
+                  </div>
+                  <div style={{ fontSize: 26, marginBottom: 8 }}>{card.icon}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 16, color: 'var(--mwm-navy)',
+                    marginBottom: 6,
+                  }}>
+                    {card.title}
+                  </div>
+                  <p style={{
+                    fontSize: 12,
+                    color: 'var(--mwm-text-muted)',
+                    lineHeight: 1.5, marginBottom: 14,
+                  }}>
+                    {card.desc}
+                  </p>
+                  <ul style={{ listStyle: 'none', padding: 0, marginBottom: 16 }}>
+                    {card.features.map((f) => (
+                      <li key={f} style={{
+                        fontSize: 11,
+                        color: 'var(--mwm-text-secondary)',
+                        padding: '3px 0',
+                        display: 'flex', gap: 6,
+                      }}>
+                        <span style={{ color: card.checkColor, fontWeight: 700 }}>✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <ButtonLink
+                    href={card.href}
+                    variant="primary"
+                    className={card.btnClass}
+                  >
+                    {card.cta}
+                  </ButtonLink>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         {/* STATS */}
         <div style={{
           display: 'grid',
@@ -500,7 +614,7 @@ export default async function HomePage() {
             </div>
           </div>
           <ButtonLink
-            href="/advisor-directory"
+            href="/find-advisor"
             variant="primary"
             className="!bg-[#c9a84c] !text-[#0f1f3d] hover:!bg-[#e8c97a] font-semibold whitespace-nowrap"
           >

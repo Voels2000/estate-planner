@@ -13,6 +13,7 @@ export type EducationModuleMeta = {
   order: number
   summary: string
   tags: string[]
+  published: boolean
 }
 
 export type EducationModule = EducationModuleMeta & {
@@ -59,6 +60,7 @@ function toModuleMeta(slug: string, frontmatter: Record<string, string>): Educat
     order: Number(frontmatter.order ?? 999),
     summary: frontmatter.summary ?? '',
     tags,
+    published: frontmatter.published !== 'false',
   }
 }
 
@@ -74,7 +76,9 @@ export async function listEducationModules(): Promise<EducationModuleMeta[]> {
       return toModuleMeta(slug, frontmatter)
     }),
   )
-  return modules.sort((a, b) => a.order - b.order)
+  return modules
+    .filter((m) => m.published)
+    .sort((a, b) => a.order - b.order)
 }
 
 export async function getEducationModule(slug: string): Promise<EducationModule | null> {

@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 7, 2026 (Session 93 / advisor public route split + assessment restore persistence)
+# Last updated: May 15, 2026 (Session 94 / connection_requests cancel status + consumer connection pages)
 
 ---
 
@@ -49,8 +49,15 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `advisor_clients`
 
-- **Key columns:** `advisor_id`, `client_id`, `status`
+- **Key columns:** `advisor_id`, `client_id`, `status`, `accepted_at`, `advisor_pdf_access`
 - **Purpose:** advisor-client link and authorization boundary for advisor workflows.
+- **Consumer UI:** `/my-advisor` reads accepted connection (`status='accepted'`) joined to `profiles` and `advisor_listings`; revoke sets `status='revoked'`.
+
+### `attorney_clients`
+
+- **Key columns:** `attorney_id`, `client_id` (household id), `status`, `granted_at`, `advisor_pdf_access`
+- **Purpose:** attorney access to household estate plan; distinct from `connection_requests` pending/claim flow.
+- **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; revoke via `/api/attorney/revoke-access`.
 
 ### `assets`, `liabilities`, `income`, `expenses`
 
@@ -98,9 +105,20 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Key columns:** `id`, `listing_type`, `listing_id`, `profile_id`, `consumer_id`, `message`, `status`, `claim_token`, `created_at`
 - **Purpose:** canonical connection-request ledger across advisor and attorney listing flows.
+- **Status values (application + migration `20260514100000_connection_requests_status_accepted_cancelled.sql`):**
+  - `pending` — consumer submitted; awaiting professional action
+  - `accepted` — professional claimed/responded via `claim-listing` flow
+  - `cancelled` — consumer cancelled pending request via cancel API
+  - `active`, `revoked` — retained from earlier attorney-access migration constraint history (see `20260401000000_attorney_access_fields.sql`)
 - **Current application routes using this table:**
-  - `POST /api/advisor-directory/request-connect`
-  - `POST /api/attorney-directory/request-connect`
+  - `POST /api/advisor-directory/request-connect` (insert `pending` + `claim_token`)
+  - `POST /api/attorney-directory/request-connect` (insert `pending` + `claim_token`)
+  - `POST /api/connection-requests/cancel` (consumer-owned pending → `cancelled`; uses admin client after auth/ownership checks)
+- **Read surfaces:**
+  - `app/claim-listing/[token]/page.tsx` — lookup by `claim_token`, update to `accepted`
+  - `app/(dashboard)/my-advisor/page.tsx` — latest pending advisor request for consumer
+  - `app/(dashboard)/my-attorney/page.tsx` — all pending attorney requests for consumer
+  - `app/find-attorney/page.tsx` — pending listing IDs to disable duplicate connect UI
 
 ### `state_estate_tax_rules`
 
@@ -207,6 +225,18 @@ After each schema-affecting session:
 - `20260428000002_strategy_line_items_acceptance_fields.sql`
 - `20260430000000_create_assessment_results.sql`
 - `20260430100000_seed_federal_tax_brackets_2026.sql`
+- `20260514100000_connection_requests_status_accepted_cancelled.sql` — extends `connection_requests_status_check` to allow `accepted` and `cancelled` (required for claim-listing accept + consumer cancel API)
+
+---
+
+## Session 94 Note
+
+- Schema/migration changes introduced:
+  - `20260514100000_connection_requests_status_accepted_cancelled.sql` — `connection_requests.status` check now includes `accepted` and `cancelled`.
+- Application-layer changes (no new tables):
+  - `POST /api/connection-requests/cancel` for consumer pending-request cancellation.
+  - New consumer routes `/my-attorney` (connections + pending requests) and enhanced `/my-advisor` (pending request + cancel).
+  - Education module frontmatter `published: false` on three meta modules; `listEducationModules()` filters unpublished entries.
 
 ---
 

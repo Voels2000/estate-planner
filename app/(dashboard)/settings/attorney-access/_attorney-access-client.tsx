@@ -144,7 +144,7 @@ export function AttorneyAccessClient({
           <div className="text-center py-10 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 text-sm">
             <p className="text-2xl mb-2">⚖️</p>
             <p>No attorneys have access to your estate plan.</p>
-            <a href="/attorney-directory" className="text-blue-600 hover:underline mt-2 inline-block">
+            <a href="/find-attorney" className="text-blue-600 hover:underline mt-2 inline-block">
               Browse the attorney directory →
             </a>
           </div>

@@ -41,6 +41,8 @@ const NAV_GROUPS: NavGroup[] = [
     { href: '/assess', label: 'Planning Assessment', icon: '🔍' },
     { href: '/find-advisor', label: 'Find an Advisor', icon: '🤝' },
     { href: '/find-attorney', label: 'Find an Attorney', icon: '⚖️' },
+    { href: '/my-attorney', label: 'My Attorney', icon: '⚖️', consumerOnly: true, minTier: 2 },
+    { href: '/settings/attorney-access', label: 'Attorney access settings', icon: '🔐', consumerOnly: true, minTier: 2 },
     { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
     { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
   ],
@@ -257,7 +259,7 @@ export function SidebarNav({
                       return null
                     }
                     if (
-                      item.href === '/settings/attorney-access' &&
+                      (item.href === '/settings/attorney-access' || item.href === '/my-attorney') &&
                       role !== 'consumer' &&
                       !isSuperuser
                     ) {
@@ -271,7 +273,8 @@ export function SidebarNav({
                       !isAdvisor &&
                       !isSuperuser &&
                       tier < item.minTier &&
-                      item.href !== '/settings/attorney-access'
+                      item.href !== '/settings/attorney-access' &&
+                      item.href !== '/my-attorney'
                     ) {
                       return null
                     }
@@ -316,7 +319,7 @@ export function SidebarNav({
                       !isSuperuser &&
                       tier < (item.minTier ?? 0)
                     const attorneyTierGate =
-                      item.href === '/settings/attorney-access' && tierBelowMin
+                      (item.href === '/settings/attorney-access' || item.href === '/my-attorney') && tierBelowMin
                     const linkHref = attorneyTierGate ? '/billing' : item.href
                     const isActive = activePath === item.href && !attorneyTierGate
                     const locked = isLocked(item.feature)
@@ -525,51 +528,6 @@ export function SidebarNav({
               👤 My Advisor
             </Link>
           ))}
-
-        {/* My Attorney (consumer, tier 2+) */}
-        {(role === 'consumer' || isSuperuser) &&
-          (isLockedUser ? (
-            <Link
-              href="#"
-              tabIndex={-1}
-              aria-disabled={true}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
-            >
-              <span className="flex-1 truncate">⚖️ My Attorney</span>
-              <span className="shrink-0 text-sm" aria-hidden>
-                🔒
-              </span>
-            </Link>
-          ) : (() => {
-            const tierBelowMin =
-              !isAdvisor && !isSuperuser && tier < 2
-            const attorneyTierGate = tierBelowMin
-            const linkHref = attorneyTierGate ? '/billing' : '/settings/attorney-access'
-            const isActive =
-              activePath === '/settings/attorney-access' && !attorneyTierGate
-            const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              isActive
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : attorneyTierGate
-                  ? 'text-neutral-400 hover:bg-neutral-50'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`
-            return attorneyTierGate ? (
-              <div
-                role="presentation"
-                onClick={blockLockedNavInteraction}
-                onPointerDown={blockLockedNavInteraction}
-                className={`${leafClasses} cursor-not-allowed`}
-              >
-                <span className="flex-1 truncate">⚖️ My Attorney</span>
-                <span className="ml-auto shrink-0 text-amber-400 text-sm">🔒</span>
-              </div>
-            ) : (
-              <Link href={linkHref} className={leafClasses}>
-                <span className="flex-1 truncate">⚖️ My Attorney</span>
-              </Link>
-            )
-          })())}
 
         {/* Export Estate Plan */}
         {isLockedUser ? (

@@ -48,6 +48,28 @@ export default async function MyAdvisorPage() {
     .order('accessed_at', { ascending: false })
     .limit(5)
 
+  // Fetch pending connection request (if no accepted connection)
+  const { data: pendingRequest } = !connection
+    ? await supabase
+        .from('connection_requests')
+        .select('id, created_at, listing_id, message')
+        .eq('consumer_id', user.id)
+        .eq('listing_type', 'advisor')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null }
+
+  // Fetch listing details for pending request if present
+  const { data: pendingListing } = pendingRequest
+    ? await supabase
+        .from('advisor_directory')
+        .select('firm_name, city, state')
+        .eq('id', pendingRequest.listing_id)
+        .maybeSingle()
+    : { data: null }
+
   const normalizedConnection = connection
     ? {
         ...connection,
@@ -62,6 +84,13 @@ export default async function MyAdvisorPage() {
       connection={normalizedConnection}
       listing={listing ?? null}
       accessLog={accessLog ?? []}
+      pendingRequest={pendingRequest ? {
+        id: pendingRequest.id,
+        created_at: pendingRequest.created_at,
+        firm_name: pendingListing?.firm_name ?? null,
+        city: pendingListing?.city ?? null,
+        state: pendingListing?.state ?? null,
+      } : null}
     />
   )
 }

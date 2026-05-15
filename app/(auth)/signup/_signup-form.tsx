@@ -21,6 +21,7 @@ export function SignupForm() {
   const firmInviteToken = searchParams.get('invite_token')?.trim() ?? ''
   const firmIdParam = searchParams.get('firm_id')?.trim() ?? ''
   const hasFirmInvite = firmInviteToken !== '' && firmIdParam !== ''
+  const redirectTo = searchParams.get('redirectTo')?.trim() ?? ''
 
   const [email, setEmail] = useState(inviteEmail)
   const [password, setPassword] = useState('')
@@ -179,7 +180,18 @@ export function SignupForm() {
       } else if (effectiveRole === 'attorney') {
         router.push('/attorney')
       } else {
-        router.push('/profile')
+        if (redirectTo) {
+          const fromMap: Record<string, string> = {
+            '/find-advisor': 'find-advisor',
+            '/find-attorney': 'find-attorney',
+            '/assess': 'assessment',
+          }
+          const fromKey = fromMap[redirectTo.split('?')[0]]
+          const profileUrl = fromKey ? `/profile?from=${fromKey}` : redirectTo
+          router.push(profileUrl)
+        } else {
+          router.push('/profile')
+        }
       }
       router.refresh()
     } catch {

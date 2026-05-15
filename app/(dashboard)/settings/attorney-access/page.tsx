@@ -82,9 +82,14 @@ export default async function AttorneyAccessPage() {
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-semibold text-gray-900 mb-1">My Attorney</h1>
-      <p className="text-sm text-gray-500 mb-8">
+      <p className="text-sm text-gray-500 mb-2">
         Manage which attorneys can view your estate plan and documents. You can revoke access at
         any time.
+      </p>
+      <p className="text-sm text-gray-500 mb-8">
+        <a href="/my-attorney" className="text-indigo-600 hover:underline">
+          View pending requests and connection details →
+        </a>
       </p>
       <AttorneyAccessClient
         attorneyConnections={attorneyConnections}

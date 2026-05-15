@@ -6,6 +6,7 @@ estimatedTime: "10 min"
 order: 12
 summary: "Understand the educational-only boundaries of the platform and when to escalate to licensed professionals."
 tags: "compliance, disclaimer, educational only, escalation"
+published: false
 ---
 
 ## Educational-Only Boundary

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 7, 2026 (Session 93 / advisor public route split + assessment restore persistence)
+# Last updated: May 15, 2026 (Session 94 / consumer connection UX, my-attorney, education publish filter)
 
 ---
 
@@ -251,6 +251,7 @@ Runtime behavior:
   - Module files live under `content/education/modules/*.md`
   - Additional long-form pages use `content/education/decision-tree.md` and `content/education/glossary.md`
 - Markdown ingestion is handled by `lib/education/loaders.ts` (frontmatter + body parsing).
+- **Published catalog filter:** `listEducationModules()` returns only modules where frontmatter `published` is not `false` (default published when key omitted). Three meta/prep modules are explicitly unpublished: `compliance-and-disclaimers`, `advisor-question-sets`, `planning-readiness-checklists` (22 modules visible in catalog of 25 files).
 
 **Progress and learning UX:**
 
@@ -297,6 +298,34 @@ Runtime behavior:
   - Files: `app/find-advisor/page.tsx`, `app/find-advisor/_advisor-directory-client.tsx`
   - Connection requests from the public advisor directory client post to `/api/advisor-directory/request-connect`
   - Legacy public route `/advisor-directory` now redirects server-side to `/find-advisor`
+- Signed-out landing page (`app/page.tsx`) now includes a **Find a professional** section with cards linking to `/find-advisor` and `/find-attorney`; bottom advisor CTA strip also links to `/find-advisor` (replacing `/advisor-directory`).
+- Marketing copy for education module count is aligned to **20+ learning modules** on hero and education path card.
+
+**Consumer professional connection surfaces (current):**
+
+| Surface | Route | Purpose |
+|---------|-------|---------|
+| My Advisor | `/my-advisor` | Single accepted `advisor_clients` connection; listing from `advisor_listings`; access log; revoke; pending `connection_requests` (advisor) with cancel |
+| My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
+| Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
+| Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |
+
+**Pending connection request UX:**
+
+- `my-advisor/page.tsx` loads latest pending `connection_requests` (`listing_type='advisor'`) when no accepted `advisor_clients` row exists; enriches with `advisor_directory` firm/location.
+- `my-attorney/page.tsx` loads pending attorney requests and merges `attorney_listings` for display.
+- Clients call cancel API; on success, UI shows confirmation and `router.refresh()` on advisor path so server state stays aligned.
+- Claim/accept flow for professionals remains on `app/claim-listing/[token]/page.tsx` (admin updates `connection_requests.status` to `accepted`).
+
+**Signup/profile onboarding from discovery flows:**
+
+- Signup form honors `redirectTo` query param; maps `/find-advisor`, `/find-attorney`, and `/assess` to `/profile?from=…` after consumer signup.
+- Profile page shows contextual welcome banner when arriving from assessment restore (`mwm_pending_assessment`), find-advisor, or find-attorney flows.
+
+**Sidebar navigation:**
+
+- Overview group includes **My Attorney** (`/my-attorney`, consumer-only, tier 2+) and **Attorney access settings** (`/settings/attorney-access`) with existing tier gate behavior.
+- Standalone bottom **My Attorney** duplicate link removed; **My Advisor** quick link remains at bottom of nav.
 
 **Design system + education UI refresh:**
 
@@ -393,6 +422,9 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `app/api/projection/monte-carlo/route.ts`
 - `app/api/advisor/monte-carlo-assumptions/route.ts`
 - `app/api/monte-carlo/advisor-assumptions/route.ts`
+- `app/api/connection-requests/cancel/route.ts`
+- `app/api/advisor-directory/request-connect/route.ts`
+- `app/api/attorney-directory/request-connect/route.ts`
 
 ### Consumer UI Composition (Current)
 
@@ -424,6 +456,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Shared strategy horizon impact table is now introduced at `components/shared/StrategyHorizonTable.tsx` and used in advisor combined strategy view plus consumer trust-strategy review flow.
 - Advisor combined recommendations view now separates active vs declined recommendations; declined items remain visible for advisor context but are excluded from composite impact calculations.
 - Strategy source normalization now treats `cst`, `roth`, and `liquidity` as canonical strategy sources in recommendation save/read and saved-state indicators.
+- Consumer connection pages: `app/(dashboard)/my-advisor/*`, `app/(dashboard)/my-attorney/*`, `app/(dashboard)/settings/attorney-access/*`.
+- Education catalog: `components/education/EducationModuleCatalog.tsx` (bundle paths unchanged; loader supplies published-only module list).
 
 ---
 

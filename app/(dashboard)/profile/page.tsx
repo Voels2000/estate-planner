@@ -75,6 +75,11 @@ export default function ProfilePage() {
   const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>('standard')
   const [customDeductionAmount, setCustomDeductionAmount] = useState('')
 
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false)
+  const [welcomeContext, setWelcomeContext] = useState<
+    'assessment' | 'advisor' | 'attorney' | 'general' | null
+  >(null)
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -132,6 +137,26 @@ export default function ProfilePage() {
     }
     load()
   }, [router])
+
+  useEffect(() => {
+    // Check if user arrived from a pre-auth exploration flow
+    const pending = (() => {
+      try { return localStorage.getItem('mwm_pending_assessment') } catch { return null }
+    })()
+    const params = new URLSearchParams(window.location.search)
+    const from = params.get('from') || ''
+
+    if (pending) {
+      setWelcomeContext('assessment')
+      setShowWelcomeBanner(true)
+    } else if (from === 'find-advisor') {
+      setWelcomeContext('advisor')
+      setShowWelcomeBanner(true)
+    } else if (from === 'find-attorney') {
+      setWelcomeContext('attorney')
+      setShowWelcomeBanner(true)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -264,6 +289,44 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
+      {showWelcomeBanner && (
+        <div style={{
+          background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',
+          borderRadius: 12, padding: '20px 24px', marginBottom: 24,
+          border: '1px solid rgba(201,168,76,0.3)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16,
+        }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+              color: '#c9a84c', textTransform: 'uppercase', marginBottom: 6 }}>
+              Welcome to My Wealth Maps
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: 'white', marginBottom: 4,
+              fontFamily: 'Playfair Display, Georgia, serif' }}>
+              {welcomeContext === 'assessment' && 'Your assessment results are being saved.'}
+              {welcomeContext === 'advisor' && 'Ready to connect with an advisor.'}
+              {welcomeContext === 'attorney' && 'Ready to connect with an attorney.'}
+              {welcomeContext === 'general' && 'Your account is ready.'}
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+              {welcomeContext === 'assessment' && (
+                <>Complete your profile, then <a href="/assess" style={{ color: '#c9a84c' }}>view your assessment results</a> on the assessment page.</>
+              )}
+              {welcomeContext === 'advisor' && (
+                <>Complete your profile, then <a href="/find-advisor" style={{ color: '#c9a84c' }}>return to the advisor directory</a> to send your connection request.</>
+              )}
+              {welcomeContext === 'attorney' && (
+                <>Complete your profile, then <a href="/find-attorney" style={{ color: '#c9a84c' }}>return to the attorney directory</a> to send your connection request.</>
+              )}
+            </div>
+          </div>
+          <button onClick={() => setShowWelcomeBanner(false)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)',
+              cursor: 'pointer', fontSize: 18, padding: 0, flexShrink: 0 }}>
+            ✕
+          </button>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Your Profile</h1>
         <p className="mt-1 text-sm text-neutral-600">

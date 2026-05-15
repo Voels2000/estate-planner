@@ -6,6 +6,7 @@ estimatedTime: "15 min"
 order: 11
 summary: "Prepare for advisor meetings with practical readiness checklists across financial, retirement, and estate topics."
 tags: "checklist, readiness, meeting prep, documentation"
+published: false
 ---
 
 ## Financial Readiness
