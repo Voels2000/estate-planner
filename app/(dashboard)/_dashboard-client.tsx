@@ -20,6 +20,9 @@ import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboar
 import { EstateSummarySection } from '@/app/(dashboard)/_components/dashboard/EstateSummarySection'
 import { DashboardIntroSection } from '@/app/(dashboard)/_components/dashboard/DashboardIntroSection'
 import { AssessmentHistoryWidget } from '@/app/(dashboard)/_components/dashboard/AssessmentHistoryWidget'
+import StrategyRecommendationPanel, {
+  type AdvisorRecommendationItem,
+} from '@/components/consumer/StrategyRecommendationPanel'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -107,6 +110,7 @@ type Props = {
     priority: 'high' | 'moderate' | 'low'
     reason: string
   }> | null
+  advisorStrategyItems?: AdvisorRecommendationItem[]
 }
 
 // ---------------------------------------------------------------------------
@@ -144,6 +148,7 @@ export function DashboardClient(props: Props) {
     otherLiabilities,
     composition,
     initialRecommendations,
+    advisorStrategyItems = [],
   } = props
 
   void consumerTier
@@ -171,6 +176,12 @@ export function DashboardClient(props: Props) {
       />
 
       <AssessmentHistoryWidget />
+
+      {householdId && advisorStrategyItems.length > 0 && (
+        <div className="mt-6">
+          <StrategyRecommendationPanel householdId={householdId} items={advisorStrategyItems} />
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* SECTION 1 — Financial Summary                                     */}

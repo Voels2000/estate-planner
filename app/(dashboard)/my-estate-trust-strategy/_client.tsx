@@ -159,6 +159,7 @@ export default function MyEstateTrustStrategyClient({
     })),
   )
   const [actionSaving, setActionSaving] = useState<string | null>(null)
+  const [giftingScenarioLabel, setGiftingScenarioLabel] = useState('Annual Gifting Program')
   const [giftingSaving, setGiftingSaving] = useState(false)
   const [giftingSaveMessage, setGiftingSaveMessage] = useState<{
     type: 'success' | 'error'
@@ -291,6 +292,7 @@ export default function MyEstateTrustStrategyClient({
           household_id: householdId,
           strategy_source: 'annual_gifting',
           source_role: 'consumer',
+          scenario_name: giftingScenarioLabel.trim() || 'Annual Gifting Program',
           amount: effectiveAnnualGifting * effectiveGiftingYears,
           sign: -1,
           confidence_level: 'probable',
@@ -453,6 +455,20 @@ export default function MyEstateTrustStrategyClient({
                 )}
               </div>
             )}
+
+            <div className="mb-2">
+              <label className="mb-1 block text-sm font-medium text-neutral-700">
+                Program name <span className="font-normal text-neutral-400">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={giftingScenarioLabel}
+                onChange={(e) => setGiftingScenarioLabel(e.target.value)}
+                placeholder="e.g. College gifting plan"
+                maxLength={60}
+                className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 sm:max-w-xs"
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
               <div>

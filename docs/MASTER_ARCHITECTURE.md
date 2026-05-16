@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 96 / consumer strategy save refresh, remove, recompute)
+# Last updated: May 15, 2026 (Session 97 / gifting scenario_name + dashboard advisor recommendations)
 
 ---
 
@@ -159,9 +159,11 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 ### Current
 
 - Advisor recommendation writes are unified:
-  - Canonical advisor write path: `/api/advisor/strategy-recommendation`
+  - Canonical advisor write path: `/api/advisor/strategy-recommendation` (used by `StrategyOverlay` via `useRecommendStrategy` — does not write `strategy_configs`)
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
-- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role`; e.g. gifting scenario saves `strategy_source='annual_gifting'`, `source_role='consumer'`).
+- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role`; optional `scenario_name` for display labels; e.g. gifting scenario saves `strategy_source='annual_gifting'`, `source_role='consumer'`).
+- As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()` + estate health recompute (same pattern as trust-strategy).
+- Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately, then `POST /api/recompute-estate-health` (non-blocking) to refresh cached estate health scores.

@@ -194,6 +194,15 @@ export default async function DashboardPage() {
   })
   void insuranceValue
 
+  const { data: advisorStrategyItems } = household?.id
+    ? await supabase
+        .from('strategy_line_items')
+        .select('id, strategy_source, amount, sign, scenario_name, consumer_accepted, consumer_rejected')
+        .eq('household_id', household.id)
+        .eq('source_role', 'advisor')
+        .eq('is_active', true)
+    : { data: null }
+
   const { data: initialRecsData } = household?.id
     ? await supabase.rpc('generate_estate_recommendations', {
         p_household_id: household.id,
@@ -321,6 +330,15 @@ export default async function DashboardPage() {
       mortgageBalance={totalMortgageBalance}
       otherLiabilities={otherLiabilities}
       initialRecommendations={initialRecommendations}
+      advisorStrategyItems={(advisorStrategyItems ?? []).map((item) => ({
+        id: item.id,
+        strategy_source: item.strategy_source,
+        amount: Number(item.amount ?? 0),
+        sign: typeof item.sign === 'number' ? item.sign : -1,
+        scenario_name: item.scenario_name ?? null,
+        consumer_accepted: item.consumer_accepted ?? false,
+        consumer_rejected: item.consumer_rejected ?? false,
+      }))}
     />
   )
 }

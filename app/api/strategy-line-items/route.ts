@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const {
       household_id, scenario_id, projection_year, metric_target, category,
       strategy_source, amount, sign, confidence_level, effective_year, metadata,
+      scenario_name,
       source_role: sourceRoleRaw,
     } = body
 
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
           confidence_level: confidence_level ?? 'illustrative',
           effective_year:   effective_year ?? null,
           metadata:         metadata ?? {},
+          scenario_name:    scenario_name ?? null,
           is_active:        true,
         })
         .eq('id', existing.id)
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
           confidence_level: confidence_level ?? 'illustrative',
           effective_year:   effective_year ?? null,
           metadata:         metadata ?? {},
+          scenario_name:    scenario_name ?? null,
           is_active:        true,
         })
         .select()

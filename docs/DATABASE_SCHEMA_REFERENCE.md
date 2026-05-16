@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 96 / consumer strategy save-remove-recompute UX)
+# Last updated: May 15, 2026 (Session 97 / scenario_name labels + dashboard advisor panel)
 
 ---
 
@@ -90,7 +90,8 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
-  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`)
+  - consumer dashboard reads active advisor rows for `StrategyRecommendationPanel` (accept/decline via `/api/consumer/strategy-recommendation`)
   - consumer removal uses `DELETE /api/strategy-line-items` (sets `is_active=false` for matching household + `strategy_source` + `source_role`; row retained for audit)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
   - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
@@ -256,6 +257,14 @@ After each schema-affecting session:
 - Application-layer changes (existing `strategy_line_items` + `/api/recompute-estate-health`):
   - `my-estate-trust-strategy/_client.tsx`: `router.refresh()` after gifting save and consumer strategy remove; **Remove from plan** on saved strategies table; non-blocking estate health recompute after save/remove.
   - `CharitableGivingDashboard.tsx`: **Save to my plan →** for total donated (`strategy_source='daf'`), with `router.refresh()` and recompute on success.
+
+## Session 97 Note
+
+- No database schema or migration changes were introduced in Session 97.
+- Application-layer changes:
+  - `POST /api/strategy-line-items` now persists optional `scenario_name` on consumer upserts.
+  - `my-estate-trust-strategy/_client.tsx`: optional gifting **Program name** saved as `scenario_name`.
+  - New `components/consumer/StrategyRecommendationPanel.tsx`; wired on `/dashboard` via `dashboard/page.tsx` + `_dashboard-client.tsx` for advisor recommendation accept/decline.
 
 ---
 
