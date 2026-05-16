@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 110 / insurance POST recompute + advisor strategy upsert)
+# Last updated: May 16, 2026 (Session 111 / titling entity writes via consumer API)
 
 ---
 
@@ -352,7 +352,7 @@ After each schema-affecting session:
 
 - No database schema or migration changes were introduced in Session 108.
 - Application-layer changes:
-  - `POST` / `PATCH` / `DELETE` `/api/consumer/asset-beneficiaries` and `POST …/bulk` — beneficiary CRUD; `lib/titling/assetBeneficiaries.ts`; updates `households.last_beneficiary_review`; `_titling-client.tsx` beneficiary paths use API (titling table writes still client-side for Phase B).
+  - `POST` / `PATCH` / `DELETE` `/api/consumer/asset-beneficiaries` and `POST …/bulk` — beneficiary CRUD; `lib/titling/assetBeneficiaries.ts`; updates `households.last_beneficiary_review`; `_titling-client.tsx` beneficiary paths use API.
   - `PATCH /api/consumer/allocation-targets` — `households.target_*_pct` with sum-to-100 validation; `_allocation-client.tsx` + server prefetch on `/allocation`.
   - `POST /api/consumer/generate-base-case` — `afterHouseholdWrite` after successful `generateBaseCase`.
   - Playwright: `consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, updated `dashboard.spec.ts`.
@@ -366,6 +366,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 111 Note
+
+- No database schema or migration changes were introduced in Session 111.
+- Application-layer changes:
+  - `POST /api/consumer/entity-titling` — upserts `asset_titling` / `real_estate_titling` / `insurance_policy_titling` / `business_titling` and updates parent entity titling fields (`titling`, `liquidity`, `cost_basis`, `basis_date`); `lib/titling/entityTitling.ts`; `afterHouseholdWrite`.
+  - `_titling-client.tsx` `TitlingModal` uses consumer API (no client Supabase writes on `/titling`).
 
 ## Session 110 Note
 

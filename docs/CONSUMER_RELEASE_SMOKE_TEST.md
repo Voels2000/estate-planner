@@ -79,12 +79,11 @@ Pick **one** module you already use (Assets is simplest).
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
 | 6.1 | Go to **Titling & Beneficiaries** (`/titling`) | Assets / real estate / insurance sections load | ☐ |
-| 6.2 | On an asset (or policy) with **Add beneficiary**, add a **primary** beneficiary at 100% (pick from family list or manual name) | Saves, beneficiary shows on card | ☐ |
-| 6.3 | Refresh page (F5) | Beneficiary still there | ☐ |
-| 6.4 | **Edit** allocation % or **Delete** the test beneficiary | Saves without error | ☐ |
-| 6.5 | Dashboard refresh | Readiness score or titling/beneficiary gaps may change | ☐ |
-
-*Note: Changing **title type** on an asset still uses the older client path — only beneficiary add/edit/delete is on the new API.*
+| 6.2 | **Set Title** on an asset (or RE / life policy): change title type, titling, save | Modal closes; card reflects new title | ☐ |
+| 6.3 | On an item with **Add beneficiary**, add a **primary** beneficiary at 100% | Saves, beneficiary shows on card | ☐ |
+| 6.4 | Refresh page (F5) | Title + beneficiary still there | ☐ |
+| 6.5 | **Edit** allocation % or **Delete** the test beneficiary | Saves without error | ☐ |
+| 6.6 | Dashboard refresh | Readiness score or titling/beneficiary gaps may change | ☐ |
 
 ### 7. Asset allocation (tier 2+)
 

@@ -8,7 +8,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 
@@ -1315,91 +1314,29 @@ function TitlingModal({
     setError(null)
     setIsSubmitting(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const entityRef =
+        kind === 'asset' ? { asset_id: id }
+        : kind === 're' ? { real_estate_id: id }
+          : kind === 'insurance' ? { insurance_policy_id: id }
+            : { business_id: id }
 
-      const table =
-        kind === 'asset' ? 'asset_titling'
-        : kind === 're' ? 'real_estate_titling'
-          : kind === 'insurance' ? 'insurance_policy_titling'
-            : 'business_titling'
-      const fkCol =
-        kind === 'asset' ? 'asset_id'
-        : kind === 're' ? 'real_estate_id'
-          : kind === 'insurance' ? 'insurance_policy_id'
-            : 'business_id'
-      const payload = {
-        title_type: titleType,
-        notes: notes.trim() || null,
-        updated_at: new Date().toISOString(),
-      }
-
-      if (existing) {
-        const { error } = await supabase.from(table).update(payload).eq('id', existing.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from(table).insert({
-          ...payload,
-          owner_id: user.id,
-          [fkCol]: id,
-        })
-        if (error) throw error
-      }
-
-      const parsedCostBasis = costBasis.trim() === '' ? null : Number(costBasis)
-      if (parsedCostBasis !== null && Number.isNaN(parsedCostBasis)) {
-        throw new Error('Cost basis must be a valid number.')
-      }
-
-      if (kind === 'asset') {
-        const { error: assetError } = await supabase
-          .from('assets')
-          .update({
-            titling: assetTitling || null,
-            liquidity: liquidity || null,
-            cost_basis: parsedCostBasis,
-            basis_date: basisDate || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-        if (assetError) throw assetError
-      } else if (kind === 're') {
-        const { error: reErr } = await supabase
-          .from('real_estate')
-          .update({
-            titling: ownerTitling || null,
-            liquidity: liquidity || null,
-            cost_basis: parsedCostBasis,
-            basis_date: basisDate || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-        if (reErr) throw reErr
-      } else if (kind === 'insurance') {
-        const { error: insErr } = await supabase
-          .from('insurance_policies')
-          .update({
-            titling: ownerTitling || null,
-            liquidity: liquidity || null,
-            cost_basis: parsedCostBasis,
-            basis_date: basisDate || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-        if (insErr) throw insErr
-      } else if (kind === 'business') {
-        const { error: bizErr } = await supabase
-          .from('businesses')
-          .update({
-            titling: ownerTitling || null,
-            liquidity: liquidity || null,
-            cost_basis: parsedCostBasis,
-            basis_date: basisDate || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-        if (bizErr) throw bizErr
+      const res = await fetch('/api/consumer/entity-titling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...entityRef,
+          titling_row_id: existing?.id ?? null,
+          title_type: titleType,
+          notes: notes.trim() || null,
+          titling: (kind === 'asset' ? assetTitling : ownerTitling) || null,
+          liquidity: liquidity || null,
+          cost_basis: costBasis.trim() === '' ? null : costBasis,
+          basis_date: basisDate || null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Failed to save titling')
       }
       onSave()
     } catch (err) {
