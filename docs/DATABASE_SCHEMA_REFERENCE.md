@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 94 / connection_requests cancel status + consumer connection pages)
+# Last updated: May 15, 2026 (Session 95 / consumer strategy_line_items in horizon surfaces)
 
 ---
 
@@ -90,8 +90,11 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (e.g. annual gifting scenario on `/my-estate-trust-strategy`)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
   - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
+  - `my-estate-trust-strategy` and `my-estate-strategy` horizon builds include consumer rows; trust-strategy page merges consumer + non-rejected advisor items before `buildStrategyHorizons`
+  - `calculate_estate_composition` RPC already sums all active `strategy_line_items` (no `source_role` filter) — do not add consumer amounts again in page-level `strategyImpact` totals
 
 ### `assessment_results`
 
@@ -237,6 +240,14 @@ After each schema-affecting session:
   - `POST /api/connection-requests/cancel` for consumer pending-request cancellation.
   - New consumer routes `/my-attorney` (connections + pending requests) and enhanced `/my-advisor` (pending request + cancel).
   - Education module frontmatter `published: false` on three meta modules; `listEducationModules()` filters unpublished entries.
+
+## Session 95 Note
+
+- No database schema or migration changes were introduced in Session 95.
+- Application-layer changes (existing `strategy_line_items` table):
+  - `my-estate-trust-strategy/page.tsx` fetches `source_role='consumer'` rows alongside advisor rows and merges both into `buildStrategyHorizons`.
+  - `my-estate-trust-strategy/_client.tsx` adds gifting scenario **Save to my plan →** (`POST /api/strategy-line-items`) and **Your Saved Strategies** display on the Transfer Strategies tab.
+  - `my-estate-strategy/page.tsx` unchanged — already includes consumer rows in `actualStrategyLineItems`.
 
 ---
 

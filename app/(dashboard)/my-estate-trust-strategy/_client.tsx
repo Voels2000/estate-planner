@@ -56,6 +56,15 @@ interface Props {
   initialTab: string
   advisorRecommendations: { strategy_type: string; label: string | null }[]
   advisorLineItems: AdvisorLineItem[]
+  consumerLineItems?: Array<{
+    id?: string
+    strategy_source: string
+    amount: number
+    sign: number
+    confidence_level: string
+    effective_year: number | null
+    scenario_name?: string | null
+  }>
   advisorHorizons?: MyEstateStrategyHorizonsResult | null
   strategyImpact: {
     strategyItems: OutsideStrategyItem[]
@@ -109,6 +118,7 @@ export default function MyEstateTrustStrategyClient({
   initialTab,
   advisorRecommendations,
   advisorLineItems,
+  consumerLineItems = [],
   advisorHorizons,
   strategyImpact,
   giftingScenario,
@@ -135,6 +145,11 @@ export default function MyEstateTrustStrategyClient({
     })),
   )
   const [actionSaving, setActionSaving] = useState<string | null>(null)
+  const [giftingSaving, setGiftingSaving] = useState(false)
+  const [giftingSaveMessage, setGiftingSaveMessage] = useState<{
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
 
   const loadTrustDocuments = useCallback(async () => {
     if (activeTab !== 'trusts') return
@@ -244,6 +259,47 @@ export default function MyEstateTrustStrategyClient({
       prev.map((i) => (i.id === item.id ? { ...i, consumer_rejected: true } : i)),
     )
     setActionSaving(null)
+  }
+
+  async function handleSaveGiftingScenario() {
+    setGiftingSaving(true)
+    setGiftingSaveMessage(null)
+    try {
+      const res = await fetch('/api/strategy-line-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: householdId,
+          strategy_source: 'annual_gifting',
+          source_role: 'consumer',
+          amount: effectiveAnnualGifting * effectiveGiftingYears,
+          sign: -1,
+          confidence_level: 'probable',
+          effective_year: new Date().getFullYear(),
+          metadata: {
+            annual_amount: effectiveAnnualGifting,
+            years: effectiveGiftingYears,
+            synced_from_gift_history: useSyncedGifting,
+          },
+        }),
+      })
+      if (res.ok) {
+        setGiftingSaveMessage({
+          type: 'success',
+          text: 'Gifting program saved to your plan. Your estate horizons will reflect this on next page load.',
+        })
+      } else {
+        const data = await res.json()
+        setGiftingSaveMessage({
+          type: 'error',
+          text: data.error ?? 'Failed to save gifting program.',
+        })
+      }
+    } catch {
+      setGiftingSaveMessage({ type: 'error', text: 'Unexpected error — please try again.' })
+    } finally {
+      setGiftingSaving(false)
+    }
   }
 
   return (
@@ -370,6 +426,21 @@ export default function MyEstateTrustStrategyClient({
                 <p className="text-2xl font-bold tabular-nums text-green-600">
                   {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveGiftingScenario()}
+                  disabled={giftingSaving || effectiveAnnualGifting * effectiveGiftingYears <= 0}
+                  className="mt-3 inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {giftingSaving ? 'Saving…' : 'Save to my plan →'}
+                </button>
+                {giftingSaveMessage && (
+                  <p
+                    className={`mt-2 text-xs ${giftingSaveMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}
+                  >
+                    {giftingSaveMessage.text}
+                  </p>
+                )}
               </div>
             </div>
           </CollapsibleSection>
@@ -386,6 +457,51 @@ export default function MyEstateTrustStrategyClient({
 
       {activeTab === 'strategies' && (
         <div className="space-y-4">
+          {consumerLineItems.length > 0 && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="mb-3 text-sm font-semibold text-emerald-900">Your Saved Strategies</p>
+              <p className="mb-3 text-xs text-emerald-700">
+                These strategies are part of your plan and are reflected in your estate horizons.
+              </p>
+              <div className="overflow-x-auto rounded-lg border border-emerald-100 bg-white">
+                <table className="w-full min-w-[28rem] text-sm">
+                  <thead className="bg-emerald-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold text-emerald-900">Strategy</th>
+                      <th className="px-3 py-2 text-right font-semibold text-emerald-900">Amount</th>
+                      <th className="px-3 py-2 text-left font-semibold text-emerald-900">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {consumerLineItems.map((item, i) => (
+                      <tr key={`${item.strategy_source}-${i}`} className="border-t border-emerald-100">
+                        <td className="px-3 py-2 text-gray-900 capitalize">
+                          {(item.scenario_name ?? item.strategy_source).replace(/_/g, ' ')}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-emerald-700">
+                          −{formatDollars(Math.abs(item.amount))}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            In your plan
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-emerald-200 bg-emerald-50">
+                      <td className="px-3 py-2 text-xs font-semibold text-emerald-900">Total reduction</td>
+                      <td className="px-3 py-2 text-right text-xs font-bold text-emerald-700">
+                        −{formatDollars(consumerLineItems.reduce((s, i) => s + Math.abs(i.amount), 0))}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
             <p className="mb-3 text-sm font-semibold text-blue-900">
               Advisor Recommended Strategies

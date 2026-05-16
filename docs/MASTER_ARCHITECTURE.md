@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 94 / consumer connection UX, my-attorney, education publish filter)
+# Last updated: May 15, 2026 (Session 95 / consumer strategy items in horizon engine)
 
 ---
 
@@ -105,6 +105,7 @@ Important:
 - Consumer My Estate Strategy now follows the same dual-horizon contract:
   - Default view shows actual estate (entered/approved only).
   - Read-only what-if toggle shows projected values if pending advisor recommendations were accepted.
+- As of Session 95, consumer-entered `strategy_line_items` (`source_role='consumer'`) are fetched in parallel with advisor items on `my-estate-trust-strategy/page.tsx` and merged before `buildStrategyHorizons`. Consumer items appear first in the merged array (established reality), then advisor items (recommendations). The engine treats them identically — `source_role` is not on `BuildHorizonsInput`; attribution is display-only, not calculation.
 - Advisor Combined Strategy view now threads the selected mode (`actual` vs `projected`) into `CompositeOverlay`, and displays inside/outside estate boundary snapshot values from the same selected horizon payload.
 
 **Effect:**
@@ -160,7 +161,10 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Advisor recommendation writes are unified:
   - Canonical advisor write path: `/api/advisor/strategy-recommendation`
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
-- Consumer save/progress writes through `/api/strategy-line-items`.
+- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role`; e.g. gifting scenario saves `strategy_source='annual_gifting'`, `source_role='consumer'`).
+- `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
+- Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item; horizons update on next page load).
+- `my-estate-strategy/page.tsx` already builds `actualStrategyLineItems` from all active rows (consumer + consumer-accepted advisor) — no duplicate fetch required.
 - Consumer accept/reject of advisor recommendations is now handled by `/api/consumer/strategy-recommendation`:
   - `PATCH` marks advisor item accepted (`consumer_accepted=true`, `accepted_at` set, `consumer_rejected=false`)
   - `DELETE` marks advisor item rejected (`consumer_rejected=true`, `consumer_accepted=false`)

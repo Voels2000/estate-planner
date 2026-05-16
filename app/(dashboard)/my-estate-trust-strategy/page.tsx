@@ -145,6 +145,7 @@ export default async function MyEstateTrustStrategyPage({
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
     { data: advisorLineItemRows },
+    { data: consumerLineItemRows },
     { data: retirementAssetRows },
     { data: scenarioData },
     { data: stateBracketRows },
@@ -172,6 +173,12 @@ export default async function MyEstateTrustStrategyPage({
       .select('id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_accepted, consumer_rejected')
       .eq('household_id', householdRow.id)
       .eq('source_role', 'advisor')
+      .eq('is_active', true),
+    supabase
+      .from('strategy_line_items')
+      .select('id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name')
+      .eq('household_id', householdRow.id)
+      .eq('source_role', 'consumer')
       .eq('is_active', true),
     supabase
       .from('assets')
@@ -302,7 +309,7 @@ export default async function MyEstateTrustStrategyPage({
       ? displayPersonFirstName(householdFull?.person1_name, 'You')
       : displayPersonFirstName(householdFull?.person2_name, 'You')
 
-  const horizonStrategyItems = (advisorLineItemRows ?? [])
+  const advisorHorizonItems = (advisorLineItemRows ?? [])
     .filter((item) => !item.consumer_rejected)
     .map((item) => ({
       amount: Math.abs(Number(item.amount ?? 0)),
@@ -311,6 +318,16 @@ export default async function MyEstateTrustStrategyPage({
       is_active: true,
       sign: typeof item.sign === 'number' ? item.sign : -1,
     }))
+
+  const consumerHorizonItems = (consumerLineItemRows ?? []).map((item) => ({
+    amount: Math.abs(Number(item.amount ?? 0)),
+    confidence_level: item.confidence_level as 'certain' | 'probable' | 'illustrative',
+    effective_year: item.effective_year,
+    is_active: true,
+    sign: typeof item.sign === 'number' ? item.sign : -1,
+  }))
+
+  const horizonStrategyItems = [...consumerHorizonItems, ...advisorHorizonItems]
 
   const advisorHorizons = householdFull ? buildStrategyHorizons({
     currentYear,
@@ -428,6 +445,7 @@ export default async function MyEstateTrustStrategyPage({
         initialTab={tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
         advisorLineItems={advisorLineItemRows ?? []}
+        consumerLineItems={consumerLineItemRows ?? []}
         advisorHorizons={advisorHorizons}
         estateContext={estateContext}
         strategyImpact={{
