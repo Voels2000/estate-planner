@@ -271,7 +271,7 @@ export function runSimulation(inputs: MonteCarloInputs): MonteCarloResult {
     ? `Good outlook. Your ${planLabel} succeeds in ${success_rate}% of simulations. Minor adjustments could push you above 90%.`
     : success_rate >= 60
     ? `Moderate risk. Your ${planLabel} succeeds in ${success_rate}% of simulations. Consider increasing contributions or adjusting spending.`
-    : `High risk. Your ${planLabel} only succeeds in ${success_rate}% of simulations. Significant changes are recommended.`
+    : `High risk. Your ${planLabel} only succeeds in ${success_rate}% of simulations. Many households in this range discuss plan adjustments with an advisor.`
 
   const insight_boost = success_rate < 90
     ? `Increasing monthly contributions by ${formatCurrency(500)} raises your suess rate from ${success_rate}% to ${boostedSuccess}%.`

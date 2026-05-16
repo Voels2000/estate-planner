@@ -7,6 +7,7 @@ import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
 import { fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { PlanningGapsSection } from '@/app/(dashboard)/_components/dashboard/PlanningGapsSection'
 import { hasEstateData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
+import { softenEducationalCopy } from '@/lib/estate/planningTopicPresentation'
 
 type ConflictReport = {
   conflicts: Array<{
@@ -55,7 +56,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
       defaultOpen={false}
       storageKey={props.storageKey}
       locked={!hasEstateData({ totalAssets: props.totalAssets })}
-      lockedMessage="Add your assets to see your estate readiness score, planning gaps, and tax exposure."
+      lockedMessage="Add your assets to see your estate readiness score, common planning topics, and tax exposure."
       lockedHref="/assets"
       lockedHrefLabel="Add assets"
     >
@@ -115,7 +116,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
 
         {props.householdId && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Planning Gaps</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Common planning topics</p>
             <PlanningGapsSection householdId={props.householdId} initialRecommendations={props.initialRecommendations} />
           </div>
         )}
@@ -152,7 +153,9 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm text-neutral-800">{conflict.description}</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">{conflict.recommended_action}</p>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        {softenEducationalCopy(conflict.recommended_action)}
+                      </p>
                     </div>
                   </div>
                 ))}

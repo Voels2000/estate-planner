@@ -1,7 +1,7 @@
 # Consumer navigation map
 
 Canonical reference for **sidebar label**, **URL**, **page title** (`<h1>`), and **minimum tier**.  
-Update this file when adding or renaming consumer routes (Phase A — Session 115).
+Update this file when adding or renaming consumer routes (Phase A — Session 115; trust merge — Session 116).
 
 **Tier legend:** 1 = Financial, 2 = Retirement, 3 = Estate (see `lib/tiers.ts`).
 
@@ -66,12 +66,11 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 |---------------|-------|------------|------|-------------|
 | My Family | `/my-family` | My Family | 3 | `my-family` |
 | Titling & Beneficiaries | `/titling` | Titling & Beneficiaries | 3 | `titling` |
-| Trust & Will Guidance | `/trust-will` | Trust & Will Guidance | 3 | `trust-will` |
 | Incapacity Planning | `/incapacity-planning` | Incapacity Planning | 3 | `incapacity` |
 | Domicile Analysis | `/domicile-analysis` | Domicile Analysis | 3 | `domicile-analysis` |
 | Estate Tax Snapshot | `/estate-tax` | Estate Tax Snapshot | 3 | `estate-tax` |
 | Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | — |
-| Gifting, Strategies & Trusts | `/my-estate-trust-strategy` | Gifting, Strategies & Trusts | 3 | — |
+| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | — |
 
 ---
 
@@ -79,6 +78,7 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 
 | Route | Page title | Tier | Notes |
 |-------|------------|------|--------|
+| `/trust-will` | — | 3 | Redirects to `/my-estate-trust-strategy?tab=trusts` (trust list, recommendations, checklist) |
 | `/health-check` | Estate Health Check | — | Linked from dashboard / onboarding |
 | `/import` | Import Data | 2 | |
 | `/print` | Export Estate Plan | — | |

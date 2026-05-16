@@ -634,7 +634,7 @@ async function evaluateEstateAlerts(
       severity: 'medium',
       title: 'Generate your base-case estate projection',
       description:
-        'You have entered assets, but no base-case projection has been generated yet. Run a base case to see estate tax exposure and planning gaps.',
+        'You have entered assets, but no base-case projection has been generated yet. Run a base case to see estate tax exposure and common planning topics.',
       linkPath: '/my-estate-strategy',
       context: { hasEnteredAssets },
     },

@@ -1,10 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
+import { TrustDocumentsPanel } from '@/components/consumer/TrustDocumentsPanel'
+import type {
+  TrustRow,
+  TrustWillChecklistItem,
+  TrustWillRecommendation,
+} from '@/lib/trusts/types'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
@@ -38,15 +43,6 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'strategies', label: 'Transfer Strategies', icon: '🏛️' },
   { id: 'trusts', label: 'Trusts & Documents', icon: '📋' },
 ]
-
-const TRUST_DOCUMENT_TYPES = [
-  'Revocable',
-  'Irrevocable',
-  'QTIP',
-  'Bypass',
-  'Charitable',
-  'Special needs',
-] as const
 
 interface Props {
   householdId: string
@@ -84,15 +80,12 @@ interface Props {
     giftingExcessOverLimit: number | null
   }
   initialGiftingSummary?: GiftingSummary | null
-  initialTrustDocuments?: TrustDocumentRow[]
-}
-
-type TrustDocumentRow = {
-  id: string
-  name: string | null
-  trust_type: string | null
-  is_irrevocable: boolean | null
-  funding_amount: number | null
+  trustWillGuidance: {
+    estateValue: number
+    recommendations: TrustWillRecommendation[]
+    checklist: TrustWillChecklistItem[]
+    trusts: TrustRow[]
+  }
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -124,16 +117,18 @@ export default function MyEstateTrustStrategyClient({
   strategyImpact,
   giftingScenario,
   initialGiftingSummary,
-  initialTrustDocuments = [],
+  trustWillGuidance,
 }: Props) {
   const router = useRouter()
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
   const [activeTab, setActiveTab] = useState<Tab>(startTab)
 
-  const [trustDocs, setTrustDocs] = useState<TrustDocumentRow[]>(initialTrustDocuments)
-  const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
-  const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null)
+  function selectTab(tab: Tab) {
+    setActiveTab(tab)
+    router.replace(`/my-estate-trust-strategy?tab=${tab}`, { scroll: false })
+  }
+
   const [annualGiftingInput, setAnnualGiftingInput] = useState<number | null>(null)
   const [giftingYears, setGiftingYears] = useState(10)
   const [pendingItems, setPendingItems] = useState<PendingAdvisorItem[]>(
@@ -168,36 +163,6 @@ export default function MyEstateTrustStrategyClient({
     type: 'success' | 'error'
     text: string
   } | null>(null)
-
-  useEffect(() => {
-    setTrustDocs(initialTrustDocuments)
-  }, [initialTrustDocuments])
-
-  const trustDocCountLabel = useMemo(() => {
-    if (trustDocs.length === 1) return '1 trust document saved'
-    return `${trustDocs.length} trust documents saved`
-  }, [trustDocs.length])
-
-  async function handleDeleteTrustDocument(id: string) {
-    const confirmed = window.confirm('Delete this trust document? This action cannot be undone.')
-    if (!confirmed) return
-    setDeletingTrustId(id)
-    setTrustDocsError(null)
-    const res = await fetch('/api/consumer/trusts', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      setTrustDocsError(data.error ?? 'Failed to delete trust')
-      setDeletingTrustId(null)
-      return
-    }
-    setTrustDocs((prev) => prev.filter((t) => t.id !== id))
-    setDeletingTrustId(null)
-    router.refresh()
-  }
 
   function formatDollars(n: number) {
     return n.toLocaleString('en-US', {
@@ -413,7 +378,7 @@ export default function MyEstateTrustStrategyClient({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
@@ -891,90 +856,13 @@ export default function MyEstateTrustStrategyClient({
       )}
 
       {activeTab === 'trusts' && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-1 text-base font-semibold text-gray-800">Trusts & Estate Documents</h2>
-            <a
-              href="/trust-will"
-              className="mb-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              + Add Trust Document
-            </a>
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Trust types you can add
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {TRUST_DOCUMENT_TYPES.map((type) => (
-                  <span
-                    key={type}
-                    className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700"
-                  >
-                    {type}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-base font-semibold text-gray-800">Stored Trust Documents</h3>
-              <span className="text-xs text-gray-500">{trustDocCountLabel}</span>
-            </div>
-            {trustDocs.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No trust documents saved yet. Click <span className="font-medium">Add Trust Document</span> to create one.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {trustDocs.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-900">
-                        {doc.name?.trim() || 'Untitled trust document'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(doc.trust_type ?? 'revocable').replace(/_/g, ' ')}
-                        {doc.is_irrevocable ? ' • Irrevocable' : ''}
-                        {typeof doc.funding_amount === 'number' && doc.funding_amount > 0
-                          ? ` • Funding ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(doc.funding_amount)}`
-                          : ''}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href="/trust-will"
-                        className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteTrustDocument(doc.id)}
-                        disabled={deletingTrustId === doc.id}
-                        className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        {deletingTrustId === doc.id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {trustDocsError && (
-              <p className="mt-3 text-xs text-red-600">{trustDocsError}</p>
-            )}
-          </div>
-          <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-            <p className="text-sm text-amber-800">
-              <span className="font-semibold">Note:</span> The advance strategies and trusts on this
-              page are complex. We recommend you consult an advisor or attorney.
-            </p>
-          </div>
-        </div>
+        <TrustDocumentsPanel
+          embedded
+          estateValue={trustWillGuidance.estateValue}
+          recommendations={trustWillGuidance.recommendations}
+          checklist={trustWillGuidance.checklist}
+          initialTrusts={trustWillGuidance.trusts}
+        />
       )}
     </div>
   )

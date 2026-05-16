@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { PlanningTopicsList } from '@/app/(dashboard)/_components/dashboard/PlanningTopicsList';
 import type { ReactNode } from 'react';
 
 interface Recommendation {
@@ -75,23 +76,6 @@ const complexityColors: Record<string, string> = {
   critical: 'bg-red-100 text-red-800',
 };
 
-const priorityColors: Record<string, string> = {
-  high: 'border-l-red-500',
-  moderate: 'border-l-yellow-500',
-  low: 'border-l-green-500',
-};
-
-const branchLabels: Record<string, string> = {
-  will: 'Last Will & Testament',
-  dpoa: 'Durable Power of Attorney',
-  healthcare_directive: 'Advance Healthcare Directive',
-  revocable_living_trust: 'Revocable Living Trust',
-  pour_over_will: 'Pour-Over Will',
-  bypass_trust: 'Bypass Trust (Credit Shelter)',
-  ilit: 'Irrevocable Life Insurance Trust',
-  gifting_strategy: 'Annual Gifting Strategy',
-};
-
 export default function EstatePlanningDashboard({
   householdId,
   userRole,
@@ -155,9 +139,6 @@ export default function EstatePlanningDashboard({
     completeness.completeness_pct >= 80 ? 'text-green-600' :
     completeness.completeness_pct >= 60 ? 'text-yellow-600' :
     completeness.completeness_pct >= 40 ? 'text-orange-600' : 'text-red-600';
-
-  const highPriority = recommendations.recommendations.filter(r => r.priority === 'high');
-  const moderatePriority = recommendations.recommendations.filter(r => r.priority === 'moderate');
 
   const content = (
     <>
@@ -275,7 +256,7 @@ export default function EstatePlanningDashboard({
             </svg>
             <div>
               <p className="text-sm font-semibold text-orange-900">Potential estate tax exposure detected</p>
-              <p className="text-sm text-orange-700 mt-1">Based on your estate size, you may have state or federal estate tax obligations. A financial advisor can quantify your exposure and recommend strategies.</p>
+              <p className="text-sm text-orange-700 mt-1">Based on your estate size, state or federal estate tax may be a topic many families discuss with counsel. A financial advisor can help illustrate exposure and common planning approaches.</p>
               <button className="mt-3 px-4 py-1.5 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors">
                 Connect with an Advisor
               </button>
@@ -288,38 +269,15 @@ export default function EstatePlanningDashboard({
       {/* Recommendations */}
       {showGaps && (isAdvisor || isConsumerT3) && recommendations.recommendations.length > 0 && (
         <CollapsibleSection
-          title="Gaps in your Estate Plan"
-          subtitle={`${recommendations.recommendations.length} items`}
+          title="Common planning topics"
+          subtitle={`${recommendations.recommendations.length} topics`}
           defaultOpen={false}
           storageKey="estate-planning-gaps"
         >
-          {highPriority.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">High Priority</p>
-              <div className="space-y-2">
-                {highPriority.map(rec => (
-                  <div key={rec.branch} className={`p-4 bg-gray-50 rounded-lg border-l-4 ${priorityColors[rec.priority]}`}>
-                    <p className="text-sm font-semibold text-gray-900">{branchLabels[rec.branch] || rec.branch}</p>
-                    <p className="text-sm text-gray-600 mt-0.5">{rec.reason}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {moderatePriority.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-2">Moderate Priority</p>
-              <div className="space-y-2">
-                {moderatePriority.map(rec => (
-                  <div key={rec.branch} className={`p-4 bg-gray-50 rounded-lg border-l-4 ${priorityColors[rec.priority]}`}>
-                    <p className="text-sm font-semibold text-gray-900">{branchLabels[rec.branch] || rec.branch}</p>
-                    <p className="text-sm text-gray-600 mt-0.5">{rec.reason}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <PlanningTopicsList
+            topics={recommendations.recommendations}
+            cardClassName="p-4 bg-gray-50 rounded-lg border-l-4"
+          />
         </CollapsibleSection>
       )}
     </>

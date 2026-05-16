@@ -1,6 +1,6 @@
 # Consumer release smoke test (manual)
 
-Use this after a production or staging deploy when consumer write paths or estate health recompute changed (Sessions 100–108).
+Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, or planning-topic copy changed (Sessions 100–116).
 
 **Time:** ~20–30 minutes for the full checklist · ~10 minutes for the **Core** section only.
 
@@ -112,12 +112,24 @@ Pick **one** module you already use (Assets is simplest).
 | 9.1 | Dashboard — **strategy recommendation** panel | Visible if advisor assigned | ☐ |
 | 9.2 | **Accept** or **Decline** one item | UI updates after refresh; no console errors | ☐ |
 
-### 10. Gifting / trust strategy (if used)
+### 10. Gifting, Strategies & Trusts (tier 3)
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
-| 10.1 | Save a **named** gifting scenario | Appears in saved list | ☐ |
-| 10.2 | **Remove** only that named scenario | Others remain | ☐ |
+| 10.1 | Go to **Gifting, Strategies & Trusts** (sidebar) | Opens with **Trusts & Documents** tab (or switch to it) | ☐ |
+| 10.2 | **Trusts & Documents** — **+ Add Trust**, save a test trust | Trust appears in table; no error | ☐ |
+| 10.3 | **Edit** and **Delete** the test trust | Updates / removes; dashboard refresh OK | ☐ |
+| 10.4 | Visit `/trust-will` | Redirects to `/my-estate-trust-strategy?tab=trusts` | ☐ |
+| 10.5 | **Common planning topics** sections show prevalence labels (not “High Priority”) | Educational disclaimer visible | ☐ |
+| 10.6 | Save a **named** gifting scenario (Gifting tab) | Appears in saved list | ☐ |
+| 10.7 | **Remove** only that named scenario | Others remain | ☐ |
+
+### 11. Estate Summary planning topics (tier 1+ with estate data)
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| 11.1 | Dashboard → expand **Estate Summary** | **Common planning topics** (not “Planning Gaps”) if topics exist | ☐ |
+| 11.2 | Group headers use educational labels | No red “High Priority” headers | ☐ |
 
 ---
 
@@ -137,6 +149,8 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 | Profile | `/profile` | ☐ |
 | Scenarios | `/scenarios` | ☐ |
 | Titling | `/titling` | ☐ |
+| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | ☐ |
+| Trust redirect | `/trust-will` → trust tab | ☐ |
 
 ---
 
@@ -150,7 +164,7 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 | Deploy / commit (if known) | |
 | **Core** (sections 1–3) | ☐ Pass ☐ Fail |
 | **Estate planning** (sections 4–7) | ☐ Pass ☐ Fail ☐ Skipped (tier) |
-| **Optional** (8–10) | ☐ Pass ☐ Fail ☐ N/A |
+| **Optional** (8–11) | ☐ Pass ☐ Fail ☐ N/A |
 | Issues found | |
 
 ---

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
 
 interface CharitableGivingDashboardProps {
   householdId: string;
@@ -87,24 +88,6 @@ const VEHICLE_LABELS: Record<string, string> = {
   crt:              'Charitable Remainder Trust',
 };
 
-const priorityColors: Record<number, string> = {
-  1: 'border-l-red-500 bg-red-50',
-  2: 'border-l-yellow-500 bg-yellow-50',
-  3: 'border-l-green-500 bg-green-50',
-};
-
-const priorityBadge: Record<number, string> = {
-  1: 'bg-red-100 text-red-700',
-  2: 'bg-yellow-100 text-yellow-700',
-  3: 'bg-green-100 text-green-700',
-};
-
-const priorityLabel: Record<number, string> = {
-  1: 'HIGH',
-  2: 'MODERATE',
-  3: 'LOW',
-};
-
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unexpected error';
 
@@ -136,7 +119,7 @@ export default function CharitableGivingDashboard({
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'recommendations' | 'deductions' | 'history'>('recommendations');
+  const [activeTab, setActiveTab] = useState<'topics' | 'deductions' | 'history'>('topics');
   const [hydrated, setHydrated] = useState(false);
   const [charitableSaving, setCharitableSaving] = useState(false);
   const [charitableSaveMessage, setCharitableSaveMessage] = useState<{
@@ -445,30 +428,24 @@ export default function CharitableGivingDashboard({
           <>
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex gap-6">
-                {(['recommendations', 'deductions', 'history'] as const).map(tab => (
+                {(['topics', 'deductions', 'history'] as const).map(tab => (
                   <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                    {tab === 'recommendations' ? 'Recommendations' : tab === 'deductions' ? 'Deduction Detail' : 'Donation History'}
+                    {tab === 'topics' ? 'Planning topics' : tab === 'deductions' ? 'Deduction Detail' : 'Donation History'}
                   </button>
                 ))}
               </nav>
             </div>
 
-            {activeTab === 'recommendations' && (
-              <div className="space-y-3">
-                {recommendations.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
-                ) : (
-                  recommendations.map((rec, i) => (
-                    <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>{priorityLabel[rec.priority]}</span>
-                        <p className="text-sm font-semibold text-gray-900">{rec.title}</p>
-                      </div>
-                      <p className="text-sm text-gray-600">{rec.detail}</p>
-                    </div>
-                  ))
-                )}
-              </div>
+            {activeTab === 'topics' && (
+              <EducationalTopicsCards
+                topics={recommendations.map((rec, i) => ({
+                  key: `${rec.type}-${i}`,
+                  title: rec.title,
+                  detail: rec.detail,
+                  priority: rec.priority,
+                }))}
+                cardClassName="border-l-4 rounded-r-lg p-4 bg-gray-50"
+              />
             )}
 
             {activeTab === 'deductions' && (

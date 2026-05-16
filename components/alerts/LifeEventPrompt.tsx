@@ -55,7 +55,7 @@ function getPromptContent(type: PromptType, context: LifeEventPromptProps['conte
       return {
         icon: '👶',
         title: 'Update your estate plan for your new family member',
-        body: 'You may want to review beneficiary designations and trust distribution provisions for your new family member. Trusts can include provisions for minors.',
+        body: 'Many families review beneficiary designations and trust distribution provisions after a new family member. Trusts can include provisions for minors—discuss with counsel if applicable.',
         actions: [
           { label: 'Review beneficiary designations', href: '/titling' },
           { label: 'Review trust provisions', href: '/trust-will' },

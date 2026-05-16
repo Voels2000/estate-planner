@@ -150,15 +150,15 @@ export default function DomicileResults({
           <p className="mb-1 text-sm font-medium text-red-800">Dual estate tax exposure</p>
           <p className="text-sm text-red-700">
             Two or more states in your profile levy their own estate tax. Without clear domicile
-            establishment, your estate could face state-level estate taxes in multiple
-            jurisdictions. An estate planning attorney can help resolve this.
+            establishment, estates sometimes face state-level tax questions in multiple
+            jurisdictions—a topic many families review with counsel.
           </p>
         </div>
       )}
 
       {recommendations.length > 0 && (
         <div>
-          <h2 className="mb-3 text-base font-medium text-gray-900">Key recommendations</h2>
+          <h2 className="mb-3 text-base font-medium text-gray-900">Common planning considerations</h2>
           <ul className="space-y-2">
             {recommendations.map((rec, i) => (
               <li key={i} className="flex gap-3 text-sm text-gray-700">

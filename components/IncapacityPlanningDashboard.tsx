@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
 
 interface ChecklistItem {
   doc_type: string;
@@ -45,12 +46,6 @@ interface DocumentConfirmation {
   status: string;
   last_reviewed: string | null;
 }
-
-const priorityColors: Record<string, string> = {
-  high: 'border-l-red-500',
-  moderate: 'border-l-yellow-500',
-  low: 'border-l-green-500',
-};
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unexpected error';
@@ -169,10 +164,13 @@ export default function IncapacityPlanningDashboard({
   const completedCount = data.checklist.filter(i => i.complete).length + (guardianRequired && guardianComplete ? 1 : 0)
   const totalCount = data.checklist.length + (guardianRequired ? 1 : 0)
 
-  const highGaps = data.incapacity_gaps.filter(g => g.priority === 'high');
-  const moderateGaps = data.incapacity_gaps.filter(g => g.priority === 'moderate');
-
   const hasGaps = data.incapacity_gaps.length > 0;
+  const planningTopics = data.incapacity_gaps.map((gap) => ({
+    key: gap.doc_type,
+    title: gap.label,
+    detail: gap.reason,
+    priority: gap.priority,
+  }));
 
   return (
     <div className="space-y-6">
@@ -187,8 +185,8 @@ export default function IncapacityPlanningDashboard({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {hasGaps && (
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-              {data.incapacity_gaps.length} gap{data.incapacity_gaps.length !== 1 ? 's' : ''} found
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800">
+              {data.incapacity_gaps.length} topic{data.incapacity_gaps.length !== 1 ? 's' : ''} to review
             </span>
           )}
           {!hasGaps && (
@@ -287,7 +285,7 @@ export default function IncapacityPlanningDashboard({
 
       <CollapsibleSection
         title="Document Confirmation"
-        subtitle="Confirm which incapacity planning documents you have in place. This updates your gap analysis."
+        subtitle="Confirm which incapacity planning documents you have in place. This updates your planning topics list."
         defaultOpen={false}
         storageKey="incapacity-document-confirmation"
       >
@@ -346,44 +344,18 @@ export default function IncapacityPlanningDashboard({
 
       {isAdvisor && hasGaps && (
         <CollapsibleSection
-          title="Gap Analysis"
+          title="Common planning topics"
           subtitle={`${data.incapacity_gaps.length} item${data.incapacity_gaps.length !== 1 ? 's' : ''}`}
           defaultOpen={false}
           storageKey="incapacity-gap-analysis"
         >
-          {highGaps.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">High Priority</p>
-              <div className="space-y-2">
-                {highGaps.map(gap => (
-                  <div key={gap.doc_type} className={`p-4 bg-gray-50 rounded-lg border-l-4 ${priorityColors[gap.priority]}`}>
-                    <p className="text-sm font-semibold text-gray-900">{gap.label}</p>
-                    <p className="text-sm text-gray-600 mt-0.5">{gap.reason}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {moderateGaps.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-2">Moderate Priority</p>
-              <div className="space-y-2">
-                {moderateGaps.map(gap => (
-                  <div key={gap.doc_type} className={`p-4 bg-gray-50 rounded-lg border-l-4 ${priorityColors[gap.priority]}`}>
-                    <p className="text-sm font-semibold text-gray-900">{gap.label}</p>
-                    <p className="text-sm text-gray-600 mt-0.5">{gap.reason}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <EducationalTopicsCards topics={planningTopics} cardClassName="p-4 bg-gray-50 rounded-lg border-l-4" />
 
           {/* Priority score — advisor only */}
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700">Incapacity Risk Score</p>
-              <p className="text-xs text-gray-400 mt-0.5">Higher score = more urgent gaps</p>
+              <p className="text-sm font-medium text-gray-700">Incapacity planning score</p>
+              <p className="text-xs text-gray-400 mt-0.5">Illustrative score based on documents on file</p>
             </div>
             <div className="text-right">
               <span className={`text-2xl font-bold ${
@@ -399,7 +371,7 @@ export default function IncapacityPlanningDashboard({
 
       {isConsumerT3 && !isAdvisor && hasGaps && (
         <CollapsibleSection
-          title="Your incapacity plan has gaps"
+          title="Common incapacity planning documents"
           defaultOpen={false}
           storageKey="incapacity-consumer-gaps-cta"
         >
@@ -408,16 +380,18 @@ export default function IncapacityPlanningDashboard({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-900">Your incapacity plan has gaps</p>
+            <p className="text-sm font-semibold text-blue-900">Documents many estate plans include</p>
             <p className="text-sm text-blue-700 mt-1">
-              You are missing {data.incapacity_gaps.length} key document{data.incapacity_gaps.length !== 1 ? 's' : ''} that protect you and your family if you become unable to manage your own affairs.
-              An estate planning attorney can help you address these gaps.
+              Your profile shows {data.incapacity_gaps.length} document type{data.incapacity_gaps.length !== 1 ? 's' : ''} that are commonly part of incapacity planning but are not recorded on file. Discuss with a qualified attorney whether any apply to you.
             </p>
             <button className="mt-3 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
               Connect with an Attorney
             </button>
           </div>
         </div>
+          <div className="mt-4">
+            <EducationalTopicsCards topics={planningTopics} showIntro={false} cardClassName="p-4 bg-gray-50 rounded-lg border-l-4" />
+          </div>
         </CollapsibleSection>
       )}
 

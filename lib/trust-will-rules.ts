@@ -26,7 +26,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (profile.estateValue >= 13_610_000) {
     recommendations.push({
       title: 'Irrevocable Trust',
-      description: 'Your estate may be subject to federal estate tax. An irrevocable trust can remove assets from your taxable estate.',
+      description:
+        'Estates above the federal exemption often discuss irrevocable trusts with counsel to explore whether moving assets out of the taxable estate may be appropriate.',
       priority: 'high',
     })
   }
@@ -35,7 +36,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (profile.domicileRisk === 'high' || profile.domicileRisk === 'critical') {
     recommendations.push({
       title: 'Revocable Living Trust',
-      description: 'Your state has a complex or expensive probate process. A revocable living trust allows assets to pass to heirs without going through probate.',
+      description:
+        'In states with complex or costly probate, many families review a revocable living trust with an attorney as one way assets may pass outside probate.',
       priority: 'high',
     })
   }
@@ -44,7 +46,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (profile.hasMinorChildren) {
     recommendations.push({
       title: 'Testamentary Trust',
-      description: 'You have minor children. A testamentary trust inside your will ensures their inheritance is managed responsibly until they reach adulthood.',
+      description:
+        'Families with minor children often discuss testamentary trusts in a will so inheritance can be managed until children reach adulthood.',
       priority: 'high',
     })
   }
@@ -53,7 +56,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (profile.isMarried) {
     recommendations.push({
       title: 'Pour-Over Will',
-      description: 'A pour-over will works alongside a living trust to ensure any assets not yet in your trust are transferred into it upon your death.',
+      description:
+        'Married couples commonly pair a living trust with a pour-over will so assets not yet titled to the trust may be directed into it at death.',
       priority: 'medium',
     })
   }
@@ -62,7 +66,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (profile.hasBusinessInterests) {
     recommendations.push({
       title: 'Business Succession Trust',
-      description: 'You have business interests that may need special handling. A succession trust or buy-sell agreement can protect your business and heirs.',
+      description:
+        'When business interests are present, owners often review succession trusts or buy-sell agreements with counsel to address continuity and heirs.',
       priority: 'medium',
     })
   }
@@ -71,7 +76,8 @@ export function getTrustWillRecommendations(profile: ProfileData): Recommendatio
   if (!profile.hasExistingTrust) {
     recommendations.push({
       title: 'Last Will & Testament',
-      description: 'Every estate plan needs a will as its foundation. It names beneficiaries, appoints an executor, and designates guardians for minor children.',
+      description:
+        'A last will and testament is a foundational document many estate plans include—for beneficiaries, an executor, and guardians when applicable.',
       priority: recommendations.length === 0 ? 'high' : 'low',
     })
   }

@@ -24,7 +24,7 @@ export default async function AssetAllocationPage() {
         <UpgradeBanner
           requiredTier={2}
           moduleName="Asset Allocation"
-          valueProposition="See your full portfolio breakdown, target allocation, and rebalancing recommendations."
+          valueProposition="See your full portfolio breakdown, target allocation, and illustrative rebalancing scenarios."
         />
       </div>
     )

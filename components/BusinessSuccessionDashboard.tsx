@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
 
 interface BusinessSuccessionDashboardProps {
   householdId: string;
@@ -85,16 +86,6 @@ const BUY_SELL_LABELS: Record<string, string> = {
   cross_purchase:    'Cross-Purchase',
   entity_redemption: 'Entity Redemption',
   wait_and_see:      'Wait-and-See',
-};
-
-const priorityColors: Record<string, string> = {
-  high:   'border-l-red-500 bg-red-50',
-  medium: 'border-l-yellow-500 bg-yellow-50',
-};
-
-const priorityBadge: Record<string, string> = {
-  high:   'bg-red-100 text-red-700',
-  medium: 'bg-yellow-100 text-yellow-700',
 };
 
 const severityDot: Record<string, string> = {
@@ -292,7 +283,7 @@ export default function BusinessSuccessionDashboard({
   const [showAddForm, setShowAddForm]       = useState(false);
   const [form, setForm]                     = useState(emptyForm);
   const [saving, setSaving]                 = useState(false);
-  const [activeTab, setActiveTab]           = useState<'overview' | 'businesses' | 'recommendations'>('overview');
+  const [activeTab, setActiveTab]           = useState<'overview' | 'businesses' | 'topics'>('overview');
   const [hydrated, setHydrated]             = useState(false);
   const [editingId, setEditingId]           = useState<string | null>(null);
   const [deleting, setDeleting]             = useState<string | null>(null);
@@ -712,9 +703,9 @@ export default function BusinessSuccessionDashboard({
           <>
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex gap-6">
-                {(['overview', 'businesses', 'recommendations'] as const).map(tab => (
+                {(['overview', 'businesses', 'topics'] as const).map(tab => (
                   <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                    {tab === 'overview' ? 'Overview' : tab === 'businesses' ? 'Businesses' : 'Recommendations'}
+                    {tab === 'overview' ? 'Overview' : tab === 'businesses' ? 'Businesses' : 'Planning topics'}
                   </button>
                 ))}
               </nav>
@@ -762,12 +753,12 @@ export default function BusinessSuccessionDashboard({
                 </div>
 
                 {summary.recommendations.filter(r => r.priority === 'high').length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-red-800 mb-2">High Priority Gaps</p>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-slate-800 mb-2">Often discussed for business owners</p>
                     <ul className="space-y-1">
                       {summary.recommendations.filter(r => r.priority === 'high').map((r, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-red-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                        <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
                           {r.label}
                         </li>
                       ))}
@@ -920,24 +911,16 @@ export default function BusinessSuccessionDashboard({
             )}
 
             {/* Recommendations tab */}
-            {activeTab === 'recommendations' && (
-              <div className="space-y-3">
-                {summary.recommendations.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
-                ) : (
-                  summary.recommendations.map((rec, i) => (
-                    <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>
-                          {rec.priority.toUpperCase()}
-                        </span>
-                        <p className="text-sm font-semibold text-gray-900">{rec.label}</p>
-                      </div>
-                      <p className="text-sm text-gray-600">{rec.detail}</p>
-                    </div>
-                  ))
-                )}
-              </div>
+            {activeTab === 'topics' && (
+              <EducationalTopicsCards
+                topics={summary.recommendations.map((rec, i) => ({
+                  key: `biz-rec-${i}`,
+                  title: rec.label,
+                  detail: rec.detail,
+                  priority: rec.priority,
+                }))}
+                cardClassName="border-l-4 rounded-r-lg p-4 bg-gray-50"
+              />
             )}
           </>
         )}

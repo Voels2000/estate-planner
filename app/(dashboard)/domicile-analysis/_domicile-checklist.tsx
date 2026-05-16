@@ -77,7 +77,7 @@ export default function DomicileChecklist({ items, onToggle }: Props) {
         <div>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-red-700">
             <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-            High priority — address these first
+            Commonly addressed early in a domicile plan
           </h2>
           <div className="space-y-2">
             {items
@@ -154,7 +154,7 @@ function ChecklistRow({
           {item.label}
           {item.priority === 'high' && !item.completed && (
             <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">
-              high priority
+              common early step
             </span>
           )}
         </p>

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import MyEstateTrustStrategyClient from './_client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { loadTrustWillGuidance } from '@/lib/trusts/loadTrustWillGuidance'
 import { computeFederalEstateTax, type EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
@@ -140,7 +141,7 @@ export default async function MyEstateTrustStrategyPage({
   const [
     composition,
     { data: liabilitiesRows },
-    { data: trustRows },
+    trustWillGuidance,
     { data: federalBracketRows },
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
@@ -153,13 +154,7 @@ export default async function MyEstateTrustStrategyPage({
   ] = await Promise.all([
     classifyEstateAssets(supabase, householdRow.id),
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
-    supabase
-      .from('trusts')
-      .select(
-        'id, name, trust_type, is_irrevocable, funding_amount, excludes_from_estate, excluded_from_estate',
-      )
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false }),
+    loadTrustWillGuidance(supabase, user.id, householdRow.id),
     supabase
       .from('federal_estate_tax_brackets')
       .select('tax_year, min_amount, max_amount, rate_pct')
@@ -212,13 +207,7 @@ export default async function MyEstateTrustStrategyPage({
     .reduce((sum, s) => sum + s.amount, 0)
 
   const totalLiabilities = (liabilitiesRows ?? []).reduce((sum, row) => sum + num(row.balance), 0)
-  const trustsExcluded = trustsExcludedSum(
-    (trustRows ?? []) as Array<{
-      excludes_from_estate?: boolean
-      excluded_from_estate?: unknown
-      funding_amount?: unknown
-    }>,
-  )
+  const trustsExcluded = trustsExcludedSum(trustWillGuidance.trusts)
   const latestYear = Math.max(...(federalBracketRows ?? []).map((b) => num(b.tax_year)), 0)
   const federalBrackets: EstateTaxBracket[] = (federalBracketRows ?? [])
     .filter((b) => num(b.tax_year) === latestYear)
@@ -472,13 +461,12 @@ export default async function MyEstateTrustStrategyPage({
           giftingExcessOverLimit: excessAnnualGifts || null,
         }}
         initialGiftingSummary={initialGiftingSummary}
-        initialTrustDocuments={(trustRows ?? []).map((row) => ({
-          id: row.id as string,
-          name: (row.name as string | null) ?? null,
-          trust_type: (row.trust_type as string | null) ?? null,
-          is_irrevocable: (row.is_irrevocable as boolean | null) ?? null,
-          funding_amount: row.funding_amount != null ? Number(row.funding_amount) : null,
-        }))}
+        trustWillGuidance={{
+          estateValue: trustWillGuidance.estateValue,
+          recommendations: trustWillGuidance.recommendations,
+          checklist: trustWillGuidance.checklist,
+          trusts: trustWillGuidance.trusts,
+        }}
       />
     </div>
   )

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
 
 interface GiftingDashboardProps {
   householdId: string;
@@ -56,18 +57,6 @@ const GIFT_TYPE_LABELS: Record<string, string> = {
   '529': '529 Contribution',
   medical: 'Direct Medical',
   tuition: 'Direct Tuition',
-};
-
-const priorityColors: Record<string, string> = {
-  high: 'border-l-red-500 bg-red-50',
-  moderate: 'border-l-yellow-500 bg-yellow-50',
-  low: 'border-l-green-500 bg-green-50',
-};
-
-const priorityBadge: Record<string, string> = {
-  high: 'bg-red-100 text-red-700',
-  moderate: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-green-100 text-green-700',
 };
 
 const getErrorMessage = (error: unknown): string =>
@@ -569,30 +558,19 @@ export default function GiftingDashboard({
 
         {activeTab === 'overview' && (
           <CollapsibleSection
-            title="Considerations"
+            title="Common planning topics"
             defaultOpen={false}
             storageKey="gifting-considerations"
           >
-            <div className="space-y-3">
-              {summary.recommendations.map((rec, i) => (
-                <div key={i} className={`border-l-4 rounded-r-lg p-4 ${priorityColors[rec.priority] ?? 'border-l-gray-300 bg-gray-50'}`}>
-                  <div className="flex items-start gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityBadge[rec.priority]}`}>
-                          {rec.priority.toUpperCase()}
-                        </span>
-                        <p className="text-sm font-semibold text-gray-900">{rec.title}</p>
-                      </div>
-                      <p className="text-sm text-gray-600">{rec.detail}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {summary.recommendations.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-8">No recommendations at this time.</p>
-              )}
-            </div>
+            <EducationalTopicsCards
+              topics={summary.recommendations.map((rec, i) => ({
+                key: `${rec.type}-${i}`,
+                title: rec.title,
+                detail: rec.detail,
+                priority: rec.priority,
+              }))}
+              cardClassName="border-l-4 rounded-r-lg p-4 bg-gray-50"
+            />
           </CollapsibleSection>
         )}
 
