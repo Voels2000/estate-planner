@@ -168,4 +168,60 @@ test.describe('Consumer strategy write APIs', () => {
     })
     expect([200, 404].includes(res.status()), await res.text()).toBeTruthy()
   })
+
+  test('POST strategy-line-items liquidity source succeeds', async ({ request }) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID to run strategy write smoke tests')
+
+    const res = await request.post('/api/strategy-line-items', {
+      data: {
+        household_id: householdId,
+        strategy_source: 'liquidity',
+        source_role: 'consumer',
+        amount: 250000,
+        sign: -1,
+        confidence_level: 'probable',
+        effective_year: new Date().getFullYear(),
+        scenario_name: 'Playwright Liquidity Test',
+        category: 'liability',
+      },
+    })
+    expect(res.ok(), await res.text()).toBeTruthy()
+    const body = await res.json()
+    expect(body.strategy_source).toBe('liquidity')
+    expect(body.category).toBe('liability')
+    expect(body.is_active).toBe(true)
+
+    await request.delete('/api/strategy-line-items', {
+      data: { householdId, strategySource: 'liquidity', scenarioName: 'Playwright Liquidity Test', source_role: 'consumer' },
+    })
+  })
+
+  test('POST strategy-line-items roth source succeeds', async ({ request }) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID to run strategy write smoke tests')
+
+    const res = await request.post('/api/strategy-line-items', {
+      data: {
+        household_id: householdId,
+        strategy_source: 'roth',
+        source_role: 'consumer',
+        amount: 100000,
+        sign: -1,
+        confidence_level: 'probable',
+        effective_year: new Date().getFullYear(),
+        scenario_name: 'Playwright Roth Test',
+        category: 'trust_exclusion',
+      },
+    })
+    expect(res.ok(), await res.text()).toBeTruthy()
+    const body = await res.json()
+    expect(body.strategy_source).toBe('roth')
+    expect(body.category).toBe('trust_exclusion')
+    expect(body.is_active).toBe(true)
+
+    await request.delete('/api/strategy-line-items', {
+      data: { householdId, strategySource: 'roth', scenarioName: 'Playwright Roth Test', source_role: 'consumer' },
+    })
+  })
 })
