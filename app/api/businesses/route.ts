@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  afterHouseholdWriteForOwner,
+  resolveOwnedHouseholdId,
+} from '@/lib/consumer/afterHouseholdWrite'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -8,12 +12,7 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .single()
-
+  const householdId = await resolveOwnedHouseholdId(supabase, user.id)
   const body = await request.json()
 
   const { data, error } = await supabase
@@ -21,14 +20,14 @@ export async function POST(request: NextRequest) {
     .insert({
       ...body,
       owner_id: user.id,
-      household_id: household?.id,
+      household_id: householdId,
     })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-  if (household?.id) {
-    await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', household.id)
-  }
+
+  await afterHouseholdWriteForOwner(supabase, user.id)
+
   return NextResponse.json(data)
 }

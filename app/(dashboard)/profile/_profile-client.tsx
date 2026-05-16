@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import type { ProfileSavePayload } from '@/lib/profile/buildHouseholdPayload'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -120,92 +120,58 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
     setValidationErrors([])
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-
-      // Save profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName,
-          email: email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-
-      if (profileError) throw profileError
-
-      // FIX 1: Build household data with filing_status as a plain string.
-      // Previously this was identical — the bug was NOT in the data shape but in
-      // how errors from the SS upsert block were handled. If the SS delete/insert
-      // threw, isSubmitting was stuck true and no error was shown to the user.
-      // Now all SS errors are surfaced properly (throw instead of console.error).
-      const householdData = {
-        owner_id: user.id,
-        name: householdName || `${fullName}'s Household`,
-        person1_name: person1Name,
-        person1_first_name: person1Name.trim().split(' ')[0] || null,
-        person1_last_name: person1Name.trim().split(' ').slice(1).join(' ') || null,
-        person1_birth_year: parseInt(person1BirthYear) || null,
-        person1_retirement_age: parseInt(person1RetirementAge) || null,
-        person1_ss_claiming_age: parseInt(person1SSClaimingAge) || null,
-        person1_longevity_age: parseInt(person1LongevityAge) || null,
-        person1_ss_pia: person1SSPia.trim() !== '' ? Number(person1SSPia) : null,
-        has_spouse: hasSpouse,
-        person2_name: hasSpouse ? person2Name : null,
-        person2_first_name: hasSpouse ? (person2Name.trim().split(' ')[0] || null) : null,
-        person2_last_name: hasSpouse ? (person2Name.trim().split(' ').slice(1).join(' ') || null) : null,
-        person2_birth_year: hasSpouse ? parseInt(person2BirthYear) || null : null,
-        person2_retirement_age: hasSpouse ? parseInt(person2RetirementAge) || null : null,
-        person2_ss_claiming_age: hasSpouse ? parseInt(person2SSClaimingAge) || null : null,
-        person2_longevity_age: hasSpouse ? parseInt(person2LongevityAge) || null : null,
-        person2_ss_pia: hasSpouse && person2SSPia.trim() !== '' ? Number(person2SSPia) : null,
-        filing_status: filingStatus,  // plain string — Supabase coerces to enum safely
-        state_primary: statePrimary || null,
-        state_compare: stateCompare || null,
-        inflation_rate: parseFloat(inflationRate) || 2.5,
-        risk_tolerance: riskTolerance,
-        growth_rate_accumulation: Number(growthRateAccumulation) || 7,
-        growth_rate_retirement: Number(growthRateRetirement) || 5,
-        deduction_mode: deductionMode,
-        custom_deduction_amount: parseFloat(customDeductionAmount) || 0,
-        updated_at: new Date().toISOString(),
+      const payload: ProfileSavePayload = {
+        householdId,
+        fullName,
+        email,
+        householdName,
+        person1Name,
+        person1BirthYear,
+        person1RetirementAge,
+        person1SSClaimingAge,
+        person1LongevityAge,
+        person1SSPia,
+        hasSpouse,
+        person2Name,
+        person2BirthYear,
+        person2RetirementAge,
+        person2SSClaimingAge,
+        person2LongevityAge,
+        person2SSPia,
+        filingStatus,
+        statePrimary,
+        stateCompare,
+        inflationRate,
+        riskTolerance,
+        growthRateAccumulation,
+        growthRateRetirement,
+        deductionMode,
+        customDeductionAmount,
       }
 
-      if (householdId) {
-        const { error } = await supabase
-          .from('households')
-          .update(householdData)
-          .eq('id', householdId)
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('households')
-          .insert(householdData)
-        if (error) throw error
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        // If advisor, grant Tier 3 access on first profile completion
-        if (profile?.role === 'advisor') {
-          await supabase
-            .from('profiles')
-            .update({ consumer_tier: 3 })
-            .eq('id', user.id)
-        }
+      const res = await fetch('/api/consumer/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save profile')
       }
 
-      // SS is handled entirely by the projection engine via households table.
-      // No SS rows are written to the income table.
+      const { householdId: savedHouseholdId, created } = (await res.json()) as {
+        householdId: string
+        created: boolean
+      }
+
+      if (created && savedHouseholdId) {
+        setHouseholdId(savedHouseholdId)
+      }
+
       setSuccess(true)
+      setIsSubmitting(false)
       setTimeout(() => {
-        // New users go through estate health check before dashboard (Sprint 56)
-        router.push(householdId ? '/dashboard' : '/health-check')
+        router.push(householdId || created ? '/dashboard' : '/health-check')
         router.refresh()
       }, 1500)
     } catch (err) {

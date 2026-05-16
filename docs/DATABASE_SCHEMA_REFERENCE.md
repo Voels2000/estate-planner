@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 105 / server-prefetch remaining dashboard pages)
+# Last updated: May 15, 2026 (Session 106 / profile save API + business create recompute)
 
 ---
 
@@ -331,6 +331,13 @@ After each schema-affecting session:
   - `lib/projections/loadProjectionData.ts` — shared projection fetch/compute for `/api/projection` and `/projections` page.
   - Server-prefetch: `/projections`, `/scenarios` (household + base case), `/profile` (`buildProfileFormInitial`), `/health-check` (household + prior answers).
   - `/titling/_titling-client.tsx` — `router.refresh()` + prop sync replaces client `reloadData()`.
+
+## Session 106 Note
+
+- No database schema or migration changes were introduced in Session 106.
+- Application-layer changes:
+  - `PATCH /api/consumer/profile` — server-side profile + household upsert; `afterHouseholdWrite` on save; `_profile-client.tsx` no longer writes directly via Supabase client.
+  - `POST /api/businesses` — `afterHouseholdWriteForOwner` after insert (recompute parity with `[id]` routes).
 
 ---
 
