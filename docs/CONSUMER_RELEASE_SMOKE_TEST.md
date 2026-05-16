@@ -103,6 +103,7 @@ Pick **one** module you already use (Assets is simplest).
 |------|--------|----------|-------|
 | 8.1 | Go to **My Estate Strategy** | Page loads | ☐ |
 | 8.2 | If offered, **generate** or refresh base case | Completes without error; horizons/charts populate | ☐ |
+| 8.3 | **Scenarios** (`/scenarios`) — adjust B or C, wait for chart, click **Save** on a column | “Saved” feedback; no error toast | ☐ |
 
 ### 9. Advisor recommendation (if linked to an advisor)
 

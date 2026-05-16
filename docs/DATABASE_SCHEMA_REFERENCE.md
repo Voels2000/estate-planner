@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 113 / repo cleanup)
+# Last updated: May 16, 2026 (Session 114 / consumer scenario snapshot saves)
 
 ---
 
@@ -366,6 +366,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 114 Note
+
+- No database schema or migration changes were introduced in Session 114.
+- Application-layer changes:
+  - `POST /api/consumer/scenario-snapshots` — inserts archived comparison rows into `projections` (distinct from live `projection_scenarios` base case); `lib/scenarios/buildScenarioSnapshot.ts`; ownership via `requireOwnedHouseholdId`.
+  - `_scenarios-client.tsx` save action uses consumer API (no browser Supabase write).
 
 ## Session 113 Note
 

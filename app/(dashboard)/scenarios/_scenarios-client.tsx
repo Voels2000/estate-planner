@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { summarizeScenario, type ScenarioSummary } from '@/lib/scenarios/summarizeScenario'
@@ -218,23 +217,23 @@ export default function ScenariosClient({
     setIsSaving(idx)
     setError(null)
     try {
-      const supabase = createClient()
-      const now       = new Date()
-      const timestamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-        ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      const { error } = await supabase.from('projections').insert({
-        household_id: household!.id,
-        scenario_name: `${names[idx]} — ${timestamp}`,
-        projection_data: result.rows,
-        summary: {
-          at_retirement: result.portfolioAtRetirement,
-          peak:          result.peakPortfolio,
-          final:         result.finalPortfolio,
-          funds_outlast: result.fundsOutlast,
-        },
-        calculated_at: now.toISOString(),
+      const res = await fetch('/api/consumer/scenario-snapshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: household!.id,
+          scenario_label: names[idx],
+          projection_data: result.rows,
+          summary: {
+            at_retirement: result.portfolioAtRetirement,
+            peak: result.peakPortfolio,
+            final: result.finalPortfolio,
+            funds_outlast: result.fundsOutlast,
+          },
+        }),
       })
-      if (error) throw error
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save scenario')
       setSavedIdx(idx)
       setTimeout(() => setSavedIdx(null), 2500)
     } catch (err) {
