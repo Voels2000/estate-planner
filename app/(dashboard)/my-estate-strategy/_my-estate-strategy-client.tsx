@@ -12,6 +12,8 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
+import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
@@ -55,6 +57,8 @@ type Props = {
   survivorEndYear: number
   currentYear: number
   middleContent?: ReactNode
+  acceptedMCScenario?: ConsumerMCScenario | null
+  latestSharedMCScenario?: ConsumerMCScenario | null
 }
 
 export default function MyEstateStrategyClient({
@@ -70,6 +74,8 @@ export default function MyEstateStrategyClient({
   survivorEndYear,
   currentYear,
   middleContent,
+  acceptedMCScenario,
+  latestSharedMCScenario,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -145,6 +151,15 @@ export default function MyEstateStrategyClient({
         <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           {generateError}
         </p>
+      )}
+
+      {(acceptedMCScenario || latestSharedMCScenario) && (
+        <div className="mb-6">
+          <MonteCarloScenarioBanner
+            acceptedScenario={acceptedMCScenario}
+            latestSharedScenario={latestSharedMCScenario}
+          />
+        </div>
       )}
 
       <CollapsibleSection

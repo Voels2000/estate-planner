@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 97 / gifting scenario_name + dashboard advisor recommendations)
+# Last updated: May 15, 2026 (Session 98 / Monte Carlo consumer acceptance UI + recompute wiring)
 
 ---
 
@@ -201,7 +201,9 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Advisor-side comparison flow exists.
 - Consumer accept/revert flow is implemented via `advisor_projection_assumptions.accepted_by_client` + `accepted_at`.
 - Consumer endpoint: `/api/monte-carlo/advisor-assumptions` (read latest shared + accepted scenario, accept, revert).
+- As of Session 98, `MonteCarloScenarioBanner` on `/dashboard` and `/my-estate-strategy` shows pending shared scenarios (side-by-side vs `MONTE_CARLO_SYSTEM_DEFAULTS`), accept/revert actions, and active-scenario badge; server pages pre-fetch rows via `lib/monte-carlo/consumerAssumptionScenarios.ts`.
 - Consumer UI (`/monte-carlo`) applies accepted advisor assumptions to page-level assumption inputs (inflation and simulation count).
+- `StrategyOverlay` already writes advisor recommendations via `/api/advisor/strategy-recommendation` (`useRecommendStrategy`); no `strategy_configs` path.
 
 ### Target
 
@@ -224,6 +226,7 @@ Runtime behavior:
 
 - Pages render from stored snapshots for speed.
 - If stale, trigger background base-case regeneration.
+- As of Session 98, successful saves on `/real-estate` and `/liabilities` also fire non-blocking `POST /api/recompute-estate-health` so estate health scores stay aligned when gross estate or debt changes.
 
 ---
 

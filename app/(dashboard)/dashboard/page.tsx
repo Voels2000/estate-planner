@@ -39,6 +39,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { DashboardClient } from '../_dashboard-client'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
 
@@ -203,6 +204,21 @@ export default async function DashboardPage() {
         .eq('is_active', true)
     : { data: null }
 
+  const mcScenarioRes = household?.id
+    ? await supabase
+        .from('advisor_projection_assumptions')
+        .select(
+          'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
+        )
+        .eq('client_household_id', household.id)
+        .or('accepted_by_client.eq.true,shared_at.not.is.null')
+        .order('accepted_at', { ascending: false, nullsFirst: false })
+    : { data: null }
+
+  const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
+    mcScenarioRes.data ?? [],
+  )
+
   const { data: initialRecsData } = household?.id
     ? await supabase.rpc('generate_estate_recommendations', {
         p_household_id: household.id,
@@ -339,6 +355,8 @@ export default async function DashboardPage() {
         consumer_accepted: item.consumer_accepted ?? false,
         consumer_rejected: item.consumer_rejected ?? false,
       }))}
+      acceptedMCScenario={acceptedMCScenario}
+      latestSharedMCScenario={latestSharedMCScenario}
     />
   )
 }

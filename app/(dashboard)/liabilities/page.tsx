@@ -26,12 +26,25 @@ type Liability = {
 
 const STORAGE_KEY = 'ep_liabilities_groups'
 
+async function fireRecompute(householdId: string) {
+  try {
+    await fetch('/api/recompute-estate-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
 export default function LiabilitiesPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
   const [liabilities, setLiabilities] = useState<Liability[]>([])
   const [liabilityTypes, setLiabilityTypes] = useState<LiabilityType[]>([])
   const [userId, setUserId] = useState<string | null>(null)
+  const [householdId, setHouseholdId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editLiability, setEditLiability] = useState<Liability | null>(null)
@@ -57,7 +70,7 @@ export default function LiabilitiesPage() {
     const [{ data: liabData, error: liabError }, { data: typesData }, { data: household }] = await Promise.all([
       supabase.from('liabilities').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
       supabase.from('liability_types').select('value, label').order('sort_order'),
-      supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
+      supabase.from('households').select('id, person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     ])
 
     if (liabError) setError(liabError.message)
@@ -65,6 +78,7 @@ export default function LiabilitiesPage() {
     setLiabilityTypes(typesData ?? [])
     if (household?.person1_name) setPerson1Name(displayPersonFirstName(household.person1_name, 'Person 1'))
     if (household?.person2_name) setPerson2Name(displayPersonFirstName(household.person2_name, 'Person 2'))
+    if (household?.id) setHouseholdId(household.id)
     setIsLoading(false)
   }, [])
 
@@ -89,7 +103,10 @@ export default function LiabilitiesPage() {
     // Touch households.updated_at for staleness detection
     if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
-    else setLiabilities(prev => prev.filter(l => l.id !== id))
+    else {
+      setLiabilities(prev => prev.filter(l => l.id !== id))
+      if (householdId) void fireRecompute(householdId)
+    }
     setConfirmDeleteId(null)
   }
 
@@ -290,14 +307,20 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
         const { error } = await supabase.from('liabilities').update(payload).eq('id', editLiability.id)
         if (!error) {
           const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+          if (hh?.id) {
+            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+            void fireRecompute(hh.id)
+          }
         }
         if (error) throw error
       } else {
         const { error } = await supabase.from('liabilities').insert({ ...payload, owner_id: user.id })
         if (!error) {
           const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+          if (hh?.id) {
+            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+            void fireRecompute(hh.id)
+          }
         }
         if (error) throw error
       }

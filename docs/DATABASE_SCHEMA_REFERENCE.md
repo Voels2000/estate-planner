@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 97 / scenario_name labels + dashboard advisor panel)
+# Last updated: May 15, 2026 (Session 98 / Monte Carlo consumer banner + input recompute)
 
 ---
 
@@ -146,6 +146,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Key columns:** `advisor_id`, `client_household_id`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`, `accepted_at`
 - **Purpose:** advisor Monte Carlo scenario assumptions and consumer acceptance state.
 - **Acceptance behavior:** consumer accept/revert toggles `accepted_by_client`/`accepted_at` on household-linked rows; latest accepted row is consumer-effective state.
+- **Consumer UI (Session 98):** `/dashboard` and `/my-estate-strategy` server pages fetch rows where `accepted_by_client=true` or `shared_at` is set; `MonteCarloScenarioBanner` calls `/api/monte-carlo/advisor-assumptions` for accept/revert with `router.refresh()`.
 
 ### `projection_assumption_audit`
 
@@ -265,6 +266,14 @@ After each schema-affecting session:
   - `POST /api/strategy-line-items` now persists optional `scenario_name` on consumer upserts.
   - `my-estate-trust-strategy/_client.tsx`: optional gifting **Program name** saved as `scenario_name`.
   - New `components/consumer/StrategyRecommendationPanel.tsx`; wired on `/dashboard` via `dashboard/page.tsx` + `_dashboard-client.tsx` for advisor recommendation accept/decline.
+
+## Session 98 Note
+
+- No database schema or migration changes were introduced in Session 98.
+- Application-layer changes:
+  - New `components/consumer/MonteCarloScenarioBanner.tsx` and `lib/monte-carlo/consumerAssumptionScenarios.ts` for consumer MC scenario accept/revert UI.
+  - `dashboard/page.tsx` and `my-estate-strategy/page.tsx` pre-fetch `advisor_projection_assumptions` for the banner.
+  - `real-estate/_real-estate-client.tsx` and `liabilities/page.tsx` call `/api/recompute-estate-health` after successful add/update/delete.
 
 ---
 

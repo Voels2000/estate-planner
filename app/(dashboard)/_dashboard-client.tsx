@@ -23,6 +23,8 @@ import { AssessmentHistoryWidget } from '@/app/(dashboard)/_components/dashboard
 import StrategyRecommendationPanel, {
   type AdvisorRecommendationItem,
 } from '@/components/consumer/StrategyRecommendationPanel'
+import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
+import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -111,6 +113,8 @@ type Props = {
     reason: string
   }> | null
   advisorStrategyItems?: AdvisorRecommendationItem[]
+  acceptedMCScenario?: ConsumerMCScenario | null
+  latestSharedMCScenario?: ConsumerMCScenario | null
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +153,8 @@ export function DashboardClient(props: Props) {
     composition,
     initialRecommendations,
     advisorStrategyItems = [],
+    acceptedMCScenario,
+    latestSharedMCScenario,
   } = props
 
   void consumerTier
@@ -180,6 +186,15 @@ export function DashboardClient(props: Props) {
       {householdId && advisorStrategyItems.length > 0 && (
         <div className="mt-6">
           <StrategyRecommendationPanel householdId={householdId} items={advisorStrategyItems} />
+        </div>
+      )}
+
+      {(acceptedMCScenario || latestSharedMCScenario) && (
+        <div className="mt-4">
+          <MonteCarloScenarioBanner
+            acceptedScenario={acceptedMCScenario}
+            latestSharedScenario={latestSharedMCScenario}
+          />
         </div>
       )}
 

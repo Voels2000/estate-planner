@@ -181,6 +181,18 @@ function formatDollars(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
+async function fireRecompute(householdId: string) {
+  try {
+    await fetch('/api/recompute-estate-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
 type RealEstateClientProps = {
   initialProperties: RealEstate[]
   person1Name: string
@@ -202,11 +214,14 @@ export default function RealEstateClient({
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
   const [userId, setUserId] = useState<string | null>(null)
-  // Fetch userId once on mount — reused by all staleness touches
+  const [householdId, setHouseholdId] = useState<string | null>(null)
   useEffect(() => {
     const sb = createClient()
-    sb.auth.getUser().then(({ data: { user } }) => {
+    void sb.auth.getUser().then(async ({ data: { user } }) => {
       setUserId(user?.id ?? null)
+      if (!user) return
+      const { data: hh } = await sb.from('households').select('id').eq('owner_id', user.id).single()
+      setHouseholdId(hh?.id ?? null)
     })
   }, [])
 
@@ -242,7 +257,10 @@ export default function RealEstateClient({
     // Touch households.updated_at for staleness detection
     if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
-    else setRows((prev) => prev.filter((r) => r.id !== id))
+    else {
+      setRows((prev) => prev.filter((r) => r.id !== id))
+      if (householdId) void fireRecompute(householdId)
+    }
     setConfirmDeleteId(null)
   }
 
@@ -547,7 +565,10 @@ function RealEstateModal({
         const { error } = await supabase.from('real_estate').update(payload).eq('id', editRow.id)
         if (!error) {
           const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+          if (hh?.id) {
+            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+            void fireRecompute(hh.id)
+          }
         }
         if (error) throw error
       } else {
@@ -557,7 +578,10 @@ function RealEstateModal({
         })
         if (!error) {
           const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+          if (hh?.id) {
+            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+            void fireRecompute(hh.id)
+          }
         }
         if (error) throw error
       }

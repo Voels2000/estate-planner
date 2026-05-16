@@ -16,6 +16,7 @@ import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 
 export default async function MyEstateStrategyPage() {
   const access = await getUserAccess()
@@ -184,6 +185,7 @@ export default async function MyEstateStrategyPage() {
     { data: scenario },
     { data: realEstate },
     { data: stateBracketRows },
+    { data: mcAssumptionRows },
   ] = await Promise.all([
     household.base_case_scenario_id
       ? admin
@@ -202,7 +204,19 @@ export default async function MyEstateStrategyPage() {
       .eq('state', household?.state_primary ?? '')
       .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
+    supabase
+      .from('advisor_projection_assumptions')
+      .select(
+        'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
+      )
+      .eq('client_household_id', household.id)
+      .or('accepted_by_client.eq.true,shared_at.not.is.null')
+      .order('accepted_at', { ascending: false, nullsFirst: false }),
   ])
+
+  const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
+    mcAssumptionRows ?? [],
+  )
 
   const stateBrackets = stateBracketRows ?? []
 
@@ -315,6 +329,8 @@ export default async function MyEstateStrategyPage() {
     <div className="min-h-screen">
       <MyEstateStrategyClient
         householdId={household.id}
+        acceptedMCScenario={acceptedMCScenario}
+        latestSharedMCScenario={latestSharedMCScenario}
         scenarioId={household.base_case_scenario_id}
         scenarioMeta={{
           calculatedAt: scenario?.calculated_at ?? null,
