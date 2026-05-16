@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 106 / profile save API + business create recompute)
+# Last updated: May 15, 2026 (Session 107 / health check + household people APIs)
 
 ---
 
@@ -235,6 +235,7 @@ Runtime behavior:
 - As of Session 104, all server-side recompute callers use `triggerHouseholdRecompute` / `getConsumerAppUrl()` (no empty `NEXT_PUBLIC_APP_URL` fallbacks). `afterHouseholdWriteForOwner` covers businesses and insurance writes; strategy-recommendation uses `resolveOwnedHouseholdId`; strategy-line-items PATCH triggers `afterHouseholdWrite` when status changes.
 - As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 - As of Session 106, profile saves go through `PATCH /api/consumer/profile` (`lib/profile/buildHouseholdPayload.ts`) with `afterHouseholdWrite` so estate health recompute runs after household/profile updates. `POST /api/businesses` uses `afterHouseholdWriteForOwner` (aligned with business PATCH/DELETE).
+- As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
 
 ---
 

@@ -7,7 +7,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 
 type Answer = 'yes' | 'no' | null
@@ -79,22 +78,13 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
   async function handleSubmit() {
     if (!householdId || !allAnswered) return
     setSaving(true)
-    const supabase = createClient()
-    await supabase
-      .from('estate_health_check')
-      .upsert(
-        {
-          household_id: householdId,
-          has_will: answers.has_will === 'yes',
-          has_trust: answers.has_trust === 'yes',
-          has_poa: answers.has_poa === 'yes',
-          has_hcd: answers.has_hcd === 'yes',
-          beneficiaries_current: answers.beneficiaries_current === 'yes',
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'household_id' },
-      )
+    const res = await fetch('/api/consumer/estate-health-check', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId, answers }),
+    })
+    setSaving(false)
+    if (!res.ok) return
     router.push('/dashboard')
     router.refresh()
   }

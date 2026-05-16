@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 106 / profile save API + business create recompute)
+# Last updated: May 15, 2026 (Session 107 / health check + household people APIs)
 
 ---
 
@@ -338,6 +338,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `PATCH /api/consumer/profile` — server-side profile + household upsert; `afterHouseholdWrite` on save; `_profile-client.tsx` no longer writes directly via Supabase client.
   - `POST /api/businesses` — `afterHouseholdWriteForOwner` after insert (recompute parity with `[id]` routes).
+
+## Session 107 Note
+
+- No database schema or migration changes were introduced in Session 107.
+- Application-layer changes:
+  - `PUT /api/consumer/estate-health-check` — upserts `estate_health_check`; `afterHouseholdWrite`; `_health-check-client.tsx` no longer writes via Supabase client.
+  - `POST` / `PATCH` / `DELETE` `/api/consumer/household-people` — CRUD on `household_people` with ownership checks; `lib/family/householdPeople.ts` shared payload/GST helpers; `_my-family-client.tsx` uses consumer API + `router.refresh()`.
 
 ---
 

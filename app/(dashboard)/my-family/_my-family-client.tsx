@@ -5,19 +5,15 @@
 // Route: /my-family
 // ─────────────────────────────────────────
 
-import { useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import {
+  type HouseholdPersonRow,
+  isGrandchildRelationship,
+} from '@/lib/family/householdPeople'
 
-export type HouseholdPersonRow = {
-  id: string
-  full_name: string
-  relationship: string
-  date_of_birth: string | null
-  is_gst_skip: boolean
-  is_beneficiary: boolean
-  notes: string | null
-}
+export type { HouseholdPersonRow }
 
 type FamilyGroup = 'spouse' | 'children' | 'grandchildren' | 'other'
 
@@ -40,11 +36,6 @@ function familyGroup(rel: string): FamilyGroup {
   if (/grand|grandchild|grandson|granddaughter/.test(r)) return 'grandchildren'
   if (/\b(son|daughter|child|children|kid|stepchild|step-son|step-daughter)\b/.test(r)) return 'children'
   return 'other'
-}
-
-function isGrandchildRelationship(rel: string): boolean {
-  const r = rel.toLowerCase()
-  return /grand|grandchild|grandson|granddaughter/.test(r)
 }
 
 /** Lowercase relationship values that show GST / skip-generation options (matches DB free text case-insensitively). */
@@ -71,7 +62,12 @@ export default function MyFamilyClient({
   hasSpouse,
   initialPeople,
 }: Props) {
+  const router = useRouter()
   const [people, setPeople] = useState<HouseholdPersonRow[]>(initialPeople)
+
+  useEffect(() => {
+    setPeople(initialPeople)
+  }, [initialPeople])
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<HouseholdPersonRow | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -150,10 +146,8 @@ export default function MyFamilyClient({
 
     setSaving(true)
     setError(null)
-    const supabase = createClient()
 
-    const payload = {
-      household_id: householdId,
+    const body = {
       full_name: fullName.trim(),
       relationship: rel,
       date_of_birth: dateOfBirth || null,
@@ -162,52 +156,41 @@ export default function MyFamilyClient({
       notes: notes.trim() || null,
     }
 
+    const res = await fetch('/api/consumer/household-people', {
+      method: editing ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing ? { id: editing.id, ...body } : body),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to save')
+      return
+    }
     if (editing) {
-      const { data, error: err } = await supabase
-        .from('household_people')
-        .update({
-          full_name: payload.full_name,
-          relationship: payload.relationship,
-          date_of_birth: payload.date_of_birth,
-          is_gst_skip: payload.is_gst_skip,
-          is_beneficiary: payload.is_beneficiary,
-          notes: payload.notes,
-        })
-        .eq('id', editing.id)
-        .select('id, full_name, relationship, date_of_birth, is_gst_skip, is_beneficiary, notes')
-        .single()
-      setSaving(false)
-      if (err) {
-        setError(err.message)
-        return
-      }
-      if (data) setPeople(prev => prev.map(p => (p.id === editing.id ? (data as HouseholdPersonRow) : p)))
+      setPeople(prev => prev.map(p => (p.id === editing.id ? (data as HouseholdPersonRow) : p)))
     } else {
-      const { data, error: err } = await supabase
-        .from('household_people')
-        .insert(payload)
-        .select('id, full_name, relationship, date_of_birth, is_gst_skip, is_beneficiary, notes')
-        .single()
-      setSaving(false)
-      if (err) {
-        setError(err.message)
-        return
-      }
-      if (data) setPeople(prev => [...prev, data as HouseholdPersonRow])
+      setPeople(prev => [...prev, data as HouseholdPersonRow])
     }
     setModalOpen(false)
+    router.refresh()
   }
 
   async function handleDelete(id: string) {
     setError(null)
-    const supabase = createClient()
-    const { error: err } = await supabase.from('household_people').delete().eq('id', id)
-    if (err) {
-      setError(err.message)
+    const res = await fetch('/api/consumer/household-people', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to delete')
       return
     }
     setPeople(prev => prev.filter(p => p.id !== id))
     setDeleteId(null)
+    router.refresh()
   }
 
   const ownerNames = [person1Name, hasSpouse ? person2Name : null].filter(Boolean) as string[]
