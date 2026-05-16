@@ -6,21 +6,25 @@ type IncomeTableProps = {
   income: IncomeRow[]
   onEdit: (row: IncomeRow) => void
   onDelete: (id: string) => void
-  deleteIncome: (id: string, ownerId: string) => Promise<void>
-  ownerId: string
 }
 
 export function IncomeTable({
   income,
   onEdit,
   onDelete,
-  deleteIncome,
-  ownerId,
 }: IncomeTableProps) {
   async function handleDelete(id: string) {
     if (!confirm('Remove this income entry?')) return
     try {
-      await deleteIncome(id, ownerId)
+      const res = await fetch('/api/consumer/income', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to delete')
+      }
       onDelete(id)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete')

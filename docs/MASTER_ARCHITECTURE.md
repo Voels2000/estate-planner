@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 99 / input recompute + gifting scenario comparison)
+# Last updated: May 15, 2026 (Session 100 / consumer write APIs + named gifting upsert)
 
 ---
 
@@ -161,14 +161,14 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Advisor recommendation writes are unified:
   - Canonical advisor write path: `/api/advisor/strategy-recommendation` (used by `StrategyOverlay` via `useRecommendStrategy` — does not write `strategy_configs`)
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
-- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role`; optional `scenario_name` for display labels; e.g. gifting scenario saves `strategy_source='annual_gifting'`, `source_role='consumer'`).
+- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role` + `scenario_name` when provided, else `scenario_name IS NULL`; e.g. multiple named gifting plans can coexist as separate rows).
 - As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()` + estate health recompute (same pattern as trust-strategy).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
-- As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). Comparison saves use the same `annual_gifting` / `consumer` upsert key as the primary plan, so only one active consumer gifting row is stored at a time unless the API gains multi-scenario support.
+- As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately, then `POST /api/recompute-estate-health` (non-blocking) to refresh cached estate health scores.
-- **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`).
+- **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`; optional `scenarioName` scopes delete to one named consumer strategy).
 - `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`), with the same refresh + recompute pattern.
 - `my-estate-strategy/page.tsx` already builds `actualStrategyLineItems` from all active rows (consumer + consumer-accepted advisor) — no duplicate fetch required.
 - Consumer accept/reject of advisor recommendations is now handled by `/api/consumer/strategy-recommendation`:
@@ -227,8 +227,8 @@ Runtime behavior:
 
 - Pages render from stored snapshots for speed.
 - If stale, trigger background base-case regeneration.
-- As of Session 98, successful saves on `/real-estate` and `/liabilities` also fire non-blocking `POST /api/recompute-estate-health` so estate health scores stay aligned when gross estate or debt changes.
-- As of Session 99, the same non-blocking recompute pattern applies to `/assets`, `/income`, and `/expenses` (add/update/delete). Income and expenses server pages pass `householdId` into client components; assets resolves household id on save/delete in-page.
+- As of Session 100, consumer financial input writes are normalized through `/api/consumer/*` routes (`assets`, `real-estate`, `liabilities`, `income`, `expenses`). Each route touches `households.updated_at` and triggers estate health recompute server-side via `triggerEstateHealthRecompute` (includes `x-recompute-secret`). Dashboard clients call these routes only — no inline household re-fetch or client-side recompute on those pages.
+- Session 99 added client-side recompute on assets/income/expenses; Session 100 superseded that with the consumer API pattern above.
 
 ---
 

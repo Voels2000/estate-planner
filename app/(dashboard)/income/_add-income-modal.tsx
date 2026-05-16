@@ -13,14 +13,7 @@ type AddIncomeModalProps = {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  ownerId: string
   editRow: IncomeRow | null
-  addIncome: (ownerId: string, values: IncomeFormValues) => Promise<void>
-  updateIncome: (
-    id: string,
-    ownerId: string,
-    values: IncomeFormValues
-  ) => Promise<void>
 }
 
 const defaultValues: IncomeFormValues = {
@@ -35,10 +28,7 @@ export function AddIncomeModal({
   isOpen,
   onClose,
   onSuccess,
-  ownerId,
   editRow,
-  addIncome,
-  updateIncome,
 }: AddIncomeModalProps) {
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(incomeFormSchema),
@@ -56,10 +46,25 @@ export function AddIncomeModal({
 
   async function onSubmit(values: IncomeFormValues) {
     try {
-      if (editRow) {
-        await updateIncome(editRow.id, ownerId, values)
-      } else {
-        await addIncome(ownerId, values)
+      const payload = {
+        source: values.source,
+        name: null,
+        ss_person: 'person1',
+        amount: values.amount,
+        start_year: values.start_year,
+        end_year: values.end_year === '' ? null : Number(values.end_year),
+        start_month: null,
+        end_month: null,
+        inflation_adjust: values.inflation_adjust,
+      }
+      const res = await fetch('/api/consumer/income', {
+        method: editRow ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editRow ? { id: editRow.id, ...payload } : payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save income')
       }
       form.reset(defaultValues)
       onSuccess()

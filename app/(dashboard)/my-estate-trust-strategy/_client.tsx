@@ -375,13 +375,17 @@ export default function MyEstateTrustStrategyClient({
     }
   }
 
-  async function handleRemoveConsumerStrategy(strategySource: string) {
+  async function handleRemoveConsumerStrategy(
+    strategySource: string,
+    scenarioName: string | null | undefined,
+  ) {
     const confirmed = window.confirm(
       'Remove this strategy from your plan? This will update your estate projections.',
     )
     if (!confirmed) return
 
-    setRemovingStrategy(strategySource)
+    const removeKey = `${strategySource}::${scenarioName ?? ''}`
+    setRemovingStrategy(removeKey)
     setRemoveMessage(null)
     try {
       const res = await fetch('/api/strategy-line-items', {
@@ -390,6 +394,7 @@ export default function MyEstateTrustStrategyClient({
         body: JSON.stringify({
           householdId,
           strategySource,
+          scenarioName: scenarioName ?? null,
           source_role: 'consumer',
         }),
       })
@@ -753,11 +758,22 @@ export default function MyEstateTrustStrategyClient({
                         <td className="px-3 py-2 text-right">
                           <button
                             type="button"
-                            onClick={() => void handleRemoveConsumerStrategy(item.strategy_source)}
-                            disabled={removingStrategy === item.strategy_source}
+                            onClick={() =>
+                              void handleRemoveConsumerStrategy(
+                                item.strategy_source,
+                                item.scenario_name,
+                              )
+                            }
+                            disabled={
+                              removingStrategy ===
+                              `${item.strategy_source}::${item.scenario_name ?? ''}`
+                            }
                             className="rounded border border-red-200 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {removingStrategy === item.strategy_source ? 'Removing…' : 'Remove'}
+                            {removingStrategy ===
+                            `${item.strategy_source}::${item.scenario_name ?? ''}`
+                              ? 'Removing…'
+                              : 'Remove'}
                           </button>
                         </td>
                       </tr>

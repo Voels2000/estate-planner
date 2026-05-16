@@ -39,15 +39,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'household_id and strategy_source required' }, { status: 400 })
     }
 
-    // Check if an active row already exists for this household+strategy+role
-    const { data: existing } = await supabase
+    // Build the upsert lookup — scenario_name is part of the key when provided
+    // so named scenarios (e.g. "Primary Plan", "Conservative Plan") are distinct rows
+    const scenarioNameValue = scenario_name ?? null
+
+    const lookupQuery = supabase
       .from('strategy_line_items')
       .select('id')
       .eq('household_id', household_id)
       .eq('strategy_source', strategy_source)
       .eq('source_role', role)
       .is('projection_year', null)
-      .maybeSingle()
+
+    // Only include scenario_name in the key when explicitly provided
+    // This preserves backward-compat: saves without scenario_name still upsert the
+    // single unnamed row for that strategy_source
+    const { data: existing } = await (
+      scenarioNameValue !== null
+        ? lookupQuery.eq('scenario_name', scenarioNameValue)
+        : lookupQuery.is('scenario_name', null)
+    ).maybeSingle()
 
     let data, error
     if (existing?.id) {
@@ -60,7 +71,7 @@ export async function POST(request: Request) {
           confidence_level: confidence_level ?? 'illustrative',
           effective_year:   effective_year ?? null,
           metadata:         metadata ?? {},
-          scenario_name:    scenario_name ?? null,
+          scenario_name:    scenarioNameValue,
           is_active:        true,
         })
         .eq('id', existing.id)
@@ -83,7 +94,7 @@ export async function POST(request: Request) {
           confidence_level: confidence_level ?? 'illustrative',
           effective_year:   effective_year ?? null,
           metadata:         metadata ?? {},
-          scenario_name:    scenario_name ?? null,
+          scenario_name:    scenarioNameValue,
           is_active:        true,
         })
         .select()
@@ -108,7 +119,12 @@ export async function DELETE(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { householdId, strategySource, source_role: sourceRoleRaw } = await request.json()
+    const {
+      householdId,
+      strategySource,
+      scenarioName,
+      source_role: sourceRoleRaw,
+    } = await request.json()
     const source_role = resolveSourceRole(sourceRoleRaw)
     if (source_role === null) {
       return NextResponse.json({ error: 'source_role must be consumer or advisor' }, { status: 400 })
@@ -118,13 +134,19 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'householdId and strategySource required' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const baseQuery = supabase
       .from('strategy_line_items')
       .update({ is_active: false })
       .eq('household_id', householdId)
       .eq('strategy_source', strategySource)
       .eq('source_role', source_role)
       .eq('is_active', true)
+
+    // When scenarioName is provided, target only that specific named scenario.
+    // When not provided, deactivate all rows for this strategy_source (existing behavior).
+    const { error } = await (
+      scenarioName != null ? baseQuery.eq('scenario_name', scenarioName) : baseQuery
+    )
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })

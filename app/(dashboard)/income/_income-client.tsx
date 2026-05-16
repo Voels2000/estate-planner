@@ -7,8 +7,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { addIncome, updateIncome, deleteIncome } from './actions'
-
 type IncomeRow = {
   id: string
   owner_id: string
@@ -29,8 +27,6 @@ type IncomeType = { value: string; label: string }
 
 type Props = {
   income: IncomeRow[]
-  ownerId: string
-  householdId?: string | null
   person1Name: string
   person2Name: string
   hasSpouse: boolean
@@ -38,18 +34,6 @@ type Props = {
 }
 
 const STORAGE_KEY = 'ep_income_groups'
-
-async function fireRecompute(householdId: string) {
-  try {
-    await fetch('/api/recompute-estate-health', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId }),
-    })
-  } catch {
-    // non-fatal
-  }
-}
 
 const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
@@ -72,8 +56,6 @@ function incomeAppliesToYear(row: IncomeRow, year: number): boolean {
 
 export function IncomeClient({
   income,
-  ownerId,
-  householdId,
   person1Name,
   person2Name,
   hasSpouse,
@@ -145,8 +127,15 @@ export function IncomeClient({
 
   async function handleDelete(id: string) {
     try {
-      await deleteIncome(id, ownerId)
-      if (householdId) void fireRecompute(householdId)
+      const res = await fetch('/api/consumer/income', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to delete')
+      }
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
@@ -257,8 +246,6 @@ export function IncomeClient({
       {modalOpen && (
         <IncomeModal
           editRow={editRow}
-          ownerId={ownerId}
-          householdId={householdId}
           person1Name={person1Name}
           person2Name={person2Name}
           hasSpouse={hasSpouse}
@@ -273,8 +260,6 @@ export function IncomeClient({
 
 function IncomeModal({
   editRow,
-  ownerId,
-  householdId,
   person1Name,
   person2Name,
   hasSpouse,
@@ -283,8 +268,6 @@ function IncomeModal({
   onSuccess,
 }: {
   editRow: IncomeRow | null
-  ownerId: string
-  householdId?: string | null
   person1Name: string
   person2Name: string
   hasSpouse: boolean
@@ -340,12 +323,15 @@ function IncomeModal({
         end_month: endMonth ? parseInt(endMonth) : null,
         inflation_adjust: inflationAdjust,
       }
-      if (editRow) {
-        await updateIncome(editRow.id, ownerId, payload)
-      } else {
-        await addIncome(ownerId, payload)
+      const res = await fetch('/api/consumer/income', {
+        method: editRow ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editRow ? { id: editRow.id, ...payload } : payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save income')
       }
-      if (householdId) void fireRecompute(householdId)
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))

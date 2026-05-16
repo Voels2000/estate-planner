@@ -43,7 +43,6 @@ function expenseAppliesInYear(e: Expense, year: number): boolean {
 
 type ExpensesClientProps = {
   initialExpenses: Expense[]
-  householdId?: string | null
   expenseTypes: ExpenseType[]
   person1Name: string
   person2Name: string
@@ -51,37 +50,14 @@ type ExpensesClientProps = {
 
 const STORAGE_KEY = 'ep_expenses_groups'
 
-async function fireRecompute(householdId: string) {
-  try {
-    await fetch('/api/recompute-estate-health', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId }),
-    })
-  } catch {
-    // non-fatal
-  }
-}
-
 export default function ExpensesClient({
   initialExpenses,
-  householdId,
   expenseTypes,
   person1Name,
   person2Name,
 }: ExpensesClientProps) {
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
-  const [userId, setUserId] = useState<string | null>(null)
-  // Fetch userId once on mount — reused by all staleness touches
-  useEffect(() => {
-    const sb = createClient()
-    sb.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null)
-    })
-  }, [])
-
-
   const [showModal, setShowModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -114,15 +90,18 @@ export default function ExpensesClient({
   }
 
   async function handleDelete(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase.from('expenses').delete().eq('id', id)
-    // Touch households.updated_at for staleness detection
-    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
-    if (error) setError(error.message)
-    else {
-      setExpenses((prev) => prev.filter((e) => e.id !== id))
-      if (householdId) void fireRecompute(householdId)
+    const res = await fetch('/api/consumer/expenses', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to delete')
+      setConfirmDeleteId(null)
+      return
     }
+    setExpenses((prev) => prev.filter((e) => e.id !== id))
     setConfirmDeleteId(null)
   }
 
@@ -303,7 +282,6 @@ export default function ExpensesClient({
       {showModal && (
         <ExpenseModal
           editExpense={editExpense}
-          householdId={householdId}
           expenseTypes={expenseTypes}
           person1Name={person1Name}
           person2Name={person2Name}
@@ -322,7 +300,6 @@ export default function ExpensesClient({
 
 function ExpenseModal({
   editExpense,
-  householdId,
   expenseTypes,
   person1Name,
   person2Name,
@@ -330,7 +307,6 @@ function ExpenseModal({
   onSave,
 }: {
   editExpense: Expense | null
-  householdId?: string | null
   expenseTypes: ExpenseType[]
   person1Name: string
   person2Name: string
@@ -379,11 +355,8 @@ function ExpenseModal({
     }
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const payload = {
+        ...(editExpense ? { id: editExpense.id } : {}),
         category,
         name: name.trim() || null,
         owner,
@@ -393,21 +366,16 @@ function ExpenseModal({
         start_month: startMonth ? parseInt(startMonth) : null,
         end_month: endMonth ? parseInt(endMonth) : null,
         inflation_adjust: inflationAdjust,
-        updated_at: new Date().toISOString(),
       }
-
-      if (editExpense) {
-        const { error } = await supabase.from('expenses').update(payload).eq('id', editExpense.id)
-        // Touch households.updated_at for staleness detection
-        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('expenses').insert({ ...payload, owner_id: user.id })
-        // Touch households.updated_at for staleness detection
-        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user.id)
-        if (error) throw error
+      const res = await fetch('/api/consumer/expenses', {
+        method: editExpense ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save expense')
       }
-      if (householdId) void fireRecompute(householdId)
       onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))

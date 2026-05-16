@@ -70,18 +70,6 @@ type Asset = {
 
 const STORAGE_KEY = 'ep_assets_groups'
 
-async function fireRecompute(householdId: string) {
-  try {
-    await fetch('/api/recompute-estate-health', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId }),
-    })
-  } catch {
-    // non-fatal
-  }
-}
-
 export default function AssetsPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
@@ -142,18 +130,18 @@ export default function AssetsPage() {
   }, [loadData])
 
   async function handleDelete(id: string) {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('assets').delete().eq('id', id)
-    if (!error && user?.id) {
-      const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-      if (hh?.id) {
-        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-        void fireRecompute(hh.id)
-      }
+    const res = await fetch('/api/consumer/assets', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to delete')
+      setConfirmDeleteId(null)
+      return
     }
-    if (error) setError(error.message)
-    else setAssets((prev) => prev.filter((a) => a.id !== id))
+    setAssets((prev) => prev.filter((a) => a.id !== id))
     setConfirmDeleteId(null)
   }
 
@@ -356,70 +344,33 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: household } = await supabase
-        .from('households')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single()
-
-      const situsPayload = {
+      const method = editAsset ? 'PATCH' : 'POST'
+      const payload = {
+        ...(editAsset ? { id: editAsset.id } : {}),
+        owner,
+        type,
+        name,
+        value: parseFloat(value),
+        cost_basis: costBasis ? parseFloat(costBasis) : null,
+        basis_date: basisDate || null,
+        liquidity: liquidity || null,
+        titling: titling || null,
+        institution: institution || null,
+        account_last4: accountLast4 || null,
+        face_value: faceValue ? parseFloat(faceValue) : null,
+        is_ilit: isIlit,
         situs_state: situsState.trim() || null,
         situs_asset_type: situsAssetType.trim() || null,
+        estate_inclusion_status: estateInclusionStatus,
       }
-
-      const estatePayload = { estate_inclusion_status: estateInclusionStatus }
-
-      if (editAsset) {
-        const { error } = await supabase
-          .from('assets')
-          .update({
-            owner: owner,
-            type,
-            name,
-            value: parseFloat(value),
-            cost_basis: costBasis ? parseFloat(costBasis) : null,
-            basis_date: basisDate || null,
-            liquidity: liquidity || null,
-            titling: titling || null,
-            institution: institution || null,
-            account_last4: accountLast4 || null,
-            face_value: faceValue ? parseFloat(faceValue) : null,
-            is_ilit: isIlit,
-            ...situsPayload,
-            ...estatePayload,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editAsset.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('assets')
-          .insert({
-            owner_id: user.id,
-            owner: owner,
-            type,
-            name,
-            value: parseFloat(value),
-            cost_basis: costBasis ? parseFloat(costBasis) : null,
-            basis_date: basisDate || null,
-            liquidity: liquidity || null,
-            titling: titling || null,
-            institution: institution || null,
-            account_last4: accountLast4 || null,
-            face_value: faceValue ? parseFloat(faceValue) : null,
-            is_ilit: isIlit,
-            ...situsPayload,
-            ...estatePayload,
-          })
-        if (error) throw error
-      }
-      if (household?.id) {
-        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', household.id)
-        void fireRecompute(household.id)
+      const res = await fetch('/api/consumer/assets', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save asset')
       }
       onSave()
     } catch (err) {

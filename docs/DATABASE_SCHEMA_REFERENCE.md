@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 99 / assets-income-expenses recompute + gifting comparison)
+# Last updated: May 15, 2026 (Session 100 / consumer write APIs + strategy upsert key)
 
 ---
 
@@ -280,7 +280,16 @@ After each schema-affecting session:
 - No database schema or migration changes were introduced in Session 99.
 - Application-layer changes:
   - `assets/page.tsx`, `income/_income-client.tsx`, and `expenses/_expenses-client.tsx` call non-blocking `POST /api/recompute-estate-health` after successful add/update/delete (`householdId` passed from server pages for income/expenses).
-  - `my-estate-trust-strategy/_client.tsx`: gifting **Compare a second scenario** UI (side-by-side comparison + save). Comparison and primary gifting saves both upsert `strategy_source='annual_gifting'`, `source_role='consumer'` — one active row per household for that key.
+  - `my-estate-trust-strategy/_client.tsx`: gifting **Compare a second scenario** UI (side-by-side comparison + save).
+
+## Session 100 Note
+
+- No database schema or migration changes were introduced in Session 100.
+- Application-layer changes:
+  - `POST /api/strategy-line-items`: upsert lookup includes `scenario_name` when provided (named consumer gifting plans are distinct rows); `DELETE` accepts optional `scenarioName` to deactivate one named row.
+  - `my-estate-trust-strategy/_client.tsx`: Remove button passes `scenario_name`; loading state uses composite key `strategy_source::scenario_name`.
+  - New consumer write routes (POST/PATCH/DELETE): `/api/consumer/assets`, `/api/consumer/real-estate`, `/api/consumer/liabilities`, `/api/consumer/income`, `/api/consumer/expenses`. Each touches `households.updated_at` and calls `triggerEstateHealthRecompute`.
+  - Dashboard pages for those entities migrated off direct Supabase client writes; `income/actions.ts` server actions removed in favor of `/api/consumer/income`.
 
 ---
 

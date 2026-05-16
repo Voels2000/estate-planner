@@ -30,7 +30,7 @@ export default async function ExpensesPage() {
       .order('sort_order'),
     supabase
       .from('households')
-      .select('id, person1_name, person2_name, has_spouse')
+      .select('person1_name, person2_name, has_spouse')
       .eq('owner_id', user.id)
       .single(),
   ])
@@ -38,7 +38,6 @@ export default async function ExpensesPage() {
   return (
     <ExpensesClient
       initialExpenses={expenses ?? []}
-      householdId={household?.id ?? null}
       expenseTypes={expenseTypes ?? []}
       person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
       person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}

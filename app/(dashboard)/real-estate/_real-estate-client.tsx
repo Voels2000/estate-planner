@@ -181,18 +181,6 @@ function formatDollars(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
-async function fireRecompute(householdId: string) {
-  try {
-    await fetch('/api/recompute-estate-health', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId }),
-    })
-  } catch {
-    // non-fatal
-  }
-}
-
 type RealEstateClientProps = {
   initialProperties: RealEstate[]
   person1Name: string
@@ -213,19 +201,6 @@ export default function RealEstateClient({
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [householdId, setHouseholdId] = useState<string | null>(null)
-  useEffect(() => {
-    const sb = createClient()
-    void sb.auth.getUser().then(async ({ data: { user } }) => {
-      setUserId(user?.id ?? null)
-      if (!user) return
-      const { data: hh } = await sb.from('households').select('id').eq('owner_id', user.id).single()
-      setHouseholdId(hh?.id ?? null)
-    })
-  }, [])
-
-
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow] = useState<RealEstate | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -252,15 +227,18 @@ export default function RealEstateClient({
   }
 
   async function handleDelete(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase.from('real_estate').delete().eq('id', id)
-    // Touch households.updated_at for staleness detection
-    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
-    if (error) setError(error.message)
-    else {
-      setRows((prev) => prev.filter((r) => r.id !== id))
-      if (householdId) void fireRecompute(householdId)
+    const res = await fetch('/api/consumer/real-estate', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to delete')
+      setConfirmDeleteId(null)
+      return
     }
+    setRows((prev) => prev.filter((r) => r.id !== id))
     setConfirmDeleteId(null)
   }
 
@@ -532,13 +510,8 @@ function RealEstateModal({
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
-
       const payload = {
+        ...(editRow ? { id: editRow.id } : {}),
         name: name.trim(),
         property_type: propertyType,
         current_value: parseFloat(currentValue) || 0,
@@ -555,35 +528,15 @@ function RealEstateModal({
         titling: titling || null,
         situs_state: situsState || null,
         estate_inclusion_status: estateInclusionStatus || 'included',
-        updated_at: new Date().toISOString(),
       }
-
-      // RLS: verify `real_estate` owner UPDATE policy still allows all columns including
-      // estate_inclusion_status (see 20250317100000_real_estate.sql — no column restrictions).
-
-      if (editRow) {
-        const { error } = await supabase.from('real_estate').update(payload).eq('id', editRow.id)
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) {
-            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-            void fireRecompute(hh.id)
-          }
-        }
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('real_estate').insert({
-          ...payload,
-          owner_id: user.id,
-        })
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) {
-            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-            void fireRecompute(hh.id)
-          }
-        }
-        if (error) throw error
+      const res = await fetch('/api/consumer/real-estate', {
+        method: editRow ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save')
       }
       onSave()
     } catch (err) {

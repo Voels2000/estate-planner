@@ -26,25 +26,11 @@ type Liability = {
 
 const STORAGE_KEY = 'ep_liabilities_groups'
 
-async function fireRecompute(householdId: string) {
-  try {
-    await fetch('/api/recompute-estate-health', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ householdId }),
-    })
-  } catch {
-    // non-fatal
-  }
-}
-
 export default function LiabilitiesPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
   const [liabilities, setLiabilities] = useState<Liability[]>([])
   const [liabilityTypes, setLiabilityTypes] = useState<LiabilityType[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
-  const [householdId, setHouseholdId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editLiability, setEditLiability] = useState<Liability | null>(null)
@@ -78,16 +64,7 @@ export default function LiabilitiesPage() {
     setLiabilityTypes(typesData ?? [])
     if (household?.person1_name) setPerson1Name(displayPersonFirstName(household.person1_name, 'Person 1'))
     if (household?.person2_name) setPerson2Name(displayPersonFirstName(household.person2_name, 'Person 2'))
-    if (household?.id) setHouseholdId(household.id)
     setIsLoading(false)
-  }, [])
-
-  // Fetch userId once on mount — reused by all staleness touches
-  useEffect(() => {
-    const sb = createClient()
-    sb.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null)
-    })
   }, [])
 
   useEffect(() => {
@@ -98,15 +75,18 @@ export default function LiabilitiesPage() {
   }, [loadData])
 
   async function handleDelete(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase.from('liabilities').delete().eq('id', id)
-    // Touch households.updated_at for staleness detection
-    if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
-    if (error) setError(error.message)
-    else {
-      setLiabilities(prev => prev.filter(l => l.id !== id))
-      if (householdId) void fireRecompute(householdId)
+    const res = await fetch('/api/consumer/liabilities', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to delete')
+      setConfirmDeleteId(null)
+      return
     }
+    setLiabilities((prev) => prev.filter((l) => l.id !== id))
     setConfirmDeleteId(null)
   }
 
@@ -289,40 +269,23 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const payload = {
+        ...(editLiability ? { id: editLiability.id } : {}),
         owner,
         type,
         name,
         balance: parseFloat(balance),
         interest_rate: interestRate ? parseFloat(interestRate) : null,
         monthly_payment: monthlyPayment ? parseFloat(monthlyPayment) : null,
-        updated_at: new Date().toISOString(),
       }
-
-      if (editLiability) {
-        const { error } = await supabase.from('liabilities').update(payload).eq('id', editLiability.id)
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) {
-            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-            void fireRecompute(hh.id)
-          }
-        }
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('liabilities').insert({ ...payload, owner_id: user.id })
-        if (!error) {
-          const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-          if (hh?.id) {
-            await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
-            void fireRecompute(hh.id)
-          }
-        }
-        if (error) throw error
+      const res = await fetch('/api/consumer/liabilities', {
+        method: editLiability ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save liability')
       }
       onSave()
     } catch (err) {
