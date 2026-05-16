@@ -155,8 +155,11 @@ export default async function MyEstateTrustStrategyPage({
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
     supabase
       .from('trusts')
-      .select('excludes_from_estate, excluded_from_estate, funding_amount')
-      .eq('owner_id', user.id),
+      .select(
+        'id, name, trust_type, is_irrevocable, funding_amount, excludes_from_estate, excluded_from_estate',
+      )
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false }),
     supabase
       .from('federal_estate_tax_brackets')
       .select('tax_year, min_amount, max_amount, rate_pct')
@@ -469,6 +472,13 @@ export default async function MyEstateTrustStrategyPage({
           giftingExcessOverLimit: excessAnnualGifts || null,
         }}
         initialGiftingSummary={initialGiftingSummary}
+        initialTrustDocuments={(trustRows ?? []).map((row) => ({
+          id: row.id as string,
+          name: (row.name as string | null) ?? null,
+          trust_type: (row.trust_type as string | null) ?? null,
+          is_irrevocable: (row.is_irrevocable as boolean | null) ?? null,
+          funding_amount: row.funding_amount != null ? Number(row.funding_amount) : null,
+        }))}
       />
     </div>
   )

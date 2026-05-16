@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 111 / titling entity writes via consumer API)
+# Last updated: May 16, 2026 (Session 112 / consumer trusts API + trust-will page)
 
 ---
 
@@ -240,6 +240,7 @@ Runtime behavior:
 - As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
 - As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, updated `dashboard.spec.ts`.
 - As of Session 111, titling row + entity field saves (title type, notes, titling, liquidity, cost basis) use `POST /api/consumer/entity-titling` (`lib/titling/entityTitling.ts`); `_titling-client.tsx` `TitlingModal` no longer writes via browser Supabase. `/titling` reads remain server-prefetched on `page.tsx`.
+- As of Session 112, trust CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/trusts` (`lib/trusts/trustPayload.ts`) with `afterHouseholdWrite`. `/trust-will` has server `page.tsx` (recommendations from `lib/trust-will-rules.ts` + prefetched trusts). `my-estate-trust-strategy` trusts tab deletes via API and receives `initialTrustDocuments` from server prefetch.
 - As of Session 109, `POST /api/strategy-line-items` resolves `category` via `lib/strategy/resolveStrategyLineItemCategory.ts` (no invalid default `'other'`). Consumer gifting/charitable saves pass explicit categories; DB allows `strategy_source` values `liquidity`, `roth`, and `slat`. Migration `20260516000001_strategy_line_items_upsert_idx_scenario_name.sql` replaces the legacy unique key with a partial unique index on active rows: `(household_id, strategy_source, source_role, projection_year, scenario_name)` — aligned with named consumer scenario upserts.
 
 ---

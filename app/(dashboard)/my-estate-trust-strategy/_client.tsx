@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
-import { createClient } from '@/lib/supabase/client'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
@@ -85,6 +84,7 @@ interface Props {
     giftingExcessOverLimit: number | null
   }
   initialGiftingSummary?: GiftingSummary | null
+  initialTrustDocuments?: TrustDocumentRow[]
 }
 
 type TrustDocumentRow = {
@@ -124,14 +124,14 @@ export default function MyEstateTrustStrategyClient({
   strategyImpact,
   giftingScenario,
   initialGiftingSummary,
+  initialTrustDocuments = [],
 }: Props) {
   const router = useRouter()
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
   const [activeTab, setActiveTab] = useState<Tab>(startTab)
 
-  const [trustDocs, setTrustDocs] = useState<TrustDocumentRow[]>([])
-  const [trustDocsLoading, setTrustDocsLoading] = useState(false)
+  const [trustDocs, setTrustDocs] = useState<TrustDocumentRow[]>(initialTrustDocuments)
   const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
   const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null)
   const [annualGiftingInput, setAnnualGiftingInput] = useState<number | null>(null)
@@ -169,38 +169,9 @@ export default function MyEstateTrustStrategyClient({
     text: string
   } | null>(null)
 
-  const loadTrustDocuments = useCallback(async () => {
-    if (activeTab !== 'trusts') return
-    setTrustDocsLoading(true)
-    setTrustDocsError(null)
-    const supabase = createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    const user = auth.user
-    if (!user) {
-      setTrustDocs([])
-      setTrustDocsLoading(false)
-      return
-    }
-    const { data, error } = await supabase
-      .from('trusts')
-      .select('id, name, trust_type, is_irrevocable, funding_amount')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    if (error) {
-      setTrustDocsError(error.message)
-      setTrustDocs([])
-    } else {
-      setTrustDocs((data as TrustDocumentRow[]) ?? [])
-    }
-    setTrustDocsLoading(false)
-  }, [activeTab])
-
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void loadTrustDocuments()
-    }, 0)
-    return () => window.clearTimeout(timeoutId)
-  }, [loadTrustDocuments])
+    setTrustDocs(initialTrustDocuments)
+  }, [initialTrustDocuments])
 
   const trustDocCountLabel = useMemo(() => {
     if (trustDocs.length === 1) return '1 trust document saved'
@@ -212,15 +183,20 @@ export default function MyEstateTrustStrategyClient({
     if (!confirmed) return
     setDeletingTrustId(id)
     setTrustDocsError(null)
-    const supabase = createClient()
-    const { error } = await supabase.from('trusts').delete().eq('id', id)
-    if (error) {
-      setTrustDocsError(error.message)
+    const res = await fetch('/api/consumer/trusts', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setTrustDocsError(data.error ?? 'Failed to delete trust')
       setDeletingTrustId(null)
       return
     }
     setTrustDocs((prev) => prev.filter((t) => t.id !== id))
     setDeletingTrustId(null)
+    router.refresh()
   }
 
   function formatDollars(n: number) {
@@ -945,9 +921,7 @@ export default function MyEstateTrustStrategyClient({
               <h3 className="text-base font-semibold text-gray-800">Stored Trust Documents</h3>
               <span className="text-xs text-gray-500">{trustDocCountLabel}</span>
             </div>
-            {trustDocsLoading ? (
-              <p className="text-sm text-gray-500">Loading trust documents...</p>
-            ) : trustDocs.length === 0 ? (
+            {trustDocs.length === 0 ? (
               <p className="text-sm text-gray-500">
                 No trust documents saved yet. Click <span className="font-medium">Add Trust Document</span> to create one.
               </p>

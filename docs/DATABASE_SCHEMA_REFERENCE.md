@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 111 / titling entity writes via consumer API)
+# Last updated: May 16, 2026 (Session 112 / consumer trusts API)
 
 ---
 
@@ -366,6 +366,14 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 112 Note
+
+- No database schema or migration changes were introduced in Session 112.
+- Application-layer changes:
+  - `POST` / `PATCH` / `DELETE` `/api/consumer/trusts` — CRUD on `trusts` with ownership checks; `lib/trusts/trustPayload.ts`; `afterHouseholdWrite`.
+  - `app/(dashboard)/trust-will/page.tsx` — server prefetch + `getTrustWillRecommendations` / `getTrustWillChecklist`.
+  - `_trust-will-client.tsx` and `my-estate-trust-strategy/_client.tsx` — trust saves/deletes via consumer API (no browser Supabase writes).
 
 ## Session 111 Note
 

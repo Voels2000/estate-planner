@@ -1,6 +1,5 @@
 'use client'
-import { useState, useCallback, type FormEvent } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 
@@ -72,19 +71,6 @@ export default function TrustWillClient({
   const [showTrustModal, setShowTrustModal] = useState(false)
   const [editTrust, setEditTrust] = useState<TrustRow | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  const loadTrusts = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error: e } = await supabase
-      .from('trusts')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    if (e) setError(e.message)
-    else setTrusts((data as TrustRow[]) ?? [])
-  }, [])
 
   function openAddTrust() { setEditTrust(null); setShowTrustModal(true); setError(null) }
   function openEditTrust(t: TrustRow) { setEditTrust(t); setShowTrustModal(true); setError(null) }
@@ -241,10 +227,20 @@ export default function TrustWillClient({
         <TrustModal
           editRow={editTrust}
           onClose={() => { setShowTrustModal(false); setEditTrust(null) }}
-          onSaved={async () => {
+          onSaved={async (saved) => {
             setShowTrustModal(false)
             setEditTrust(null)
-            await loadTrusts()
+            if (saved) {
+              setTrusts((prev) => {
+                const idx = prev.findIndex((t) => t.id === saved.id)
+                if (idx >= 0) {
+                  const next = [...prev]
+                  next[idx] = saved
+                  return next
+                }
+                return [saved, ...prev]
+              })
+            }
             router.refresh()
           }}
         />
@@ -264,7 +260,7 @@ function TrustModal({
 }: {
   editRow: TrustRow | null
   onClose: () => void
-  onSaved: () => Promise<void>
+  onSaved: (saved: TrustRow) => Promise<void>
 }) {
   const [name, setName] = useState(editRow?.name ?? '')
   const [trustType, setTrustType] = useState(editRow?.trust_type ?? 'revocable')
@@ -286,37 +282,26 @@ function TrustModal({
     setFormError(null)
     setIsSubmitting(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const funding = Math.max(0, parseFloat(fundingAmount) || 0)
-      const excludedNumeric = excludesFromEstate ? funding : 0
-
-      const payload = {
+      const body = {
         name: name.trim() || 'Trust',
         trust_type: trustType,
         grantor: grantor.trim(),
         trustee: trustee.trim(),
         funding_amount: funding,
-        state: state.trim().length === 2 ? state.trim().toUpperCase() : state.trim(),
+        state: state.trim(),
         is_irrevocable: isIrrevocable,
         excludes_from_estate: excludesFromEstate,
-        excluded_from_estate: excludedNumeric,
-        updated_at: new Date().toISOString(),
       }
 
-      if (editRow) {
-        const { error } = await supabase.from('trusts').update(payload).eq('id', editRow.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('trusts').insert({
-          ...payload,
-          owner_id: (await supabase.auth.getUser()).data.user?.id,
-        })
-        if (error) throw error
-      }
-      await onSaved()
+      const res = await fetch('/api/consumer/trusts', {
+        method: editRow ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editRow ? { id: editRow.id, ...body } : body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save trust')
+      await onSaved(data as TrustRow)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : String(err))
     } finally {
