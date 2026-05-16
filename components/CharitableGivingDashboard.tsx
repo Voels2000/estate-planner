@@ -225,6 +225,7 @@ export default function CharitableGivingDashboard({
           household_id: householdId,
           strategy_source: 'daf',
           source_role: 'consumer',
+          category: 'charitable',
           amount: charitableTotal,
           sign: -1,
           confidence_level: 'probable',

@@ -734,7 +734,7 @@ export default function ConsumerStrategyPanel({
             strategySource="liquidity" saved={saved} saving={saving} userRole={userRole}
             status={statuses.liquidity} onCycleStatus={() => cycleStatus('liquidity')}
             onToggle={() => toggle('liquidity', {
-              scenario_id: 'current_law', metric_target: 'gross_estate', category: 'trust_exclusion',
+              scenario_id: 'current_law', metric_target: 'gross_estate', category: 'liability',
               strategy_source: 'liquidity', amount: liquidityConfig.ilitDeathBenefit, sign: -1, confidence_level: 'illustrative',
             })}
           />

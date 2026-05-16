@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 108 / titling beneficiaries + allocation + e2e smoke)
+# Last updated: May 16, 2026 (Session 109 / strategy line items category + upsert index)
 
 ---
 
@@ -90,7 +90,9 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
-  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`); `category` required by DB check — API defaults from `strategy_source` when omitted (`lib/strategy/resolveStrategyLineItemCategory.ts`)
+  - **Upsert key (active rows):** partial unique index `strategy_line_items_upsert_active_idx` on `(household_id, strategy_source, source_role, COALESCE(projection_year,-1), COALESCE(scenario_name,''))` WHERE `is_active=true` (migration `20260516000001`)
+  - **`strategy_source` allowlist** includes `liquidity`, `roth`, `slat` (in addition to gifting, trust, charitable, etc.)
   - consumer dashboard reads active advisor rows for `StrategyRecommendationPanel` (accept/decline via `/api/consumer/strategy-recommendation`)
   - consumer removal uses `DELETE /api/strategy-line-items` (sets `is_active=false` for matching household + `strategy_source` + `source_role`; row retained for audit)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
@@ -353,7 +355,17 @@ After each schema-affecting session:
   - `POST` / `PATCH` / `DELETE` `/api/consumer/asset-beneficiaries` and `POST …/bulk` — beneficiary CRUD; `lib/titling/assetBeneficiaries.ts`; updates `households.last_beneficiary_review`; `_titling-client.tsx` beneficiary paths use API (titling table writes still client-side for Phase B).
   - `PATCH /api/consumer/allocation-targets` — `households.target_*_pct` with sum-to-100 validation; `_allocation-client.tsx` + server prefetch on `/allocation`.
   - `POST /api/consumer/generate-base-case` — `afterHouseholdWrite` after successful `generateBaseCase`.
-  - `tests/e2e/consumer/consumer-api-writes.spec.ts` — API smoke for allocation, health check, optional base-case generation.
+  - Playwright: `consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, updated `dashboard.spec.ts`.
+
+## Session 109 Note
+
+- Migration `20260516000001_strategy_line_items_upsert_idx_scenario_name.sql`:
+  - Adds `source_role` column if missing (`consumer` | `advisor`).
+  - Drops legacy `strategy_line_items_household_source_year_unique`; adds `strategy_line_items_upsert_active_idx` (partial unique on active rows, includes `scenario_name`).
+  - Extends `strategy_source` check constraint with `liquidity`, `roth`, `slat`.
+- Application-layer changes:
+  - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
+  - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
 
 ---
 

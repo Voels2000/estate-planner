@@ -814,7 +814,7 @@ export default function AdvancedStrategyPanel({
             onToggle={() => toggle('liquidity', {
               scenario_id: 'current_law',
               metric_target: 'gross_estate',
-              category: 'other' as never,
+              category: 'liability',
               strategy_source: 'liquidity',
               amount: liquidityConfig.ilitDeathBenefit,
               sign: -1,

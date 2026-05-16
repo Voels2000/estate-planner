@@ -9,6 +9,7 @@ import {
   afterHouseholdWrite,
   resolveOwnedHouseholdId,
 } from '@/lib/consumer/afterHouseholdWrite'
+import { resolveStrategyLineItemCategory } from '@/lib/strategy/resolveStrategyLineItemCategory'
 
 type SourceRole = 'consumer' | 'advisor'
 
@@ -41,6 +42,11 @@ export async function POST(request: Request) {
 
     if (!household_id || !strategy_source) {
       return NextResponse.json({ error: 'household_id and strategy_source required' }, { status: 400 })
+    }
+
+    const resolvedCategory = resolveStrategyLineItemCategory(strategy_source, category)
+    if (!resolvedCategory.ok) {
+      return NextResponse.json({ error: resolvedCategory.error }, { status: 400 })
     }
 
     // Build the upsert lookup — scenario_name is part of the key when provided
@@ -90,7 +96,7 @@ export async function POST(request: Request) {
           scenario_id:      scenario_id ?? 'current_law',
           projection_year:  projection_year ?? null,
           metric_target:    metric_target ?? 'taxable_estate',
-          category:         category ?? 'other',
+          category:         resolvedCategory.category,
           strategy_source,
           source_role:      role,
           amount:           amount ?? 0,
