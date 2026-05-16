@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 112 / consumer trusts API + trust-will page)
+# Last updated: May 16, 2026 (Session 113 / repo cleanup — projections loader, Playwright)
 
 ---
 
@@ -241,6 +241,7 @@ Runtime behavior:
 - As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, updated `dashboard.spec.ts`.
 - As of Session 111, titling row + entity field saves (title type, notes, titling, liquidity, cost basis) use `POST /api/consumer/entity-titling` (`lib/titling/entityTitling.ts`); `_titling-client.tsx` `TitlingModal` no longer writes via browser Supabase. `/titling` reads remain server-prefetched on `page.tsx`.
 - As of Session 112, trust CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/trusts` (`lib/trusts/trustPayload.ts`) with `afterHouseholdWrite`. `/trust-will` has server `page.tsx` (recommendations from `lib/trust-will-rules.ts` + prefetched trusts). `my-estate-trust-strategy` trusts tab deletes via API and receives `initialTrustDocuments` from server prefetch.
+- As of Session 113, removed unused client loader `loadProjectionPageData.ts` (projections use server `loadProjectionData` only). Playwright devDependency bumped to 1.60; removed default `example.spec.ts` scaffold (e2e runs `consumer/`, `advisor/`, `public/` only).
 - As of Session 109, `POST /api/strategy-line-items` resolves `category` via `lib/strategy/resolveStrategyLineItemCategory.ts` (no invalid default `'other'`). Consumer gifting/charitable saves pass explicit categories; DB allows `strategy_source` values `liquidity`, `roth`, and `slat`. Migration `20260516000001_strategy_line_items_upsert_idx_scenario_name.sql` replaces the legacy unique key with a partial unique index on active rows: `(household_id, strategy_source, source_role, projection_year, scenario_name)` — aligned with named consumer scenario upserts.
 
 ---
@@ -456,7 +457,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/calculations/roth-analysis.ts`
 - `lib/domicile/moveBreakeven.ts`
 - `lib/my-estate-strategy/horizonSnapshots.ts`
-- `lib/projections/loaders/loadProjectionPageData.ts` (consumer projections data loading)
+- `lib/projections/loadProjectionData.ts` (shared projection fetch for `/api/projection`, `/projections`, `/scenarios` pages)
 - `lib/projections/mappers/mapProjectionRows.ts` (consumer projections API row mapping)
 - `lib/projections/selectors/getProjectionSummary.ts` (consumer projections derived metrics)
 - `lib/dashboard/calculations.ts` (shared SS/RMD calculation helpers)

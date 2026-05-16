@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Consumer projections page: loads `/api/projection` via `loadProjectionPageData`,
+ * Consumer projections page: server-prefetched via `loadProjectionData` in `page.tsx`;
  * summary cards, chart/table/income tabs, and assumptions footer.
  *
  * Route: `/projections`

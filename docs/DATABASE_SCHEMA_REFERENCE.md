@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 112 / consumer trusts API)
+# Last updated: May 16, 2026 (Session 113 / repo cleanup)
 
 ---
 
@@ -366,6 +366,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 113 Note
+
+- No database schema or migration changes were introduced in Session 113.
+- Application-layer cleanup:
+  - Deleted unused `lib/projections/loaders/loadProjectionPageData.ts` (canonical path: `lib/projections/loadProjectionData.ts` on server).
+  - Playwright `@playwright/test` 1.59 → 1.60; removed `tests/e2e/example.spec.ts` (Playwright.dev scaffold; not in `playwright.config` projects).
 
 ## Session 112 Note
 
