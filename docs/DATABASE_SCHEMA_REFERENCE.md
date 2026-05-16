@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 95 / consumer strategy_line_items in horizon surfaces)
+# Last updated: May 15, 2026 (Session 96 / consumer strategy save-remove-recompute UX)
 
 ---
 
@@ -90,7 +90,8 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
-  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (e.g. annual gifting scenario on `/my-estate-trust-strategy`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`)
+  - consumer removal uses `DELETE /api/strategy-line-items` (sets `is_active=false` for matching household + `strategy_source` + `source_role`; row retained for audit)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
   - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
   - `my-estate-trust-strategy` and `my-estate-strategy` horizon builds include consumer rows; trust-strategy page merges consumer + non-rejected advisor items before `buildStrategyHorizons`
@@ -248,6 +249,13 @@ After each schema-affecting session:
   - `my-estate-trust-strategy/page.tsx` fetches `source_role='consumer'` rows alongside advisor rows and merges both into `buildStrategyHorizons`.
   - `my-estate-trust-strategy/_client.tsx` adds gifting scenario **Save to my plan →** (`POST /api/strategy-line-items`) and **Your Saved Strategies** display on the Transfer Strategies tab.
   - `my-estate-strategy/page.tsx` unchanged — already includes consumer rows in `actualStrategyLineItems`.
+
+## Session 96 Note
+
+- No database schema or migration changes were introduced in Session 96.
+- Application-layer changes (existing `strategy_line_items` + `/api/recompute-estate-health`):
+  - `my-estate-trust-strategy/_client.tsx`: `router.refresh()` after gifting save and consumer strategy remove; **Remove from plan** on saved strategies table; non-blocking estate health recompute after save/remove.
+  - `CharitableGivingDashboard.tsx`: **Save to my plan →** for total donated (`strategy_source='daf'`), with `router.refresh()` and recompute on success.
 
 ---
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 interface CharitableGivingDashboardProps {
@@ -111,7 +112,20 @@ export default function CharitableGivingDashboard({
   householdId,
   userRole,
 }: CharitableGivingDashboardProps) {
+  const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
+
+  async function fireRecompute() {
+    try {
+      await fetch('/api/recompute-estate-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      });
+    } catch {
+      // Non-fatal — stale health score is acceptable
+    }
+  }
 
   const emptyForm = {
     tax_year: CURRENT_YEAR,
@@ -136,6 +150,11 @@ export default function CharitableGivingDashboard({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'recommendations' | 'deductions' | 'history'>('recommendations');
   const [hydrated, setHydrated] = useState(false);
+  const [charitableSaving, setCharitableSaving] = useState(false);
+  const [charitableSaveMessage, setCharitableSaveMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
   useEffect(() => { setHydrated(true); }, []);
 
   const supabaseRef = useRef(createClient());
@@ -205,6 +224,49 @@ export default function CharitableGivingDashboard({
       setDeleteId(null);
     }
   };
+
+  async function handleSaveCharitableToPlan(charitableTotal: number) {
+    if (!charitableTotal || charitableTotal <= 0) return;
+    setCharitableSaving(true);
+    setCharitableSaveMessage(null);
+    try {
+      const res = await fetch('/api/strategy-line-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: householdId,
+          strategy_source: 'daf',
+          source_role: 'consumer',
+          amount: charitableTotal,
+          sign: -1,
+          confidence_level: 'probable',
+          effective_year: new Date().getFullYear(),
+          metadata: {
+            source: 'charitable_giving_dashboard',
+            tax_year: summary?.tax_year ?? new Date().getFullYear(),
+          },
+        }),
+      });
+      if (res.ok) {
+        setCharitableSaveMessage({
+          type: 'success',
+          text: 'Charitable giving saved to your plan.',
+        });
+        router.refresh();
+        void fireRecompute();
+      } else {
+        const data = await res.json();
+        setCharitableSaveMessage({
+          type: 'error',
+          text: data.error ?? 'Failed to save charitable giving.',
+        });
+      }
+    } catch {
+      setCharitableSaveMessage({ type: 'error', text: 'Unexpected error — please try again.' });
+    } finally {
+      setCharitableSaving(false);
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center p-12">
@@ -328,6 +390,19 @@ export default function CharitableGivingDashboard({
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Donated</p>
             <p className="text-2xl font-bold text-gray-900">{fmt$(s.total_donated)}</p>
             <p className="text-xs text-gray-400 mt-1">{s.donation_count} donation{s.donation_count !== 1 ? 's' : ''} this year</p>
+            <button
+              type="button"
+              onClick={() => void handleSaveCharitableToPlan(s.total_donated)}
+              disabled={charitableSaving || !s.total_donated || s.total_donated <= 0}
+              className="mt-3 inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {charitableSaving ? 'Saving…' : 'Save to my plan →'}
+            </button>
+            {charitableSaveMessage && (
+              <p className={`mt-2 text-xs ${charitableSaveMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>
+                {charitableSaveMessage.text}
+              </p>
+            )}
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Tax Deductible</p>

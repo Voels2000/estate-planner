@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 95 / consumer strategy items in horizon engine)
+# Last updated: May 15, 2026 (Session 96 / consumer strategy save refresh, remove, recompute)
 
 ---
 
@@ -163,7 +163,10 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
 - Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role`; e.g. gifting scenario saves `strategy_source='annual_gifting'`, `source_role='consumer'`).
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
-- Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item; horizons update on next page load).
+- Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
+- As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately, then `POST /api/recompute-estate-health` (non-blocking) to refresh cached estate health scores.
+- **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`).
+- `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`), with the same refresh + recompute pattern.
 - `my-estate-strategy/page.tsx` already builds `actualStrategyLineItems` from all active rows (consumer + consumer-accepted advisor) — no duplicate fetch required.
 - Consumer accept/reject of advisor recommendations is now handled by `/api/consumer/strategy-recommendation`:
   - `PATCH` marks advisor item accepted (`consumer_accepted=true`, `accepted_at` set, `consumer_rejected=false`)

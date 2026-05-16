@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
@@ -124,9 +125,22 @@ export default function MyEstateTrustStrategyClient({
   giftingScenario,
   initialGiftingSummary,
 }: Props) {
+  const router = useRouter()
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
   const [activeTab, setActiveTab] = useState<Tab>(startTab)
+
+  async function fireRecompute() {
+    try {
+      await fetch('/api/recompute-estate-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      })
+    } catch {
+      // Non-fatal — stale health score is acceptable
+    }
+  }
   const [trustDocs, setTrustDocs] = useState<TrustDocumentRow[]>([])
   const [trustDocsLoading, setTrustDocsLoading] = useState(false)
   const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
@@ -147,6 +161,11 @@ export default function MyEstateTrustStrategyClient({
   const [actionSaving, setActionSaving] = useState<string | null>(null)
   const [giftingSaving, setGiftingSaving] = useState(false)
   const [giftingSaveMessage, setGiftingSaveMessage] = useState<{
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
+  const [removingStrategy, setRemovingStrategy] = useState<string | null>(null)
+  const [removeMessage, setRemoveMessage] = useState<{
     type: 'success' | 'error'
     text: string
   } | null>(null)
@@ -286,8 +305,10 @@ export default function MyEstateTrustStrategyClient({
       if (res.ok) {
         setGiftingSaveMessage({
           type: 'success',
-          text: 'Gifting program saved to your plan. Your estate horizons will reflect this on next page load.',
+          text: 'Gifting program saved to your plan.',
         })
+        router.refresh()
+        void fireRecompute()
       } else {
         const data = await res.json()
         setGiftingSaveMessage({
@@ -299,6 +320,42 @@ export default function MyEstateTrustStrategyClient({
       setGiftingSaveMessage({ type: 'error', text: 'Unexpected error — please try again.' })
     } finally {
       setGiftingSaving(false)
+    }
+  }
+
+  async function handleRemoveConsumerStrategy(strategySource: string) {
+    const confirmed = window.confirm(
+      'Remove this strategy from your plan? This will update your estate projections.',
+    )
+    if (!confirmed) return
+
+    setRemovingStrategy(strategySource)
+    setRemoveMessage(null)
+    try {
+      const res = await fetch('/api/strategy-line-items', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          strategySource,
+          source_role: 'consumer',
+        }),
+      })
+      if (res.ok) {
+        setRemoveMessage({ type: 'success', text: 'Strategy removed from your plan.' })
+        router.refresh()
+        void fireRecompute()
+      } else {
+        const data = await res.json()
+        setRemoveMessage({
+          type: 'error',
+          text: data.error ?? 'Failed to remove strategy.',
+        })
+      }
+    } catch {
+      setRemoveMessage({ type: 'error', text: 'Unexpected error — please try again.' })
+    } finally {
+      setRemovingStrategy(null)
     }
   }
 
@@ -470,6 +527,7 @@ export default function MyEstateTrustStrategyClient({
                       <th className="px-3 py-2 text-left font-semibold text-emerald-900">Strategy</th>
                       <th className="px-3 py-2 text-right font-semibold text-emerald-900">Amount</th>
                       <th className="px-3 py-2 text-left font-semibold text-emerald-900">Status</th>
+                      <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
@@ -486,6 +544,16 @@ export default function MyEstateTrustStrategyClient({
                             In your plan
                           </span>
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => void handleRemoveConsumerStrategy(item.strategy_source)}
+                            disabled={removingStrategy === item.strategy_source}
+                            className="rounded border border-red-200 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {removingStrategy === item.strategy_source ? 'Removing…' : 'Remove'}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -496,10 +564,18 @@ export default function MyEstateTrustStrategyClient({
                         −{formatDollars(consumerLineItems.reduce((s, i) => s + Math.abs(i.amount), 0))}
                       </td>
                       <td />
+                      <td />
                     </tr>
                   </tfoot>
                 </table>
               </div>
+              {removeMessage && (
+                <p
+                  className={`mt-2 text-xs ${removeMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}
+                >
+                  {removeMessage.text}
+                </p>
+              )}
             </div>
           )}
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
