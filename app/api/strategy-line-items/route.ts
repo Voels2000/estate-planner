@@ -203,6 +203,12 @@ export async function PATCH(request: Request) {
     if (!data || data.length === 0) {
       return NextResponse.json({ error: 'No active row found for that strategy' }, { status: 404 })
     }
+
+    const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
+    if (ownedHouseholdId) {
+      await afterHouseholdWrite(supabase, ownedHouseholdId)
+    }
+
     return NextResponse.json(data[0])
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unexpected error' }, { status: 500 })

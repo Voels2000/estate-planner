@@ -4,19 +4,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
-
-async function resolveHousehold(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-) {
-  const { data } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', userId)
-    .single()
-  return data
-}
+import {
+  afterHouseholdWrite,
+  resolveOwnedHouseholdId,
+} from '@/lib/consumer/afterHouseholdWrite'
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
@@ -33,8 +24,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'lineItemId and householdId required' }, { status: 400 })
   }
 
-  const household = await resolveHousehold(supabase, user.id)
-  if (!household || household.id !== householdId) {
+  const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
+  if (!ownedHouseholdId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -74,8 +65,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'lineItemId and householdId required' }, { status: 400 })
   }
 
-  const household = await resolveHousehold(supabase, user.id)
-  if (!household || household.id !== householdId) {
+  const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
+  if (!ownedHouseholdId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

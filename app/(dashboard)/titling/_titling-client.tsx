@@ -570,6 +570,27 @@ export default function TitlingClient({
   const [insurancePolicyTitling, setInsurancePolicyTitling] = useState<InsurancePolicyTitling[]>(initialInsurancePolicyTitling)
   const [businessTitling, setBusinessTitling] = useState<BusinessTitlingRow[]>(initialBusinessTitling)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(initialBeneficiaries)
+  useEffect(() => {
+    setAssets(initialAssets)
+    setRealEstate(initialRealEstate)
+    setInsurance(initialInsurance)
+    setBusinesses(initialBusinesses)
+    setAssetTitling(initialAssetTitling)
+    setRealEstateTitling(initialRealEstateTitling)
+    setInsurancePolicyTitling(initialInsurancePolicyTitling)
+    setBusinessTitling(initialBusinessTitling)
+    setBeneficiaries(initialBeneficiaries)
+  }, [
+    initialAssets,
+    initialRealEstate,
+    initialInsurance,
+    initialBusinesses,
+    initialAssetTitling,
+    initialRealEstateTitling,
+    initialInsurancePolicyTitling,
+    initialBusinessTitling,
+    initialBeneficiaries,
+  ])
   const [activeTab, setActiveTab] = useState<string>('assets')
   const [gapModalOpen, setGapModalOpen] = useState(false)
   const [prereqBannerDismissed, setPrereqBannerDismissed] = useState(false)
@@ -642,59 +663,9 @@ export default function TitlingClient({
     [insurance, p1First, p2First],
   )
 
-  async function reloadData() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const [
-      { data: assetsData },
-      { data: reData },
-      { data: insData },
-      { data: bizData },
-      { data: at },
-      { data: rt },
-      { data: it },
-      { data: bt },
-      { data: bens },
-    ] = await Promise.all([
-      supabase
-        .from('assets')
-        .select('id, name, type, value, owner, cost_basis, basis_date, titling, liquidity')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('real_estate')
-        .select('id, name, property_type, current_value, owner, titling, liquidity, cost_basis, basis_date')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('insurance_policies')
-        .select('id, policy_name, insurance_type, death_benefit, owner, titling, liquidity, cost_basis, basis_date')
-        .eq('user_id', user.id)
-        .not('insurance_type', 'in', `(${PC_INSURANCE_TYPES.join(',')})`)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('businesses')
-        .select('id, name, estimated_value, entity_type, owner, titling, liquidity, cost_basis, basis_date')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: false }),
-      supabase.from('asset_titling').select('id, asset_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('real_estate_titling').select('id, real_estate_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('insurance_policy_titling').select('id, insurance_policy_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('business_titling').select('id, business_id, title_type, notes').eq('owner_id', user.id),
-      supabase.from('asset_beneficiaries').select('id, asset_id, real_estate_id, insurance_policy_id, business_id, beneficiary_type, full_name, relationship, email, phone, allocation_pct, is_gst_skip').eq('owner_id', user.id).order('created_at', { ascending: true }),
-    ])
-    setAssets(assetsData ?? [])
-    setRealEstate(reData ?? [])
-    setInsurance(insData ?? [])
-    setBusinesses(bizData ?? [])
-    setAssetTitling(at ?? [])
-    setRealEstateTitling(rt ?? [])
-    setInsurancePolicyTitling(it ?? [])
-    setBusinessTitling(bt ?? [])
-    setBeneficiaries(bens ?? [])
-    await refreshConflicts()
+  async function refreshTitlingData() {
     router.refresh()
+    await refreshConflicts()
   }
 
   async function touchLastBeneficiaryReview() {
@@ -709,7 +680,7 @@ export default function TitlingClient({
   async function handleDeleteBeneficiary(id: string) {
     const supabase = createClient()
     await supabase.from('asset_beneficiaries').delete().eq('id', id)
-    await reloadData()
+    await refreshTitlingData()
   }
 
   const getBeneficiariesFor = useCallback((kind: TitlingKind, id: string, type: 'primary' | 'contingent') => {
@@ -1082,7 +1053,7 @@ export default function TitlingClient({
           entityRow={titlingModal.entityRow}
           titlingOptions={assetTitlingOptions}
           onClose={() => setTitlingModal(null)}
-          onSave={async () => { await reloadData(); setTitlingModal(null) }}
+          onSave={async () => { await refreshTitlingData(); setTitlingModal(null) }}
         />
       )}
 
@@ -1103,7 +1074,7 @@ export default function TitlingClient({
           onClose={() => setBeneficiaryModal(null)}
           onSave={async () => {
             await touchLastBeneficiaryReview()
-            await reloadData()
+            await refreshTitlingData()
             setBeneficiaryModal(null)
           }}
         />
@@ -1122,7 +1093,7 @@ export default function TitlingClient({
           onClose={() => setGapModalOpen(false)}
           onApplied={async () => {
             await touchLastBeneficiaryReview()
-            await reloadData()
+            await refreshTitlingData()
             setGapModalOpen(false)
           }}
         />

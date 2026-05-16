@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 103 / recompute ops + financial save polish)
+# Last updated: May 15, 2026 (Session 105 / server-prefetch remaining dashboard pages)
 
 ---
 
@@ -232,6 +232,8 @@ Runtime behavior:
 - As of Session 101, all consumer write routes and strategy-line-item writes share `lib/consumer/afterHouseholdWrite` (`touchHousehold` + `triggerEstateHealthRecompute` with `x-recompute-secret`). `/real-estate` and `/expenses` clients use `router.refresh()` only (no redundant client `loadData()` after save); server pages pass full row shapes including expense `start_month` / `end_month`.
 - As of Session 102, `/assets` and `/liabilities` follow the same server-prefetch pattern as `/real-estate` and `/income`: server `page.tsx` fetches rows + reference data; `_assets-client.tsx` / `_liabilities-client.tsx` hold UI state, patch from API responses on save, and call `router.refresh()`. Grouped table keys use `useMemo` on assets, liabilities, income, and expenses. Removed unused `app/api/assets/[id]` and orphan income table/modal components.
 - As of Session 103, `/real-estate`, `/expenses`, and `/income` clients also patch local state from consumer API JSON on save (same pattern as assets/liabilities). Consumer write routes use `requireOwnedHouseholdId` / `resolveOwnedHouseholdId` from `lib/consumer/afterHouseholdWrite.ts` instead of duplicated household queries. `triggerEstateHealthRecompute` logs misconfigured production env, HTTP failures, and network errors (recompute remains best-effort; saves are not blocked).
+- As of Session 104, all server-side recompute callers use `triggerHouseholdRecompute` / `getConsumerAppUrl()` (no empty `NEXT_PUBLIC_APP_URL` fallbacks). `afterHouseholdWriteForOwner` covers businesses and insurance writes; strategy-recommendation uses `resolveOwnedHouseholdId`; strategy-line-items PATCH triggers `afterHouseholdWrite` when status changes.
+- As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 
 ---
 

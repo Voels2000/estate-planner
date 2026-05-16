@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 103 / recompute ops + financial save polish)
+# Last updated: May 15, 2026 (Session 105 / server-prefetch remaining dashboard pages)
 
 ---
 
@@ -316,6 +316,21 @@ After each schema-affecting session:
   - Real-estate, expenses, and income clients patch list state from consumer API JSON on save; income keeps synced local state for deletes.
   - Consumer entity routes use `requireOwnedHouseholdId` (POST/PATCH) and `resolveOwnedHouseholdId` (DELETE) from `lib/consumer/afterHouseholdWrite.ts`.
   - `lib/estate/triggerEstateHealthRecompute.ts` logs production misconfiguration and recompute failures; see `MASTER_ARCHITECTURE.md` → “Estate health recompute — operations” for env vars and smoke checklist.
+
+## Session 104 Note
+
+- No database schema or migration changes were introduced in Session 104.
+- Application-layer changes:
+  - `triggerHouseholdRecompute` / `getConsumerAppUrl()` used by dashboard, my-estate-strategy, advisor client view, and `/api/households/[id]` (replaces empty app URL fallbacks).
+  - `afterHouseholdWriteForOwner` on `/api/businesses/[id]` and `/api/insurance/[id]`; strategy-recommendation uses `resolveOwnedHouseholdId`; strategy-line-items PATCH calls `afterHouseholdWrite`.
+
+## Session 105 Note
+
+- No database schema or migration changes were introduced in Session 105.
+- Application-layer changes:
+  - `lib/projections/loadProjectionData.ts` — shared projection fetch/compute for `/api/projection` and `/projections` page.
+  - Server-prefetch: `/projections`, `/scenarios` (household + base case), `/profile` (`buildProfileFormInitial`), `/health-check` (household + prior answers).
+  - `/titling/_titling-client.tsx` — `router.refresh()` + prop sync replaces client `reloadData()`.
 
 ---
 

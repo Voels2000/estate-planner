@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
+import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function resolveBusinessAuth(
@@ -54,21 +54,7 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  // Touch households.updated_at for staleness detection
-  await supabase
-    .from('households')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('owner_id', ownerId)
-
-  // Fire estate health recompute (best-effort, fire-and-forget)
-  const { data: hh } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', ownerId)
-    .single()
-  if (hh?.id) {
-    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
-  }
+  await afterHouseholdWriteForOwner(supabase, ownerId)
 
   return NextResponse.json(data)
 }
@@ -93,20 +79,7 @@ export async function DELETE(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  await supabase
-    .from('households')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('owner_id', ownerId)
-
-  // Fire estate health recompute (best-effort, fire-and-forget)
-  const { data: hh } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', ownerId)
-    .single()
-  if (hh?.id) {
-    triggerEstateHealthRecompute(hh.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
-  }
+  await afterHouseholdWriteForOwner(supabase, ownerId)
 
   return NextResponse.json({ success: true })
 }

@@ -25,6 +25,17 @@ export async function afterHouseholdWrite(supabase: ServerSupabase, householdId:
   triggerHouseholdRecompute(householdId)
 }
 
+/** Resolve household by owner user id, then touch + recompute (businesses, insurance, etc.). */
+export async function afterHouseholdWriteForOwner(
+  supabase: ServerSupabase,
+  ownerUserId: string,
+) {
+  const householdId = await resolveOwnedHouseholdId(supabase, ownerUserId)
+  if (householdId) {
+    await afterHouseholdWrite(supabase, householdId)
+  }
+}
+
 /** Resolve household id for the authenticated owner; optional id must match. */
 export async function resolveOwnedHouseholdId(
   supabase: ServerSupabase,

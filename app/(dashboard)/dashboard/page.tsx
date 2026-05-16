@@ -81,8 +81,8 @@ export default async function DashboardPage() {
       try {
         const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
         await generateBaseCase(household.id)
-        const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
-        triggerEstateHealthRecompute(household.id, process.env.NEXT_PUBLIC_APP_URL ?? '')
+        const { triggerHouseholdRecompute } = await import('@/lib/consumer/afterHouseholdWrite')
+        triggerHouseholdRecompute(household.id)
       } catch (e) {
         console.error('[dashboard] background base case regeneration failed', e)
       }

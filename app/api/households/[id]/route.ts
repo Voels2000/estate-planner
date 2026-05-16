@@ -4,7 +4,7 @@
 // Auth-gated — caller must be the household owner OR an active advisor for the household.
 
 import { createClient } from '@/lib/supabase/server'
-import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
+import { triggerHouseholdRecompute } from '@/lib/consumer/afterHouseholdWrite'
 import { NextResponse } from 'next/server'
 
 // Fields advisors are permitted to update via this route.
@@ -85,7 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    triggerEstateHealthRecompute(householdId, process.env.NEXT_PUBLIC_APP_URL ?? '')
+    triggerHouseholdRecompute(householdId)
 
     return NextResponse.json({ success: true, data })
   } catch (err) {
