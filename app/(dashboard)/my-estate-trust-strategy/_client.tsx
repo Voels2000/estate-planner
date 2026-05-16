@@ -130,17 +130,6 @@ export default function MyEstateTrustStrategyClient({
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
   const [activeTab, setActiveTab] = useState<Tab>(startTab)
 
-  async function fireRecompute() {
-    try {
-      await fetch('/api/recompute-estate-health', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ householdId }),
-      })
-    } catch {
-      // Non-fatal — stale health score is acceptable
-    }
-  }
   const [trustDocs, setTrustDocs] = useState<TrustDocumentRow[]>([])
   const [trustDocsLoading, setTrustDocsLoading] = useState(false)
   const [trustDocsError, setTrustDocsError] = useState<string | null>(null)
@@ -319,7 +308,6 @@ export default function MyEstateTrustStrategyClient({
           text: 'Gifting program saved to your plan.',
         })
         router.refresh()
-        void fireRecompute()
       } else {
         const data = await res.json()
         setGiftingSaveMessage({
@@ -357,7 +345,6 @@ export default function MyEstateTrustStrategyClient({
       if (res.ok) {
         setComparisonSaveMessage({ type: 'success', text: 'Comparison scenario saved.' })
         router.refresh()
-        void fireRecompute()
       } else {
         const data = await res.json()
         setComparisonSaveMessage({
@@ -401,7 +388,6 @@ export default function MyEstateTrustStrategyClient({
       if (res.ok) {
         setRemoveMessage({ type: 'success', text: 'Strategy removed from your plan.' })
         router.refresh()
-        void fireRecompute()
       } else {
         const data = await res.json()
         setRemoveMessage({

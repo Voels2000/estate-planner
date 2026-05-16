@@ -201,6 +201,9 @@ export default function RealEstateClient({
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
+  useEffect(() => {
+    setRows(initialProperties)
+  }, [initialProperties])
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow] = useState<RealEstate | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -210,21 +213,6 @@ export default function RealEstateClient({
   const isMfj = filingStatus === 'mfj' || filingStatus === 'qw' ||
                 filingStatus === 'married_filing_jointly' || filingStatus === 'married_joint'
   const exclusionAmount = isMfj ? 500_000 : 250_000
-
-  async function loadData() {
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error: fetchError } = await supabase
-      .from('real_estate')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    if (fetchError) setError(fetchError.message)
-    else setRows((data as RealEstate[]) ?? [])
-  }
 
   async function handleDelete(id: string) {
     const res = await fetch('/api/consumer/real-estate', {
@@ -438,7 +426,6 @@ export default function RealEstateClient({
           onSave={() => {
             setShowModal(false)
             setEditRow(null)
-            void loadData()
             router.refresh()
           }}
         />

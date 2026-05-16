@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 100 / consumer write APIs + named gifting upsert)
+# Last updated: May 15, 2026 (Session 101 / centralized household write side effects)
 
 ---
 
@@ -162,18 +162,19 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
   - Canonical advisor write path: `/api/advisor/strategy-recommendation` (used by `StrategyOverlay` via `useRecommendStrategy` — does not write `strategy_configs`)
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
 - Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role` + `scenario_name` when provided, else `scenario_name IS NULL`; e.g. multiple named gifting plans can coexist as separate rows).
-- As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()` + estate health recompute (same pattern as trust-strategy).
+- As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()`; estate health recompute runs server-side on accept/reject (Session 101).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
-- As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately, then `POST /api/recompute-estate-health` (non-blocking) to refresh cached estate health scores.
+- As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately.
+- As of Session 101, `POST`/`DELETE` on `/api/strategy-line-items` and `PATCH`/`DELETE` on `/api/consumer/strategy-recommendation` call `lib/consumer/afterHouseholdWrite` (touch `households.updated_at` + `triggerEstateHealthRecompute`). Clients no longer call `/api/recompute-estate-health` directly (that route requires `x-recompute-secret`).
 - **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`; optional `scenarioName` scopes delete to one named consumer strategy).
-- `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`), with the same refresh + recompute pattern.
+- `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`) via `/api/strategy-line-items`, with `router.refresh()` only on the client.
 - `my-estate-strategy/page.tsx` already builds `actualStrategyLineItems` from all active rows (consumer + consumer-accepted advisor) — no duplicate fetch required.
-- Consumer accept/reject of advisor recommendations is now handled by `/api/consumer/strategy-recommendation`:
-  - `PATCH` marks advisor item accepted (`consumer_accepted=true`, `accepted_at` set, `consumer_rejected=false`)
-  - `DELETE` marks advisor item rejected (`consumer_rejected=true`, `consumer_accepted=false`)
+- Consumer accept/reject of advisor recommendations is handled by `/api/consumer/strategy-recommendation`:
+  - `PATCH` marks advisor item accepted (`consumer_accepted=true`, `accepted_at` set, `consumer_rejected=false`) and runs `afterHouseholdWrite`
+  - `DELETE` marks advisor item rejected (`consumer_rejected=true`, `consumer_accepted=false`) and runs `afterHouseholdWrite`
 - Advisor read path now includes both active and client-rejected advisor items for visibility;
   composability/waterfall calculations exclude rejected rows.
 
@@ -227,8 +228,8 @@ Runtime behavior:
 
 - Pages render from stored snapshots for speed.
 - If stale, trigger background base-case regeneration.
-- As of Session 100, consumer financial input writes are normalized through `/api/consumer/*` routes (`assets`, `real-estate`, `liabilities`, `income`, `expenses`). Each route touches `households.updated_at` and triggers estate health recompute server-side via `triggerEstateHealthRecompute` (includes `x-recompute-secret`). Dashboard clients call these routes only — no inline household re-fetch or client-side recompute on those pages.
-- Session 99 added client-side recompute on assets/income/expenses; Session 100 superseded that with the consumer API pattern above.
+- As of Session 100, consumer financial input writes are normalized through `/api/consumer/*` routes (`assets`, `real-estate`, `liabilities`, `income`, `expenses`). Dashboard clients call these routes only — no inline household re-fetch or client-side recompute on those pages.
+- As of Session 101, all consumer write routes and strategy-line-item writes share `lib/consumer/afterHouseholdWrite` (`touchHousehold` + `triggerEstateHealthRecompute` with `x-recompute-secret`). `/real-estate` and `/expenses` clients use `router.refresh()` only (no redundant client `loadData()` after save); server pages pass full row shapes including expense `start_month` / `end_month`.
 
 ---
 

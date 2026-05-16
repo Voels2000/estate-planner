@@ -1,23 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
-
-async function touchHousehold(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  householdId: string,
-) {
-  await supabase
-    .from('households')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', householdId)
-}
-
-function fireRecompute(householdId: string) {
-  void triggerEstateHealthRecompute(
-    householdId,
-    process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-  )
-}
+import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -56,8 +39,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await touchHousehold(supabase, household.id)
-  fireRecompute(household.id)
+  await afterHouseholdWrite(supabase, household.id)
 
   return NextResponse.json(data)
 }
@@ -97,8 +79,7 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await touchHousehold(supabase, household.id)
-  fireRecompute(household.id)
+  await afterHouseholdWrite(supabase, household.id)
 
   return NextResponse.json(data)
 }
@@ -128,8 +109,7 @@ export async function DELETE(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (household?.id) {
-    await touchHousehold(supabase, household.id)
-    fireRecompute(household.id)
+    await afterHouseholdWrite(supabase, household.id)
   }
 
   return NextResponse.json({ success: true })

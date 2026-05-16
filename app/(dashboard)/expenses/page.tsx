@@ -20,7 +20,7 @@ export default async function ExpensesPage() {
   ] = await Promise.all([
     supabase
       .from('expenses')
-      .select('id, owner_id, owner, category, name, amount, start_year, end_year, inflation_adjust, created_at, updated_at')
+      .select('id, owner_id, owner, category, name, amount, start_year, end_year, start_month, end_month, inflation_adjust, created_at, updated_at')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     supabase

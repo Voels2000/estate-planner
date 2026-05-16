@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 100 / consumer write APIs + strategy upsert key)
+# Last updated: May 15, 2026 (Session 101 / afterHouseholdWrite + server recompute)
 
 ---
 
@@ -290,6 +290,16 @@ After each schema-affecting session:
   - `my-estate-trust-strategy/_client.tsx`: Remove button passes `scenario_name`; loading state uses composite key `strategy_source::scenario_name`.
   - New consumer write routes (POST/PATCH/DELETE): `/api/consumer/assets`, `/api/consumer/real-estate`, `/api/consumer/liabilities`, `/api/consumer/income`, `/api/consumer/expenses`. Each touches `households.updated_at` and calls `triggerEstateHealthRecompute`.
   - Dashboard pages for those entities migrated off direct Supabase client writes; `income/actions.ts` server actions removed in favor of `/api/consumer/income`.
+
+## Session 101 Note
+
+- No database schema or migration changes were introduced in Session 101.
+- Application-layer changes:
+  - New `lib/consumer/afterHouseholdWrite.ts` — shared `touchHousehold`, `triggerHouseholdRecompute`, `afterHouseholdWrite`, `resolveOwnedHouseholdId`.
+  - All `/api/consumer/{assets,real-estate,liabilities,income,expenses}` routes refactored to use `afterHouseholdWrite`.
+  - `/api/strategy-line-items` POST/DELETE and `/api/consumer/strategy-recommendation` PATCH/DELETE now call `afterHouseholdWrite` (fixes client recompute calls that lacked `x-recompute-secret`).
+  - Removed client-side `/api/recompute-estate-health` from trust-strategy client, `CharitableGivingDashboard`, and `StrategyRecommendationPanel`.
+  - `expenses/page.tsx` server select includes `start_month` / `end_month`; real-estate and expenses clients sync props from server refresh without post-save `loadData()`.
 
 ---
 

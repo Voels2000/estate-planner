@@ -115,18 +115,6 @@ export default function CharitableGivingDashboard({
   const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
 
-  async function fireRecompute() {
-    try {
-      await fetch('/api/recompute-estate-health', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ householdId }),
-      });
-    } catch {
-      // Non-fatal — stale health score is acceptable
-    }
-  }
-
   const emptyForm = {
     tax_year: CURRENT_YEAR,
     vehicle_type: 'cash',
@@ -253,7 +241,6 @@ export default function CharitableGivingDashboard({
           text: 'Charitable giving saved to your plan.',
         });
         router.refresh();
-        void fireRecompute();
       } else {
         const data = await res.json();
         setCharitableSaveMessage({

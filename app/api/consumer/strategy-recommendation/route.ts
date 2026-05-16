@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 
 async function resolveHousehold(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -53,12 +54,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  try {
-    const { triggerEstateHealthRecompute } = await import('@/lib/estate/triggerEstateHealthRecompute')
-    triggerEstateHealthRecompute(householdId, process.env.NEXT_PUBLIC_APP_URL ?? '')
-  } catch (err) {
-    console.error('[consumer/strategy-recommendation] recompute trigger failed', err)
-  }
+  await afterHouseholdWrite(supabase, householdId)
 
   return NextResponse.json({ success: true })
 }
@@ -97,6 +93,8 @@ export async function DELETE(request: NextRequest) {
     console.error('[consumer/strategy-recommendation:reject]', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  await afterHouseholdWrite(supabase, householdId)
 
   return NextResponse.json({ success: true })
 }

@@ -60,18 +60,6 @@ export default function StrategyRecommendationPanel({
   const [actionSaving, setActionSaving] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
-  async function fireRecompute() {
-    try {
-      await fetch('/api/recompute-estate-health', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ householdId }),
-      })
-    } catch {
-      // non-fatal
-    }
-  }
-
   async function handleAccept(item: AdvisorRecommendationItem) {
     setActionSaving(item.id)
     setActionMessage(null)
@@ -87,7 +75,6 @@ export default function StrategyRecommendationPanel({
         )
         setActionMessage(`"${strategyLabel(item.strategy_source, item.scenario_name)}" added to your plan.`)
         router.refresh()
-        void fireRecompute()
       } else {
         setActionMessage('Failed to accept — please try again.')
       }
@@ -113,7 +100,6 @@ export default function StrategyRecommendationPanel({
         )
         setActionMessage(`"${strategyLabel(item.strategy_source, item.scenario_name)}" declined.`)
         router.refresh()
-        void fireRecompute()
       } else {
         setActionMessage('Failed to decline — please try again.')
       }

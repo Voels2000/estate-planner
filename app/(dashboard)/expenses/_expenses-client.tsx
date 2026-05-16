@@ -7,7 +7,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 type ExpenseType = { value: string; label: string }
 
@@ -58,6 +57,9 @@ export default function ExpensesClient({
 }: ExpensesClientProps) {
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
+  useEffect(() => {
+    setExpenses(initialExpenses)
+  }, [initialExpenses])
   const [showModal, setShowModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -75,19 +77,6 @@ export default function ExpensesClient({
   const totalAnnual = expenses
     .filter((e) => expenseAppliesInYear(e, currentYear))
     .reduce((sum, e) => sum + Number(e.amount), 0)
-
-  async function loadData() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error: fetchError } = await supabase
-      .from('expenses')
-      .select('id, owner_id, owner, category, name, amount, start_year, end_year, start_month, end_month, inflation_adjust, created_at, updated_at')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    if (fetchError) setError(fetchError.message)
-    else setExpenses(data ?? [])
-  }
 
   async function handleDelete(id: string) {
     const res = await fetch('/api/consumer/expenses', {
@@ -289,7 +278,6 @@ export default function ExpensesClient({
           onSave={() => {
             setShowModal(false)
             setEditExpense(null)
-            void loadData()
             router.refresh()
           }}
         />

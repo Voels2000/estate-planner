@@ -5,6 +5,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import {
+  afterHouseholdWrite,
+  resolveOwnedHouseholdId,
+} from '@/lib/consumer/afterHouseholdWrite'
 
 type SourceRole = 'consumer' | 'advisor'
 
@@ -104,6 +108,13 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message, details: error }, { status: 500 })
     }
+
+    const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, household_id)
+    if (!ownedHouseholdId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    await afterHouseholdWrite(supabase, ownedHouseholdId)
+
     return NextResponse.json(data)
   } catch (err) {
     return NextResponse.json(
@@ -149,6 +160,12 @@ export async function DELETE(request: Request) {
     )
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
+    if (ownedHouseholdId) {
+      await afterHouseholdWrite(supabase, ownedHouseholdId)
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unexpected error' }, { status: 500 })
