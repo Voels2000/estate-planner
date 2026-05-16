@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 114 / consumer scenario snapshot saves)
+# Last updated: May 16, 2026 (Session 115 / consumer nav alignment Phase A)
 
 ---
 
@@ -366,6 +366,11 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 115 Note
+
+- No database schema or migration changes were introduced in Session 115.
+- Application-layer cleanup (Phase A): `docs/CONSUMER_NAV_MAP.md`; sidebar/page title alignment; removed dead `asset-allocation` client duplicate; `lib/tiers.ts` feature keys aligned with page gates.
 
 ## Session 114 Note
 

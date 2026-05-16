@@ -60,8 +60,8 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   liabilities:           1,
   income:                1,
   expenses:              1,
-  project:           1,
-  allocation:            1,
+  projections:           1,
+  allocation:            2,
   'real-estate':         1,
   scenarios:             1,
   'social-security':     1,
@@ -81,6 +81,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   charitable:            3,
   'business-succession': 3,
   'my-family':           3,
+  'trust-will':          3,
 }
 // Free trial gets tier 2 access
 export const TRIAL_TIER = 3

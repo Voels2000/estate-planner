@@ -246,7 +246,7 @@ export default function ScenariosClient({
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Scenario Comparison</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Scenarios</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Compare up to 3 scenarios side by side. Base Case is locked to your profile. Customize Scenario B and C freely.
         </p>

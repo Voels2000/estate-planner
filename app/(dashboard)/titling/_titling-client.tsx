@@ -768,7 +768,7 @@ export default function TitlingClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Account Titling & Beneficiaries</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Titling & Beneficiaries</h1>
         <p className="mt-1 text-sm text-neutral-600">
           How each asset is titled and who inherits it. Affects estate distribution and probate.
         </p>

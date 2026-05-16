@@ -37,7 +37,7 @@ export default async function DigitalAssetsPage() {
       <DisclaimerBanner />
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Digital Asset Inventory</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Digital Assets</h1>
           <p className="text-gray-600 mt-1 text-sm">
             Catalogue your digital assets so your executor and beneficiaries can locate and manage
             them. Credentials are never required - just enough information to act on your behalf.

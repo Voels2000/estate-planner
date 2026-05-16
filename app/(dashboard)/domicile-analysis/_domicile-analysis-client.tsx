@@ -201,12 +201,10 @@ export default function DomicileAnalysisClient({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-1 text-2xl font-bold text-neutral-900">
-        Multi-State Domicile Analysis
-      </h1>
+      <h1 className="mb-1 text-2xl font-bold text-neutral-900">Domicile Analysis</h1>
       <p className="mb-8 text-sm text-neutral-500">
-        Compare ties across states against your claimed domicile and get a
-        practical checklist. This is educational only and not legal advice.
+        Multi-state comparison against your claimed domicile and a practical
+        checklist. This is educational only and not legal advice.
       </p>
 
       {isAdvisor && (

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DomicileAnalysisClient from './_domicile-analysis-client'
 
-export const metadata = { title: 'Multi-State Domicile Analysis' }
+export const metadata = { title: 'Domicile Analysis | Estate Planner' }
 
 export default async function DomicileAnalysisPage() {
   const supabase = await createClient()
