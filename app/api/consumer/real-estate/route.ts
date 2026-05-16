@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
+import { afterHouseholdWrite, requireOwnedHouseholdId, resolveOwnedHouseholdId } from '@/lib/consumer/afterHouseholdWrite'
 
 function buildRealEstateRow(body: Record<string, unknown>, userId: string, forInsert: boolean) {
   const row: Record<string, unknown> = {
@@ -41,12 +41,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'name and current_value required' }, { status: 400 })
   }
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .single()
-  if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+  const owned = await requireOwnedHouseholdId(supabase, user.id)
+  if (!owned.ok) return owned.response
+
 
   const { data, error } = await supabase
     .from('real_estate')
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await afterHouseholdWrite(supabase, household.id)
+  await afterHouseholdWrite(supabase, owned.householdId)
 
   return NextResponse.json(data)
 }
@@ -72,12 +69,9 @@ export async function PATCH(request: NextRequest) {
   const { id, ...rest } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .single()
-  if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+  const owned = await requireOwnedHouseholdId(supabase, user.id)
+  if (!owned.ok) return owned.response
+
 
   const { data, error } = await supabase
     .from('real_estate')
@@ -89,7 +83,7 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await afterHouseholdWrite(supabase, household.id)
+  await afterHouseholdWrite(supabase, owned.householdId)
 
   return NextResponse.json(data)
 }
@@ -104,11 +98,7 @@ export async function DELETE(request: NextRequest) {
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .single()
+  const householdId = await resolveOwnedHouseholdId(supabase, user.id)
 
   const { error } = await supabase
     .from('real_estate')
@@ -118,8 +108,8 @@ export async function DELETE(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  if (household?.id) {
-    await afterHouseholdWrite(supabase, household.id)
+  if (householdId) {
+    await afterHouseholdWrite(supabase, householdId)
   }
 
   return NextResponse.json({ success: true })

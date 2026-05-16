@@ -230,6 +230,21 @@ export default function RealEstateClient({
     setConfirmDeleteId(null)
   }
 
+  function handleSave(saved: RealEstate) {
+    setShowModal(false)
+    setEditRow(null)
+    setRows((prev) => {
+      const idx = prev.findIndex((r) => r.id === saved.id)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = saved
+        return next
+      }
+      return [saved, ...prev]
+    })
+    router.refresh()
+  }
+
   function ownerLabel(owner: string) {
     if (owner === 'person2') return person2Name
     if (owner === 'joint') return 'Joint'
@@ -423,11 +438,7 @@ export default function RealEstateClient({
             setShowModal(false)
             setEditRow(null)
           }}
-          onSave={() => {
-            setShowModal(false)
-            setEditRow(null)
-            router.refresh()
-          }}
+          onSave={handleSave}
         />
       )}
     </div>
@@ -449,7 +460,7 @@ function RealEstateModal({
   titlingTypes: RefOption[]
   propertyTypes: RefOption[]
   onClose: () => void
-  onSave: () => void
+  onSave: (saved: RealEstate) => void
 }) {
   const currentYear = new Date().getFullYear()
   const [name, setName] = useState(editRow?.name ?? '')
@@ -525,7 +536,8 @@ function RealEstateModal({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save')
       }
-      onSave()
+      const saved = (await res.json()) as RealEstate
+      onSave(saved)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)

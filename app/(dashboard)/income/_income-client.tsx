@@ -55,13 +55,17 @@ function incomeAppliesToYear(row: IncomeRow, year: number): boolean {
 }
 
 export function IncomeClient({
-  income,
+  income: initialIncome,
   person1Name,
   person2Name,
   hasSpouse,
   incomeTypes,
 }: Props) {
   const router = useRouter()
+  const [income, setIncome] = useState<IncomeRow[]>(initialIncome)
+  useEffect(() => {
+    setIncome(initialIncome)
+  }, [initialIncome])
   const currentCalendarYear = new Date().getFullYear()
   const [modalOpen, setModalOpen]             = useState(false)
   const [editRow, setEditRow]                 = useState<IncomeRow | null>(null)
@@ -139,6 +143,7 @@ export function IncomeClient({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to delete')
       }
+      setIncome((prev) => prev.filter((row) => row.id !== id))
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
@@ -149,7 +154,19 @@ export function IncomeClient({
   function openAdd()               { setEditRow(null);  setModalOpen(true) }
   function openEdit(row: IncomeRow){ setEditRow(row);   setModalOpen(true) }
   function closeModal()            { setModalOpen(false); setEditRow(null) }
-  function handleSuccess()         { closeModal(); router.refresh() }
+  function handleSave(saved: IncomeRow) {
+    closeModal()
+    setIncome((prev) => {
+      const idx = prev.findIndex((row) => row.id === saved.id)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = saved
+        return next
+      }
+      return [saved, ...prev]
+    })
+    router.refresh()
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -254,7 +271,7 @@ export function IncomeClient({
           hasSpouse={hasSpouse}
           incomeTypes={incomeTypes}
           onClose={closeModal}
-          onSuccess={handleSuccess}
+          onSave={handleSave}
         />
       )}
     </div>
@@ -268,7 +285,7 @@ function IncomeModal({
   hasSpouse,
   incomeTypes,
   onClose,
-  onSuccess,
+  onSave,
 }: {
   editRow: IncomeRow | null
   person1Name: string
@@ -276,7 +293,7 @@ function IncomeModal({
   hasSpouse: boolean
   incomeTypes: IncomeType[]
   onClose: () => void
-  onSuccess: () => void
+  onSave: (saved: IncomeRow) => void
 }) {
   const sortedIncomeTypes = [...incomeTypes].sort((a, b) => a.label.localeCompare(b.label))
   const currentYear = new Date().getFullYear()
@@ -335,7 +352,8 @@ function IncomeModal({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save income')
       }
-      onSuccess()
+      const saved = (await res.json()) as IncomeRow
+      onSave(saved)
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)

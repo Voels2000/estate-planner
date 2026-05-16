@@ -94,6 +94,21 @@ export default function ExpensesClient({
     setConfirmDeleteId(null)
   }
 
+  function handleSave(saved: Expense) {
+    setShowModal(false)
+    setEditExpense(null)
+    setExpenses((prev) => {
+      const idx = prev.findIndex((e) => e.id === saved.id)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = saved
+        return next
+      }
+      return [saved, ...prev]
+    })
+    router.refresh()
+  }
+
   function getDisplayName(expense: Expense) {
     if (expense.name && expense.name.trim()) return expense.name.trim()
     return expenseTypes.find((t) => t.value === expense.category)?.label ?? expense.category
@@ -276,11 +291,7 @@ export default function ExpensesClient({
           person1Name={person1Name}
           person2Name={person2Name}
           onClose={() => { setShowModal(false); setEditExpense(null) }}
-          onSave={() => {
-            setShowModal(false)
-            setEditExpense(null)
-            router.refresh()
-          }}
+          onSave={handleSave}
         />
       )}
     </div>
@@ -300,7 +311,7 @@ function ExpenseModal({
   person1Name: string
   person2Name: string
   onClose: () => void
-  onSave: () => void
+  onSave: (saved: Expense) => void
 }) {
   const sortedExpenseTypes = [...expenseTypes].sort((a, b) => a.label.localeCompare(b.label))
   const currentYear = new Date().getFullYear()
@@ -365,7 +376,8 @@ function ExpenseModal({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save expense')
       }
-      onSave()
+      const saved = (await res.json()) as Expense
+      onSave(saved)
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))
       setIsSubmitting(false)

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 102 / server-prefetch financial pages)
+# Last updated: May 15, 2026 (Session 103 / recompute ops + financial save polish)
 
 ---
 
@@ -231,6 +231,31 @@ Runtime behavior:
 - As of Session 100, consumer financial input writes are normalized through `/api/consumer/*` routes (`assets`, `real-estate`, `liabilities`, `income`, `expenses`). Dashboard clients call these routes only — no inline household re-fetch or client-side recompute on those pages.
 - As of Session 101, all consumer write routes and strategy-line-item writes share `lib/consumer/afterHouseholdWrite` (`touchHousehold` + `triggerEstateHealthRecompute` with `x-recompute-secret`). `/real-estate` and `/expenses` clients use `router.refresh()` only (no redundant client `loadData()` after save); server pages pass full row shapes including expense `start_month` / `end_month`.
 - As of Session 102, `/assets` and `/liabilities` follow the same server-prefetch pattern as `/real-estate` and `/income`: server `page.tsx` fetches rows + reference data; `_assets-client.tsx` / `_liabilities-client.tsx` hold UI state, patch from API responses on save, and call `router.refresh()`. Grouped table keys use `useMemo` on assets, liabilities, income, and expenses. Removed unused `app/api/assets/[id]` and orphan income table/modal components.
+- As of Session 103, `/real-estate`, `/expenses`, and `/income` clients also patch local state from consumer API JSON on save (same pattern as assets/liabilities). Consumer write routes use `requireOwnedHouseholdId` / `resolveOwnedHouseholdId` from `lib/consumer/afterHouseholdWrite.ts` instead of duplicated household queries. `triggerEstateHealthRecompute` logs misconfigured production env, HTTP failures, and network errors (recompute remains best-effort; saves are not blocked).
+
+---
+
+## Estate health recompute — operations
+
+Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealthRecompute`, which POSTs to `/api/recompute-estate-health` with header `x-recompute-secret`. The route runs `computeEstateHealthScore` and `detectConflicts` in the background so dashboard pages stay fast.
+
+**Required environment (staging + production):**
+
+| Variable | Purpose |
+|----------|---------|
+| `RECOMPUTE_SECRET` | Shared secret; must match on the caller and `/api/recompute-estate-health` |
+| `NEXT_PUBLIC_APP_URL` | Public app URL used for the server-to-server recompute `fetch` (e.g. `https://your-app.vercel.app`) |
+
+If either is missing in production, recompute is skipped and a **one-time** `console.warn` is emitted per process. Failed recompute attempts log `console.error` with `householdId`, HTTP status, and response snippet — search hosting logs (e.g. Vercel) for `[triggerEstateHealthRecompute]`.
+
+**Post-deploy smoke checklist (manual, ~5 min):**
+
+1. Log in as a test consumer with an existing household.
+2. Note dashboard estate health (or `estate_health_scores.computed_at` in Supabase).
+3. Add or edit one financial row (asset, income, or expense).
+4. Wait a few seconds; refresh dashboard — score or “last updated” should change.
+5. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
+6. Optional: accept or decline one advisor recommendation on the dashboard.
 
 ---
 
