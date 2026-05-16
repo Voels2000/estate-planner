@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 109 / strategy line items category + upsert index)
+# Last updated: May 16, 2026 (Session 110 / insurance POST recompute + advisor strategy upsert)
 
 ---
 
@@ -159,9 +159,10 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 ### Current
 
 - Advisor recommendation writes are unified:
-  - Canonical advisor write path: `/api/advisor/strategy-recommendation` (used by `StrategyOverlay` via `useRecommendStrategy` — does not write `strategy_configs`)
+  - Canonical advisor write path: `/api/advisor/strategy-recommendation` (used by `StrategyOverlay`, `AdvancedStrategyPanel`, `SLATILITPanel` — does not write `strategy_configs`)
   - Advisor recommendation reads: `/api/advisor/strategy-recommendations-read`
-- Consumer save/progress writes through `/api/strategy-line-items` (upsert on `household_id` + `strategy_source` + `source_role` + `scenario_name` when provided, else `scenario_name IS NULL`; e.g. multiple named gifting plans can coexist as separate rows).
+  - As of Session 110, advisor POST/DELETE use `lib/strategy/upsertStrategyLineItem.ts` (required `category`, `metric_target`, DB `confidence_level` enum, `afterHouseholdWrite` on write and soft-delete).
+- Consumer save/progress writes through `/api/strategy-line-items` (shared upsert in `lib/strategy/upsertStrategyLineItem.ts` on `household_id` + `strategy_source` + `source_role` + `scenario_name` when provided, else `scenario_name IS NULL`; ownership checked before write).
 - As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()`; estate health recompute runs server-side on accept/reject (Session 101).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
@@ -232,7 +233,8 @@ Runtime behavior:
 - As of Session 101, all consumer write routes and strategy-line-item writes share `lib/consumer/afterHouseholdWrite` (`touchHousehold` + `triggerEstateHealthRecompute` with `x-recompute-secret`). `/real-estate` and `/expenses` clients use `router.refresh()` only (no redundant client `loadData()` after save); server pages pass full row shapes including expense `start_month` / `end_month`.
 - As of Session 102, `/assets` and `/liabilities` follow the same server-prefetch pattern as `/real-estate` and `/income`: server `page.tsx` fetches rows + reference data; `_assets-client.tsx` / `_liabilities-client.tsx` hold UI state, patch from API responses on save, and call `router.refresh()`. Grouped table keys use `useMemo` on assets, liabilities, income, and expenses. Removed unused `app/api/assets/[id]` and orphan income table/modal components.
 - As of Session 103, `/real-estate`, `/expenses`, and `/income` clients also patch local state from consumer API JSON on save (same pattern as assets/liabilities). Consumer write routes use `requireOwnedHouseholdId` / `resolveOwnedHouseholdId` from `lib/consumer/afterHouseholdWrite.ts` instead of duplicated household queries. `triggerEstateHealthRecompute` logs misconfigured production env, HTTP failures, and network errors (recompute remains best-effort; saves are not blocked).
-- As of Session 104, all server-side recompute callers use `triggerHouseholdRecompute` / `getConsumerAppUrl()` (no empty `NEXT_PUBLIC_APP_URL` fallbacks). `afterHouseholdWriteForOwner` covers businesses and insurance writes; strategy-recommendation uses `resolveOwnedHouseholdId`; strategy-line-items PATCH triggers `afterHouseholdWrite` when status changes.
+- As of Session 104, all server-side recompute callers use `triggerHouseholdRecompute` / `getConsumerAppUrl()` (no empty `NEXT_PUBLIC_APP_URL` fallbacks). `afterHouseholdWriteForOwner` covers businesses and insurance PATCH/DELETE; strategy-recommendation uses `resolveOwnedHouseholdId`; strategy-line-items PATCH triggers `afterHouseholdWrite` when status changes.
+- As of Session 110, `POST /api/insurance` calls `afterHouseholdWriteForOwner` (aligned with `/api/insurance/[id]`). Advisor `POST`/`DELETE` on `/api/advisor/strategy-recommendation` call `afterHouseholdWrite`.
 - As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 - As of Session 106, profile saves go through `PATCH /api/consumer/profile` (`lib/profile/buildHouseholdPayload.ts`) with `afterHouseholdWrite` so estate health recompute runs after household/profile updates. `POST /api/businesses` uses `afterHouseholdWriteForOwner` (aligned with business PATCH/DELETE).
 - As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
@@ -467,6 +469,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 - `app/api/projection/route.ts`
 - `app/api/advisor/generate-base-case/route.ts`
+- `lib/strategy/upsertStrategyLineItem.ts` (shared strategy line item upsert for consumer and advisor routes)
 - `app/api/advisor/strategy-recommendation/route.ts`
 - `app/api/advisor/strategy-recommendations-read/route.ts`
 - `app/api/consumer/strategy-recommendation/route.ts`

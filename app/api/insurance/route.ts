@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -16,5 +17,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  await afterHouseholdWriteForOwner(supabase, user.id)
   return NextResponse.json(data)
 }

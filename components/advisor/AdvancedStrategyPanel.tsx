@@ -79,6 +79,10 @@ async function writeAdvisorRecommendation(input: StrategyLineItemInput) {
       confidenceLevel: toAdvisorConfidence(input.confidence_level),
       effectiveYear: input.effective_year ?? undefined,
       metadata: input.metadata ?? {},
+      category: input.category,
+      metric_target: input.metric_target,
+      scenario_id: input.scenario_id,
+      scenarioName: input.scenario_name ?? undefined,
     }),
   })
 }

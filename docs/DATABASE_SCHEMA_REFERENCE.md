@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 109 / strategy line items category + upsert index)
+# Last updated: May 16, 2026 (Session 110 / insurance POST recompute + advisor strategy upsert)
 
 ---
 
@@ -366,6 +366,15 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 110 Note
+
+- No database schema or migration changes were introduced in Session 110.
+- Application-layer changes:
+  - `POST /api/insurance` — `afterHouseholdWriteForOwner` after policy insert (PATCH/DELETE on `[id]` already had recompute).
+  - `lib/strategy/upsertStrategyLineItem.ts` — shared upsert for `/api/strategy-line-items` POST and `/api/advisor/strategy-recommendation` POST; maps advisor `low|medium|high` → `illustrative|probable|certain`.
+  - `/api/advisor/strategy-recommendation` POST/DELETE — `afterHouseholdWrite`; inserts include `category`, `metric_target`, `scenario_id`.
+  - `AdvancedStrategyPanel` passes `category`, `metric_target`, `scenario_id`, `scenarioName` on advisor recommend.
 
 ---
 
