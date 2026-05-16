@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 98 / Monte Carlo consumer acceptance UI + recompute wiring)
+# Last updated: May 15, 2026 (Session 99 / input recompute + gifting scenario comparison)
 
 ---
 
@@ -166,6 +166,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
+- As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). Comparison saves use the same `annual_gifting` / `consumer` upsert key as the primary plan, so only one active consumer gifting row is stored at a time unless the API gains multi-scenario support.
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately, then `POST /api/recompute-estate-health` (non-blocking) to refresh cached estate health scores.
 - **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`).
 - `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`), with the same refresh + recompute pattern.
@@ -227,6 +228,7 @@ Runtime behavior:
 - Pages render from stored snapshots for speed.
 - If stale, trigger background base-case regeneration.
 - As of Session 98, successful saves on `/real-estate` and `/liabilities` also fire non-blocking `POST /api/recompute-estate-health` so estate health scores stay aligned when gross estate or debt changes.
+- As of Session 99, the same non-blocking recompute pattern applies to `/assets`, `/income`, and `/expenses` (add/update/delete). Income and expenses server pages pass `householdId` into client components; assets resolves household id on save/delete in-page.
 
 ---
 

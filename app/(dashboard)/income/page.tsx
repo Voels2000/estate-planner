@@ -15,7 +15,7 @@ export default async function IncomePage() {
 
   const [{ data: income }, { data: household }, { data: incomeTypes }] = await Promise.all([
     supabase.from('income').select('*').eq('owner_id', user.id).neq('source', 'social_security').order('created_at', { ascending: false }),
-    supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
+    supabase.from('households').select('id, person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     supabase.from('income_types').select('value, label').eq('is_active', true).order('sort_order'),
   ])
 
@@ -23,6 +23,7 @@ export default async function IncomePage() {
     <IncomeClient
       income={income ?? []}
       ownerId={user.id}
+      householdId={household?.id ?? null}
       person1Name={displayPersonFirstName(household?.person1_name, 'Person 1')}
       person2Name={displayPersonFirstName(household?.person2_name, 'Person 2')}
       hasSpouse={household?.has_spouse ?? false}

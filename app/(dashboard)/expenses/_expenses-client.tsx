@@ -43,6 +43,7 @@ function expenseAppliesInYear(e: Expense, year: number): boolean {
 
 type ExpensesClientProps = {
   initialExpenses: Expense[]
+  householdId?: string | null
   expenseTypes: ExpenseType[]
   person1Name: string
   person2Name: string
@@ -50,8 +51,21 @@ type ExpensesClientProps = {
 
 const STORAGE_KEY = 'ep_expenses_groups'
 
+async function fireRecompute(householdId: string) {
+  try {
+    await fetch('/api/recompute-estate-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
 export default function ExpensesClient({
   initialExpenses,
+  householdId,
   expenseTypes,
   person1Name,
   person2Name,
@@ -105,7 +119,10 @@ export default function ExpensesClient({
     // Touch households.updated_at for staleness detection
     if (userId) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', userId)
     if (error) setError(error.message)
-    else setExpenses((prev) => prev.filter((e) => e.id !== id))
+    else {
+      setExpenses((prev) => prev.filter((e) => e.id !== id))
+      if (householdId) void fireRecompute(householdId)
+    }
     setConfirmDeleteId(null)
   }
 
@@ -286,6 +303,7 @@ export default function ExpensesClient({
       {showModal && (
         <ExpenseModal
           editExpense={editExpense}
+          householdId={householdId}
           expenseTypes={expenseTypes}
           person1Name={person1Name}
           person2Name={person2Name}
@@ -304,6 +322,7 @@ export default function ExpensesClient({
 
 function ExpenseModal({
   editExpense,
+  householdId,
   expenseTypes,
   person1Name,
   person2Name,
@@ -311,6 +330,7 @@ function ExpenseModal({
   onSave,
 }: {
   editExpense: Expense | null
+  householdId?: string | null
   expenseTypes: ExpenseType[]
   person1Name: string
   person2Name: string
@@ -387,6 +407,7 @@ function ExpenseModal({
         await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('owner_id', user.id)
         if (error) throw error
       }
+      if (householdId) void fireRecompute(householdId)
       onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))

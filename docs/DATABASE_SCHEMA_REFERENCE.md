@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 98 / Monte Carlo consumer banner + input recompute)
+# Last updated: May 15, 2026 (Session 99 / assets-income-expenses recompute + gifting comparison)
 
 ---
 
@@ -274,6 +274,13 @@ After each schema-affecting session:
   - New `components/consumer/MonteCarloScenarioBanner.tsx` and `lib/monte-carlo/consumerAssumptionScenarios.ts` for consumer MC scenario accept/revert UI.
   - `dashboard/page.tsx` and `my-estate-strategy/page.tsx` pre-fetch `advisor_projection_assumptions` for the banner.
   - `real-estate/_real-estate-client.tsx` and `liabilities/page.tsx` call `/api/recompute-estate-health` after successful add/update/delete.
+
+## Session 99 Note
+
+- No database schema or migration changes were introduced in Session 99.
+- Application-layer changes:
+  - `assets/page.tsx`, `income/_income-client.tsx`, and `expenses/_expenses-client.tsx` call non-blocking `POST /api/recompute-estate-health` after successful add/update/delete (`householdId` passed from server pages for income/expenses).
+  - `my-estate-trust-strategy/_client.tsx`: gifting **Compare a second scenario** UI (side-by-side comparison + save). Comparison and primary gifting saves both upsert `strategy_source='annual_gifting'`, `source_role='consumer'` — one active row per household for that key.
 
 ---
 

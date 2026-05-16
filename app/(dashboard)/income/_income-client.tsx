@@ -30,6 +30,7 @@ type IncomeType = { value: string; label: string }
 type Props = {
   income: IncomeRow[]
   ownerId: string
+  householdId?: string | null
   person1Name: string
   person2Name: string
   hasSpouse: boolean
@@ -37,6 +38,18 @@ type Props = {
 }
 
 const STORAGE_KEY = 'ep_income_groups'
+
+async function fireRecompute(householdId: string) {
+  try {
+    await fetch('/api/recompute-estate-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
 
 const inputClass = "block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
 
@@ -57,7 +70,15 @@ function incomeAppliesToYear(row: IncomeRow, year: number): boolean {
   return year >= start && year <= end
 }
 
-export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpouse, incomeTypes }: Props) {
+export function IncomeClient({
+  income,
+  ownerId,
+  householdId,
+  person1Name,
+  person2Name,
+  hasSpouse,
+  incomeTypes,
+}: Props) {
   const router = useRouter()
   const currentCalendarYear = new Date().getFullYear()
   const [modalOpen, setModalOpen]             = useState(false)
@@ -125,6 +146,7 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   async function handleDelete(id: string) {
     try {
       await deleteIncome(id, ownerId)
+      if (householdId) void fireRecompute(householdId)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
@@ -236,6 +258,7 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
         <IncomeModal
           editRow={editRow}
           ownerId={ownerId}
+          householdId={householdId}
           person1Name={person1Name}
           person2Name={person2Name}
           hasSpouse={hasSpouse}
@@ -248,9 +271,20 @@ export function IncomeClient({ income, ownerId, person1Name, person2Name, hasSpo
   )
 }
 
-function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, incomeTypes, onClose, onSuccess }: {
+function IncomeModal({
+  editRow,
+  ownerId,
+  householdId,
+  person1Name,
+  person2Name,
+  hasSpouse,
+  incomeTypes,
+  onClose,
+  onSuccess,
+}: {
   editRow: IncomeRow | null
   ownerId: string
+  householdId?: string | null
   person1Name: string
   person2Name: string
   hasSpouse: boolean
@@ -311,6 +345,7 @@ function IncomeModal({ editRow, ownerId, person1Name, person2Name, hasSpouse, in
       } else {
         await addIncome(ownerId, payload)
       }
+      if (householdId) void fireRecompute(householdId)
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : JSON.stringify(err))

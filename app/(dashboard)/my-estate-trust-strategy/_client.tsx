@@ -165,6 +165,15 @@ export default function MyEstateTrustStrategyClient({
     type: 'success' | 'error'
     text: string
   } | null>(null)
+  const [showScenarioComparison, setShowScenarioComparison] = useState(false)
+  const [comparisonLabel, setComparisonLabel] = useState('Conservative Plan')
+  const [comparisonAnnualGifting, setComparisonAnnualGifting] = useState<number | null>(null)
+  const [comparisonYears, setComparisonYears] = useState(5)
+  const [comparisonSaving, setComparisonSaving] = useState(false)
+  const [comparisonSaveMessage, setComparisonSaveMessage] = useState<{
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
   const [removingStrategy, setRemovingStrategy] = useState<string | null>(null)
   const [removeMessage, setRemoveMessage] = useState<{
     type: 'success' | 'error'
@@ -322,6 +331,47 @@ export default function MyEstateTrustStrategyClient({
       setGiftingSaveMessage({ type: 'error', text: 'Unexpected error — please try again.' })
     } finally {
       setGiftingSaving(false)
+    }
+  }
+
+  async function handleSaveComparisonScenario() {
+    const amount = (comparisonAnnualGifting ?? annualGifting) * comparisonYears
+    if (amount <= 0) return
+    setComparisonSaving(true)
+    setComparisonSaveMessage(null)
+    try {
+      const res = await fetch('/api/strategy-line-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: householdId,
+          strategy_source: 'annual_gifting',
+          source_role: 'consumer',
+          amount,
+          sign: -1,
+          confidence_level: 'probable',
+          effective_year: new Date().getFullYear(),
+          scenario_name: comparisonLabel.trim() || 'Alternative Gifting Plan',
+        }),
+      })
+      if (res.ok) {
+        setComparisonSaveMessage({ type: 'success', text: 'Comparison scenario saved.' })
+        router.refresh()
+        void fireRecompute()
+      } else {
+        const data = await res.json()
+        setComparisonSaveMessage({
+          type: 'error',
+          text: data.error ?? 'Failed to save.',
+        })
+      }
+    } catch {
+      setComparisonSaveMessage({
+        type: 'error',
+        text: 'Unexpected error — please try again.',
+      })
+    } finally {
+      setComparisonSaving(false)
     }
   }
 
@@ -515,6 +565,146 @@ export default function MyEstateTrustStrategyClient({
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Scenario comparison */}
+            <div className="border-t border-neutral-200 pt-4 mt-2">
+              <button
+                type="button"
+                onClick={() => setShowScenarioComparison((s) => !s)}
+                className="text-sm font-medium text-blue-600 hover:text-blue-800 underline underline-offset-2"
+              >
+                {showScenarioComparison ? '▲ Hide comparison' : '▼ Compare a second scenario'}
+              </button>
+
+              {showScenarioComparison && (
+                <div className="mt-4 space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="sm:col-span-3">
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Scenario name
+                      </label>
+                      <input
+                        type="text"
+                        value={comparisonLabel}
+                        onChange={(e) => setComparisonLabel(e.target.value)}
+                        placeholder="e.g. Conservative Plan"
+                        maxLength={60}
+                        className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 sm:max-w-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Annual gift amount ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={comparisonAnnualGifting ?? annualGifting}
+                        onChange={(e) =>
+                          setComparisonAnnualGifting(Math.max(0, Number(e.target.value) || 0))
+                        }
+                        className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Years of gifting
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="40"
+                        step="1"
+                        value={comparisonYears}
+                        onChange={(e) =>
+                          setComparisonYears(Math.max(1, Math.min(40, Number(e.target.value) || 1)))
+                        }
+                        className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                      />
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <p className="mb-1 text-xs text-neutral-500">Total reduction</p>
+                      <p className="text-2xl font-bold tabular-nums text-blue-600">
+                        {formatDollars((comparisonAnnualGifting ?? annualGifting) * comparisonYears)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                    <div>
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                        {giftingScenarioLabel || 'Primary Plan'}
+                      </p>
+                      <p className="text-xl font-bold text-green-600">
+                        {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        {formatDollars(effectiveAnnualGifting)} × {effectiveGiftingYears} yr
+                        {effectiveGiftingYears !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="border-l border-neutral-200 pl-3">
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                        {comparisonLabel || 'Alternative Plan'}
+                      </p>
+                      <p className="text-xl font-bold text-blue-600">
+                        {formatDollars((comparisonAnnualGifting ?? annualGifting) * comparisonYears)}
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        {formatDollars(comparisonAnnualGifting ?? annualGifting)} × {comparisonYears}{' '}
+                        yr{comparisonYears !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="col-span-2 border-t border-neutral-200 pt-3 mt-1">
+                      <p className="text-xs text-neutral-500">
+                        Difference:{' '}
+                        <span
+                          className={`font-semibold ${
+                            (comparisonAnnualGifting ?? annualGifting) * comparisonYears >
+                            effectiveAnnualGifting * effectiveGiftingYears
+                              ? 'text-blue-600'
+                              : 'text-green-600'
+                          }`}
+                        >
+                          {formatDollars(
+                            Math.abs(
+                              (comparisonAnnualGifting ?? annualGifting) * comparisonYears -
+                                effectiveAnnualGifting * effectiveGiftingYears,
+                            ),
+                          )}{' '}
+                          {(comparisonAnnualGifting ?? annualGifting) * comparisonYears >
+                          effectiveAnnualGifting * effectiveGiftingYears
+                            ? 'more in alternative'
+                            : 'more in primary'}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveComparisonScenario()}
+                      disabled={
+                        comparisonSaving ||
+                        (comparisonAnnualGifting ?? annualGifting) * comparisonYears <= 0
+                      }
+                      className="inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {comparisonSaving ? 'Saving…' : 'Save comparison to plan →'}
+                    </button>
+                  </div>
+                  {comparisonSaveMessage && (
+                    <p
+                      className={`text-xs ${comparisonSaveMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}
+                    >
+                      {comparisonSaveMessage.text}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </CollapsibleSection>
         </div>

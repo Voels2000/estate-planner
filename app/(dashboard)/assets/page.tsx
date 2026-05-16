@@ -70,6 +70,18 @@ type Asset = {
 
 const STORAGE_KEY = 'ep_assets_groups'
 
+async function fireRecompute(householdId: string) {
+  try {
+    await fetch('/api/recompute-estate-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ householdId }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
 export default function AssetsPage() {
   const [person1Name, setPerson1Name] = useState('Person 1')
   const [person2Name, setPerson2Name] = useState('Person 2')
@@ -135,7 +147,10 @@ export default function AssetsPage() {
     const { error } = await supabase.from('assets').delete().eq('id', id)
     if (!error && user?.id) {
       const { data: hh } = await supabase.from('households').select('id').eq('owner_id', user.id).single()
-      if (hh?.id) await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+      if (hh?.id) {
+        await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', hh.id)
+        void fireRecompute(hh.id)
+      }
     }
     if (error) setError(error.message)
     else setAssets((prev) => prev.filter((a) => a.id !== id))
@@ -404,6 +419,7 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
       }
       if (household?.id) {
         await supabase.from('households').update({ updated_at: new Date().toISOString() }).eq('id', household.id)
+        void fireRecompute(household.id)
       }
       onSave()
     } catch (err) {
