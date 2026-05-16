@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 107 / health check + household people APIs)
+# Last updated: May 15, 2026 (Session 108 / titling beneficiaries + allocation + e2e smoke)
 
 ---
 
@@ -345,6 +345,15 @@ After each schema-affecting session:
 - Application-layer changes:
   - `PUT /api/consumer/estate-health-check` — upserts `estate_health_check`; `afterHouseholdWrite`; `_health-check-client.tsx` no longer writes via Supabase client.
   - `POST` / `PATCH` / `DELETE` `/api/consumer/household-people` — CRUD on `household_people` with ownership checks; `lib/family/householdPeople.ts` shared payload/GST helpers; `_my-family-client.tsx` uses consumer API + `router.refresh()`.
+
+## Session 108 Note
+
+- No database schema or migration changes were introduced in Session 108.
+- Application-layer changes:
+  - `POST` / `PATCH` / `DELETE` `/api/consumer/asset-beneficiaries` and `POST …/bulk` — beneficiary CRUD; `lib/titling/assetBeneficiaries.ts`; updates `households.last_beneficiary_review`; `_titling-client.tsx` beneficiary paths use API (titling table writes still client-side for Phase B).
+  - `PATCH /api/consumer/allocation-targets` — `households.target_*_pct` with sum-to-100 validation; `_allocation-client.tsx` + server prefetch on `/allocation`.
+  - `POST /api/consumer/generate-base-case` — `afterHouseholdWrite` after successful `generateBaseCase`.
+  - `tests/e2e/consumer/consumer-api-writes.spec.ts` — API smoke for allocation, health check, optional base-case generation.
 
 ---
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateBaseCase } from '@/lib/actions/generate-base-case'
+import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,5 +27,8 @@ export async function POST(request: Request) {
   if ('error' in result) {
     return NextResponse.json({ error: result.error }, { status: 500 })
   }
+
+  await afterHouseholdWrite(supabase, householdId)
+
   return NextResponse.json({ success: true, scenarioId: result.scenarioId })
 }

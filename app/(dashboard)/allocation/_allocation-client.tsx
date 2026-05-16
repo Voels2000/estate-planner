@@ -1,7 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+export type AllocationTargets = {
+  target_stocks_pct: number
+  target_bonds_pct: number
+  target_cash_pct: number
+} | null
 
 interface Benchmark { stocks: number; bonds: number; cash: number }
 interface AllocationData {
@@ -113,16 +119,23 @@ function BarRow({ label, current, target, color }: { label: string; current: num
   )
 }
 
-export default function AllocationClient({ userTier: _userTier }: { userTier: number }) {
+export default function AllocationClient({
+  userTier: _userTier,
+  initialTargets,
+}: {
+  userTier: number
+  initialTargets: AllocationTargets
+}) {
   void _userTier
+  const router = useRouter()
   const [data, setData] = useState<AllocationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Target mix sliders
-  const [stocks, setStocks] = useState(60)
-  const [bonds,  setBonds]  = useState(30)
-  const [cash,   setCash]   = useState(10)
+  const [stocks, setStocks] = useState(initialTargets?.target_stocks_pct ?? 60)
+  const [bonds,  setBonds]  = useState(initialTargets?.target_bonds_pct ?? 30)
+  const [cash,   setCash]   = useState(initialTargets?.target_cash_pct ?? 10)
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -131,29 +144,29 @@ export default function AllocationClient({ userTier: _userTier }: { userTier: nu
   const valid = Math.abs(total - 100) < 0.01
 
   useEffect(() => {
-    // Load allocation data and saved target mix in parallel
-    Promise.all([
-      fetch('/api/asset-allocation').then(r => r.json()),
-      createClient().auth.getUser().then(({ data: { user } }) => {
-        if (!user) return null
-        return createClient()
-          .from('households')
-          .select('target_stocks_pct, target_bonds_pct, target_cash_pct')
-          .eq('owner_id', user.id)
-          .single()
-          .then(({ data }) => data)
+    fetch('/api/asset-allocation')
+      .then(r => r.json())
+      .then(allocData => {
+        if (allocData.error) {
+          setError(allocData.error)
+        } else {
+          setData(allocData)
+        }
+        setLoading(false)
       })
-    ]).then(([allocData, targetData]) => {
-      if (allocData.error) { setError(allocData.error); setLoading(false); return }
-      setData(allocData)
-      if (targetData?.target_stocks_pct != null) {
-        setStocks(targetData.target_stocks_pct)
-        setBonds(targetData.target_bonds_pct ?? 30)
-        setCash(targetData.target_cash_pct ?? 10)
-      }
-      setLoading(false)
-    }).catch(() => { setError('Failed to load data'); setLoading(false) })
+      .catch(() => {
+        setError('Failed to load data')
+        setLoading(false)
+      })
   }, [])
+
+  useEffect(() => {
+    if (initialTargets?.target_stocks_pct != null) {
+      setStocks(initialTargets.target_stocks_pct)
+      setBonds(initialTargets.target_bonds_pct ?? 30)
+      setCash(initialTargets.target_cash_pct ?? 10)
+    }
+  }, [initialTargets])
 
   function normalize() {
     if (total <= 0) return
@@ -167,19 +180,25 @@ export default function AllocationClient({ userTier: _userTier }: { userTier: nu
     if (!valid) return
     setSaving(true); setSaveError(null)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setSaveError('Not logged in'); return }
-      const { error } = await supabase
-        .from('households')
-        .update({ target_stocks_pct: stocks, target_bonds_pct: bonds, target_cash_pct: cash })
-        .eq('owner_id', user.id)
-      if (error) { setSaveError(error.message); return }
+      const res = await fetch('/api/consumer/allocation-targets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_stocks_pct: stocks,
+          target_bonds_pct: bonds,
+          target_cash_pct: cash,
+        }),
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setSaveError(payload.error ?? 'Failed to save')
+        return
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-      // Refresh allocation data so drift bars update immediately
       const fresh = await fetch('/api/asset-allocation').then(r => r.json())
       if (!fresh.error) setData(fresh)
+      router.refresh()
     } finally {
       setSaving(false)
     }

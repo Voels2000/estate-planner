@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 107 / health check + household people APIs)
+# Last updated: May 15, 2026 (Session 108 / titling beneficiaries + allocation + e2e smoke)
 
 ---
 
@@ -236,6 +236,7 @@ Runtime behavior:
 - As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 - As of Session 106, profile saves go through `PATCH /api/consumer/profile` (`lib/profile/buildHouseholdPayload.ts`) with `afterHouseholdWrite` so estate health recompute runs after household/profile updates. `POST /api/businesses` uses `afterHouseholdWriteForOwner` (aligned with business PATCH/DELETE).
 - As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
+- As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`.
 
 ---
 
@@ -258,8 +259,12 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 2. Note dashboard estate health (or `estate_health_scores.computed_at` in Supabase).
 3. Add or edit one financial row (asset, income, or expense).
 4. Wait a few seconds; refresh dashboard — score or “last updated” should change.
-5. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
-6. Optional: accept or decline one advisor recommendation on the dashboard.
+5. Optional: add or edit a beneficiary on `/titling`; refresh dashboard — beneficiary-related score/gaps should update.
+6. Optional: save target allocation on `/allocation` (sliders must sum to 100%).
+7. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
+8. Optional: accept or decline one advisor recommendation on the dashboard.
+
+**Automated smoke (CI / local):** run consumer Playwright project (`npx playwright test --project=consumer`). Requires `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, and optional `PLAYWRIGHT_HOUSEHOLD_ID` for generate-base-case.
 
 ---
 

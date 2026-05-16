@@ -30,5 +30,20 @@ export default async function AssetAllocationPage() {
     )
   }
 
-  return <AllocationClient userTier={access.tier} />
+  const { data: household } = await supabase
+    .from('households')
+    .select('target_stocks_pct, target_bonds_pct, target_cash_pct')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
+  const initialTargets =
+    household?.target_stocks_pct != null
+      ? {
+          target_stocks_pct: household.target_stocks_pct,
+          target_bonds_pct: household.target_bonds_pct ?? 30,
+          target_cash_pct: household.target_cash_pct ?? 10,
+        }
+      : null
+
+  return <AllocationClient userTier={access.tier} initialTargets={initialTargets} />
 }

@@ -668,18 +668,13 @@ export default function TitlingClient({
     await refreshConflicts()
   }
 
-  async function touchLastBeneficiaryReview() {
-    if (!householdId) return
-    const supabase = createClient()
-    await supabase
-      .from('households')
-      .update({ last_beneficiary_review: new Date().toISOString() })
-      .eq('id', householdId)
-  }
-
   async function handleDeleteBeneficiary(id: string) {
-    const supabase = createClient()
-    await supabase.from('asset_beneficiaries').delete().eq('id', id)
+    const res = await fetch('/api/consumer/asset-beneficiaries', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) return
     await refreshTitlingData()
   }
 
@@ -1073,7 +1068,6 @@ export default function TitlingClient({
           householdPeopleEmpty={householdPeople.length === 0}
           onClose={() => setBeneficiaryModal(null)}
           onSave={async () => {
-            await touchLastBeneficiaryReview()
             await refreshTitlingData()
             setBeneficiaryModal(null)
           }}
@@ -1092,7 +1086,6 @@ export default function TitlingClient({
           descendantsOrdered={descendantsOrdered}
           onClose={() => setGapModalOpen(false)}
           onApplied={async () => {
-            await touchLastBeneficiaryReview()
             await refreshTitlingData()
             setGapModalOpen(false)
           }}
@@ -1783,18 +1776,18 @@ function BeneficiaryGapModal({
     setError(null)
     setIsSubmitting(true)
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        setError('You must be signed in to apply defaults.')
-        return
-      }
-
       const working = [...beneficiaries]
-      let appliedCount = 0
+      const bulkItems: Record<string, unknown>[] = []
       const applyErrors: string[] = []
+
+      function entityRefForRow(row: GapItem) {
+        return {
+          asset_id: row.kind === 'asset' ? row.id : null,
+          real_estate_id: row.kind === 're' ? row.id : null,
+          insurance_policy_id: row.kind === 'insurance' ? row.id : null,
+          business_id: row.kind === 'business' ? row.id : null,
+        }
+      }
 
       for (const row of items) {
         const key = gapItemKey(row)
@@ -1807,29 +1800,16 @@ function BeneficiaryGapModal({
           if (resolved) {
             const rem = remainingPct(working, row.kind, row.id, 'primary')
             if (rem > 0.01) {
-              const payload = {
-                beneficiary_type: 'primary' as const,
+              bulkItems.push({
+                ...entityRefForRow(row),
+                beneficiary_type: 'primary',
                 full_name: resolved.fullName,
                 relationship: resolved.relationship,
-                email: null as string | null,
-                phone: null as string | null,
+                email: null,
+                phone: null,
                 allocation_pct: rem,
                 is_gst_skip: resolved.isGst,
-                updated_at: new Date().toISOString(),
-              }
-              const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
-                ...payload,
-                owner_id: user.id,
-                asset_id: row.kind === 'asset' ? row.id : null,
-                real_estate_id: row.kind === 're' ? row.id : null,
-                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
-                business_id: row.kind === 'business' ? row.id : null,
               })
-              if (insErr) {
-                applyErrors.push(`${row.name} (primary): ${insErr.message}`)
-              } else {
-                appliedCount += 1
-              }
               working.push({
                 id: `temp-${row.id}-p`,
                 asset_id: row.kind === 'asset' ? row.id : null,
@@ -1859,29 +1839,16 @@ function BeneficiaryGapModal({
               if (already) continue
               const pct = parseFloat(cr.allocationPct)
               if (!Number.isFinite(pct) || pct <= 0) continue
-              const payload = {
-                beneficiary_type: 'contingent' as const,
+              bulkItems.push({
+                ...entityRefForRow(row),
+                beneficiary_type: 'contingent',
                 full_name: resolved.fullName,
                 relationship: resolved.relationship,
-                email: null as string | null,
-                phone: null as string | null,
+                email: null,
+                phone: null,
                 allocation_pct: pct,
                 is_gst_skip: resolved.isGst,
-                updated_at: new Date().toISOString(),
-              }
-              const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
-                ...payload,
-                owner_id: user.id,
-                asset_id: row.kind === 'asset' ? row.id : null,
-                real_estate_id: row.kind === 're' ? row.id : null,
-                insurance_policy_id: row.kind === 'insurance' ? row.id : null,
-                business_id: row.kind === 'business' ? row.id : null,
               })
-              if (insErr) {
-                applyErrors.push(`${row.name} (contingent): ${insErr.message}`)
-                continue
-              }
-              appliedCount += 1
               working.push({
                 id: `temp-${row.id}-c-${cr.householdPersonId}`,
                 asset_id: row.kind === 'asset' ? row.id : null,
@@ -1902,29 +1869,16 @@ function BeneficiaryGapModal({
             if (resolved) {
               const rem = remainingPct(working, row.kind, row.id, 'contingent')
               if (rem > 0.01) {
-                const payload = {
-                  beneficiary_type: 'contingent' as const,
+                bulkItems.push({
+                  ...entityRefForRow(row),
+                  beneficiary_type: 'contingent',
                   full_name: resolved.fullName,
                   relationship: resolved.relationship,
-                  email: null as string | null,
-                  phone: null as string | null,
+                  email: null,
+                  phone: null,
                   allocation_pct: rem,
                   is_gst_skip: resolved.isGst,
-                  updated_at: new Date().toISOString(),
-                }
-                const { error: insErr } = await supabase.from('asset_beneficiaries').insert({
-                  ...payload,
-                  owner_id: user.id,
-                  asset_id: row.kind === 'asset' ? row.id : null,
-                  real_estate_id: row.kind === 're' ? row.id : null,
-                  insurance_policy_id: row.kind === 'insurance' ? row.id : null,
-                  business_id: row.kind === 'business' ? row.id : null,
                 })
-                if (insErr) {
-                  applyErrors.push(`${row.name} (contingent): ${insErr.message}`)
-                } else {
-                  appliedCount += 1
-                }
                 working.push({
                   id: `temp-${row.id}-c`,
                   asset_id: row.kind === 'asset' ? row.id : null,
@@ -1945,10 +1899,26 @@ function BeneficiaryGapModal({
         }
       }
 
-      if (appliedCount > 0) {
-        await onApplied()
-        return
+      if (bulkItems.length > 0) {
+        const res = await fetch('/api/consumer/asset-beneficiaries/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: bulkItems }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error ?? 'Failed to apply defaults')
+          return
+        }
+        if (data.errors?.length) {
+          applyErrors.push(...data.errors)
+        }
+        if (data.appliedCount > 0) {
+          await onApplied()
+          return
+        }
       }
+
       if (applyErrors.length > 0) {
         setError(`No defaults were applied. ${applyErrors.slice(0, 3).join(' | ')}`)
       } else {
@@ -2331,12 +2301,7 @@ function BeneficiaryModal({
     }
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
-      const payload = {
+      const body = {
         beneficiary_type: beneficiaryType,
         full_name: fullNameOut,
         relationship: relationshipOut,
@@ -2344,21 +2309,19 @@ function BeneficiaryModal({
         phone: phone.trim() || null,
         allocation_pct: pct,
         is_gst_skip: isGstSkip,
-        updated_at: new Date().toISOString(),
+        asset_id: kind === 'asset' ? id : null,
+        real_estate_id: kind === 're' ? id : null,
+        insurance_policy_id: kind === 'insurance' ? id : null,
+        business_id: kind === 'business' ? id : null,
       }
-      if (existing) {
-        const { error } = await supabase.from('asset_beneficiaries').update(payload).eq('id', existing.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('asset_beneficiaries').insert({
-          ...payload,
-          owner_id: user.id,
-          asset_id: kind === 'asset' ? id : null,
-          real_estate_id: kind === 're' ? id : null,
-          insurance_policy_id: kind === 'insurance' ? id : null,
-          business_id: kind === 'business' ? id : null,
-        })
-        if (error) throw error
+      const res = await fetch('/api/consumer/asset-beneficiaries', {
+        method: existing ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(existing ? { id: existing.id, ...body } : body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save beneficiary')
       }
       await onSave()
     } catch (err) {
