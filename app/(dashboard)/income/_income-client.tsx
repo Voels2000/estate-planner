@@ -5,7 +5,7 @@
 // Route: /income
 // ─────────────────────────────────────────
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 type IncomeRow = {
   id: string
@@ -92,18 +92,21 @@ export function IncomeClient({
     return sourceLabel(row.source, incomeTypes)
   }
 
-  const grouped = income.reduce<Record<string, IncomeRow[]>>((acc, row) => {
-    const key = row.source || 'other'
-    if (!acc[key]) acc[key] = []
-    acc[key].push(row)
-    return acc
-  }, {})
-
-  const groupKeys = Object.keys(grouped).sort((a, b) => sourceLabel(a, incomeTypes).localeCompare(sourceLabel(b, incomeTypes)))
-
-  groupKeys.forEach((key) => {
-    grouped[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
-  })
+  const { grouped, groupKeys } = useMemo(() => {
+    const g = income.reduce<Record<string, IncomeRow[]>>((acc, row) => {
+      const key = row.source || 'other'
+      if (!acc[key]) acc[key] = []
+      acc[key].push(row)
+      return acc
+    }, {})
+    const keys = Object.keys(g).sort((a, b) =>
+      sourceLabel(a, incomeTypes).localeCompare(sourceLabel(b, incomeTypes))
+    )
+    keys.forEach((key) => {
+      g[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+    })
+    return { grouped: g, groupKeys: keys }
+  }, [income, incomeTypes])
 
   useEffect(() => {
     try {

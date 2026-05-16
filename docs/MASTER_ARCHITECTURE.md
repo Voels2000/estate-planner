@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 15, 2026 (Session 101 / centralized household write side effects)
+# Last updated: May 15, 2026 (Session 102 / server-prefetch financial pages)
 
 ---
 
@@ -230,6 +230,7 @@ Runtime behavior:
 - If stale, trigger background base-case regeneration.
 - As of Session 100, consumer financial input writes are normalized through `/api/consumer/*` routes (`assets`, `real-estate`, `liabilities`, `income`, `expenses`). Dashboard clients call these routes only — no inline household re-fetch or client-side recompute on those pages.
 - As of Session 101, all consumer write routes and strategy-line-item writes share `lib/consumer/afterHouseholdWrite` (`touchHousehold` + `triggerEstateHealthRecompute` with `x-recompute-secret`). `/real-estate` and `/expenses` clients use `router.refresh()` only (no redundant client `loadData()` after save); server pages pass full row shapes including expense `start_month` / `end_month`.
+- As of Session 102, `/assets` and `/liabilities` follow the same server-prefetch pattern as `/real-estate` and `/income`: server `page.tsx` fetches rows + reference data; `_assets-client.tsx` / `_liabilities-client.tsx` hold UI state, patch from API responses on save, and call `router.refresh()`. Grouped table keys use `useMemo` on assets, liabilities, income, and expenses. Removed unused `app/api/assets/[id]` and orphan income table/modal components.
 
 ---
 

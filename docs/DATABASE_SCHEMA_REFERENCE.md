@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 15, 2026 (Session 101 / afterHouseholdWrite + server recompute)
+# Last updated: May 15, 2026 (Session 102 / server-prefetch financial pages)
 
 ---
 
@@ -300,6 +300,14 @@ After each schema-affecting session:
   - `/api/strategy-line-items` POST/DELETE and `/api/consumer/strategy-recommendation` PATCH/DELETE now call `afterHouseholdWrite` (fixes client recompute calls that lacked `x-recompute-secret`).
   - Removed client-side `/api/recompute-estate-health` from trust-strategy client, `CharitableGivingDashboard`, and `StrategyRecommendationPanel`.
   - `expenses/page.tsx` server select includes `start_month` / `end_month`; real-estate and expenses clients sync props from server refresh without post-save `loadData()`.
+
+## Session 102 Note
+
+- No database schema or migration changes were introduced in Session 102.
+- Application-layer changes:
+  - `/assets` and `/liabilities`: split into server `page.tsx` + `_assets-client.tsx` / `_liabilities-client.tsx` (no client mount `loadData()`); save handlers patch local state from API JSON then `router.refresh()`.
+  - `useMemo` for grouped row keys on assets, liabilities, income, and expenses clients.
+  - Deleted unused `app/api/assets/[id]/route.ts` and orphan `income/_add-income-modal.tsx`, `income/_income-table.tsx`.
 
 ---
 

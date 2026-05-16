@@ -5,7 +5,7 @@
 // Route: /expenses
 // ─────────────────────────────────────────
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 type ExpenseType = { value: string; label: string }
@@ -110,18 +110,19 @@ export default function ExpensesClient({
     return expenseTypes.find((t) => t.value === value)?.label ?? value
   }
 
-  const grouped = expenses.reduce<Record<string, Expense[]>>((acc, expense) => {
-    const key = expense.category || 'other'
-    if (!acc[key]) acc[key] = []
-    acc[key].push(expense)
-    return acc
-  }, {})
-
-  const groupKeys = Object.keys(grouped).sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b)))
-
-  groupKeys.forEach((key) => {
-    grouped[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
-  })
+  const { grouped, groupKeys } = useMemo(() => {
+    const g = expenses.reduce<Record<string, Expense[]>>((acc, expense) => {
+      const key = expense.category || 'other'
+      if (!acc[key]) acc[key] = []
+      acc[key].push(expense)
+      return acc
+    }, {})
+    const keys = Object.keys(g).sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b)))
+    keys.forEach((key) => {
+      g[key].sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+    })
+    return { grouped: g, groupKeys: keys }
+  }, [expenses, expenseTypes])
 
   useEffect(() => {
     try {
