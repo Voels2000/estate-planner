@@ -14,6 +14,11 @@ import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/ho
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import {
+  FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL,
+  HEADROOM_BEFORE_FEDERAL_TAX_LABEL,
+  LIFETIME_GIFTS_USED_LABEL,
+} from '@/lib/estate/exemptionLabels'
 import { formatDollars } from '@/lib/utils/formatCurrency'
 
 type Horizons = MyEstateStrategyHorizonsResult
@@ -248,7 +253,7 @@ export default function MyEstateStrategyClient({
                     <div className="mt-4 space-y-3 text-sm">
                       <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
                       <div className="flex justify-between items-baseline gap-2">
-                        <span className="text-neutral-500">Lifetime gifts used</span>
+                        <span className="text-neutral-500">{LIFETIME_GIFTS_USED_LABEL}</span>
                         {lifetimeGiftsUsed > 0 ? (
                           <Link
                             href="/my-estate-trust-strategy?tab=gifting"
@@ -262,7 +267,10 @@ export default function MyEstateStrategyClient({
                           </span>
                         )}
                       </div>
-                      <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
+                      <MetricRow
+                        label={FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}
+                        value={fmtEst(col.federalExemption)}
+                      />
                       <MetricRow label="Federal estate tax exposure" value={fmtEst(col.federalExposure)} />
                       <MetricRow label="Federal estate tax estimate" value={fmtEst(col.federalTaxEstimate)} />
                       <div className="my-3 border-t border-neutral-200" />
@@ -309,7 +317,7 @@ export default function MyEstateStrategyClient({
                           col.insideTotal != null &&
                           col.federalExemption - col.insideTotal > 0 && (
                             <div className="flex justify-between text-xs">
-                              <span className="text-neutral-500">Exemption remaining</span>
+                              <span className="text-neutral-500">{HEADROOM_BEFORE_FEDERAL_TAX_LABEL}</span>
                               <span className="font-medium text-green-700">
                                 {fmtEst(col.federalExemption - col.insideTotal)}
                               </span>

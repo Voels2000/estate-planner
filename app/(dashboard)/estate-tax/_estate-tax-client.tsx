@@ -27,6 +27,10 @@ import {
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import type { EstateComposition } from '@/lib/estate/types'
+import {
+  FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL,
+  HEADROOM_BEFORE_FEDERAL_TAX_LABEL,
+} from '@/lib/estate/exemptionLabels'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -447,7 +451,7 @@ export default function EstateTaxClient({
                 sub="From your estate composition snapshot"
               />
               <SummaryCard
-                label="Federal Exemption"
+                label={FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}
                 value={formatDollars(federalExemptionDisplay)}
                 sub={
                   (composition?.lifetime_gifts_used ?? 0) > 0
@@ -479,21 +483,12 @@ export default function EstateTaxClient({
                   a consideration only when taxable estate exceeds that amount.
                 </p>
                 {composition && composition.exemption_remaining > 0 && (
-                  <div className="mt-3 rounded-lg border border-green-200/80 bg-white/60 px-3 py-2.5 text-green-900">
-                    <p className="font-semibold text-green-800">
-                      Headroom before federal estate tax:{' '}
-                      <span className="tabular-nums">{formatDollars(composition.exemption_remaining)}</span>
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-green-800/90">
-                      {formatDollars(federalExemptionDisplay)} available federal exemption
-                      {(composition.lifetime_gifts_used ?? 0) > 0 && (
-                        <> (after {formatDollars(composition.lifetime_gifts_used!)} lifetime gifts)</>
-                      )}
-                      {' '}minus {formatDollars(taxableEstateDisplay)} taxable estate. Room left before
-                      federal estate tax is estimated — not the same as unused lifetime gift credit on
-                      the Gifting tab.
-                    </p>
-                  </div>
+                  <p className="mt-2 text-sm text-green-800">
+                    <span className="font-semibold">{HEADROOM_BEFORE_FEDERAL_TAX_LABEL}:</span>{' '}
+                    <span className="tabular-nums font-semibold">
+                      {formatDollars(composition.exemption_remaining)}
+                    </span>
+                  </p>
                 )}
               </div>
             )}

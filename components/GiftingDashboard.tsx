@@ -4,7 +4,11 @@ import { useEffect, useState, useRef, Fragment, useCallback, useMemo } from 'rea
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
-import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
+import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards'
+import {
+  LIFETIME_EXEMPTION_REMAINING_LABEL,
+  LIFETIME_GIFTS_USED_LABEL,
+} from '@/lib/estate/exemptionLabels';
 
 interface GiftingDashboardProps {
   householdId: string;
@@ -495,7 +499,9 @@ export default function GiftingDashboard({
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Lifetime Exemption Used</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                {LIFETIME_GIFTS_USED_LABEL}
+              </p>
               <div className="flex items-end justify-between mb-3">
                 <span className="text-2xl font-bold text-gray-900">{fmt$(lifetimeUsedDisplay)}</span>
                 <span className="text-sm text-gray-500">of {fmt$(summary.total_exemption)}</span>
@@ -504,7 +510,8 @@ export default function GiftingDashboard({
                 <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${lifetimePct}%` }} />
               </div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold text-green-600">{fmt$(lifetimeRemainingDisplay)}</span> remaining
+                <span className="font-semibold text-green-600">{fmt$(lifetimeRemainingDisplay)}</span>{' '}
+                {LIFETIME_EXEMPTION_REMAINING_LABEL.toLowerCase()}
                 {summary.filing_status === 'mfj' ? ' (combined MFJ)' : ''}
               </p>
               {annualOverflowToLifetime > 0 && (

@@ -10,13 +10,17 @@
 //   • Liquid vs Illiquid sub-breakdown
 //   • Outside — completed structural transfers (estate_inclusion_status != 'included')
 //   • Outside — advisor-recommended strategies (strategy_line_items)
-//   • Exemption remaining
+//   • Federal exemption (after gifts) + headroom before federal tax
 //   • Three-tier metric row: Gross / Net / Taxable
 //
 // Confidence badges on strategy items: certain (green) / probable (blue) / illustrative (gray)
 
 import { useEffect, useState } from 'react'
 import type { EstateComposition, OutsideStructureItem, OutsideStrategyItem } from '@/lib/estate/types'
+import {
+  FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL,
+  HEADROOM_BEFORE_FEDERAL_TAX_LABEL,
+} from '@/lib/estate/exemptionLabels'
 
 const fmt = (n: number | null | undefined) =>
   n == null ? '—' : `$${Math.round(n).toLocaleString()}`
@@ -309,22 +313,15 @@ export default function EstateCompositionCard({
           {/* Federal exemption headroom */}
           <div className="pt-2 border-t border-gray-100 space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-500">
-                Federal exemption
-                {(lifetime_gifts_used ?? 0) > 0 ? ' (after gifts)' : ''}
-              </span>
+              <span className="text-gray-500">{FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}</span>
               <span className="font-medium text-gray-700">{fmt(exemption_available)}</span>
             </div>
             <div className="flex justify-between text-xs mt-0.5">
-              <span className="text-gray-500">Headroom before federal tax</span>
+              <span className="text-gray-500">{HEADROOM_BEFORE_FEDERAL_TAX_LABEL}</span>
               <span className={`font-semibold ${exemption_remaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
                 {fmt(exemption_remaining)}
               </span>
             </div>
-            <p className="text-[10px] leading-snug text-gray-400">
-              {fmt(exemption_available)} − {fmt(taxable_estate)} taxable estate. Not unused lifetime gift
-              credit (see Gifting tab).
-            </p>
           </div>
         </div>
 
@@ -458,7 +455,7 @@ export default function EstateCompositionCard({
                   bold: true,
                 },
                 {
-                  label: '− Federal Exemption',
+                  label: `− ${FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}`,
                   value: exemption_available,
                   sign: '−',
                 },
