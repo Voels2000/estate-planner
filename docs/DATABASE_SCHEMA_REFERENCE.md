@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 116 / trust merge + educational planning copy)
+# Last updated: May 16, 2026 (Session 118 / gift_history consumer API + horizon lifetime gifts)
 
 ---
 
@@ -31,6 +31,8 @@ This is a developer reference, not a full SQL DDL dump.
 | Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results` | Cached analytics + user assessment history |
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
+| Gifting activity | `gift_history` | Annual/lifetime/529/medical/tuition gifts; feeds `calculate_gifting_summary` |
+| Post-1976 ATG (legacy intake) | `adjusted_taxable_gifts` | Separate from `gift_history`; IRC §2001(b) ATG — not yet wired to horizons |
 | Monte Carlo assumptions | `advisor_projection_assumptions`, `projection_assumption_audit` | Advisor override + consumer accept/revert workflow |
 
 ---
@@ -83,6 +85,23 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Key columns:** `household_id`, `scenario_type`, `outputs_s1_first`, `outputs_s2_first`, `calculated_at`
 - **Purpose:** persisted projection snapshots used by multiple pages/tabs.
+
+### `gift_history`
+
+- **Key columns:** `id`, `household_id`, `owner_id`, `tax_year`, `donor_person`, `recipient_name`, `recipient_relationship`, `amount`, `gift_type`, `form_709_filed`, `notes`, `created_at`
+- **Purpose:** consumer-logged gifts for annual exclusion tracking, Form 709 lifetime gifts, and specialty exclusions (529, direct medical/tuition).
+- **`gift_type` values (application):** `annual`, `lifetime`, `529`, `medical`, `tuition`
+- **`donor_person`:** `person1` | `person2` (MFJ households; UI labels from `households.person1_name` / `person2_name`)
+- **RPC:** `calculate_gifting_summary(p_household_id)` aggregates rows and returns `lifetime_exemption_used`, annual caps, per-recipient audit, and `gifts` JSON array (single read path for `GiftingDashboard`).
+- **Consumer writes (Session 118):** `POST` / `PATCH` / `DELETE` `/api/consumer/gift-history` — `requireOwnedHouseholdId`, row verify via `household_id` + `owner_id`, `afterHouseholdWrite`, `revalidatePath` on strategy/gifting pages. No browser Supabase writes from dashboard UI.
+- **Horizon engine (Session 118):** `lifetime_exemption_used` from the RPC is passed as `lifetimeGiftsUsed` into `buildStrategyHorizons` so federal exemption on horizon columns matches the gifting tab (engine does not call the RPC).
+- **UI:** `components/GiftingDashboard.tsx` — annual gifts via **Log a Gift**; prior Form 709 lifetime gifts via **Prior taxable gifts** collapsible (`gift_type='lifetime'`, amber left border when `form_709_filed=false`).
+
+### `adjusted_taxable_gifts`
+
+- **Key columns:** `household_id`, `gift_year`, `amount`, `recipient_description`, `three_year_clawback`, `notes`
+- **Purpose:** post-1976 adjusted taxable gifts (IRC §2001(b)) — **distinct** from `gift_history` lifetime rows used for planning UX and `calculate_gifting_summary`.
+- **Note:** Not merged into horizon `lifetimeGiftsUsed` in Session 118; keep both concepts separate until a unified ATG intake is designed.
 
 ### `strategy_line_items`
 
@@ -209,7 +228,7 @@ Projection snapshots should be invalidated when newer data exists in:
 | `calculate_estate_composition` | Estate asset/tax composition |
 | `calculate_domicile_risk` | Domicile risk scoring |
 | `generate_estate_recommendations` | Gap/recommendation generation |
-| `calculate_gifting_summary` | Gifting summary outputs |
+| `calculate_gifting_summary` | Gifting summary outputs (`lifetime_exemption_used`, annual caps, `gifts` array); horizon callers pass `lifetime_exemption_used` as `lifetimeGiftsUsed` |
 | `get_state_exemptions` | State exemption batch lookup |
 | `upsert_household_alert` | Safe alert writes |
 
@@ -366,6 +385,22 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 118 Note
+
+- No database schema or migration changes were introduced in Session 118.
+- Application-layer changes (existing `gift_history` table + `calculate_gifting_summary` RPC):
+  - `lib/my-estate-strategy/horizonSnapshots.ts` — `lifetimeGiftsUsed` on `BuildHorizonsInput` / `estimateFederalEstateTaxSnapshot` (`exemption = max(0, statutory − lifetimeGiftsUsed)`).
+  - Horizon callers: `my-estate-strategy/page.tsx`, `my-estate-trust-strategy/page.tsx`, `lib/advisor/strategyMappers.ts` + advisor client page.
+  - `POST` / `PATCH` / `DELETE` `/api/consumer/gift-history` — consumer gift CRUD; `afterHouseholdWrite`.
+  - `components/GiftingDashboard.tsx` — API writes, **Prior taxable gifts (Form 709)** section, donor selector for MFJ.
+
+## Session 117 Note
+
+- No database schema or migration changes were introduced in Session 117.
+- Application-layer changes:
+  - `POST` / `DELETE` `/api/consumer/digital-assets` — digital asset inventory CRUD; `afterHouseholdWrite`.
+  - Trust POST sets `household_id` on insert; `lib/trusts/trustPayload.ts` aligned to live schema (no `excluded_from_estate`).
 
 ## Session 116 Note
 

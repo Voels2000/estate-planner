@@ -321,12 +321,21 @@ export default async function MyEstateTrustStrategyPage({
 
   const horizonStrategyItems = [...consumerHorizonItems, ...advisorHorizonItems]
 
+  const lifetimeGiftsUsed = giftingSummaryError
+    ? 0
+    : Math.max(
+        0,
+        Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
+          0,
+      )
+
   const advisorHorizons = householdFull ? buildStrategyHorizons({
     currentYear,
     currentMonthYearLabel,
     liveNetWorth: grossEstate,
     strategyLineItems: horizonStrategyItems,
     stateBrackets,
+    lifetimeGiftsUsed,
     household: {
       state_primary: householdFull.state_primary,
       filing_status: householdFull.filing_status,

@@ -31,9 +31,11 @@ export function estimateFederalEstateTaxSnapshot(params: {
   grossEstate: number
   filingStatus: string | null | undefined
   hasSpouse: boolean
+  lifetimeGiftsUsed?: number
 }): { exemption: number; federalExposure: number; federalTax: number } {
-  const { grossEstate, filingStatus, hasSpouse } = params
-  const exemption = householdFederalExemption(filingStatus, hasSpouse)
+  const { grossEstate, filingStatus, hasSpouse, lifetimeGiftsUsed = 0 } = params
+  const statutoryExemption = householdFederalExemption(filingStatus, hasSpouse)
+  const exemption = Math.max(0, statutoryExemption - lifetimeGiftsUsed)
   const federalExposure = Math.max(0, grossEstate - exemption)
   const federalTax = Math.round(federalExposure * OBBBA_2026.TOP_RATE)
   return { exemption, federalExposure, federalTax }
@@ -121,6 +123,7 @@ export function computeColumnTaxes(params: {
   filingStatus: string | null | undefined
   hasSpouse: boolean
   stateBrackets: StateBracket[]
+  lifetimeGiftsUsed?: number
 }): {
   federalExemption: number
   federalExposure: number
@@ -142,11 +145,11 @@ export function computeColumnTaxes(params: {
   // Legacy alias kept so existing UI destructuring doesn't break
   stateExposure: number
 } {
-  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets } = params
+  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets, lifetimeGiftsUsed = 0 } = params
 
   const isMFJ = isMFJFilingStatus(filingStatus)
   const { exemption: federalExemption, federalExposure, federalTax } =
-    estimateFederalEstateTaxSnapshot({ grossEstate, filingStatus, hasSpouse })
+    estimateFederalEstateTaxSnapshot({ grossEstate, filingStatus, hasSpouse, lifetimeGiftsUsed })
 
   if (grossEstate <= 0) {
     return {
@@ -243,6 +246,8 @@ export type BuildHorizonsInput = {
   scenarioRows: AnnualOutput[] | null
   survivorFirstName: string
   longevityAge: number
+  /** Lifetime exemption already used (from calculate_gifting_summary.lifetime_exemption_used). */
+  lifetimeGiftsUsed?: number
 }
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
@@ -289,6 +294,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     survivorFirstName,
     longevityAge,
     strategyLineItems,
+    lifetimeGiftsUsed = 0,
   } = input
 
   const hasSpouse = household.has_spouse ?? false
@@ -323,6 +329,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     filingStatus: fs,
     hasSpouse,
     stateBrackets,
+    lifetimeGiftsUsed,
   }
 
   // ── Today column ───────────────────────────────────────────────────────────

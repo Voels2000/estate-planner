@@ -229,12 +229,22 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     typeof domicileAnalysis?.id === 'string' ? domicileAnalysis.id : null,
   )
 
+  const { data: giftingSummaryData } = await supabase.rpc('calculate_gifting_summary', {
+    p_household_id: household.id,
+  })
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
+      0,
+  )
+
   // 3) Strategy and export view models
   const { advisorHorizons, advisorHorizonsProjected, scenarioForStrategy, projectionRowsDomicile, strategySetSummary } = buildAdvisorStrategyViewModels({
     currentYear,
     household,
     stateBrackets,
     estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
+    lifetimeGiftsUsed,
     scenario,
     scenarioOutputs,
     scenarioOutputsSecondDeath,

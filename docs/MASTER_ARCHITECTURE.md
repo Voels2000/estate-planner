@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 117 / digital assets API + trust CRUD fixes)
+# Last updated: May 16, 2026 (Session 118 / lifetime gifts in horizons + gift-history API)
 
 ---
 
@@ -66,6 +66,11 @@ Important:
 - Consumer trust-strategy estate context now aligns to horizon-derived federal values:
   - Require `advisorHorizons.today.federalExemption` and `advisorHorizons.today.federalTaxEstimate`.
   - If missing, surface a page warning and keep federal context unavailable until horizon inputs are restored.
+- As of Session 118, federal exemption on all horizon columns subtracts **lifetime gifts already used** (`lifetimeGiftsUsed` on `BuildHorizonsInput`, default `0`):
+  - Callers fetch `calculate_gifting_summary` and pass `lifetime_exemption_used` into `buildStrategyHorizons` / `estimateFederalEstateTaxSnapshot` (`exemption = max(0, statutory − lifetimeGiftsUsed)`).
+  - Engine stays pure — no RPC inside `horizonSnapshots.ts`.
+  - Wired on `my-estate-strategy/page.tsx`, `my-estate-trust-strategy/page.tsx`, advisor client page via `lib/advisor/strategyMappers.ts`.
+  - Aligns strategy horizon federal exemption with the gifting tab’s `lifetime_exemption_used` (still sourced from `calculate_gifting_summary`, not `calculate_estate_composition`).
 - Missing-input observability hooks are now in place:
   - Advisor Tax tab emits one client-side telemetry event to `/api/telemetry/horizon-input-missing`.
   - Consumer trust-strategy page emits a structured server log event when horizon federal inputs are missing.
@@ -243,6 +248,7 @@ Runtime behavior:
 - As of Session 112, trust CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/trusts` (`lib/trusts/trustPayload.ts`) with `afterHouseholdWrite`. (Session 116: trust UI consolidated on trust-strategy tab; see Phase A½ above.)
 - As of Session 117, trust writes set `household_id` from `requireOwnedHouseholdId` on POST insert (alongside `owner_id`). `lib/trusts/trustPayload.ts` no longer references `excluded_from_estate` (column removed; use `excludes_from_estate` + `funding_amount` only). `TRUST_SELECT` aligned to live schema.
 - As of Session 117, digital asset inventory uses `POST` / `DELETE` on `/api/consumer/digital-assets` with household ownership check, `afterHouseholdWrite`, and `revalidatePath('/digital-assets')`. UI: server `page.tsx` + `_digital-assets-client.tsx` (local list state updated on save/delete, same pattern as `/assets` and `/income`); `DigitalAssetIntakeForm` uses try/catch/finally + `router.refresh()`. Legacy `createDigitalAsset` server action remains in `beneficiary-grant-actions.ts` but is no longer called from the dashboard form.
+- As of Session 118, `gift_history` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/gift-history` with `requireOwnedHouseholdId`, `owner_id` + `household_id` verify on PATCH/DELETE, `afterHouseholdWrite`, and `revalidatePath` for `/my-estate-trust-strategy` and `/my-estate-strategy`. `components/GiftingDashboard.tsx` no longer inserts/deletes via browser Supabase; uses `parseApiError`, try/finally on saves, and `refreshAfterGiftWrite()` (`router.refresh()` + RPC reload). New collapsible **Prior taxable gifts (Form 709)** section for `gift_type='lifetime'` rows; MFJ **Gifted by** donor selector on prior + annual forms (`donor_person` required on API). Reads still use client `calculate_gifting_summary` RPC (unchanged).
 - As of Session 113, removed unused client loader `loadProjectionPageData.ts` (projections use server `loadProjectionData` only). Playwright devDependency bumped to 1.60; removed default `example.spec.ts` scaffold (e2e runs `consumer/`, `advisor/`, `public/` only).
 - As of Session 114, `/scenarios` “Save” archives comparison results via `POST /api/consumer/scenario-snapshots` (`lib/scenarios/buildScenarioSnapshot.ts` → `projections` table). Scenario math remains `GET /api/projection` with query overrides; no `afterHouseholdWrite` on snapshot-only saves.
 - As of Session 115 (Phase A consumer cleanup), canonical nav/URL/title/tier map lives in `docs/CONSUMER_NAV_MAP.md`. Sidebar labels aligned with page `<h1>` titles; duplicate `asset-allocation/_allocation-client.tsx` removed (`/asset-allocation` still redirects to `/allocation`). `FEATURE_TIERS`: fixed `projections` key, `allocation` tier 2, added `trust-will` tier 3.
@@ -483,6 +489,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `app/api/advisor/strategy-recommendations-read/route.ts`
 - `app/api/consumer/strategy-recommendation/route.ts`
 - `app/api/consumer/digital-assets/route.ts`
+- `app/api/consumer/gift-history/route.ts`
 - `app/api/consumer/trusts/route.ts`
 - `lib/trusts/trustPayload.ts` (`buildTrustRow`, `TRUST_SELECT`)
 - `app/api/projection/monte-carlo/route.ts`
@@ -525,6 +532,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Consumer connection pages: `app/(dashboard)/my-advisor/*`, `app/(dashboard)/my-attorney/*`, `app/(dashboard)/settings/attorney-access/*`.
 - Education catalog: `components/education/EducationModuleCatalog.tsx` (bundle paths unchanged; loader supplies published-only module list).
 - Digital assets: `app/(dashboard)/digital-assets/page.tsx`, `_digital-assets-client.tsx`, `_components/DigitalAssetIntakeForm.tsx`, `_components/DigitalAssetList.tsx`.
+- Gifting: `components/GiftingDashboard.tsx` (trust-strategy gifting tab); summary via `calculate_gifting_summary` RPC; writes via `/api/consumer/gift-history`.
 
 ---
 

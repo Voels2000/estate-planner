@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
@@ -62,10 +63,22 @@ const GIFT_TYPE_LABELS: Record<string, string> = {
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unexpected error';
 
+async function parseApiError(res: Response): Promise<string> {
+  const text = await res.text();
+  try {
+    const data = JSON.parse(text) as { error?: string };
+    if (data.error) return data.error;
+  } catch {
+    // ignore JSON parse failure
+  }
+  return text || 'Request failed';
+}
+
 export default function GiftingDashboard({
   householdId,
   initialGiftingSummary,
 }: GiftingDashboardProps) {
+  const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
   const emptyForm = {
     tax_year: CURRENT_YEAR,
@@ -77,12 +90,23 @@ export default function GiftingDashboard({
     form_709_filed: false,
     notes: '',
   };
+  const emptyPriorForm = {
+    tax_year: CURRENT_YEAR - 1,
+    donor_person: 'person1',
+    recipient_name: '',
+    amount: '',
+    notes: '',
+    form_709_filed: false,
+  };
   const [summary, setSummary] = useState<GiftingSummary | null>(initialGiftingSummary ?? null);
   const [loading, setLoading] = useState(initialGiftingSummary == null);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showPriorForm, setShowPriorForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [priorForm, setPriorForm] = useState(emptyPriorForm);
   const [saving, setSaving] = useState(false);
+  const [savingPrior, setSavingPrior] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview'); // default: overview
@@ -143,42 +167,83 @@ export default function GiftingDashboard({
     void load();
   }, [refreshCount, load]);
 
+  const refreshAfterGiftWrite = () => {
+    router.refresh();
+    setRefreshCount((c) => c + 1);
+  };
+
   const handleAdd = async () => {
     if (!form.recipient_name || !form.amount) return;
     setSaving(true);
+    setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: insertError } = await supabase.from('gift_history').insert({
-        household_id: householdId,
-        owner_id: user!.id,
-        tax_year: form.tax_year,
-        donor_person: form.donor_person,
-        recipient_name: form.recipient_name,
-        recipient_relationship: form.recipient_relationship,
-        amount: parseFloat(form.amount as string),
-        gift_type: form.gift_type,
-        form_709_filed: form.form_709_filed,
-        notes: form.notes,
+      const res = await fetch('/api/consumer/gift-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tax_year: form.tax_year,
+          recipient_name: form.recipient_name.trim(),
+          donor_person: form.donor_person,
+          recipient_relationship: form.recipient_relationship.trim() || undefined,
+          amount: parseFloat(form.amount as string),
+          gift_type: form.gift_type,
+          notes: form.notes.trim() || undefined,
+          form_709_filed: form.form_709_filed,
+        }),
       });
-      if (insertError) throw insertError;
+      if (!res.ok) throw new Error(await parseApiError(res));
       setForm(emptyForm);
       setShowAddForm(false);
-      setRefreshCount((c) => c + 1);
-    } catch (error: unknown) {
-      setError(getErrorMessage(error));
+      refreshAfterGiftWrite();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   };
 
+  const handleAddPriorGift = async () => {
+    if (!priorForm.recipient_name || !priorForm.amount) return;
+    setSavingPrior(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/consumer/gift-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tax_year: priorForm.tax_year,
+          recipient_name: priorForm.recipient_name.trim(),
+          donor_person: priorForm.donor_person,
+          amount: parseFloat(priorForm.amount as string),
+          gift_type: 'lifetime',
+          notes: priorForm.notes.trim() || undefined,
+          form_709_filed: priorForm.form_709_filed,
+        }),
+      });
+      if (!res.ok) throw new Error(await parseApiError(res));
+      setPriorForm(emptyPriorForm);
+      setShowPriorForm(false);
+      refreshAfterGiftWrite();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSavingPrior(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     setDeleteId(id);
+    setError(null);
     try {
-      const { error: delError } = await supabase.from('gift_history').delete().eq('id', id);
-      if (delError) throw delError;
-      setRefreshCount((c) => c + 1);
-    } catch (error: unknown) {
-      setError(getErrorMessage(error));
+      const res = await fetch('/api/consumer/gift-history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error(await parseApiError(res));
+      refreshAfterGiftWrite();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setDeleteId(null);
     }
@@ -200,6 +265,9 @@ export default function GiftingDashboard({
   const annualGiftRows = summary.gifts.filter(
     g => g.gift_type === 'annual' && g.tax_year === summary.tax_year,
   );
+  const priorLifetimeGiftRows = summary.gifts
+    .filter(g => g.gift_type === 'lifetime')
+    .sort((a, b) => b.tax_year - a.tax_year || a.recipient_name.localeCompare(b.recipient_name));
   // Session 27 fix — use RPC values as single source of truth
   // summary.split_elected and summary.per_recipient_limit come from
   // calculate_gifting_summary which correctly handles all edge cases
@@ -461,6 +529,146 @@ export default function GiftingDashboard({
                 {' '}= {fmt$(annualCapacityDynamic)} capacity; {fmt$(annualUsedDynamic)} used.
               </p>
             </div>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Prior taxable gifts (Form 709)"
+          subtitle="Gifts reported on Form 709 that count toward your lifetime exemption"
+          defaultOpen={false}
+          storageKey="gifting-prior-taxable"
+        >
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-gray-600">
+                Record lifetime exemption gifts from prior tax years (Form 709).
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowPriorForm(v => !v)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                {showPriorForm ? 'Cancel' : 'Add prior gift'}
+              </button>
+            </div>
+
+            {showPriorForm && (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Tax year *</label>
+                    <input
+                      type="number"
+                      value={priorForm.tax_year}
+                      onChange={e => setPriorForm(f => ({ ...f, tax_year: parseInt(e.target.value, 10) || f.tax_year }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  {donorNames.hasSpouse && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Gifted by *</label>
+                      <select
+                        value={priorForm.donor_person}
+                        onChange={e => setPriorForm(f => ({ ...f, donor_person: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value="person1">{donorNames.person1}</option>
+                        <option value="person2">{donorNames.person2}</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Recipient name *</label>
+                  <input
+                    type="text"
+                    value={priorForm.recipient_name}
+                    onChange={e => setPriorForm(f => ({ ...f, recipient_name: e.target.value }))}
+                    placeholder="e.g. Family trust, Child"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={priorForm.amount}
+                    onChange={e => setPriorForm(f => ({ ...f, amount: e.target.value }))}
+                    placeholder="0"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                  <input
+                    type="text"
+                    value={priorForm.notes}
+                    onChange={e => setPriorForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Optional"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="prior-form709"
+                    checked={priorForm.form_709_filed}
+                    onChange={e => setPriorForm(f => ({ ...f, form_709_filed: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="prior-form709" className="text-sm text-gray-700">
+                    Form 709 filed
+                  </label>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleAddPriorGift}
+                    disabled={savingPrior || !priorForm.recipient_name || !priorForm.amount}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    {savingPrior ? 'Saving...' : 'Save prior gift'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {priorLifetimeGiftRows.length === 0 ? (
+              <p className="text-sm text-gray-500">No prior lifetime gifts recorded yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {priorLifetimeGiftRows.map(gift => (
+                  <div
+                    key={gift.id}
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 ${
+                      gift.form_709_filed ? 'border-l-4 border-l-gray-300' : 'border-l-4 border-l-amber-400'
+                    }`}
+                  >
+                    <p className="text-sm text-gray-800">
+                      <span className="font-semibold">{fmt$(gift.amount)}</span>
+                      {' · '}
+                      {gift.tax_year}
+                      {' · '}
+                      {gift.recipient_name}
+                      {gift.form_709_filed ? ' · Form 709 filed' : ''}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(gift.id)}
+                      disabled={deleteId === gift.id}
+                      className="text-xs text-red-600 hover:text-red-800 disabled:opacity-50 shrink-0"
+                    >
+                      {deleteId === gift.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CollapsibleSection>
 

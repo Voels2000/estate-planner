@@ -26,6 +26,7 @@ export function buildAdvisorStrategyViewModels(params: {
   household: HouseholdLike
   stateBrackets: StateBracket[]
   estateCompositionGrossEstate: number
+  lifetimeGiftsUsed?: number
   scenario: Record<string, unknown> | null
   scenarioOutputs: Array<Record<string, unknown>>
   scenarioOutputsSecondDeath: Array<Record<string, unknown>>
@@ -93,11 +94,14 @@ export function buildAdvisorStrategyViewModels(params: {
     }))
   const projectedStrategyLineItems = [...actualStrategyLineItems, ...pendingAdvisorLineItems]
 
+  const lifetimeGiftsUsed = params.lifetimeGiftsUsed ?? 0
+
   const advisorHorizons: MyEstateStrategyHorizonsResult = buildStrategyHorizons({
     currentYear: params.currentYear,
     currentMonthYearLabel,
     liveNetWorth: Number(params.estateCompositionGrossEstate ?? 0),
     stateBrackets: params.stateBrackets,
+    lifetimeGiftsUsed,
     household: {
       state_primary: params.household.state_primary,
       filing_status: params.household.filing_status,
@@ -120,6 +124,7 @@ export function buildAdvisorStrategyViewModels(params: {
     currentMonthYearLabel,
     liveNetWorth: Number(params.estateCompositionGrossEstate ?? 0),
     stateBrackets: params.stateBrackets,
+    lifetimeGiftsUsed,
     household: {
       state_primary: params.household.state_primary,
       filing_status: params.household.filing_status,
