@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
 import { FILING_STATUSES, type ProfileFormInitial } from '@/lib/profile/profileFormInitial'
+import { isMinimumViableProfile, type ProfileGateHousehold, type ProfileGateMissingField } from '@/lib/estate/profileGate'
+import { ProfileRequiredBanner } from './_profile-required-banner'
 
 const FILING_STATUS_LABELS: Record<string, string> = {
   single: 'Single',
@@ -31,9 +33,18 @@ const US_STATES = [
 type ProfileClientProps = {
   initial: ProfileFormInitial
   fromParam: string | null
+  requiredParam?: boolean
+  missingFields?: ProfileGateMissingField[]
+  householdSnapshot?: ProfileGateHousehold
 }
 
-export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
+export function ProfileClient({
+  initial,
+  fromParam,
+  requiredParam = false,
+  missingFields = [],
+  householdSnapshot,
+}: ProfileClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,8 +181,22 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
 
       setSuccess(true)
       setIsSubmitting(false)
+
+      const gateHousehold: ProfileGateHousehold = {
+        state_primary: statePrimary || null,
+        filing_status: filingStatus || null,
+        person1_birth_year: person1BirthYear ? Number(person1BirthYear) : null,
+      }
+      const profileComplete = isMinimumViableProfile(gateHousehold).complete
+      const returnTo =
+        requiredParam && profileComplete && fromParam?.startsWith('/')
+          ? fromParam
+          : householdId || created
+            ? '/dashboard'
+            : '/health-check'
+
       setTimeout(() => {
-        router.push(householdId || created ? '/dashboard' : '/health-check')
+        router.push(returnTo)
         router.refresh()
       }, 1500)
     } catch (err) {
@@ -220,6 +245,17 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
           </button>
         </div>
       )}
+      {requiredParam && householdSnapshot && (
+        <ProfileRequiredBanner
+          missingFromUrl={missingFields}
+          householdSnapshot={{
+            ...householdSnapshot,
+            state_primary: statePrimary || null,
+            filing_status: filingStatus || null,
+            person1_birth_year: person1BirthYear ? Number(person1BirthYear) : null,
+          }}
+        />
+      )}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Your Profile</h1>
         <p className="mt-1 text-sm text-neutral-600">
@@ -263,9 +299,17 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
                 className={inputClass} placeholder="Jane" />
             </Field>
             <Field label="Birth Year" required>
-              <input type="number" min="1920" max="2005" required value={person1BirthYear}
+              <input
+                id="profile-field-person1-birth-year"
+                type="number"
+                min="1920"
+                max="2005"
+                required
+                value={person1BirthYear}
                 onChange={(e) => setPerson1BirthYear(e.target.value)}
-                className={inputClass} placeholder="1970" />
+                className={inputClass}
+                placeholder="1970"
+              />
             </Field>
             <Field label="Retirement Age">
               <input type="number" min="50" max="80" value={person1RetirementAge}
@@ -372,6 +416,7 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Filing Status">
               <select
+                id="profile-field-filing-status"
                 value={filingStatus}
                 onChange={(e) => setFilingStatus(e.target.value)}
                 className={inputClass}
@@ -382,9 +427,12 @@ export function ProfileClient({ initial, fromParam }: ProfileClientProps) {
               </select>
             </Field>
             <Field label="Primary State">
-              <select value={statePrimary}
+              <select
+                id="profile-field-state-primary"
+                value={statePrimary}
                 onChange={(e) => setStatePrimary(e.target.value)}
-                className={inputClass}>
+                className={inputClass}
+              >
                 <option value="">Select state</option>
                 {US_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
