@@ -393,7 +393,7 @@ After each schema-affecting session:
 - Schema: migration `20260518120000` — adds `charitable` to `strategy_line_items_strategy_source_check` (`daf` and `category: 'charitable'` already present).
 - Application-layer — `GiftingDashboard.tsx` Gift History tab: year-grouped table; client-side `splitElectedYears` from all annual gifts with `form_709_filed=true`; year header **Gift Split Elected ✓** badge; MFJ-only **Split available — file Form 709** when year has annual gifts but no split (no new RPC).
 - Application-layer — `CharitableStrategyForm.tsx` on DAF Transfer Strategies panel: strategy type dropdown (DAF / direct charitable), annual amount, recipient, notes; `strategy_source` `daf`|`charitable`, `category: 'charitable'`, `scenario_name: 'base'`; green pill when `daf` or `charitable` saved; legacy DAF calculator removed from consumer panel.
-- E2E: `consumer-strategy-writes.spec.ts` — DAF/direct POST/DELETE + `outside_strategy_total` composition check via `POST /api/estate-composition`.
+- E2E: `consumer-strategy-writes.spec.ts` (10 cases) — DAF/direct POST/DELETE; composition check via `POST /api/estate-composition` (relative `outside_strategy_total` increase after 1.5s wait, not hardcoded totals). Hardened cleanup: `PLAYWRIGHT_SCENARIOS` registry, `try/finally` per write test, `test.afterEach` sweep, pre-delete `daf`/`charitable` `base` before charitable tests so David Chen fixture state does not leak between runs.
 
 ## Session 124 Note
 

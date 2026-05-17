@@ -192,3 +192,5 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 ## Related automated tests
 
 Engineers can run `npm run test:e2e:consumer` with `.env.test` (see `playwright.config.ts`). That covers login, dashboard UI, and a subset of consumer APIs — **not** a substitute for this manual pass on a real account.
+
+`consumer-strategy-writes.spec.ts` soft-deletes all Playwright-named `strategy_line_items` in `afterEach` on the fixture household (`PLAYWRIGHT_HOUSEHOLD_ID` / David Chen). If manual testing overlaps those scenario names (`Playwright *`, `daf`/`charitable` at `base`), re-run e2e or delete those rows before relying on estate composition totals.
