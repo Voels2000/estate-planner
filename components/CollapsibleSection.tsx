@@ -29,6 +29,8 @@ export function CollapsibleSection({
   badge,
   defaultOpen,
   storageKey,
+  open: controlledOpen,
+  onOpenChange,
   locked,
   lockedMessage,
   lockedHref,
@@ -40,16 +42,25 @@ export function CollapsibleSection({
   badge?: ReactNode
   defaultOpen: boolean
   storageKey?: string
+  /** When set with onOpenChange, section open state is controlled by the parent. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   locked?: boolean
   lockedMessage?: string
   lockedHref?: string
   lockedHrefLabel?: string
   children: ReactNode
 }) {
+  const isControlled = onOpenChange != null
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const effectiveOpen = isControlled ? (controlledOpen ?? false) : open
 
   useEffect(() => {
+    if (isControlled) {
+      const timeoutId = window.setTimeout(() => setMounted(true), 0)
+      return () => window.clearTimeout(timeoutId)
+    }
     const timeoutId = window.setTimeout(() => {
       setMounted(true)
       if (storageKey) {
@@ -59,12 +70,16 @@ export function CollapsibleSection({
       }
     }, 0)
     return () => window.clearTimeout(timeoutId)
-  }, [defaultOpen, storageKey])
+  }, [defaultOpen, isControlled, storageKey])
 
   function toggle() {
-    const next = !open
-    setOpen(next)
-    if (storageKey) writeSectionState(storageKey, next)
+    const next = !effectiveOpen
+    if (isControlled) {
+      onOpenChange?.(next)
+    } else {
+      setOpen(next)
+      if (storageKey) writeSectionState(storageKey, next)
+    }
   }
 
   return (
@@ -84,12 +99,12 @@ export function CollapsibleSection({
           </div>
         </div>
         <span
-          className={`text-neutral-400 text-lg transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
+          className={`text-neutral-400 text-lg transition-transform duration-200 shrink-0 ${effectiveOpen ? 'rotate-180' : ''}`}
         >
           ⌄
         </span>
       </button>
-      {mounted && open && (
+      {mounted && effectiveOpen && (
         <div className="border-t border-neutral-100">
           {locked ? (
             <div className="px-6 py-8 text-center">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
+import { useEffect, useState, useRef, Fragment, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -117,6 +117,26 @@ export default function GiftingDashboard({
   });
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+
+  const priorTaxableGifts = useMemo(
+    () =>
+      (summary?.gifts ?? [])
+        .filter(g => g.gift_type === 'lifetime')
+        .sort(
+          (a, b) =>
+            b.tax_year - a.tax_year ||
+            a.recipient_name.localeCompare(b.recipient_name),
+        ),
+    [summary?.gifts],
+  );
+
+  const [priorSectionOpen, setPriorSectionOpen] = useState(
+    () => (initialGiftingSummary?.gifts ?? []).some(g => g.gift_type === 'lifetime'),
+  );
+
+  useEffect(() => {
+    setPriorSectionOpen(priorTaxableGifts.length > 0);
+  }, [priorTaxableGifts.length]);
 
   useEffect(() => {
     let isMounted = true;
@@ -267,9 +287,6 @@ export default function GiftingDashboard({
   const annualGiftRows = summary.gifts.filter(
     g => g.gift_type === 'annual' && g.tax_year === summary.tax_year,
   );
-  const priorLifetimeGiftRows = summary.gifts
-    .filter(g => g.gift_type === 'lifetime')
-    .sort((a, b) => b.tax_year - a.tax_year || a.recipient_name.localeCompare(b.recipient_name));
   // Session 27 fix — use RPC values as single source of truth
   // summary.split_elected and summary.per_recipient_limit come from
   // calculate_gifting_summary which correctly handles all edge cases
@@ -537,8 +554,9 @@ export default function GiftingDashboard({
         <CollapsibleSection
           title="Prior taxable gifts (Form 709)"
           subtitle="Gifts reported on Form 709 that count toward your lifetime exemption"
-          defaultOpen={false}
-          storageKey="gifting-prior-taxable"
+          defaultOpen={priorTaxableGifts.length > 0}
+          open={priorSectionOpen}
+          onOpenChange={setPriorSectionOpen}
         >
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -658,11 +676,11 @@ export default function GiftingDashboard({
               </div>
             )}
 
-            {priorLifetimeGiftRows.length === 0 ? (
+            {priorTaxableGifts.length === 0 ? (
               <p className="text-sm text-gray-500">No prior lifetime gifts recorded yet.</p>
             ) : (
               <div className="space-y-2">
-                {priorLifetimeGiftRows.map(gift => (
+                {priorTaxableGifts.map(gift => (
                   <div
                     key={gift.id}
                     className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 ${
@@ -674,8 +692,8 @@ export default function GiftingDashboard({
                       {' · '}
                       {gift.tax_year}
                       {' · '}
-                      {gift.recipient_name}
-                      {gift.form_709_filed ? ' · Form 709 filed' : ''}
+                      {gift.recipient_name.trim()}
+                      {gift.form_709_filed ? ' · Form 709 filed ✓' : ''}
                     </p>
                     <button
                       type="button"
