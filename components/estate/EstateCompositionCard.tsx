@@ -214,6 +214,7 @@ export default function EstateCompositionCard({
     taxable_estate,
     exemption_available,
     exemption_remaining,
+    lifetime_gifts_used,
     admin_expense,
     marital_deduction,
     adjusted_taxable_gifts,
@@ -305,18 +306,25 @@ export default function EstateCompositionCard({
             </div>
           </div>
 
-          {/* Exemption remaining */}
-          <div className="pt-2 border-t border-gray-100">
+          {/* Federal exemption headroom */}
+          <div className="pt-2 border-t border-gray-100 space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Exemption available</span>
+              <span className="text-gray-500">
+                Federal exemption
+                {(lifetime_gifts_used ?? 0) > 0 ? ' (after gifts)' : ''}
+              </span>
               <span className="font-medium text-gray-700">{fmt(exemption_available)}</span>
             </div>
             <div className="flex justify-between text-xs mt-0.5">
-              <span className="text-gray-500">Exemption remaining</span>
+              <span className="text-gray-500">Headroom before federal tax</span>
               <span className={`font-semibold ${exemption_remaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
                 {fmt(exemption_remaining)}
               </span>
             </div>
+            <p className="text-[10px] leading-snug text-gray-400">
+              {fmt(exemption_available)} − {fmt(taxable_estate)} taxable estate. Not unused lifetime gift
+              credit (see Gifting tab).
+            </p>
           </div>
         </div>
 

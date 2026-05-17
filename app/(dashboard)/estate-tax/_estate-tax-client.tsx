@@ -474,15 +474,26 @@ export default function EstateTaxClient({
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 mb-4">
                 <p className="font-semibold">No federal estate tax estimated</p>
                 <p className="mt-1 leading-relaxed">
-                  Your taxable estate of {formatDollars(taxableEstateDisplay)} is below the{' '}
-                  {filing === 'married_joint' ? '$30,000,000 MFJ' : '$15,000,000 single'} federal exemption
-                  under the OBBBA 2026. Federal estate tax becomes a consideration only when your taxable
-                  estate exceeds this threshold.
+                  Your taxable estate of {formatDollars(taxableEstateDisplay)} is below your available
+                  federal exemption of {formatDollars(federalExemptionDisplay)}. Federal estate tax becomes
+                  a consideration only when taxable estate exceeds that amount.
                 </p>
                 {composition && composition.exemption_remaining > 0 && (
-                  <p className="mt-1.5 text-green-700">
-                    Exemption remaining: <span className="font-semibold">{formatDollars(composition.exemption_remaining)}</span>
-                  </p>
+                  <div className="mt-3 rounded-lg border border-green-200/80 bg-white/60 px-3 py-2.5 text-green-900">
+                    <p className="font-semibold text-green-800">
+                      Headroom before federal estate tax:{' '}
+                      <span className="tabular-nums">{formatDollars(composition.exemption_remaining)}</span>
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-green-800/90">
+                      {formatDollars(federalExemptionDisplay)} available federal exemption
+                      {(composition.lifetime_gifts_used ?? 0) > 0 && (
+                        <> (after {formatDollars(composition.lifetime_gifts_used!)} lifetime gifts)</>
+                      )}
+                      {' '}minus {formatDollars(taxableEstateDisplay)} taxable estate. Room left before
+                      federal estate tax is estimated — not the same as unused lifetime gift credit on
+                      the Gifting tab.
+                    </p>
+                  </div>
                 )}
               </div>
             )}

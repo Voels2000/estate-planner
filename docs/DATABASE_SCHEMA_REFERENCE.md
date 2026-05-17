@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 120 — lifetime gifts wiring + gifting UI fixes)
+# Last updated: May 16, 2026 (Session 120 — exemption headroom UI labels)
 
 ---
 
@@ -393,7 +393,8 @@ After each schema-affecting session:
 - Application-layer changes:
   - `classifyEstateAssets` + `my-estate-trust-strategy/page.tsx` + `estate-tax/page.tsx` + `my-estate-strategy/page.tsx` + `POST /api/estate-composition` — pass `lifetime_exemption_used` into composition RPC.
   - `lib/estate/types.ts` — `lifetime_gifts_used?`, `exemption_used?`, `source_role?` on `EstateComposition`.
-  - `estate-tax/_estate-tax-client.tsx` — federal exemption subtitle when `lifetime_gifts_used > 0`.
+  - `estate-tax/_estate-tax-client.tsx` — federal exemption subtitle when `lifetime_gifts_used > 0`; **Headroom before federal estate tax** callout explains `exemption_remaining` (= `exemption_available − taxable_estate`), not Gifting `lifetime_exemption_remaining`.
+  - `EstateCompositionCard.tsx` — **Federal exemption (after gifts)** + **Headroom before federal tax** labels; helper text for `exemption_remaining` formula.
   - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo; prior section controlled open; lifetime meter uses RPC `lifetime_exemption_used` only (no double-count of annual overflow).
   - `CollapsibleSection.tsx` — optional `open` / `onOpenChange`.
 
