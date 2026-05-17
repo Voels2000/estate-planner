@@ -1,192 +1,371 @@
 # NEXT_SESSION.md
-# Sprint 1 — Session 1 Start Document
+# Sprint 1 — Session Start Document
 # Generated: May 2026 (after Sprint 0 completion)
 
 ---
 
-## Paste this as your FIRST MESSAGE in the next Cursor / AI session
+## Paste this as your FIRST MESSAGE in Cursor
 
-> I am building My Wealth Maps, a self-guided estate and financial planning tool for households with $2M–$30M in assets. This segment is severely underserved — over 50% have no will or plan at all. The product has a strong calculation engine. We are on **Sprint 1** — public/app separation and $2M–$30M segment positioning. Sprint 0 in-app UI fixes are complete (see carryover notes below for two small gaps). Today's task: [FILL IN FROM TASK LIST BELOW — start with Task 1 or the carryover you choose].
+> I am building My Wealth Maps, a self-guided estate and financial
+> planning tool for households with $2M–$30M in assets. The engine
+> is strong — we are doing UI and structural work only. Sprint 0
+> is complete (dashboard conflict banner, horizons table, sidebar
+> footer, Monte Carlo layout, upgrade gate personalization).
+> Sprint 1 goal: separate the public site nav from the app nav,
+> clean up the sidebar so it contains planning tools only, and
+> fix the remaining Sprint 0 carryover items. Today's task:
+> [FILL IN FROM TASK LIST BELOW].
 
 ---
 
-## Sprint 0 — completed summary
+## Sprint 0 — What shipped
 
-Sprint 0 goal was to surface the most valuable content already built. **All seven tasks were implemented** (UI only — no engine, API, or database changes). Code is in the working tree; commit when ready.
+| Task | Status | Notes |
+|------|--------|-------|
+| Dashboard conflict alert banner above fold | ✅ Done | |
+| Severity chips on Planning Readiness Score | ✅ Done | |
+| Sidebar: My Advisor + Billing → footer | ✅ Done | |
+| Horizons: hero cards + comparison table | ✅ Done | |
+| Horizons: tier gate on /my-estate-strategy | ✅ Done | |
+| Projections: column header tooltips | ✅ Done | Full names still show abbreviated — see Task 2 |
+| Monte Carlo: single-column + step stepper | ✅ Done | |
+| UpgradeBanner householdContext on estate-tax | ✅ Done | |
+| UpgradeBanner householdContext on my-estate-strategy | ✅ Done | |
+| My Attorney still in main nav | 🔄 Sprint 1 Task 1 | Move to sidebar footer |
+| "Your plan" tier badge on active group | 🔄 Sprint 1 Task 1 | |
+| Full person names on projections headers | 🔄 Sprint 1 Task 2 | Check p1/p2 value from page |
+| householdContext on other locked pages | 🔄 Sprint 1 Task 3 | |
 
-| Task | Status | What shipped |
-|------|--------|--------------|
-| **1** Dashboard conflict banner | ✅ Done | Dismissible banner between intro and assessment widget; links to `#estate-conflicts`; red/amber by severity |
-| **2** Severity chips | ✅ Done | Chips in `DashboardIntroSection` (critical / warnings / “See issues below”) — note: not inside `AssessmentHistoryWidget` score card |
-| **3** Sidebar footer | ⚠️ Partial | **My Advisor** + **Manage Subscription** moved to footer; **My Attorney** still in main nav (Sprint 1 item); **“Your plan” tier badge** not added |
-| **4** Horizons comparison table | ✅ Done | Hero tax-liability cards + comparison table in `_my-estate-strategy-client.tsx`; generate CTA below table |
-| **5** Projections headers | ⚠️ Partial | `title` tooltips on `IncomeTable.tsx` headers; headers still `{p1} Earned` / `{p1} SS` — not full “Name · Earned income” labels yet |
-| **6** Monte Carlo layout | ✅ Done | Single-column stack; labeled step stepper; empty chart placeholder removed |
-| **7** Upgrade gates | ✅ Done (core) | `householdContext` on `UpgradeBanner`; wired on `estate-tax` and `my-estate-strategy` tier gates; other locked pages unchanged |
+---
 
-### Files changed in Sprint 0
+## Sprint 1 task list — work through in order
 
+All changes are UI and structural only.
+No engine, API, or database changes required.
+
+---
+
+### Task 1 — Sidebar carryover: My Attorney to footer + tier badge
+
+**Files needed:**
 ```
-app/(dashboard)/_dashboard-client.tsx
-app/(dashboard)/_components/dashboard/DashboardIntroSection.tsx
 app/(dashboard)/_components/sidebar-nav.tsx
-app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx
-app/(dashboard)/my-estate-strategy/page.tsx
+```
+
+**Change 1 — Remove from Overview NAV_GROUPS items array:**
+- `{ href: '/my-attorney', label: 'My Attorney', ... }`
+- `{ href: '/settings/attorney-access', label: 'Attorney access settings', ... }`
+
+**Change 2 — Add My Attorney to the footer section**
+(alongside My Advisor and Manage Subscription added in Sprint 0).
+Add this block inside the footer connections div, after My Advisor:
+
+```jsx
+{/* My Attorney — consumer only, tier 2+ */}
+{(role === 'consumer' || isSuperuser) && tier >= 2 &&
+  (isLockedUser ? (
+    <Link href="#" tabIndex={-1} aria-disabled={true}
+      className="flex items-center gap-3 rounded-lg px-3 py-2
+        text-sm font-medium text-neutral-600 transition-colors
+        pointer-events-none opacity-40 cursor-not-allowed">
+      <span className="flex-1 truncate">⚖️ My Attorney</span>
+      <span className="shrink-0 text-sm" aria-hidden>🔒</span>
+    </Link>
+  ) : (
+    <Link href="/my-attorney"
+      className={`flex items-center gap-3 rounded-lg px-3 py-2
+        text-sm font-medium transition-colors ${
+        activePath === '/my-attorney'
+          ? 'bg-indigo-600 text-white shadow-sm'
+          : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+      }`}>
+      ⚖️ My Attorney
+    </Link>
+  ))
+}
+```
+
+**Change 3 — Add "Your plan" badge to active planning group.**
+Inside the NAV_GROUPS.map() where the group header button is
+rendered, add the badge between the group label and the chevron:
+
+```jsx
+{/* Your plan badge — only on unlocked non-Overview groups */}
+{!groupIsLocked && group.label !== 'Overview' && (
+  (group.label === 'Financial Planning' && tier === 1) ||
+  (group.label === 'Retirement Planning' && tier === 2) ||
+  (group.label === 'Estate Planning' && tier >= 3)
+) && (
+  <span className={`text-[10px] font-semibold px-1.5 py-0.5
+    rounded-full mr-1 ${
+    group.label === 'Financial Planning'
+      ? 'bg-blue-100 text-blue-700'
+      : group.label === 'Retirement Planning'
+      ? 'bg-green-100 text-green-700'
+      : 'bg-purple-100 text-purple-700'
+  }`}>
+    Your plan
+  </span>
+)}
+```
+
+**Do not change:** portal links, Export Estate Plan,
+Import Data, Security, Sign Out, or any locked group logic.
+
+---
+
+### Task 2 — Projections: fix full person names in column headers
+
+**The problem:** Headers show "AL" / "CATHI" abbreviations.
+IncomeTable receives p1 and p2 as props and uses them correctly —
+the issue is what value the projections page passes in.
+
+**Files needed:**
+```
+app/(dashboard)/projections/page.tsx
 app/(dashboard)/projections/_components/IncomeTable.tsx
-app/(dashboard)/monte-carlo/_monte-carlo-client.tsx
-app/(dashboard)/_components/UpgradeBanner.tsx
-app/(dashboard)/estate-tax/page.tsx
 ```
 
-### Sprint 0 carryover (optional quick wins before Sprint 1)
+**Fix:** In projections/page.tsx, find where IncomeTable is
+called. Wrap person names with displayPersonFirstName:
 
-- [ ] Move **My Attorney** to sidebar footer (with My Advisor) — `sidebar-nav.tsx`
-- [ ] Add **“Your plan”** tier badge on active planning group in sidebar — `sidebar-nav.tsx`
-- [ ] Projections: full header labels (`{person1_name} · Earned income`) — `IncomeTable.tsx` + parent that passes `p1`/`p2`
-- [ ] Extend `householdContext` on `UpgradeBanner` to other tier-locked pages (monte-carlo, roth, titling, etc.)
+```tsx
+import { displayPersonFirstName } from '@/lib/display-person-name'
 
-### Sprint 0 success criteria (verify manually)
-
-- [x] Conflict alert banner visible on dashboard without scrolling (when conflicts exist)
-- [x] Severity chips visible when conflicts exist
-- [x] My Advisor in sidebar footer
-- [ ] My Attorney in sidebar footer
-- [x] Horizons comparison table with tax liability hero row
-- [~] Projections headers clarified (tooltips yes; full names no)
-- [x] Monte Carlo single-column with results below wizard
-- [x] Upgrade gate personalized copy on estate-tax + my-estate-strategy
-
----
-
-## Sprint 1 task list — work in priority order
-
-**Goal:** Two distinct nav experiences. All copy reflects $2M–$30M segment. See [ROADMAP.md](./ROADMAP.md) for full checklist.
-
-### Task 1 — Public layout + top nav (start here)
-
-**The problem:** Public site and planning app share chrome; visitors see a 30-item sidebar mental model.
-
-**The fix:** Separate public layout — top nav only, no sidebar.
-
-**Files you will likely need:**
-- `app/(marketing)/` or `app/(public)/` route group — search for existing public pages (`/`, `/education`, `/pricing`)
-- `app/layout.tsx` and any shared header components
-- New or existing `PublicNav.tsx` (create if missing)
-
-**Public top nav items:** Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started
-
----
-
-### Task 2 — Remove public links from app sidebar
-
-**The problem:** Paid subscribers still see Education Guide, Planning Assessment, Find an Advisor, Find an Attorney in the planning sidebar.
-
-**The fix:** Delete or comment out those entries from `sidebar-nav.tsx` (or `ConsumerNav` if split). Keep planning groups only.
-
-**Files:**
-- `app/(dashboard)/_components/sidebar-nav.tsx`
-- `docs/CONSUMER_NAV_MAP.md` (update after change)
-
----
-
-### Task 3 — Sidebar footer: My Attorney + Account & Billing
-
-**The problem:** Sprint 0 moved My Advisor and Billing to footer; My Attorney and a unified “Account & billing” label remain incomplete.
-
-**The fix:** Footer row: 👤 My Advisor · ⚖️ My Attorney · 💳 Account & billing (or Manage Subscription). Match lock/active patterns from existing footer links.
-
-**Files:**
-- `app/(dashboard)/_components/sidebar-nav.tsx`
-
----
-
-### Task 4 — Homepage + public copy for $2M–$30M segment
-
-**The problem:** Hero and marketing copy still read mass-market.
-
-**The fix:** Rewrite homepage hero, subhead, and key CTAs for business owners, RE accumulators, executives. Remove “simple,” “teaser,” LegalZoom comparisons. See [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) and [DECISION_LOG.md](./DECISION_LOG.md).
-
-**Files:**
-- Public homepage — search `app/(marketing)` or `app/page.tsx`
-- `/pricing` page
-
----
-
-### Task 5 — Pricing page: position against professional fees
-
-**Copy direction:** “Less than one hour with an estate attorney per month” — not consumer-tool price comparison.
-
----
-
-### Task 6 — In-app copy audit (sample pass)
-
-**The problem:** Residual “teaser,” “rule-of-thumb,” “illustrative mix” language violates segment positioning.
-
-**The fix:** Grep-driven pass on dashboard, projections, strategy panels. Replace with confident, professional tone per DECISION_LOG.
-
-**High-traffic files:**
-- `app/(dashboard)/dashboard/`
-- `app/(dashboard)/my-estate-trust-strategy/_client.tsx`
-- `components/consumer/ConsumerStrategyPanel.tsx`
-
----
-
-### Task 7 — Assessment conversion (if assess route exists)
-
-- Score visible without login; full breakdown gates account creation
-- Assessment score carries through signup; plan selector maps to three tiers
-- Optional: “Email me my full checklist” on results
-
-**Files:** Search `/assess`, `assessment`, `Planning Assessment` routes.
-
----
-
-## Key decisions that apply to Sprint 1
-
-1. **Public nav and app nav are separate** — no planning links on public site; no public links in app sidebar ([DECISION_LOG.md](./DECISION_LOG.md))
-2. **Complexity stays in** — do not dumb down transfer strategy forms; add guided context instead
-3. **Advisor/attorney are distribution partners** — “Invite your advisor” becomes primary onboarding (Sprint 1 Task 7+ in roadmap)
-4. **Document every route/tier change** — [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md), [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md), [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md)
-
----
-
-## Files to load at the START of Sprint 1
-
-**Public / marketing shell:**
-```
-app/layout.tsx
-app/page.tsx  (or marketing route group)
-← search: PublicNav, SiteHeader, (marketing)
+// In the JSX:
+<IncomeTable
+  projections={projections}
+  p1={displayPersonFirstName(
+    household?.person1_name, 'You'
+  )}
+  p2={household?.has_spouse
+    ? displayPersonFirstName(
+        household?.person2_name, 'Spouse'
+      )
+    : null
+  }
+/>
 ```
 
-**App sidebar (Tasks 2 + 3):**
+If displayPersonFirstName is already imported on this page,
+do not add a duplicate import. If p1/p2 are computed
+elsewhere in the file (e.g. in a variable), update that
+variable instead of the JSX call.
+
+Goal: headers read "Alan · Earned Income" not "AL EARNED".
+The tooltips from Sprint 0 remain unchanged.
+
+---
+
+### Task 3 — UpgradeBanner: householdContext on remaining locked pages
+
+**Files needed (upload 2–3 at a time):**
+```
+app/(dashboard)/social-security/page.tsx
+app/(dashboard)/roth/page.tsx
+app/(dashboard)/rmd/page.tsx
+app/(dashboard)/complete/page.tsx
+app/(dashboard)/my-family/page.tsx
+app/(dashboard)/titling/page.tsx
+app/(dashboard)/incapacity-planning/page.tsx
+app/(dashboard)/domicile-analysis/page.tsx
+```
+
+**Pattern for each page:**
+
+Each page already loads household data before the tier check.
+Add householdContext to the existing UpgradeBanner call only —
+do not add new data fetching.
+
+For tier-2 retirement pages:
+```tsx
+<UpgradeBanner
+  requiredTier={2}
+  moduleName="[keep existing]"
+  valueProposition="[keep existing]"
+  householdContext={{
+    grossEstate: null,
+    statePrimary: householdRow?.state_primary ?? null,
+    firstName: null,
+  }}
+/>
+```
+
+For tier-3 estate pages:
+```tsx
+<UpgradeBanner
+  requiredTier={3}
+  moduleName="[keep existing]"
+  valueProposition="[keep existing]"
+  householdContext={{
+    grossEstate: composition?.gross_estate ?? null,
+    statePrimary: householdRow?.state_primary ?? null,
+    firstName: null,
+  }}
+/>
+```
+
+If composition is not loaded on a page, pass null for grossEstate.
+UpgradeBanner handles null gracefully and falls back to the
+generic valueProposition.
+
+---
+
+### Task 4 — Public site nav separation (Sprint 1 core task)
+
+**The problem:** Education Guide, Planning Assessment, Find an
+Advisor, Find an Attorney appear in the authenticated app
+sidebar. They belong on a public marketing layout with a
+top nav, not in the planning app.
+
+**Files needed — search and upload what exists:**
 ```
 app/(dashboard)/_components/sidebar-nav.tsx
-docs/CONSUMER_NAV_MAP.md
+app/(dashboard)/layout.tsx
+app/layout.tsx
+app/page.tsx
 ```
 
-**Strategy / copy context:**
+Also search for any of these — upload if they exist:
 ```
-docs/PRODUCT_STRATEGY.md
-docs/DECISION_LOG.md
-docs/ROADMAP.md
+app/(marketing)/layout.tsx
+app/(public)/layout.tsx
+app/education/page.tsx  OR  app/(dashboard)/education/page.tsx
+app/assess/page.tsx     OR  app/(dashboard)/assess/page.tsx
 ```
+
+Understanding the current route group structure is essential
+before writing any code. Check whether /education, /assess,
+/find-advisor, /find-attorney are inside the (dashboard)
+route group or outside it.
+
+**Changes:**
+
+Step 1 — Remove from sidebar Overview NAV_GROUPS items:
+```
+{ href: '/', label: 'Home', icon: '🏠' }
+{ href: '/education', label: 'Education Guide', icon: '📚' }
+{ href: '/assess', label: 'Planning Assessment', icon: '🔍' }
+{ href: '/find-advisor', label: 'Find an Advisor', icon: '🤝' }
+{ href: '/find-attorney', label: 'Find an Attorney', icon: '⚖️' }
+```
+
+Step 2 — Move public routes outside the (dashboard) route
+group if they are currently inside it, so they use a
+different layout (no sidebar).
+
+Step 3 — Create a simple public top nav for the marketing
+pages. This does not need to be complex:
+
+```tsx
+// app/(public)/layout.tsx  or  app/(marketing)/layout.tsx
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-neutral-200">
+        <nav className="mx-auto flex max-w-7xl items-center
+          justify-between px-4 py-3">
+          <div className="text-base font-bold text-neutral-900">
+            My Wealth Maps
+          </div>
+          <div className="hidden sm:flex items-center gap-1">
+            <a href="/education"
+              className="px-3 py-1.5 text-sm text-neutral-600
+                hover:text-neutral-900 rounded-lg
+                hover:bg-neutral-100 transition-colors">
+              Education
+            </a>
+            <a href="/assess"
+              className="px-3 py-1.5 text-sm text-neutral-600
+                hover:text-neutral-900 rounded-lg
+                hover:bg-neutral-100 transition-colors">
+              Assessment
+            </a>
+            <a href="/find-advisor"
+              className="px-3 py-1.5 text-sm text-neutral-600
+                hover:text-neutral-900 rounded-lg
+                hover:bg-neutral-100 transition-colors">
+              Find an advisor
+            </a>
+            <a href="/find-attorney"
+              className="px-3 py-1.5 text-sm text-neutral-600
+                hover:text-neutral-900 rounded-lg
+                hover:bg-neutral-100 transition-colors">
+              Find an attorney
+            </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="/login"
+              className="px-3 py-1.5 text-sm text-neutral-600
+                hover:text-neutral-900 rounded-lg border
+                border-neutral-200 hover:bg-neutral-50
+                transition-colors">
+              Log in
+            </a>
+            <a href="/login"
+              className="px-3 py-1.5 text-sm font-medium
+                text-white bg-indigo-600 hover:bg-indigo-700
+                rounded-lg transition-colors">
+              Get started
+            </a>
+          </div>
+        </nav>
+      </header>
+      <main>{children}</main>
+    </div>
+  )
+}
+```
+
+Step 4 — Confirm the Overview group in the sidebar now
+contains only:
+- Profile (`/profile`)
+- Estate Summary (`/dashboard`)
+
+**Critical:** Do not delete or modify the actual page
+components at /education, /assess, /find-advisor,
+/find-attorney. Only change which layout wraps them.
 
 ---
 
-## How to end each coding session
+## Files to upload per task
 
-Ask: "Summarize what we completed today and update NEXT_SESSION.md with remaining Sprint 1 tasks and any new file paths we discovered."
+**Task 1:** `sidebar-nav.tsx`
 
-Commit `NEXT_SESSION.md` with code changes. Update [ROADMAP.md](./ROADMAP.md) checkboxes for completed items.
+**Task 2:** `projections/page.tsx` + `IncomeTable.tsx`
+
+**Task 3:** Upload 2–3 locked pages at a time
+
+**Task 4:** `sidebar-nav.tsx` + `layout.tsx` files +
+any public route page files found in search
 
 ---
 
-## Success criteria — Sprint 1 is done when:
+## Sprint 1 success criteria
 
-- [ ] Zero public-site links in app sidebar
-- [ ] Zero planning-app links in public top nav
-- [ ] Public layout uses top nav only (no sidebar)
-- [ ] Homepage and pricing reflect $2M–$30M segment
-- [ ] Sidebar footer: My Advisor · My Attorney · Account & billing
-- [ ] Assessment → account creation funnel measurable (baseline)
+- [ ] My Attorney in sidebar footer, not Overview group
+- [ ] Attorney access settings removed from sidebar entirely
+- [ ] "Your plan" badge on the active planning group header
+- [ ] Projections headers show full first names with tooltips
+- [ ] UpgradeBanner personalized on all remaining locked pages
+- [ ] Education, Assessment, Find Advisor, Find Attorney
+      removed from app sidebar
+- [ ] Public routes still render correctly with their own
+      layout (no sidebar, simple top nav)
+- [ ] Overview group contains only Profile + Estate Summary
+- [ ] Sidebar footer: My Advisor · My Attorney (tier 2+) ·
+      Manage Subscription · Sign Out
+
+---
+
+## How to end each session
+
+Ask: "Summarize what we completed today and update
+NEXT_SESSION.md with remaining Sprint 1 tasks and
+any new file paths discovered."
+
+Commit the updated NEXT_SESSION.md alongside code changes.
