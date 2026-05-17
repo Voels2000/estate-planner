@@ -155,8 +155,16 @@ export default async function EstateTaxPage() {
   // ── Estate composition — correct gross estate from RPC ──────────────────────
   // Fetched server-side so the client component has it immediately without
   // a loading state. Falls back gracefully if household has no data.
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number(
+      (giftingSummary.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ??
+        0,
+    ) || 0,
+  )
+
   const composition = householdRow?.id
-    ? await classifyEstateAssets(supabase, householdRow.id)
+    ? await classifyEstateAssets(supabase, householdRow.id, 'consumer', lifetimeGiftsUsed)
     : null
 
   return (

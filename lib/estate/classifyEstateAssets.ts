@@ -14,11 +14,13 @@ export async function classifyEstateAssets(
   supabase: SupabaseClient,
   householdId: string,
   sourceRole: 'consumer' | 'advisor' = 'consumer',
+  lifetimeGiftsUsed: number = 0,
 ): Promise<EstateComposition> {
   const { data, error } = await supabase
     .rpc('calculate_estate_composition', {
       p_household_id: householdId,
       p_source_role: sourceRole,
+      p_lifetime_gifts_used: Math.max(0, lifetimeGiftsUsed),
     })
 
   if (error) {

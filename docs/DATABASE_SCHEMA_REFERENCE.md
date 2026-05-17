@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 120 / prior taxable gifts list + controlled collapse)
+# Last updated: May 16, 2026 (Session 120 / Step 4 — calculate_estate_composition lifetime gifts)
 
 ---
 
@@ -95,6 +95,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **RPC:** `calculate_gifting_summary(p_household_id)` aggregates rows and returns `lifetime_exemption_used`, annual caps, per-recipient audit, and `gifts` JSON array (single read path for `GiftingDashboard`).
 - **Consumer writes (Session 118):** `POST` / `PATCH` / `DELETE` `/api/consumer/gift-history` — `requireOwnedHouseholdId`, row verify via `household_id` + `owner_id`, `afterHouseholdWrite`, `revalidatePath` on strategy/gifting pages. No browser Supabase writes from dashboard UI.
 - **Horizon engine (Session 118):** `lifetime_exemption_used` from the RPC is passed as `lifetimeGiftsUsed` into `buildStrategyHorizons` so federal exemption on horizon columns matches the gifting tab (engine does not call the RPC).
+- **Estate composition (Session 120, Step 4):** `classifyEstateAssets` passes `p_lifetime_gifts_used` (`lifetime_exemption_used` from gifting RPC) into `calculate_estate_composition(p_household_id, p_source_role, p_lifetime_gifts_used)`. Reduces federal `v_exemption` after config null guard; return includes `lifetime_gifts_used`. Distinct from `adjusted_taxable_gifts` (ATG add-back to taxable estate). Migration `20260516140000` — regenerate from `supabase/migrations/reference/live_calculate_estate_composition.sql` via `scripts/build-estate-composition-lifetime-gifts-migration.mjs` if prod diverges again.
 - **UI:** `components/GiftingDashboard.tsx` — annual gifts via **Log a Gift**; prior Form 709 lifetime gifts via **Prior taxable gifts** collapsible (`priorTaxableGifts` = `summary.gifts` filtered `gift_type='lifetime'`; controlled open, auto-expand when rows exist; amber border when `form_709_filed=false`). Session 119: trim on submit; prior form badge + Form 709 auto-check.
 
 ### `adjusted_taxable_gifts`
@@ -225,7 +226,7 @@ Projection snapshots should be invalidated when newer data exists in:
 
 | RPC | Purpose |
 |-----|---------|
-| `calculate_estate_composition` | Estate asset/tax composition |
+| `calculate_estate_composition` | Estate asset/tax composition; args `(uuid, text DEFAULT 'consumer', numeric DEFAULT 0)` — third arg `p_lifetime_gifts_used` reduces federal exemption (Session 120) |
 | `calculate_domicile_risk` | Domicile risk scoring |
 | `generate_estate_recommendations` | Gap/recommendation generation |
 | `calculate_gifting_summary` | Gifting summary outputs (`lifetime_exemption_used`, annual caps, `gifts` array); horizon callers pass `lifetime_exemption_used` as `lifetimeGiftsUsed` |
@@ -388,10 +389,12 @@ After each schema-affecting session:
 
 ## Session 120 Note
 
-- No database schema or migration changes were introduced in Session 120.
+- Schema: migration `20260516140000_calculate_estate_composition_add_lifetime_gifts.sql` — `calculate_estate_composition` gains `p_lifetime_gifts_used numeric DEFAULT 0`; `v_exemption := GREATEST(0, v_exemption - p_lifetime_gifts_used)` after federal config null guard; return adds `lifetime_gifts_used`; `SET search_path = public`; GRANT on `(uuid, text, numeric)`. Built from live `pg_get_functiondef` (`supabase/migrations/reference/live_calculate_estate_composition.sql` + `scripts/build-estate-composition-lifetime-gifts-migration.mjs`). `v_atg` / `adjusted_taxable_gifts` unchanged (Step 7).
 - Application-layer changes:
-  - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo from RPC `summary.gifts`; prior section controlled open (expands when rows exist).
-  - `CollapsibleSection.tsx` — optional `open` / `onOpenChange` for controlled collapse.
+  - `classifyEstateAssets` + `my-estate-trust-strategy/page.tsx` + `estate-tax/page.tsx` — pass `lifetime_exemption_used` into composition RPC.
+  - `lib/estate/types.ts` — `lifetime_gifts_used?`, `exemption_used?`, `source_role?` on `EstateComposition`.
+  - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo; prior section controlled open.
+  - `CollapsibleSection.tsx` — optional `open` / `onOpenChange`.
 
 ## Session 119 Note
 

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 120 / prior taxable gifts section expand + controlled collapse)
+# Last updated: May 16, 2026 (Session 120 / Step 4 — lifetime gifts in calculate_estate_composition)
 
 ---
 
@@ -70,7 +70,8 @@ Important:
   - Callers fetch `calculate_gifting_summary` and pass `lifetime_exemption_used` into `buildStrategyHorizons` / `estimateFederalEstateTaxSnapshot` (`exemption = max(0, statutory − lifetimeGiftsUsed)`).
   - Engine stays pure — no RPC inside `horizonSnapshots.ts`.
   - Wired on `my-estate-strategy/page.tsx`, `my-estate-trust-strategy/page.tsx`, advisor client page via `lib/advisor/strategyMappers.ts`.
-  - Aligns strategy horizon federal exemption with the gifting tab’s `lifetime_exemption_used` (still sourced from `calculate_gifting_summary`, not `calculate_estate_composition`).
+  - Aligns strategy horizon federal exemption with the gifting tab’s `lifetime_exemption_used` (sourced from `calculate_gifting_summary`).
+- As of Session 120 (Step 4), `calculate_estate_composition` accepts `p_lifetime_gifts_used numeric DEFAULT 0` (migration `20260516140000`, built from live `pg_get_functiondef` in `supabase/migrations/reference/`). `classifyEstateAssets` passes `calculate_gifting_summary.lifetime_exemption_used` on trust-strategy and estate-tax pages; other callers default `0`. Federal `v_exemption` is reduced after the `federal_tax_config` null guard; return includes `lifetime_gifts_used`. **Do not conflate** with `adjusted_taxable_gifts` (`v_atg`): ATG add-back to taxable estate (Step 7 removal).
 - Missing-input observability hooks are now in place:
   - Advisor Tax tab emits one client-side telemetry event to `/api/telemetry/horizon-input-missing`.
   - Consumer trust-strategy page emits a structured server log event when horizon federal inputs are missing.

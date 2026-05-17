@@ -68,7 +68,10 @@ export type EstateComposition = {
 
   // Exemption
   exemption_available: number
+  exemption_used?: number
   exemption_remaining: number
+  lifetime_gifts_used?: number
+  source_role?: string
   estimated_tax: number
   estimated_tax_federal?: number | null
   estimated_tax_state?: number | null
