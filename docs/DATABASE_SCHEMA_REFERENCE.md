@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 120 — exemption headroom UI labels)
+# Last updated: May 16, 2026 (Session 120 — formatCurrency + horizon lifetime gifts row)
 
 ---
 
@@ -397,6 +397,8 @@ After each schema-affecting session:
   - `EstateCompositionCard.tsx` — **Federal exemption (after gifts)** + **Headroom before federal tax** labels; helper text for `exemption_remaining` formula.
   - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo; prior section controlled open; lifetime meter uses RPC `lifetime_exemption_used` only (no double-count of annual overflow).
   - `CollapsibleSection.tsx` — optional `open` / `onOpenChange`.
+  - `lib/utils/formatCurrency.ts` — shared `formatDollars` / `formatDollarsCompact`; `TrustDocumentsPanel` estate value display.
+  - `my-estate-strategy/_my-estate-strategy-client.tsx` — `lifetimeGiftsUsed` prop; horizon **Lifetime gifts used** row (link to `/my-estate-trust-strategy?tab=gifting` when &gt; 0).
 
 ## Session 119 Note
 

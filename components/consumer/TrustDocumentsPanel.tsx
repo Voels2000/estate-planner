@@ -13,6 +13,7 @@ import type {
   TrustWillChecklistItem,
   TrustWillRecommendation,
 } from '@/lib/trusts/types'
+import { formatDollars } from '@/lib/utils/formatCurrency'
 
 export type { TrustRow } from '@/lib/trusts/types'
 
@@ -37,10 +38,6 @@ function num(v: unknown): number {
   if (typeof v === 'number' && !Number.isNaN(v)) return v
   if (typeof v === 'string' && v !== '') return Number(v) || 0
   return 0
-}
-
-function formatDollars(n: number) {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
 const inputClass =
@@ -124,8 +121,8 @@ export function TrustDocumentsPanel({
         defaultOpen={true}
         storageKey={`${keyPrefix}-estimated-estate-value`}
       >
-        <p className="text-2xl font-bold text-neutral-900">
-          ${estateValue.toLocaleString()}
+        <p className="text-2xl font-bold text-neutral-900 tabular-nums">
+          {formatDollars(estateValue)}
         </p>
       </CollapsibleSection>
 

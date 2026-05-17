@@ -361,6 +361,7 @@ export default async function MyEstateStrategyPage() {
         hasSpouse={hasSpouse}
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
+        lifetimeGiftsUsed={lifetimeGiftsUsedForComposition}
         middleContent={
           <EstatePlanningDashboard
             householdId={household.id}

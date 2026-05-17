@@ -14,6 +14,7 @@ import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/ho
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import { formatDollars } from '@/lib/utils/formatCurrency'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
@@ -59,6 +60,8 @@ type Props = {
   middleContent?: ReactNode
   acceptedMCScenario?: ConsumerMCScenario | null
   latestSharedMCScenario?: ConsumerMCScenario | null
+  /** From calculate_gifting_summary.lifetime_exemption_used — same across horizon columns */
+  lifetimeGiftsUsed?: number
 }
 
 export default function MyEstateStrategyClient({
@@ -76,6 +79,7 @@ export default function MyEstateStrategyClient({
   middleContent,
   acceptedMCScenario,
   latestSharedMCScenario,
+  lifetimeGiftsUsed = 0,
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -243,6 +247,21 @@ export default function MyEstateStrategyClient({
                     )}
                     <div className="mt-4 space-y-3 text-sm">
                       <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
+                      <div className="flex justify-between items-baseline gap-2">
+                        <span className="text-neutral-500">Lifetime gifts used</span>
+                        {lifetimeGiftsUsed > 0 ? (
+                          <Link
+                            href="/my-estate-trust-strategy?tab=gifting"
+                            className="text-sm font-medium text-amber-600 hover:underline tabular-nums"
+                          >
+                            {formatDollars(lifetimeGiftsUsed)}
+                          </Link>
+                        ) : (
+                          <span className="text-sm text-neutral-500 tabular-nums">
+                            {formatDollars(0)}
+                          </span>
+                        )}
+                      </div>
                       <MetricRow label="Federal exemption" value={fmtEst(col.federalExemption)} />
                       <MetricRow label="Federal estate tax exposure" value={fmtEst(col.federalExposure)} />
                       <MetricRow label="Federal estate tax estimate" value={fmtEst(col.federalTaxEstimate)} />
