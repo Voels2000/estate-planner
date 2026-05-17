@@ -297,14 +297,24 @@ test.describe('Consumer strategy write APIs', () => {
       })
       expect(saveRes.ok(), await saveRes.text()).toBeTruthy()
 
-      await new Promise((r) => setTimeout(r, 1500))
+      // afterHouseholdWrite triggers async recompute — wait then poll composition
+      await new Promise((r) => setTimeout(r, 2000))
 
-      const afterRes = await request.post('/api/estate-composition', {
-        data: { householdId, sourceRole: 'consumer' },
-      })
-      expect(afterRes.ok(), await afterRes.text()).toBeTruthy()
-      const after = (await afterRes.json()) as { outside_strategy_total?: number }
-      expect(Number(after.outside_strategy_total ?? 0)).toBeGreaterThan(beforeTotal)
+      await expect
+        .poll(
+          async () => {
+            const afterRes = await request.post('/api/estate-composition', {
+              data: { householdId, sourceRole: 'consumer' },
+            })
+            if (!afterRes.ok()) {
+              throw new Error(`estate-composition failed: ${await afterRes.text()}`)
+            }
+            const after = (await afterRes.json()) as { outside_strategy_total?: number }
+            return Number(after.outside_strategy_total ?? 0)
+          },
+          { timeout: 20_000, intervals: [500, 1000, 2000] },
+        )
+        .toBeGreaterThan(beforeTotal)
     } finally {
       await deleteStrategyLineItem(request, householdId, strategySource, scenarioName)
       await deleteStrategyLineItem(request, householdId, 'charitable', scenarioName)
