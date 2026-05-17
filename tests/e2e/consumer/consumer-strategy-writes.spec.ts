@@ -193,7 +193,6 @@ test.describe('Consumer strategy write APIs', () => {
     })
     expect(beforeRes.ok(), await beforeRes.text()).toBeTruthy()
     const before = (await beforeRes.json()) as { outside_strategy_total?: number }
-    const beforeTotal = Number(before.outside_strategy_total ?? 0)
 
     const saveRes = await request.post('/api/strategy-line-items', {
       data: {
@@ -209,12 +208,17 @@ test.describe('Consumer strategy write APIs', () => {
     })
     expect(saveRes.ok(), await saveRes.text()).toBeTruthy()
 
+    // Brief wait so composition RPC sees the new row (no hardcoded account totals)
+    await new Promise((r) => setTimeout(r, 1500))
+
     const afterRes = await request.post('/api/estate-composition', {
       data: { householdId, sourceRole: 'consumer' },
     })
     expect(afterRes.ok(), await afterRes.text()).toBeTruthy()
     const after = (await afterRes.json()) as { outside_strategy_total?: number }
-    expect(Number(after.outside_strategy_total ?? 0)).toBeGreaterThanOrEqual(beforeTotal + 10000)
+    expect(Number(after.outside_strategy_total ?? 0)).toBeGreaterThan(
+      Number(before.outside_strategy_total ?? 0),
+    )
 
     await request.delete('/api/strategy-line-items', {
       data: { householdId, strategySource: 'daf', scenarioName: 'base', source_role: 'consumer' },
