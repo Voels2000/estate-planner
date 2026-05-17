@@ -78,8 +78,8 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `insurance_policies`
 
-- **Key columns:** `user_id`, `death_benefit`, `cash_value`, `is_ilit`
-- **Important:** uses `user_id` (not `owner_id`).
+- **Key columns:** `user_id`, `death_benefit`, `cash_value`, `is_ilit`, `description`, `policy_type`
+- **Important:** uses `user_id` (not `owner_id`) — architectural decision #8; ILIT consumer form (`IlitStrategyForm`) queries by `user_id` (`ownerUserId` from `my-estate-trust-strategy/page.tsx`).
 
 ### `projection_scenarios`
 
@@ -110,9 +110,10 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
-  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`); `category` required by DB check — API defaults from `strategy_source` when omitted (`lib/strategy/resolveStrategyLineItemCategory.ts`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`, SLAT/ILIT as `strategy_source` `slat`/`ilit` with `scenario_name='base'` from `SlatStrategyForm` / `IlitStrategyForm` via `lib/consumer/consumerStrategyLineItems.ts`); `category` required by DB check — API defaults from `strategy_source` when omitted (`lib/strategy/resolveStrategyLineItemCategory.ts`); SLAT/ILIT consumer saves use `category: 'trust_exclusion'` (not literal `trust` or `insurance`)
   - **Upsert key (active rows):** partial unique index `strategy_line_items_upsert_active_idx` on `(household_id, strategy_source, source_role, COALESCE(projection_year,-1), COALESCE(scenario_name,''))` WHERE `is_active=true` (migration `20260516000001`)
-  - **`strategy_source` allowlist** includes `liquidity`, `roth`, `slat` (in addition to gifting, trust, charitable, etc.)
+  - **`strategy_source` allowlist** includes `ilit`, `liquidity`, `roth`, `slat` (in addition to gifting, trust, charitable, etc.; `slat` added in `20260516000001`, `ilit` since original table migration)
+  - consumer SLAT/ILIT rows should use `confidence_level='probable'` (default in `consumerStrategyLineItems.ts`) so they aggregate into `outside_strategy_total` in `calculate_estate_composition` (`certain` + `probable` only; `illustrative` excluded)
   - consumer dashboard reads active advisor rows for `StrategyRecommendationPanel` (accept/decline via `/api/consumer/strategy-recommendation`)
   - consumer removal uses `DELETE /api/strategy-line-items` (sets `is_active=false` for matching household + `strategy_source` + `source_role`; row retained for audit)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
@@ -387,6 +388,18 @@ After each schema-affecting session:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
 
+## Session 124 Note
+
+- No database schema or migration changes were introduced in Session 124 (SLAT/ILIT consumer modeling uses existing `strategy_line_items` allowlist and `trust_exclusion` category).
+- Application-layer — Transfer Strategies (`ConsumerStrategyPanel`):
+  - `components/consumer/SlatStrategyForm.tsx` — contribution amount, funding source (`metadata.funding_source`), notes; MFJ form guard + pill gate; save/remove via `lib/consumer/consumerStrategyLineItems.ts`.
+  - `components/consumer/IlitStrategyForm.tsx` — policy dropdown from `insurance_policies` (`user_id`) or manual coverage amount; `metadata.policy_id` / `policy_label` when policy selected.
+  - `lib/consumer/consumerStrategyLineItems.ts` — `CONSUMER_BASE_SCENARIO_NAME = 'base'`, `saveConsumerStrategyLineItem` / `removeConsumerStrategyLineItem` → `POST`/`DELETE` `/api/strategy-line-items`; defaults `confidence_level: 'probable'`, `metric_target: 'taxable_estate'`, `sign: -1`.
+  - `my-estate-trust-strategy/page.tsx` passes `ownerUserId={user.id}`; panel reloads saved rows (`amount`, `metadata`) and calls `router.refresh()` after write.
+  - Education card collapses when saved (`StrategyEducationCard` `defaultOpen={!saved}`); green pill dot when `strategy_source` in saved set.
+- Engine: active consumer SLAT/ILIT rows flow through existing `outside_strategy_items` / `outside_strategy_total` aggregation in `calculate_estate_composition` (no RPC change).
+- Types: `StrategyLineItemSource` includes `slat` in `lib/estate/types.ts` (`ilit` was already present).
+
 ## Session 122 Note
 
 - No database schema or migration changes were introduced in Session 122.
@@ -399,7 +412,7 @@ After each schema-affecting session:
 ## Session 121 Note
 
 - Schema (Step 7): `20260517120000` — drop `adjusted_taxable_gift` from `strategy_line_items_strategy_source_check` (pre-flight count must be 0). `20260517120100` — remove `v_atg` from `calculate_estate_composition` (no ATG add-back to `taxable_estate`; `lifetime_gifts_used` unchanged). Reference: `supabase/migrations/reference/live_calculate_estate_composition.sql`.
-- Application-layer — Transfer Strategies: `ConsumerStrategyPanel` educational cards (`STRATEGY_INFO`, SLAT/ILIT pills, MFJ gating); liquidity panel `Math.round()` on `estimatedStateTax` / `estimatedFederalTax` for number inputs.
+- Application-layer — Transfer Strategies: `ConsumerStrategyPanel` educational cards (`STRATEGY_INFO`, SLAT/ILIT pills, MFJ gating); liquidity panel `Math.round()` on `estimatedStateTax` / `estimatedFederalTax` for number inputs. Consumer save forms for SLAT/ILIT deferred to Session 124.
 - Application-layer — gift-history: `POST /api/consumer/gift-history` returns **201**; `lib/strategy/*` drops `adjusted_taxable_gift` from allowed sources; `EstateComposition.adjusted_taxable_gifts` optional (RPC no longer returns it after 7B).
 - E2E: `tests/e2e/consumer/consumer-gift-history.spec.ts` (9 cases); consumer project **50** tests. Playwright account: `david@rolobe.resend.app` / household `3967698f-00d2-4746-ab90-6209e90b3d68` in `.env.test`. Recompute case needs `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 

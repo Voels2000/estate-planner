@@ -1,6 +1,6 @@
 # Consumer release smoke test (manual)
 
-Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, or planning-topic copy changed (Sessions 100–116).
+Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, transfer-strategy modeling, or planning-topic copy changed (Sessions 100–124).
 
 **Time:** ~20–30 minutes for the full checklist · ~10 minutes for the **Core** section only.
 
@@ -123,6 +123,12 @@ Pick **one** module you already use (Assets is simplest).
 | 10.5 | **Common planning topics** sections show prevalence labels (not “High Priority”) | Educational disclaimer visible | ☐ |
 | 10.6 | Save a **named** gifting scenario (Gifting tab) | Appears in saved list | ☐ |
 | 10.7 | **Remove** only that named scenario | Others remain | ☐ |
+| 10.8 | **Transfer Strategies** tab → **SLAT** (MFJ household only) | Pill clickable; save contribution (e.g. $100,000), funding source, optional notes | ☐ |
+| 10.8b | After save | Green summary “SLAT funded: …”; pill shows active dot; **About this strategy** collapsed | ☐ |
+| 10.8c | **Edit** then **Remove from plan** | Form returns; pill inactive | ☐ |
+| 10.9 | **Transfer Strategies** tab → **ILIT** | If policies exist: dropdown + save; else manual coverage amount + amber note linking to Insurance | ☐ |
+| 10.9b | After save | Green summary “ILIT funded: …”; dashboard refresh updates estate/strategy totals | ☐ |
+| 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
 
 ### 11. Estate Summary planning topics (tier 1+ with estate data)
 

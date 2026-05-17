@@ -265,7 +265,8 @@ Runtime behavior:
 - As of Session 115 (Phase A consumer cleanup), canonical nav/URL/title/tier map lives in `docs/CONSUMER_NAV_MAP.md`. Sidebar labels aligned with page `<h1>` titles; duplicate `asset-allocation/_allocation-client.tsx` removed (`/asset-allocation` still redirects to `/allocation`). `FEATURE_TIERS`: fixed `projections` key, `allocation` tier 2, added `trust-will` tier 3.
 - As of Session 116 (Phase A½ trust merge), full Trust & Will UI lives on **Gifting, Strategies & Trusts** → **Trusts & Documents** tab (`/my-estate-trust-strategy?tab=trusts`). Shared `components/consumer/TrustDocumentsPanel.tsx` + `lib/trusts/loadTrustWillGuidance.ts`; `/trust-will` redirects to that tab (no separate sidebar link). Sidebar **Gifting, Strategies & Trusts** opens `?tab=trusts`; tab clicks sync URL via `router.replace`.
 - As of Session 116, consumer planning-topic lists use educational framing (not personalized advice): `lib/estate/planningTopicPresentation.ts`, `PlanningTopicsList` (estate recommendations RPC), `EducationalTopicsCards` (gifting, charitable, business succession, incapacity). Prevalence labels: “Common in many estate plans” / “Often discussed in planning” / “Depends on your situation”. `lib/trust-will-rules.ts` recommendation copy softened. Domicile, Roth, Social Security, Monte Carlo, and dashboard conflict actions use similar non-directive language. **Advisor Recommendations** panel unchanged (explicit advisor accept/decline workflow).
-- As of Session 109, `POST /api/strategy-line-items` resolves `category` via `lib/strategy/resolveStrategyLineItemCategory.ts` (no invalid default `'other'`). Consumer gifting/charitable saves pass explicit categories; DB allows `strategy_source` values `liquidity`, `roth`, and `slat`. Migration `20260516000001_strategy_line_items_upsert_idx_scenario_name.sql` replaces the legacy unique key with a partial unique index on active rows: `(household_id, strategy_source, source_role, projection_year, scenario_name)` — aligned with named consumer scenario upserts.
+- As of Session 109, `POST /api/strategy-line-items` resolves `category` via `lib/strategy/resolveStrategyLineItemCategory.ts` (no invalid default `'other'`). Consumer gifting/charitable saves pass explicit categories; DB allows `strategy_source` values including `ilit`, `liquidity`, `roth`, and `slat`. Migration `20260516000001_strategy_line_items_upsert_idx_scenario_name.sql` replaces the legacy unique key with a partial unique index on active rows: `(household_id, strategy_source, source_role, projection_year, scenario_name)` — aligned with named consumer scenario upserts.
+- As of Session 124, consumer SLAT/ILIT modeling shares `lib/consumer/consumerStrategyLineItems.ts` and upserts one active row per `(household_id, strategy_source, source_role, scenario_name='base')`. Do not use raw Supabase inserts from the browser for these strategies.
 
 ---
 
@@ -544,6 +545,11 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Education catalog: `components/education/EducationModuleCatalog.tsx` (bundle paths unchanged; loader supplies published-only module list).
 - Digital assets: `app/(dashboard)/digital-assets/page.tsx`, `_digital-assets-client.tsx`, `_components/DigitalAssetIntakeForm.tsx`, `_components/DigitalAssetList.tsx`.
 - Gifting: `components/GiftingDashboard.tsx` (trust-strategy gifting tab); summary via `calculate_gifting_summary` RPC; writes via `/api/consumer/gift-history`.
+- Transfer Strategies (trust-strategy tab): `components/consumer/ConsumerStrategyPanel.tsx` (orchestration, pills, `STRATEGY_INFO` education cards, saved-state reload).
+- SLAT consumer form: `components/consumer/SlatStrategyForm.tsx` (MFJ guard, funding source metadata).
+- ILIT consumer form: `components/consumer/IlitStrategyForm.tsx` (policy dropdown / manual amount; reads `insurance_policies` by `user_id`).
+- Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
+- Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
 
 ---
 
