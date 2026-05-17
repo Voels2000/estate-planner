@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 17, 2026 (Session 122 — dashboard estate callout + flow label overlap)
+# Last updated: May 17, 2026 (Session 122 — dashboard callout, headroom parity, flow labels)
 
 ---
 
@@ -393,7 +393,8 @@ After each schema-affecting session:
 - Application-layer changes:
   - `app/(dashboard)/dashboard/page.tsx` — server `calculate_gifting_summary` + `classifyEstateAssets(..., lifetimeGiftsUsed)`; passes `estateCallout` to client.
   - `components/dashboard/EstateCalloutCard.tsx` — gross estate, headroom before federal tax, est. federal/state tax; link `/estate-tax`.
-  - `components/estate-flow/EstateFlowDiagram.tsx` — `buildEdgeLabelLanes` (file-local rendering helper) + label background/stagger for overlapping edges.
+  - `lib/estate/exemptionLabels.ts` — `computeHeadroomBeforeFederalTax(exemption_available, gross, outside_strategy_total)` aligns dashboard callout with My Estate Strategy horizons (`federalExemption − insideTotal`); RPC `exemption_remaining` remains `exemption_available − taxable_estate` for tax-engine surfaces (e.g. estate-tax snapshot).
+  - `components/estate-flow/EstateFlowDiagram.tsx` — `buildEdgeLabelLanes` (file-local rendering helper; not under `lib/`) + label background/stagger for overlapping edges.
 
 ## Session 121 Note
 

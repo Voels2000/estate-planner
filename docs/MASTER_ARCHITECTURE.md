@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 17, 2026 (Session 122 — dashboard estate callout + flow label overlap)
+# Last updated: May 17, 2026 (Session 122 — dashboard callout, headroom parity, flow labels)
 
 ---
 
@@ -72,7 +72,7 @@ Important:
   - Wired on `my-estate-strategy/page.tsx`, `my-estate-trust-strategy/page.tsx`, advisor client page via `lib/advisor/strategyMappers.ts`.
   - Aligns strategy horizon federal exemption with the gifting tab’s `lifetime_exemption_used` (sourced from `calculate_gifting_summary`).
 - As of Session 120 (Step 4), `calculate_estate_composition` accepts `p_lifetime_gifts_used numeric DEFAULT 0` (migration `20260516140000`). As of Session 121 (Step 7), `v_atg` / `adjusted_taxable_gifts` add-back removed from the RPC (`20260517120100`); `adjusted_taxable_gift` dropped from `strategy_line_items.strategy_source` check (`20260517120000`). Legacy `adjusted_taxable_gifts` table remains for intake only. `classifyEstateAssets` passes `calculate_gifting_summary.lifetime_exemption_used` on trust-strategy, estate-tax, **my-estate-strategy**, and `POST /api/estate-composition`.
-- As of Session 120, composition RPC `exemption_remaining` = `exemption_available − taxable_estate` (headroom before federal estate tax is estimated). Consumer UI labels are centralized in `lib/estate/exemptionLabels.ts`: **Lifetime gifts used**, **Federal exemption (after gifts)**, **Headroom before federal tax** (estate-tax, composition card, My Estate Strategy horizons) vs **Lifetime exemption remaining** (Gifting tab only).
+- As of Session 120, composition RPC `exemption_remaining` = `exemption_available − taxable_estate` (tax-engine field after admin deductions). Consumer-facing **Headroom before federal tax** on dashboard and My Estate Strategy horizons uses `computeHeadroomBeforeFederalTax()` in `lib/estate/exemptionLabels.ts` (`exemption_available − inside estate`, where inside = gross minus `outside_strategy_total`) — not raw RPC `exemption_remaining`. Other labels: **Lifetime gifts used**, **Federal exemption (after gifts)**, **Lifetime exemption remaining** (Gifting tab only).
 - As of Session 120, shared `lib/utils/formatCurrency.ts` (`formatDollars`, `formatDollarsCompact`) — `TrustDocumentsPanel` estimated taxable estate uses `formatDollars` (whole dollars, no raw `toLocaleString` decimals). **My Estate Strategy** horizon columns show **Lifetime gifts used** between gross estate and federal exemption (`lifetimeGiftsUsed` prop from `calculate_gifting_summary`; links to gifting tab when &gt; 0).
 - Missing-input observability hooks are now in place:
   - Advisor Tax tab emits one client-side telemetry event to `/api/telemetry/horizon-input-missing`.
