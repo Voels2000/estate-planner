@@ -2,6 +2,17 @@
 
 Use this checklist in every PR/commit routine when architecture, data flow, or tax logic changes.
 
+## Doc repository (start here for context)
+
+| Doc | Purpose |
+|-----|---------|
+| [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
+| [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
+| [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
+| [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
+| [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Consumer journeys and routes |
+| [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
+
 ## When to update docs
 
 - Engine logic changes (`projection-complete`, `roth-analysis`, tax engines, strategy engines)
@@ -11,6 +22,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Workflow changes (advisor/consumer acceptance, recommendation writes, Monte Carlo sharing)
 - Consumer route, profile gate, tab/sub-tab, CTA label, or save/refresh behavior → `docs/CONSUMER_FLOWS.md`
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
+- Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 
 ## Required updates before merge
 
