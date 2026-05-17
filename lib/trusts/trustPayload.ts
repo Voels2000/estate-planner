@@ -10,7 +10,7 @@ export const TRUST_TYPES = [
 export type TrustType = (typeof TRUST_TYPES)[number]
 
 export const TRUST_SELECT =
-  'id, owner_id, name, excluded_from_estate, trust_type, grantor, trustee, funding_amount, state, is_irrevocable, excludes_from_estate, created_at, updated_at'
+  'id, owner_id, name, trust_type, grantor, trustee, funding_amount, state, is_irrevocable, excludes_from_estate, created_at, updated_at'
 
 export const TRUST_DOCUMENT_SELECT =
   'id, name, trust_type, is_irrevocable, funding_amount'
@@ -36,7 +36,6 @@ export function buildTrustRow(body: Record<string, unknown>):
 
   const funding = Math.max(0, Number(body.funding_amount) || 0)
   const excludesFromEstate = Boolean(body.excludes_from_estate)
-  const excludedNumeric = excludesFromEstate ? funding : 0
 
   return {
     ok: true,
@@ -49,7 +48,6 @@ export function buildTrustRow(body: Record<string, unknown>):
       state: normalizeState(body.state as string | undefined),
       is_irrevocable: Boolean(body.is_irrevocable),
       excludes_from_estate: excludesFromEstate,
-      excluded_from_estate: excludedNumeric,
       updated_at: new Date().toISOString(),
     },
   }
