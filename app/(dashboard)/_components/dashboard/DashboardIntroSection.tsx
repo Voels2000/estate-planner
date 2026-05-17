@@ -16,6 +16,10 @@ type DashboardIntroSectionProps = {
   completedSteps: number
   setupSteps: SetupStep[]
   completionScore?: CompletionScore | null
+  conflictReport?: {
+    critical: number
+    warnings: number
+  } | null
 }
 
 export function DashboardIntroSection(props: DashboardIntroSectionProps) {
@@ -27,6 +31,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
     completedSteps,
     setupSteps,
     completionScore,
+    conflictReport,
   } = props
 
   return (
@@ -112,6 +117,34 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
           </div>
         </div>
       )}
+
+      {conflictReport &&
+        (conflictReport.critical > 0 || conflictReport.warnings > 0) && (
+          <div className="mb-4 flex items-center gap-2">
+            {conflictReport.critical > 0 && (
+              <a
+                href="#estate-conflicts"
+                className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
+              >
+                🚨 {conflictReport.critical} critical
+              </a>
+            )}
+            {conflictReport.warnings > 0 && (
+              <a
+                href="#estate-conflicts"
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition"
+              >
+                ⚠️ {conflictReport.warnings} warnings
+              </a>
+            )}
+            <a
+              href="#estate-conflicts"
+              className="text-xs text-neutral-400 hover:text-neutral-600 underline-offset-2 hover:underline transition"
+            >
+              See issues below
+            </a>
+          </div>
+        )}
     </>
   )
 }

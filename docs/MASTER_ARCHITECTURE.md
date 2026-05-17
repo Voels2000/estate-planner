@@ -451,10 +451,11 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Signup form honors `redirectTo` query param; maps `/find-advisor`, `/find-attorney`, and `/assess` to `/profile?from=…` after consumer signup.
 - Profile page shows contextual welcome banner when arriving from assessment restore (`mwm_pending_assessment`), find-advisor, or find-attorney flows.
 
-**Sidebar navigation:**
+**Sidebar navigation (Sprint 0):**
 
 - Overview group includes **My Attorney** (`/my-attorney`, consumer-only, tier 2+) and **Attorney access settings** (`/settings/attorney-access`) with existing tier gate behavior.
-- Standalone bottom **My Attorney** duplicate link removed; **My Advisor** quick link remains at bottom of nav.
+- **Footer block** (below main nav): **My Advisor** (`/my-advisor`) and **Manage Subscription** (`/billing`), then **Sign out**. My Attorney move to footer deferred to Sprint 1.
+- **`UpgradeBanner`** (`app/(dashboard)/_components/UpgradeBanner.tsx`): optional `householdContext` for personalized tier-gate copy on `/estate-tax` and `/my-estate-strategy`.
 
 **Design system + education UI refresh:**
 

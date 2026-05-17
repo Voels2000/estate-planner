@@ -127,6 +127,7 @@ export default function MyEstateStrategyClient({
     if (columns.length === 2) return 'lg:grid-cols-2'
     return 'lg:grid-cols-1'
   }, [columns.length])
+  void gridClassName
   const horizonsSubtitle = scenarioMeta.calculatedAt
     ? `Today, 10 years, 20 years, and at second death · Last updated ${new Date(scenarioMeta.calculatedAt).toLocaleDateString()}.`
     : 'Today, 10 years, 20 years, and at second death'
@@ -210,127 +211,242 @@ export default function MyEstateStrategyClient({
             </div>
           )}
         </div>
-        <div className={`grid grid-cols-1 gap-4 ${gridClassName}`}>
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {columns.map((col) => (
             <div
-              key={col.headerTitle}
-              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+              key={col.headerTitle + '-hero'}
+              className={`rounded-xl border px-4 py-3 text-center ${
+                col === today
+                  ? 'border-neutral-300 bg-neutral-50'
+                  : col === tenYear
+                    ? 'border-blue-200 bg-blue-50'
+                    : col === twentyYear
+                      ? 'border-indigo-200 bg-indigo-50'
+                      : 'border-purple-200 bg-purple-50'
+              }`}
             >
-              <div className={`px-4 py-3 text-center text-sm font-semibold ${col.headerClassName}`}>
+              <p
+                className={`mb-1 text-xs font-medium ${
+                  col === today
+                    ? 'text-neutral-500'
+                    : col === tenYear
+                      ? 'text-blue-600'
+                      : col === twentyYear
+                        ? 'text-indigo-600'
+                        : 'text-purple-700'
+                }`}
+              >
                 {col.headerTitle}
-              </div>
-              <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
-                <p className="text-xs leading-relaxed text-neutral-600">{col.narrative}</p>
-
-                {col.showGenerateCta ? (
-                  <div className="mt-6 flex flex-1 flex-col items-center justify-center text-center">
-                    <p className="text-sm text-neutral-700">
-                      Generate your estate plan to see projections
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleGenerateBaseCase}
-                      disabled={generating}
-                      className="mt-4 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {generating ? 'Generating…' : 'Generate My Estate Plan →'}
-                    </button>
-                    <Link
-                      href="/dashboard"
-                      className="mt-3 text-xs text-neutral-400 hover:text-neutral-600 hover:underline"
-                    >
-                      Or go to Dashboard
-                    </Link>
-                  </div>
-                ) : (
-                  <>
-                    {col.showMissingRowNote && col.missingRowCalendarYear != null && (
-                      <p className="mt-2 text-xs text-amber-800">
-                        This projection does not include {col.missingRowCalendarYear}; figures are
-                        unavailable for this horizon.
-                      </p>
-                    )}
-                    <div className="mt-4 space-y-3 text-sm">
-                      <MetricRow label="Gross estate" value={fmtEst(col.grossEstate)} emphasized />
-                      <div className="flex justify-between items-baseline gap-2">
-                        <span className="text-neutral-500">{LIFETIME_GIFTS_USED_LABEL}</span>
-                        {lifetimeGiftsUsed > 0 ? (
-                          <Link
-                            href="/my-estate-trust-strategy?tab=gifting"
-                            className="text-sm font-medium text-amber-600 hover:underline tabular-nums"
-                          >
-                            {formatDollars(lifetimeGiftsUsed)}
-                          </Link>
-                        ) : (
-                          <span className="text-sm text-neutral-500 tabular-nums">
-                            {formatDollars(0)}
-                          </span>
-                        )}
-                      </div>
-                      <MetricRow
-                        label={FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}
-                        value={fmtEst(col.federalExemption)}
-                      />
-                      <MetricRow label="Federal estate tax exposure" value={fmtEst(col.federalExposure)} />
-                      <MetricRow label="Federal estate tax estimate" value={fmtEst(col.federalTaxEstimate)} />
-                      <div className="my-3 border-t border-neutral-200" />
-                      <MetricRow label="State estate tax exposure" value={fmtEst(col.stateExposure)} />
-                      {col === atDeath &&
-                        primaryResidenceValue != null &&
-                        primaryResidenceValue > 0 && (
-                          <p className="mt-2 text-xs leading-relaxed text-neutral-500">
-                            ℹ️ This estimate reflects the surviving spouse&apos;s estate at second death
-                            and includes the primary residence (est. {fmtEst(primaryResidenceValue)}).
-                          </p>
-                        )}
-                      <MetricRow
-                        label="Est. total estate tax liability"
-                        value={fmtEst(col.totalTaxLiability)}
-                        emphasized
-                      />
-                    </div>
-
-                    {/* ── Inside / Outside sub-rows (Session 27 pattern; all horizons) ── */}
-                    {col.insideTotal != null && (
-                      <div className="mt-3 pt-3 border-t border-neutral-100 space-y-1.5">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-neutral-500">Inside taxable estate</span>
-                          <span className="font-medium text-blue-700">{fmtEst(col.insideTotal)}</span>
-                        </div>
-                        {(col.outsideCertainProbableTotal ?? 0) > 0 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="text-neutral-500">Outside taxable estate</span>
-                            <span className="font-medium text-green-700">
-                              {fmtEst(col.outsideCertainProbableTotal)}
-                            </span>
-                          </div>
-                        )}
-                        {(col.outsideIllustrativeTotal ?? 0) > 0 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="text-neutral-400 italic">Illustrative strategies</span>
-                            <span className="text-neutral-400 italic">
-                              {fmtEst(col.outsideIllustrativeTotal)}
-                            </span>
-                          </div>
-                        )}
-                        {col.federalExemption != null &&
-                          col.insideTotal != null &&
-                          col.federalExemption - col.insideTotal > 0 && (
-                            <div className="flex justify-between text-xs">
-                              <span className="text-neutral-500">{HEADROOM_BEFORE_FEDERAL_TAX_LABEL}</span>
-                              <span className="font-medium text-green-700">
-                                {fmtEst(col.federalExemption - col.insideTotal)}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              </p>
+              <p
+                className={`text-lg font-semibold ${
+                  col.totalTaxLiability && col.totalTaxLiability > 0
+                    ? 'text-red-600'
+                    : 'text-neutral-400'
+                }`}
+              >
+                {fmtEst(col.totalTaxLiability)}
+              </p>
+              <p className="mt-0.5 text-[10px] text-neutral-400">Est. total tax liability</p>
             </div>
           ))}
         </div>
+
+        <div className="overflow-x-auto rounded-xl border border-neutral-200">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-neutral-200 bg-neutral-50">
+                <th className="w-48 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500" />
+                {columns.map((col) => (
+                  <th
+                    key={col.headerTitle + '-th'}
+                    className={`px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide ${
+                      col === today
+                        ? 'text-neutral-600'
+                        : col === tenYear
+                          ? 'text-blue-600'
+                          : col === twentyYear
+                            ? 'text-indigo-600'
+                            : 'text-purple-700'
+                    }`}
+                  >
+                    {col.headerTitle}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-neutral-100 bg-neutral-50">
+                <td
+                  colSpan={columns.length + 1}
+                  className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-400"
+                >
+                  Estate size
+                </td>
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm font-medium text-neutral-600">Gross estate</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-gross'}
+                    className="px-4 py-2.5 text-right text-sm font-semibold tabular-nums text-neutral-900"
+                  >
+                    {fmtEst(col.grossEstate)}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">{LIFETIME_GIFTS_USED_LABEL}</td>
+                {columns.map((col) => (
+                  <td key={col.headerTitle + '-gifts'} className="px-4 py-2.5 text-right text-sm tabular-nums">
+                    {lifetimeGiftsUsed > 0 ? (
+                      <Link
+                        href="/my-estate-trust-strategy?tab=gifting"
+                        className="font-medium text-amber-600 hover:underline"
+                      >
+                        {formatDollars(lifetimeGiftsUsed)}
+                      </Link>
+                    ) : (
+                      <span className="text-neutral-400">{formatDollars(0)}</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">{FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-exemption'}
+                    className="px-4 py-2.5 text-right text-sm tabular-nums text-neutral-700"
+                  >
+                    {fmtEst(col.federalExemption)}
+                  </td>
+                ))}
+              </tr>
+
+              <tr className="border-b border-neutral-100 bg-neutral-50">
+                <td
+                  colSpan={columns.length + 1}
+                  className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-400"
+                >
+                  Tax exposure
+                </td>
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">Federal tax exposure</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-fedexp'}
+                    className="px-4 py-2.5 text-right text-sm tabular-nums text-neutral-700"
+                  >
+                    {fmtEst(col.federalExposure)}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">Federal tax estimate</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-fedtax'}
+                    className="px-4 py-2.5 text-right text-sm tabular-nums text-neutral-700"
+                  >
+                    {fmtEst(col.federalTaxEstimate)}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">State tax exposure</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-stateexp'}
+                    className="px-4 py-2.5 text-right text-sm tabular-nums text-neutral-700"
+                  >
+                    {fmtEst(col.stateExposure)}
+                  </td>
+                ))}
+              </tr>
+
+              <tr className="border-b-2 border-neutral-200 bg-red-50/40">
+                <td className="px-4 py-3 text-sm font-semibold text-neutral-800">
+                  Est. total estate tax liability
+                </td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-total'}
+                    className="px-4 py-3 text-right text-sm font-bold tabular-nums text-red-600"
+                  >
+                    {fmtEst(col.totalTaxLiability)}
+                  </td>
+                ))}
+              </tr>
+
+              <tr className="border-b border-neutral-100 bg-neutral-50">
+                <td
+                  colSpan={columns.length + 1}
+                  className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-400"
+                >
+                  Inside estate
+                </td>
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">Inside taxable estate</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.headerTitle + '-inside'}
+                    className="px-4 py-2.5 text-right text-sm font-medium tabular-nums text-blue-700"
+                  >
+                    {fmtEst(col.insideTotal)}
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
+                <td className="px-4 py-2.5 text-sm text-neutral-500">Headroom before federal tax</td>
+                {columns.map((col) => (
+                  <td key={col.headerTitle + '-headroom'} className="px-4 py-2.5 text-right text-sm font-medium tabular-nums">
+                    {col.federalExemption != null &&
+                    col.insideTotal != null &&
+                    col.federalExemption - col.insideTotal > 0 ? (
+                      <span className="text-green-700">
+                        {fmtEst(col.federalExemption - col.insideTotal)}
+                      </span>
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+
+              {primaryResidenceValue != null && primaryResidenceValue > 0 && (
+                <tr>
+                  <td colSpan={columns.length + 1} className="px-4 py-2 text-[11px] italic text-neutral-400">
+                    ℹ️ At death estimate reflects surviving spouse&apos;s estate at second death and includes
+                    the primary residence (est. {fmtEst(primaryResidenceValue)}).
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {columns.some((col) => col.showGenerateCta) && (
+          <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-8 text-center">
+            <p className="text-sm text-neutral-700">Generate your estate plan to see projections</p>
+            <button
+              type="button"
+              onClick={handleGenerateBaseCase}
+              disabled={generating}
+              className="mt-4 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+            >
+              {generating ? 'Generating…' : 'Generate My Estate Plan →'}
+            </button>
+            <Link
+              href="/dashboard"
+              className="mt-3 text-xs text-neutral-400 hover:text-neutral-600 hover:underline"
+            >
+              Or go to Dashboard
+            </Link>
+          </div>
+        )}
       </CollapsibleSection>
 
       {middleContent}

@@ -17,16 +17,27 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 
 ---
 
+## Sidebar footer (consumer layout)
+
+Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main planning nav (`<nav>` scroll area), above Sign out. Sprint 0 moved connection/billing links here; **My Attorney** remains in the main nav until Sprint 1.
+
+| Link | Visible when | Target | Notes |
+|------|----------------|--------|--------|
+| 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; lock when `isLockedUser` |
+| 💳 Manage Subscription | All signed-in users | `/billing` | Lock when `isLockedUser` |
+| 🚪 Sign out | All signed-in users | (auth sign-out) | Second footer block, separated by border |
+
+Locked accounts (`isLockedUser`): footer links render disabled with 🔒.
+
 ## Sidebar portal links (consumer layout)
 
-Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` at the **bottom** of the nav (below planning groups).
+Rendered at the **bottom** of the main `<nav>` scroll area (above the footer block).
 
 | Link | Visible when | Target | Notes |
 |------|----------------|--------|--------|
 | 💼 Advisor Portal | `role === 'advisor'` **or** `isSuperuser` | `/advisor` | Professional users switching hats; not shown to consumer-only accounts |
 | ⚖️ Attorney Portal | `role === 'attorney'` **or** `isAttorney` **or** `isSuperuser` | `/attorney` | Same pattern |
 | ⚙️ Admin Portal | `role === 'admin'` **or** `isAdmin` **or** `isSuperuser` | `/admin` | Same pattern |
-| 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Consumer connection management (all tiers that see sidebar) |
 
 Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 

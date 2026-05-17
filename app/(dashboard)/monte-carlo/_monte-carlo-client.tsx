@@ -638,16 +638,45 @@ export function MonteCarloClient() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-4">
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-0">
             {STEPS.map((s, i) => (
-              <button key={s.key} onClick={() => setStep(s.key)} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${step === s.key ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                {i + 1}
-              </button>
+              <div key={s.key} className="flex flex-1 items-center">
+                <button
+                  type="button"
+                  onClick={() => setStep(s.key)}
+                  className="flex flex-1 flex-col items-center gap-1"
+                >
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                      step === s.key
+                        ? 'bg-indigo-600 text-white'
+                        : stepIdx > i
+                          ? 'bg-indigo-100 text-indigo-600'
+                          : 'bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    {stepIdx > i ? '✓' : i + 1}
+                  </div>
+                  <span
+                    className={`text-[10px] font-medium leading-none ${
+                      step === s.key ? 'text-indigo-600' : 'text-gray-400'
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={`mx-1 mb-4 h-px flex-1 ${
+                      stepIdx > i ? 'bg-indigo-300' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
             ))}
           </div>
-          <p className="text-sm font-semibold text-gray-700">{STEPS[stepIdx].label}</p>
 
           {step === 'portfolio' && (
             <div className="space-y-4">
@@ -886,14 +915,7 @@ export function MonteCarloClient() {
           )}
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          {!result && !loading && (
-            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-sm">
-              <p className="text-4xl mb-3">📊</p>
-              <p>Fill in your inputs and run a simulation</p>
-              <p className="text-xs mt-1">Results will appear here</p>
-            </div>
-          )}
+        <div className="space-y-6">
           {loading && (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-sm gap-3">
               <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />

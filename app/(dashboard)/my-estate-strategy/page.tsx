@@ -18,6 +18,7 @@ import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 
 export default async function MyEstateStrategyPage() {
   const access = await getUserAccess()
@@ -38,6 +39,27 @@ export default async function MyEstateStrategyPage() {
     .single()
 
   if (!household) redirect('/profile')
+
+  if (access.tier < 3) {
+    const compositionForBanner = await classifyEstateAssets(supabase, household.id, 'consumer', 0)
+
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Estate Value &amp; Tax Horizons</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Estate Value & Tax Horizons"
+          valueProposition="See how your estate grows over time, federal and state tax exposure at each horizon, and how strategies change the picture."
+          householdContext={{
+            grossEstate: compositionForBanner.gross_estate ?? null,
+            statePrimary: household.state_primary ?? null,
+            firstName: null,
+          }}
+        />
+      </div>
+    )
+  }
+
   requireMinimumViableProfile(household, '/my-estate-strategy')
 
   const ownerId = user.id

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026
+# Last updated: May 2026 (Sprint 0 complete → Sprint 1 current)
 
 ---
 
@@ -20,31 +20,6 @@
 ---
 
 ## Current sprint
-
-### Sprint 0 — In-app fixes (Weeks 1–2)
-**Goal:** Surface the most valuable content already built. No new infrastructure required.
-
-**Dashboard fixes**
-- `[ ]` Add conflict alert banner above the fold — "1 critical · 3 warnings" visible without scrolling
-- `[ ]` Add severity chips to Planning Readiness Score card — "1 critical · 3 warnings · See issues below"
-- `[ ]` Move advisor and attorney links from primary sidebar to sidebar footer
-- `[ ]` Add "Your plan" tier badge to active planning group in sidebar
-
-**Page-level fixes**
-- `[ ]` Horizons page: redesign from card-per-column to comparison table (labels left, 4 value columns)
-- `[ ]` Horizons page: "Est. total estate tax liability" as hero row — top of table, not bottom
-- `[ ]` Projections table: replace "AL SS / CATHI RMD / JOINT/OTHER" with full names + tooltips
-- `[ ]` Monte Carlo: convert split-screen layout to single-column wizard with chart below
-- `[ ]` Upgrade gates: inject household data into copy ("your $9.3M WA estate has state tax exposure today")
-
-**Success criteria for Sprint 0**
-- Conflict alert banner visible on dashboard load without scrolling
-- Horizons page time-on-page increases (baseline to measure before deploying)
-- Upgrade gate conversion rate baselined for A/B testing in Sprint 5
-
----
-
-## Upcoming sprints
 
 ### Sprint 1 — Public/app separation + segment positioning (Weeks 3–5)
 **Goal:** Two distinct nav experiences. All copy reflects $2M–$30M segment.
@@ -74,6 +49,8 @@
 - Assessment → account creation conversion rate measured
 
 ---
+
+## Upcoming sprints
 
 ### Sprint 2 — Life event landing pages (Weeks 6–8)
 **Goal:** 8 event pages live, SEO-ready, with event-specific assessments.
@@ -198,7 +175,23 @@
 
 ## Completed sprints
 
-*(Move sprints here when done, with a brief retrospective note)*
+### Sprint 0 — In-app fixes (Weeks 1–2) ✅
+**Goal:** Surface the most valuable content already built. No new infrastructure required.
+
+**Dashboard fixes**
+- `[x]` Add conflict alert banner above the fold — dismissible; links to `#estate-conflicts`
+- `[x]` Add severity chips — critical/warnings in `DashboardIntroSection` (links to conflicts)
+- `[~]` Move advisor links to sidebar footer — **My Advisor** + **Manage Subscription** in footer; **My Attorney** still in main nav (→ Sprint 1)
+- `[ ]` Add "Your plan" tier badge to active planning group in sidebar (carryover)
+
+**Page-level fixes**
+- `[x]` Horizons page: comparison table (labels left, 4 columns) + hero tax-liability summary cards
+- `[x]` Horizons page: "Est. total estate tax liability" as highlighted row in table
+- `[~]` Projections table: `title` tooltips on income column headers; full person-name labels not yet done
+- `[x]` Monte Carlo: single-column layout; labeled step stepper; results below wizard
+- `[x]` Upgrade gates: `householdContext` on `UpgradeBanner` for `/estate-tax` and `/my-estate-strategy`
+
+**Retrospective:** UI-only sprint; no engine/API/DB changes. Ship carryover items in Sprint 1 sidebar task. Baseline horizons time-on-page and upgrade conversion in Sprint 5.
 
 ---
 

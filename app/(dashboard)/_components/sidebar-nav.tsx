@@ -502,33 +502,6 @@ export function SidebarNav({
           ))}
         */}
 
-        {/* My Advisor (consumer) */}
-        {(role === 'consumer' || isSuperuser) &&
-          (isLockedUser ? (
-            <Link
-              href="#"
-              tabIndex={-1}
-              aria-disabled={true}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
-            >
-              <span className="flex-1 truncate">👤 My Advisor</span>
-              <span className="shrink-0 text-sm" aria-hidden>
-                🔒
-              </span>
-            </Link>
-          ) : (
-            <Link
-              href="/my-advisor"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/my-advisor'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
-            >
-              👤 My Advisor
-            </Link>
-          ))}
-
         {/* Export Estate Plan */}
         {isLockedUser ? (
           <Link
@@ -632,41 +605,70 @@ export function SidebarNav({
           </Link>
         )}
 
-        {/* Billing */}
-        {isLockedUser ? (
-          <Link
-            href="#"
-            tabIndex={-1}
-            aria-disabled={true}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
-          >
-            <span className="flex-1 truncate">💳 Manage Subscription</span>
-            <span className="shrink-0 text-sm" aria-hidden>
-              🔒
-            </span>
-          </Link>
-        ) : (
-          <Link
-            href="/billing"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/billing'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
-            💳 Manage Subscription
-          </Link>
-        )}
       </nav>
 
-      {/* Sign out */}
-      <div className="px-3 py-4 border-t border-neutral-200">
-        <button
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-        >
-          🚪 Sign out
-        </button>
+      <div className="border-t border-neutral-200">
+        <div className="px-3 pt-3 pb-1 space-y-0.5">
+          {(role === 'consumer' || isSuperuser) &&
+            (isLockedUser ? (
+              <Link
+                href="#"
+                tabIndex={-1}
+                aria-disabled={true}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+              >
+                <span className="flex-1 truncate">👤 My Advisor</span>
+                <span className="shrink-0 text-sm" aria-hidden>
+                  🔒
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/my-advisor"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  activePath === '/my-advisor'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                }`}
+              >
+                👤 My Advisor
+              </Link>
+            ))}
+
+          {isLockedUser ? (
+            <Link
+              href="#"
+              tabIndex={-1}
+              aria-disabled={true}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+            >
+              <span className="flex-1 truncate">💳 Manage Subscription</span>
+              <span className="shrink-0 text-sm" aria-hidden>
+                🔒
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/billing"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/billing'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              💳 Manage Subscription
+            </Link>
+          )}
+        </div>
+
+        <div className="px-3 pb-4 pt-1 border-t border-neutral-100">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+          >
+            🚪 Sign out
+          </button>
+        </div>
       </div>
     </aside>
   )

@@ -14,14 +14,36 @@ export default async function EstateTaxPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: householdRow } = await supabase
+    .from('households')
+    .select('*')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
   if (access.tier < 3) {
+    let grossEstate: number | null = null
+    if (householdRow?.id) {
+      const compositionForBanner = await classifyEstateAssets(
+        supabase,
+        householdRow.id,
+        'consumer',
+        0,
+      )
+      grossEstate = compositionForBanner.gross_estate ?? null
+    }
+
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Estate Tax Snapshot</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Estate Tax Snapshot"
-          valueProposition="Calculate federal and state estate tax exposure and model reduction strategies."
+          valueProposition="See exactly how your estate tax is calculated, what's driving it, and how much headroom you have before federal tax kicks in."
+          householdContext={{
+            grossEstate,
+            statePrimary: householdRow?.state_primary ?? null,
+            firstName: null,
+          }}
         />
       </div>
     )
@@ -33,7 +55,6 @@ export default async function EstateTaxPage() {
     { data: liabilitiesRows },
     ,
     { data: trustsRows },
-    { data: householdRow },
     { data: federalEstateTaxBracketsRows },
     { data: stateEstateTaxRows },
     { data: stateInheritanceTaxRows },
@@ -62,7 +83,6 @@ export default async function EstateTaxPage() {
       .select('*')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase.from('households').select('*').eq('owner_id', user.id).maybeSingle(),
     // Fetch all years — client filters to most recent
     supabase
       .from('federal_estate_tax_brackets')

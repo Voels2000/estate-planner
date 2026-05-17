@@ -139,8 +139,8 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/*`, `components/dashboard/EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Planning Readiness Score (tier progress); Financial Summary / Net Worth; **Your Estate Summary** callout (`EstateCalloutCard`); advisor `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` when advisor shared MC |
-| **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state |
+| **Key UI sections** | Greeting + setup progress (`DashboardIntroSection`); **conflict severity chips** (when `conflictReport` has critical/warnings); dismissible **conflict alert banner** (`_dashboard-client.tsx`, links to `#estate-conflicts`); `AssessmentHistoryWidget`; Financial Summary / Net Worth; **Your Estate Summary** callout (`EstateCalloutCard`); advisor `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` when advisor shared MC |
+| **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
 ### Financial modules (representative)
 
@@ -181,19 +181,20 @@ All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (s
 | **Write APIs** | Read-heavy; trust edits may use consumer trust API from other flows |
 | **Read APIs / RPCs** | `calculate_estate_composition` via `classifyEstateAssets` |
 | **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts` |
-| **Empty / blocked** | `UpgradeBanner` if `tier < 3` |
+| **Empty / blocked** | `UpgradeBanner` if `tier < 3`; optional `householdContext` (`grossEstate`, `statePrimary`) for personalized copy when estate ≥ $100K |
 
 ### Estate Value and Tax Horizons — `/my-estate-strategy`
 
 | | |
 |--|--|
 | **User goal** | Horizon table: today → longevity; federal/state tax bands; strategy line impact |
-| **Tier / gate** | Tier 3; **profile gate**; redirects to `/profile` if no household |
+| **Tier / gate** | Tier 3; **profile gate**; `UpgradeBanner` + `householdContext` if `tier < 3` |
 | **Server** | `app/(dashboard)/my-estate-strategy/page.tsx` — staleness-based base-case regen; `buildStrategyHorizons`, `classifyEstateAssets` |
 | **Client** | `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx`, `EstatePlanningDashboard` |
 | **Write APIs** | Strategy changes usually on trust-strategy page; base case via `POST /api/consumer/generate-base-case` when needed |
 | **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules` |
 | **Key lib** | `lib/my-estate-strategy/horizonSnapshots.ts` |
+| **UX** | Collapsible **Estate value & tax horizons**: labeled stepper (Actual vs What-if); **hero tax cards** + **comparison table** (not card-per-column); estate conflicts anchor `#estate-conflicts` on embedded completeness section |
 | **Empty / blocked** | Amber banner if federal horizon inputs missing (needs base-case projection) |
 
 ### Gifting, Strategies & Trusts — `/my-estate-trust-strategy?tab=…`

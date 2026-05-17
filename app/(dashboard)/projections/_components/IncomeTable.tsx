@@ -15,19 +15,58 @@ export function IncomeTable({ projections, p1, p2 }: IncomeTableProps) {
           <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
             <th className="pb-2 pr-4">Age</th>
             <th className="pb-2 pr-4">Year</th>
-            <th className="pb-2 pr-3 text-blue-600">{p1} Earned</th>
-            <th className="pb-2 pr-3 text-blue-600">{p1} SS</th>
-            <th className="pb-2 pr-3 text-blue-600">{p1} RMD</th>
-            <th className="pb-2 pr-3 text-blue-600">{p1} Other</th>
+            <th
+              className="pb-2 pr-3 text-blue-600 cursor-help"
+              title="Earned income — wages, self-employment, business"
+            >
+              {p1} Earned
+            </th>
+            <th className="pb-2 pr-3 text-blue-600 cursor-help" title="Social Security benefit income">
+              {p1} SS
+            </th>
+            <th
+              className="pb-2 pr-3 text-blue-600 cursor-help"
+              title="Required Minimum Distribution from retirement accounts"
+            >
+              {p1} RMD
+            </th>
+            <th
+              className="pb-2 pr-3 text-blue-600 cursor-help"
+              title="Other income — interest, dividends, rental, pension"
+            >
+              {p1} Other
+            </th>
             {p2 && (
               <>
-                <th className="pb-2 pr-3 text-violet-600">{p2} Earned</th>
-                <th className="pb-2 pr-3 text-violet-600">{p2} SS</th>
-                <th className="pb-2 pr-3 text-violet-600">{p2} RMD</th>
-                <th className="pb-2 pr-3 text-violet-600">{p2} Other</th>
+                <th
+                  className="pb-2 pr-3 text-violet-600 cursor-help"
+                  title="Earned income — wages, self-employment, business"
+                >
+                  {p2} Earned
+                </th>
+                <th className="pb-2 pr-3 text-violet-600 cursor-help" title="Social Security benefit income">
+                  {p2} SS
+                </th>
+                <th
+                  className="pb-2 pr-3 text-violet-600 cursor-help"
+                  title="Required Minimum Distribution from retirement accounts"
+                >
+                  {p2} RMD
+                </th>
+                <th
+                  className="pb-2 pr-3 text-violet-600 cursor-help"
+                  title="Other income — interest, dividends, rental, pension"
+                >
+                  {p2} Other
+                </th>
               </>
             )}
-            <th className="pb-2 pr-4">Joint/Other</th>
+            <th
+              className="pb-2 pr-4 cursor-help"
+              title="Income not attributed to a specific person — joint accounts, trust distributions, other household income"
+            >
+              Joint/Other
+            </th>
             <th className="pb-2">Total</th>
           </tr>
         </thead>

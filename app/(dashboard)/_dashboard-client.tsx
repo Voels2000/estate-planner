@@ -175,6 +175,7 @@ export function DashboardClient(props: Props) {
     const h = new Date().getHours()
     return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
   })
+  const [conflictDismissed, setConflictDismissed] = useState(false)
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -186,7 +187,79 @@ export function DashboardClient(props: Props) {
         completedSteps={completedSteps}
         setupSteps={setupSteps}
         completionScore={completionScore}
+        conflictReport={conflictReport}
       />
+
+      {conflictReport &&
+        (conflictReport.critical > 0 || conflictReport.warnings > 0) &&
+        !conflictDismissed && (
+          <div
+            className={`mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 ${
+              conflictReport.critical > 0
+                ? 'border-red-200 bg-red-50'
+                : 'border-amber-200 bg-amber-50'
+            }`}
+          >
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="mt-0.5 shrink-0 text-base">
+                {conflictReport.critical > 0 ? '🚨' : '⚠️'}
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`text-sm font-semibold ${
+                    conflictReport.critical > 0 ? 'text-red-800' : 'text-amber-800'
+                  }`}
+                >
+                  {conflictReport.critical > 0 && (
+                    <span>
+                      {conflictReport.critical} critical issue
+                      {conflictReport.critical > 1 ? 's' : ''}
+                      {conflictReport.warnings > 0 ? ' · ' : ''}
+                    </span>
+                  )}
+                  {conflictReport.warnings > 0 && (
+                    <span>
+                      {conflictReport.warnings} warning
+                      {conflictReport.warnings > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {' '}found in your plan
+                </p>
+                {conflictReport.conflicts[0] && (
+                  <p
+                    className={`mt-0.5 text-xs truncate ${
+                      conflictReport.critical > 0 ? 'text-red-600' : 'text-amber-600'
+                    }`}
+                  >
+                    {conflictReport.conflicts[0].description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <a
+                href="#estate-conflicts"
+                className={`text-xs font-medium underline-offset-2 hover:underline ${
+                  conflictReport.critical > 0 ? 'text-red-700' : 'text-amber-700'
+                }`}
+              >
+                See details ↓
+              </a>
+              <button
+                type="button"
+                onClick={() => setConflictDismissed(true)}
+                className={`text-xs leading-none ${
+                  conflictReport.critical > 0
+                    ? 'text-red-400 hover:text-red-600'
+                    : 'text-amber-400 hover:text-amber-600'
+                }`}
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
       <AssessmentHistoryWidget />
 
@@ -245,16 +318,18 @@ export function DashboardClient(props: Props) {
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* SECTION 3 — Estate Summary                                        */}
       {/* ══════════════════════════════════════════════════════════════════ */}
-      <EstateSummarySection
-        storageKey={SECTION_KEYS.estate}
-        totalAssets={totalAssets}
-        netWorth={netWorth}
-        estateHealthScore={estateHealthScore}
-        conflictReport={conflictReport}
-        composition={composition}
-        householdId={householdId}
-        initialRecommendations={initialRecommendations}
-      />
+      <div id="estate-conflicts">
+        <EstateSummarySection
+          storageKey={SECTION_KEYS.estate}
+          totalAssets={totalAssets}
+          netWorth={netWorth}
+          estateHealthScore={estateHealthScore}
+          conflictReport={conflictReport}
+          composition={composition}
+          householdId={householdId}
+          initialRecommendations={initialRecommendations}
+        />
+      </div>
 
       <FeedbackButton userId={userId} />
       <div className="mt-8"><DisclaimerBanner /></div>
