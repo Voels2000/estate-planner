@@ -4,11 +4,11 @@ import { test, expect } from '@playwright/test'
  * Advisor strategy recommendation end-to-end verification.
  * Covers: SLAT, ILIT, liquidity, roth — the sources added in Session 101.
  *
- * Uses Steve's household (avoels@outlook.com) which has an active advisor link
- * to Al (avoels@comcast.net). Cleans up after each test.
+ * Uses consumer1@rolobe.resend.app household which has an active advisor link
+ * to advisor2@rolobe.resend.app. Cleans up after each test.
  */
 
-const CLIENT_HOUSEHOLD_ID = '5ea14f56-e880-4992-87bc-0d815a450cdc'
+const CLIENT_HOUSEHOLD_ID = '90cc8759-5465-4671-8894-e17eca783a42'
 
 const SOURCES = [
   { strategySource: 'slat',      amount: 500000, category: 'trust_exclusion', label: 'SLAT' },

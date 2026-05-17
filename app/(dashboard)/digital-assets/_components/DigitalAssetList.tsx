@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import type { DigitalAsset, DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPE_ICONS: Record<DigitalAssetType, string> = {
@@ -18,19 +17,16 @@ interface Props {
 }
 
 export default function DigitalAssetList({ assets, householdId }: Props) {
-  const supabase = createClient()
   const router = useRouter()
 
   async function handleDelete(id: string) {
     const ok = window.confirm('Delete this digital asset?')
     if (!ok) return
-
-    await supabase
-      .from('digital_assets')
-      .delete()
-      .eq('id', id)
-      .eq('household_id', householdId)
-
+    await fetch('/api/consumer/digital-assets', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, household_id: householdId }),
+    })
     router.refresh()
   }
 
