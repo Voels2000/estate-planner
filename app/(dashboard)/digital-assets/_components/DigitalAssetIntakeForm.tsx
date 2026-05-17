@@ -1,7 +1,7 @@
-// Sprint 63 - Consumer intake form for all 5 digital asset types
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string }[] = [
@@ -31,6 +31,7 @@ const BLANK = {
 }
 
 export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) {
+  const router = useRouter()
   const [form, setForm] = useState(BLANK)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -41,36 +42,39 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
     setMessage(null)
-
-    const res = await fetch('/api/consumer/digital-assets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        household_id: householdId,
-        asset_type: form.asset_type,
-        platform: form.platform,
-        description: form.description || null,
-        estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
-        wallet_address: form.wallet_address || null,
-        account_username: form.account_username || null,
-        storage_location: form.storage_location || null,
-        access_instructions: form.access_instructions || null,
-        executor_grantee_email: form.executor_grantee_email || null,
-        executor_notes: form.executor_notes || null,
-      }),
-    })
-
-    setSaving(false)
-
-    if (!res.ok) {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/consumer/digital-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: householdId,
+          asset_type: form.asset_type,
+          platform: form.platform,
+          description: form.description || null,
+          estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
+          wallet_address: form.wallet_address || null,
+          account_username: form.account_username || null,
+          storage_location: form.storage_location || null,
+          access_instructions: form.access_instructions || null,
+          executor_grantee_email: form.executor_grantee_email || null,
+          executor_notes: form.executor_notes || null,
+        }),
+      })
       const data = await res.json()
-      setMessage({ type: 'error', text: data.error ?? 'Failed to save digital asset.' })
-    } else {
-      setMessage({ type: 'success', text: 'Digital asset saved.' })
-      setForm(BLANK)
-      onSaved?.()
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error ?? 'Failed to save digital asset.' })
+      } else {
+        setMessage({ type: 'success', text: 'Digital asset saved.' })
+        setForm(BLANK)
+        router.refresh()
+        onSaved?.()
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Something went wrong. Please try again.' })
+    } finally {
+      setSaving(false)
     }
   }
 
