@@ -146,16 +146,78 @@ test.describe('Consumer strategy write APIs', () => {
         amount: 50000,
         sign: -1,
         confidence_level: 'probable',
-        effective_year: new Date().getFullYear(),
-        scenario_name: 'Charitable Giving',
+        scenario_name: 'base',
         category: 'charitable',
       },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
     expect((await res.json()).strategy_source).toBe('daf')
 
+    const deleteRes = await request.delete('/api/strategy-line-items', {
+      data: { householdId, strategySource: 'daf', scenarioName: 'base', source_role: 'consumer' },
+    })
+    expect(deleteRes.ok(), await deleteRes.text()).toBeTruthy()
+  })
+
+  test('POST strategy-line-items direct charitable source succeeds', async ({ request }) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID to run strategy write smoke tests')
+
+    const res = await request.post('/api/strategy-line-items', {
+      data: {
+        household_id: householdId,
+        strategy_source: 'charitable',
+        source_role: 'consumer',
+        amount: 25000,
+        sign: -1,
+        confidence_level: 'probable',
+        scenario_name: 'base',
+        category: 'charitable',
+      },
+    })
+    expect(res.ok(), await res.text()).toBeTruthy()
+    expect((await res.json()).strategy_source).toBe('charitable')
+
+    const deleteRes = await request.delete('/api/strategy-line-items', {
+      data: { householdId, strategySource: 'charitable', scenarioName: 'base', source_role: 'consumer' },
+    })
+    expect(deleteRes.ok(), await deleteRes.text()).toBeTruthy()
+  })
+
+  test('charitable save increases outside_strategy_total in composition', async ({ request }) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID to run strategy write smoke tests')
+
+    const beforeRes = await request.post('/api/estate-composition', {
+      data: { householdId, sourceRole: 'consumer' },
+    })
+    expect(beforeRes.ok(), await beforeRes.text()).toBeTruthy()
+    const before = (await beforeRes.json()) as { outside_strategy_total?: number }
+    const beforeTotal = Number(before.outside_strategy_total ?? 0)
+
+    const saveRes = await request.post('/api/strategy-line-items', {
+      data: {
+        household_id: householdId,
+        strategy_source: 'daf',
+        source_role: 'consumer',
+        amount: 10000,
+        sign: -1,
+        confidence_level: 'probable',
+        scenario_name: 'base',
+        category: 'charitable',
+      },
+    })
+    expect(saveRes.ok(), await saveRes.text()).toBeTruthy()
+
+    const afterRes = await request.post('/api/estate-composition', {
+      data: { householdId, sourceRole: 'consumer' },
+    })
+    expect(afterRes.ok(), await afterRes.text()).toBeTruthy()
+    const after = (await afterRes.json()) as { outside_strategy_total?: number }
+    expect(Number(after.outside_strategy_total ?? 0)).toBeGreaterThanOrEqual(beforeTotal + 10000)
+
     await request.delete('/api/strategy-line-items', {
-      data: { householdId, strategySource: 'daf', scenarioName: 'Charitable Giving', source_role: 'consumer' },
+      data: { householdId, strategySource: 'daf', scenarioName: 'base', source_role: 'consumer' },
     })
   })
 
