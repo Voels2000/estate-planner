@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { DigitalAssetType } from '@/lib/types/beneficiary-grant'
+import type { DigitalAsset, DigitalAssetType } from '@/lib/types/beneficiary-grant'
 
 const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string }[] = [
   { value: 'cryptocurrency', label: 'Cryptocurrency', description: 'Bitcoin, Ethereum, other tokens' },
@@ -14,7 +14,7 @@ const ASSET_TYPES: { value: DigitalAssetType; label: string; description: string
 
 interface Props {
   householdId: string
-  onSaved?: () => void
+  onSaved?: (asset: DigitalAsset) => void
 }
 
 const BLANK = {
@@ -68,8 +68,8 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
       } else {
         setMessage({ type: 'success', text: 'Digital asset saved.' })
         setForm(BLANK)
+        onSaved?.(data as DigitalAsset)
         router.refresh()
-        onSaved?.()
       }
     } catch {
       setMessage({ type: 'error', text: 'Something went wrong. Please try again.' })

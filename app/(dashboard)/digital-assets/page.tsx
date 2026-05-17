@@ -7,8 +7,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import DigitalAssetIntakeForm from './_components/DigitalAssetIntakeForm'
-import DigitalAssetList from './_components/DigitalAssetList'
+import DigitalAssetsClient from './_digital-assets-client'
 
 export default async function DigitalAssetsPage() {
   const supabase = await createClient()
@@ -44,8 +43,7 @@ export default async function DigitalAssetsPage() {
           </p>
         </div>
 
-        <DigitalAssetList assets={assets ?? []} householdId={household.id} />
-        <DigitalAssetIntakeForm householdId={household.id} />
+        <DigitalAssetsClient initialAssets={assets ?? []} householdId={household.id} />
       </main>
     </div>
   )

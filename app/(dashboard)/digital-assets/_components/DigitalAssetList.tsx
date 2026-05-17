@@ -14,20 +14,24 @@ const ASSET_TYPE_ICONS: Record<DigitalAssetType, string> = {
 interface Props {
   assets: DigitalAsset[]
   householdId: string
+  onDeleted?: (id: string) => void
 }
 
-export default function DigitalAssetList({ assets, householdId }: Props) {
+export default function DigitalAssetList({ assets, householdId, onDeleted }: Props) {
   const router = useRouter()
 
   async function handleDelete(id: string) {
     const ok = window.confirm('Delete this digital asset?')
     if (!ok) return
-    await fetch('/api/consumer/digital-assets', {
+    const res = await fetch('/api/consumer/digital-assets', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, household_id: householdId }),
     })
-    router.refresh()
+    if (res.ok) {
+      onDeleted?.(id)
+      router.refresh()
+    }
   }
 
   if (assets.length === 0) {

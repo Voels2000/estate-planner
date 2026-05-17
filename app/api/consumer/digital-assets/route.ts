@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   await afterHouseholdWrite(supabase, household_id)
+  revalidatePath('/digital-assets')
   return NextResponse.json(data)
 }
 
@@ -87,5 +89,6 @@ export async function DELETE(request: NextRequest) {
   }
 
   await afterHouseholdWrite(supabase, household_id)
+  revalidatePath('/digital-assets')
   return NextResponse.json({ success: true })
 }
