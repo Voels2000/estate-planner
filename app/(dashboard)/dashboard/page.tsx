@@ -38,6 +38,7 @@ import { buildRetirementSnapshot } from '@/lib/view-models/retirementSnapshot'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { DashboardClient } from '../_dashboard-client'
@@ -191,18 +192,25 @@ export default async function DashboardPage() {
 
   const estateCallout =
     composition && composition.success !== false
-      ? {
-          grossEstate: Number(composition.gross_estate ?? 0),
-          exemptionRemaining: Number(composition.exemption_remaining ?? 0),
-          estimatedTaxFederal: Number(composition.estimated_tax_federal ?? 0),
-          estimatedTaxState: Number(composition.estimated_tax_state ?? 0),
-          hasStateTax: Number(composition.estimated_tax_state ?? 0) > 0,
-          exemptionMarginTight: (() => {
-            const available = Number(composition.exemption_available ?? 0)
-            const remaining = Number(composition.exemption_remaining ?? 0)
-            return available > 0 && remaining < available * 0.2
-          })(),
-        }
+      ? (() => {
+          const grossEstate = Number(composition.gross_estate ?? 0)
+          const exemptionAvailable = Number(composition.exemption_available ?? 0)
+          const outsideStrategyTotal = Number(composition.outside_strategy_total ?? 0)
+          const headroom = computeHeadroomBeforeFederalTax(
+            exemptionAvailable,
+            grossEstate,
+            outsideStrategyTotal,
+          )
+          return {
+            grossEstate,
+            exemptionRemaining: headroom,
+            estimatedTaxFederal: Number(composition.estimated_tax_federal ?? 0),
+            estimatedTaxState: Number(composition.estimated_tax_state ?? 0),
+            hasStateTax: Number(composition.estimated_tax_state ?? 0) > 0,
+            exemptionMarginTight:
+              exemptionAvailable > 0 && headroom < exemptionAvailable * 0.2,
+          }
+        })()
       : null
 
   // ── Financial calculations (engine-aligned primary path) ─────────────────
