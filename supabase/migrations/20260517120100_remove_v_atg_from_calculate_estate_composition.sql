@@ -1,3 +1,10 @@
+-- Session 121 / Step 7B: remove adjusted_taxable_gifts (v_atg) from calculate_estate_composition.
+-- ATG add-back deprecated; lifetime gifts remain via p_lifetime_gifts_used (Session 120).
+
+DROP FUNCTION IF EXISTS public.calculate_estate_composition(uuid);
+DROP FUNCTION IF EXISTS public.calculate_estate_composition(uuid, text);
+DROP FUNCTION IF EXISTS public.calculate_estate_composition(uuid, text, numeric);
+
 CREATE OR REPLACE FUNCTION public.calculate_estate_composition(
   p_household_id uuid,
   p_source_role text DEFAULT 'consumer'::text,
@@ -268,3 +275,6 @@ BEGIN
   );
 END;
 $function$;
+
+GRANT EXECUTE ON FUNCTION public.calculate_estate_composition(uuid, text, numeric) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.calculate_estate_composition(uuid, text, numeric) TO service_role;

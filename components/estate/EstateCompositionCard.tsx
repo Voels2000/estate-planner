@@ -221,7 +221,7 @@ export default function EstateCompositionCard({
     lifetime_gifts_used,
     admin_expense,
     marital_deduction,
-    adjusted_taxable_gifts,
+    adjusted_taxable_gifts = 0,
     estimated_tax,
     estimated_tax_federal,
     estimated_tax_state,

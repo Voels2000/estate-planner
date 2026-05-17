@@ -63,7 +63,8 @@ export type EstateComposition = {
   admin_expense_pct: number
   valuation_discount_total: number
   marital_deduction: number
-  adjusted_taxable_gifts: number
+  /** Deprecated: removed from calculate_estate_composition RPC (Session 121 / 7B). */
+  adjusted_taxable_gifts?: number
   taxable_estate: number
 
   // Exemption
@@ -104,7 +105,6 @@ export type StrategyLineItemSource =
   | 'valuation_discount'
   | 'admin_expense'
   | 'marital_deduction'
-  | 'adjusted_taxable_gift'
   | 'other'
 
 export type StrategyLineItemInput = {

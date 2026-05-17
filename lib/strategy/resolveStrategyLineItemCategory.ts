@@ -8,7 +8,6 @@ export const STRATEGY_LINE_ITEM_CATEGORIES: readonly StrategyLineItemCategory[] 
   'marital',
   'charitable',
   'admin_expense',
-  'adjusted_taxable_gift',
 ] as const
 
 const CATEGORY_BY_STRATEGY_SOURCE: Record<string, StrategyLineItemCategory> = {
@@ -24,7 +23,6 @@ const CATEGORY_BY_STRATEGY_SOURCE: Record<string, StrategyLineItemCategory> = {
   valuation_discount: 'valuation_discount',
   admin_expense: 'admin_expense',
   marital_deduction: 'marital',
-  adjusted_taxable_gift: 'adjusted_taxable_gift',
   liquidity: 'liability',
   roth: 'trust_exclusion',
   slat: 'trust_exclusion',

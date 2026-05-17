@@ -437,8 +437,8 @@ export default function ConsumerStrategyPanel({
   const grossEstate            = ctx.grossEstate
   const federalExemption       = ctx.federalExemption
   void federalExemption
-  const estimatedFederalTax    = ctx.estimatedFederalTax
-  const estimatedStateTax      = ctx.estimatedStateTax
+  const estimatedFederalTax    = Math.round(ctx.estimatedFederalTax)
+  const estimatedStateTax      = Math.round(ctx.estimatedStateTax)
   const person1BirthYear       = ctx.person1BirthYear
   const liquidAssets           = ctx.liquidAssets
   const illiquidAssets         = ctx.illiquidAssets
@@ -554,8 +554,8 @@ export default function ConsumerStrategyPanel({
         ...c,
         liquidAssets: estateContext.liquidAssets,
         illiquidAssets: estateContext.illiquidAssets,
-        estimatedFederalTax: estateContext.estimatedFederalTax,
-        estimatedStateTax: estateContext.estimatedStateTax,
+        estimatedFederalTax: Math.round(estateContext.estimatedFederalTax),
+        estimatedStateTax: Math.round(estateContext.estimatedStateTax),
       }))
       setRothConfig((c) => ({
         ...c,

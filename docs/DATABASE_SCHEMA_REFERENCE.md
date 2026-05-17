@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 121 — Transfer Strategies educational cards)
+# Last updated: May 17, 2026 (Session 121 — gift-history e2e, ATG deprecation)
 
 ---
 
@@ -389,10 +389,10 @@ After each schema-affecting session:
 
 ## Session 121 Note
 
-- No database schema or migration changes were introduced in Session 121.
-- Application-layer changes (existing `strategy_line_items` + consumer UI):
-  - `components/consumer/ConsumerStrategyPanel.tsx` — `STRATEGY_INFO` / `StrategyEducationCard` above each active strategy panel; SLAT and ILIT pills (educational-only; no consumer upsert yet). SLAT pill disabled when not MFJ (`filingStatus` from `giftingScenario.filing`). `formatDollarsCompact` for context notes.
-  - `my-estate-trust-strategy/_client.tsx` — passes `filingStatus={giftingScenario.filing}` to `ConsumerStrategyPanel`.
+- Schema (Step 7): `20260517120000` — drop `adjusted_taxable_gift` from `strategy_line_items_strategy_source_check` (pre-flight count must be 0). `20260517120100` — remove `v_atg` from `calculate_estate_composition` (no ATG add-back to `taxable_estate`; `lifetime_gifts_used` unchanged). Reference: `supabase/migrations/reference/live_calculate_estate_composition.sql`.
+- Application-layer — Transfer Strategies: `ConsumerStrategyPanel` educational cards (`STRATEGY_INFO`, SLAT/ILIT pills, MFJ gating); liquidity panel `Math.round()` on `estimatedStateTax` / `estimatedFederalTax` for number inputs.
+- Application-layer — gift-history: `POST /api/consumer/gift-history` returns **201**; `lib/strategy/*` drops `adjusted_taxable_gift` from allowed sources; `EstateComposition.adjusted_taxable_gifts` optional (RPC no longer returns it after 7B).
+- E2E: `tests/e2e/consumer/consumer-gift-history.spec.ts` (9 cases); consumer project **50** tests. Playwright account: `david@rolobe.resend.app` / household `3967698f-00d2-4746-ab90-6209e90b3d68` in `.env.test`. Recompute case needs `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Session 120 Note
 

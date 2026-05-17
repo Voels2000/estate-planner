@@ -18,7 +18,6 @@ export const ALLOWED_STRATEGY_SOURCES = [
   'valuation_discount',
   'admin_expense',
   'marital_deduction',
-  'adjusted_taxable_gift',
   'other',
   'liquidity',
   'roth',

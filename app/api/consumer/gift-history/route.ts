@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   await afterHouseholdWrite(supabase, owned.householdId)
   revalidateGiftingPaths()
-  return NextResponse.json(data)
+  return NextResponse.json(data, { status: 201 })
 }
 
 export async function PATCH(request: NextRequest) {
