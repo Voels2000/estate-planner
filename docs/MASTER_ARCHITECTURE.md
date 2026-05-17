@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 17, 2026 (Session 122 — dashboard callout, headroom parity, flow labels)
+# Last updated: May 17, 2026 (Session 126 — advisor Monte Carlo presets, default-on-mount)
 
 ---
 
@@ -214,6 +214,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 
 - Defaults live in code: `MONTE_CARLO_SYSTEM_DEFAULTS`.
 - Advisor assumptions saved in `advisor_projection_assumptions`.
+- **Advisor presets (Session 126):** `is_preset = true` rows with `client_household_id` null; `is_default` marks the preset auto-loaded into the Monte Carlo recommendation form (partial unique index `advisor_projection_assumptions_one_default_preset_idx`). CRUD via `/api/advisor/presets` (+ `PATCH …/[id]/default` clears other defaults before set). UI: `/advisor/presets` (`PresetManager` — list, create, edit, delete, ★ default) and “Load preset” on `MonteCarloAssumptionsPanel` (default applied on mount when no active client scenario; manual load does not auto-save). Unset numeric fields are stored as **null** (not `0`) so `monteCarloAssumptionsFromRow` / `MONTE_CARLO_SYSTEM_DEFAULTS` apply. Helpers: `lib/advisor/advisorPresetAssumptions.ts`, `requireAdvisorUser.ts`, `monteCarloFromRow.ts`.
 - Advisor-side comparison flow exists.
 - Consumer accept/revert flow is implemented via `advisor_projection_assumptions.accepted_by_client` + `accepted_at`.
 - Consumer endpoint: `/api/monte-carlo/advisor-assumptions` (read latest shared + accepted scenario, accept, revert).
@@ -251,7 +252,7 @@ Runtime behavior:
 - As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 - As of Session 106, profile saves go through `PATCH /api/consumer/profile` (`lib/profile/buildHouseholdPayload.ts`) with `afterHouseholdWrite` so estate health recompute runs after household/profile updates. `POST /api/businesses` uses `afterHouseholdWriteForOwner` (aligned with business PATCH/DELETE).
 - As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
-- As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, `consumer-titling.spec.ts`, `consumer-trust-crud.spec.ts`, updated `dashboard.spec.ts`; advisor `advisor-strategy-recommendation.spec.ts`.
+- As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, `consumer-titling.spec.ts`, `consumer-trust-crud.spec.ts`, updated `dashboard.spec.ts`; advisor `advisor-strategy-recommendation.spec.ts`, `advisor-presets.spec.ts` (Session 126), plus UI specs under `tests/e2e/advisor/`.
 - As of Session 111, titling row + entity field saves (title type, notes, titling, liquidity, cost basis) use `POST /api/consumer/entity-titling` (`lib/titling/entityTitling.ts`); `_titling-client.tsx` `TitlingModal` no longer writes via browser Supabase. `/titling` reads remain server-prefetched on `page.tsx`.
 - As of Session 112, trust CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/trusts` (`lib/trusts/trustPayload.ts`) with `afterHouseholdWrite`. (Session 116: trust UI consolidated on trust-strategy tab; see Phase A½ above.)
 - As of Session 117, trust writes set `household_id` from `requireOwnedHouseholdId` on POST insert (alongside `owner_id`). `lib/trusts/trustPayload.ts` no longer references `excluded_from_estate` (column removed; use `excludes_from_estate` + `funding_amount` only). `TRUST_SELECT` aligned to live schema.
@@ -296,6 +297,8 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 8. Optional: accept or decline one advisor recommendation on the dashboard.
 
 **Automated smoke (CI / local):** `npm run test:e2e:consumer` (50 tests). Requires `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID` (strategy + gift-history + recompute cases), and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for gift-history recompute polling.
+
+**Advisor automated smoke:** `npm run test:e2e:advisor` (44 tests). Requires `PLAYWRIGHT_ADVISOR_EMAIL` / `PLAYWRIGHT_ADVISOR_PASSWORD` (canonical: `advisor2@rolobe.resend.app`). Session 126 preset API/UI tests (`advisor-presets.spec.ts`) require deploy of `/api/advisor/presets` routes; 7 preset cases 404 until then (37/44 pass pre-deploy). Michael Johnson UI paths: `SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app npx tsx scripts/seed-michael-johnson-advisor-demo.ts`; strategy API household link: `scripts/seed-advisor2-playwright-fixture.ts`.
 
 ---
 

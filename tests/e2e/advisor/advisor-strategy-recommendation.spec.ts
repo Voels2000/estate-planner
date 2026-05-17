@@ -8,7 +8,8 @@ import { test, expect } from '@playwright/test'
  * to advisor2@rolobe.resend.app. Cleans up after each test.
  */
 
-const CLIENT_HOUSEHOLD_ID = '90cc8759-5465-4671-8894-e17eca783a42'
+const CLIENT_HOUSEHOLD_ID =
+  process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID ?? '90cc8759-5465-4671-8894-e17eca783a42'
 
 const SOURCES = [
   { strategySource: 'slat',      amount: 500000, category: 'trust_exclusion', label: 'SLAT' },

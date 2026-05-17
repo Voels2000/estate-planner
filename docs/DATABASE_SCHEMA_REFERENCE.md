@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 17, 2026 (Session 122 — dashboard callout, headroom parity, flow labels)
+# Last updated: May 17, 2026 (Session 126 — advisor_projection_assumptions.is_default)
 
 ---
 
@@ -166,8 +166,9 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `advisor_projection_assumptions`
 
-- **Key columns:** `advisor_id`, `client_household_id`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`, `accepted_at`
-- **Purpose:** advisor Monte Carlo scenario assumptions and consumer acceptance state.
+- **Key columns:** `advisor_id`, `client_household_id`, `is_preset`, `is_default`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`, `accepted_at`
+- **Purpose:** advisor Monte Carlo scenario assumptions and consumer acceptance state. Presets (`is_preset = true`, `client_household_id` null) are advisor-wide templates; at most one `is_default` preset per advisor (partial unique index `advisor_projection_assumptions_one_default_preset_idx`).
+- **Migration:** `20260517185228_add_is_default_to_advisor_projection_assumptions.sql`
 - **Acceptance behavior:** consumer accept/revert toggles `accepted_by_client`/`accepted_at` on household-linked rows; latest accepted row is consumer-effective state.
 - **Consumer UI (Session 98):** `/dashboard` and `/my-estate-strategy` server pages fetch rows where `accepted_by_client=true` or `shared_at` is set; `MonteCarloScenarioBanner` calls `/api/monte-carlo/advisor-assumptions` for accept/revert with `router.refresh()`.
 
@@ -654,4 +655,13 @@ After each schema-affecting session:
 - Changes in this session are application-layer only:
   - Public advisor directory moved to `app/find-advisor/*` with legacy `/advisor-directory` redirecting to `/find-advisor`.
   - Assessment results flow now includes local-storage pending payload restore (`mwm_pending_assessment`) after authentication.
+
+## Session 126 Note
+
+- Migration `20260517185228_add_is_default_to_advisor_projection_assumptions.sql`: `is_default boolean NOT NULL DEFAULT false` + partial unique index `advisor_projection_assumptions_one_default_preset_idx` on `(advisor_id) WHERE is_preset = true AND is_default = true`.
+- Preset rows: `is_preset = true`, `client_household_id` null, `scenario_name` required on create; unset assumption numerics stored as null (Monte Carlo engine uses `MONTE_CARLO_SYSTEM_DEFAULTS`).
+- Application-layer:
+  - `/api/advisor/presets` — GET (default first, then `created_at` DESC), POST (`is_preset` explicit); `/api/advisor/presets/[id]` — PATCH/DELETE with ownership guard; `/api/advisor/presets/[id]/default` — clear all advisor preset defaults then set one.
+  - `/advisor/presets` — `PresetManager` (CRUD + set default); `MonteCarloAssumptionsPanel` auto-loads default on mount + “Load preset” dropdown (UI-only until advisor saves scenario).
+- E2E: `tests/e2e/advisor/advisor-presets.spec.ts` (API CRUD, consumer 403, UI pre-fill). Playwright seeds: `scripts/seed-michael-johnson-advisor-demo.ts` (Johnson client for advisor2), `scripts/seed-advisor2-playwright-fixture.ts` (household `90cc8759-…` strategy-recommendation link).
 

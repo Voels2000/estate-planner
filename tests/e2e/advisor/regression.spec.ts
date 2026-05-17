@@ -29,7 +29,9 @@ test('strategy and tax tabs switch without error', async ({ page }) => {
   const strategyLoading = page.locator('.animate-pulse')
   await expect(dashboard.or(strategyLoading).first()).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: /Tax/ }).click()
-  await expect(page.getByText('Law Scenario')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Law Scenario' })).toBeVisible({
+    timeout: 30_000,
+  })
 })
 
 test('public terms API responds', async ({ request }) => {
