@@ -122,6 +122,36 @@ export default function GiftingDashboard({
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
+  const giftRows = summary?.gifts ?? [];
+
+  const splitElectedYears = useMemo(
+    () =>
+      new Set(
+        giftRows
+          .filter((g) => g.gift_type === 'annual' && g.form_709_filed === true)
+          .map((g) => g.tax_year),
+      ),
+    [summary?.gifts],
+  );
+
+  const yearsWithAnnualGifts = useMemo(
+    () =>
+      new Set(
+        giftRows.filter((g) => g.gift_type === 'annual').map((g) => g.tax_year),
+      ),
+    [summary?.gifts],
+  );
+
+  const giftsGroupedByYear = useMemo(() => {
+    const map = new Map<number, GiftRow[]>();
+    for (const g of giftRows) {
+      const list = map.get(g.tax_year) ?? [];
+      list.push(g);
+      map.set(g.tax_year, list);
+    }
+    return [...map.entries()].sort((a, b) => b[0] - a[0]);
+  }, [summary?.gifts]);
+
   const priorTaxableGifts = useMemo(
     () =>
       (summary?.gifts ?? [])
@@ -854,35 +884,76 @@ export default function GiftingDashboard({
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.gifts.map((gift, i) => (
-                      <tr key={gift.id} className={`border-b border-gray-100 ${i % 2 !== 0 ? 'bg-gray-50' : ''}`}>
-                        <td className="px-4 py-3 text-gray-700">{gift.tax_year}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-gray-900">{gift.recipient_name}</p>
-                          {gift.recipient_relationship && (
-                            <p className="text-xs text-gray-400">{gift.recipient_relationship}</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{GIFT_TYPE_LABELS[gift.gift_type] ?? gift.gift_type}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt$(gift.amount)}</td>
-                        <td className="px-4 py-3 text-center">
-                          {gift.form_709_filed
-                            ? <span className="text-green-600 font-bold">✓</span>
-                            : <span className="text-gray-300">—</span>
-                          }
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(gift.id)}
-                            disabled={deleteId === gift.id}
-                            className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
-                          >
-                            {deleteId === gift.id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {giftsGroupedByYear.map(([year, yearGifts]) => {
+                      const isMfj = summary.filing_status === 'mfj';
+                      const showSplitBadge = splitElectedYears.has(year);
+                      const showSplitPrompt =
+                        isMfj &&
+                        yearsWithAnnualGifts.has(year) &&
+                        !splitElectedYears.has(year);
+
+                      return (
+                        <Fragment key={year}>
+                          <tr className="bg-gray-100 border-b border-gray-200">
+                            <td colSpan={6} className="px-4 py-2.5">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-sm font-semibold text-gray-900">{year}</span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {showSplitBadge && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                      Gift Split Elected
+                                      <span aria-hidden>✓</span>
+                                    </span>
+                                  )}
+                                  {showSplitPrompt && (
+                                    <span className="text-xs text-gray-500">
+                                      Split available — file Form 709
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                          {yearGifts.map((gift, i) => (
+                            <tr
+                              key={gift.id}
+                              className={`border-b border-gray-100 ${i % 2 !== 0 ? 'bg-gray-50' : ''}`}
+                            >
+                              <td className="px-4 py-3 text-gray-400 pl-6" />
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-900">{gift.recipient_name}</p>
+                                {gift.recipient_relationship && (
+                                  <p className="text-xs text-gray-400">{gift.recipient_relationship}</p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {GIFT_TYPE_LABELS[gift.gift_type] ?? gift.gift_type}
+                              </td>
+                              <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                                {fmt$(gift.amount)}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {gift.form_709_filed ? (
+                                  <span className="text-green-600 font-bold">✓</span>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(gift.id)}
+                                  disabled={deleteId === gift.id}
+                                  className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
+                                >
+                                  {deleteId === gift.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
