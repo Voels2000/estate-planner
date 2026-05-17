@@ -144,6 +144,7 @@ Never duplicate information across documents. Use cross-references instead. This
 | Why are we building this? | This document (PRODUCT_STRATEGY.md) |
 | What decisions have been made and why? | DECISION_LOG.md |
 | What are we building and when? | ROADMAP.md |
+| What is the current session working on? | NEXT_SESSION.md |
 | How do consumers navigate the app? | CONSUMER_NAV_MAP.md |
 | How do specific features work end-to-end? | CONSUMER_FLOWS.md |
 | How is the system architected? | MASTER_ARCHITECTURE.md |

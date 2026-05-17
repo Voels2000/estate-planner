@@ -6,7 +6,7 @@
 
 ## How to use this document
 
-**At the start of a session:** Read the "Current sprint" section. Update the status of any items completed since the last session. This is the document that answers "where are we?"
+**At the start of a session:** Read the "Current sprint" section and [NEXT_SESSION.md](./NEXT_SESSION.md) (task detail, file paths, paste block). Update the status of any items completed since the last session. This is the document that answers "where are we?"
 
 **At the end of a session:** Update the status of any items worked on. Add any new items discovered. Move completed sprints to the "Completed" section at the bottom.
 
