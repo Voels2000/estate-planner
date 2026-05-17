@@ -14,8 +14,17 @@ import type {
   TrustWillRecommendation,
 } from '@/lib/trusts/types'
 import { formatDollars } from '@/lib/utils/formatCurrency'
+import { HEADROOM_BEFORE_FEDERAL_TAX_LABEL } from '@/lib/estate/exemptionLabels'
+import { estimateTrustTaxSaved } from '@/lib/trusts/trustEstateTaxEstimate'
 
 export type { TrustRow } from '@/lib/trusts/types'
+
+export type TrustEstateSummary = {
+  estimatedTaxableEstate: number
+  federalExemptionRemaining: number
+  lifetimeGiftsUsed: number
+  headroom: number
+}
 
 export type TrustDocumentsPanelProps = {
   estateValue: number
@@ -23,6 +32,8 @@ export type TrustDocumentsPanelProps = {
   checklist: TrustWillChecklistItem[]
   initialTrusts?: TrustRow[]
   embedded?: boolean
+  trustEstateSummary?: TrustEstateSummary
+  marginalStateEstateRatePct?: number
 }
 
 const TRUST_TYPES = [
@@ -49,6 +60,8 @@ export function TrustDocumentsPanel({
   checklist,
   initialTrusts = [],
   embedded = false,
+  trustEstateSummary,
+  marginalStateEstateRatePct = 0,
 }: TrustDocumentsPanelProps) {
   const router = useRouter()
   const keyPrefix = embedded ? 'trust-strategy-docs' : 'trust-will'
@@ -116,15 +129,49 @@ export function TrustDocumentsPanel({
         </p>
       )}
 
-      <CollapsibleSection
-        title="Estimated Taxable Estate"
-        defaultOpen={true}
-        storageKey={`${keyPrefix}-estimated-estate-value`}
-      >
-        <p className="text-2xl font-bold text-neutral-900 tabular-nums">
-          {formatDollars(estateValue)}
-        </p>
-      </CollapsibleSection>
+      {trustEstateSummary ? (
+        <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 grid gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              Estimated Taxable Estate
+            </p>
+            <p className="mt-1 text-lg font-semibold text-neutral-900 tabular-nums">
+              {formatDollars(trustEstateSummary.estimatedTaxableEstate)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              Federal exemption remaining
+            </p>
+            <p className="mt-1 text-lg font-semibold text-neutral-900 tabular-nums">
+              {formatDollars(trustEstateSummary.federalExemptionRemaining)}
+            </p>
+            {trustEstateSummary.lifetimeGiftsUsed > 0 && (
+              <p className="mt-0.5 text-xs text-neutral-500">
+                after {formatDollars(trustEstateSummary.lifetimeGiftsUsed)} lifetime gifts
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {HEADROOM_BEFORE_FEDERAL_TAX_LABEL}
+            </p>
+            <p className="mt-1 text-lg font-semibold text-emerald-700 tabular-nums">
+              {formatDollars(trustEstateSummary.headroom)}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <CollapsibleSection
+          title="Estimated Taxable Estate"
+          defaultOpen={true}
+          storageKey={`${keyPrefix}-estimated-estate-value`}
+        >
+          <p className="text-2xl font-bold text-neutral-900 tabular-nums">
+            {formatDollars(estateValue)}
+          </p>
+        </CollapsibleSection>
+      )}
 
       <CollapsibleSection
         title="Trusts on file"
@@ -149,7 +196,16 @@ export function TrustDocumentsPanel({
             <table className="min-w-full divide-y divide-neutral-100">
               <thead className="bg-neutral-50">
                 <tr>
-                  {['Name', 'Type', 'Grantor', 'Trustee', 'Funding', 'Excludes from estate', ''].map((h) => (
+                  {[
+                    'Name',
+                    'Type',
+                    'Grantor',
+                    'Trustee',
+                    'Funding',
+                    'Est. Tax Saved',
+                    'Excludes from estate',
+                    '',
+                  ].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-500">
                       {h}
                     </th>
@@ -157,7 +213,13 @@ export function TrustDocumentsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {trusts.map((t) => (
+                {trusts.map((t) => {
+                  const funding = num(t.funding_amount ?? t.excluded_from_estate)
+                  const excludes = t.excludes_from_estate === true
+                  const taxSaved = excludes
+                    ? estimateTrustTaxSaved(funding, marginalStateEstateRatePct)
+                    : 0
+                  return (
                   <tr key={t.id} className="hover:bg-neutral-50/80">
                     <td className="px-4 py-3 text-sm font-medium text-neutral-900">{t.name}</td>
                     <td className="px-4 py-3 text-sm text-neutral-600">
@@ -166,7 +228,17 @@ export function TrustDocumentsPanel({
                     <td className="px-4 py-3 text-sm text-neutral-600">{t.grantor || '-'}</td>
                     <td className="px-4 py-3 text-sm text-neutral-600">{t.trustee || '-'}</td>
                     <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
-                      {formatDollars(num(t.funding_amount ?? t.excluded_from_estate))}
+                      {formatDollars(funding)}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-sm tabular-nums text-neutral-700"
+                      title={
+                        excludes
+                          ? 'Estimated based on current marginal state estate tax rate.'
+                          : undefined
+                      }
+                    >
+                      {excludes && taxSaved > 0 ? `~${formatDollars(taxSaved)}` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span className={t.excludes_from_estate || num(t.excluded_from_estate) > 0 ? 'text-green-700 font-medium' : 'text-neutral-400'}>
@@ -191,7 +263,8 @@ export function TrustDocumentsPanel({
                       </button>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           )}

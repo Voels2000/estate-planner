@@ -87,6 +87,13 @@ interface Props {
     checklist: TrustWillChecklistItem[]
     trusts: TrustRow[]
   }
+  trustEstateSummary?: {
+    estimatedTaxableEstate: number
+    federalExemptionRemaining: number
+    lifetimeGiftsUsed: number
+    headroom: number
+  }
+  marginalStateEstateRatePct?: number
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -120,6 +127,8 @@ export default function MyEstateTrustStrategyClient({
   giftingScenario,
   initialGiftingSummary,
   trustWillGuidance,
+  trustEstateSummary,
+  marginalStateEstateRatePct = 0,
 }: Props) {
   const router = useRouter()
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
@@ -866,6 +875,8 @@ export default function MyEstateTrustStrategyClient({
           recommendations={trustWillGuidance.recommendations}
           checklist={trustWillGuidance.checklist}
           initialTrusts={trustWillGuidance.trusts}
+          trustEstateSummary={trustEstateSummary}
+          marginalStateEstateRatePct={marginalStateEstateRatePct}
         />
       )}
     </div>
