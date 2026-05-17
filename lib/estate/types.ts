@@ -92,6 +92,7 @@ export type StrategyLineItemCategory =
 
 export type StrategyLineItemSource =
   | 'cst'
+  | 'slat'
   | 'ilit'
   | 'annual_gifting'
   | 'lifetime_gifting'

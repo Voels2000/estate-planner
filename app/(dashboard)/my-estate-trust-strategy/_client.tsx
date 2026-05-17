@@ -46,6 +46,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 interface Props {
   householdId: string
+  ownerUserId: string
   userRole: 'consumer' | 'advisor'
   consumerTier: number
   estateContext?: EstateContext
@@ -106,6 +107,7 @@ function toDisplayStrategyLabel(strategyType: string, label: string | null): str
 
 export default function MyEstateTrustStrategyClient({
   householdId,
+  ownerUserId,
   userRole,
   consumerTier,
   estateContext,
@@ -848,6 +850,7 @@ export default function MyEstateTrustStrategyClient({
           )}
           <ConsumerStrategyPanel
             householdId={householdId}
+            ownerUserId={ownerUserId}
             userRole={userRole}
             advisorLineItems={advisorLineItems}
             estateContext={estateContext}

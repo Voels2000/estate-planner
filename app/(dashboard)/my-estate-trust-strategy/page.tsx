@@ -456,6 +456,7 @@ export default async function MyEstateTrustStrategyPage({
       )}
       <MyEstateTrustStrategyClient
         householdId={householdRow.id}
+        ownerUserId={user.id}
         userRole={access.isAdvisor ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
         initialTab={tab ?? 'gifting'}

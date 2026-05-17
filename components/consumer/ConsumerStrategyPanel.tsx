@@ -4,8 +4,9 @@
 // Reads advisor-modeled hints, pre-populates assumptions from household context,
 // and persists consumer save/progress state through `/api/strategy-line-items`.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
@@ -13,6 +14,8 @@ import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCh
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
 import { modelRothConversion, RothConversionConfig } from '@/lib/strategy/modelRothConversion'
 import type { StrategyLineItemInput } from '@/lib/estate/types'
+import { SlatStrategyForm, type SlatSavedRow } from '@/components/consumer/SlatStrategyForm'
+import { IlitStrategyForm, type IlitSavedRow } from '@/components/consumer/IlitStrategyForm'
 
 type AdvisorLineItem = {
   strategy_source: string
@@ -35,8 +38,6 @@ type AdvancedPanel =
   | null
 
 type FilingStatus = 'single' | 'married_joint'
-
-const EDUCATIONAL_ONLY_PANELS = new Set<AdvancedPanel>(['slat', 'ilit'])
 
 function isMfjFiling(filing: string): boolean {
   return filing === 'mfj' || filing === 'married_joint'
@@ -140,10 +141,12 @@ function StrategyEducationCard({
   panelId,
   ctx,
   filingStatus,
+  defaultOpen = true,
 }: {
   panelId: string
   ctx: EstateContext
   filingStatus: FilingStatus
+  defaultOpen?: boolean
 }) {
   const info = STRATEGY_INFO[panelId]
   if (!info) return null
@@ -151,7 +154,7 @@ function StrategyEducationCard({
   const contextNote = info.contextNote(ctx, filing)
 
   return (
-    <details className="mb-4 rounded-lg border border-neutral-200 bg-white" open>
+    <details className="mb-4 rounded-lg border border-neutral-200 bg-white" open={defaultOpen}>
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-neutral-800 [&::-webkit-details-marker]:hidden">
         About this strategy
       </summary>
@@ -224,6 +227,13 @@ interface ConsumerStrategyPanelProps {
   estateContext?: EstateContext
   /** Household filing status for strategy relevance (e.g. SLAT requires MFJ). */
   filingStatus?: FilingStatus
+  /** Household owner user id — insurance policies use user_id. */
+  ownerUserId?: string
+}
+
+export type SavedStrategyDetail = {
+  amount: number
+  metadata: Record<string, unknown> | null
 }
 
 const CONFIDENCE_DISPLAY: Record<string, string> = {
@@ -281,33 +291,51 @@ async function updateStrategyStatus(
 
 function useRecommendAdvanced(householdId: string) {
   const [saved, setSaved] = useState<Set<string>>(new Set())
+  const [savedDetails, setSavedDetails] = useState<Record<string, SavedStrategyDetail>>({})
   const [saving, setSaving] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, ConsumerStatus>>({})
   const [loadingInitial, setLoadingInitial] = useState(true)
 
-  useEffect(() => {
-    if (!householdId) return
+  const loadSaved = useCallback(async () => {
+    if (!householdId) {
+      setLoadingInitial(false)
+      return
+    }
     const supabase = createClient()
-    supabase
+    const { data } = await supabase
       .from('strategy_line_items')
-      .select('strategy_source, consumer_status')
+      .select('strategy_source, consumer_status, amount, metadata, scenario_name')
       .eq('household_id', householdId)
       .eq('source_role', 'consumer')
       .eq('is_active', true)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const savedSet = new Set(data.map((r) => r.strategy_source as string))
-          const statusMap: Record<string, ConsumerStatus> = {}
-          for (const row of data) {
-            statusMap[row.strategy_source as string] =
-              (row.consumer_status as ConsumerStatus) ?? 'not_started'
-          }
-          setSaved(savedSet)
-          setStatuses(statusMap)
+
+    if (data && data.length > 0) {
+      const savedSet = new Set<string>()
+      const statusMap: Record<string, ConsumerStatus> = {}
+      const detailMap: Record<string, SavedStrategyDetail> = {}
+      for (const row of data) {
+        const source = row.strategy_source as string
+        savedSet.add(source)
+        statusMap[source] = (row.consumer_status as ConsumerStatus) ?? 'not_started'
+        detailMap[source] = {
+          amount: Number(row.amount ?? 0),
+          metadata: (row.metadata as Record<string, unknown> | null) ?? null,
         }
-        setLoadingInitial(false)
-      })
+      }
+      setSaved(savedSet)
+      setStatuses(statusMap)
+      setSavedDetails(detailMap)
+    } else {
+      setSaved(new Set())
+      setStatuses({})
+      setSavedDetails({})
+    }
+    setLoadingInitial(false)
   }, [householdId])
+
+  useEffect(() => {
+    void loadSaved()
+  }, [loadSaved])
 
   async function toggle(
     strategySource: string,
@@ -345,7 +373,7 @@ function useRecommendAdvanced(householdId: string) {
     await updateStrategyStatus(householdId, strategySource, next)
   }
 
-  return { saved, saving, toggle, statuses, cycleStatus, loadingInitial }
+  return { saved, savedDetails, saving, toggle, statuses, cycleStatus, loadingInitial, reloadSaved: loadSaved }
 }
 
 // ─── Advisor hint banner ──────────────────────────────────────────────────────
@@ -428,11 +456,14 @@ export default function ConsumerStrategyPanel({
   advisorLineItems = [],
   estateContext,
   filingStatus = 'single',
+  ownerUserId,
 }: ConsumerStrategyPanelProps) {
+  const router = useRouter()
 
   // Use real data when provided, fall back gracefully if not
   const ctx = estateContext ?? FALLBACK_CONTEXT
   const mfjFiling = filingStatus === 'married_joint'
+  const slatBlocked = !mfjFiling
 
   const grossEstate            = ctx.grossEstate
   const federalExemption       = ctx.federalExemption
@@ -461,8 +492,27 @@ export default function ConsumerStrategyPanel({
     return advisorLineItemBySource.get(strategySource)?.amount ?? 0
   }
 
-  const { saved, saving, toggle, statuses, cycleStatus, loadingInitial } =
+  const { saved, savedDetails, saving, toggle, statuses, cycleStatus, loadingInitial, reloadSaved } =
     useRecommendAdvanced(householdId)
+
+  const refreshAfterStrategyWrite = useCallback(() => {
+    void reloadSaved()
+    router.refresh()
+  }, [reloadSaved, router])
+
+  const slatSaved: SlatSavedRow | null = saved.has('slat')
+    ? {
+        amount: savedDetails.slat?.amount ?? 0,
+        metadata: savedDetails.slat?.metadata ?? null,
+      }
+    : null
+
+  const ilitSaved: IlitSavedRow | null = saved.has('ilit')
+    ? {
+        amount: savedDetails.ilit?.amount ?? 0,
+        metadata: savedDetails.ilit?.metadata ?? null,
+      }
+    : null
 
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82
@@ -983,24 +1033,45 @@ export default function ConsumerStrategyPanel({
 
       {activePanel === 'slat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="slat" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard
+            panelId="slat"
+            ctx={ctx}
+            filingStatus={filingStatus}
+            defaultOpen={!slatSaved}
+          />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="slat" />
-          <p className="text-sm text-gray-600">
-            Interactive modeling and save for SLAT are coming in a future update. Use the link above
-            to discuss implementation with your advisor.
-          </p>
+          <SlatStrategyForm
+            householdId={householdId}
+            disabled={slatBlocked}
+            disabledReason="SLAT is available for married couples filing jointly only."
+            savedRow={slatSaved}
+            onSaved={refreshAfterStrategyWrite}
+            onRemoved={refreshAfterStrategyWrite}
+          />
         </div>
       )}
 
-      {activePanel === 'ilit' && (
+      {activePanel === 'ilit' && ownerUserId && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="ilit" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard
+            panelId="ilit"
+            ctx={ctx}
+            filingStatus={filingStatus}
+            defaultOpen={!ilitSaved}
+          />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="ilit" />
-          <p className="text-sm text-gray-600">
-            Interactive modeling and save for ILIT are coming in a future update. Use the link above
-            to discuss implementation with your advisor.
-          </p>
+          <IlitStrategyForm
+            householdId={householdId}
+            ownerUserId={ownerUserId}
+            savedRow={ilitSaved}
+            onSaved={refreshAfterStrategyWrite}
+            onRemoved={refreshAfterStrategyWrite}
+          />
         </div>
+      )}
+
+      {activePanel === 'ilit' && !ownerUserId && (
+        <p className="text-sm text-gray-500">Sign in to model ILIT strategies.</p>
       )}
 
       <p className="text-xs text-gray-500">
