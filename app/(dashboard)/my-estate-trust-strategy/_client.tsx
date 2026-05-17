@@ -851,6 +851,7 @@ export default function MyEstateTrustStrategyClient({
             userRole={userRole}
             advisorLineItems={advisorLineItems}
             estateContext={estateContext}
+            filingStatus={giftingScenario.filing}
           />
         </div>
       )}

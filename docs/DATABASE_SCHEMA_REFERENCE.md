@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 120 — standardized exemption UI labels)
+# Last updated: May 16, 2026 (Session 121 — Transfer Strategies educational cards)
 
 ---
 
@@ -386,6 +386,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 121 Note
+
+- No database schema or migration changes were introduced in Session 121.
+- Application-layer changes (existing `strategy_line_items` + consumer UI):
+  - `components/consumer/ConsumerStrategyPanel.tsx` — `STRATEGY_INFO` / `StrategyEducationCard` above each active strategy panel; SLAT and ILIT pills (educational-only; no consumer upsert yet). SLAT pill disabled when not MFJ (`filingStatus` from `giftingScenario.filing`). `formatDollarsCompact` for context notes.
+  - `my-estate-trust-strategy/_client.tsx` — passes `filingStatus={giftingScenario.filing}` to `ConsumerStrategyPanel`.
 
 ## Session 120 Note
 

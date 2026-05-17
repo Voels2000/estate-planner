@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 120 — standardized exemption UI labels)
+# Last updated: May 16, 2026 (Session 121 — Transfer Strategies educational cards)
 
 ---
 
@@ -174,6 +174,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()`; estate health recompute runs server-side on accept/reject (Session 101).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
+- As of Session 121, `components/consumer/ConsumerStrategyPanel.tsx` (Transfer Strategies tab) shows a collapsible **About this strategy** card (`STRATEGY_INFO` + `StrategyEducationCard`) above each active panel’s model form — full name, description, best for, and personalized `contextNote` from `EstateContext` + `filingStatus` (illiquid %, IRA balance, exemption headroom, MFJ gating). Pills include **SLAT** and **ILIT** (educational-only for consumer; `applySLAT` / `applyILIT` exist for advisor UI, consumer save forms deferred). SLAT pill is grayed and non-clickable when `filingStatus !== 'married_joint'`. `filingStatus` is passed from `my-estate-trust-strategy/_client.tsx` via `giftingScenario.filing`. Advisor CTA links to `/find-advisor`. Uses `formatDollarsCompact` from `lib/utils/formatCurrency.ts`.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately.
@@ -255,6 +256,7 @@ Runtime behavior:
 - As of Session 119, `GiftingDashboard` submit handlers trim `recipient_name`, `notes`, and `recipient_relationship` (annual form); block save when recipient name is whitespace-only. Prior gift form shows read-only **Form 709 — Taxable gift** badge (type hardcoded `lifetime` on submit), auto-checks `form_709_filed` when amount is entered (editable; helper text for amber pending-filing indicator).
 - As of Session 120, **Prior taxable gifts (Form 709)** lists `priorTaxableGifts` from `summary.gifts` (`gift_type === 'lifetime'` via `useMemo`); section uses controlled `CollapsibleSection` `open` / `onOpenChange` (no localStorage) and auto-expands when rows exist. Row format: amount · year · recipient · Form 709 filed ✓; amber left border when unfiled. `CollapsibleSection` supports optional controlled open state for other parents.
 - As of Session 120, `GiftingDashboard` lifetime meter uses `summary.lifetime_exemption_used` only (RPC already includes annual overflow in that field — do not add client `annualOverflowToLifetime` again).
+- As of Session 121, Transfer Strategies tab (`ConsumerStrategyPanel`): educational cards for GRAT, CRT, CLAT, DAF, Liquidity, Roth, SLAT, ILIT; SLAT/ILIT panels are read-only (no consumer save form yet).
 - As of Session 113, removed unused client loader `loadProjectionPageData.ts` (projections use server `loadProjectionData` only). Playwright devDependency bumped to 1.60; removed default `example.spec.ts` scaffold (e2e runs `consumer/`, `advisor/`, `public/` only).
 - As of Session 114, `/scenarios` “Save” archives comparison results via `POST /api/consumer/scenario-snapshots` (`lib/scenarios/buildScenarioSnapshot.ts` → `projections` table). Scenario math remains `GET /api/projection` with query overrides; no `afterHouseholdWrite` on snapshot-only saves.
 - As of Session 115 (Phase A consumer cleanup), canonical nav/URL/title/tier map lives in `docs/CONSUMER_NAV_MAP.md`. Sidebar labels aligned with page `<h1>` titles; duplicate `asset-allocation/_allocation-client.tsx` removed (`/asset-allocation` still redirects to `/allocation`). `FEATURE_TIERS`: fixed `projections` key, `allocation` tier 2, added `trust-will` tier 3.

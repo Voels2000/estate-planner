@@ -5,7 +5,9 @@
 // and persists consumer save/progress state through `/api/strategy-line-items`.
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
@@ -21,7 +23,158 @@ type AdvisorLineItem = {
   metadata: Record<string, unknown> | null
 }
 
-type AdvancedPanel = 'grat' | 'crt' | 'clat' | 'daf' | 'liquidity' | 'roth' | null
+type AdvancedPanel =
+  | 'grat'
+  | 'crt'
+  | 'clat'
+  | 'daf'
+  | 'liquidity'
+  | 'roth'
+  | 'slat'
+  | 'ilit'
+  | null
+
+type FilingStatus = 'single' | 'married_joint'
+
+const EDUCATIONAL_ONLY_PANELS = new Set<AdvancedPanel>(['slat', 'ilit'])
+
+function isMfjFiling(filing: string): boolean {
+  return filing === 'mfj' || filing === 'married_joint'
+}
+
+function filingForStrategyContext(filingStatus: FilingStatus): string {
+  return filingStatus === 'married_joint' ? 'mfj' : 'single'
+}
+
+const STRATEGY_INFO: Record<
+  string,
+  {
+    fullName: string
+    description: string
+    bestFor: string
+    contextNote: (ctx: EstateContext, filing: string) => string | null
+  }
+> = {
+  grat: {
+    fullName: 'Grantor Retained Annuity Trust',
+    description:
+      'Transfers future appreciation on assets out of your estate while you retain an annuity stream for a fixed term.',
+    bestFor: 'High-growth assets, business interests, concentrated positions',
+    contextNote: (ctx) =>
+      ctx.illiquidAssets > 0
+        ? `Your estate has ${formatDollarsCompact(ctx.illiquidAssets)} in illiquid assets that may be good candidates.`
+        : null,
+  },
+  crt: {
+    fullName: 'Charitable Remainder Trust',
+    description:
+      'You receive an income stream now; the remaining assets pass to charity at death with an immediate tax deduction.',
+    bestFor: 'Appreciated assets with charitable intent',
+    contextNote: (ctx) =>
+      ctx.grossEstate > 0 ? 'Most effective for highly appreciated assets you would otherwise sell.' : null,
+  },
+  clat: {
+    fullName: 'Charitable Lead Annuity Trust',
+    description:
+      'Charity receives an annuity now; heirs receive the remainder after the trust term, often with reduced gift tax.',
+    bestFor: 'MFJ estates with strong charitable goals',
+    contextNote: (_ctx, filing) =>
+      !isMfjFiling(filing) ? 'Most commonly used by married couples.' : null,
+  },
+  daf: {
+    fullName: 'Donor Advised Fund',
+    description:
+      'Take an immediate charitable deduction and recommend grants to charities over time.',
+    bestFor: 'High-income years, appreciated securities, bunching deductions',
+    contextNote: () =>
+      'Contributions of appreciated securities avoid capital gains and qualify for a full FMV deduction.',
+  },
+  liquidity: {
+    fullName: 'Liquidity Planning',
+    description:
+      'Ensures your estate has sufficient liquid assets to pay taxes and settlement costs without forced sales.',
+    bestFor: 'Estates with significant illiquid holdings',
+    contextNote: (ctx) => {
+      const illiquidPct =
+        ctx.grossEstate > 0 ? Math.round((ctx.illiquidAssets / ctx.grossEstate) * 100) : 0
+      return illiquidPct > 50
+        ? `Your estate is ${illiquidPct}% illiquid — liquidity planning is highly relevant.`
+        : null
+    },
+  },
+  roth: {
+    fullName: 'Roth Conversion',
+    description:
+      'Convert pre-tax retirement assets to Roth, paying tax now to eliminate RMDs and create tax-free growth.',
+    bestFor: 'Income gap years before RMDs, estates expecting higher future tax rates',
+    contextNote: (ctx) =>
+      ctx.preIRABalance > 0
+        ? `You have ${formatDollarsCompact(ctx.preIRABalance)} in pre-tax retirement assets eligible for conversion.`
+        : null,
+  },
+  slat: {
+    fullName: 'Spousal Lifetime Access Trust',
+    description:
+      'Removes assets from your taxable estate while your spouse retains access to the trust assets.',
+    bestFor: 'MFJ households looking to use lifetime exemption now',
+    contextNote: (ctx, filing) =>
+      !isMfjFiling(filing)
+        ? 'Available for married couples only.'
+        : ctx.federalExemption > ctx.grossEstate
+          ? `You have ${formatDollarsCompact(ctx.federalExemption - ctx.grossEstate)} of exemption available to shelter SLAT contributions.`
+          : null,
+  },
+  ilit: {
+    fullName: 'Irrevocable Life Insurance Trust',
+    description:
+      'Holds life insurance outside your taxable estate so the death benefit passes to heirs free of estate tax.',
+    bestFor: 'Estates with significant life insurance',
+    contextNote: (ctx) =>
+      ctx.grossEstate > 0
+        ? 'Life insurance owned personally is included in your taxable estate — an ILIT removes it.'
+        : null,
+  },
+}
+
+function StrategyEducationCard({
+  panelId,
+  ctx,
+  filingStatus,
+}: {
+  panelId: string
+  ctx: EstateContext
+  filingStatus: FilingStatus
+}) {
+  const info = STRATEGY_INFO[panelId]
+  if (!info) return null
+  const filing = filingForStrategyContext(filingStatus)
+  const contextNote = info.contextNote(ctx, filing)
+
+  return (
+    <details className="mb-4 rounded-lg border border-neutral-200 bg-white" open>
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-neutral-800 [&::-webkit-details-marker]:hidden">
+        About this strategy
+      </summary>
+      <div className="space-y-2 border-t border-neutral-100 px-4 pb-4 pt-3">
+        <p className="text-sm font-medium text-neutral-900">{info.fullName}</p>
+        <p className="text-sm text-neutral-600">{info.description}</p>
+        <p className="text-xs text-neutral-500">
+          <span className="font-medium">Best for: </span>
+          {info.bestFor}
+        </p>
+        {contextNote && (
+          <p className="text-xs font-medium text-amber-600">{contextNote}</p>
+        )}
+        <Link
+          href="/find-advisor"
+          className="mt-1 inline-block text-xs text-blue-600 hover:underline"
+        >
+          Ask your advisor about this →
+        </Link>
+      </div>
+    </details>
+  )
+}
 
 type ConsumerStatus = 'not_started' | 'in_progress' | 'complete'
 
@@ -69,6 +222,8 @@ interface ConsumerStrategyPanelProps {
   advisorLineItems?: AdvisorLineItem[]
   /** Real household data — replaces hardcoded defaults */
   estateContext?: EstateContext
+  /** Household filing status for strategy relevance (e.g. SLAT requires MFJ). */
+  filingStatus?: FilingStatus
 }
 
 const CONFIDENCE_DISPLAY: Record<string, string> = {
@@ -272,10 +427,12 @@ export default function ConsumerStrategyPanel({
   userRole,
   advisorLineItems = [],
   estateContext,
+  filingStatus = 'single',
 }: ConsumerStrategyPanelProps) {
 
   // Use real data when provided, fall back gracefully if not
   const ctx = estateContext ?? FALLBACK_CONTEXT
+  const mfjFiling = filingStatus === 'married_joint'
 
   const grossEstate            = ctx.grossEstate
   const federalExemption       = ctx.federalExemption
@@ -417,6 +574,8 @@ export default function ConsumerStrategyPanel({
     { id: 'daf' as AdvancedPanel, label: 'DAF' },
     { id: 'liquidity' as AdvancedPanel, label: 'Liquidity' },
     { id: 'roth' as AdvancedPanel, label: 'Roth Conversion' },
+    { id: 'slat' as AdvancedPanel, label: 'SLAT' },
+    { id: 'ilit' as AdvancedPanel, label: 'ILIT' },
   ]
 
   const gratResult     = activePanel === 'grat'      ? applyGRAT(gratConfig) : null
@@ -441,15 +600,22 @@ export default function ConsumerStrategyPanel({
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Transfer Strategies</h3>
         <div className="flex flex-wrap gap-2">
-          {PANELS.map((p) => (
+          {PANELS.map((p) => {
+            const slatDisabled = p.id === 'slat' && !mfjFiling
+            return (
             <button
               key={p.id}
-              onClick={() => setActivePanel(activePanel === p.id ? null : p.id)}
+              type="button"
+              onClick={() => {
+                if (slatDisabled) return
+                setActivePanel(activePanel === p.id ? null : p.id)
+              }}
               className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
                 activePanel === p.id
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-              }`}
+              }${slatDisabled ? ' opacity-40 cursor-default' : ''}`}
+              title={slatDisabled ? 'Available for married couples only' : undefined}
             >
               {p.label}
               {advisorLineItemSources.has(p.id ?? '') && (
@@ -459,14 +625,16 @@ export default function ConsumerStrategyPanel({
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
               )}
             </button>
-          ))}
+            )
+          })}
         </div>
       </div>
 
       {/* ── GRAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'grat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Grantor Retained Annuity Trust (GRAT)</h4>
+          <StrategyEducationCard panelId="grat" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="grat" />
           {estateContext && (
             <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
@@ -530,7 +698,8 @@ export default function ConsumerStrategyPanel({
       {/* ── CRT ──────────────────────────────────────────────────────────── */}
       {activePanel === 'crt' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Charitable Remainder Trust (CRT)</h4>
+          <StrategyEducationCard panelId="crt" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="crt" />
           <div className="grid grid-cols-2 gap-4">
             {[
@@ -575,7 +744,8 @@ export default function ConsumerStrategyPanel({
       {/* ── CLAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'clat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Charitable Lead Annuity Trust (CLAT)</h4>
+          <StrategyEducationCard panelId="clat" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="clat" />
           <div className="grid grid-cols-2 gap-4">
             {[
@@ -623,7 +793,8 @@ export default function ConsumerStrategyPanel({
       {/* ── DAF ──────────────────────────────────────────────────────────── */}
       {activePanel === 'daf' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Donor Advised Fund (DAF)</h4>
+          <StrategyEducationCard panelId="daf" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="daf" />
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -680,7 +851,8 @@ export default function ConsumerStrategyPanel({
       {/* ── Liquidity ─────────────────────────────────────────────────────── */}
       {activePanel === 'liquidity' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Estate Liquidity Analysis</h4>
+          <StrategyEducationCard panelId="liquidity" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="liquidity" />
           {estateContext && (
             <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
@@ -744,7 +916,8 @@ export default function ConsumerStrategyPanel({
       {/* ── Roth ─────────────────────────────────────────────────────────── */}
       {activePanel === 'roth' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-gray-800">Roth Conversion Analysis</h4>
+          <StrategyEducationCard panelId="roth" ctx={ctx} filingStatus={filingStatus} />
+          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="roth" />
           {rothBalance > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1">
@@ -804,6 +977,29 @@ export default function ConsumerStrategyPanel({
               sign: -1, confidence_level: 'illustrative',
             })}
           />
+        </div>
+      )}
+
+
+      {activePanel === 'slat' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+          <StrategyEducationCard panelId="slat" ctx={ctx} filingStatus={filingStatus} />
+          <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="slat" />
+          <p className="text-sm text-gray-600">
+            Interactive modeling and save for SLAT are coming in a future update. Use the link above
+            to discuss implementation with your advisor.
+          </p>
+        </div>
+      )}
+
+      {activePanel === 'ilit' && (
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+          <StrategyEducationCard panelId="ilit" ctx={ctx} filingStatus={filingStatus} />
+          <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="ilit" />
+          <p className="text-sm text-gray-600">
+            Interactive modeling and save for ILIT are coming in a future update. Use the link above
+            to discuss implementation with your advisor.
+          </p>
         </div>
       )}
 
