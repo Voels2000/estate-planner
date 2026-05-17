@@ -7,6 +7,31 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 
 **Tier legend:** 1 = Financial, 2 = Retirement, 3 = Estate (see `lib/tiers.ts`).
 
+**Feature key legend:**
+
+| Value | Meaning |
+|-------|---------|
+| `profile`, `dashboard`, … | Listed in `FEATURE_TIERS` (`lib/tiers.ts`); sidebar uses `getUserAccess().tier` vs minimum tier |
+| — (dash) | **Intentionally no `FEATURE_TIERS` key** — route still tier-gated in `page.tsx` (e.g. `access.tier < 3` → `UpgradeBanner`) or not subscription-gated (marketing, connections) |
+| Sub-tabs | Not separate routes — documented under parent in [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (e.g. trust-strategy `?tab=`) |
+
+---
+
+## Sidebar portal links (consumer layout)
+
+Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` at the **bottom** of the nav (below planning groups).
+
+| Link | Visible when | Target | Notes |
+|------|----------------|--------|--------|
+| 💼 Advisor Portal | `role === 'advisor'` **or** `isSuperuser` | `/advisor` | Professional users switching hats; not shown to consumer-only accounts |
+| ⚖️ Attorney Portal | `role === 'attorney'` **or** `isAttorney` **or** `isSuperuser` | `/attorney` | Same pattern |
+| ⚙️ Admin Portal | `role === 'admin'` **or** `isAdmin` **or** `isSuperuser` | `/admin` | Same pattern |
+| 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Consumer connection management (all tiers that see sidebar) |
+
+Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
+
+Demo/admin test users may see **multiple** portal links if their profile has elevated roles — that is expected, not a consumer-only UX bug.
+
 ---
 
 ## Overview
@@ -34,7 +59,7 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 | Assets | `/assets` | Assets | 1 | `assets` |
 | Real Estate | `/real-estate` | Real Estate | 1 | `real-estate` |
 | Business Interests | `/businesses` | Business Interests | 1 | `businesses` |
-| Digital Assets | `/digital-assets` | Digital Assets | 1 | — |
+| Digital Assets | `/digital-assets` | Digital Assets | 1 | — (tier 1 page; no `FEATURE_TIERS` key yet) |
 | Liabilities | `/liabilities` | Liabilities | 1 | `liabilities` |
 | Life & Estate Insurance | `/insurance` | Life & Estate Insurance | 1 | `insurance` |
 | Property & Casualty | `/property-casualty` | Property & Casualty Insurance | 1 | `insurance` |
@@ -71,8 +96,8 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 | Incapacity Planning | `/incapacity-planning` | Incapacity Planning | 3 | `incapacity` |
 | Domicile Analysis | `/domicile-analysis` | Domicile Analysis | 3 | `domicile-analysis` |
 | Estate Tax Snapshot | `/estate-tax` | Estate Tax Snapshot | 3 | `estate-tax` |
-| Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | — |
-| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | — |
+| Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | — (tier 3 + profile gate in `page.tsx`; no sidebar `FEATURE_TIERS` key) |
+| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | — (tier 3 + profile gate; tabs via `?tab=` not feature keys) |
 
 ---
 
@@ -84,7 +109,7 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 | `/health-check` | Estate Health Check | — | Linked from dashboard / onboarding |
 | `/import` | Import Data | 2 | |
 | `/print` | Export Estate Plan | — | |
-| `/my-advisor` | My Advisor | — | |
+| `/my-advisor` | My Advisor | — | Connection UI; not tier-gated (sidebar link for `role === 'consumer'`) |
 | `/my-advisor-directory` | Find a Financial Advisor | — | |
 | `/unlock-estate` | — | — | Upgrade flow |
 | `/business-succession` | — | 3 | Commented out of sidebar |

@@ -6,11 +6,12 @@ Journey-oriented reference for how consumers move through the app: **routes → 
 
 | Doc | Use for |
 |-----|---------|
-| [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Sidebar labels, URLs, tiers, feature keys |
-| [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Cross-cutting contracts (strategy merge, horizons, Monte Carlo, advisor parity) |
-| [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) | Tables, RPCs, migrations |
-| [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Manual deploy verification |
-| [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) | When to update which doc |
+| [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Sidebar labels, URLs, tiers, feature keys, portal link visibility |
+| [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Consumer/advisor handoff, strategy/MC/access channels, migration status |
+| [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) | Current tables, RPCs, authoritative columns |
+| [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Session-by-session schema/app audit trail |
+| [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | **Human** deploy verification (~10 min core; full ~30 min) |
+| [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) | **When and how to update** all docs (single maintenance guide) |
 
 **Tier legend:** 1 = Financial, 2 = Retirement, 3 = Estate (`lib/tiers.ts`, `FEATURE_TIERS`).
 
@@ -138,6 +139,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/*`, `components/dashboard/EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
+| **Key UI sections** | Planning Readiness Score (tier progress); Financial Summary / Net Worth; **Your Estate Summary** callout (`EstateCalloutCard`); advisor `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` when advisor shared MC |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state |
 
 ### Financial modules (representative)
@@ -196,13 +198,23 @@ All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (s
 
 ### Gifting, Strategies & Trusts — `/my-estate-trust-strategy?tab=…`
 
+This page is a **two-level** navigation system: primary tabs (URL-driven) plus client-only sub-navigation inside several tabs.
+
 | | |
 |--|--|
 | **User goal** | Annual gifting, charitable giving, transfer strategies, trusts & documents in one workspace |
 | **Tier / gate** | Tier 3; **profile gate**; `UpgradeBanner` if `tier < 3` |
 | **Server** | `app/(dashboard)/my-estate-trust-strategy/page.tsx` — heavy parallel fetch: gifting RPC, line items, trust guidance, horizons, composition |
-| **Client** | `app/(dashboard)/my-estate-trust-strategy/_client.tsx` |
-| **Tabs** | `gifting` · `charitable` · `strategies` · `trusts` (query `?tab=`; legacy `/trust-will` redirects here) |
+| **Client** | `app/(dashboard)/my-estate-trust-strategy/_client.tsx` — tab state + `router.replace(?tab=)` (no full route per tab) |
+| **Primary tabs** | `gifting` · `charitable` · `strategies` · `trusts` |
+
+```text
+/my-estate-trust-strategy?tab={gifting|charitable|strategies|trusts}
+  ├── gifting      → GiftingDashboard
+  ├── charitable   → CharitableGivingDashboard (+ sub-tabs, client state)
+  ├── strategies   → ConsumerStrategyPanel (+ strategy pills, client state)
+  └── trusts       → TrustDocumentsPanel + educational planning topics
+```
 
 **Legacy redirect:** `/trust-will` → `/my-estate-trust-strategy?tab=trusts`
 
@@ -213,6 +225,7 @@ All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (s
 | **Client** | `components/GiftingDashboard.tsx` (dynamic import) |
 | **Write APIs** | `POST/PATCH/DELETE /api/consumer/gift-history`; annual program via `POST /api/strategy-line-items` (`strategy_source: annual_gifting`) |
 | **Read APIs / RPCs** | `calculate_gifting_summary`, `gift_history` for current tax year |
+| **UX (not separate routes)** | Lifetime exemption meter; per-recipient annual cap warnings (amber when over limit); **Prior taxable gifts (Form 709)** collapsible (`gift_type='lifetime'`); MFJ donor selector; **Save to my plan →** / **Compare a second scenario** on parent `_client.tsx` |
 | **E2E** | `tests/e2e/consumer/consumer-gift-history.spec.ts`, strategy sections of `consumer-strategy-writes.spec.ts` |
 
 #### Tab: Charitable Giving (`?tab=charitable`)
@@ -220,17 +233,23 @@ All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (s
 | | |
 |--|--|
 | **Client** | `components/CharitableGivingDashboard.tsx` |
-| **Write APIs** | `POST /api/strategy-line-items` (`strategy_source: daf`, `charitable`, etc.) |
-| **After save** | `afterHouseholdWrite` on line-item route; composition `outside_strategy_total` updates asynchronously — e2e polls `POST /api/estate-composition` up to ~20s |
+| **Sub-tabs (client state)** | **Planning topics** · **Deduction Detail** · **Donation History** — not in URL; `useState<'topics' \| 'deductions' \| 'history'>` |
+| **Read APIs / RPCs** | `calculate_charitable_summary(p_household_id)` — summary cards, `recommendations[]`, deduction detail, donation rows |
+| **Planning topics empty state** | “No topics to display at this time based on your profile inputs” when RPC returns no recommendations (profile-driven, not a separate route) |
+| **Write APIs** | Donation CRUD via Supabase from component; **Save to my plan →** → `POST /api/strategy-line-items` (`strategy_source: daf` or `charitable`, `scenario_name: base`); DAF panel also uses `CharitableStrategyForm` on Transfer Strategies tab |
+| **After save** | `afterHouseholdWrite` on line-item route; `router.refresh()`; composition `outside_strategy_total` may lag — e2e polls `POST /api/estate-composition` up to ~20s |
 | **E2E** | `consumer-strategy-writes.spec.ts` (DAF / charitable) |
 
 #### Tab: Transfer Strategies (`?tab=strategies`)
 
 | | |
 |--|--|
-| **Client** | `components/consumer/ConsumerStrategyPanel.tsx`, `StrategyHorizonTable`, advisor accept/reject UI |
-| **Write APIs** | `POST/PATCH/DELETE /api/strategy-line-items`; `PATCH /api/consumer/strategy-recommendation` (accept advisor line) |
+| **Client** | `components/consumer/ConsumerStrategyPanel.tsx`, `StrategyHorizonTable`, advisor recommendation block on `_client.tsx` |
+| **Sub-nav (client state)** | Strategy **pills**: GRAT, CRT, CLAT, DAF, Liquidity, Roth Conversion, SLAT, ILIT — selects panel; not URL segments |
+| **Write APIs** | `POST/PATCH/DELETE /api/strategy-line-items`; `PATCH /api/consumer/strategy-recommendation` (accept advisor line); SLAT/ILIT via `lib/consumer/consumerStrategyLineItems.ts` |
 | **Read** | Server-prefetched `estateContext`, `strategyImpact`, `advisorHorizons` |
+| **Advisor block** | “Advisor Recommended Strategies” — pending `strategy_line_items` (`source_role='advisor'`, not rejected); empty copy when none |
+| **Education CTA** | **Ask your advisor about this →** in each strategy’s “About this strategy” card → `/find-advisor` (directory only; does not notify linked advisor) |
 | **Key lib** | Strategy categories must match DB check constraint (see e2e file header) |
 | **E2E** | `consumer-strategy-writes.spec.ts` |
 
@@ -239,15 +258,17 @@ All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (s
 | | |
 |--|--|
 | **Client** | `components/consumer/TrustDocumentsPanel.tsx` |
+| **Summary strip** | Estimated Taxable Estate, Federal Exemption Remaining, Headroom Before Federal Tax (annotated with lifetime gifts used when applicable) |
 | **Write APIs** | `POST/PATCH/DELETE /api/consumer/trusts` |
-| **Read** | `loadTrustWillGuidance` — trusts, recommendations, checklist; server passes `trustEstateSummary` (exemption remaining, headroom, taxable estate) |
+| **Read** | `loadTrustWillGuidance` — trusts, recommendations, checklist; `trustEstateSummary` from composition + gifting RPC |
+| **Educational UI** | Common planning topics (Pour-Over Will, Business Succession Trust, etc.) via `lib/estate/planningTopicPresentation.ts` — framing only, not personalized advice |
 | **Key lib** | `lib/trusts/trustPayload.ts`, `lib/trusts/trustEstateTaxEstimate.ts` (`excludes_from_estate`, `~Est. Tax Saved`) |
 | **E2E** | `tests/e2e/consumer/consumer-trust-crud.spec.ts` |
 
 **Advisor overlay on this page:**
 
 - `strategy_configs` → in-app `advisor_strategy_recommended` notifications
-- Pending advisor `strategy_line_items` → accept via `/api/consumer/strategy-recommendation`
+- Pending advisor `strategy_line_items` → accept/reject on strategies tab + dashboard panel
 - Horizon federal values require base-case projection; missing context shows amber server banner
 
 ---
@@ -269,13 +290,17 @@ See [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) for the full route list.
 
 ## 5. Advisor ↔ consumer handoff
 
-| Surface | Behavior |
-|---------|----------|
-| Dashboard | Pending advisor `strategy_line_items`; MC scenario banner (`/api/monte-carlo/advisor-assumptions`) |
-| Trust-strategy | Accept/reject recommendations; horizon table merges consumer + accepted advisor items |
-| Notifications | `advisor_strategy_recommended` inserted when new `strategy_configs` appear |
+Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interaction](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction).
 
-Details: [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) (advisor strategy workflow).
+| Channel | Consumer surface | API / data |
+|---------|------------------|------------|
+| **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** (“Advisor Recommended Strategies”) | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Reject: `DELETE` same. Rows: `strategy_line_items` `source_role='advisor'` |
+| **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
+| **Access** | `/my-advisor` (sidebar for consumers) | `advisor_clients`, `connection_requests`; advisor workspace `/advisor/clients/[clientId]` |
+| **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
+| **Find advisor (not handoff)** | **Ask your advisor about this →** on strategy education cards | Links to `/find-advisor` only — no message to connected advisor |
+
+**Computation parity:** Accepted advisor lines + consumer lines feed `buildStrategyHorizons` and `calculate_estate_composition` so federal/state figures align with advisor client view (same household snapshot).
 
 ---
 
@@ -326,20 +351,14 @@ Details: [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) (advisor strategy wo
 
 Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment.
 
----
-
-## 8. Maintenance
-
-When you change consumer behavior:
-
-1. **Route / tier / gate** → [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md)
-2. **Journey / APIs / refresh behavior** → this file (section for the feature)
-3. **Schema or RPC** → [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md)
-4. **Cross-cutting rule** → [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md)
-5. **Write path or deploy smoke** → e2e spec + [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
-
-Optional: add a three-line header comment on `page.tsx` (route, tier, gate, write APIs) — matches patterns on `/profile` and `/dashboard`.
+**Automated vs manual:** E2E specs are living contracts for APIs and key UI loads. Post-deploy human checks (login, save, recompute, gated profile redirect) live in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — do not skip for production releases.
 
 ---
 
-*Last structured pass: Session 127 (profile gate, dashboard empty states, trust-strategy exemption/headroom).*
+## Document maintenance
+
+When consumer behavior changes, follow **[UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md)** (single source for what to update and verification steps). This file holds journey detail only.
+
+---
+
+*Last structured pass: Session 127+ (profile gate, trust-strategy sub-nav, advisor handoff, doc consolidation).*

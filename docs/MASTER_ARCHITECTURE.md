@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 17, 2026 (Session 127 — profile gate, dashboard empty states, trusts polish)
+# Last updated: May 17, 2026 (Session 127+ — docs consolidation, consumer/advisor handoff)
 
 ---
 
@@ -11,6 +11,49 @@ It documents both:
 
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
+
+**Related docs:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+
+---
+
+## Consumer and advisor interaction
+
+Consumers and advisors share one **household** data model but operate in separate app trees:
+
+| App tree | Path | Users |
+|----------|------|--------|
+| Consumer | `app/(dashboard)/` | Household owner |
+| Advisor | `app/advisor/` | Advisor with accepted `advisor_clients` link |
+
+**Shared computation:** Federal/state estate figures are expected to match across portals when viewing the same household snapshot, because both use `buildStrategyHorizons()` and `calculate_estate_composition` (parity work Sessions 118–121).
+
+### Handoff channels
+
+**1. Strategy recommendations**
+
+- Advisor writes `strategy_line_items` with `source_role='advisor'` via `/api/advisor/strategy-recommendation`.
+- Consumer UI: dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** tab (“Advisor Recommended Strategies”).
+- Consumer accept/reject: `PATCH` / `DELETE` on `/api/consumer/strategy-recommendation` sets `consumer_accepted` / `consumer_rejected`.
+- Accepted rows join consumer-entered lines in **actual** horizon and composition calculations.
+
+**2. Monte Carlo assumptions**
+
+- Rows in `advisor_projection_assumptions`; changes audited in `projection_assumption_audit`.
+- Consumer: `MonteCarloScenarioBanner` on `/dashboard` and `/my-estate-strategy`; `/api/monte-carlo/advisor-assumptions` (read, accept, revert).
+- Advisor presets (Session 126): separate `is_preset` rows; not the same as per-client shared scenarios.
+
+**3. Access and notifications**
+
+- Link boundary: `advisor_clients` (`status='accepted'`).
+- Advisor workspace: `/advisor/clients/[clientId]?tab=…`
+- Consumer: `/my-advisor` (connection, revoke, pending `connection_requests`); optional `advisor_pdf_access`.
+- Attorneys: `attorney_clients`, `/my-attorney`, `/settings/attorney-access` (parallel, not advisor portal).
+
+**Consumer CTAs that do not notify the linked advisor**
+
+- Transfer Strategies **About this strategy** card: **Ask your advisor about this →** → `/find-advisor` (public directory). No in-app message to the connected advisor.
+
+Sidebar portal link visibility: [CONSUMER_NAV_MAP.md → Sidebar portal links](./CONSUMER_NAV_MAP.md#sidebar-portal-links-consumer-layout).
 
 ---
 
@@ -568,15 +611,52 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 ---
 
-## Pre-Release Checklist for Tax/Engine Changes
+## Release verification
 
-- `npm run build` passes
-- Lint/types pass on changed modules
-- Spot-check `/projections`
-- Spot-check `/roth`
-- Spot-check advisor domicile breakeven
-- Confirm staleness-trigger regeneration
-- Decide/execute backfill for stored scenarios
+**All merges:** follow [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (build, doc sync, spot-check affected surfaces).
+
+**Additional spot-checks when tax/engine logic changes:**
+
+- `/projections` — base case still regenerates when stale
+- `/roth` — state marginal path uses bracket engine
+- Advisor client domicile breakeven — state income timeline labels
+- Confirm staleness-trigger regeneration after financial write
+- Decide whether stored `projection_scenarios` need backfill after bracket/RPC changes
+
+Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core).
+
+---
+
+## Migration status (at a glance)
+
+| Area | Current | Target | Notes |
+|------|---------|--------|--------|
+| Consumer strategy writes | `/api/strategy-line-items` | Optional `/api/consumer/strategy-*` rename | Canonical path today; do not duplicate |
+| Businesses / insurance writes | `/api/businesses`, `/api/insurance` | `/api/consumer/*` mirror (deferred) | Documented in CONSUMER_FLOWS |
+| ATG intake | `adjusted_taxable_gifts` table only; no unified UI | Single intake feeding §2001(b) | See [Open design decisions](#open-design-decisions) |
+| `gift_history` lifetime rows | Planning UX + `calculate_gifting_summary` | Stay separate until ATG design | Form 709 prior gifts section |
+| Consumer Monte Carlo | Inflation + simulation count from accepted advisor row | Full advisor assumption parity | Backlog item below |
+| Federal income tax | `federal_tax_brackets` required in canonical projection | No hardcoded fallback | Implemented |
+| State income tax | `state_income_tax_brackets` in user paths | Retire `state_income_tax_rates` archive | Admin archive only |
+| Estate health recompute | Server `afterHouseholdWrite` + secret header | No client `/api/recompute-estate-health` | Session 101+ |
+| Trust UI | Single page `/my-estate-trust-strategy` tabs | `/trust-will` redirect only | Session 116 |
+
+---
+
+## Open design decisions
+
+### ATG vs `gift_history` (IRC §2001(b))
+
+Two concepts must stay separate until product designs unified intake:
+
+| Concept | Storage | Used for |
+|---------|---------|----------|
+| Planning gifts | `gift_history` (+ `calculate_gifting_summary`) | Annual exclusion UI, lifetime meter, horizon `lifetimeGiftsUsed`, composition `p_lifetime_gifts_used` |
+| Adjusted taxable gifts (ATG) | `adjusted_taxable_gifts` | Future §2001(b) taxable-gift add-back intake |
+
+**Current:** Session 121 removed ATG add-back from `calculate_estate_composition`; `gift_history` `gift_type='lifetime'` rows are **not** ATG. Unified ATG intake is **not designed**.
+
+**When designing intake:** update this section, `DATABASE_SCHEMA_REFERENCE.md` (`adjusted_taxable_gifts`, `gift_history`), and [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) gifting tab.
 
 ---
 
@@ -584,5 +664,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 1. Deferred cleanup: keep `/api/strategy-line-items` as canonical consumer path for now; revisit `/api/consumer/strategy-*` endpoint naming during a broader consumer API label cleanup.
 2. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
-3. Keep this file updated with **Current vs Target** deltas each session.
+3. Unified ATG intake design (see [Open design decisions](#open-design-decisions)).
+4. Mirror `/api/businesses` and `/api/insurance` under `/api/consumer/*` or document permanent legacy status.
+5. Keep this file updated with **Current vs Target** deltas and the [Migration status](#migration-status-at-a-glance) table each session.
 

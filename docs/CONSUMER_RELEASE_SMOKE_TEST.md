@@ -1,6 +1,8 @@
 # Consumer release smoke test (manual)
 
-Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, transfer-strategy modeling, gifting history UI, or planning-topic copy changed (Sessions 100–125).
+Human-runnable deploy verification. Complements automated Playwright coverage mapped in [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts); E2E does not replace this checklist for production sign-off.
+
+Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, transfer-strategy modeling, gifting history UI, or planning-topic copy changed (Sessions 100–127).
 
 **Time:** ~20–30 minutes for the full checklist · ~10 minutes for the **Core** section only.
 
