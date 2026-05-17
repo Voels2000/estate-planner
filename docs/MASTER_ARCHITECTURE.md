@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 16, 2026 (Session 116 / trust merge Phase A½ + educational planning copy)
+# Last updated: May 16, 2026 (Session 117 / digital assets API + trust CRUD fixes)
 
 ---
 
@@ -238,9 +238,11 @@ Runtime behavior:
 - As of Session 105, `/projections`, `/scenarios`, `/profile`, and `/health-check` use server `page.tsx` + client components with prefetched data (`lib/projections/loadProjectionData.ts` shared with `/api/projection`). `/titling` was already server-prefetched; titling client syncs props after `router.refresh()` instead of client `reloadData()`.
 - As of Session 106, profile saves go through `PATCH /api/consumer/profile` (`lib/profile/buildHouseholdPayload.ts`) with `afterHouseholdWrite` so estate health recompute runs after household/profile updates. `POST /api/businesses` uses `afterHouseholdWriteForOwner` (aligned with business PATCH/DELETE).
 - As of Session 107, estate health check answers save through `PUT /api/consumer/estate-health-check` (`afterHouseholdWrite`); `/my-family` CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/household-people` with shared payload logic in `lib/family/householdPeople.ts`. Both pages were already server-prefetched; clients patch local state from API JSON and call `router.refresh()`.
-- As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, updated `dashboard.spec.ts`.
+- As of Session 108, titling beneficiary CRUD uses `/api/consumer/asset-beneficiaries` (plus `POST …/bulk` for gap defaults); saves touch `households.last_beneficiary_review` and `afterHouseholdWrite`. Allocation target mix saves through `PATCH /api/consumer/allocation-targets` (server-prefetched on `/allocation`). `POST /api/consumer/generate-base-case` calls `afterHouseholdWrite` after successful generation. Playwright: `tests/e2e/consumer/consumer-api-writes.spec.ts`, `consumer-financial-writes.spec.ts`, `consumer-strategy-writes.spec.ts`, `consumer-titling.spec.ts`, `consumer-trust-crud.spec.ts`, updated `dashboard.spec.ts`; advisor `advisor-strategy-recommendation.spec.ts`.
 - As of Session 111, titling row + entity field saves (title type, notes, titling, liquidity, cost basis) use `POST /api/consumer/entity-titling` (`lib/titling/entityTitling.ts`); `_titling-client.tsx` `TitlingModal` no longer writes via browser Supabase. `/titling` reads remain server-prefetched on `page.tsx`.
 - As of Session 112, trust CRUD uses `POST` / `PATCH` / `DELETE` on `/api/consumer/trusts` (`lib/trusts/trustPayload.ts`) with `afterHouseholdWrite`. (Session 116: trust UI consolidated on trust-strategy tab; see Phase A½ above.)
+- As of Session 117, trust writes set `household_id` from `requireOwnedHouseholdId` on POST insert (alongside `owner_id`). `lib/trusts/trustPayload.ts` no longer references `excluded_from_estate` (column removed; use `excludes_from_estate` + `funding_amount` only). `TRUST_SELECT` aligned to live schema.
+- As of Session 117, digital asset inventory uses `POST` / `DELETE` on `/api/consumer/digital-assets` with household ownership check, `afterHouseholdWrite`, and `revalidatePath('/digital-assets')`. UI: server `page.tsx` + `_digital-assets-client.tsx` (local list state updated on save/delete, same pattern as `/assets` and `/income`); `DigitalAssetIntakeForm` uses try/catch/finally + `router.refresh()`. Legacy `createDigitalAsset` server action remains in `beneficiary-grant-actions.ts` but is no longer called from the dashboard form.
 - As of Session 113, removed unused client loader `loadProjectionPageData.ts` (projections use server `loadProjectionData` only). Playwright devDependency bumped to 1.60; removed default `example.spec.ts` scaffold (e2e runs `consumer/`, `advisor/`, `public/` only).
 - As of Session 114, `/scenarios` “Save” archives comparison results via `POST /api/consumer/scenario-snapshots` (`lib/scenarios/buildScenarioSnapshot.ts` → `projections` table). Scenario math remains `GET /api/projection` with query overrides; no `afterHouseholdWrite` on snapshot-only saves.
 - As of Session 115 (Phase A consumer cleanup), canonical nav/URL/title/tier map lives in `docs/CONSUMER_NAV_MAP.md`. Sidebar labels aligned with page `<h1>` titles; duplicate `asset-allocation/_allocation-client.tsx` removed (`/asset-allocation` still redirects to `/allocation`). `FEATURE_TIERS`: fixed `projections` key, `allocation` tier 2, added `trust-will` tier 3.
@@ -480,6 +482,9 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `app/api/advisor/strategy-recommendation/route.ts`
 - `app/api/advisor/strategy-recommendations-read/route.ts`
 - `app/api/consumer/strategy-recommendation/route.ts`
+- `app/api/consumer/digital-assets/route.ts`
+- `app/api/consumer/trusts/route.ts`
+- `lib/trusts/trustPayload.ts` (`buildTrustRow`, `TRUST_SELECT`)
 - `app/api/projection/monte-carlo/route.ts`
 - `app/api/advisor/monte-carlo-assumptions/route.ts`
 - `app/api/monte-carlo/advisor-assumptions/route.ts`
@@ -519,6 +524,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Strategy source normalization now treats `cst`, `roth`, and `liquidity` as canonical strategy sources in recommendation save/read and saved-state indicators.
 - Consumer connection pages: `app/(dashboard)/my-advisor/*`, `app/(dashboard)/my-attorney/*`, `app/(dashboard)/settings/attorney-access/*`.
 - Education catalog: `components/education/EducationModuleCatalog.tsx` (bundle paths unchanged; loader supplies published-only module list).
+- Digital assets: `app/(dashboard)/digital-assets/page.tsx`, `_digital-assets-client.tsx`, `_components/DigitalAssetIntakeForm.tsx`, `_components/DigitalAssetList.tsx`.
 
 ---
 

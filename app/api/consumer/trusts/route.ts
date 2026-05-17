@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     .insert({
       ...built.row,
       owner_id: user.id,
+      household_id: owned.householdId,
     })
     .select(TRUST_SELECT)
     .single()
