@@ -4,6 +4,12 @@ import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import MyEstateTrustStrategyClient from './_client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
+import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
+import {
+  estimateTrustTaxSaved,
+  marginalStateEstateRatePct,
+} from '@/lib/trusts/trustEstateTaxEstimate'
 import { loadTrustWillGuidance } from '@/lib/trusts/loadTrustWillGuidance'
 import { computeFederalEstateTax, type EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
@@ -94,6 +100,8 @@ export default async function MyEstateTrustStrategyPage({
       </div>
     )
   }
+
+  requireMinimumViableProfile(householdRow, '/my-estate-trust-strategy')
 
   const { data: advisorRecommendations } = await supabase
     .from('strategy_configs')
@@ -446,6 +454,46 @@ export default async function MyEstateTrustStrategyPage({
     excessAnnualGifts += Math.max(0, total - perRecipientLimit)
   })
 
+  const outsideStrategyTotal = Number(composition.outside_strategy_total ?? 0)
+  const exemptionAvailable = Number(composition.exemption_available ?? 0)
+  const headroom = computeHeadroomBeforeFederalTax(
+    exemptionAvailable,
+    grossEstate,
+    outsideStrategyTotal,
+  )
+  const federalExemptionRemaining = Math.max(
+    0,
+    exemptionAvailable - lifetimeGiftsUsedForComposition,
+  )
+
+  const stateCode = (householdRow.state_primary ?? '').toUpperCase()
+  const latestStateTaxYear = Math.max(
+    ...(stateBrackets ?? []).map((b) => num((b as { tax_year?: unknown }).tax_year)),
+    0,
+  )
+  const stateRulesForMarginal = (stateBrackets ?? [])
+    .filter(
+      (b) =>
+        String((b as { state?: string }).state ?? '').toUpperCase() === stateCode &&
+        num((b as { tax_year?: unknown }).tax_year) === latestStateTaxYear,
+    )
+    .map((b) => ({
+      min_amount: num((b as { min_amount?: unknown }).min_amount),
+      max_amount:
+        (b as { max_amount?: unknown }).max_amount != null
+          ? num((b as { max_amount?: unknown }).max_amount)
+          : null,
+      rate_pct: num((b as { rate_pct?: unknown }).rate_pct),
+    }))
+  const marginalStateEstateRate = marginalStateEstateRatePct(stateRulesForMarginal, grossEstate)
+
+  const trustEstateSummary = {
+    estimatedTaxableEstate: Number(composition.taxable_estate ?? grossEstate),
+    federalExemptionRemaining,
+    lifetimeGiftsUsed: lifetimeGiftsUsedForComposition,
+    headroom,
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       {!hasHorizonFederalContext && (
@@ -492,6 +540,8 @@ export default async function MyEstateTrustStrategyPage({
           checklist: trustWillGuidance.checklist,
           trusts: trustWillGuidance.trusts,
         }}
+        trustEstateSummary={trustEstateSummary}
+        marginalStateEstateRatePct={marginalStateEstateRate}
       />
     </div>
   )

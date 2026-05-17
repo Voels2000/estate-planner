@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -82,6 +83,8 @@ export default async function EstateTaxPage() {
       .order('tax_year', { ascending: false })
       .order('state', { ascending: true }),
   ])
+
+  requireMinimumViableProfile(householdRow, '/estate-tax')
 
   const primaryResidenceValue = (() => {
     const rows = (realEstateRows ?? []).filter(

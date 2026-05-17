@@ -16,6 +16,7 @@ import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 
 export default async function MyEstateStrategyPage() {
@@ -37,6 +38,7 @@ export default async function MyEstateStrategyPage() {
     .single()
 
   if (!household) redirect('/profile')
+  requireMinimumViableProfile(household, '/my-estate-strategy')
 
   const ownerId = user.id
 
