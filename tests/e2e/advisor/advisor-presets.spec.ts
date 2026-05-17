@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
 
 function uniquePresetName(suffix: string) {
   return `Playwright Preset ${suffix} ${Date.now()}`
@@ -107,6 +108,26 @@ test.describe('Advisor preset APIs — consumer forbidden', () => {
 })
 
 test.describe('Load preset in recommendation form', () => {
+  // UI copy (Strategy tab → Monte Carlo — Assumption Overrides, expanded):
+  //   label "Load preset" (lowercase p), button "Load", not "Load Preset"
+  const presetIdsToCleanup: string[] = []
+
+  test.beforeEach(async ({ request }) => {
+    const res = await request.post('/api/advisor/presets', {
+      data: { scenario_name: `E2E UI seed ${Date.now()}`, returnMeanPct: 6 },
+    })
+    if (res.ok()) {
+      presetIdsToCleanup.push((await res.json()).preset.id)
+    }
+  })
+
+  test.afterEach(async ({ request }) => {
+    while (presetIdsToCleanup.length > 0) {
+      const id = presetIdsToCleanup.pop()
+      if (id) await request.delete(`/api/advisor/presets/${id}`)
+    }
+  })
+
   test('preset dropdown pre-fills Monte Carlo fields', async ({ page, request }) => {
     const name = uniquePresetName('UI')
     const create = await request.post('/api/advisor/presets', {
@@ -118,39 +139,33 @@ test.describe('Load preset in recommendation form', () => {
         simulationCount: 2000,
       },
     })
-    expect(create.status()).toBe(201)
+    expect(create.status(), await create.text()).toBe(201)
     const created = (await create.json()).preset
+    presetIdsToCleanup.push(created.id)
 
-    try {
-      await page.goto('/advisor')
-      await page.getByText('My Clients').first().waitFor({ state: 'visible', timeout: 30_000 })
-      const row = page
-        .locator('tbody tr')
-        .filter({ has: page.getByRole('link', { name: 'View →' }) })
-        .first()
-      await row.getByRole('link', { name: 'View →' }).click()
-      await page.waitForURL(/\/advisor\/clients\/[a-f0-9-]+$/)
-      await page.getByRole('button', { name: /Strategy/ }).click()
-      await page.waitForURL(/[?&]tab=strategy/, { timeout: 30_000 })
+    await gotoMichaelJohnsonClient(page)
+    await clickAdvisorClientTab(page, /Strategy/)
 
-      const assumptionsSection = page.locator('section').filter({
-        hasText: 'Monte Carlo — Assumption Overrides',
-      })
-      await assumptionsSection.getByRole('button', { name: /Expand/ }).click()
+    const assumptionsSection = page.locator('section').filter({
+      hasText: 'Monte Carlo — Assumption Overrides',
+    })
+    await assumptionsSection.getByRole('button', { name: /Expand/ }).click()
 
-      await expect(assumptionsSection.getByText('Load preset')).toBeVisible({
-        timeout: 30_000,
-      })
-      await assumptionsSection.locator('select').selectOption({ label: name })
-      await assumptionsSection.getByRole('button', { name: 'Load' }).click()
+    // Block only renders when presets.length > 0 after GET /api/advisor/presets
+    await expect(assumptionsSection.getByText('Load preset', { exact: true })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(assumptionsSection.locator('select option', { hasText: name })).toHaveCount(1, {
+      timeout: 30_000,
+    })
 
-      const returnInput = assumptionsSection
-        .getByText('Expected Annual Return', { exact: true })
-        .locator('..')
-        .locator('input[type="number"]')
-      await expect(returnInput).toHaveValue('7.25')
-    } finally {
-      await request.delete(`/api/advisor/presets/${created.id}`)
-    }
+    await assumptionsSection.locator('select').selectOption({ label: name })
+    await assumptionsSection.getByRole('button', { name: 'Load', exact: true }).click()
+
+    const returnInput = assumptionsSection
+      .getByText('Expected Annual Return', { exact: true })
+      .locator('..')
+      .locator('input[type="number"]')
+    await expect(returnInput).toHaveValue('7.25')
   })
 })
