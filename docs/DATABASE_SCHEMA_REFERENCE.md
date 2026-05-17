@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 118 / gift_history consumer API + horizon lifetime gifts)
+# Last updated: May 16, 2026 (Session 119 / gift form input hardening + prior gift UX)
 
 ---
 
@@ -95,7 +95,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **RPC:** `calculate_gifting_summary(p_household_id)` aggregates rows and returns `lifetime_exemption_used`, annual caps, per-recipient audit, and `gifts` JSON array (single read path for `GiftingDashboard`).
 - **Consumer writes (Session 118):** `POST` / `PATCH` / `DELETE` `/api/consumer/gift-history` — `requireOwnedHouseholdId`, row verify via `household_id` + `owner_id`, `afterHouseholdWrite`, `revalidatePath` on strategy/gifting pages. No browser Supabase writes from dashboard UI.
 - **Horizon engine (Session 118):** `lifetime_exemption_used` from the RPC is passed as `lifetimeGiftsUsed` into `buildStrategyHorizons` so federal exemption on horizon columns matches the gifting tab (engine does not call the RPC).
-- **UI:** `components/GiftingDashboard.tsx` — annual gifts via **Log a Gift**; prior Form 709 lifetime gifts via **Prior taxable gifts** collapsible (`gift_type='lifetime'`, amber left border when `form_709_filed=false`).
+- **UI:** `components/GiftingDashboard.tsx` — annual gifts via **Log a Gift**; prior Form 709 lifetime gifts via **Prior taxable gifts** collapsible (`gift_type='lifetime'` hardcoded on submit, read-only badge in form, amber left border when `form_709_filed=false`). Session 119: trim text fields on submit; whitespace-only recipient blocked; prior form auto-checks Form 709 when amount entered.
 
 ### `adjusted_taxable_gifts`
 
@@ -385,6 +385,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 119 Note
+
+- No database schema or migration changes were introduced in Session 119.
+- Application-layer changes (`components/GiftingDashboard.tsx` only):
+  - Trim `recipient_name`, `notes`, `recipient_relationship` on gift form POST bodies; reject whitespace-only recipient names.
+  - Prior gift form: read-only **Form 709 — Taxable gift** badge; `gift_type: 'lifetime'` on submit; auto-check `form_709_filed` when amount entered; helper text for amber pending-filing indicator.
 
 ## Session 118 Note
 

@@ -173,7 +173,8 @@ export default function GiftingDashboard({
   };
 
   const handleAdd = async () => {
-    if (!form.recipient_name || !form.amount) return;
+    const recipientName = form.recipient_name.trim();
+    if (!recipientName || !form.amount) return;
     setSaving(true);
     setError(null);
     try {
@@ -182,12 +183,12 @@ export default function GiftingDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tax_year: form.tax_year,
-          recipient_name: form.recipient_name.trim(),
+          recipient_name: recipientName,
           donor_person: form.donor_person,
-          recipient_relationship: form.recipient_relationship.trim() || undefined,
+          recipient_relationship: form.recipient_relationship?.trim() || undefined,
           amount: parseFloat(form.amount as string),
           gift_type: form.gift_type,
-          notes: form.notes.trim() || undefined,
+          notes: form.notes?.trim() ?? null,
           form_709_filed: form.form_709_filed,
         }),
       });
@@ -203,7 +204,8 @@ export default function GiftingDashboard({
   };
 
   const handleAddPriorGift = async () => {
-    if (!priorForm.recipient_name || !priorForm.amount) return;
+    const recipientName = priorForm.recipient_name.trim();
+    if (!recipientName || !priorForm.amount) return;
     setSavingPrior(true);
     setError(null);
     try {
@@ -212,11 +214,11 @@ export default function GiftingDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tax_year: priorForm.tax_year,
-          recipient_name: priorForm.recipient_name.trim(),
+          recipient_name: recipientName,
           donor_person: priorForm.donor_person,
           amount: parseFloat(priorForm.amount as string),
           gift_type: 'lifetime',
-          notes: priorForm.notes.trim() || undefined,
+          notes: priorForm.notes?.trim() ?? null,
           form_709_filed: priorForm.form_709_filed,
         }),
       });
@@ -438,8 +440,8 @@ export default function GiftingDashboard({
               <button
                 type="button"
                 onClick={handleAdd}
-                disabled={saving || !form.recipient_name || !form.amount}
-                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 500, backgroundColor: saving || !form.recipient_name || !form.amount ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: saving || !form.recipient_name || !form.amount ? 'not-allowed' : 'pointer' }}
+                disabled={saving || !form.recipient_name.trim() || !form.amount}
+                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 500, backgroundColor: saving || !form.recipient_name.trim() || !form.amount ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: saving || !form.recipient_name.trim() || !form.amount ? 'not-allowed' : 'pointer' }}
               >
                 {saving ? 'Saving...' : 'Save Gift'}
               </button>
@@ -592,13 +594,26 @@ export default function GiftingDashboard({
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Gift type</label>
+                  <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
+                    Form 709 — Taxable gift
+                  </span>
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
                   <input
                     type="number"
                     min="0"
                     step="1"
                     value={priorForm.amount}
-                    onChange={e => setPriorForm(f => ({ ...f, amount: e.target.value }))}
+                    onChange={e => {
+                      const amount = e.target.value;
+                      setPriorForm(f => ({
+                        ...f,
+                        amount,
+                        ...(amount !== '' && Number(amount) > 0 ? { form_709_filed: true } : {}),
+                      }));
+                    }}
                     placeholder="0"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   />
@@ -613,23 +628,28 @@ export default function GiftingDashboard({
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="prior-form709"
-                    checked={priorForm.form_709_filed}
-                    onChange={e => setPriorForm(f => ({ ...f, form_709_filed: e.target.checked }))}
-                    className="rounded border-gray-300"
-                  />
-                  <label htmlFor="prior-form709" className="text-sm text-gray-700">
-                    Form 709 filed
-                  </label>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="prior-form709"
+                      checked={priorForm.form_709_filed}
+                      onChange={e => setPriorForm(f => ({ ...f, form_709_filed: e.target.checked }))}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="prior-form709" className="text-sm text-gray-700">
+                      Form 709 filed
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 pl-6">
+                    A gift exceeding the annual exclusion requires Form 709. Uncheck only if filing is still pending — the amber indicator will remind you.
+                  </p>
                 </div>
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={handleAddPriorGift}
-                    disabled={savingPrior || !priorForm.recipient_name || !priorForm.amount}
+                    disabled={savingPrior || !priorForm.recipient_name.trim() || !priorForm.amount}
                     className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                   >
                     {savingPrior ? 'Saving...' : 'Save prior gift'}
