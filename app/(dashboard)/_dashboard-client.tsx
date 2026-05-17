@@ -76,6 +76,7 @@ type Props = {
   annualSSFromPIA: number      // SS component for display breakdown
   allocationContext: AssetAllocationContext
   retirementSnapshot: RetirementSnapshot | null
+  retirementAccountsTotal?: number
   estateHealthScore?: EstateHealthScore | null
   conflictReport?: {
     conflicts: Array<{
@@ -148,7 +149,7 @@ export function DashboardClient(props: Props) {
   const {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
-    allocationContext, retirementSnapshot, estateHealthScore, conflictReport,
+    allocationContext, retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, conflictReport,
     setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
@@ -233,6 +234,7 @@ export function DashboardClient(props: Props) {
       <RetirementSummarySection
         storageKey={SECTION_KEYS.retirement}
         retirementSnapshot={retirementSnapshot}
+        retirementAccountsTotal={retirementAccountsTotal}
         currentYearNet={currentYearNet}
         annualSSFromPIA={annualSSFromPIA}
         totalIncome={totalIncome}

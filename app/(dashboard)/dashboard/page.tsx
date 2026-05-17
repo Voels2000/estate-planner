@@ -326,6 +326,17 @@ export default async function DashboardPage() {
 
   const hasRetirementInputs = !!(p1RetirementAge || p1SSPia || p2SSPia)
 
+  const RETIREMENT_ACCOUNT_TYPES = new Set([
+    'traditional_ira',
+    'traditional_401k',
+    'sep_account',
+    'roth_ira',
+    'roth_401k',
+  ])
+  const retirementAccountsTotal = (assets ?? [])
+    .filter((a) => RETIREMENT_ACCOUNT_TYPES.has(String((a as { type?: string }).type ?? '')))
+    .reduce((sum, a) => sum + Number(a.value ?? 0), 0)
+
   const retirementSnapshot = buildRetirementSnapshot({
     hasRetirementInputs,
     hasSpouse,
@@ -371,6 +382,7 @@ export default async function DashboardPage() {
       annualSSFromPIA={annualSSFromPIA}
       allocationContext={allocationContext}
       retirementSnapshot={retirementSnapshot}
+      retirementAccountsTotal={retirementAccountsTotal}
       estateHealthScore={estateHealthScore}
       conflictReport={conflictReport}
       setupSteps={setupSteps}

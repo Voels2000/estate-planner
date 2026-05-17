@@ -1,4 +1,5 @@
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard'
 import { firstName, fmt } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { StatBox } from '@/app/(dashboard)/_components/dashboard/ui-primitives'
 import { hasRetirementData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
@@ -33,6 +34,7 @@ type RmdStatus = {
 type RetirementSummarySectionProps = {
   storageKey: string
   retirementSnapshot: RetirementSnapshot | null
+  retirementAccountsTotal?: number
   currentYearNet: number
   annualSSFromPIA: number
   totalIncome: number
@@ -41,9 +43,35 @@ type RetirementSummarySectionProps = {
 }
 
 export function RetirementSummarySection(props: RetirementSummarySectionProps) {
-  const { retirementSnapshot, currentYearNet, annualSSFromPIA, totalIncome, totalExpenses, rmdStatus } = props
+  const {
+    retirementSnapshot,
+    retirementAccountsTotal = 0,
+    currentYearNet,
+    annualSSFromPIA,
+    totalIncome,
+    totalExpenses,
+    rmdStatus,
+  } = props
   const hasData = hasRetirementData({ retirementSnapshot })
   const nonSSIncome = totalIncome - annualSSFromPIA
+
+  if (retirementAccountsTotal <= 0 && !hasData) {
+    return (
+      <CollapsibleSection
+        title="Retirement Summary"
+        subtitle="Add retirement accounts to see your projection"
+        defaultOpen={false}
+        storageKey={props.storageKey}
+      >
+        <EmptyStateCard
+          message="Add retirement accounts to see your projection"
+          href="/assets"
+          linkLabel="Add retirement accounts"
+          icon="◷"
+        />
+      </CollapsibleSection>
+    )
+  }
 
   return (
     <CollapsibleSection

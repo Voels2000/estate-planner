@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { formatDollars } from '@/lib/utils/formatCurrency'
 import { HEADROOM_BEFORE_FEDERAL_TAX_LABEL } from '@/lib/estate/exemptionLabels'
+import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard'
 
 export interface EstateCalloutCardProps {
   grossEstate: number
@@ -20,6 +21,17 @@ export function EstateCalloutCard({
   hasStateTax,
   exemptionMarginTight = false,
 }: EstateCalloutCardProps) {
+  if (grossEstate <= 0) {
+    return (
+      <EmptyStateCard
+        message="Add your assets to see your estate picture"
+        href="/assets"
+        linkLabel="Add assets"
+        icon="🏛️"
+      />
+    )
+  }
+
   const federalTaxClass =
     estimatedTaxFederal > 0 ? 'text-amber-700 font-medium' : 'text-neutral-400'
 
