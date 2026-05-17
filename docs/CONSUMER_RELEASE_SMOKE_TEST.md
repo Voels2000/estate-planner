@@ -1,6 +1,6 @@
 # Consumer release smoke test (manual)
 
-Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, transfer-strategy modeling, or planning-topic copy changed (Sessions 100–124).
+Use this after a production or staging deploy when consumer write paths, estate health recompute, trust UI, transfer-strategy modeling, gifting history UI, or planning-topic copy changed (Sessions 100–125).
 
 **Time:** ~20–30 minutes for the full checklist · ~10 minutes for the **Core** section only.
 
@@ -129,6 +129,10 @@ Pick **one** module you already use (Assets is simplest).
 | 10.9 | **Transfer Strategies** tab → **ILIT** | If policies exist: dropdown + save; else manual coverage amount + amber note linking to Insurance | ☐ |
 | 10.9b | After save | Green summary “ILIT funded: …”; dashboard refresh updates estate/strategy totals | ☐ |
 | 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
+| 10.10 | **Gifting** tab → **Gift History** | Gifts grouped by year; split years show **Gift Split Elected ✓** (if Form 709 filed on annual gifts) | ☐ |
+| 10.10b | MFJ account, year with annual gifts, no split | **Split available — file Form 709** on year header (not shown for single filers) | ☐ |
+| 10.11 | **Transfer Strategies** → **DAF** | Save DAF or direct charitable amount; summary **Charitable giving: $X/yr**; pill active | ☐ |
+| 10.11b | **Edit** / **Remove from plan** | Works; horizons/estate totals refresh | ☐ |
 
 ### 11. Estate Summary planning topics (tier 1+ with estate data)
 

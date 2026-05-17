@@ -110,10 +110,10 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** strategy recommendation and acceptance audit layer.
 - **Current behavior notes:**
   - advisor recommendations are written via advisor API routes (`source_role='advisor'`)
-  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable total as `strategy_source='daf'` from `CharitableGivingDashboard`, SLAT/ILIT as `strategy_source` `slat`/`ilit` with `scenario_name='base'` from `SlatStrategyForm` / `IlitStrategyForm` via `lib/consumer/consumerStrategyLineItems.ts`); `category` required by DB check — API defaults from `strategy_source` when omitted (`lib/strategy/resolveStrategyLineItemCategory.ts`); SLAT/ILIT consumer saves use `category: 'trust_exclusion'` (not literal `trust` or `insurance`)
+  - consumer-entered strategies are written via `POST /api/strategy-line-items` with `source_role='consumer'` (optional `scenario_name` for display; e.g. annual gifting on `/my-estate-trust-strategy`, charitable as `strategy_source` `daf` or `charitable` with `scenario_name='base'` from `CharitableStrategyForm` on the DAF panel, SLAT/ILIT as `strategy_source` `slat`/`ilit` from `SlatStrategyForm` / `IlitStrategyForm` via `lib/consumer/consumerStrategyLineItems.ts`); `category` required by DB check — API defaults from `strategy_source` when omitted (`lib/strategy/resolveStrategyLineItemCategory.ts`); SLAT/ILIT use `category: 'trust_exclusion'`; charitable consumer saves use `category: 'charitable'`
   - **Upsert key (active rows):** partial unique index `strategy_line_items_upsert_active_idx` on `(household_id, strategy_source, source_role, COALESCE(projection_year,-1), COALESCE(scenario_name,''))` WHERE `is_active=true` (migration `20260516000001`)
-  - **`strategy_source` allowlist** includes `ilit`, `liquidity`, `roth`, `slat` (in addition to gifting, trust, charitable, etc.; `slat` added in `20260516000001`, `ilit` since original table migration)
-  - consumer SLAT/ILIT rows should use `confidence_level='probable'` (default in `consumerStrategyLineItems.ts`) so they aggregate into `outside_strategy_total` in `calculate_estate_composition` (`certain` + `probable` only; `illustrative` excluded)
+  - **`strategy_source` allowlist** includes `daf`, `charitable`, `ilit`, `liquidity`, `roth`, `slat` (in addition to gifting, trust, etc.; `charitable` added in `20260518120000`, `slat` in `20260516000001`)
+  - consumer SLAT/ILIT/charitable rows should use `confidence_level='probable'` (default in `consumerStrategyLineItems.ts`) so they aggregate into `outside_strategy_total` in `calculate_estate_composition` (`certain` + `probable` only; `illustrative` excluded)
   - consumer dashboard reads active advisor rows for `StrategyRecommendationPanel` (accept/decline via `/api/consumer/strategy-recommendation`)
   - consumer removal uses `DELETE /api/strategy-line-items` (sets `is_active=false` for matching household + `strategy_source` + `source_role`; row retained for audit)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
@@ -387,6 +387,13 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 125 Note
+
+- Schema: migration `20260518120000` — adds `charitable` to `strategy_line_items_strategy_source_check` (`daf` and `category: 'charitable'` already present).
+- Application-layer — `GiftingDashboard.tsx` Gift History tab: year-grouped table; client-side `splitElectedYears` from all annual gifts with `form_709_filed=true`; year header **Gift Split Elected ✓** badge; MFJ-only **Split available — file Form 709** when year has annual gifts but no split (no new RPC).
+- Application-layer — `CharitableStrategyForm.tsx` on DAF Transfer Strategies panel: strategy type dropdown (DAF / direct charitable), annual amount, recipient, notes; `strategy_source` `daf`|`charitable`, `category: 'charitable'`, `scenario_name: 'base'`; green pill when `daf` or `charitable` saved; legacy DAF calculator removed from consumer panel.
+- E2E: `consumer-strategy-writes.spec.ts` — DAF/direct POST/DELETE + `outside_strategy_total` composition check via `POST /api/estate-composition`.
 
 ## Session 124 Note
 
