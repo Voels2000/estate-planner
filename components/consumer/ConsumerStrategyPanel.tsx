@@ -10,12 +10,16 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
-import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
+import { applyCRT, applyCLAT } from '@/lib/strategy/applyCharitableStrategies'
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
 import { modelRothConversion, RothConversionConfig } from '@/lib/strategy/modelRothConversion'
 import type { StrategyLineItemInput } from '@/lib/estate/types'
 import { SlatStrategyForm, type SlatSavedRow } from '@/components/consumer/SlatStrategyForm'
 import { IlitStrategyForm, type IlitSavedRow } from '@/components/consumer/IlitStrategyForm'
+import {
+  CharitableStrategyForm,
+  type CharitableSavedRow,
+} from '@/components/consumer/CharitableStrategyForm'
 
 type AdvisorLineItem = {
   strategy_source: string
@@ -514,6 +518,22 @@ export default function ConsumerStrategyPanel({
       }
     : null
 
+  const charitableSaved: CharitableSavedRow | null = saved.has('daf')
+    ? {
+        amount: savedDetails.daf?.amount ?? 0,
+        strategySource: 'daf',
+        metadata: savedDetails.daf?.metadata ?? null,
+      }
+    : saved.has('charitable')
+      ? {
+          amount: savedDetails.charitable?.amount ?? 0,
+          strategySource: 'charitable',
+          metadata: savedDetails.charitable?.metadata ?? null,
+        }
+      : null
+
+  const charitablePanelActive = saved.has('daf') || saved.has('charitable')
+
   const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
   const defaultDeathYear = person1BirthYear + 82
 
@@ -552,14 +572,6 @@ export default function ConsumerStrategyPanel({
     section7520Rate: DEFAULT_7520_RATE,
     growthRate: 0.08,
     isZeroedOut: true,
-  })
-
-  const [dafConfig, setDafConfig] = useState<DAFConfig>({
-    contributionAmount: advisorAmount('daf') > 0 ? advisorAmount('daf') : 500_000,
-    assetType: 'appreciated_securities',
-    costBasis: 100_000,
-    marginalIncomeTaxRate: 0.37,
-    capitalGainsRate: 0.238,
   })
 
   // ── Liquidity defaults — use real estate composition ──────────────────────
@@ -631,7 +643,6 @@ export default function ConsumerStrategyPanel({
   const gratResult     = activePanel === 'grat'      ? applyGRAT(gratConfig) : null
   const crtResult      = activePanel === 'crt'       ? applyCRT(crtConfig) : null
   const clatResult     = activePanel === 'clat'      ? applyCLAT(clatConfig) : null
-  const dafResult      = activePanel === 'daf'       ? applyDAF(dafConfig) : null
   const liquidityResult = activePanel === 'liquidity'
     ? analyzeLiquidity({ ...liquidityConfig, estimatedFederalTax, estimatedStateTax })
     : null
@@ -671,7 +682,7 @@ export default function ConsumerStrategyPanel({
               {advisorLineItemSources.has(p.id ?? '') && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400" title="Advisor modeled" />
               )}
-              {saved.has(p.id ?? '') && (
+              {(p.id === 'daf' ? charitablePanelActive : saved.has(p.id ?? '')) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
               )}
             </button>
@@ -843,57 +854,18 @@ export default function ConsumerStrategyPanel({
       {/* ── DAF ──────────────────────────────────────────────────────────── */}
       {activePanel === 'daf' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="daf" ctx={ctx} filingStatus={filingStatus} />
-          <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
+          <StrategyEducationCard
+            panelId="daf"
+            ctx={ctx}
+            filingStatus={filingStatus}
+            defaultOpen={!charitableSaved}
+          />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="daf" />
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Contribution Amount</label>
-              <input type="number" value={dafConfig.contributionAmount}
-                onChange={(e) => setDafConfig((c) => ({ ...c, contributionAmount: Number(e.target.value) }))}
-                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Asset Type</label>
-              <select value={dafConfig.assetType}
-                onChange={(e) => setDafConfig((c) => ({ ...c, assetType: e.target.value as DAFConfig['assetType'] }))}
-                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm">
-                <option value="cash">Cash</option>
-                <option value="appreciated_securities">Appreciated Securities</option>
-                <option value="real_estate">Real Estate</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Cost Basis</label>
-              <input type="number" value={dafConfig.costBasis}
-                onChange={(e) => setDafConfig((c) => ({ ...c, costBasis: Number(e.target.value) }))}
-                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Capital Gains Rate</label>
-              <input type="number" step="0.01" value={dafConfig.capitalGainsRate}
-                onChange={(e) => setDafConfig((c) => ({ ...c, capitalGainsRate: Number(e.target.value) }))}
-                className="w-full border border-gray-200 rounded px-3 py-1.5 text-sm" />
-            </div>
-          </div>
-          {dafResult && (
-            <div className="border-t border-gray-200 pt-4 space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-gray-600">Charitable Deduction</span><span className="font-medium">{fmt(dafResult.charitableDeduction)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-600">Income Tax Savings</span><span className="font-medium text-green-700">{fmt(dafResult.taxSavingsFromDeduction)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-600">Capital Gains Avoided</span><span className="font-medium text-green-700">{fmt(dafResult.capitalGainsTaxAvoided)}</span></div>
-              <div className="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2"><span className="text-gray-700">Total Benefit</span><span className="text-green-700">{fmt(dafResult.totalBenefit)}</span></div>
-              {dafResult.advisoryNotes.map((note, i) => (
-                <div key={i} className="bg-blue-50 border border-blue-100 rounded p-3 text-xs text-blue-800 mt-2">{note}</div>
-              ))}
-            </div>
-          )}
-          <RecommendButton
-            strategySource="daf" saved={saved} saving={saving} userRole={userRole}
-            status={statuses['daf']} onCycleStatus={() => cycleStatus('daf')}
-            onToggle={() => toggle('daf', {
-              scenario_id: 'current_law', metric_target: 'taxable_estate', category: 'charitable',
-              strategy_source: 'daf', amount: dafConfig.contributionAmount, sign: -1, confidence_level: 'probable',
-            })}
+          <CharitableStrategyForm
+            householdId={householdId}
+            savedRow={charitableSaved}
+            onSaved={refreshAfterStrategyWrite}
+            onRemoved={refreshAfterStrategyWrite}
           />
         </div>
       )}
