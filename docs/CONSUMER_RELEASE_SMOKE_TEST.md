@@ -116,6 +116,10 @@ Pick **one** module you already use (Assets is simplest).
 
 ### 10. Gifting, Strategies & Trusts (tier 3)
 
+Run sub-sections independently if time-boxed; step IDs are stable for failure notes.
+
+#### 10a. Trusts & Documents
+
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
 | 10.1 | Go to **Gifting, Strategies & Trusts** (sidebar) | Opens with **Trusts & Documents** tab (or switch to it) | ☐ |
@@ -123,18 +127,42 @@ Pick **one** module you already use (Assets is simplest).
 | 10.3 | **Edit** and **Delete** the test trust | Updates / removes; dashboard refresh OK | ☐ |
 | 10.4 | Visit `/trust-will` | Redirects to `/my-estate-trust-strategy?tab=trusts` | ☐ |
 | 10.5 | **Common planning topics** sections show prevalence labels (not “High Priority”) | Educational disclaimer visible | ☐ |
+
+#### 10b. Gifting scenarios
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
 | 10.6 | Save a **named** gifting scenario (Gifting tab) | Appears in saved list | ☐ |
 | 10.7 | **Remove** only that named scenario | Others remain | ☐ |
+
+#### 10c. Transfer Strategies (SLAT, ILIT, DAF)
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
 | 10.8 | **Transfer Strategies** tab → **SLAT** (MFJ household only) | Pill clickable; save contribution (e.g. $100,000), funding source, optional notes | ☐ |
 | 10.8b | After save | Green summary “SLAT funded: …”; pill shows active dot; **About this strategy** collapsed | ☐ |
 | 10.8c | **Edit** then **Remove from plan** | Form returns; pill inactive | ☐ |
 | 10.9 | **Transfer Strategies** tab → **ILIT** | If policies exist: dropdown + save; else manual coverage amount + amber note linking to Insurance | ☐ |
 | 10.9b | After save | Green summary “ILIT funded: …”; dashboard refresh updates estate/strategy totals | ☐ |
 | 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
-| 10.10 | **Gifting** tab → **Gift History** | Gifts grouped by year; split years show **Gift Split Elected ✓** (if Form 709 filed on annual gifts) | ☐ |
-| 10.10b | MFJ account, year with annual gifts, no split | **Split available — file Form 709** on year header (not shown for single filers) | ☐ |
 | 10.11 | **Transfer Strategies** → **DAF** | Save DAF or direct charitable amount; summary **Charitable giving: $X/yr**; pill active | ☐ |
 | 10.11b | **Edit** / **Remove from plan** | Works; horizons/estate totals refresh | ☐ |
+
+#### 10d. Gift History
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| 10.10 | **Gifting** tab → **Gift History** | Gifts grouped by year; split years show **Gift Split Elected ✓** (if Form 709 filed on annual gifts) | ☐ |
+| 10.10b | MFJ account, year with annual gifts, no split | **Split available — file Form 709** on year header (not shown for single filers) | ☐ |
+
+#### 10e. Charitable Giving
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| 10.12 | **Charitable Giving** tab | Four summary cards load; sub-tabs **Planning topics** · **Deduction Detail** · **Donation History** | ☐ |
+| 10.12b | **Planning topics** — profile with no RPC recommendations | “No topics to display at this time based on your profile inputs” (not an error) | ☐ |
+| 10.13 | **Log a Donation** (cash), then **Donation History** sub-tab | Row appears; delete works | ☐ |
+| 10.14 | **Save to my plan →** on total donated (when &gt; $0) | Success message; dashboard/strategy refresh OK | ☐ |
 
 ### 11. Estate Summary planning topics (tier 1+ with estate data)
 

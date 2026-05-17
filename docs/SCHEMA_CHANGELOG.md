@@ -4,6 +4,8 @@ Historical session-by-session audit trail moved from `DATABASE_SCHEMA_REFERENCE.
 
 For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md).
 
+**Session coverage:** Entries from Session 94 onward are the primary audit trail for this file. Sessions 43–93 (and selected lower numbers) are carried over from the original schema reference where they had schema impact. Sessions 1–50, gaps between carried-over blocks (e.g. 63–74, 77–78, 80–87, 89–90), and sessions without schema impact before 94 are not recorded here — that reflects history, not missing files.
+
 ---
 
 ## Session 94 Note

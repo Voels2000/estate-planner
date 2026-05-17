@@ -233,10 +233,13 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | | |
 |--|--|
 | **Client** | `components/CharitableGivingDashboard.tsx` |
-| **Sub-tabs (client state)** | **Planning topics** · **Deduction Detail** · **Donation History** — not in URL; `useState<'topics' \| 'deductions' \| 'history'>` |
-| **Read APIs / RPCs** | `calculate_charitable_summary(p_household_id)` — summary cards, `recommendations[]`, deduction detail, donation rows |
-| **Planning topics empty state** | “No topics to display at this time based on your profile inputs” when RPC returns no recommendations (profile-driven, not a separate route) |
-| **Write APIs** | Donation CRUD via Supabase from component; **Save to my plan →** → `POST /api/strategy-line-items` (`strategy_source: daf` or `charitable`, `scenario_name: base`); DAF panel also uses `CharitableStrategyForm` on Transfer Strategies tab |
+| **Sub-tabs (client state)** | **Planning topics** · **Deduction Detail** · **Donation History** — not in URL; `useState<'topics' \| 'deductions' \| 'history'>` (default: Planning topics); sub-nav renders after client hydration |
+| **Read APIs / RPCs** | `calculate_charitable_summary(p_household_id)` — summary cards, `recommendations[]`, `deduction_detail`, `donation_history`, optional QCD eligibility |
+| **Above sub-tabs (always visible)** | Four summary cards (total donated, tax deductible, QCD, capital gains avoided); optional QCD eligibility banner; **Log a Donation** modal; **Save to my plan →** on total donated (`strategy_source: daf`) |
+| **Planning topics** | RPC `recommendations[]` → `EducationalTopicsCards` (prevalence groups via `lib/estate/planningTopicPresentation.ts`); client filters TCJA/sunset strings; empty → `EDUCATIONAL_TOPICS_EMPTY_MESSAGE` (“No topics to display at this time based on your profile inputs”) — profile-driven, not a route |
+| **Deduction Detail** | `deduction_detail`: itemizing vs standard, AGI limits (60% cash / 30% assets), deductible amounts, carryforward |
+| **Donation History** | `donation_history[]` table with delete; empty copy “No donations logged yet…” (distinct from planning-topics empty) |
+| **Write APIs** | Donation insert/delete via Supabase `charitable_donations` from component (not `/api/consumer/*`); **Save to my plan →** → `POST /api/strategy-line-items` (`strategy_source: daf` or `charitable`, `scenario_name: base`); DAF panel also uses `CharitableStrategyForm` on Transfer Strategies tab |
 | **After save** | `afterHouseholdWrite` on line-item route; `router.refresh()`; composition `outside_strategy_total` may lag — e2e polls `POST /api/estate-composition` up to ~20s |
 | **E2E** | `consumer-strategy-writes.spec.ts` (DAF / charitable) |
 

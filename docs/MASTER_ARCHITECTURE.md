@@ -634,6 +634,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Consumer strategy writes | `/api/strategy-line-items` | Optional `/api/consumer/strategy-*` rename | Canonical path today; do not duplicate |
 | Businesses / insurance writes | `/api/businesses`, `/api/insurance` | `/api/consumer/*` mirror (deferred) | Documented in CONSUMER_FLOWS |
 | ATG intake | `adjusted_taxable_gifts` table only; no unified UI | Single intake feeding §2001(b) | See [Open design decisions](#open-design-decisions) |
+| ATG → horizons / composition | Not wired; only `calculate_gifting_summary.lifetime_exemption_used` affects `lifetimeGiftsUsed` / `p_lifetime_gifts_used` | §2001(b) ATG in composition and horizon exemption | Backlog #3 |
 | `gift_history` lifetime rows | Planning UX + `calculate_gifting_summary` | Stay separate until ATG design | Form 709 prior gifts section |
 | Consumer Monte Carlo | Inflation + simulation count from accepted advisor row | Full advisor assumption parity | Backlog item below |
 | Federal income tax | `federal_tax_brackets` required in canonical projection | No hardcoded fallback | Implemented |
@@ -664,7 +665,7 @@ Two concepts must stay separate until product designs unified intake:
 
 1. Deferred cleanup: keep `/api/strategy-line-items` as canonical consumer path for now; revisit `/api/consumer/strategy-*` endpoint naming during a broader consumer API label cleanup.
 2. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
-3. Unified ATG intake design (see [Open design decisions](#open-design-decisions)).
+3. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake; wire §2001(b) ATG into estate composition and horizon `lifetimeGiftsUsed` (today only `calculate_gifting_summary.lifetime_exemption_used` / `gift_history` planning path affects horizons). See [Open design decisions](#open-design-decisions).
 4. Mirror `/api/businesses` and `/api/insurance` under `/api/consumer/*` or document permanent legacy status.
 5. Keep this file updated with **Current vs Target** deltas and the [Migration status](#migration-status-at-a-glance) table each session.
 
