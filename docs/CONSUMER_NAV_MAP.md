@@ -3,6 +3,8 @@
 Canonical reference for **sidebar label**, **URL**, **page title** (`<h1>`), and **minimum tier**.  
 Update this file when adding or renaming consumer routes (Phase A — Session 115; trust merge — Session 116).
 
+**User journeys (routes → APIs → gates → recompute):** see [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md).
+
 **Tier legend:** 1 = Financial, 2 = Retirement, 3 = Estate (see `lib/tiers.ts`).
 
 ---

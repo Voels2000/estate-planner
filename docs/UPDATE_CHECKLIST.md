@@ -9,6 +9,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Database schema changes (new tables/columns/migrations/RPC signatures)
 - Source-of-truth changes (e.g., table swaps, fallback removals)
 - Workflow changes (advisor/consumer acceptance, recommendation writes, Monte Carlo sharing)
+- Consumer route, profile gate, tab, or save/refresh behavior changes → `docs/CONSUMER_FLOWS.md`
 
 ## Required updates before merge
 
