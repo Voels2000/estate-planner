@@ -165,12 +165,45 @@ export default async function DashboardPage() {
     hasLiveProjectionOutput,
   })
 
-  // ── Tier / completion ────────────────────────────────────────────────────
+  // ── Tier / completion + gift-aware estate composition ───────────────────
   const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
+
+  const giftingSummary = household?.id
+    ? await supabase.rpc('calculate_gifting_summary', {
+        p_household_id: household.id,
+      })
+    : { data: null }
+
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number(
+      (giftingSummary.data as { lifetime_exemption_used?: number } | null)
+        ?.lifetime_exemption_used ?? 0,
+    ) || 0,
+  )
+
   const [completionScore, composition] = await Promise.all([
     isConsumerTier2 ? getCompletionScore(user!.id) : Promise.resolve(null),
-    household?.id ? classifyEstateAssets(supabase, household.id) : Promise.resolve(null),
+    household?.id
+      ? classifyEstateAssets(supabase, household.id, 'consumer', lifetimeGiftsUsed)
+      : Promise.resolve(null),
   ])
+
+  const estateCallout =
+    composition && composition.success !== false
+      ? {
+          grossEstate: Number(composition.gross_estate ?? 0),
+          exemptionRemaining: Number(composition.exemption_remaining ?? 0),
+          estimatedTaxFederal: Number(composition.estimated_tax_federal ?? 0),
+          estimatedTaxState: Number(composition.estimated_tax_state ?? 0),
+          hasStateTax: Number(composition.estimated_tax_state ?? 0) > 0,
+          exemptionMarginTight: (() => {
+            const available = Number(composition.exemption_available ?? 0)
+            const remaining = Number(composition.exemption_remaining ?? 0)
+            return available > 0 && remaining < available * 0.2
+          })(),
+        }
+      : null
 
   // ── Financial calculations (engine-aligned primary path) ─────────────────
   // Use composition rollups so Dashboard net worth matches estate engine:
@@ -357,6 +390,7 @@ export default async function DashboardPage() {
       }))}
       acceptedMCScenario={acceptedMCScenario}
       latestSharedMCScenario={latestSharedMCScenario}
+      estateCallout={estateCallout}
     />
   )
 }

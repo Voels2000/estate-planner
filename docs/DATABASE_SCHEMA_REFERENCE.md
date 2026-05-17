@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 17, 2026 (Session 121 — gift-history e2e, ATG deprecation)
+# Last updated: May 17, 2026 (Session 122 — dashboard estate callout + flow label overlap)
 
 ---
 
@@ -386,6 +386,14 @@ After each schema-affecting session:
 - Application-layer changes:
   - `lib/strategy/resolveStrategyLineItemCategory.ts` — valid category resolution for `POST /api/strategy-line-items` (fixes invalid default `category: 'other'`).
   - Consumer UI passes `category` on gifting/charitable saves; liquidity panel uses `category: 'liability'`.
+
+## Session 122 Note
+
+- No database schema or migration changes were introduced in Session 122.
+- Application-layer changes:
+  - `app/(dashboard)/dashboard/page.tsx` — server `calculate_gifting_summary` + `classifyEstateAssets(..., lifetimeGiftsUsed)`; passes `estateCallout` to client.
+  - `components/dashboard/EstateCalloutCard.tsx` — gross estate, headroom before federal tax, est. federal/state tax; link `/estate-tax`.
+  - `components/estate-flow/EstateFlowDiagram.tsx` — `buildEdgeLabelLanes` (file-local rendering helper) + label background/stagger for overlapping edges.
 
 ## Session 121 Note
 

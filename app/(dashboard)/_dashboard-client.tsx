@@ -19,6 +19,10 @@ import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard
 import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboard/RetirementSummarySection'
 import { EstateSummarySection } from '@/app/(dashboard)/_components/dashboard/EstateSummarySection'
 import { DashboardIntroSection } from '@/app/(dashboard)/_components/dashboard/DashboardIntroSection'
+import {
+  EstateCalloutCard,
+  type EstateCalloutCardProps,
+} from '@/components/dashboard/EstateCalloutCard'
 import { AssessmentHistoryWidget } from '@/app/(dashboard)/_components/dashboard/AssessmentHistoryWidget'
 import StrategyRecommendationPanel, {
   type AdvisorRecommendationItem,
@@ -115,6 +119,7 @@ type Props = {
   advisorStrategyItems?: AdvisorRecommendationItem[]
   acceptedMCScenario?: ConsumerMCScenario | null
   latestSharedMCScenario?: ConsumerMCScenario | null
+  estateCallout?: EstateCalloutCardProps | null
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +160,7 @@ export function DashboardClient(props: Props) {
     advisorStrategyItems = [],
     acceptedMCScenario,
     latestSharedMCScenario,
+    estateCallout,
   } = props
 
   void consumerTier
@@ -214,6 +220,12 @@ export function DashboardClient(props: Props) {
         savingsRate={savingsRate}
         allocationContext={allocationContext}
       />
+
+      {estateCallout && (
+        <div className="mt-6">
+          <EstateCalloutCard {...estateCallout} />
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* SECTION 2 — Retirement Summary                                    */}

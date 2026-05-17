@@ -29,7 +29,7 @@ Use this after a production or staging deploy when consumer write paths, estate 
 |------|--------|----------|-------|
 | 1.1 | Go to `/login`, sign in | Redirects to `/dashboard` | ☐ |
 | 1.2 | Dashboard loads | Greeting (“Good morning/afternoon/evening”), **Estate Readiness Score** shows a number 0–100 | ☐ |
-| 1.3 | Scroll dashboard | **Net Worth** section visible; disclaimer at bottom | ☐ |
+| 1.3 | Scroll dashboard | **Net Worth** section visible; **Your Estate Summary** callout (gross estate, headroom, taxes) below net worth; disclaimer at bottom | ☐ |
 
 ### 2. Financial save (consumer API + recompute)
 

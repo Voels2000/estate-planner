@@ -155,14 +155,53 @@ function NodeBox({ node, isAdvisor }: { node: PositionedNode; isAdvisor: boolean
   )
 }
 
+/** Stagger edge labels that share the same path or converge on one node (probate / outside estate). */
+function buildEdgeLabelLanes(edges: FlowEdge[]): Map<string, number> {
+  const labeled = edges.filter((e) => e.value > 0 && e.label)
+  const lanes = new Map<string, number>()
+
+  const assignLanes = (ids: string[]) => {
+    if (ids.length <= 1) return
+    ids.forEach((id, i) => {
+      lanes.set(id, i - (ids.length - 1) / 2)
+    })
+  }
+
+  const bySourceTarget = new Map<string, string[]>()
+  for (const e of labeled) {
+    const key = `${e.source}|${e.target}`
+    const ids = bySourceTarget.get(key) ?? []
+    ids.push(e.id)
+    bySourceTarget.set(key, ids)
+  }
+  for (const [, ids] of bySourceTarget) {
+    assignLanes(ids)
+  }
+
+  const byTarget = new Map<string, string[]>()
+  for (const e of labeled) {
+    if (lanes.has(e.id)) continue
+    const ids = byTarget.get(e.target) ?? []
+    ids.push(e.id)
+    byTarget.set(e.target, ids)
+  }
+  for (const [, ids] of byTarget) {
+    assignLanes(ids)
+  }
+
+  return lanes
+}
+
 function EdgeLine({
   edge,
   nodeMap,
   showLabels,
+  labelLane = 0,
 }: {
   edge: FlowEdge
   nodeMap: Map<string, PositionedNode>
   showLabels: boolean
+  labelLane?: number
 }) {
   const source = nodeMap.get(edge.source)
   const target = nodeMap.get(edge.target)
@@ -176,6 +215,10 @@ function EdgeLine({
   const color = EDGE_COLORS[edge.type] ?? '#CBD5E1'
   const midX = (x1 + x2) / 2
   const midY = (y1 + y2) / 2
+  const laneOffset = labelLane * 14
+  const labelY = midY - 6 + laneOffset
+  const labelText = edge.label
+  const approxWidth = Math.min(168, Math.max(40, labelText.length * 5.5))
 
   return (
     <g>
@@ -199,17 +242,28 @@ function EdgeLine({
         fill="none"
         markerEnd={`url(#arrow_${edge.id})`}
       />
-      {showLabels && edge.value > 0 && (
-        <text
-          x={midX}
-          y={midY - 6}
-          textAnchor="middle"
-          fontSize={9}
-          fill="#6B7280"
-          fontFamily="ui-sans-serif, system-ui, sans-serif"
-        >
-          {edge.label}
-        </text>
+      {showLabels && edge.value > 0 && labelText && (
+        <g>
+          <rect
+            x={midX - approxWidth / 2 - 4}
+            y={labelY - 11}
+            width={approxWidth + 8}
+            height={14}
+            rx={3}
+            fill="#1a1a2e"
+            fillOpacity={0.9}
+          />
+          <text
+            x={midX}
+            y={labelY}
+            textAnchor="middle"
+            fontSize={9}
+            fill="#F3F4F6"
+            fontFamily="ui-sans-serif, system-ui, sans-serif"
+          >
+            {labelText}
+          </text>
+        </g>
       )}
     </g>
   )
@@ -391,6 +445,7 @@ export default function EstateFlowDiagram({
 
   const { positioned, svgWidth: SVG_W } = layoutNodes(graph.nodes)
   const nodeMap = new Map(positioned.map(n => [n.id, n]))
+  const labelLanes = buildEdgeLabelLanes(graph.edges)
 
   // SVG viewport
   const maxY = Math.max(...positioned.map(n => n.y + n.height)) + 80
@@ -568,7 +623,13 @@ export default function EstateFlowDiagram({
         >
           {/* Edges (drawn first, behind nodes) */}
           {graph.edges.map(edge => (
-            <EdgeLine key={edge.id} edge={edge} nodeMap={nodeMap} showLabels={showLabels} />
+            <EdgeLine
+              key={edge.id}
+              edge={edge}
+              nodeMap={nodeMap}
+              showLabels={showLabels}
+              labelLane={labelLanes.get(edge.id) ?? 0}
+            />
           ))}
 
           {/* Nodes */}

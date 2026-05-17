@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 17, 2026 (Session 121 — gift-history e2e, ATG deprecation)
+# Last updated: May 17, 2026 (Session 122 — dashboard estate callout + flow label overlap)
 
 ---
 
@@ -174,6 +174,8 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()`; estate health recompute runs server-side on accept/reject (Session 101).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
+- As of Session 122, `/dashboard` (`dashboard/page.tsx`) fetches `calculate_gifting_summary` server-side, passes `lifetime_exemption_used` into `classifyEstateAssets`, and renders `components/dashboard/EstateCalloutCard.tsx` below net worth (gross estate, headroom before federal tax, est. federal/state tax, link to `/estate-tax`). Display-only props — no client RPC.
+- As of Session 122, advisor/consumer SVG estate flow (`components/estate-flow/EstateFlowDiagram.tsx`) uses colocated `buildEdgeLabelLanes` (rendering-only; not in `lib/`) to stagger overlapping edge labels plus dark label backgrounds.
 - As of Session 121, `components/consumer/ConsumerStrategyPanel.tsx` (Transfer Strategies tab) shows a collapsible **About this strategy** card (`STRATEGY_INFO` + `StrategyEducationCard`) above each active panel’s model form — full name, description, best for, and personalized `contextNote` from `EstateContext` + `filingStatus` (illiquid %, IRA balance, exemption headroom, MFJ gating). Pills include **SLAT** and **ILIT** (educational-only for consumer; `applySLAT` / `applyILIT` exist for advisor UI, consumer save forms deferred). SLAT pill is grayed and non-clickable when `filingStatus !== 'married_joint'`. `filingStatus` is passed from `my-estate-trust-strategy/_client.tsx` via `giftingScenario.filing`. Advisor CTA links to `/find-advisor`. Uses `formatDollarsCompact` from `lib/utils/formatCurrency.ts`.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
@@ -513,7 +515,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Local UI components are split under `app/(dashboard)/projections/_components/*`
 - Shared projection route types are centralized in `lib/projections/types.ts`
 - This refactor is structure-only (no behavior/calculation change); projection math still comes from `projection-complete.ts`
-- Dashboard route `app/(dashboard)/dashboard/page.tsx` is decomposed into helper modules under `lib/dashboard/*` (calculations, loaders, and mappers) with no behavior changes.
+- Dashboard route `app/(dashboard)/dashboard/page.tsx` is decomposed into helper modules under `lib/dashboard/*` (calculations, loaders, and mappers) with no behavior changes. Session 122 adds gift-aware `classifyEstateAssets` + `EstateCalloutCard` on the same server page.
 - Dashboard empty-state rendering is componentized under `app/(dashboard)/dashboard/_components/*` to keep the route file orchestration-focused.
 - Dashboard client route composition in `app/(dashboard)/_dashboard-client.tsx` now delegates rendering to feature components under `app/(dashboard)/_components/dashboard/*` (`DashboardIntroSection`, `FinancialSummarySection`, `RetirementSummarySection`, `EstateSummarySection`) while keeping data flow unchanged.
 - Shared financial rollup view-models are now being introduced under `lib/view-models/*`; `lib/view-models/netWorthSummary.ts` is used by both consumer dashboard and advisor overview surfaces.
