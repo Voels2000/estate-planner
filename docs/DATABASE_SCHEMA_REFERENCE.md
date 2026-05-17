@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 16, 2026 (Session 120 / Step 4 — calculate_estate_composition lifetime gifts)
+# Last updated: May 16, 2026 (Session 120 — lifetime gifts wiring + gifting UI fixes)
 
 ---
 
@@ -391,9 +391,10 @@ After each schema-affecting session:
 
 - Schema: migration `20260516140000_calculate_estate_composition_add_lifetime_gifts.sql` — `calculate_estate_composition` gains `p_lifetime_gifts_used numeric DEFAULT 0`; `v_exemption := GREATEST(0, v_exemption - p_lifetime_gifts_used)` after federal config null guard; return adds `lifetime_gifts_used`; `SET search_path = public`; GRANT on `(uuid, text, numeric)`. Built from live `pg_get_functiondef` (`supabase/migrations/reference/live_calculate_estate_composition.sql` + `scripts/build-estate-composition-lifetime-gifts-migration.mjs`). `v_atg` / `adjusted_taxable_gifts` unchanged (Step 7).
 - Application-layer changes:
-  - `classifyEstateAssets` + `my-estate-trust-strategy/page.tsx` + `estate-tax/page.tsx` — pass `lifetime_exemption_used` into composition RPC.
+  - `classifyEstateAssets` + `my-estate-trust-strategy/page.tsx` + `estate-tax/page.tsx` + `my-estate-strategy/page.tsx` + `POST /api/estate-composition` — pass `lifetime_exemption_used` into composition RPC.
   - `lib/estate/types.ts` — `lifetime_gifts_used?`, `exemption_used?`, `source_role?` on `EstateComposition`.
-  - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo; prior section controlled open.
+  - `estate-tax/_estate-tax-client.tsx` — federal exemption subtitle when `lifetime_gifts_used > 0`.
+  - `GiftingDashboard.tsx` — `priorTaxableGifts` useMemo; prior section controlled open; lifetime meter uses RPC `lifetime_exemption_used` only (no double-count of annual overflow).
   - `CollapsibleSection.tsx` — optional `open` / `onOpenChange`.
 
 ## Session 119 Note

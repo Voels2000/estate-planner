@@ -253,8 +253,7 @@ export default async function MyEstateStrategyPage() {
 
   const scenarioRows = (scenario?.outputs_s1_first ?? null) as AnnualOutput[] | null
 
-  const [composition, { data: strategyLineRows }, { data: giftingSummaryData }] = await Promise.all([
-    classifyEstateAssets(supabase, household.id),
+  const [{ data: strategyLineRows }, { data: giftingSummaryData }] = await Promise.all([
     supabase
       .from('strategy_line_items')
       .select('amount, confidence_level, effective_year, is_active, sign, source_role, consumer_accepted, consumer_rejected')
@@ -263,9 +262,16 @@ export default async function MyEstateStrategyPage() {
     supabase.rpc('calculate_gifting_summary', { p_household_id: household.id }),
   ])
 
-  const lifetimeGiftsUsed = Math.max(
+  const lifetimeGiftsUsedForComposition = Math.max(
     0,
     Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) || 0,
+  )
+
+  const composition = await classifyEstateAssets(
+    supabase,
+    household.id,
+    'consumer',
+    lifetimeGiftsUsedForComposition,
   )
 
   const strategyLineItems = (strategyLineRows ?? []).map((row) => ({
@@ -294,7 +300,7 @@ export default async function MyEstateStrategyPage() {
     liveNetWorth: composition.gross_estate,
     strategyLineItems: actualStrategyLineItems,
     stateBrackets,
-    lifetimeGiftsUsed,
+    lifetimeGiftsUsed: lifetimeGiftsUsedForComposition,
     household: {
       state_primary: household.state_primary,
       filing_status: household.filing_status,
@@ -316,7 +322,7 @@ export default async function MyEstateStrategyPage() {
     liveNetWorth: composition.gross_estate,
     strategyLineItems: projectedStrategyLineItems,
     stateBrackets,
-    lifetimeGiftsUsed,
+    lifetimeGiftsUsed: lifetimeGiftsUsedForComposition,
     household: {
       state_primary: household.state_primary,
       filing_status: household.filing_status,

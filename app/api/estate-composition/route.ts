@@ -37,7 +37,23 @@ export async function POST(request: Request) {
     const normalizedSourceRole: 'consumer' | 'advisor' =
       sourceRole === 'advisor' ? 'advisor' : 'consumer'
 
-    const composition = await classifyEstateAssets(supabase, householdId, normalizedSourceRole)
+    const giftingSummary = await supabase.rpc('calculate_gifting_summary', {
+      p_household_id: householdId,
+    })
+    const lifetimeGiftsUsed = Math.max(
+      0,
+      Number(
+        (giftingSummary.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ??
+          0,
+      ) || 0,
+    )
+
+    const composition = await classifyEstateAssets(
+      supabase,
+      householdId,
+      normalizedSourceRole,
+      lifetimeGiftsUsed,
+    )
 
     return NextResponse.json(composition)
   } catch (err) {

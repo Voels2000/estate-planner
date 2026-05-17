@@ -449,7 +449,13 @@ export default function EstateTaxClient({
               <SummaryCard
                 label="Federal Exemption"
                 value={formatDollars(federalExemptionDisplay)}
-                sub={filing === 'married_joint' ? '$30M MFJ (OBBBA 2026)' : '$15M single (OBBBA 2026)'}
+                sub={
+                  (composition?.lifetime_gifts_used ?? 0) > 0
+                    ? `After ${formatDollars(composition!.lifetime_gifts_used!)} lifetime gifts used`
+                    : filing === 'married_joint'
+                      ? '$30M MFJ (OBBBA 2026)'
+                      : '$15M single (OBBBA 2026)'
+                }
               />
               <SummaryCard
                 label="Federal Estate Tax"

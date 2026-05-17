@@ -340,7 +340,7 @@ export default function GiftingDashboard({
       };
     })
     .sort((a, b) => b.totalGifted - a.totalGifted);
-  const lifetimeUsedDisplay = Math.max(0, Number(summary.lifetime_exemption_used ?? 0)) + annualOverflowToLifetime;
+  const lifetimeUsedDisplay = Math.max(0, Number(summary.lifetime_exemption_used ?? 0));
   const lifetimeRemainingDisplay = Math.max(0, Number(summary.total_exemption ?? 0) - lifetimeUsedDisplay);
   const lifetimePct = summary.total_exemption > 0
     ? Math.min(100, (lifetimeUsedDisplay / summary.total_exemption) * 100)
