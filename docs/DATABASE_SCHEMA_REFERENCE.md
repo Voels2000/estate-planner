@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 17, 2026 (Session 126 — advisor_projection_assumptions.is_default)
+# Last updated: May 17, 2026 (Session 127 — profile gate, trusts UI; no schema change)
 
 ---
 
@@ -664,4 +664,11 @@ After each schema-affecting session:
   - `/api/advisor/presets` — GET (default first, then `created_at` DESC), POST (`is_preset` explicit); `/api/advisor/presets/[id]` — PATCH/DELETE with ownership guard; `/api/advisor/presets/[id]/default` — clear all advisor preset defaults then set one.
   - `/advisor/presets` — `PresetManager` (CRUD + set default); `MonteCarloAssumptionsPanel` auto-loads default on mount + “Load preset” dropdown (UI-only until advisor saves scenario).
 - E2E: `tests/e2e/advisor/advisor-presets.spec.ts` (API CRUD, consumer 403, UI pre-fill). Playwright seeds: `scripts/seed-michael-johnson-advisor-demo.ts` (Johnson client for advisor2), `scripts/seed-advisor2-playwright-fixture.ts` (household `90cc8759-…` strategy-recommendation link).
+
+## Session 127 Note
+
+- No new schema migration. Uses existing `households.state_primary`, `households.filing_status`, `households.person1_birth_year`, `trusts.excludes_from_estate`, `trusts.funding_amount`, `state_estate_tax_rules`, and `calculate_gifting_summary` RPC.
+- Application-layer:
+  - `lib/estate/profileGate.ts` + `requireMinimumViableProfile` — gated consumer pages redirect to profile when minimum fields missing.
+  - `TrustDocumentsPanel` (trust-strategy tab): headroom via `computeHeadroomBeforeFederalTax`, federal exemption remaining after lifetime gifts, `~Est. Tax Saved` on excluded trusts using marginal `rate_pct` from `state_estate_tax_rules`.
 
