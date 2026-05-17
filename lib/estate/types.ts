@@ -100,6 +100,7 @@ export type StrategyLineItemSource =
   | 'crt'
   | 'clat'
   | 'daf'
+  | 'charitable'
   | 'liquidity'
   | 'roth'
   | 'revocable_trust'

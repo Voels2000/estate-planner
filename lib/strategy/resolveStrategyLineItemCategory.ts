@@ -14,6 +14,7 @@ const CATEGORY_BY_STRATEGY_SOURCE: Record<string, StrategyLineItemCategory> = {
   annual_gifting: 'gifting',
   lifetime_gifting: 'gifting',
   daf: 'charitable',
+  charitable: 'charitable',
   crt: 'charitable',
   clat: 'charitable',
   ilit: 'trust_exclusion',
