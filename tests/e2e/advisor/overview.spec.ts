@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { gotoMichaelJohnsonClient } from '../helpers/constants'
+import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
 
 test.describe('Advisor client list', () => {
   test('advisor dashboard loads', async ({ page }) => {
@@ -35,20 +35,24 @@ test.describe('Advisor client overview', () => {
   })
 
   test('strategy tab shows advisory metrics or loading', async ({ page }) => {
-    await page.getByRole('button', { name: /Strategy/ }).click()
+    await clickAdvisorClientTab(page, /Strategy/)
     await expect(
       page.getByText('Advisory Metrics Dashboard').or(page.locator('.animate-pulse')).first(),
     ).toBeVisible({ timeout: 30_000 })
   })
 
   test('tax tab shows law scenario', async ({ page }) => {
-    await page.getByRole('button', { name: /Tax/ }).click()
-    await expect(page.getByText('Law Scenario')).toBeVisible()
+    await clickAdvisorClientTab(page, /Tax/)
+    await expect(page.getByRole('heading', { name: 'Law Scenario' })).toBeVisible({
+      timeout: 30_000,
+    })
   })
 
   test('estate tab shows estate flow', async ({ page }) => {
-    await page.getByRole('button', { name: /Estate/ }).click()
-    await expect(page.getByRole('heading', { name: 'Estate Flow' })).toBeVisible()
+    await clickAdvisorClientTab(page, /Estate/)
+    await expect(page.getByRole('heading', { name: 'Estate Flow' })).toBeVisible({
+      timeout: 30_000,
+    })
   })
 
   test('documents tab loads', async ({ page }) => {

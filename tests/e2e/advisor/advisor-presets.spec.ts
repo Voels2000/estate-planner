@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-const PRESET_NAME = `Playwright Preset ${Date.now()}`
+function uniquePresetName(suffix: string) {
+  return `Playwright Preset ${suffix} ${Date.now()}`
+}
 
 test.describe('Advisor preset APIs', () => {
   test('GET /api/advisor/presets returns array', async ({ request }) => {
@@ -11,9 +13,10 @@ test.describe('Advisor preset APIs', () => {
   })
 
   test('POST creates preset with is_preset true', async ({ request }) => {
+    const scenarioName = uniquePresetName('POST')
     const res = await request.post('/api/advisor/presets', {
       data: {
-        scenario_name: PRESET_NAME,
+        scenario_name: scenarioName,
         returnMeanPct: 5.5,
         inflationRatePct: 3.2,
         volatilityPct: 12,
@@ -22,62 +25,75 @@ test.describe('Advisor preset APIs', () => {
     })
     expect(res.status(), await res.text()).toBe(201)
     const body = await res.json()
-    expect(body.preset.scenario_name).toBe(PRESET_NAME)
+    expect(body.preset.scenario_name).toBe(scenarioName)
     expect(body.preset.is_preset).toBe(true)
+    await request.delete(`/api/advisor/presets/${body.preset.id}`)
   })
 
   test('PATCH updates preset name', async ({ request }) => {
-    const list = await request.get('/api/advisor/presets')
-    const preset = (await list.json()).presets.find(
-      (p: { scenario_name: string }) => p.scenario_name === PRESET_NAME,
-    )
-    expect(preset).toBeTruthy()
+    const scenarioName = uniquePresetName('PATCH')
+    const createRes = await request.post('/api/advisor/presets', {
+      data: {
+        scenario_name: scenarioName,
+        returnMeanPct: 5.5,
+      },
+    })
+    expect(createRes.status(), await createRes.text()).toBe(201)
+    const created = (await createRes.json()).preset
 
-    const updatedName = `${PRESET_NAME} Updated`
-    const res = await request.patch(`/api/advisor/presets/${preset.id}`, {
+    const updatedName = `${scenarioName} Updated`
+    const res = await request.patch(`/api/advisor/presets/${created.id}`, {
       data: { scenario_name: updatedName },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
     expect((await res.json()).preset.scenario_name).toBe(updatedName)
+
+    await request.delete(`/api/advisor/presets/${created.id}`)
   })
 
   test('PATCH default clears previous default', async ({ request }) => {
-    const listRes = await request.get('/api/advisor/presets')
-    const presets = (await listRes.json()).presets as Array<{
-      id: string
-      scenario_name: string
-      is_default: boolean
-    }>
-    const target = presets.find((p) => p.scenario_name.startsWith(PRESET_NAME))
-    expect(target).toBeTruthy()
+    const firstName = uniquePresetName('DefaultA')
+    const secondName = uniquePresetName('DefaultB')
 
-    const otherName = `${PRESET_NAME} Alt`
-    const createRes = await request.post('/api/advisor/presets', {
-      data: { scenario_name: otherName, returnMeanPct: 6 },
+    const firstRes = await request.post('/api/advisor/presets', {
+      data: { scenario_name: firstName, returnMeanPct: 5, is_default: true },
     })
-    expect(createRes.status()).toBe(201)
-    const other = (await createRes.json()).preset
+    expect(firstRes.status(), await firstRes.text()).toBe(201)
+    const first = (await firstRes.json()).preset
 
-    const setRes = await request.patch(`/api/advisor/presets/${other.id}/default`)
+    const secondRes = await request.post('/api/advisor/presets', {
+      data: { scenario_name: secondName, returnMeanPct: 6 },
+    })
+    expect(secondRes.status(), await secondRes.text()).toBe(201)
+    const second = (await secondRes.json()).preset
+
+    const setRes = await request.patch(`/api/advisor/presets/${second.id}/default`)
     expect(setRes.ok(), await setRes.text()).toBeTruthy()
 
     const after = await request.get('/api/advisor/presets')
     const rows = (await after.json()).presets as Array<{ id: string; is_default: boolean }>
     const defaults = rows.filter((r) => r.is_default)
     expect(defaults).toHaveLength(1)
-    expect(defaults[0].id).toBe(other.id)
+    expect(defaults[0].id).toBe(second.id)
+
+    await request.delete(`/api/advisor/presets/${first.id}`)
+    await request.delete(`/api/advisor/presets/${second.id}`)
   })
 
   test('DELETE removes preset', async ({ request }) => {
+    const scenarioName = uniquePresetName('DELETE')
+    const createRes = await request.post('/api/advisor/presets', {
+      data: { scenario_name: scenarioName, returnMeanPct: 4 },
+    })
+    expect(createRes.status(), await createRes.text()).toBe(201)
+    const created = (await createRes.json()).preset
+
+    const res = await request.delete(`/api/advisor/presets/${created.id}`)
+    expect(res.ok(), await res.text()).toBeTruthy()
+
     const list = await request.get('/api/advisor/presets')
-    const presets = (await list.json()).presets as Array<{
-      id: string
-      scenario_name: string
-    }>
-    for (const row of presets.filter((p) => p.scenario_name.includes(PRESET_NAME))) {
-      const res = await request.delete(`/api/advisor/presets/${row.id}`)
-      expect(res.ok(), await res.text()).toBeTruthy()
-    }
+    const presets = (await list.json()).presets as Array<{ id: string }>
+    expect(presets.some((p) => p.id === created.id)).toBe(false)
   })
 })
 
@@ -92,7 +108,7 @@ test.describe('Advisor preset APIs — consumer forbidden', () => {
 
 test.describe('Load preset in recommendation form', () => {
   test('preset dropdown pre-fills Monte Carlo fields', async ({ page, request }) => {
-    const name = `Playwright UI Preset ${Date.now()}`
+    const name = uniquePresetName('UI')
     const create = await request.post('/api/advisor/presets', {
       data: {
         scenario_name: name,
@@ -103,28 +119,37 @@ test.describe('Load preset in recommendation form', () => {
       },
     })
     expect(create.status()).toBe(201)
+    const created = (await create.json()).preset
 
-    await page.goto('/advisor')
-    await page.getByText('My Clients').first().waitFor({ state: 'visible', timeout: 30_000 })
-    const row = page.locator('tbody tr').filter({ has: page.getByRole('link', { name: 'View →' }) }).first()
-    await row.getByRole('link', { name: 'View →' }).click()
-    await page.waitForURL(/\/advisor\/clients\/[a-f0-9-]+$/)
-    await page.getByRole('button', { name: /Strategy/ }).click()
+    try {
+      await page.goto('/advisor')
+      await page.getByText('My Clients').first().waitFor({ state: 'visible', timeout: 30_000 })
+      const row = page
+        .locator('tbody tr')
+        .filter({ has: page.getByRole('link', { name: 'View →' }) })
+        .first()
+      await row.getByRole('link', { name: 'View →' }).click()
+      await page.waitForURL(/\/advisor\/clients\/[a-f0-9-]+$/)
+      await page.getByRole('button', { name: /Strategy/ }).click()
+      await page.waitForURL(/[?&]tab=strategy/, { timeout: 30_000 })
 
-    await expect(page.getByText('Load preset')).toBeVisible({ timeout: 30_000 })
-    await page.locator('select').filter({ has: page.locator(`option:has-text("${name}")`) }).selectOption({ label: name })
-    await page.getByRole('button', { name: 'Load' }).click()
+      const assumptionsSection = page.locator('section').filter({
+        hasText: 'Monte Carlo — Assumption Overrides',
+      })
+      await assumptionsSection.getByRole('button', { name: /Expand/ }).click()
 
-    const returnInput = page
-      .locator('div')
-      .filter({ has: page.getByText('Expected Annual Return', { exact: true }) })
-      .locator('input[type="number"]')
-    await expect(returnInput).toHaveValue('7.25')
+      await expect(assumptionsSection.getByText('Load preset')).toBeVisible({
+        timeout: 30_000,
+      })
+      await assumptionsSection.locator('select').selectOption({ label: name })
+      await assumptionsSection.getByRole('button', { name: 'Load' }).click()
 
-    const list = await request.get('/api/advisor/presets')
-    const presets = (await list.json()).presets as Array<{ id: string; scenario_name: string }>
-    const created = presets.find((p) => p.scenario_name === name)
-    if (created) {
+      const returnInput = assumptionsSection
+        .getByText('Expected Annual Return', { exact: true })
+        .locator('..')
+        .locator('input[type="number"]')
+      await expect(returnInput).toHaveValue('7.25')
+    } finally {
       await request.delete(`/api/advisor/presets/${created.id}`)
     }
   })
