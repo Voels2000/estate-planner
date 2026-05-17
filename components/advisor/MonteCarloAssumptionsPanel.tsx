@@ -9,6 +9,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MONTE_CARLO_SYSTEM_DEFAULTS, type MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
+import { monteCarloAssumptionsFromRow } from '@/lib/advisor/monteCarloFromRow'
+import type { AdvisorPresetRow } from '@/lib/advisor/advisorPresetAssumptions'
 
 interface ScenarioRow {
   id: string
@@ -56,19 +58,6 @@ const FIELDS: Array<{
   { key: 'inflationRatePct', dbKey: 'inflation_rate_pct', label: 'Inflation Assumption', min: 1, max: 6, step: 0.25, suffix: '%' },
 ]
 
-function fromScenario(row: ScenarioRow | null): MonteCarloAssumptions {
-  if (!row) return { ...MONTE_CARLO_SYSTEM_DEFAULTS }
-  return {
-    returnMeanPct: row.return_mean_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.returnMeanPct,
-    volatilityPct: row.volatility_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.volatilityPct,
-    withdrawalRatePct: row.withdrawal_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.withdrawalRatePct,
-    successThreshold: row.success_threshold ?? MONTE_CARLO_SYSTEM_DEFAULTS.successThreshold,
-    simulationCount: row.simulation_count ?? MONTE_CARLO_SYSTEM_DEFAULTS.simulationCount,
-    planningHorizonYr: row.planning_horizon_yr ?? MONTE_CARLO_SYSTEM_DEFAULTS.planningHorizonYr,
-    inflationRatePct: row.inflation_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.inflationRatePct,
-  }
-}
-
 const fmtPct = (n: number) => `${n.toFixed(1)}%`
 const fmtM = (n: number) => `$${(n / 1_000_000).toFixed(2)}M`
 
@@ -78,7 +67,10 @@ export default function MonteCarloAssumptionsPanel({
   onAssumptionsChange,
 }: MonteCarloAssumptionsPanelProps) {
   const [scenarios, setScenarios] = useState<ScenarioRow[]>([])
+  const [presets, setPresets] = useState<AdvisorPresetRow[]>([])
+  const [selectedPresetId, setSelectedPresetId] = useState('')
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null)
+  const [defaultPresetApplied, setDefaultPresetApplied] = useState(false)
   const [draftName, setDraftName] = useState('Base Case')
   const [draftValues, setDraftValues] = useState<MonteCarloAssumptions>({ ...MONTE_CARLO_SYSTEM_DEFAULTS })
   const [errors, setErrors] = useState<Partial<Record<keyof MonteCarloAssumptions, string>>>({})
@@ -90,23 +82,57 @@ export default function MonteCarloAssumptionsPanel({
   const [advisorResult, setAdvisorResult] = useState<CompareResult | null>(null)
   const isDirty = useMemo(() => JSON.stringify(draftValues) !== JSON.stringify(MONTE_CARLO_SYSTEM_DEFAULTS), [draftValues])
 
-  const loadScenarios = useCallback(async () => {
-    const res = await fetch(`/api/advisor/monte-carlo-assumptions?clientHouseholdId=${householdId}`)
+  const loadPresets = useCallback(async () => {
+    const res = await fetch('/api/advisor/presets')
     if (!res.ok) return
     const data = await res.json()
+    setPresets((data.presets ?? []) as AdvisorPresetRow[])
+  }, [])
+
+  const loadScenarios = useCallback(async () => {
+    const [scenarioRes] = await Promise.all([
+      fetch(`/api/advisor/monte-carlo-assumptions?clientHouseholdId=${householdId}`),
+      loadPresets(),
+    ])
+    if (!scenarioRes.ok) return
+    const data = await scenarioRes.json()
     const rows: ScenarioRow[] = data.scenarios ?? []
     setScenarios(rows)
     const active = rows.find((s) => s.is_active) ?? null
     if (active) {
       setActiveScenarioId(active.id)
       setDraftName(active.scenario_name)
-      const assumptions = fromScenario(active)
+      const assumptions = monteCarloAssumptionsFromRow(active)
       setDraftValues(assumptions)
       onAssumptionsChange?.(assumptions)
+      setDefaultPresetApplied(true)
     } else {
       onAssumptionsChange?.(null)
     }
-  }, [householdId, onAssumptionsChange])
+  }, [householdId, onAssumptionsChange, loadPresets])
+
+  useEffect(() => {
+    if (defaultPresetApplied || activeScenarioId) return
+    const defaultPreset = presets.find((p) => p.is_default)
+    if (!defaultPreset) return
+    const assumptions = monteCarloAssumptionsFromRow(defaultPreset)
+    setDraftValues(assumptions)
+    onAssumptionsChange?.(assumptions)
+    setDefaultPresetApplied(true)
+  }, [presets, defaultPresetApplied, activeScenarioId, onAssumptionsChange])
+
+  function applyPreset(preset: AdvisorPresetRow) {
+    const assumptions = monteCarloAssumptionsFromRow(preset)
+    setDraftValues(assumptions)
+    setDraftName(preset.scenario_name)
+    onAssumptionsChange?.(assumptions)
+    validate(assumptions)
+  }
+
+  function handleLoadPreset() {
+    const preset = presets.find((p) => p.id === selectedPresetId)
+    if (preset) applyPreset(preset)
+  }
 
   useEffect(() => {
     loadScenarios()
@@ -212,6 +238,35 @@ export default function MonteCarloAssumptionsPanel({
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+      {presets.length > 0 && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2">
+          <div className="flex-1 min-w-[12rem]">
+            <label className="text-xs text-gray-500">Load preset</label>
+            <select
+              value={selectedPresetId}
+              onChange={(e) => setSelectedPresetId(e.target.value)}
+              className="mt-1 w-full rounded border border-gray-200 px-3 py-1.5 text-sm bg-white"
+            >
+              <option value="">Select a preset…</option>
+              {presets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.scenario_name}
+                  {p.is_default ? ' (default)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleLoadPreset}
+            disabled={!selectedPresetId}
+            className="rounded border border-indigo-300 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 disabled:opacity-50"
+          >
+            Load
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1">
           <label className="text-xs text-gray-500">Scenario Name</label>
@@ -226,9 +281,9 @@ export default function MonteCarloAssumptionsPanel({
                 const id = e.target.value
                 const row = scenarios.find((s) => s.id === id) ?? null
                 setActiveScenarioId(id || null)
-                setDraftValues(fromScenario(row))
+                setDraftValues(monteCarloAssumptionsFromRow(row))
                 setDraftName(row?.scenario_name ?? 'Base Case')
-                onAssumptionsChange?.(row ? fromScenario(row) : null)
+                onAssumptionsChange?.(row ? monteCarloAssumptionsFromRow(row) : null)
               }}
               className="mt-1 rounded border border-gray-200 px-3 py-1.5 text-sm"
             >

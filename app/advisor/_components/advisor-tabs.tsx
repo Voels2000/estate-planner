@@ -16,6 +16,8 @@ export type AdvisorTabsProps = {
 export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
   const pathname = usePathname()
   const clientsActive = pathname === '/advisor' || pathname === '/advisor/'
+  const presetsActive =
+    pathname === '/advisor/presets' || pathname.startsWith('/advisor/presets/')
   const firmActive =
     pathname === '/advisor/firm' || pathname.startsWith('/advisor/firm/')
   const analyticsActive =
@@ -38,6 +40,9 @@ export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
     >
       <Link href="/advisor" className={tabClass(clientsActive)}>
         👥 My Clients
+      </Link>
+      <Link href="/advisor/presets" className={tabClass(presetsActive)}>
+        📋 Presets
       </Link>
       {showFirmSettingsTab && (
         <Link href="/advisor/firm" className={tabClass(firmActive)}>
