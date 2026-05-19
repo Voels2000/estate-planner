@@ -19,6 +19,11 @@ export default async function TitlingPage() {
   if (!user) redirect('/login')
 
   if (access.tier < 3) {
+    const { data: householdRow } = await supabase
+      .from('households')
+      .select('state_primary')
+      .eq('owner_id', user.id)
+      .single()
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Titling & Beneficiaries</h1>
@@ -26,6 +31,11 @@ export default async function TitlingPage() {
           requiredTier={3}
           moduleName="Titling & Beneficiaries"
           valueProposition="Review and optimize how assets are titled to avoid probate and tax exposure."
+          householdContext={{
+            grossEstate: null,
+            statePrimary: householdRow?.state_primary ?? null,
+            firstName: null,
+          }}
         />
       </div>
     )

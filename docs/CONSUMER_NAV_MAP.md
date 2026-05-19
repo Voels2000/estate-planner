@@ -19,11 +19,12 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 
 ## Sidebar footer (consumer layout)
 
-Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main planning nav (`<nav>` scroll area), above Sign out. Sprint 0 moved connection/billing links here; **My Attorney** remains in the main nav until Sprint 1.
+Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main planning nav (`<nav>` scroll area), above Sign out. Sprint 1: **My Attorney** moved here from Overview.
 
 | Link | Visible when | Target | Notes |
 |------|----------------|--------|--------|
 | 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; lock when `isLockedUser` |
+| ⚖️ My Attorney | `role === 'consumer'` **or** `isSuperuser`, **tier ≥ 2** | `/my-attorney` | Lock when `isLockedUser` or tier &lt; 2 |
 | 💳 Manage Subscription | All signed-in users | `/billing` | Lock when `isLockedUser` |
 | 🚪 Sign out | All signed-in users | (auth sign-out) | Second footer block, separated by border |
 
@@ -45,19 +46,29 @@ Demo/admin test users may see **multiple** portal links if their profile has ele
 
 ---
 
-## Overview
+## Overview (app sidebar only)
 
 | Sidebar label | Route | Page title | Tier | Feature key |
 |---------------|-------|------------|------|-------------|
-| Home | `/` | (marketing) | — | — |
-| Education Guide | `/education` | — | — | — |
-| Planning Assessment | `/assess` | — | — | — |
-| Find an Advisor | `/find-advisor` | — | — | — |
-| Find an Attorney | `/find-attorney` | — | — | — |
-| My Attorney | `/my-attorney` | My Attorney | 2 | — |
-| Attorney access settings | `/settings/attorney-access` | — | 2 | — |
 | Profile | `/profile` | Your Profile | 1 | `profile` |
 | Estate Summary | `/dashboard` | (dashboard sections) | 1 | `dashboard` |
+
+**Not in app sidebar (public / marketing — `app/(public)/`):**
+
+| Label | Route | Layout | Notes |
+|-------|-------|--------|--------|
+| Home | `/` | Root `app/page.tsx` | Marketing landing when signed out |
+| Education Guide | `/education` | `(public)/education/layout.tsx` | Auth-gated inside page layout |
+| Planning Assessment | `/assess` | `(public)/assess` | Client-only; `localStorage` pending assessment |
+| Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Public directory; connect when logged in |
+| Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Public directory; connect when logged in |
+
+**Connections (footer, not Overview):**
+
+| Label | Route | Tier | Notes |
+|-------|-------|------|--------|
+| My Attorney | `/my-attorney` | 2+ | Sidebar footer |
+| Attorney access settings | `/settings/attorney-access` | 2 | Reachable from My Attorney / settings; not in sidebar |
 
 ---
 

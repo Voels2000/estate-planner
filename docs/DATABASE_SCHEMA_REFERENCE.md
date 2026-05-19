@@ -149,7 +149,7 @@ This is a developer reference, not a full SQL DDL dump.
   - `app/claim-listing/[token]/page.tsx` — lookup by `claim_token`, update to `accepted`
   - `app/(dashboard)/my-advisor/page.tsx` — latest pending advisor request for consumer
   - `app/(dashboard)/my-attorney/page.tsx` — all pending attorney requests for consumer
-  - `app/find-attorney/page.tsx` — pending listing IDs to disable duplicate connect UI
+  - `app/(public)/find-attorney/page.tsx` — pending listing IDs to disable duplicate connect UI
 
 ### `state_estate_tax_rules`
 

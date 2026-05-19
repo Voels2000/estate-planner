@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 0 complete → Sprint 1 current)
+# Last updated: May 2026 (Sprint 1 complete → Sprint 2 current)
 
 ---
 
@@ -20,37 +20,6 @@
 ---
 
 ## Current sprint
-
-### Sprint 1 — Public/app separation + segment positioning (Weeks 3–5)
-**Goal:** Two distinct nav experiences. All copy reflects $2M–$30M segment.
-
-**Public site**
-- `[ ]` Create separate public layout component — top nav only, no sidebar
-- `[ ]` Public top nav: Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started
-- `[ ]` Rewrite homepage hero and all public copy for $2M–$30M segment — remove mass-market language
-- `[ ]` Pricing page: position against professional fees ("less than one hour with an estate attorney per month")
-- `[ ]` Add social proof section — testimonials from business owners, RE accumulators, executives
-
-**App**
-- `[ ]` Remove all public-site links from app sidebar (Education Guide, Planning Assessment, Find an Advisor, Find an Attorney)
-- `[ ]` Audit all in-app copy — remove "teaser," "simple," "rule-of-thumb" language
-- `[ ]` Restore Transfer Strategy form depth — replace removal with guided context (tooltips, IRS rate auto-populate)
-- `[ ]` Add "Invite your advisor" as primary onboarding step (Step 2 after profile, before first planning page)
-- `[ ]` Sidebar footer: My Advisor · My Attorney · Account & Billing
-
-**Assessment conversion**
-- `[ ]` Assessment result: score visible without login, full breakdown gates account creation
-- `[ ]` Account creation flow: assessment score carries through, plan selector maps to three tiers
-- `[ ]` Add email capture option on assessment result ("email me my full checklist") as alternative to account creation
-
-**Success criteria for Sprint 1**
-- Zero public-site links in app sidebar
-- Zero planning-app links in public top nav
-- Assessment → account creation conversion rate measured
-
----
-
-## Upcoming sprints
 
 ### Sprint 2 — Life event landing pages (Weeks 6–8)
 **Goal:** 8 event pages live, SEO-ready, with event-specific assessments.
@@ -73,12 +42,26 @@
 - `[ ]` Email capture → drip sequence (3 emails, 2-week cadence) per event type
 - `[ ]` Professional CTAs: attorney CTA on legal-doc events, advisor CTA on strategy events
 
+**Sprint 1 carryover (marketing / public chrome)**
+- `[ ]` Public top nav component (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started)
+- `[ ]` Rewrite homepage hero and all public copy for $2M–$30M segment
+- `[ ]` Pricing page: position against professional fees
+- `[ ]` Add social proof section on marketing site
+- `[ ]` Assessment: score visible without login, full breakdown gates account creation
+- `[ ]` Account creation: assessment score carries through; plan selector maps to tiers
+- `[ ]` Email capture on assessment result ("email me my full checklist")
+- `[ ]` Audit in-app copy — remove "teaser," "simple," "rule-of-thumb" language
+- `[ ]` Transfer Strategy form depth + guided context (tooltips, IRS rate auto-populate)
+- `[ ]` "Invite your advisor" as primary onboarding step (Step 2 after profile)
+
 **Success criteria for Sprint 2**
 - 8 event pages indexed in Google Search Console
 - Event page → assessment → account creation funnel measured
 - Email capture rate on assessment results
 
 ---
+
+## Upcoming sprints
 
 ### Sprint 3 — In-app life event triggers (Weeks 9–11)
 **Goal:** Users can log life events in-app; plan recomputes with event-specific conflict generation.
@@ -175,23 +158,50 @@
 
 ## Completed sprints
 
+### Sprint 1 — App/public nav separation + upgrade gates (Weeks 3–5) ✅
+**Goal:** Planning app sidebar contains planning tools only; public routes outside dashboard layout; tier gates personalized.
+
+**Shipped (engineering)**
+- `[x]` Remove public-site links from app sidebar Overview (Education, Assessment, Find Advisor, Find Attorney, Home)
+- `[x]` Overview group: Profile + Estate Summary only
+- `[x]` Move **My Attorney** to sidebar footer (tier 2+); remove **Attorney access settings** from sidebar
+- `[x]` Sidebar footer: My Advisor · My Attorney (tier 2+) · Manage Subscription · Sign out
+- `[x]` "Your plan" tier badge on active planning group header
+- `[x]` `UpgradeBanner` `householdContext` on all tier-gated consumer pages (retirement + estate modules)
+- `[x]` Social Security: tier 2 gate added (was missing)
+- `[x]` Domicile Analysis: explicit tier 3 gate added
+- `[x]` Public route group `app/(public)/` — education, assess, find-advisor, find-attorney (passthrough layout, no dashboard sidebar)
+- `[x]` Projections income table: full first names via `displayPersonFirstName` in `_projections-client.tsx`
+
+**Deferred to Sprint 2 (marketing / public chrome)**
+- `[-]` Shared public top nav component on `(public)` layout
+- `[-]` Homepage hero and segment copy rewrite
+- `[-]` Pricing positioning vs professional fees
+- `[-]` Social proof section
+- `[-]` Assessment conversion funnel enhancements
+- `[-]` In-app copy audit; Transfer Strategy guided depth; Invite-your-advisor onboarding step
+
+**Success criteria met (engineering slice)**
+- Zero public-site links in app sidebar ✅
+- Public routes render without dashboard chrome ✅
+- Upgrade gates personalized with `state_primary` where household exists ✅
+
+---
+
 ### Sprint 0 — In-app fixes (Weeks 1–2) ✅
 **Goal:** Surface the most valuable content already built. No new infrastructure required.
 
 **Dashboard fixes**
 - `[x]` Add conflict alert banner above the fold — dismissible; links to `#estate-conflicts`
 - `[x]` Add severity chips — critical/warnings in `DashboardIntroSection` (links to conflicts)
-- `[~]` Move advisor links to sidebar footer — **My Advisor** + **Manage Subscription** in footer; **My Attorney** still in main nav (→ Sprint 1)
-- `[ ]` Add "Your plan" tier badge to active planning group in sidebar (carryover)
+- `[x]` Move advisor links to sidebar footer — **My Advisor** + **Manage Subscription** in footer
+- `[x]` Horizons page: comparison table + hero tax-liability summary cards
+- `[x]` Horizons page: tier gate on `/my-estate-strategy`
+- `[x]` Projections table: `title` tooltips on income column headers
+- `[x]` Monte Carlo: single-column layout; labeled step stepper
+- `[x]` Upgrade gates: `householdContext` on `/estate-tax` and `/my-estate-strategy`
 
-**Page-level fixes**
-- `[x]` Horizons page: comparison table (labels left, 4 columns) + hero tax-liability summary cards
-- `[x]` Horizons page: "Est. total estate tax liability" as highlighted row in table
-- `[~]` Projections table: `title` tooltips on income column headers; full person-name labels not yet done
-- `[x]` Monte Carlo: single-column layout; labeled step stepper; results below wizard
-- `[x]` Upgrade gates: `householdContext` on `UpgradeBanner` for `/estate-tax` and `/my-estate-strategy`
-
-**Retrospective:** UI-only sprint; no engine/API/DB changes. Ship carryover items in Sprint 1 sidebar task. Baseline horizons time-on-page and upgrade conversion in Sprint 5.
+**Retrospective:** UI-only sprint; no engine/API/DB changes. Sprint 1 completed nav separation and remaining upgrade-gate personalization.
 
 ---
 
@@ -204,6 +214,7 @@
 - Remaining 17 life event pages (scheduled for Sprint 5 but listed here for reference)
 - Business succession planning page (currently commented out of sidebar)
 - Digital Assets feature key addition to FEATURE_TIERS
+- Add `/education` to `proxy.ts` `PUBLIC_PATHS` if education should be reachable without proxy login redirect (page layout still auth-gates)
 
 ---
 

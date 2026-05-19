@@ -8,6 +8,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 1 (May 2026) — UI / route group only
+
+- No database schema or migration changes.
+- Route moves (URLs unchanged):
+  - `app/(education)/education/*` → `app/(public)/education/*`
+  - `app/assess/page.tsx` → `app/(public)/assess/page.tsx`
+  - `app/find-advisor/*` → `app/(public)/find-advisor/*`
+  - `app/find-attorney/*` → `app/(public)/find-attorney/*`
+- New `app/(public)/layout.tsx` (passthrough fragment).
+- Consumer sidebar: Overview = Profile + Estate Summary; My Attorney → footer; upgrade gates use `UpgradeBanner` `householdContext` with lightweight `state_primary` query in gate branches.
+
 ## Session 94 Note
 
 - Schema/migration changes introduced:

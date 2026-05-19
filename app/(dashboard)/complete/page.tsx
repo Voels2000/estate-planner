@@ -18,6 +18,11 @@ export default async function CompletePage() {
   if (!user) redirect('/login')
 
   if (access.tier < 3) {
+    const { data: householdRow } = await supabase
+      .from('households')
+      .select('state_primary')
+      .eq('owner_id', user.id)
+      .single()
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Complete Estate Plan</h1>
@@ -25,6 +30,11 @@ export default async function CompletePage() {
           requiredTier={3}
           moduleName="Complete Estate Plan"
           valueProposition="Get a full summary and action plan across every dimension of your estate."
+          householdContext={{
+            grossEstate: null,
+            statePrimary: householdRow?.state_primary ?? null,
+            firstName: null,
+          }}
         />
       </div>
     )

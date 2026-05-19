@@ -374,8 +374,8 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Current (as built):**
 
-- Education route family is implemented under `app/(education)/education/*`.
-- Education pages are auth-gated (`app/(education)/education/layout.tsx`); users must be logged in before viewing.
+- Education route family is implemented under `app/(public)/education/*` (Sprint 1 route-group move from `app/(education)/education/*`).
+- Education pages are auth-gated (`app/(public)/education/layout.tsx`); users must be logged in before viewing. The `(public)` layout is passthrough only — no dashboard sidebar.
 - Content is markdown-first:
   - Module files live under `content/education/modules/*.md`
   - Additional long-form pages use `content/education/decision-tree.md` and `content/education/glossary.md`
@@ -406,25 +406,25 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Navigation + landing integration:**
 
-- Sidebar navigation now includes `Education Guide` under Overview.
+- **Sprint 1:** Education, Assessment, Find Advisor, and Find Attorney are **not** in the app sidebar. They live under `app/(public)/` with URLs unchanged (`/education`, `/assess`, `/find-advisor`, `/find-attorney`). Overview sidebar = Profile + Estate Summary only.
 - Root route behavior (`app/page.tsx`) is now:
   - Signed-out users: public education-first marketing landing page
   - Signed-in users with profile: redirect to `/dashboard`
   - Signed-in users without profile: redirect to `/profile`
 - Root middleware guard behavior (`proxy.ts`) now explicitly allows unauthenticated `/` requests to pass through after login redirect checks, preventing profile lookups for signed-out landing-page traffic.
 - New public assessment route is available at `/assess`:
-  - File: `app/assess/page.tsx`
+  - File: `app/(public)/assess/page.tsx`
   - Client-rendered 20-question planning readiness flow across financial, retirement, and estate pillars
   - Includes intro, guided question progression with progress bar, and results with pillar-level gap scoring
   - Results save behavior now shows a soft capture CTA banner for signed-out users (instead of silent non-persistence) with `signup/login` redirects back to `/assess`
   - Signed-out assessment results are now cached in browser local storage (`mwm_pending_assessment`) and restored/auto-persisted after auth return, with a success banner after restore
 - Public middleware path exceptions now include `/advisor-directory` so directory discovery remains available without forced auth redirect.
 - Public attorney discovery route now lives at `/find-attorney`:
-  - Files: `app/find-attorney/page.tsx`, `app/find-attorney/_attorney-directory-client.tsx`
-  - Sidebar Overview navigation now links to both `/find-advisor` and `/find-attorney`
+  - Files: `app/(public)/find-attorney/page.tsx`, `app/(public)/find-attorney/_attorney-directory-client.tsx`
+  - Not in app sidebar; linked from marketing landing and public flows
   - Connection requests from the attorney directory client post to `/api/attorney-directory/request-connect`
 - Public advisor discovery now lives at `/find-advisor`:
-  - Files: `app/find-advisor/page.tsx`, `app/find-advisor/_advisor-directory-client.tsx`
+  - Files: `app/(public)/find-advisor/page.tsx`, `app/(public)/find-advisor/_advisor-directory-client.tsx`
   - Connection requests from the public advisor directory client post to `/api/advisor-directory/request-connect`
   - Legacy public route `/advisor-directory` now redirects server-side to `/find-advisor`
 - Signed-out landing page (`app/page.tsx`) now includes a **Find a professional** section with cards linking to `/find-advisor` and `/find-attorney`; bottom advisor CTA strip also links to `/find-advisor` (replacing `/advisor-directory`).
@@ -451,11 +451,12 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Signup form honors `redirectTo` query param; maps `/find-advisor`, `/find-attorney`, and `/assess` to `/profile?from=…` after consumer signup.
 - Profile page shows contextual welcome banner when arriving from assessment restore (`mwm_pending_assessment`), find-advisor, or find-attorney flows.
 
-**Sidebar navigation (Sprint 0):**
+**Sidebar navigation (Sprint 0 + Sprint 1):**
 
-- Overview group includes **My Attorney** (`/my-attorney`, consumer-only, tier 2+) and **Attorney access settings** (`/settings/attorney-access`) with existing tier gate behavior.
-- **Footer block** (below main nav): **My Advisor** (`/my-advisor`) and **Manage Subscription** (`/billing`), then **Sign out**. My Attorney move to footer deferred to Sprint 1.
-- **`UpgradeBanner`** (`app/(dashboard)/_components/UpgradeBanner.tsx`): optional `householdContext` for personalized tier-gate copy on `/estate-tax` and `/my-estate-strategy`.
+- **Overview group:** Profile + Estate Summary only (no public-site links).
+- **Footer block:** **My Advisor**, **My Attorney** (consumer, tier 2+), **Manage Subscription**, then **Sign out**. Attorney access settings removed from sidebar (still at `/settings/attorney-access`).
+- **"Your plan" badge** on the active unlocked planning group header (Financial / Retirement / Estate).
+- **`UpgradeBanner`** (`app/(dashboard)/_components/UpgradeBanner.tsx`): optional `householdContext` (`state_primary`, optional `grossEstate`, `firstName`) on all tier-gated consumer pages; gate branches use a lightweight `households` query when full household load runs after the gate.
 
 **Design system + education UI refresh:**
 
@@ -463,7 +464,7 @@ If either is missing in production, recompute is skipped and a **one-time** `con
   - `DESIGN_SYSTEM.md`
   - `assets/design-system.css`
 - The education route family and root landing surface now share the same updated visual language (typography, spacing, cards, badges, and call-to-action treatment) for consistent signed-out and signed-in transitions.
-- Education markdown rendering now has explicit prose styling hooks in `app/(education)/education/education-theme.css` under `.education-prose-content*` selectors (headings, paragraph/list rhythm, links, blockquotes, table chrome, and inline/preformatted code treatment) so module/decision-tree/glossary content remains visually consistent with the design system.
+- Education markdown rendering now has explicit prose styling hooks in `app/(public)/education/education-theme.css` under `.education-prose-content*` selectors (headings, paragraph/list rhythm, links, blockquotes, table chrome, and inline/preformatted code treatment) so module/decision-tree/glossary content remains visually consistent with the design system.
 
 **Content coverage status:**
 

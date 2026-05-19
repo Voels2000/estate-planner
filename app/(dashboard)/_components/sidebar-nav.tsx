@@ -36,13 +36,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Overview',
     icon: '🏠',
   items: [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/education', label: 'Education Guide', icon: '📚' },
-    { href: '/assess', label: 'Planning Assessment', icon: '🔍' },
-    { href: '/find-advisor', label: 'Find an Advisor', icon: '🤝' },
-    { href: '/find-attorney', label: 'Find an Attorney', icon: '⚖️' },
-    { href: '/my-attorney', label: 'My Attorney', icon: '⚖️', consumerOnly: true, minTier: 2 },
-    { href: '/settings/attorney-access', label: 'Attorney access settings', icon: '🔐', consumerOnly: true, minTier: 2 },
     { href: '/profile', label: 'Profile', icon: '👤', feature: 'profile' },
     { href: '/dashboard', label: 'Estate Summary', icon: '📊', feature: 'dashboard' },
   ],
@@ -229,6 +222,21 @@ export function SidebarNav({
                 } ${groupIsLocked ? 'cursor-not-allowed' : ''} disabled:cursor-not-allowed disabled:opacity-100`}
               >
                 <span className="flex-1 text-left text-neutral-900">{group.label}</span>
+                {!groupIsLocked && group.label !== 'Overview' && (
+                  ((group.label === 'Financial Planning' && tier === 1) ||
+                   (group.label === 'Retirement Planning' && tier === 2) ||
+                   (group.label === 'Estate Planning' && tier >= 3)) && (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full mr-1 ${
+                      group.label === 'Financial Planning'
+                        ? 'bg-blue-100 text-blue-700'
+                        : group.label === 'Retirement Planning'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-purple-100 text-purple-700'
+                    }`}>
+                      Your plan
+                    </span>
+                  )
+                )}
                 {groupIsLocked && (
                   <span className="text-amber-400 text-sm mr-1">🔒</span>
                 )}
@@ -632,6 +640,31 @@ export function SidebarNav({
                 }`}
               >
                 👤 My Advisor
+              </Link>
+            ))}
+
+          {/* My Attorney — consumer only, tier 2+ */}
+          {(role === 'consumer' || isSuperuser) && tier >= 2 &&
+            (isLockedUser ? (
+              <Link
+                href="#"
+                tabIndex={-1}
+                aria-disabled={true}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors pointer-events-none opacity-40 cursor-not-allowed"
+              >
+                <span className="flex-1 truncate">⚖️ My Attorney</span>
+                <span className="shrink-0 text-sm" aria-hidden>🔒</span>
+              </Link>
+            ) : (
+              <Link
+                href="/my-attorney"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  activePath === '/my-attorney'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                }`}
+              >
+                ⚖️ My Attorney
               </Link>
             ))}
 

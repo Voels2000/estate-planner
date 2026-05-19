@@ -33,7 +33,9 @@ Use this after a production or staging deploy when consumer write paths, estate 
 | 1.2 | Dashboard loads | Greeting (“Good morning/afternoon/evening”), **Estate Readiness Score** shows a number 0–100 | ☐ |
 | 1.2b | If household has conflicts | Dismissible **conflict banner** below greeting (before scrolling); severity chips under intro; **See details ↓** jumps to estate conflicts | ☐ |
 | 1.3 | Scroll dashboard | **Net Worth** section visible; **Your Estate Summary** callout (gross estate, headroom, taxes) below net worth; disclaimer at bottom | ☐ |
-| 1.4 | Sidebar footer | **My Advisor** and **Manage Subscription** in footer (not main planning list) | ☐ |
+| 1.4 | Sidebar footer | **My Advisor**, **My Attorney** (tier 2+), and **Manage Subscription** in footer (not main Overview list) | ☐ |
+| 1.4b | Sidebar Overview | Only **Profile** and **Estate Summary** — no Education / Assessment / Find Advisor / Find Attorney | ☐ |
+| 1.4c | Active planning group | **Your plan** badge on Financial, Retirement, or Estate header when that group is unlocked | ☐ |
 
 ### 2. Financial save (consumer API + recompute)
 
@@ -172,6 +174,22 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 |------|--------|----------|-------|
 | 11.1 | Dashboard → expand **Estate Summary** | **Common planning topics** (not “Planning Gaps”) if topics exist | ☐ |
 | 11.2 | Group headers use educational labels | No red “High Priority” headers | ☐ |
+
+---
+
+## Public routes (no dashboard sidebar) — Sprint 1
+
+Open while logged out or in a private window unless noted:
+
+| Step | URL | Expected | Pass? |
+|------|-----|----------|-------|
+| P.1 | `/assess` | Assessment loads; no app sidebar | ☐ |
+| P.2 | `/find-advisor` | Directory loads; no app sidebar | ☐ |
+| P.3 | `/find-attorney` | Directory loads; no app sidebar | ☐ |
+| P.4 | `/education` (logged in) | Education shell with own header; no app sidebar | ☐ |
+| P.5 | `/advisor-directory` | Redirects to `/find-advisor` | ☐ |
+
+**Tier-gate spot-check (tier 1 account):** `/social-security`, `/roth`, `/my-family` show `UpgradeBanner` with personalized copy when `state_primary` is set on household (fallback to generic copy otherwise).
 
 ---
 

@@ -104,6 +104,18 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ---
 
+### May 2026 — Sprint 1: public routes in `(public)` route group, not dashboard sidebar
+
+**Decision:** Move `/education`, `/assess`, `/find-advisor`, and `/find-attorney` to `app/(public)/` with a passthrough layout (no dashboard sidebar). Remove those links from the app sidebar Overview group. Keep education auth-gated in its nested layout.
+
+**Reasoning:** Public discovery and planning app are different mental models. Mixing them in the sidebar made the app feel like a marketing site. URLs stay the same; only layout grouping changes. Marketing top nav on `(public)` is deferred to Sprint 2 — education and directories already render their own headers.
+
+**Alternatives considered:** Leaving routes at `app/` root and `app/(education)/` (rejected — inconsistent route groups). Deleting page components (rejected — breaks bookmarks and SEO).
+
+**Implication:** `CONSUMER_NAV_MAP.md` and `proxy.ts` `PUBLIC_PATHS` must stay aligned. `/education` is not in `PUBLIC_PATHS` today — unauthenticated users hit proxy login redirect before the education layout; consider adding if marketing should allow anonymous catalog browse.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
