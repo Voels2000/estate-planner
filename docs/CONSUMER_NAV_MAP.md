@@ -53,15 +53,31 @@ Demo/admin test users may see **multiple** portal links if their profile has ele
 | Profile | `/profile` | Your Profile | 1 | `profile` |
 | Estate Summary | `/dashboard` | (dashboard sections) | 1 | `dashboard` |
 
-**Not in app sidebar (public / marketing — `app/(public)/`):**
+**Not in app sidebar (public / marketing):**
 
 | Label | Route | Layout | Notes |
 |-------|-------|--------|--------|
-| Home | `/` | Root `app/page.tsx` | Marketing landing when signed out |
-| Education Guide | `/education` | `(public)/education/layout.tsx` | Auth-gated inside page layout |
-| Planning Assessment | `/assess` | `(public)/assess` | Client-only; `localStorage` pending assessment |
-| Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Public directory; connect when logged in |
-| Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Public directory; connect when logged in |
+| Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
+| Pricing | `/pricing` | `app/pricing/page.tsx` | Own inline nav |
+| Education Guide | `/education` | `(public)/education/layout.tsx` | Shared `(public)` nav + education header; auth-gated |
+| Planning Assessment | `/assess` | `(public)/assess` | Shared `(public)` nav; `localStorage` pending assessment |
+| Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
+| Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
+
+**Life event pages (`app/(public)/event/[slug]/`):**
+
+| Route | Page title (hero) | Tier | Notes |
+|-------|-------------------|------|--------|
+| `/event/selling-a-business` | Business sale | — | Public; SSG |
+| `/event/death-of-spouse` | Death of a spouse | — | Public; SSG |
+| `/event/serious-diagnosis` | Serious health diagnosis | — | Public; SSG |
+| `/event/receiving-inheritance` | Receiving an inheritance | — | Public; SSG |
+| `/event/divorce` | Divorce | — | Public; SSG |
+| `/event/approaching-retirement` | Approaching retirement | — | Public; SSG |
+| `/event/large-rsu-vest` | RSU / liquidity event | — | Public; SSG |
+| `/event/new-child-grandchild` | New child or grandchild | — | Public; SSG |
+
+Content: `lib/events/content.ts`. Assessment teaser links to `/assess` (event-specific flow pending).
 
 **Connections (footer, not Overview):**
 

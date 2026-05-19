@@ -116,6 +116,18 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ---
 
+### May 2026 — Life event content in TypeScript, not MDX (v1)
+
+**Decision:** Ship Sprint 2 event pages with content in `lib/events/content.ts` (typed `EventContent` records), not MDX files under `content/events/`.
+
+**Reasoning:** Faster to ship eight complete pages with actions, assessment questions, and SEO fields in one reviewable module. No `@next/mdx` setup required. Matches education’s pattern (markdown elsewhere, app-layer rendering).
+
+**Alternatives considered:** MDX per `ROADMAP.md` original spec (deferred). CMS / database-driven events (deferred to Sprint 3+ in-app logging).
+
+**Implication:** Content edits require a code deploy. MDX migration remains optional if non-engineers need to author events.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

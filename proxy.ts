@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   '/pricing',
   '/find-advisor',
   '/find-attorney',
+  '/event',
   '/mfa-enroll',
   '/mfa-challenge',
 ]

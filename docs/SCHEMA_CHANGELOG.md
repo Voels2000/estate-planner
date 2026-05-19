@@ -8,6 +8,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 2 Track A + B (May 2026) — Marketing + life event pages
+
+- No database schema or migration changes.
+- **Track A:** `app/(public)/_components/public-nav.tsx` + `(public)/layout.tsx` shared nav; `app/page.tsx` and `app/pricing/page.tsx` segment copy; `proxy.ts` adds `/event` to `PUBLIC_PATHS`.
+- **Track B:** `lib/events/types.ts`, `lib/events/content.ts` (8 events); `app/(public)/event/[slug]/page.tsx` with SSG and `generateMetadata`.
+
 ## Sprint 1 (May 2026) — UI / route group only
 
 - No database schema or migration changes.

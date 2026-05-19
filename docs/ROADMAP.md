@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 1 complete → Sprint 2 current)
+# Last updated: May 2026 (Sprint 2 Track A + B shipped)
 
 ---
 
@@ -25,27 +25,27 @@
 **Goal:** 8 event pages live, SEO-ready, with event-specific assessments.
 
 **8 priority events**
-- `[ ]` /event/selling-a-business — GRAT/SLAT window, charitable timing, business valuation
-- `[ ]` /event/death-of-spouse — portability election, retitling urgency, 30-day checklist
-- `[ ]` /event/serious-diagnosis — incapacity planning, trust funding, healthcare directives
-- `[ ]` /event/receiving-inheritance — sudden estate complexity, first-time $2M+
-- `[ ]` /event/divorce — beneficiary reconstruction, QDRO, trust restructuring
-- `[ ]` /event/approaching-retirement — RMD, SS timing, Roth window, estate freeze
-- `[ ]` /event/large-rsu-vest — concentrated position, capital gains, gifting timing
-- `[ ]` /event/new-child-grandchild — trust for minors, guardianship, 529, beneficiary updates
+- `[x]` /event/selling-a-business — GRAT/SLAT window, charitable timing, business valuation
+- `[x]` /event/death-of-spouse — portability election, retitling urgency, 30-day checklist
+- `[x]` /event/serious-diagnosis — incapacity planning, trust funding, healthcare directives
+- `[x]` /event/receiving-inheritance — sudden estate complexity, first-time $2M+
+- `[x]` /event/divorce — beneficiary reconstruction, QDRO, trust restructuring
+- `[x]` /event/approaching-retirement — RMD, SS timing, Roth window, estate freeze
+- `[x]` /event/large-rsu-vest — concentrated position, capital gains, gifting timing
+- `[x]` /event/new-child-grandchild — trust for minors, guardianship, 529, beneficiary updates
 
 **Infrastructure**
-- `[ ]` Dynamic route: /event/[slug] with MDX content
-- `[ ]` Event content schema: slug, category, urgency, linked app features, assessment questions
-- `[ ]` SEO: title, description, schema.org structured data, OG tags per event
-- `[ ]` Event-specific 5-question assessment path per event
+- `[x]` Dynamic route: `/event/[slug]` with TypeScript content (`lib/events/content.ts`; MDX deferred)
+- `[x]` Event content schema: slug, category, urgency, linked features, assessment questions (`lib/events/types.ts`)
+- `[~]` SEO: title, description, OG tags per event via `generateMetadata`; schema.org structured data still pending
+- `[~]` Event-specific 5-question assessment: questions in content; interactive path on `/assess` still pending (teaser links to generic assess)
 - `[ ]` Email capture → drip sequence (3 emails, 2-week cadence) per event type
-- `[ ]` Professional CTAs: attorney CTA on legal-doc events, advisor CTA on strategy events
+- `[x]` Professional CTAs: attorney/advisor cards on event pages per `advisorCTA` / `attorneyCTA` flags
 
 **Sprint 1 carryover (marketing / public chrome)**
-- `[ ]` Public top nav component (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started)
-- `[ ]` Rewrite homepage hero and all public copy for $2M–$30M segment
-- `[ ]` Pricing page: position against professional fees
+- `[x]` Public top nav on `(public)` layout (`app/(public)/_components/public-nav.tsx`)
+- `[x]` Homepage hero rewritten for $2M–$30M segment; life events quick-start entry (`app/page.tsx`)
+- `[x]` Pricing page: position against professional fees (`app/pricing/page.tsx`)
 - `[ ]` Add social proof section on marketing site
 - `[ ]` Assessment: score visible without login, full breakdown gates account creation
 - `[ ]` Account creation: assessment score carries through; plan selector maps to tiers
@@ -174,9 +174,9 @@
 - `[x]` Projections income table: full first names via `displayPersonFirstName` in `_projections-client.tsx`
 
 **Deferred to Sprint 2 (marketing / public chrome)**
-- `[-]` Shared public top nav component on `(public)` layout
-- `[-]` Homepage hero and segment copy rewrite
-- `[-]` Pricing positioning vs professional fees
+- `[x]` Shared public top nav — shipped Sprint 2 Track A
+- `[x]` Homepage hero and segment copy — shipped Sprint 2 Track A
+- `[x]` Pricing positioning vs professional fees — shipped Sprint 2 Track A
 - `[-]` Social proof section
 - `[-]` Assessment conversion funnel enhancements
 - `[-]` In-app copy audit; Transfer Strategy guided depth; Invite-your-advisor onboarding step

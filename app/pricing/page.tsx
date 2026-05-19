@@ -138,15 +138,24 @@ export default async function PricingPage() {
             lineHeight: 1.2,
             marginBottom: 14,
           }}>
-            Start free. Upgrade as your<br />planning needs grow.
+            Professional planning infrastructure.<br />
+            At a price that makes sense.
           </h1>
           <p style={{
             fontSize: 16, color: '#4a5568',
-            maxWidth: 480, margin: '0 auto',
+            maxWidth: 520, margin: '0 auto 12px',
             lineHeight: 1.7,
           }}>
-            All plans include a 3-day free trial.
-            No credit card required.
+            Estate attorneys charge $5K–$50K annually. Family offices
+            require $30M+. My Wealth Maps gives $2M–$30M households the
+            coordinated planning tool that segment has never had.
+          </p>
+          <p style={{
+            fontSize: 13, color: '#718096',
+            maxWidth: 400, margin: '0 auto',
+            lineHeight: 1.6,
+          }}>
+            All plans include a 3-day free trial. No credit card required.
           </p>
         </div>
 
@@ -329,9 +338,9 @@ export default async function PricingPage() {
         }}>
           {[
             '✓ Cancel anytime',
-            '✓ 15-minute free trial',
+            '✓ 3-day free trial',
             '✓ No credit card to start',
-            '✓ Secure payment via Stripe',
+            '✓ A fraction of annual attorney fees',
           ].map(item => (
             <div key={item} style={{
               fontSize: 12, color: '#718096',

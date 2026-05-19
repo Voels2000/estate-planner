@@ -177,17 +177,21 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 
 ---
 
-## Public routes (no dashboard sidebar) — Sprint 1
+## Public routes (no dashboard sidebar) — Sprint 1–2
 
 Open while logged out or in a private window unless noted:
 
 | Step | URL | Expected | Pass? |
 |------|-----|----------|-------|
-| P.1 | `/assess` | Assessment loads; no app sidebar | ☐ |
-| P.2 | `/find-advisor` | Directory loads; no app sidebar | ☐ |
-| P.3 | `/find-attorney` | Directory loads; no app sidebar | ☐ |
-| P.4 | `/education` (logged in) | Education shell with own header; no app sidebar | ☐ |
+| P.1 | `/assess` | Assessment loads; shared public top nav; no app sidebar | ☐ |
+| P.2 | `/find-advisor` | Directory loads; public top nav | ☐ |
+| P.3 | `/find-attorney` | Directory loads; public top nav | ☐ |
+| P.4 | `/education` (logged in) | Public top nav + education header; no app sidebar | ☐ |
 | P.5 | `/advisor-directory` | Redirects to `/find-advisor` | ☐ |
+| P.6 | `/` (signed out) | $2M–$30M hero copy; life event quick-start card | ☐ |
+| P.7 | `/pricing` | Professional-fees positioning copy | ☐ |
+| P.8 | `/event/selling-a-business` | Event page: hero, action plan, assessment teaser, no 404 | ☐ |
+| P.9 | `/event/death-of-spouse` | Same pattern; attorney/advisor CTAs if applicable | ☐ |
 
 **Tier-gate spot-check (tier 1 account):** `/social-security`, `/roth`, `/my-family` show `UpgradeBanner` with personalized copy when `state_primary` is set on household (fallback to generic copy otherwise).
 

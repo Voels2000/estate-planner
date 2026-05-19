@@ -430,6 +430,22 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Signed-out landing page (`app/page.tsx`) now includes a **Find a professional** section with cards linking to `/find-advisor` and `/find-attorney`; bottom advisor CTA strip also links to `/find-advisor` (replacing `/advisor-directory`).
 - Marketing copy for education module count is aligned to **20+ learning modules** on hero and education path card.
 
+**Public layout + marketing (Sprint 2 Track A):**
+
+- `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
+- Routes under `(public)/` inherit this nav: education, assess, find-advisor, find-attorney, event pages.
+- Root landing `app/page.tsx` and `app/pricing/page.tsx` are **outside** `(public)` and keep their own inline nav; homepage copy targets **$2M–$30M** segment with life-event quick-start linking to `/event/selling-a-business`.
+- `proxy.ts` `PUBLIC_PATHS` includes `/event` for unauthenticated event page access.
+
+**Life event landing pages (Sprint 2 Track B):**
+
+- Dynamic route: `app/(public)/event/[slug]/page.tsx` — SSG via `generateStaticParams` over `EVENT_SLUGS` from `lib/events/content.ts`.
+- Content schema: `lib/events/types.ts` (`EventContent`, `EventAction`, `EventAssessmentQuestion`, urgency/category enums).
+- Eight published slugs: `selling-a-business`, `death-of-spouse`, `serious-diagnosis`, `receiving-inheritance`, `divorce`, `approaching-retirement`, `large-rsu-vest`, `new-child-grandchild`.
+- Each page: hero + urgency badge, “what changes” bullets, prioritized action plan (linked features → `/signup?redirectTo=…`), assessment teaser (sample questions → full `/assess`), optional advisor/attorney directory CTAs, related events.
+- SEO: per-event `seoTitle`, `seoDescription`, Open Graph via `generateMetadata`. schema.org JSON-LD not yet implemented.
+- Content is **TypeScript** in `lib/events/content.ts`, not MDX (MDX migration optional later).
+
 **Consumer professional connection surfaces (current):**
 
 | Surface | Route | Purpose |

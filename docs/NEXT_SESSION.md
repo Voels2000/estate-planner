@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 2 — Session Start Document
-# Generated: May 2026 (after Sprint 1 completion)
+# Generated: May 2026 (Sprint 2 Track A + B shipped)
 
 ---
 
@@ -8,67 +8,77 @@
 
 > I am building My Wealth Maps, a self-guided estate and financial
 > planning tool for households with $2M–$30M in assets. The engine
-> is strong — we are doing UI and structural work only. Sprint 1
-> is complete (sidebar nav separation, public route group, upgrade
-> gate personalization, projections name labels). Sprint 2 goal:
-> life event landing pages and marketing-site carryover. Today's
-> task: [FILL IN FROM TASK LIST BELOW].
+> is strong — we are doing UI and structural work only. Sprint 2
+> Track A + B are shipped: public top nav on `(public)` routes,
+> homepage/pricing segment copy, and 8 life event pages at
+> `/event/[slug]`. Remaining Sprint 2: event-specific assessment
+> on `/assess`, schema.org SEO, email capture, social proof.
+> Today's task: [FILL IN FROM TASK LIST BELOW].
 
 ---
 
-## Sprint 1 — What shipped
+## Sprint 2 — What shipped (Track A + B)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Sidebar: public links removed from Overview | ✅ Done | Profile + Estate Summary only |
-| Sidebar: My Attorney → footer (tier 2+) | ✅ Done | Attorney access settings removed from nav |
-| Sidebar: "Your plan" badge on active group | ✅ Done | Financial / Retirement / Estate colors |
-| UpgradeBanner `householdContext` on locked pages | ✅ Done | All tier 2/3 gates; SS + domicile added |
-| Public route group `app/(public)/` | ✅ Done | education, assess, find-advisor, find-attorney |
-| Projections: full first names in headers | ✅ Done | `_projections-client.tsx` |
-| Public marketing top nav on `(public)` layout | 🔄 Sprint 2 | Passthrough layout only; pages keep own nav |
-| Homepage / pricing segment copy | 🔄 Sprint 2 | See ROADMAP Sprint 2 carryover |
+| Shared public top nav on `(public)` layout | ✅ Done | `app/(public)/_components/public-nav.tsx` |
+| Homepage hero — $2M–$30M segment | ✅ Done | `app/page.tsx` (root; keeps own nav) |
+| Life events entry on homepage quick-start | ✅ Done | Links to `/event/selling-a-business` |
+| Pricing vs professional fees | ✅ Done | `app/pricing/page.tsx` (inline nav) |
+| `lib/events/types.ts` | ✅ Done | Typed content schema |
+| `lib/events/content.ts` | ✅ Done | All 8 events, actions, 5 questions each |
+| `/event/[slug]` dynamic route | ✅ Done | SSG, SEO metadata, action plan, CTAs |
+| `proxy.ts` `/event` public path | ✅ Done | Unauthenticated access |
 
 ---
 
-## Sprint 2 — Priority order
+## Sprint 2 — Remaining
 
-### A. Public marketing chrome (Sprint 1 carryover)
-
-**Files:**
-```
-app/(public)/layout.tsx
-app/page.tsx
-app/pricing/page.tsx
-```
-
-Add shared top nav to `(public)/layout.tsx` per ROADMAP Sprint 1 spec (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started). Education pages keep their existing auth-gated header inside `app/(public)/education/layout.tsx`.
-
-### B. Life event pages (Sprint 2 core)
-
-See [ROADMAP.md](./ROADMAP.md) Sprint 2 for the 8 priority `/event/[slug]` pages and infrastructure tasks.
+| Task | Status | Notes |
+|------|--------|-------|
+| Event-specific interactive assessment on `/assess` | 🔄 Pending | Event pages teaser → generic `/assess` today |
+| schema.org structured data on event pages | 🔄 Pending | `generateMetadata` has title/description/OG only |
+| Email capture on assessment / event results | 🔄 Pending | |
+| Social proof section on marketing site | 🔄 Pending | |
+| Education double-header cleanup | 🔄 Optional | `(public)` nav + education layout header |
+| Move `/pricing` under `(public)` for shared nav | 🔄 Optional | Pricing keeps inline nav today |
+| MDX for event content | 🔄 Deferred | TypeScript content in `lib/events/content.ts` (not MDX) |
+| Assessment conversion funnel (score visible w/o login) | 🔄 Pending | Product strategy item |
+| Sprint 1 carryover: in-app copy audit, Transfer Strategy tooltips, Invite advisor onboarding | 🔄 Pending | See ROADMAP |
 
 ---
 
-## Key file paths (post–Sprint 1)
+## Key file paths (post–Sprint 2 Track A + B)
 
 | Area | Path |
 |------|------|
-| Dashboard layout + sidebar | `app/(dashboard)/layout.tsx`, `app/(dashboard)/_components/sidebar-nav.tsx` |
-| Upgrade gates | `app/(dashboard)/_components/UpgradeBanner.tsx`, each `page.tsx` under planning routes |
-| Public routes | `app/(public)/layout.tsx`, `app/(public)/education/`, `assess/`, `find-advisor/`, `find-attorney/` |
-| Auth proxy | `proxy.ts` (root) |
-| Projections names | `app/(dashboard)/projections/_projections-client.tsx` |
-| Name helper | `lib/display-person-name.ts` |
+| Public layout + nav | `app/(public)/layout.tsx`, `app/(public)/_components/public-nav.tsx` |
+| Life event pages | `app/(public)/event/[slug]/page.tsx` |
+| Event content | `lib/events/types.ts`, `lib/events/content.ts` |
+| Marketing landing | `app/page.tsx` (not in `(public)` group) |
+| Pricing | `app/pricing/page.tsx` |
+| Public routes | `app/(public)/education/`, `assess/`, `find-advisor/`, `find-attorney/` |
+| Auth proxy | `proxy.ts` — includes `/event` |
+| Dashboard + sidebar | `app/(dashboard)/layout.tsx`, `_components/sidebar-nav.tsx` |
 
 ---
 
-## Sprint 2 success criteria (initial)
+## Event slugs (all live)
 
-- [ ] Shared public top nav on `(public)` layout
-- [ ] First life event page live at `/event/[slug]` with MDX + assessment hook
-- [ ] No regression: public URLs (`/education`, `/assess`, `/find-advisor`, `/find-attorney`) load without dashboard sidebar
-- [ ] App sidebar still planning-only (Overview = Profile + Estate Summary)
+`selling-a-business` · `death-of-spouse` · `serious-diagnosis` · `receiving-inheritance` · `divorce` · `approaching-retirement` · `large-rsu-vest` · `new-child-grandchild`
+
+---
+
+## Sprint 2 success criteria (updated)
+
+- [x] Shared public top nav on `(public)` layout
+- [x] All 8 life event pages at `/event/[slug]` with SEO metadata
+- [x] Homepage segment copy + life events entry point
+- [x] Pricing positioned against professional fees
+- [x] No regression: public URLs load without dashboard sidebar
+- [ ] Event-specific assessment path (not just teaser → `/assess`)
+- [ ] schema.org on event pages
+- [ ] Event pages indexed in Search Console (post-deploy)
 
 ---
 

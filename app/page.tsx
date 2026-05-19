@@ -111,19 +111,31 @@ export default async function HomePage() {
           lineHeight: 1.2,
           marginBottom: 14,
         }}>
-          Plan with{' '}
-          <span style={{ color: 'var(--mwm-gold)' }}>Confidence</span>.<br />
-          Learn Before You Leap.
+          Estate planning built for<br />
+          <span style={{ color: 'var(--mwm-gold)' }}>$2M–$30M households</span>.
         </h1>
         <p style={{
           fontSize: 16,
           color: 'rgba(255,255,255,0.65)',
-          maxWidth: 500,
-          margin: '0 auto 32px',
+          maxWidth: 520,
+          margin: '0 auto 16px',
           lineHeight: 1.7,
         }}>
-          Understand your financial, retirement, and estate planning
-          options in plain English — then build your plan with confidence.
+          The first self-guided planning tool built for the complexity
+          your household actually faces — business interests, multiple
+          properties, estate tax exposure, and a professional network
+          that needs to work together.
+        </p>
+        <p style={{
+          fontSize: 13,
+          color: 'rgba(255,255,255,0.45)',
+          maxWidth: 420,
+          margin: '0 auto 32px',
+          lineHeight: 1.6,
+        }}>
+          Not LegalZoom. Not a family office. The coordinated planning
+          infrastructure this segment has never had — at $50–200/month
+          vs $5K–50K in annual professional fees.
         </p>
         <div style={{
           display: 'flex', gap: 12,
@@ -131,10 +143,10 @@ export default async function HomePage() {
           marginBottom: 24,
         }}>
           {[
-            '20+ learning modules',
-            'Planning readiness assessment',
-            'Advisor-ready tools',
-            '100% private',
+            'Estate tax exposure modeled by state',
+            'Business interests, real estate, trusts',
+            'Advisor + attorney coordination tools',
+            '100% private — your data stays yours',
           ].map((item) => (
             <div key={item} style={{
               display: 'flex', alignItems: 'center', gap: 6,
@@ -190,7 +202,7 @@ export default async function HomePage() {
             fontSize: 17, color: 'var(--mwm-navy)',
             marginBottom: 16,
           }}>
-            Which best describes what you&apos;re looking for right now?
+            Something just changed. Or it&apos;s been too long. Where are you right now?
           </div>
           <div style={{
             display: 'grid',
@@ -199,22 +211,22 @@ export default async function HomePage() {
           }}>
             {[
               {
-                icon: '🗂️',
-                label: 'I want to build or update my plan',
-                sub: 'Ready to work on my financial documents',
-                href: '/signup?intent=plan',
-              },
-              {
-                icon: '📚',
-                label: 'I want to learn before I decide',
-                sub: 'Understand my options before taking action',
-                href: '/education',
+                icon: '⚡',
+                label: 'Something just happened in my life',
+                sub: 'Business sale, inheritance, divorce, health event — see what changes',
+                href: '/event/selling-a-business',
               },
               {
                 icon: '🔍',
-                label: "I'm not sure where I stand",
-                sub: 'Help me assess my current planning situation',
+                label: "I don't know where I stand",
+                sub: 'Take the 8-minute assessment and get your planning score',
                 href: '/assess',
+              },
+              {
+                icon: '🗂️',
+                label: 'I want to build my plan',
+                sub: 'Start organizing your estate, retirement, and financial picture',
+                href: '/signup?intent=plan',
               },
             ].map((opt) => (
               <a
@@ -561,9 +573,9 @@ export default async function HomePage() {
           marginBottom: 24,
         }}>
           {[
-            { num: '47%', label: 'of Americans have no estate plan at all' },
-            { num: '$0', label: 'cost to educate yourself before meeting an advisor' },
-            { num: '8 min', label: 'to complete your planning needs assessment' },
+            { num: '50%+', label: 'of $2M–$30M households have no estate plan at all' },
+            { num: '$5K–$50K', label: 'typical annual spend on estate attorneys — our tool costs a fraction' },
+            { num: '8 min', label: 'to get your personalized planning readiness score' },
           ].map((stat) => (
             <Card key={stat.num} className="p-5 text-center">
               <div style={{
@@ -601,16 +613,18 @@ export default async function HomePage() {
               textTransform: 'uppercase', letterSpacing: '0.6px',
               marginBottom: 4,
             }}>
-              Ready to take action?
+              Your advisor will thank you
             </div>
             <div style={{
               fontFamily: 'var(--font-display)',
               fontSize: 20, color: 'white', marginBottom: 6,
             }}>
-              Connect with a licensed professional
+              Arrive prepared. Not starting from scratch.
             </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-              Estate attorneys, CFP® advisors, and CPAs in your area
+              A client with a completed household profile, current estate
+              tax snapshot, and specific questions turns a 3-hour meeting
+              into 90 minutes.
             </div>
           </div>
           <ButtonLink
