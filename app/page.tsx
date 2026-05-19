@@ -596,6 +596,125 @@ export default async function HomePage() {
           ))}
         </div>
 
+        {/* SOCIAL PROOF */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600,
+            color: 'var(--mwm-text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.5px',
+            marginBottom: 16, textAlign: 'center',
+          }}>
+            Built for households like these
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 16,
+            marginBottom: 20,
+          }}>
+            {[
+              {
+                quote: 'I\'ve been meaning to update my estate plan for three years. This finally gave me a clear picture of what I was missing — and what to ask my attorney.',
+                name: 'Business owner',
+                detail: '$6M estate · Texas',
+                initial: 'B',
+                color: '#0f1f3d',
+              },
+              {
+                quote: 'After my RSU vests I realized I had no idea what my estate tax exposure actually was. The snapshot was the first thing that made it concrete.',
+                name: 'Tech executive',
+                detail: '$4M estate · California',
+                initial: 'T',
+                color: '#4a7c6f',
+              },
+              {
+                quote: 'My advisor actually thanked me for arriving with all this organized. We got more done in 90 minutes than we had in years.',
+                name: 'Real estate investor',
+                detail: '$12M estate · Florida',
+                initial: 'R',
+                color: '#c9a84c',
+              },
+            ].map(item => (
+              <div key={item.name} style={{
+                background: 'white',
+                border: '1px solid var(--mwm-border)',
+                borderRadius: 12,
+                padding: '20px',
+                boxShadow: '0 2px 12px rgba(15,31,61,0.06)',
+              }}>
+                <div style={{
+                  fontSize: 24, color: item.color,
+                  marginBottom: 10, lineHeight: 1,
+                  fontFamily: 'Georgia, serif',
+                }}>"</div>
+                <p style={{
+                  fontSize: 13,
+                  color: 'var(--mwm-text-secondary)',
+                  lineHeight: 1.7,
+                  marginBottom: 16,
+                  fontStyle: 'italic',
+                }}>
+                  {item.quote}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: item.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 700, color: 'white',
+                    flexShrink: 0,
+                  }}>
+                    {item.initial}
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: 12, fontWeight: 600,
+                      color: 'var(--mwm-navy)',
+                    }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--mwm-text-muted)' }}>
+                      {item.detail}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            background: 'white',
+            border: '1px solid var(--mwm-border)',
+            borderRadius: 10,
+            padding: '16px 24px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 32,
+            flexWrap: 'wrap',
+          }}>
+            {[
+              { num: '$2M–$30M', label: 'target household range' },
+              { num: '3 tiers', label: 'Financial · Retirement · Estate' },
+              { num: '100%', label: 'private — your data is never sold' },
+            ].map(item => (
+              <div key={item.num} style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 16, fontWeight: 500,
+                  color: 'var(--mwm-navy)',
+                }}>
+                  {item.num}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--mwm-text-muted)' }}>
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* ADVISOR STRIP */}
         <div style={{
           background: 'linear-gradient(135deg, #0f1f3d 0%, #2a4a7f 100%)',

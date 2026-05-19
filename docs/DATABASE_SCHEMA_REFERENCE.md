@@ -129,8 +129,16 @@ This is a developer reference, not a full SQL DDL dump.
 - **Key columns:** `id`, `user_id`, `taken_at`, `overall_score`, `financial_score`, `retirement_score`, `estate_score`, `financial_pct`, `retirement_pct`, `estate_pct`, `answers`
 - **Purpose:** persist planning-readiness assessment runs so dashboard and assessment history surfaces can show latest and prior scores.
 - **RLS policy:** users can insert/select only rows where `user_id = auth.uid()`.
-- **Application behavior note:** when assessment results are generated while signed out, UI now prompts for account creation/sign-in before persistence; authenticated users continue to write rows to `assessment_results`.
+- **Application behavior note:** general `/assess` shows overall + pillar scores when signed out; full gap report gated behind account. Event assessments at `/event/[slug]/assess` store `_event_slug` and `_type: 'event'` inside `answers` JSONB (pillar score columns duplicated to `overall_score` for event runs).
 - **Restore behavior note:** signed-out runs are cached client-side under `mwm_pending_assessment` and inserted after auth return (within 30-minute freshness window), then cache is cleared.
+
+### `email_captures`
+
+- **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`
+- **Purpose:** marketing leads from public assessment and event assessment email capture flows.
+- **Constraints:** unique `(email, source)` — duplicate inserts ignored by API.
+- **RLS:** service role full access; `anon` / `authenticated` may insert via `POST /api/email-capture` (no public read).
+- **Migration:** `20260520000000_create_email_captures.sql`
 
 ### `connection_requests`
 
@@ -259,6 +267,7 @@ After each schema-affecting session:
 - `20260430000000_create_assessment_results.sql`
 - `20260430100000_seed_federal_tax_brackets_2026.sql`
 - `20260514100000_connection_requests_status_accepted_cancelled.sql` — extends `connection_requests_status_check` to allow `accepted` and `cancelled` (required for claim-listing accept + consumer cancel API)
+- `20260520000000_create_email_captures.sql` — `email_captures` table for public marketing lead capture
 
 ---
 

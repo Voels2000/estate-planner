@@ -59,6 +59,31 @@ Each feature section below uses this shape:
 
 ---
 
+## 0. Public marketing flows
+
+### Planning assessment — `/assess`
+
+| | |
+|--|--|
+| **User goal** | Self-assess planning readiness across financial, retirement, and estate pillars |
+| **Tier / gate** | None (public) |
+| **Client** | `app/(public)/assess/page.tsx` |
+| **Write APIs** | `assessment_results` insert when logged in; `mwm_pending_assessment` in `localStorage` when logged out |
+| **Gating** | Logged-out: overall score + pillar % visible; gap report / next steps require signup or login |
+| **After auth** | Pending payload restored and inserted (30-minute window) |
+
+### Life event assessment — `/event/[slug]/assess`
+
+| | |
+|--|--|
+| **User goal** | Event-specific readiness score (5 questions) |
+| **Tier / gate** | None (public) |
+| **Client** | `app/(public)/event/[slug]/assess/page.tsx` |
+| **Write APIs** | `POST /api/email-capture` when anonymous; `assessment_results` when logged in (`answers._event_slug`) |
+| **Content** | `lib/events/content.ts` per slug |
+
+---
+
 ## 1. Auth and onboarding
 
 ### Login — `/login`

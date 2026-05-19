@@ -97,14 +97,14 @@ function AssessmentTeaser({ event }: { event: EventContent }) {
           </div>
         )}
       </div>
-      <a href="/assess" style={{
+      <a href={`/event/${event.slug}/assess`} style={{
         display: 'inline-flex', alignItems: 'center', gap: 8,
         background: '#c9a84c', color: '#0f1f3d',
         padding: '11px 24px', borderRadius: 8,
         fontSize: 14, fontWeight: 600,
         textDecoration: 'none',
       }}>
-        Take the full assessment →
+        Take the {event.shortTitle.toLowerCase()} assessment →
       </a>
     </div>
   )
@@ -209,12 +209,37 @@ export default async function EventPage({
   const soonActions = event.actions.filter(a => a.priority === 2)
   const laterActions = event.actions.filter(a => a.priority === 3)
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: event.seoTitle,
+    description: event.seoDescription,
+    author: {
+      '@type': 'Organization',
+      name: 'My Wealth Maps',
+      url: 'https://mywealthmaps.com',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'My Wealth Maps',
+      url: 'https://mywealthmaps.com',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://mywealthmaps.com/event/${event.slug}`,
+    },
+  }
+
   return (
     <main style={{
       fontFamily: 'DM Sans, system-ui, sans-serif',
       background: '#fafaf8',
       minHeight: '100vh',
     }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Disclaimer */}
       <div style={{
@@ -292,7 +317,7 @@ export default async function EventPage({
             }}>
               Build my plan →
             </a>
-            <a href="/assess" style={{
+            <a href={`/event/${event.slug}/assess`} style={{
               padding: '11px 22px',
               background: 'rgba(255,255,255,0.1)',
               border: '1.5px solid rgba(255,255,255,0.25)',

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 2 Track A + B shipped)
+# Last updated: May 2026 (Sprint 2 complete)
 
 ---
 
@@ -20,48 +20,6 @@
 ---
 
 ## Current sprint
-
-### Sprint 2 — Life event landing pages (Weeks 6–8)
-**Goal:** 8 event pages live, SEO-ready, with event-specific assessments.
-
-**8 priority events**
-- `[x]` /event/selling-a-business — GRAT/SLAT window, charitable timing, business valuation
-- `[x]` /event/death-of-spouse — portability election, retitling urgency, 30-day checklist
-- `[x]` /event/serious-diagnosis — incapacity planning, trust funding, healthcare directives
-- `[x]` /event/receiving-inheritance — sudden estate complexity, first-time $2M+
-- `[x]` /event/divorce — beneficiary reconstruction, QDRO, trust restructuring
-- `[x]` /event/approaching-retirement — RMD, SS timing, Roth window, estate freeze
-- `[x]` /event/large-rsu-vest — concentrated position, capital gains, gifting timing
-- `[x]` /event/new-child-grandchild — trust for minors, guardianship, 529, beneficiary updates
-
-**Infrastructure**
-- `[x]` Dynamic route: `/event/[slug]` with TypeScript content (`lib/events/content.ts`; MDX deferred)
-- `[x]` Event content schema: slug, category, urgency, linked features, assessment questions (`lib/events/types.ts`)
-- `[~]` SEO: title, description, OG tags per event via `generateMetadata`; schema.org structured data still pending
-- `[~]` Event-specific 5-question assessment: questions in content; interactive path on `/assess` still pending (teaser links to generic assess)
-- `[ ]` Email capture → drip sequence (3 emails, 2-week cadence) per event type
-- `[x]` Professional CTAs: attorney/advisor cards on event pages per `advisorCTA` / `attorneyCTA` flags
-
-**Sprint 1 carryover (marketing / public chrome)**
-- `[x]` Public top nav on `(public)` layout (`app/(public)/_components/public-nav.tsx`)
-- `[x]` Homepage hero rewritten for $2M–$30M segment; life events quick-start entry (`app/page.tsx`)
-- `[x]` Pricing page: position against professional fees (`app/pricing/page.tsx`)
-- `[ ]` Add social proof section on marketing site
-- `[ ]` Assessment: score visible without login, full breakdown gates account creation
-- `[ ]` Account creation: assessment score carries through; plan selector maps to tiers
-- `[ ]` Email capture on assessment result ("email me my full checklist")
-- `[ ]` Audit in-app copy — remove "teaser," "simple," "rule-of-thumb" language
-- `[ ]` Transfer Strategy form depth + guided context (tooltips, IRS rate auto-populate)
-- `[ ]` "Invite your advisor" as primary onboarding step (Step 2 after profile)
-
-**Success criteria for Sprint 2**
-- 8 event pages indexed in Google Search Console
-- Event page → assessment → account creation funnel measured
-- Email capture rate on assessment results
-
----
-
-## Upcoming sprints
 
 ### Sprint 3 — In-app life event triggers (Weeks 9–11)
 **Goal:** Users can log life events in-app; plan recomputes with event-specific conflict generation.
@@ -158,6 +116,27 @@
 
 ## Completed sprints
 
+### Sprint 2 — Life event landing pages + public conversion (Weeks 6–8) ✅
+**Goal:** 8 event pages live, SEO-ready, with event-specific assessments and email capture.
+
+**Shipped**
+- `[x]` 8 life event pages at `/event/[slug]` (SSG, action plans, professional CTAs)
+- `[x]` schema.org Article JSON-LD on event pages
+- `[x]` Event-specific assessments at `/event/[slug]/assess` (5 questions, scoring, gap detection)
+- `[x]` `app/api/email-capture` + `email_captures` table (migration `20260520000000`)
+- `[x]` Homepage social proof + trust bar (`app/page.tsx`)
+- `[x]` General `/assess`: overall + pillar scores visible when logged out; gap report gated behind account
+- `[x]` Pricing moved to `app/(public)/pricing/page.tsx` (shared public nav)
+- `[x]` Sprint 2 Track A: public nav, segment homepage/pricing copy
+
+**Deferred to Sprint 3+**
+- `[ ]` Email drip sequence (3 emails per event type) — needs provider decision
+- `[ ]` Event pages indexed in Google Search Console — post-deploy verification
+- `[ ]` In-app copy audit; Transfer Strategy guided depth; Invite-your-advisor onboarding step
+- `[ ]` Account creation: plan selector maps assessment tier gaps to subscription tiers
+
+---
+
 ### Sprint 1 — App/public nav separation + upgrade gates (Weeks 3–5) ✅
 **Goal:** Planning app sidebar contains planning tools only; public routes outside dashboard layout; tier gates personalized.
 
@@ -173,13 +152,7 @@
 - `[x]` Public route group `app/(public)/` — education, assess, find-advisor, find-attorney (passthrough layout, no dashboard sidebar)
 - `[x]` Projections income table: full first names via `displayPersonFirstName` in `_projections-client.tsx`
 
-**Deferred to Sprint 2 (marketing / public chrome)**
-- `[x]` Shared public top nav — shipped Sprint 2 Track A
-- `[x]` Homepage hero and segment copy — shipped Sprint 2 Track A
-- `[x]` Pricing positioning vs professional fees — shipped Sprint 2 Track A
-- `[-]` Social proof section
-- `[-]` Assessment conversion funnel enhancements
-- `[-]` In-app copy audit; Transfer Strategy guided depth; Invite-your-advisor onboarding step
+**Deferred to Sprint 2 (marketing / public chrome)** — completed in Sprint 2 except items listed under Sprint 2 deferred above
 
 **Success criteria met (engineering slice)**
 - Zero public-site links in app sidebar ✅

@@ -8,11 +8,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint 2 Track A + B (May 2026) — Marketing + life event pages
+## Sprint 2 complete (May 2026) — Marketing, life events, email capture
 
-- No database schema or migration changes.
-- **Track A:** `app/(public)/_components/public-nav.tsx` + `(public)/layout.tsx` shared nav; `app/page.tsx` and `app/pricing/page.tsx` segment copy; `proxy.ts` adds `/event` to `PUBLIC_PATHS`.
-- **Track B:** `lib/events/types.ts`, `lib/events/content.ts` (8 events); `app/(public)/event/[slug]/page.tsx` with SSG and `generateMetadata`.
+- **Migration:** `20260520000000_create_email_captures.sql` — `email_captures` table (`email`, `source`, `score`, `captured_at`); unique `(email, source)`; RLS (service role full access + anon/authenticated insert for API route).
+- **API:** `POST /api/email-capture` persists leads from event assessment email capture UI.
+- **Track A:** `app/(public)/_components/public-nav.tsx` + `(public)/layout.tsx` shared nav; `app/page.tsx` segment copy + social proof; `app/(public)/pricing/page.tsx` (moved from `app/pricing/`); `proxy.ts` adds `/event` to `PUBLIC_PATHS`.
+- **Track B:** `lib/events/types.ts`, `lib/events/content.ts` (8 events); `app/(public)/event/[slug]/page.tsx` (SSG, `generateMetadata`, schema.org JSON-LD); `app/(public)/event/[slug]/assess/page.tsx` (event-specific 5-question assessment).
+- **Assess gating:** `app/(public)/assess/page.tsx` — logged-out users see overall + pillar scores; gap report gated behind account creation.
 
 ## Sprint 1 (May 2026) — UI / route group only
 

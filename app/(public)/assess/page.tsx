@@ -775,6 +775,9 @@ export default function AssessPage() {
   const rl = getLevel(rp)
   const el = getLevel(ep)
 
+  // Logged-out users see score + pillar breakdown; gap report is gated
+  const isLoggedOut = showSaveCTA
+
   return (
     <main style={{
       fontFamily: 'var(--font-body, DM Sans, system-ui)',
@@ -810,7 +813,17 @@ export default function AssessPage() {
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 24px 80px' }}>
 
-        {/* Overall score */}
+        {showRestoredBanner && (
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #bbf7d0',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+            fontSize: 13, color: '#16a34a',
+          }}>
+            ✓ Your assessment results have been saved to your account.
+          </div>
+        )}
+
+        {/* Overall score — visible to everyone */}
         <div style={{
           background: 'linear-gradient(135deg, #0f1f3d 0%, #2a4a7f 100%)',
           borderRadius: 12, padding: '36px 32px',
@@ -855,7 +868,6 @@ export default function AssessPage() {
               marginBottom: 12,
             }}>
               Assessed across financial, retirement, and estate planning.
-              This score reflects your current awareness and preparation.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -866,16 +878,16 @@ export default function AssessPage() {
           </div>
         </div>
 
-        {/* Pillar scores */}
+        {/* Pillar scores — visible to everyone */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 16, marginBottom: 24,
         }}>
           {[
-            { label: '💰 Financial Planning', score: fp, level: fl, barColor: '#0f1f3d', note: 'Cash flow, insurance, debt, investment accounts' },
-            { label: '🏖️ Retirement Planning', score: rp, level: rl, barColor: '#c9a84c', note: 'Social Security, Medicare, LTC, RMDs' },
-            { label: '📜 Estate Planning', score: ep, level: el, barColor: '#4a7c6f', note: 'Will, POA, beneficiary designations, probate' },
+            { label: '💰 Financial Planning', score: fp, level: fl, barColor: '#0f1f3d' },
+            { label: '🏖️ Retirement Planning', score: rp, level: rl, barColor: '#c9a84c' },
+            { label: '📜 Estate Planning', score: ep, level: el, barColor: '#4a7c6f' },
           ].map(pillar => (
             <div key={pillar.label} style={{
               background: 'white', border: '1px solid #e2e8f0',
@@ -903,7 +915,7 @@ export default function AssessPage() {
               }}>{pillar.level.label}</div>
               <div style={{
                 background: '#e2e8f0', borderRadius: 40,
-                height: 6, overflow: 'hidden', marginBottom: 8,
+                height: 6, overflow: 'hidden',
               }}>
                 <div style={{
                   height: '100%', borderRadius: 40,
@@ -912,106 +924,121 @@ export default function AssessPage() {
                   transition: 'width 1s ease',
                 }} />
               </div>
-              <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.4 }}>
-                {pillar.note}
-              </div>
             </div>
           ))}
         </div>
 
-        {/* Next steps */}
-        <div style={{
-          background: 'white', border: '1px solid #e2e8f0',
-          borderRadius: 12, padding: '24px 28px',
-          marginBottom: 24,
-          boxShadow: '0 4px 20px rgba(15,31,61,0.08)',
-        }}>
-          <h3 style={{
-            fontFamily: 'Playfair Display, Georgia, serif',
-            fontSize: 20, color: '#0f1f3d', marginBottom: 18,
-          }}>Your Recommended Next Steps</h3>
-          {[
-            { num: 1, title: 'Review your gaps with a professional', desc: 'Share this report with your estate attorney, financial advisor, and CPA. Your gaps become the agenda for your next meeting.', cta: 'Find an Advisor →', href: '/advisor-directory' },
-            { num: 2, title: 'Complete relevant education modules', desc: 'The My Wealth Maps education library has modules covering every gap identified in your assessment.', cta: 'Go to Education →', href: '/education' },
-            { num: 3, title: 'Build your plan', desc: 'Use what you\'ve learned to start building your financial, retirement, and estate plan.', cta: 'Go to My Plan →', href: '/dashboard' },
-          ].map(step => (
-            <div key={step.num} style={{
-              display: 'flex', gap: 14, padding: '14px 0',
-              borderBottom: '1px solid #e2e8f0', alignItems: 'flex-start',
-            }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: '50%',
-                background: '#0f1f3d', color: 'white',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 600, flexShrink: 0,
-                fontFamily: 'Playfair Display, Georgia, serif',
-              }}>{step.num}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontSize: 14, fontWeight: 500, color: '#0f1f3d', marginBottom: 4,
-                }}>{step.title}</div>
-                <div style={{
-                  fontSize: 12, color: '#718096', lineHeight: 1.5, marginBottom: 8,
-                }}>{step.desc}</div>
-                <Link href={step.href} style={{
-                  fontSize: 12, fontWeight: 500, color: '#c9a84c',
-                  textDecoration: 'none',
-                }}>{step.cta}</Link>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {showRestoredBanner && (
-          <div style={{
-            background: '#f0fdf4', border: '1px solid #bbf7d0',
-            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
-            fontSize: 13, color: '#16a34a', display: 'flex',
-            alignItems: 'center', gap: 8,
-          }}>
-            ✓ Your assessment results have been saved to your account.
-          </div>
-        )}
-
-        {showSaveCTA && (
+        {/* Gate — logged-out users see CTA instead of gap report */}
+        {isLoggedOut ? (
           <div style={{
             background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',
-            borderRadius: 12, padding: '24px 28px', marginBottom: 24,
+            borderRadius: 12, padding: '32px',
+            marginBottom: 24,
             border: '1px solid rgba(201,168,76,0.3)',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
-              color: '#c9a84c', textTransform: 'uppercase', marginBottom: 8 }}>
-              Save Your Results
+            <div style={{
+              fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
+              color: '#c9a84c', textTransform: 'uppercase', marginBottom: 10,
+            }}>
+              Your full gap report is ready
             </div>
-            <div style={{ fontFamily: 'Playfair Display, Georgia, serif',
-              fontSize: 18, fontWeight: 500, color: 'white', marginBottom: 8 }}>
-              Create a free account to save your score
-            </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)',
-              lineHeight: 1.6, marginBottom: 20 }}>
-              Your results won't be saved without an account. Sign up free to track
-              your planning progress, access education modules, and connect with
-              advisors and attorneys.
+            <h3 style={{
+              fontFamily: 'Playfair Display, Georgia, serif',
+              fontSize: 22, color: 'white', marginBottom: 10,
+            }}>
+              See exactly which questions you missed
+            </h3>
+            <p style={{
+              fontSize: 14, color: 'rgba(255,255,255,0.65)',
+              lineHeight: 1.65, marginBottom: 8, maxWidth: 480,
+            }}>
+              Your gap report identifies the specific planning items that lowered
+              your score — with prioritized next steps and professional referrals.
+              Create a free account to unlock it.
             </p>
+            <ul style={{
+              listStyle: 'none', padding: 0,
+              marginBottom: 24,
+            }}>
+              {[
+                'Question-by-question gap breakdown',
+                'Prioritized action checklist',
+                'Advisor and attorney referrals for your gaps',
+                'Score saved to your account for tracking',
+              ].map(item => (
+                <li key={item} style={{
+                  fontSize: 13, color: 'rgba(255,255,255,0.7)',
+                  padding: '4px 0',
+                  display: 'flex', gap: 8, alignItems: 'center',
+                }}>
+                  <span style={{ color: '#c9a84c', fontWeight: 700 }}>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a href={`/signup?redirectTo=/assess&restored=1`}
-                style={{ padding: '10px 20px', borderRadius: 8,
-                  background: '#c9a84c', color: '#0f1f3d',
-                  fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+              <a href={`/signup?redirectTo=/assess&restored=1`} style={{
+                padding: '11px 22px', borderRadius: 8,
+                background: '#c9a84c', color: '#0f1f3d',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              }}>
                 Create free account →
               </a>
-              <a href={`/login?redirectTo=/assess&restored=1`}
-                style={{ padding: '10px 20px', borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+              <a href={`/login?redirectTo=/assess&restored=1`} style={{
+                padding: '11px 22px', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: 14, fontWeight: 500, textDecoration: 'none',
+              }}>
                 Sign in
               </a>
             </div>
           </div>
+        ) : (
+          <div style={{
+            background: 'white', border: '1px solid #e2e8f0',
+            borderRadius: 12, padding: '24px 28px',
+            marginBottom: 24,
+            boxShadow: '0 4px 20px rgba(15,31,61,0.08)',
+          }}>
+            <h3 style={{
+              fontFamily: 'Playfair Display, Georgia, serif',
+              fontSize: 20, color: '#0f1f3d', marginBottom: 18,
+            }}>Your Recommended Next Steps</h3>
+            {[
+              { num: 1, title: 'Review your gaps with a professional', desc: 'Share this report with your estate attorney, financial advisor, and CPA. Your gaps become the agenda for your next meeting.', cta: 'Find an Advisor →', href: '/find-advisor' },
+              { num: 2, title: 'Complete relevant education modules', desc: 'The My Wealth Maps education library has modules covering every gap identified in your assessment.', cta: 'Go to Education →', href: '/education' },
+              { num: 3, title: 'Build your plan', desc: 'Use what you\'ve learned to start building your financial, retirement, and estate plan.', cta: 'Go to My Plan →', href: '/dashboard' },
+            ].map(step => (
+              <div key={step.num} style={{
+                display: 'flex', gap: 14, padding: '14px 0',
+                borderBottom: '1px solid #e2e8f0', alignItems: 'flex-start',
+              }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%',
+                  background: '#0f1f3d', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 600, flexShrink: 0,
+                  fontFamily: 'Playfair Display, Georgia, serif',
+                }}>{step.num}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 500, color: '#0f1f3d', marginBottom: 4,
+                  }}>{step.title}</div>
+                  <div style={{
+                    fontSize: 12, color: '#718096', lineHeight: 1.5, marginBottom: 8,
+                  }}>{step.desc}</div>
+                  <a href={step.href} style={{
+                    fontSize: 12, fontWeight: 500, color: '#c9a84c',
+                    textDecoration: 'none',
+                  }}>{step.cta}</a>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
-        {/* Actions */}
+        {/* Actions row — visible to everyone */}
         <div style={{
           background: 'linear-gradient(135deg, #0f1f3d 0%, #2a4a7f 100%)',
           borderRadius: 12, padding: '28px 32px',
@@ -1039,22 +1066,13 @@ export default function AssessPage() {
                 cursor: 'pointer',
               }}
             >🖨️ Print Report</button>
-            <Link href="/dashboard" style={{
+            <a href="/dashboard" style={{
               background: 'white', color: '#0f1f3d',
               border: 'none', borderRadius: 8,
               padding: '10px 20px', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', textDecoration: 'none',
               display: 'inline-flex', alignItems: 'center',
-            }}>📊 My Dashboard</Link>
-            <Link href="/" style={{
-              background: 'rgba(255,255,255,0.1)',
-              color: 'white',
-              border: '1.5px solid rgba(255,255,255,0.25)',
-              borderRadius: 8, padding: '10px 20px',
-              fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              textDecoration: 'none',
-              display: 'inline-flex', alignItems: 'center',
-            }}>🏠 Home</Link>
+            }}>📊 My Dashboard</a>
             <button
               onClick={retake}
               style={{

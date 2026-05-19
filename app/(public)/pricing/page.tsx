@@ -56,64 +56,6 @@ export default async function PricingPage() {
       fontFamily: 'DM Sans, system-ui, sans-serif',
     }}>
 
-      {/* Nav */}
-      <nav style={{
-        background: '#0f1f3d',
-        padding: '14px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 2px 20px rgba(0,0,0,0.2)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36,
-            background: '#c9a84c',
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Playfair Display, Georgia, serif',
-            fontWeight: 600, fontSize: 16,
-            color: '#0f1f3d',
-          }}>M</div>
-          <div>
-            <div style={{
-              fontFamily: 'Playfair Display, Georgia, serif',
-              fontSize: 17, fontWeight: 500,
-              color: 'white', lineHeight: 1.2,
-            }}>My Wealth Maps</div>
-            <div style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.45)',
-              letterSpacing: '0.5px', textTransform: 'uppercase',
-            }}>Pricing</div>
-          </div>
-        </div>
-        <a href="/" style={{
-          color: 'rgba(255,255,255,0.6)', fontSize: 12,
-          textDecoration: 'none',
-          border: '1.5px solid rgba(255,255,255,0.2)',
-          padding: '6px 14px', borderRadius: 6,
-        }}>← Back to Home</a>
-      </nav>
-
-      {/* Disclaimer */}
-      <div style={{
-        background: '#1a3460',
-        borderLeft: '4px solid #c9a84c',
-        padding: '11px 32px',
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.65)',
-        lineHeight: 1.5,
-      }}>
-        <span style={{ color: '#c9a84c', fontWeight: 500 }}>
-          Educational platform only.
-        </span>
-        {' '}Planning tools are organizational aids only and do not
-        constitute financial, legal, or tax advice.
-      </div>
-
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '60px 24px 80px' }}>
 
         {/* Header */}

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 17, 2026 (Session 127+ — docs consolidation, consumer/advisor handoff)
+# Last updated: May 2026 (Sprint 2 complete — public conversion, life events, email capture)
 
 ---
 
@@ -412,12 +412,11 @@ If either is missing in production, recompute is skipped and a **one-time** `con
   - Signed-in users with profile: redirect to `/dashboard`
   - Signed-in users without profile: redirect to `/profile`
 - Root middleware guard behavior (`proxy.ts`) now explicitly allows unauthenticated `/` requests to pass through after login redirect checks, preventing profile lookups for signed-out landing-page traffic.
-- New public assessment route is available at `/assess`:
-  - File: `app/(public)/assess/page.tsx`
-  - Client-rendered 20-question planning readiness flow across financial, retirement, and estate pillars
-  - Includes intro, guided question progression with progress bar, and results with pillar-level gap scoring
-  - Results save behavior now shows a soft capture CTA banner for signed-out users (instead of silent non-persistence) with `signup/login` redirects back to `/assess`
-  - Signed-out assessment results are now cached in browser local storage (`mwm_pending_assessment`) and restored/auto-persisted after auth return, with a success banner after restore
+- Public assessment route at `/assess` (`app/(public)/assess/page.tsx`):
+  - 20-question planning readiness flow across financial, retirement, and estate pillars
+  - **Logged-out results:** overall score + pillar breakdown visible; full gap report / next steps gated behind account creation (`showSaveCTA` → signup/login CTA)
+  - **Logged-in results:** full recommended next steps; persists to `assessment_results`
+  - Signed-out runs cached in `mwm_pending_assessment` and restored after auth (30-minute window)
 - Public middleware path exceptions now include `/advisor-directory` so directory discovery remains available without forced auth redirect.
 - Public attorney discovery route now lives at `/find-attorney`:
   - Files: `app/(public)/find-attorney/page.tsx`, `app/(public)/find-attorney/_attorney-directory-client.tsx`
@@ -433,18 +432,25 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 **Public layout + marketing (Sprint 2 Track A):**
 
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
-- Routes under `(public)/` inherit this nav: education, assess, find-advisor, find-attorney, event pages.
-- Root landing `app/page.tsx` and `app/pricing/page.tsx` are **outside** `(public)` and keep their own inline nav; homepage copy targets **$2M–$30M** segment with life-event quick-start linking to `/event/selling-a-business`.
-- `proxy.ts` `PUBLIC_PATHS` includes `/event` for unauthenticated event page access.
+- Routes under `(public)/` inherit this nav: education, assess, find-advisor, find-attorney, **pricing**, event pages.
+- Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start. Homepage copy targets **$2M–$30M** segment.
+- `proxy.ts` `PUBLIC_PATHS` includes `/event` and `/pricing` for unauthenticated access.
 
-**Life event landing pages (Sprint 2 Track B):**
+**Life event landing pages (Sprint 2):**
 
 - Dynamic route: `app/(public)/event/[slug]/page.tsx` — SSG via `generateStaticParams` over `EVENT_SLUGS` from `lib/events/content.ts`.
+- Event-specific assessment: `app/(public)/event/[slug]/assess/page.tsx` — 5 questions from `event.assessmentQuestions`, gap detection, email capture for anonymous users.
 - Content schema: `lib/events/types.ts` (`EventContent`, `EventAction`, `EventAssessmentQuestion`, urgency/category enums).
 - Eight published slugs: `selling-a-business`, `death-of-spouse`, `serious-diagnosis`, `receiving-inheritance`, `divorce`, `approaching-retirement`, `large-rsu-vest`, `new-child-grandchild`.
-- Each page: hero + urgency badge, “what changes” bullets, prioritized action plan (linked features → `/signup?redirectTo=…`), assessment teaser (sample questions → full `/assess`), optional advisor/attorney directory CTAs, related events.
-- SEO: per-event `seoTitle`, `seoDescription`, Open Graph via `generateMetadata`. schema.org JSON-LD not yet implemented.
+- Each page: hero + urgency badge, “what changes” bullets, prioritized action plan, assessment teaser → `/event/[slug]/assess`, optional advisor/attorney CTAs, related events.
+- SEO: `generateMetadata` + schema.org Article JSON-LD (`headline`, `description`, author/publisher, `mainEntityOfPage`).
 - Content is **TypeScript** in `lib/events/content.ts`, not MDX (MDX migration optional later).
+
+**Email capture (Sprint 2):**
+
+- API: `POST /api/email-capture` → `email_captures` table (`email`, `source`, `score`, unique on `(email, source)`).
+- Used by event assessment results screen (`source=event-assess-{slug}`). Drip sequence not yet implemented.
+- Event assessment saves for logged-in users write to `assessment_results` with `_event_slug` / `_type: 'event'` in `answers` JSONB (no dedicated `event_slug` column).
 
 **Consumer professional connection surfaces (current):**
 
