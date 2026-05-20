@@ -8,6 +8,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 3 — life_events (May 2026)
+
+- **Migration:** `20260521000000_create_life_events.sql` — `life_events` table; RLS users own rows; indexes on `user_id` and unacknowledged.
+- **API:** `app/api/consumer/life-events` — POST/GET/PATCH; valid `event_type` from `EVENT_SLUGS`.
+- **Cron:** `app/api/cron/age-triggers` — calendar_trigger inserts; registered in `vercel.json`.
+
 ## Ops — notification cron consolidation (May 2026)
 
 - No database schema changes.

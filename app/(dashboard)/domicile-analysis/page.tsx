@@ -25,13 +25,20 @@ export default async function DomicileAnalysisPage() {
       .select('state_primary')
       .eq('owner_id', user.id)
       .single()
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      3,
+      'Compare state tax climates and model the impact of changing your primary domicile.',
+    )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Domicile Analysis</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Domicile Analysis"
-          valueProposition="Compare state tax climates and model the impact of changing your primary domicile."
+          valueProposition={valueProposition}
           householdContext={{
             grossEstate: null,
             statePrimary: householdRow?.state_primary ?? null,

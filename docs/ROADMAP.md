@@ -25,14 +25,15 @@
 **Goal:** Users can log life events in-app; plan recomputes with event-specific conflict generation.
 
 **Event logging**
-- `[ ]` life_events table: user_id, event_type, event_date, acknowledged, linked_features, source
-- `[ ]` Dashboard banner: "Did something change? Log a life event" with event picker
-- `[ ]` Event → recompute pipeline: logged event triggers estate health recompute + new conflicts
-- `[ ]` Event-specific dashboard alerts: "You indicated a business sale. 5 things need updating."
+- `[x]` life_events table + RLS (`20260521000000_create_life_events.sql` — run in Supabase)
+- `[x]` `POST/GET/PATCH /api/consumer/life-events` + `afterHouseholdWriteForOwner` on POST
+- `[x]` Dashboard `LifeEventBanner` — prompt, picker, calendar trigger variant, confirmation
+- `[x]` Event → recompute pipeline on user-logged events (via `afterHouseholdWriteForOwner`)
+- `[ ]` Event-specific dashboard alerts beyond banner (e.g. inline conflict copy tied to event)
 
 **Calendar triggers**
-- `[x]` Daily notification cron — Vercel `vercel.json` → `/api/cron/notifications`; GitHub workflow manual-only (duplicate preview workflow removed May 2026)
-- `[ ]` Age-based trigger service: cron checks DOB from profiles against milestone ages (`/api/cron/age-triggers` — not built)
+- `[x]` Daily notification cron — Vercel `vercel.json` → `/api/cron/notifications`
+- `[x]` Age-based trigger cron — `/api/cron/age-triggers` at 15:00 UTC; ages 62/65/70/73
 - `[ ]` SS trigger at age 62: "Social Security claiming decisions start now — see your options"
 - `[ ]` Medicare trigger at age 65
 - `[ ]` Roth conversion window trigger at age 70½
@@ -42,7 +43,7 @@
 - `[ ]` Business value threshold: when business input crosses $5M and $10M, surface estate tax change alert
 - `[ ]` Multi-state property: when RE in 2+ states entered, flag probate risk
 - `[ ]` Estate growth velocity: when gross estate grows 20%+ year-over-year, surface alert
-- `[ ]` Event-personalized upgrade gates: logged event injects context into locked-page copy
+- `[x]` Event-personalized upgrade gates — `lib/events/upgradeContext.ts` on 8 locked pages
 
 **Success criteria for Sprint 3**
 - Event banner engagement rate

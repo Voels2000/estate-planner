@@ -24,13 +24,20 @@ export default async function TitlingPage() {
       .select('state_primary')
       .eq('owner_id', user.id)
       .single()
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      3,
+      'Review and optimize how assets are titled to avoid probate and tax exposure.',
+    )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Titling & Beneficiaries</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Titling & Beneficiaries"
-          valueProposition="Review and optimize how assets are titled to avoid probate and tax exposure."
+          valueProposition={valueProposition}
           householdContext={{
             grossEstate: null,
             statePrimary: householdRow?.state_primary ?? null,

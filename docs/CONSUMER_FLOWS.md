@@ -164,7 +164,8 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/*`, `components/dashboard/EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Greeting + setup progress (`DashboardIntroSection`); **conflict severity chips** (when `conflictReport` has critical/warnings); dismissible **conflict alert banner** (`_dashboard-client.tsx`, links to `#estate-conflicts`); `AssessmentHistoryWidget`; Financial Summary / Net Worth; **Your Estate Summary** callout (`EstateCalloutCard`); advisor `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` when advisor shared MC |
+| **Key UI sections** | Greeting + setup progress (`DashboardIntroSection`); **`LifeEventBanner`** (log event → `POST /api/consumer/life-events`, calendar triggers from cron); **conflict severity chips**; dismissible conflict alert banner; `AssessmentHistoryWidget`; Financial Summary / Net Worth; `EstateCalloutCard`; `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` |
+| **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
 ### Financial modules (representative)

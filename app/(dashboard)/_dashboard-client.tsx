@@ -13,6 +13,7 @@ import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
+import { LifeEventBanner, type LifeEvent } from './_components/LifeEventBanner'
 import type { EstateComposition } from '@/lib/estate/types'
 import { firstName, fmt } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard/FinancialSummarySection'
@@ -121,6 +122,7 @@ type Props = {
   acceptedMCScenario?: ConsumerMCScenario | null
   latestSharedMCScenario?: ConsumerMCScenario | null
   estateCallout?: EstateCalloutCardProps | null
+  pendingLifeEvents?: LifeEvent[]
 }
 
 // ---------------------------------------------------------------------------
@@ -162,6 +164,7 @@ export function DashboardClient(props: Props) {
     acceptedMCScenario,
     latestSharedMCScenario,
     estateCallout,
+    pendingLifeEvents = [],
   } = props
 
   void consumerTier
@@ -189,6 +192,8 @@ export function DashboardClient(props: Props) {
         completionScore={completionScore}
         conflictReport={conflictReport}
       />
+
+      <LifeEventBanner pendingEvents={pendingLifeEvents} />
 
       {conflictReport &&
         (conflictReport.critical > 0 || conflictReport.warnings > 0) &&

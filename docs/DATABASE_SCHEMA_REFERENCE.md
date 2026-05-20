@@ -132,6 +132,15 @@ This is a developer reference, not a full SQL DDL dump.
 - **Application behavior note:** general `/assess` shows overall + pillar scores when signed out; full gap report gated behind account. Event assessments at `/event/[slug]/assess` store `_event_slug` and `_type: 'event'` inside `answers` JSONB (pillar score columns duplicated to `overall_score` for event runs).
 - **Restore behavior note:** signed-out runs are cached client-side under `mwm_pending_assessment` and inserted after auth return (within 30-minute freshness window), then cache is cleared.
 
+### `life_events`
+
+- **Key columns:** `id`, `user_id`, `event_type`, `event_date`, `acknowledged`, `source`, `created_at`
+- **Purpose:** user-logged life changes and age-based calendar triggers for dashboard banner and upgrade copy personalization.
+- **`source` values:** `user` (dashboard picker), `calendar_trigger` (daily cron at ages 62/65/70/73).
+- **`event_type`:** one of eight slugs from `lib/events/content.ts` (`EVENT_SLUGS`).
+- **RLS:** users can read/write only rows where `user_id = auth.uid()`.
+- **Migration:** `20260521000000_create_life_events.sql`
+
 ### `email_captures`
 
 - **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`
@@ -268,6 +277,7 @@ After each schema-affecting session:
 - `20260430100000_seed_federal_tax_brackets_2026.sql`
 - `20260514100000_connection_requests_status_accepted_cancelled.sql` — extends `connection_requests_status_check` to allow `accepted` and `cancelled` (required for claim-listing accept + consumer cancel API)
 - `20260520000000_create_email_captures.sql` — `email_captures` table for public marketing lead capture
+- `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
 
 ---
 

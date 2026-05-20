@@ -21,13 +21,20 @@ export default async function SocialSecurityPage() {
       .select('state_primary')
       .eq('owner_id', user.id)
       .single()
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      2,
+      'Model optimal claiming ages and spousal coordination strategy.',
+    )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Social Security</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Social Security"
-          valueProposition="Model optimal claiming ages and spousal coordination strategy."
+          valueProposition={valueProposition}
           householdContext={{
             grossEstate: null,
             statePrimary: householdRow?.state_primary ?? null,

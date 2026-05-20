@@ -43,6 +43,7 @@ import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { DashboardClient } from '../_dashboard-client'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
+import type { LifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -95,17 +96,31 @@ export default async function DashboardPage() {
   // ── Parallel data fetch ──────────────────────────────────────────────────
   // Income query now includes ALL sources (including social_security) so the
   // current-year net income calculation is complete.
-  const {
-    profile,
-    assets,
-    liabilities,
-    income,
-    expenses,
-    realEstate,
-    businesses,
-    businessInterests,
-    insurance,
-  } = await loadDashboardCoreInputs(supabase, user!.id)
+  const [
+    {
+      profile,
+      assets,
+      liabilities,
+      income,
+      expenses,
+      realEstate,
+      businesses,
+      businessInterests,
+      insurance,
+    },
+    { data: lifeEventsData },
+  ] = await Promise.all([
+    loadDashboardCoreInputs(supabase, user!.id),
+    supabase
+      .from('life_events')
+      .select('id, event_type, source, acknowledged, created_at')
+      .eq('user_id', user!.id)
+      .eq('acknowledged', false)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
+
+  const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
   const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -411,6 +426,7 @@ export default async function DashboardPage() {
       acceptedMCScenario={acceptedMCScenario}
       latestSharedMCScenario={latestSharedMCScenario}
       estateCallout={estateCallout}
+      pendingLifeEvents={pendingLifeEvents}
     />
   )
 }

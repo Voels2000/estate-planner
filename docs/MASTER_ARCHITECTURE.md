@@ -655,7 +655,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 | Job | Route | Schedule | Trigger |
 |-----|-------|----------|---------|
-| Daily notifications | `GET /api/cron/notifications` | `0 14 * * *` (14:00 UTC daily) | **Vercel cron** (`vercel.json`) — authoritative |
+| Daily notifications | `GET /api/cron/notifications` | `0 14 * * *` (14:00 UTC daily) | **Vercel cron** (`vercel.json`) |
+| Age-based life events | `GET /api/cron/age-triggers` | `0 15 * * *` (15:00 UTC daily) | **Vercel cron** (`vercel.json`) |
 
 **Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
 
@@ -665,7 +666,14 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 
-**Planned (Sprint 3):** `app/api/cron/age-triggers/route.ts` — age-based `life_events` inserts; add to `vercel.json` when implemented.
+**Age triggers (Sprint 3):** `GET /api/cron/age-triggers` — daily 15:00 UTC (`vercel.json`); inserts `life_events` with `source='calendar_trigger'` when `person1_birth_year` / `person2_birth_year` hits ages 62, 65, 70, or 73 in the current calendar year (deduped per user/event/year). Maps to `approaching-retirement` event slug.
+
+**In-app life events (Sprint 3):**
+
+- Table: `life_events` (`user_id`, `event_type`, `event_date`, `acknowledged`, `source` = `user` | `calendar_trigger`).
+- API: `app/api/consumer/life-events/route.ts` — POST (log event + recompute), GET, PATCH (acknowledge).
+- UI: `LifeEventBanner` on dashboard (`pendingLifeEvents` from server); links to `/event/[slug]`.
+- Upgrade personalization: `lib/events/upgradeContext.ts` → `getEventUpgradeValueProp()` on tier-gated pages.
 
 ---
 

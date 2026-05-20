@@ -24,13 +24,20 @@ export default async function RothPage() {
       .select("state_primary")
       .eq("owner_id", user.id)
       .single();
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      2,
+      'Model Roth conversion scenarios and project long-term tax savings.',
+    )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Roth Conversion</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Roth Conversion"
-          valueProposition="Model Roth conversion scenarios and project long-term tax savings."
+          valueProposition={valueProposition}
           householdContext={{
             grossEstate: null,
             statePrimary: householdRow?.state_primary ?? null,
