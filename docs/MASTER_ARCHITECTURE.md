@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 2 complete — public conversion, life events, email capture)
+# Last updated: May 2026 (Sprint 2 complete; notification cron consolidated to Vercel)
 
 ---
 
@@ -648,6 +648,24 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Decide whether stored `projection_scenarios` need backfill after bracket/RPC changes
 
 Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core).
+
+---
+
+## Scheduled jobs (cron)
+
+| Job | Route | Schedule | Trigger |
+|-----|-------|----------|---------|
+| Daily notifications | `GET /api/cron/notifications` | `0 14 * * *` (14:00 UTC daily) | **Vercel cron** (`vercel.json`) — authoritative |
+
+**Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
+
+**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d).
+
+**GitHub Actions:** `.github/workflows/cron-notifications.yml` — **manual only** (`workflow_dispatch`). Schedule removed to avoid duplicating or racing Vercel cron. Production URL: `https://estate-planner-gules.vercel.app/api/cron/notifications`. Requires `CRON_SECRET` in GitHub repo secrets.
+
+**Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
+
+**Planned (Sprint 3):** `app/api/cron/age-triggers/route.ts` — age-based `life_events` inserts; add to `vercel.json` when implemented.
 
 ---
 

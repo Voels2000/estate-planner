@@ -8,6 +8,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Ops — notification cron consolidation (May 2026)
+
+- No database schema changes.
+- **Vercel cron** (`vercel.json`) is the sole scheduled trigger for `GET /api/cron/notifications` (`0 14 * * *`).
+- Deleted `.github/workflows/daily-notifications-cron.yml` (preview URL workflow).
+- `.github/workflows/cron-notifications.yml`: schedule disabled; `workflow_dispatch` only; production URL `https://estate-planner-gules.vercel.app/api/cron/notifications`.
+
 ## Sprint 2 complete (May 2026) — Marketing, life events, email capture
 
 - **Migration:** `20260520000000_create_email_captures.sql` — `email_captures` table (`email`, `source`, `score`, `captured_at`); unique `(email, source)`; RLS (service role full access + anon/authenticated insert for API route).

@@ -1,9 +1,7 @@
 name: Daily Notifications Cron
 
 on:
-  schedule:
-    - cron: '0 14 * * *'
-  workflow_dispatch:
+  workflow_dispatch:  # manual trigger only — Vercel cron handles the schedule
 
 jobs:
   notify:
@@ -11,7 +9,7 @@ jobs:
     steps:
       - name: Trigger notification cron
         run: |
-          curl -X GET https://mywealthmaps.com/api/cron/notifications \
+          curl -X GET https://estate-planner-gules.vercel.app/api/cron/notifications \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -f \
             --silent \

@@ -31,7 +31,8 @@
 - `[ ]` Event-specific dashboard alerts: "You indicated a business sale. 5 things need updating."
 
 **Calendar triggers**
-- `[ ]` Age-based trigger service: cron checks DOB from profiles against milestone ages
+- `[x]` Daily notification cron — Vercel `vercel.json` → `/api/cron/notifications`; GitHub workflow manual-only (duplicate preview workflow removed May 2026)
+- `[ ]` Age-based trigger service: cron checks DOB from profiles against milestone ages (`/api/cron/age-triggers` — not built)
 - `[ ]` SS trigger at age 62: "Social Security claiming decisions start now — see your options"
 - `[ ]` Medicare trigger at age 65
 - `[ ]` Roth conversion window trigger at age 70½

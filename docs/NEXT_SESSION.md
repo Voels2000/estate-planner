@@ -59,6 +59,8 @@
 | Marketing landing | `app/page.tsx` |
 | Pricing | `app/(public)/pricing/page.tsx` |
 | General assessment | `app/(public)/assess/page.tsx` |
+| Notification cron (live) | `app/api/cron/notifications/route.ts`, `vercel.json` |
+| Cron manual fallback | `.github/workflows/cron-notifications.yml` (`workflow_dispatch` only) |
 
 ---
 
@@ -94,7 +96,7 @@ On submit: POST to API, then `router.refresh()`.
 
 ### Task 3 — Age-based calendar triggers
 
-File: `app/api/cron/age-triggers/route.ts`
+File: `app/api/cron/age-triggers/route.ts` (new — register in `vercel.json` alongside existing `/api/cron/notifications`)
 
 Cron (daily): query `households` for birth years hitting milestone ages this calendar year.
 Insert `life_events` rows with `source='calendar_trigger'` for:
