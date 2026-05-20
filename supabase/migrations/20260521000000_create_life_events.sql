@@ -19,8 +19,18 @@ create index if not exists life_events_user_unacknowledged_idx
 
 alter table public.life_events enable row level security;
 
-create policy "Users own their life events"
-  on public.life_events
-  for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'life_events'
+      and policyname = 'Users own their life events'
+  ) then
+    create policy "Users own their life events"
+      on public.life_events
+      for all
+      using (auth.uid() = user_id)
+      with check (auth.uid() = user_id);
+  end if;
+end $$;

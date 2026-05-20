@@ -169,6 +169,31 @@ export function SignupForm() {
         body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' }),
       })
 
+      const referralCode =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem('mwm_referral_code') ?? undefined
+          : undefined
+      const referralSlug =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem('mwm_referral_slug') ?? undefined
+          : undefined
+
+      fetch('/api/analytics/funnel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_name: 'account_created',
+          event_slug: referralSlug,
+          referral_code: referralCode,
+          properties: { role: effectiveRole },
+        }),
+      }).catch(() => {})
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('mwm_referral_code')
+        sessionStorage.removeItem('mwm_referral_slug')
+      }
+
       // Route: advisor invite → invite accept (linking/billing); otherwise by role.
       setIsDone(true)
       if (advisorInviteToken) {

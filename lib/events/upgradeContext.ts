@@ -42,6 +42,11 @@ export async function getEventUpgradeValueProp(
   fallback: string,
 ): Promise<string> {
   try {
+    const { getUpgradeCopyVariant } = await import('@/lib/analytics/abTests')
+    if ((await getUpgradeCopyVariant()) === 'generic') {
+      return fallback
+    }
+
     const { data } = await supabase
       .from('life_events')
       .select('event_type')

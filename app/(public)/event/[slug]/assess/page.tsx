@@ -191,6 +191,12 @@ function ResultsScreen({
         body: JSON.stringify({ email, source: `event-assess-${event.slug}`, score: pct }),
       })
       setEmailSent(true)
+      const { captureFunnelEvent } = await import('@/lib/analytics/useFunnelEvent')
+      captureFunnelEvent({
+        event_name: 'email_captured',
+        event_slug: event.slug,
+        properties: { score: pct, source: `event-assess-${event.slug}` },
+      })
     } catch {
       setEmailSent(true)
     }
@@ -557,8 +563,22 @@ export default function EventAssessPage() {
 
   function next() {
     if (!hasAnswer) return
+    if (current === 0) {
+      import('@/lib/analytics/useFunnelEvent').then(({ captureFunnelEvent }) => {
+        captureFunnelEvent({
+          event_name: 'event_assess_start',
+          event_slug: slug,
+        })
+      })
+    }
     if (current === questions.length - 1) {
       setScreen('results')
+      import('@/lib/analytics/useFunnelEvent').then(({ captureFunnelEvent }) => {
+        captureFunnelEvent({
+          event_name: 'event_assess_complete',
+          event_slug: slug,
+        })
+      })
     } else {
       setCurrent(c => c + 1)
       window.scrollTo(0, 0)

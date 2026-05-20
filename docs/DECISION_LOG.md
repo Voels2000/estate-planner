@@ -144,7 +144,51 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 **Implementation:** Migration `20260522000000_advisor_referrals.sql`; `referral_clicks.listing_id` → `advisor_directory(id)`.
 
-**Implication:** Content edits require a code deploy. MDX migration remains optional if non-engineers need to author events.
+**Implication:** All listing/referral queries use `profile_id`, not `advisor_id`, on `advisor_directory`.
+
+---
+
+### May 2026 — Dual analytics: Vercel page views + custom `funnel_events`
+
+**Decision:** Use `@vercel/analytics` for automatic route page views and a separate `funnel_events` table + `/api/analytics/funnel` for conversion steps (assess, email, signup, tier, advisor connect).
+
+**Reasoning:** Vercel Analytics does not capture custom funnel steps or join to `referral_code` / `event_slug`. Product needs SQL-queryable events for A/B analysis and advisor attribution. Client capture is fire-and-forget (`captureFunnelEvent`) so analytics never blocks UX.
+
+**Alternatives considered:** Vercel only (rejected — insufficient for funnel). PostHog/Mixpanel (deferred — Supabase keeps data in-house).
+
+---
+
+### May 2026 — A/B tests via `app_config`, not feature flags service
+
+**Decision:** Store `ab_upgrade_copy` and `ab_assessment_gate` in `app_config`. Toggle values in Supabase dashboard without deploy.
+
+**Reasoning:** Two experiments for Sprint 5; no need for LaunchDarkly-style infra. `getAssessmentGateVariant()` / `getUpgradeCopyVariant()` read at request time on server paths.
+
+**Measurement:** Compare `funnel_events` and conversion rates grouped by variant (store variant in `properties` when needed).
+
+---
+
+### May 2026 — Event content split: `content.ts` + `content-sprint5.ts`
+
+**Decision:** Keep original 8 events in `lib/events/content.ts`; add 16 Sprint 5 events in `lib/events/content-sprint5.ts`; merge via spread into `EVENT_CONTENT`.
+
+**Reasoning:** Single 3k-line file is hard to review and merge. `EVENT_SLUGS = Object.keys(EVENT_CONTENT)` still drives SSG without code changes to `generateStaticParams`.
+
+---
+
+### May 2026 — Idempotent RLS policies in migrations
+
+**Decision:** Wrap `create policy` statements in `DO $$ … IF NOT EXISTS (SELECT 1 FROM pg_policies …)` blocks for `life_events`, `referral_clicks`, and `funnel_events`.
+
+**Reasoning:** Migrations were applied manually in Supabase before `supabase db push`; re-run must not fail on duplicate policy names. Tables/indexes already use `IF NOT EXISTS`.
+
+---
+
+### May 2026 — `/assess` server wrapper for assessment A/B gate
+
+**Decision:** Split `app/(public)/assess/page.tsx` into server page (reads `ab_assessment_gate`) + `_assess-client.tsx` (client UI).
+
+**Reasoning:** Gate variant must be read server-side from `app_config`; the assess UI is a large client component. `full_gate` hides scores for logged-out users; `score_visible` keeps current behavior.
 
 ---
 

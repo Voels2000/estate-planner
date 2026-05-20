@@ -65,6 +65,14 @@ This is a developer reference, not a full SQL DDL dump.
 - **Application:** `app/(public)/find-advisor`, `my-advisor`, `app/advisor` referral lookup, `POST /api/referral/track`.
 - **Migration:** `20260522000000_advisor_referrals.sql` (adds `referral_code`; do not use legacy `advisor_listings`).
 
+### `funnel_events`
+
+- **Key columns:** `id`, `event_name`, `user_id`, `session_id`, `properties`, `referral_code`, `event_slug`, `source_url`, `created_at`
+- **Purpose:** custom conversion funnel tracking (complements Vercel Analytics page views).
+- **RLS:** users read own rows; service role full access for API inserts.
+- **Migration:** `20260523000000_funnel_events.sql`
+- **API:** `POST /api/analytics/funnel`
+
 ### `referral_clicks`
 
 - **Key columns:** `id`, `referral_code`, `advisor_id`, `listing_id`, `event_slug`, `source_url`, `resolved`, `created_at`
@@ -294,6 +302,10 @@ After each schema-affecting session:
 - `20260520000000_create_email_captures.sql` — `email_captures` table for public marketing lead capture
 - `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
+- `20260523000000_funnel_events.sql` — `funnel_events`
+- `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
+
+**`app_config` keys (Sprint 5 A/B):** `ab_upgrade_copy` (`"personalized"` | `"generic"`), `ab_assessment_gate` (`"score_visible"` | `"full_gate"`). Toggle in Supabase SQL editor; no deploy required.
 
 ---
 

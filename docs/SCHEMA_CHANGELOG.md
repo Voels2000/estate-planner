@@ -8,6 +8,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 5 — analytics + funnel events (May 2026)
+
+- **Package:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).
+- **Migration:** `20260523000000_funnel_events.sql` — `funnel_events` table + RLS + indexes (policies idempotent via `pg_policies` check).
+- **Migration:** `20260523000001_app_config_ab_tests.sql` — seeds `ab_upgrade_copy`, `ab_assessment_gate` in `app_config`.
+- **Migration hygiene:** `20260521000000`, `20260522000000` — RLS policies wrapped for safe re-run after manual SQL apply.
+- **API:** `POST /api/analytics/funnel` — custom funnel events (admin insert).
+- **Client:** `lib/analytics/useFunnelEvent.ts`, `lib/analytics/abTests.ts`, `lib/analytics/trackUpgrade.ts`.
+- **Instrumentation:** event page view, assess start/complete, email capture, signup, Stripe tier upgrade, advisor accept.
+- **A/B:** `/assess` server wrapper passes `ab_assessment_gate` variant (`score_visible` | `full_gate`).
+- **Content:** `lib/events/content-sprint5.ts` — 16 additional event slugs (24 total).
+
 ## Sprint 4 — advisor referrals + distribution (May 2026)
 
 - **Migration:** `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code` (unique); `referral_clicks` with FK to `advisor_directory(id)` and `auth.users`; RLS for advisor read + service role writes.

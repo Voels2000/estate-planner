@@ -441,11 +441,11 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Dynamic route: `app/(public)/event/[slug]/page.tsx` — SSG via `generateStaticParams` over `EVENT_SLUGS` from `lib/events/content.ts`.
 - Event-specific assessment: `app/(public)/event/[slug]/assess/page.tsx` — 5 questions from `event.assessmentQuestions`, gap detection, email capture for anonymous users.
 - Content schema: `lib/events/types.ts` (`EventContent`, `EventAction`, `EventAssessmentQuestion`, urgency/category enums).
-- Eight published slugs: `selling-a-business`, `death-of-spouse`, `serious-diagnosis`, `receiving-inheritance`, `divorce`, `approaching-retirement`, `large-rsu-vest`, `new-child-grandchild`.
+- **24 published slugs** — `EVENT_SLUGS` from `lib/events/content.ts` + `lib/events/content-sprint5.ts` (8 original + 16 Sprint 5).
 - Each page: hero + urgency badge, “what changes” bullets, prioritized action plan, assessment teaser → `/event/[slug]/assess`, optional advisor/attorney CTAs, related events.
 - SEO: `generateMetadata` + schema.org Article JSON-LD (`headline`, `description`, author/publisher, `mainEntityOfPage`).
-- Referral: `_referral-tracker.tsx` on event pages posts `?ref=` to `/api/referral/track` (Sprint 4).
-- Content is **TypeScript** in `lib/events/content.ts`, not MDX (MDX migration optional later). Sprint 5 adds 17 more slugs.
+- Referral + funnel: `_referral-tracker.tsx` posts `?ref=` to `/api/referral/track` and fires `event_page_view` via `/api/analytics/funnel`.
+- Content is **TypeScript** (`EventContent` records), not MDX.
 
 **Email capture (Sprint 2):**
 
@@ -686,7 +686,15 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` — UI complete; PDF content branch on `variant=attorney` deferred.
 
-**Current sprint (Sprint 5):** Analytics funnel, A/B tests (upgrade + assess gates), 17 additional event slugs in `lib/events/content.ts`. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+**Analytics & A/B (Sprint 5):**
+
+- **Vercel Analytics:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).
+- **Custom funnel:** table `funnel_events`; `POST /api/analytics/funnel`; `lib/analytics/useFunnelEvent.ts` (fire-and-forget).
+- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `tier_upgraded`, `advisor_connected`.
+- **A/B flags** in `app_config`: `ab_assessment_gate` (`score_visible` | `full_gate`) — server `app/(public)/assess/page.tsx` → `_assess-client.tsx`; `ab_upgrade_copy` (`personalized` | `generic`) — `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts`.
+- **Signup attribution:** `mwm_referral_code` / `mwm_referral_slug` in sessionStorage; cleared after `account_created` funnel event.
+
+**Current sprint (Sprint 6):** Funnel reporting, attorney PDF template, growth distribution. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 

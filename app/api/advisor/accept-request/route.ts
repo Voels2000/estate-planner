@@ -103,6 +103,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to accept request' }, { status: 500 })
   }
 
+  void admin.from('funnel_events').insert({
+    event_name: 'advisor_connected',
+    user_id: row.client_id,
+    properties: { advisor_id: user.id, advisor_client_id: row.id },
+  }).then(({ error: funnelErr }) => {
+    if (funnelErr) console.error('advisor_connected funnel event:', funnelErr)
+  })
+
   // Notify consumer that advisor accepted — no action required from consumer
   const advisorLabel = profile.full_name?.trim() || profile.email || 'Your advisor'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'

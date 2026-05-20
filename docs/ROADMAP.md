@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 5 current)
+# Last updated: May 2026 (Sprint 6 current)
 
 ---
 
@@ -21,49 +21,54 @@
 
 ## Current sprint
 
-### Sprint 5 — Analytics, optimization, remaining event pages (Weeks 15–18)
-**Goal:** Full funnel measured, A/B tests running, remaining 17 event pages published.
+### Sprint 6 — Measurement, attorney PDF, growth distribution (Weeks 19–22)
+**Goal:** Act on funnel data, ship attorney-ready PDF content, begin outbound distribution.
 
-**Analytics**
-- `[ ]` Full funnel instrumentation: event page → assessment → email → account → tier → advisor connect → retention
-- `[ ]` Event source attribution: which events convert at highest rate, which drive highest LTV tier
-- `[ ]` A/B: event-personalized upgrade copy vs generic (expected 20–40% lift)
-- `[ ]` A/B: assessment gate (score visible) vs full gate (nothing visible)
+**Analytics & reporting**
+- `[ ]` Admin funnel dashboard — query `funnel_events` by `event_name`, `event_slug`, `referral_code`
+- `[ ]` Event → tier conversion report (join `funnel_events` to `profiles.consumer_tier`)
+- `[ ]` Document standard SQL queries for weekly funnel review
 
-**Remaining event pages (17)**
-- `[ ]` Getting married
-- `[ ]` Remarriage / blended family
-- `[ ]` Aging parent needs care
-- `[ ]` Loss of a parent
-- `[ ]` Starting a business
-- `[ ]` Selling a home
-- `[ ]` Multi-state real estate
-- `[ ]` Child reaching adulthood
-- `[ ]` Blended family / stepchildren
-- `[ ]` Disability / early retirement
-- `[ ]` Estate tax law change (federal exemption sunset)
-- `[ ]` RMD start age (73)
-- `[ ]` Medicare eligibility (65)
-- `[ ]` Social security timing decision (62–70)
-- `[ ]` First-time high net worth (crossed $2M threshold)
-- `[ ]` Major job / income change
-- `[ ]` 5-year plan review (calendar trigger)
+**Product polish**
+- `[ ]` Attorney PDF template — `variant=attorney` in export API + `EstatePlanPDF`
+- `[ ]` Upgrade `EVENT_UPGRADE_COPY` in `upgradeContext.ts` for 16 new event slugs (optional)
 
-**Content distribution**
-- `[ ]` Advisor newsletters — provide event page content for advisors to share with their book
-- `[ ]` Attorney referral program — co-branded event pages for estate planning attorneys
-- `[ ]` LinkedIn targeting for $2M–$30M segment using life event targeting
-- `[ ]` Partnership outreach to estate planning publications and podcasts
+**Growth**
+- `[ ]` Email drip — provider decision + 3-email sequence per top event slug
+- `[ ]` Search Console — submit sitemap / verify 24 event URLs indexed
+- `[ ]` Advisor newsletter kit — shareable links from `lib/events/referral.ts`
+- `[ ]` Attorney referral tag on event pages (parallel to advisor `?ref=`)
 
-**Success criteria for Sprint 5**
-- Monthly organic traffic from event pages (target: 5,000+ sessions/month)
-- Event → paid tier conversion rate by source
-- 6-month retention rate by acquisition source
-- NPS segmented by persona type (business owner, RE accumulator, executive)
+**Deferred from earlier sprints**
+- `[ ]` Per-milestone age trigger event slugs (62/65/70/73)
+- `[ ]` Life event context on new advisor connections
+- `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
+
+**Success criteria for Sprint 6**
+- Weekly funnel review cadence with real conversion numbers
+- Attorney export used in production (track `variant=attorney` downloads)
+- At least one distribution channel live (email drip or Search Console verified)
 
 ---
 
+
 ## Completed sprints
+
+### Sprint 5 — Analytics, optimization, event pages (Weeks 15–18) ✅
+**Goal:** Full funnel measured, A/B tests running, remaining event pages published.
+
+**Shipped**
+- `[x]` Vercel Analytics + `funnel_events` custom funnel + 6 instrumented steps
+- `[x]` A/B via `app_config` — assess gate (`/assess` server + `_assess-client.tsx`) + upgrade copy toggle
+- `[x]` 16 new event slugs in `lib/events/content-sprint5.ts` (24 total, SSG)
+- `[x]` Idempotent migration policies for re-run safety
+
+**Deferred to Sprint 6**
+- `[ ]` Admin funnel dashboards
+- `[ ]` Content distribution (newsletters, LinkedIn, partnerships)
+- `[ ]` Blended family as separate slug (optional; `remarriage-blended-family` covers today)
+
+---
 
 ### Sprint 4 — Advisor/attorney network as distribution (Weeks 12–14) ✅
 **Goal:** Advisors and attorneys become active referral sources.
@@ -168,7 +173,7 @@
 - Charitable Giving empty state — personalized suggestions from household data
 - Mobile nav audit and responsive improvements
 - Scenarios page discoverability — entry point from Projections summary cards
-- Remaining 17 life event pages — **active in Sprint 5** (see current sprint)
+- Life event pages — 24 live (Sprint 2 + Sprint 5); see `lib/events/content-sprint5.ts`
 - Business succession planning page (currently commented out of sidebar)
 - Digital Assets feature key addition to FEATURE_TIERS
 - Add `/education` to `proxy.ts` `PUBLIC_PATHS` if education should be reachable without proxy login redirect (page layout still auth-gates)

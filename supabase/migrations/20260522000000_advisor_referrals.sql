@@ -28,15 +28,35 @@ create table if not exists public.referral_clicks (
 
 alter table public.referral_clicks enable row level security;
 
-create policy "Advisors see their own referral clicks"
-  on public.referral_clicks
-  for select
-  using (auth.uid() = advisor_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'referral_clicks'
+      and policyname = 'Advisors see their own referral clicks'
+  ) then
+    create policy "Advisors see their own referral clicks"
+      on public.referral_clicks
+      for select
+      using (auth.uid() = advisor_id);
+  end if;
+end $$;
 
-create policy "Service role full access referral_clicks"
-  on public.referral_clicks
-  for all
-  using (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'referral_clicks'
+      and policyname = 'Service role full access referral_clicks'
+  ) then
+    create policy "Service role full access referral_clicks"
+      on public.referral_clicks
+      for all
+      using (auth.role() = 'service_role');
+  end if;
+end $$;
 
 create index if not exists referral_clicks_advisor_idx
   on public.referral_clicks (advisor_id, created_at desc);

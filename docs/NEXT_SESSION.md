@@ -1,90 +1,111 @@
 # NEXT_SESSION.md
-# Sprint 5 — Session Start Document
+# Sprint 6 — Session Start Document
 # Updated: May 2026
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–4 shipped
-> (public funnel, 8 event pages, life events, advisor/attorney distribution batch).
-> **Current: Sprint 5** — analytics, A/B tests, remaining 17 event pages.
-> Run pending Supabase migrations if not applied in prod.
+> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–5 shipped: 24 life event
+> pages, Vercel + custom funnel analytics, A/B tests (assess gate + upgrade copy), advisor
+> distribution, life events. Migrations are idempotent for re-run.
+> **Current: Sprint 6** — reporting, attorney PDF, growth distribution.
 > Today's task: [FILL IN BELOW].
 
 ---
 
-## Current sprint — Sprint 5 (Weeks 15–18)
+## Current sprint — Sprint 6 (Weeks 19–22)
 
-**Goal:** Full funnel measured, A/B tests running, remaining 17 event pages published.
+**Goal:** Measure and act on funnel data; finish attorney PDF export; start content distribution.
 
-See [ROADMAP.md](./ROADMAP.md) for full checklist. Priority order:
+See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
-1. **Analytics** — event page → assessment → email → account → tier → advisor connect → retention
-2. **A/B** — event-personalized upgrade copy vs generic; assessment gate variants
-3. **Content** — 17 event slugs in `lib/events/content.ts` + SSG pages (today: 8 published)
+1. **Admin funnel views** — SQL or admin UI on `funnel_events` + `referral_clicks`
+2. **Attorney PDF** — `variant=attorney` branch in `/api/export-estate-plan` + `EstatePlanPDF`
+3. **SEO / distribution** — Search Console, email drip decision, advisor newsletter kit
 
 ---
 
-## Recently shipped (Sprint 4 — advisor/attorney distribution) ✅
+## Sprint 5 completed ✅
 
-| Task | Path / notes |
+| Area | What shipped |
 |------|----------------|
-| Invite your advisor (no-connection) | `my-advisor/page.tsx`, `_my-advisor-client.tsx` |
-| Advisor notified on client life event | `POST /api/consumer/life-events` + `create_notification` |
-| Life event banner — share / find advisor | `LifeEventBanner.tsx`, `dashboard/page.tsx` |
-| Event `?ref=` tracking | `_referral-tracker.tsx`, `/api/referral/track`, `lib/events/referral.ts` |
-| Advisor referral links in portal | `app/advisor/page.tsx`, `_advisor-client.tsx` |
-| Cron backup life-event advisor notify | Job 6 in `/api/cron/notifications` |
-| Attorney-ready export UI | `print/_print-client.tsx`, `ExportPDFButton` `variant=attorney` |
-| Plan readiness (advisor client view) | `PlanReadinessCard.tsx` → Overview tab |
-| `advisor_directory` canonical table | All listing/referral queries; migration `20260522000000` |
-
-## Recently shipped (Sprint 3) ✅
-
-| Task | Path / notes |
-|------|----------------|
-| `life_events` + API + banner | `20260521000000`, `/api/consumer/life-events` |
-| Age triggers cron | `/api/cron/age-triggers`, `vercel.json` 15:00 UTC |
-| Event-personalized upgrade gates | `lib/events/upgradeContext.ts` |
+| Vercel Analytics | `@vercel/analytics` + `<Analytics />` in `app/layout.tsx` |
+| Custom funnel | `funnel_events`, `POST /api/analytics/funnel`, `lib/analytics/useFunnelEvent.ts` |
+| Funnel steps | `event_page_view`, `event_assess_start/complete`, `email_captured`, `account_created`, `tier_upgraded`, `advisor_connected` |
+| A/B tests | `app_config`: `ab_assessment_gate`, `ab_upgrade_copy`; `/assess` server gate; `upgradeContext` |
+| Event content | 16 slugs in `lib/events/content-sprint5.ts` — **24 total** at `/event/[slug]` |
+| Migrations | Idempotent RLS policies on `life_events`, `referral_clicks`, `funnel_events` |
 
 ---
 
-## Pending migrations (run in Supabase if not applied)
+## Migrations (prod — safe to re-run)
 
-1. `20260521000000_create_life_events.sql`
-2. `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
-
----
-
-## Key paths (Sprint 5 work)
-
-| Area | Path |
-|------|------|
-| Event content (add 17) | `lib/events/content.ts`, `lib/events/types.ts` |
-| Event pages | `app/(public)/event/[slug]/page.tsx`, `assess/page.tsx` |
-| Referral / attribution | `lib/events/referral.ts`, `app/api/referral/track/route.ts` |
-| Upgrade A/B | `UpgradeBanner`, `lib/events/upgradeContext.ts` |
-| Analytics (TBD) | instrument funnel events — no central module yet |
-| Print / attorney PDF | `print/_print-client.tsx`, `components/pdf/ExportPDFButton.tsx`, `/api/export-estate-plan` |
-| Advisor client readiness | `app/advisor/clients/[clientId]/_components/PlanReadinessCard.tsx` |
+| File | Purpose |
+|------|---------|
+| `20260521000000_create_life_events.sql` | `life_events` |
+| `20260522000000_advisor_referrals.sql` | `referral_code`, `referral_clicks` |
+| `20260523000000_funnel_events.sql` | `funnel_events` |
+| `20260523000001_app_config_ab_tests.sql` | A/B seed rows |
 
 ---
 
-## Sprint 5 backlog (from ROADMAP)
+## Files you need for Sprint 6
 
-- [ ] Full funnel instrumentation
-- [ ] Event source attribution (conversion + LTV by slug)
-- [ ] A/B: personalized upgrade copy vs generic
-- [ ] A/B: assessment gate (score visible vs full gate)
-- [ ] 17 remaining event pages (see ROADMAP list)
+### Analytics / reporting (start here)
+
+| File | Why |
+|------|-----|
+| `app/api/analytics/funnel/route.ts` | Funnel insert contract |
+| `lib/analytics/useFunnelEvent.ts` | Event names + client capture |
+| `lib/analytics/abTests.ts` | `app_config` A/B readers |
+| `supabase/migrations/20260523000000_funnel_events.sql` | Schema reference |
+| `app/admin/page.tsx` | Extend or add funnel admin tab |
+| `docs/DATABASE_SCHEMA_REFERENCE.md` | `funnel_events`, `referral_clicks` |
+
+### Attorney PDF export
+
+| File | Why |
+|------|-----|
+| `app/(dashboard)/print/_print-client.tsx` | Dual-mode UI |
+| `components/pdf/ExportPDFButton.tsx` | Passes `variant=attorney` |
+| `app/api/export-estate-plan/route.ts` | Add variant branch |
+| `components/pdf/EstatePlanPDF.tsx` | Attorney summary layout |
+
+### Growth / distribution (pick one track)
+
+| File | Why |
+|------|-----|
+| `lib/events/content.ts` + `lib/events/content-sprint5.ts` | Event copy for newsletters |
+| `app/(public)/event/[slug]/page.tsx` | SEO / JSON-LD |
+| `app/api/email-capture/route.ts` | Drip hook point |
+| `lib/events/referral.ts` | Advisor share URLs |
+
+### Still useful context (Sprint 4–5)
+
+| File | Why |
+|------|-----|
+| `app/advisor/page.tsx`, `_advisor-client.tsx` | Referral links |
+| `app/(public)/event/[slug]/_referral-tracker.tsx` | `?ref=` + `event_page_view` |
+| `app/(auth)/signup/_signup-form.tsx` | `account_created` funnel event |
+| `app/api/stripe/webhook/route.ts` | `tier_upgraded` |
+| `app/api/advisor/accept-request/route.ts` | `advisor_connected` |
+| `lib/events/upgradeContext.ts` | Personalized upgrade copy |
+
+---
+
+## Sprint 6 backlog
+
+- [ ] Admin funnel dashboard (conversion by `event_slug`, `referral_code`)
 - [ ] Attorney PDF template for `variant=attorney`
-- [ ] Signup attribution from `mwm_referral_code` / sessionStorage
-- [ ] Per-age event slugs for age-triggers (62/65/70/73)
-- [ ] Email drip; Search Console indexing
+- [ ] Email drip provider + sequences per event type
+- [ ] Google Search Console indexing verification (24 event URLs)
+- [ ] Per-age calendar trigger slugs (62/65/70/73) — today all `approaching-retirement`
+- [ ] Life event context on new advisor connections
+- [ ] Attorney `?ref=` on event pages (advisor-only today)
 
 ---
 
 ## How to end each session
 
-Summarize completed work; update this file, `ROADMAP.md`, and master docs per [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md).
+Update this file, [ROADMAP.md](./ROADMAP.md), and master docs per [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md).

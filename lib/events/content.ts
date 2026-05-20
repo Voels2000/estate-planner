@@ -1,4 +1,5 @@
 import type { EventContent } from './types'
+import { EVENT_CONTENT_SPRINT5 } from './content-sprint5'
 
 export const EVENT_CONTENT: Record<string, EventContent> = {
   'selling-a-business': {
@@ -883,6 +884,8 @@ export const EVENT_CONTENT: Record<string, EventContent> = {
     seoDescription: 'Guardian designations, trust provisions for minors, beneficiary updates, and 529 accounts after a new child or grandchild.',
     relatedSlugs: ['serious-diagnosis', 'approaching-retirement'],
   },
+
+  ...EVENT_CONTENT_SPRINT5,
 }
 
 export const EVENT_SLUGS = Object.keys(EVENT_CONTENT)

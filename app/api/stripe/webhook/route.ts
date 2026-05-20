@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { FIRM_PRICE_ID_TO_TIER, PRICE_ID_TO_TIER } from '@/lib/tiers'
+import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -92,6 +93,13 @@ export async function POST(req: NextRequest) {
         console.log('checkout.session.completed — customer:', session.customer)
         console.log('checkout.session.completed — subscription:', session.subscription)
         if (userId) {
+          const { data: priorProfile } = await supabase
+            .from('profiles')
+            .select('consumer_tier')
+            .eq('id', userId)
+            .single()
+          const previousTier = priorProfile?.consumer_tier ?? 0
+
           const subId = session.subscription as string | null
           let renewalIso: string | null = null
           let priceId: string | null = null
@@ -116,6 +124,14 @@ export async function POST(req: NextRequest) {
           console.log('Supabase update data:', JSON.stringify(data))
           console.log('Supabase update error:', JSON.stringify(error))
           console.log('Subscription activated for user:', userId)
+
+          if (consumerTier && consumerTier > previousTier) {
+            void trackTierUpgrade({
+              userId,
+              tier: consumerTier,
+              previousTier,
+            })
+          }
         } else {
           console.log('No userId in metadata — skipping update')
         }

@@ -60,7 +60,7 @@ Demo/admin test users may see **multiple** portal links if their profile has ele
 | Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
 | Education Guide | `/education` | `(public)/education/layout.tsx` | Shared `(public)` nav + education header; auth-gated |
-| Planning Assessment | `/assess` | `(public)/assess` | Shared `(public)` nav; logged-out: score + pillars visible, gap report gated; `localStorage` pending assessment |
+| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | A/B gate: `app_config.ab_assessment_gate` (`score_visible` \| `full_gate`); `localStorage` pending assessment |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
 
@@ -77,7 +77,7 @@ Demo/admin test users may see **multiple** portal links if their profile has ele
 | `/event/large-rsu-vest` | RSU / liquidity event | — | Public; SSG |
 | `/event/new-child-grandchild` | New child or grandchild | — | Public; SSG |
 
-Content: `lib/events/content.ts`. Assessment teaser and hero CTA link to `/event/[slug]/assess` (5-question event assessment).
+Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts` (24 slugs). Assessment teaser → `/event/[slug]/assess`. Funnel: `_referral-tracker.tsx` + `useFunnelEvent`.
 
 | Route | Notes |
 |-------|--------|
