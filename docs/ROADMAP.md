@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 2 complete)
+# Last updated: May 2026 (Sprint 5 current)
 
 ---
 
@@ -20,59 +20,6 @@
 ---
 
 ## Current sprint
-
-### Sprint 3 — In-app life event triggers (Weeks 9–11)
-**Goal:** Users can log life events in-app; plan recomputes with event-specific conflict generation.
-
-**Event logging**
-- `[x]` life_events table + RLS (`20260521000000_create_life_events.sql` — run in Supabase)
-- `[x]` `POST/GET/PATCH /api/consumer/life-events` + `afterHouseholdWriteForOwner` on POST
-- `[x]` Dashboard `LifeEventBanner` — prompt, picker, calendar trigger variant, confirmation
-- `[x]` Event → recompute pipeline on user-logged events (via `afterHouseholdWriteForOwner`)
-- `[ ]` Event-specific dashboard alerts beyond banner (e.g. inline conflict copy tied to event)
-
-**Calendar triggers**
-- `[x]` Daily notification cron — Vercel `vercel.json` → `/api/cron/notifications`
-- `[x]` Age-based trigger cron — `/api/cron/age-triggers` at 15:00 UTC; ages 62/65/70/73
-- `[ ]` SS trigger at age 62: "Social Security claiming decisions start now — see your options"
-- `[ ]` Medicare trigger at age 65
-- `[ ]` Roth conversion window trigger at age 70½
-- `[ ]` RMD trigger at age 73
-
-**Segment-specific triggers**
-- `[ ]` Business value threshold: when business input crosses $5M and $10M, surface estate tax change alert
-- `[ ]` Multi-state property: when RE in 2+ states entered, flag probate risk
-- `[ ]` Estate growth velocity: when gross estate grows 20%+ year-over-year, surface alert
-- `[x]` Event-personalized upgrade gates — `lib/events/upgradeContext.ts` on 8 locked pages
-
-**Success criteria for Sprint 3**
-- Event banner engagement rate
-- Calendar trigger → feature visit rate
-- Event-personalized upgrade conversion vs generic gate baseline (A/B)
-
----
-
-### Sprint 4 — Advisor/attorney network as distribution (Weeks 12–14)
-**Goal:** Advisors and attorneys become active referral sources.
-
-**Advisor integration**
-- `[ ]` "Invite your advisor" primary onboarding step with pre-written email template
-- `[ ]` Life event context on new advisor connections: "Alan connected after indicating a business sale"
-- `[ ]` Advisor notification when client logs a life event: "Your client just recorded a marriage — 4 items need review"
-- `[ ]` Advisor referral mechanic: shareable event page links with advisor referral tag
-
-**Attorney integration**
-- `[ ]` Attorney CTA prominent on high-urgency events (death of spouse, serious diagnosis, divorce)
-- `[ ]` Attorney-ready export: one-click household summary formatted for attorney intake
-- `[ ]` Attorney referral mechanic: shareable event page links with attorney referral tag
-- `[ ]` Shared plan completeness visibility: advisor + attorney can see non-confidential readiness score
-
-**Success criteria for Sprint 4**
-- % new accounts from advisor/attorney referral (target: 20%+ within 60 days of launch)
-- Advisor-referred LTV vs self-acquired
-- Attorney export usage rate
-
----
 
 ### Sprint 5 — Analytics, optimization, remaining event pages (Weeks 15–18)
 **Goal:** Full funnel measured, A/B tests running, remaining 17 event pages published.
@@ -117,6 +64,41 @@
 ---
 
 ## Completed sprints
+
+### Sprint 4 — Advisor/attorney network as distribution (Weeks 12–14) ✅
+**Goal:** Advisors and attorneys become active referral sources.
+
+**Shipped**
+- `[x]` Invite your advisor — `mailto:` card on `/my-advisor` no-connection state
+- `[x]` Advisor notification when client logs a life event — `POST /api/consumer/life-events` + cron job 6
+- `[x]` Advisor referral links — `?ref=` on event pages, `referral_clicks`, portal copy UI (`lib/events/referral.ts`)
+- `[x]` Attorney-ready export UI — `/print` dual mode; `ExportPDFButton` `variant=attorney` (PDF template follow-up)
+- `[x]` Plan readiness on advisor client Overview — `PlanReadinessCard` + `estate_health_scores`
+- `[x]` Canonical `advisor_directory` for listings/referrals (replaced `advisor_listings` references)
+
+**Deferred**
+- `[ ]` Life event context on new advisor connections (connection metadata)
+- `[ ]` Attorney referral tag on event pages (advisor `?ref=` only today)
+- `[ ]` Attorney portal readiness score (advisor-only today)
+- `[ ]` Signup attribution from `mwm_referral_code`
+
+---
+
+### Sprint 3 — In-app life event triggers (Weeks 9–11) ✅
+**Goal:** Users can log life events in-app; plan recomputes with event-specific conflict generation.
+
+**Shipped**
+- `[x]` `life_events` table + RLS + consumer API + dashboard `LifeEventBanner`
+- `[x]` Age-based trigger cron (`/api/cron/age-triggers`, 15:00 UTC)
+- `[x]` Event-personalized upgrade gates (`lib/events/upgradeContext.ts`)
+
+**Deferred**
+- `[ ]` Event-specific dashboard alerts beyond banner
+- `[ ]` Per-milestone copy (SS 62, Medicare 65, Roth 70½, RMD 73) — all map to `approaching-retirement` today
+- `[ ]` Segment-specific triggers (business $5M/$10M, multi-state RE, estate growth velocity)
+- `[ ]` A/B on upgrade gates (moved to Sprint 5)
+
+---
 
 ### Sprint 2 — Life event landing pages + public conversion (Weeks 6–8) ✅
 **Goal:** 8 event pages live, SEO-ready, with event-specific assessments and email capture.
@@ -186,7 +168,7 @@
 - Charitable Giving empty state — personalized suggestions from household data
 - Mobile nav audit and responsive improvements
 - Scenarios page discoverability — entry point from Projections summary cards
-- Remaining 17 life event pages (scheduled for Sprint 5 but listed here for reference)
+- Remaining 17 life event pages — **active in Sprint 5** (see current sprint)
 - Business succession planning page (currently commented out of sidebar)
 - Digital Assets feature key addition to FEATURE_TIERS
 - Add `/education` to `proxy.ts` `PUBLIC_PATHS` if education should be reachable without proxy login redirect (page layout still auth-gates)

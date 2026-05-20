@@ -109,6 +109,7 @@ export default async function DashboardPage() {
       insurance,
     },
     { data: lifeEventsData },
+    { data: advisorConnection },
   ] = await Promise.all([
     loadDashboardCoreInputs(supabase, user!.id),
     supabase
@@ -118,9 +119,16 @@ export default async function DashboardPage() {
       .eq('acknowledged', false)
       .order('created_at', { ascending: false })
       .limit(5),
+    supabase
+      .from('advisor_clients')
+      .select('id')
+      .eq('client_id', user!.id)
+      .eq('status', 'accepted')
+      .maybeSingle(),
   ])
 
   const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
+  const hasAdvisorConnection = !!advisorConnection
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
   const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -427,6 +435,7 @@ export default async function DashboardPage() {
       latestSharedMCScenario={latestSharedMCScenario}
       estateCallout={estateCallout}
       pendingLifeEvents={pendingLifeEvents}
+      hasAdvisorConnection={hasAdvisorConnection}
     />
   )
 }

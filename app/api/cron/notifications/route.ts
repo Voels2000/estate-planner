@@ -262,6 +262,58 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── 6. Life event context — notify advisor of recent client events ────────
+  const oneDayAgo = new Date(now)
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+  const { data: recentLifeEvents } = await supabase
+    .from('life_events')
+    .select('id, user_id, event_type, created_at')
+    .eq('source', 'user')
+    .gte('created_at', oneDayAgo.toISOString())
+
+  for (const event of recentLifeEvents ?? []) {
+    const { data: connection } = await supabase
+      .from('advisor_clients')
+      .select('advisor_id')
+      .eq('client_id', event.user_id)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    if (!connection?.advisor_id) continue
+
+    const { data: clientProfile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', event.user_id)
+      .single()
+
+    const clientName = clientProfile?.full_name
+      ?? clientProfile?.email
+      ?? 'Your client'
+
+    const eventLabel = event.event_type
+      .split('-')
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+
+    const notifId = await callCreateNotification(supabase, {
+      user_id: connection.advisor_id,
+      type: `client_life_event_${event.id}`,
+      title: `${clientName} logged a life event`,
+      body: `${clientName} indicated: ${eventLabel}. Review their plan to see what may need attention.`,
+      metadata: {
+        client_id: event.user_id,
+        life_event_id: event.id,
+        event_type: event.event_type,
+      },
+      cooldown: '23 hours',
+    })
+
+    if (notifId) results.sent++
+    else results.skipped++
+  }
+
   console.log('[cron:notifications]', results)
   return NextResponse.json({ ok: true, ...results })
 }

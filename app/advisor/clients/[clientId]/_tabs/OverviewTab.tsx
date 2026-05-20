@@ -6,6 +6,7 @@
  */
 
 import { ClientViewShellProps } from '../_client-view-shell'
+import { PlanReadinessCard } from '../_components/PlanReadinessCard'
 import type { EstateComposition } from '@/lib/estate/types'
 import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
 import {
@@ -13,7 +14,25 @@ import {
   computeGaps, severityBadge, severityDot, type Gap
 } from '../_utils'
 
-export default function OverviewTab({ household, assets, realEstate, businesses, insurancePolicies, beneficiaries, estateDocuments, estateComposition }: ClientViewShellProps) {
+function getClientDisplayName(household: ClientViewShellProps['household']) {
+  if (household.has_spouse) {
+    return `${household.person1_first_name ?? ''} & ${household.person2_first_name ?? ''} ${household.person1_last_name ?? ''}`.trim()
+  }
+  return `${household.person1_first_name ?? ''} ${household.person1_last_name ?? ''}`.trim() || null
+}
+
+export default function OverviewTab({
+  household,
+  assets,
+  realEstate,
+  businesses,
+  insurancePolicies,
+  beneficiaries,
+  estateDocuments,
+  estateComposition,
+  planReadinessScore,
+  planReadinessComputedAt,
+}: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
   // ── Net worth calc (matches My Estate Strategy estate composition source) ──
@@ -38,8 +57,16 @@ export default function OverviewTab({ household, assets, realEstate, businesses,
   const p1Age = getAge(household.person1_birth_year, currentYear)
   const p2Age = household.has_spouse ? getAge(household.person2_birth_year, currentYear) : null
 
+  const clientName = getClientDisplayName(household)
+
   return (
     <div className="space-y-6">
+
+      <PlanReadinessCard
+        score={planReadinessScore ?? null}
+        computedAt={planReadinessComputedAt ?? null}
+        clientName={clientName}
+      />
 
       {/* ── Gap alert banner ── */}
       {(criticalCount > 0 || highCount > 0) && (

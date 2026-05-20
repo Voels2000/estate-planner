@@ -326,7 +326,11 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 |---------|------------------|------------|
 | **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** (“Advisor Recommended Strategies”) | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Reject: `DELETE` same. Rows: `strategy_line_items` `source_role='advisor'` |
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
-| **Access** | `/my-advisor` (sidebar for consumers) | `advisor_clients`, `connection_requests`; advisor workspace `/advisor/clients/[clientId]` |
+| **Access** | `/my-advisor` (sidebar footer) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel` |
+| **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
+| **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanReadinessCard` |
+| **Export for attorney** | `/print` (tier 3+) | Dual mode UI; `ExportPDFButton` `variant=attorney` → `/api/export-estate-plan?variant=attorney` |
+| **Event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` → `referral_clicks` |
 | **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
 | **Find advisor (not handoff)** | **Ask your advisor about this →** on strategy education cards | Links to `/find-advisor` only — no message to connected advisor |
 
@@ -348,6 +352,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `asset-beneficiaries`, `entity-titling`, `household-people` | Titling / family |
 | `allocation-targets`, `scenario-snapshots`, `generate-base-case` | Projections / allocation |
 | `estate-health-check` | Health questionnaire |
+| `life-events` | Log / list / acknowledge in-app life events |
 
 ### Shared / legacy writes
 

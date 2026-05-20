@@ -29,6 +29,17 @@ type AdvisorClient = {
   } | null
 }
 
+const EVENT_REFERRAL_LABELS: Record<string, string> = {
+  'selling-a-business': 'Selling a business',
+  'death-of-spouse': 'Death of a spouse',
+  'serious-diagnosis': 'Serious diagnosis',
+  'receiving-inheritance': 'Receiving an inheritance',
+  divorce: 'Divorce',
+  'approaching-retirement': 'Approaching retirement',
+  'large-rsu-vest': 'Large RSU vest',
+  'new-child-grandchild': 'New child / grandchild',
+}
+
 type Props = {
   advisorClients: AdvisorClient[]
   netWorthMap: Record<string, number>
@@ -38,6 +49,8 @@ type Props = {
   isFirmOwner?: boolean
   firm_name?: string | null
   firm_id?: string | null
+  referralCode?: string | null
+  eventReferralUrls?: Record<string, string> | null
 }
 
 const STATUS_OPTIONS = ['active', 'needs_review', 'at_risk', 'inactive']
@@ -76,9 +89,12 @@ export default function AdvisorClientPage({
   isFirmOwner,
   firm_name,
   firm_id,
+  referralCode,
+  eventReferralUrls,
 }: Props) {
   void advisorId
   const [clients, setClients] = useState(advisorClients)
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -290,6 +306,50 @@ export default function AdvisorClientPage({
           </button>
         </div>
       </div>
+
+      {referralCode && eventReferralUrls && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-1">
+            Referral links
+          </h2>
+          <p className="text-sm text-neutral-600 mb-4">
+            Share these links with prospects. When they sign up from an event page, the visit is
+            attributed to your code <span className="font-mono font-medium text-neutral-800">{referralCode}</span>.
+          </p>
+          <div className="space-y-2">
+            {Object.entries(eventReferralUrls).map(([slug, url]) => (
+              <div
+                key={slug}
+                className="flex items-center justify-between gap-3 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2"
+              >
+                <span className="text-sm text-neutral-700 shrink-0">
+                  {EVENT_REFERRAL_LABELS[slug] ?? slug}
+                </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-neutral-400 truncate hidden sm:block max-w-[240px]">
+                    {url}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(url)
+                        setCopiedSlug(slug)
+                        setTimeout(() => setCopiedSlug(null), 2000)
+                      } catch {
+                        window.prompt('Copy this link:', url)
+                      }
+                    }}
+                    className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                  >
+                    {copiedSlug === slug ? 'Copied ✓' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showFirmBanner && isFirmOwner === true && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">

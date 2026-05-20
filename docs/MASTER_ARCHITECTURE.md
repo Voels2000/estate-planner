@@ -444,7 +444,8 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Eight published slugs: `selling-a-business`, `death-of-spouse`, `serious-diagnosis`, `receiving-inheritance`, `divorce`, `approaching-retirement`, `large-rsu-vest`, `new-child-grandchild`.
 - Each page: hero + urgency badge, “what changes” bullets, prioritized action plan, assessment teaser → `/event/[slug]/assess`, optional advisor/attorney CTAs, related events.
 - SEO: `generateMetadata` + schema.org Article JSON-LD (`headline`, `description`, author/publisher, `mainEntityOfPage`).
-- Content is **TypeScript** in `lib/events/content.ts`, not MDX (MDX migration optional later).
+- Referral: `_referral-tracker.tsx` on event pages posts `?ref=` to `/api/referral/track` (Sprint 4).
+- Content is **TypeScript** in `lib/events/content.ts`, not MDX (MDX migration optional later). Sprint 5 adds 17 more slugs.
 
 **Email capture (Sprint 2):**
 
@@ -456,7 +457,8 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 | Surface | Route | Purpose |
 |---------|-------|---------|
-| My Advisor | `/my-advisor` | Single accepted `advisor_clients` connection; listing from `advisor_listings`; access log; revoke; pending `connection_requests` (advisor) with cancel |
+| My Advisor | `/my-advisor` | Accepted `advisor_clients` + `advisor_directory` listing (`profile_id`); invite-via-email when no connection; pending requests; access log; revoke |
+| Print / export | `/print` | Tier 3+ consumers; dual export mode (full vs attorney summary); `ExportPDFButton` `variant=attorney` |
 | My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
 | Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
 | Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |
@@ -674,6 +676,17 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - API: `app/api/consumer/life-events/route.ts` — POST (log event + recompute), GET, PATCH (acknowledge).
 - UI: `LifeEventBanner` on dashboard (`pendingLifeEvents` from server); links to `/event/[slug]`.
 - Upgrade personalization: `lib/events/upgradeContext.ts` → `getEventUpgradeValueProp()` on tier-gated pages.
+- Advisor notify on POST: `notifyAdvisorOfLifeEvent()` via admin `create_notification` RPC (1h cooldown).
+- Cron backup: job 6 in `/api/cron/notifications` for recent unacknowledged `life_events`.
+
+**Advisor/attorney distribution (Sprint 4):**
+
+- **Referral:** `lib/events/referral.ts` builds `?ref=` URLs; `app/(public)/event/[slug]/_referral-tracker.tsx` → `POST /api/referral/track`; `referral_clicks` + `advisor_directory.referral_code`.
+- **Advisor portal:** `app/advisor/page.tsx` loads referral code from `advisor_directory` by `profile_id`; `_advisor-client.tsx` shows copyable event links.
+- **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
+- **Attorney export:** `app/(dashboard)/print/_print-client.tsx` — UI complete; PDF content branch on `variant=attorney` deferred.
+
+**Current sprint (Sprint 5):** Analytics funnel, A/B tests (upgrade + assess gates), 17 additional event slugs in `lib/events/content.ts`. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 

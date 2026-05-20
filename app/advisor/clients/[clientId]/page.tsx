@@ -158,6 +158,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     stateIncomeTaxBracketsResult,
     strategyLineItemsResult,
     healthScore,
+    healthScoreComputedAt,
     liquidAssets,
     activeStrategies,
     actionItems,
@@ -308,6 +309,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       advisorHorizons={advisorHorizons}
       advisorHorizonsProjected={advisorHorizonsProjected}
       strategySetSummary={strategySetSummary}
+      planReadinessScore={healthScore}
+      planReadinessComputedAt={healthScoreComputedAt}
     />
   )
 }

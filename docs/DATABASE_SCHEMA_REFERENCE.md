@@ -55,7 +55,22 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Key columns:** `advisor_id`, `client_id`, `status`, `accepted_at`, `advisor_pdf_access`
 - **Purpose:** advisor-client link and authorization boundary for advisor workflows.
-- **Consumer UI:** `/my-advisor` reads accepted connection (`status='accepted'`) joined to `profiles` and `advisor_listings`; revoke sets `status='revoked'`.
+- **Consumer UI:** `/my-advisor` reads accepted connection (`status='accepted'`) joined to `profiles` and `advisor_directory` (via `profile_id`); revoke sets `status='revoked'`.
+
+### `advisor_directory`
+
+- **Key columns:** `id`, `profile_id`, `firm_name`, `contact_name`, `email`, `city`, `state`, `bio`, `credentials`, `specializations`, `is_verified`, `is_active`, `referral_code`, `submitted_by`
+- **Purpose:** canonical advisor listing table for find-advisor, registration, connection requests, and referral resolution.
+- **Referral:** unique `referral_code` per row; `referral_clicks.listing_id` FK references `advisor_directory(id)`.
+- **Application:** `app/(public)/find-advisor`, `my-advisor`, `app/advisor` referral lookup, `POST /api/referral/track`.
+- **Migration:** `20260522000000_advisor_referrals.sql` (adds `referral_code`; do not use legacy `advisor_listings`).
+
+### `referral_clicks`
+
+- **Key columns:** `id`, `referral_code`, `advisor_id`, `listing_id`, `event_slug`, `source_url`, `resolved`, `created_at`
+- **Purpose:** log event-page visits with `?ref=`; resolved when code matches `advisor_directory`.
+- **RLS:** advisors read own rows (`auth.uid() = advisor_id`); service role full access for API inserts.
+- **Migration:** `20260522000000_advisor_referrals.sql`
 
 ### `attorney_clients`
 
@@ -278,6 +293,7 @@ After each schema-affecting session:
 - `20260514100000_connection_requests_status_accepted_cancelled.sql` — extends `connection_requests_status_check` to allow `accepted` and `cancelled` (required for claim-listing accept + consumer cancel API)
 - `20260520000000_create_email_captures.sql` — `email_captures` table for public marketing lead capture
 - `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
+- `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 
 ---
 

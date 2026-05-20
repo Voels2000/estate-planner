@@ -25,16 +25,26 @@ export interface MonteCarloSummary {
   paths: number
 }
 
-export async function fetchHealthScore(householdId: string): Promise<number | null> {
+export type HealthScoreResult = {
+  score: number | null
+  computedAt: string | null
+}
+
+export async function fetchHealthScore(householdId: string): Promise<HealthScoreResult> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('estate_health_scores')
-    .select('score')
+    .select('score, computed_at')
     .eq('household_id', householdId)
     .maybeSingle()
 
-  if (error || data == null || data.score == null) return null
-  return data.score
+  if (error || data == null || data.score == null) {
+    return { score: null, computedAt: data?.computed_at ?? null }
+  }
+  return {
+    score: data.score,
+    computedAt: data.computed_at ?? null,
+  }
 }
 
 export async function fetchLiquidAssets(userId: string): Promise<number> {

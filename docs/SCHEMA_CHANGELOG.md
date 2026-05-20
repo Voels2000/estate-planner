@@ -8,6 +8,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 4 — advisor referrals + distribution (May 2026)
+
+- **Migration:** `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code` (unique); `referral_clicks` with FK to `advisor_directory(id)` and `auth.users`; RLS for advisor read + service role writes.
+- **API:** `POST /api/referral/track` — resolves `?ref=` against `advisor_directory`; logs resolved/unresolved clicks.
+- **Application:** Event pages mount `_referral-tracker.tsx`; advisor portal shows per-event referral URLs (`lib/events/referral.ts`). All listing queries use `advisor_directory` + `profile_id` (not `advisor_listings`).
+- **No schema change:** attorney export UI (`/print` dual mode), plan readiness card reads existing `estate_health_scores`.
+
 ## Sprint 3 — life_events (May 2026)
 
 - **Migration:** `20260521000000_create_life_events.sql` — `life_events` table; RLS users own rows; indexes on `user_id` and unacknowledged.

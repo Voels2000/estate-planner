@@ -150,7 +150,7 @@ Content: `lib/events/content.ts`. Assessment teaser and hero CTA link to `/event
 | `/trust-will` | — | 3 | Redirects to `/my-estate-trust-strategy?tab=trusts` (trust list, recommendations, checklist) |
 | `/health-check` | Estate Health Check | — | Linked from dashboard / onboarding |
 | `/import` | Import Data | 2 | |
-| `/print` | Export Estate Plan | — | |
+| `/print` | Export Estate Plan (full + attorney summary modes, tier 3+) | — | |
 | `/my-advisor` | My Advisor | — | Connection UI; not tier-gated (sidebar link for `role === 'consumer'`) |
 | `/my-advisor-directory` | Find a Financial Advisor | — | |
 | `/unlock-estate` | — | — | Upgrade flow |

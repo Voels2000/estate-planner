@@ -42,6 +42,7 @@ export type AdvisorClientDatasetsResult = {
   stateIncomeTaxBracketsResult: { data: unknown[] | null; error?: unknown }
   strategyLineItemsResult: { data: unknown[] | null; error?: unknown }
   healthScore: number | null
+  healthScoreComputedAt: string | null
   liquidAssets: number
   activeStrategies: string[]
   actionItems: Array<{ id: string; message: string; severity: string; created_at: string }>
@@ -182,7 +183,7 @@ export async function loadAdvisorClientDatasets(
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
     strategyLineItemsResult,
-    healthScore,
+    healthScoreResult,
     liquidAssets,
     activeStrategies,
     actionItems,
@@ -334,7 +335,8 @@ export async function loadAdvisorClientDatasets(
     stateTaxRulesAllYearsResult,
     stateIncomeTaxBracketsResult,
     strategyLineItemsResult,
-    healthScore,
+    healthScore: healthScoreResult.score,
+    healthScoreComputedAt: healthScoreResult.computedAt,
     liquidAssets,
     activeStrategies,
     actionItems,

@@ -328,6 +328,8 @@ export interface ClientViewShellProps {
   exportPdfData?: PDFReportData
   exportExcelData?: ExcelExportData
   exportPanelProps?: AdvisorExportPanelProps
+  planReadinessScore?: number | null
+  planReadinessComputedAt?: string | null
   projectionRowsDomicile?: Array<{ year: number; gross_estate: number; estate_incl_home?: number }>
   beneficiaryGrants?: BeneficiaryAccessGrant[]
   domicileAnalysis: Record<string, unknown> | null

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getEventContent, EVENT_SLUGS } from '@/lib/events/content'
 import type { EventContent, EventAction } from '@/lib/events/types'
 import type { Metadata } from 'next'
+import { ReferralTracker } from './_referral-tracker'
 
 // ── Static params for all 8 events ───────────────────────────────────────────
 
@@ -240,6 +241,7 @@ export default async function EventPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ReferralTracker slug={event.slug} />
 
       {/* Disclaimer */}
       <div style={{

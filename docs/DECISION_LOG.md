@@ -134,6 +134,16 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 **Alternatives considered:** MDX per `ROADMAP.md` original spec (deferred). CMS / database-driven events (deferred to Sprint 3+ in-app logging).
 
+---
+
+### May 2026 — `advisor_directory` is the canonical advisor listing table
+
+**Decision:** All advisor listing, connection, and referral resolution uses `advisor_directory` keyed by `profile_id` (professional's auth user id). Do not introduce or query `advisor_listings`.
+
+**Reasoning:** Find-advisor, register, my-advisor, and referral tracking were split across table names; a single canonical table prevents ghost schema and broken referral FKs.
+
+**Implementation:** Migration `20260522000000_advisor_referrals.sql`; `referral_clicks.listing_id` → `advisor_directory(id)`.
+
 **Implication:** Content edits require a code deploy. MDX migration remains optional if non-engineers need to author events.
 
 ---

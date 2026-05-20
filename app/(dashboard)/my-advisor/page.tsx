@@ -34,9 +34,9 @@ export default async function MyAdvisorPage() {
   const advisorId = connection?.advisor_id ?? null
   const { data: listing } = advisorId
     ? await supabase
-        .from('advisor_listings')
+        .from('advisor_directory')
         .select('firm_name, city, state, bio, credentials, specializations, is_fiduciary, website')
-        .eq('advisor_id', advisorId)
+        .eq('profile_id', advisorId)
         .maybeSingle()
     : { data: null }
 
@@ -79,6 +79,23 @@ export default async function MyAdvisorPage() {
       }
     : null
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  const consumerName = profile?.full_name ?? 'Your client'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+
+  const inviteEmailBody = encodeURIComponent(
+    `Hi,\n\nI've been using My Wealth Maps to organize my estate and financial plan, and I'd like to invite you to connect so you can view my plan and collaborate with me.\n\nClick here to join: ${appUrl}/signup?role=advisor\n\nOnce you're set up, search for me by email to connect.\n\nThanks,\n${consumerName}`,
+  )
+
+  const inviteEmailSubject = encodeURIComponent(
+    'Invitation to connect on My Wealth Maps',
+  )
+
   return (
     <MyAdvisorClient
       connection={normalizedConnection}
@@ -91,6 +108,9 @@ export default async function MyAdvisorPage() {
         city: pendingListing?.city ?? null,
         state: pendingListing?.state ?? null,
       } : null}
+      inviteEmailSubject={inviteEmailSubject}
+      inviteEmailBody={inviteEmailBody}
+      consumerName={consumerName}
     />
   )
 }

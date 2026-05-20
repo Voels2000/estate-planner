@@ -46,9 +46,20 @@ type Props = {
   listing: Listing
   accessLog: AccessEntry[]
   pendingRequest: PendingRequest
+  inviteEmailSubject: string
+  inviteEmailBody: string
+  consumerName: string
 }
 
-export default function MyAdvisorClient({ connection, listing, accessLog, pendingRequest }: Props) {
+export default function MyAdvisorClient({
+  connection,
+  listing,
+  accessLog,
+  pendingRequest,
+  inviteEmailSubject,
+  inviteEmailBody,
+  consumerName,
+}: Props) {
   const router = useRouter()
   const [isRevoking, setIsRevoking] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -158,23 +169,49 @@ export default function MyAdvisorClient({ connection, listing, accessLog, pendin
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center px-8">
-            {cancelled && (
-              <div className="mb-6 w-full max-w-sm rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 text-center">
-                ✓ Request cancelled. You can send a new request any time.
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0">✉️</span>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-semibold text-indigo-900">
+                    Invite your advisor
+                  </h2>
+                  <p className="mt-1 text-sm text-indigo-700 leading-relaxed">
+                    Already working with a financial advisor? Send them a pre-written email
+                    inviting them to join My Wealth Maps and connect to your plan.
+                  </p>
+                  <a
+                    href={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
+                    className="mt-4 inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+                  >
+                    Invite my advisor via email →
+                  </a>
+                  <p className="mt-3 text-xs text-indigo-600">
+                    Opens your email app with a message signed as {consumerName}.
+                  </p>
+                </div>
               </div>
-            )}
-            <div className="text-4xl mb-3">👤</div>
-            <p className="text-sm font-medium text-neutral-600">No advisor connected</p>
-            <p className="mt-1 text-sm text-neutral-400">
-              Your advisor can send you an invite by email, or you can find one in the directory.
-            </p>
-            <Link
-              href="/find-advisor"
-              className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-            >
-              Find an Advisor
-            </Link>
+            </div>
+
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-12 text-center px-8">
+              {cancelled && (
+                <div className="mb-6 w-full max-w-sm rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 text-center">
+                  ✓ Request cancelled. You can send a new request any time.
+                </div>
+              )}
+              <div className="text-4xl mb-3">👤</div>
+              <p className="text-sm font-medium text-neutral-600">No advisor connected yet</p>
+              <p className="mt-1 text-sm text-neutral-400">
+                Or find an advisor in our directory who is already on the platform.
+              </p>
+              <Link
+                href="/find-advisor"
+                className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+              >
+                Find an Advisor
+              </Link>
+            </div>
           </div>
         )}
       </div>

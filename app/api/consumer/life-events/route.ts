@@ -51,7 +51,60 @@ export async function POST(request: NextRequest) {
 
   await afterHouseholdWriteForOwner(supabase, user.id)
 
-  return NextResponse.json({ event: data })
+  void notifyAdvisorOfLifeEvent(supabase, user.id, eventType, data.id)
+
+  return NextResponse.json({ ok: true, id: data.id, event: data })
+}
+
+async function notifyAdvisorOfLifeEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  eventType: string,
+  lifeEventId: string,
+) {
+  try {
+    const { data: connection } = await supabase
+      .from('advisor_clients')
+      .select('advisor_id')
+      .eq('client_id', userId)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    if (!connection?.advisor_id) return
+
+    const { data: clientProfile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .single()
+
+    const clientName = clientProfile?.full_name ?? clientProfile?.email ?? 'Your client'
+
+    const eventLabel = eventType
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const adminClient = createAdminClient()
+
+    await adminClient.rpc('create_notification', {
+      p_user_id: connection.advisor_id,
+      p_type: 'client_life_event',
+      p_title: `${clientName} logged a life event`,
+      p_body: `${clientName} indicated: ${eventLabel}. Review their plan to see what may need attention.`,
+      p_delivery: 'both',
+      p_metadata: {
+        client_id: userId,
+        life_event_id: lifeEventId,
+        event_type: eventType,
+        event_label: eventLabel,
+      },
+      p_cooldown: '1 hour',
+    })
+  } catch (err) {
+    console.error('notifyAdvisorOfLifeEvent error:', err)
+  }
 }
 
 export async function PATCH(request: NextRequest) {

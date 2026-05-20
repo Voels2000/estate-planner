@@ -123,6 +123,7 @@ type Props = {
   latestSharedMCScenario?: ConsumerMCScenario | null
   estateCallout?: EstateCalloutCardProps | null
   pendingLifeEvents?: LifeEvent[]
+  hasAdvisorConnection?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +166,7 @@ export function DashboardClient(props: Props) {
     latestSharedMCScenario,
     estateCallout,
     pendingLifeEvents = [],
+    hasAdvisorConnection = false,
   } = props
 
   void consumerTier
@@ -193,7 +195,10 @@ export function DashboardClient(props: Props) {
         conflictReport={conflictReport}
       />
 
-      <LifeEventBanner pendingEvents={pendingLifeEvents} />
+      <LifeEventBanner
+        pendingEvents={pendingLifeEvents}
+        hasAdvisorConnection={hasAdvisorConnection}
+      />
 
       {conflictReport &&
         (conflictReport.critical > 0 || conflictReport.warnings > 0) &&

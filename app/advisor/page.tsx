@@ -8,6 +8,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import AdvisorClient from './_advisor-client-wrapper'
 
 export default async function AdvisorPage() {
@@ -103,6 +104,17 @@ export default async function AdvisorPage() {
     netWorthMap[clientId] = totalAssets - totalLiabilities
   }
 
+  const { data: advisorListing } = await supabase
+    .from('advisor_directory')
+    .select('referral_code')
+    .eq('profile_id', user.id)
+    .maybeSingle()
+
+  const referralCode = advisorListing?.referral_code ?? null
+  const eventReferralUrls = referralCode
+    ? buildAllEventReferralUrls(referralCode)
+    : null
+
   return (
     <AdvisorClient
       advisorClients={(advisorClients ?? []).map(ac => ({
@@ -116,6 +128,8 @@ export default async function AdvisorPage() {
       firm_id={firm_id}
       healthScoreMap={healthScoreMap}
       householdIdMap={ownerToHousehold}
+      referralCode={referralCode}
+      eventReferralUrls={eventReferralUrls}
     />
   )
 }

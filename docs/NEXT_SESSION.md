@@ -1,72 +1,90 @@
 # NEXT_SESSION.md
-# Sprint 3 — Session Start Document
-# Generated: May 2026 (Sprint 3 core shipped)
+# Sprint 5 — Session Start Document
+# Updated: May 2026
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> I am building My Wealth Maps, a self-guided estate and financial
-> planning tool for households with $2M–$30M in assets. The engine
-> is strong — we are doing UI and structural work only. Sprint 3 core
-> is shipped: life_events table + API, dashboard LifeEventBanner,
-> age-triggers cron, and event-personalized upgrade gates on locked
-> pages. Remaining: engagement tracking, copy audit, email drip.
-> Today's task: [FILL IN FROM REMAINING LIST BELOW].
+> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–4 shipped
+> (public funnel, 8 event pages, life events, advisor/attorney distribution batch).
+> **Current: Sprint 5** — analytics, A/B tests, remaining 17 event pages.
+> Run pending Supabase migrations if not applied in prod.
+> Today's task: [FILL IN BELOW].
 
 ---
 
-## Sprint 3 — What shipped
+## Current sprint — Sprint 5 (Weeks 15–18)
 
-| Task | Status | Notes |
-|------|--------|-------|
-| `life_events` table + RLS | ✅ Done | `supabase/migrations/20260521000000_create_life_events.sql` — **run in Supabase** |
-| `POST/GET/PATCH /api/consumer/life-events` | ✅ Done | POST triggers `afterHouseholdWriteForOwner` |
-| `LifeEventBanner` on dashboard | ✅ Done | `app/(dashboard)/_components/LifeEventBanner.tsx` |
-| `app/api/cron/age-triggers` | ✅ Done | Daily 15:00 UTC in `vercel.json`; ages 62/65/70/73 → `approaching-retirement` |
-| `lib/events/upgradeContext.ts` | ✅ Done | `getEventUpgradeValueProp()` |
-| Event-personalized upgrade gates | ✅ Done | SS, Roth, RMD, Complete, My Family, Titling, Incapacity, Domicile |
+**Goal:** Full funnel measured, A/B tests running, remaining 17 event pages published.
 
-## Sprint 3 — Remaining / backlog
+See [ROADMAP.md](./ROADMAP.md) for full checklist. Priority order:
 
-| Task | Notes |
-|------|-------|
-| Run `life_events` migration in Supabase | Required before banner/API work in prod |
-| Life event banner engagement tracking | Analytics not wired |
-| Age trigger copy per milestone (62 vs 65 vs 70 vs 73) | All map to `approaching-retirement` slug today |
-| In-app copy audit | Sprint 2 carryover |
-| Email drip sequence | Needs ESP |
-| Event pages in Search Console | Post-deploy |
+1. **Analytics** — event page → assessment → email → account → tier → advisor connect → retention
+2. **A/B** — event-personalized upgrade copy vs generic; assessment gate variants
+3. **Content** — 17 event slugs in `lib/events/content.ts` + SSG pages (today: 8 published)
 
 ---
 
-## Key file paths (post–Sprint 3)
+## Recently shipped (Sprint 4 — advisor/attorney distribution) ✅
+
+| Task | Path / notes |
+|------|----------------|
+| Invite your advisor (no-connection) | `my-advisor/page.tsx`, `_my-advisor-client.tsx` |
+| Advisor notified on client life event | `POST /api/consumer/life-events` + `create_notification` |
+| Life event banner — share / find advisor | `LifeEventBanner.tsx`, `dashboard/page.tsx` |
+| Event `?ref=` tracking | `_referral-tracker.tsx`, `/api/referral/track`, `lib/events/referral.ts` |
+| Advisor referral links in portal | `app/advisor/page.tsx`, `_advisor-client.tsx` |
+| Cron backup life-event advisor notify | Job 6 in `/api/cron/notifications` |
+| Attorney-ready export UI | `print/_print-client.tsx`, `ExportPDFButton` `variant=attorney` |
+| Plan readiness (advisor client view) | `PlanReadinessCard.tsx` → Overview tab |
+| `advisor_directory` canonical table | All listing/referral queries; migration `20260522000000` |
+
+## Recently shipped (Sprint 3) ✅
+
+| Task | Path / notes |
+|------|----------------|
+| `life_events` + API + banner | `20260521000000`, `/api/consumer/life-events` |
+| Age triggers cron | `/api/cron/age-triggers`, `vercel.json` 15:00 UTC |
+| Event-personalized upgrade gates | `lib/events/upgradeContext.ts` |
+
+---
+
+## Pending migrations (run in Supabase if not applied)
+
+1. `20260521000000_create_life_events.sql`
+2. `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
+
+---
+
+## Key paths (Sprint 5 work)
 
 | Area | Path |
 |------|------|
-| Life event banner | `app/(dashboard)/_components/LifeEventBanner.tsx` |
-| Life events API | `app/api/consumer/life-events/route.ts` |
-| Life events table | Supabase: `life_events` |
-| Age triggers cron | `app/api/cron/age-triggers/route.ts`, `vercel.json` |
-| Upgrade copy helper | `lib/events/upgradeContext.ts` |
-| Event slug validation | `lib/events/lifeEventSlugs.ts` |
-| Dashboard fetch | `app/(dashboard)/dashboard/page.tsx` |
-| Notification cron | `app/api/cron/notifications/route.ts` |
+| Event content (add 17) | `lib/events/content.ts`, `lib/events/types.ts` |
+| Event pages | `app/(public)/event/[slug]/page.tsx`, `assess/page.tsx` |
+| Referral / attribution | `lib/events/referral.ts`, `app/api/referral/track/route.ts` |
+| Upgrade A/B | `UpgradeBanner`, `lib/events/upgradeContext.ts` |
+| Analytics (TBD) | instrument funnel events — no central module yet |
+| Print / attorney PDF | `print/_print-client.tsx`, `components/pdf/ExportPDFButton.tsx`, `/api/export-estate-plan` |
+| Advisor client readiness | `app/advisor/clients/[clientId]/_components/PlanReadinessCard.tsx` |
 
 ---
 
-## Sprint 3 success criteria
+## Sprint 5 backlog (from ROADMAP)
 
-- [x] Life event banner on dashboard
-- [ ] Age triggers verified in test environment (after migration + cron deploy)
-- [x] Event-personalized upgrade copy on 8+ locked pages
-- [ ] No regression on existing upgrade gates (manual smoke)
+- [ ] Full funnel instrumentation
+- [ ] Event source attribution (conversion + LTV by slug)
+- [ ] A/B: personalized upgrade copy vs generic
+- [ ] A/B: assessment gate (score visible vs full gate)
+- [ ] 17 remaining event pages (see ROADMAP list)
+- [ ] Attorney PDF template for `variant=attorney`
+- [ ] Signup attribution from `mwm_referral_code` / sessionStorage
+- [ ] Per-age event slugs for age-triggers (62/65/70/73)
+- [ ] Email drip; Search Console indexing
 
 ---
 
 ## How to end each session
 
-Ask: "Summarize what we completed today and update NEXT_SESSION.md with
-remaining tasks and any new file paths discovered."
-
-Commit the updated NEXT_SESSION.md alongside code changes.
+Summarize completed work; update this file, `ROADMAP.md`, and master docs per [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md).
