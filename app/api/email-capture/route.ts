@@ -27,6 +27,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not save' }, { status: 500 })
     }
 
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'}/api/email/drip`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        source: source ?? 'unknown',
+        event_slug: source?.replace('event-assess-', '') ?? null,
+        sequence_step: 1,
+      }),
+    }).catch(() => {})
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('email-capture route error:', err)

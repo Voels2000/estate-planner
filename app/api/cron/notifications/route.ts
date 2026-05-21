@@ -2,6 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { NextResponse } from 'next/server'
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+
 type AuthInfo = {
   email?: string
   last_sign_in_at?: string | null
@@ -312,6 +314,70 @@ export async function GET(request: Request) {
 
     if (notifId) results.sent++
     else results.skipped++
+  }
+
+  // ── 7. Email drip — send step 2 (day 3) and step 3 (day 7) ─────────────
+  const threeDaysAgo = new Date(now)
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+  const sevenDaysAgo = new Date(now)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const eightDaysAgo = new Date(now)
+  eightDaysAgo.setDate(eightDaysAgo.getDate() - 8)
+
+  const { data: dripCandidates } = await supabase
+    .from('email_captures')
+    .select('email, source')
+    .is('unsubscribed_at', null)
+
+  for (const capture of dripCandidates ?? []) {
+    const { data: full } = await supabase
+      .from('email_captures')
+      .select('email, source, drip_step_1_sent_at, drip_step_2_sent_at, drip_step_3_sent_at')
+      .eq('email', capture.email)
+      .eq('source', capture.source)
+      .single()
+
+    if (!full) continue
+
+    const step1At = full.drip_step_1_sent_at ? new Date(full.drip_step_1_sent_at) : null
+    const step2At = full.drip_step_2_sent_at ? new Date(full.drip_step_2_sent_at) : null
+    const step3At = full.drip_step_3_sent_at ? new Date(full.drip_step_3_sent_at) : null
+
+    const eventSlug = full.source?.replace('event-assess-', '') ?? null
+
+    if (step1At && !step2At && step1At >= sevenDaysAgo && step1At < threeDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+        },
+        body: JSON.stringify({
+          email: full.email,
+          source: full.source,
+          event_slug: eventSlug,
+          sequence_step: 2,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
+
+    if (step1At && step2At && !step3At && step1At >= eightDaysAgo && step1At < sevenDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+        },
+        body: JSON.stringify({
+          email: full.email,
+          source: full.source,
+          event_slug: eventSlug,
+          sequence_step: 3,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
   }
 
   console.log('[cron:notifications]', results)

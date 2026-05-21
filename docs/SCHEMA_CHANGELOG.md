@@ -8,6 +8,16 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 6 — admin funnel, attorney PDF, SEO, Resend drip (May 2026)
+
+- **Admin:** `app/admin/funnel-tab.tsx` — reads `funnel_events` via `createAdminClient()` (service role; user client cannot read funnel rows).
+- **PDF:** `AttorneyEstatePlanPDF` in `components/pdf/EstatePlanPDF.tsx`; `POST /api/export-estate-plan?variant=attorney` adds `beneficiary_conflicts`, `assets` summary, tax RPCs.
+- **SEO:** `app/sitemap.ts` (static routes + `EVENT_SLUGS` event + assess URLs); `app/robots.ts` (disallow dashboard/advisor/api).
+- **Migration:** `20260524000000_email_captures_drip.sql` — `drip_step_1/2/3_sent_at`, `unsubscribed_at` on `email_captures`.
+- **Email:** `lib/emails/drip-templates.ts`; `POST /api/email/drip` (Resend; auth `INTERNAL_API_KEY` or `CRON_SECRET`); `GET /api/email/unsubscribe`.
+- **Cron:** `app/api/cron/notifications/route.ts` job 7 — drip steps 2–3 by age since step 1.
+- **Capture:** `app/api/email-capture/route.ts` fires drip step 1 (non-blocking) after insert.
+
 ## Sprint 5 — analytics + funnel events (May 2026)
 
 - **Package:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).

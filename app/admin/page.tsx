@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminClient } from './_admin-client'
 
 export default async function AdminPage() {
@@ -109,6 +110,33 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Funnel analytics (service role — funnel_events RLS is not admin-readable via user client)
+  const admin = createAdminClient()
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const [
+    { data: funnelBySlug },
+    { data: funnelByReferral },
+    { data: recentFunnelEvents },
+  ] = await Promise.all([
+    admin
+      .from('funnel_events')
+      .select('event_slug, event_name')
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .not('event_slug', 'is', null),
+    admin
+      .from('funnel_events')
+      .select('referral_code, event_name')
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .not('referral_code', 'is', null),
+    admin
+      .from('funnel_events')
+      .select('event_name, event_slug, referral_code, created_at, properties')
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
+
   // Compute stats
   const now = new Date()
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -163,6 +191,9 @@ export default async function AdminPage() {
       titlingCategories={titlingCategories ?? []}
       termsVersion={termsVersion}
       termsSections={termsSections}
+      funnelBySlug={funnelBySlug ?? []}
+      funnelByReferral={funnelByReferral ?? []}
+      recentFunnelEvents={recentFunnelEvents ?? []}
     />
   )
 }

@@ -38,7 +38,7 @@ Rendered at the **bottom** of the main `<nav>` scroll area (above the footer blo
 |------|----------------|--------|--------|
 | 💼 Advisor Portal | `role === 'advisor'` **or** `isSuperuser` | `/advisor` | Professional users switching hats; not shown to consumer-only accounts |
 | ⚖️ Attorney Portal | `role === 'attorney'` **or** `isAttorney` **or** `isSuperuser` | `/attorney` | Same pattern |
-| ⚙️ Admin Portal | `role === 'admin'` **or** `isAdmin` **or** `isSuperuser` | `/admin` | Same pattern |
+| ⚙️ Admin Portal | `role === 'admin'` **or** `isAdmin` **or** `isSuperuser` | `/admin` | Tabs include **Funnel** (conversion by slug/referral) |
 
 Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 

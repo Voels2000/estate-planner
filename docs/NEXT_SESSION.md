@@ -1,41 +1,41 @@
 # NEXT_SESSION.md
-# Sprint 6 — Session Start Document
+# Sprint 7 — Session Start Document
 # Updated: May 2026
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–5 shipped: 24 life event
-> pages, Vercel + custom funnel analytics, A/B tests (assess gate + upgrade copy), advisor
-> distribution, life events. Migrations are idempotent for re-run.
-> **Current: Sprint 6** — reporting, attorney PDF, growth distribution.
+> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–6 shipped: 24 life event
+> pages, funnel analytics + admin Funnel tab, attorney PDF export, sitemap/robots, Resend
+> 3-step email drip, A/B tests, advisor distribution. Canonical URL: `NEXT_PUBLIC_APP_URL`.
+> **Current: Sprint 7** — Search Console, conversion reporting, distribution polish.
 > Today's task: [FILL IN BELOW].
 
 ---
 
-## Current sprint — Sprint 6 (Weeks 19–22)
+## Current sprint — Sprint 7 (Weeks 23–26)
 
-**Goal:** Measure and act on funnel data; finish attorney PDF export; start content distribution.
+**Goal:** Verify SEO indexing, deepen funnel reporting, expand drip and advisor distribution.
 
 See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
-1. **Admin funnel views** — SQL or admin UI on `funnel_events` + `referral_clicks`
-2. **Attorney PDF** — `variant=attorney` branch in `/api/export-estate-plan` + `EstatePlanPDF`
-3. **SEO / distribution** — Search Console, email drip decision, advisor newsletter kit
+1. **Search Console** — verify property, submit `sitemap.xml`, confirm event URLs indexed
+2. **Funnel reporting** — event → tier conversion; optional 30-day step counts in admin
+3. **Distribution** — advisor newsletter kit; more drip sequences; attorney `?ref=` on events
 
 ---
 
-## Sprint 5 completed ✅
+## Sprint 6 completed ✅
 
 | Area | What shipped |
 |------|----------------|
-| Vercel Analytics | `@vercel/analytics` + `<Analytics />` in `app/layout.tsx` |
-| Custom funnel | `funnel_events`, `POST /api/analytics/funnel`, `lib/analytics/useFunnelEvent.ts` |
-| Funnel steps | `event_page_view`, `event_assess_start/complete`, `email_captured`, `account_created`, `tier_upgraded`, `advisor_connected` |
-| A/B tests | `app_config`: `ab_assessment_gate`, `ab_upgrade_copy`; `/assess` server gate; `upgradeContext` |
-| Event content | 16 slugs in `lib/events/content-sprint5.ts` — **24 total** at `/event/[slug]` |
-| Migrations | Idempotent RLS policies on `life_events`, `referral_clicks`, `funnel_events` |
+| Admin funnel | `app/admin/funnel-tab.tsx` — conversion viz, by-slug/referral tables, recent feed, SQL cheat sheet; data via `createAdminClient()` |
+| Attorney PDF | `AttorneyEstatePlanPDF` + `variant=attorney` in `/api/export-estate-plan` (conflicts, assets, tax) |
+| SEO | `app/sitemap.ts` (static + 24 events + assess URLs), `app/robots.ts` |
+| Email drip | Resend — `lib/emails/drip-templates.ts`, `POST /api/email/drip`, unsubscribe route, cron steps 2–3, step 1 on capture |
+| Schema | `20260524000000_email_captures_drip.sql` — drip sent timestamps + `unsubscribed_at` |
+| Auth | `INTERNAL_API_KEY` for internal drip calls; `CRON_SECRET` also accepted on drip route |
 
 ---
 
@@ -47,62 +47,80 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 | `20260522000000_advisor_referrals.sql` | `referral_code`, `referral_clicks` |
 | `20260523000000_funnel_events.sql` | `funnel_events` |
 | `20260523000001_app_config_ab_tests.sql` | A/B seed rows |
+| `20260524000000_email_captures_drip.sql` | Drip + unsubscribe columns on `email_captures` |
 
 ---
 
-## Files you need for Sprint 6
+## Vercel / env (Production)
 
-### Analytics / reporting (start here)
+Set in dashboard before drip + sitemap go live:
 
-| File | Why |
-|------|-----|
-| `app/api/analytics/funnel/route.ts` | Funnel insert contract |
-| `lib/analytics/useFunnelEvent.ts` | Event names + client capture |
-| `lib/analytics/abTests.ts` | `app_config` A/B readers |
-| `supabase/migrations/20260523000000_funnel_events.sql` | Schema reference |
-| `app/admin/page.tsx` | Extend or add funnel admin tab |
-| `docs/DATABASE_SCHEMA_REFERENCE.md` | `funnel_events`, `referral_clicks` |
+| Variable | Value |
+|----------|--------|
+| `NEXT_PUBLIC_APP_URL` | `https://estate-planner-gules.vercel.app` (→ `https://mywealthmaps.com` at domain cutover) |
+| `RESEND_API_KEY` | From resend.com |
+| `INTERNAL_API_KEY` | Same hex as `.env.local` (must match for drip + cron) |
+| `CRON_SECRET` | Already required for notifications cron |
 
-### Attorney PDF export
-
-| File | Why |
-|------|-----|
-| `app/(dashboard)/print/_print-client.tsx` | Dual-mode UI |
-| `components/pdf/ExportPDFButton.tsx` | Passes `variant=attorney` |
-| `app/api/export-estate-plan/route.ts` | Add variant branch |
-| `components/pdf/EstatePlanPDF.tsx` | Attorney summary layout |
-
-### Growth / distribution (pick one track)
-
-| File | Why |
-|------|-----|
-| `lib/events/content.ts` + `lib/events/content-sprint5.ts` | Event copy for newsletters |
-| `app/(public)/event/[slug]/page.tsx` | SEO / JSON-LD |
-| `app/api/email-capture/route.ts` | Drip hook point |
-| `lib/events/referral.ts` | Advisor share URLs |
-
-### Still useful context (Sprint 4–5)
-
-| File | Why |
-|------|-----|
-| `app/advisor/page.tsx`, `_advisor-client.tsx` | Referral links |
-| `app/(public)/event/[slug]/_referral-tracker.tsx` | `?ref=` + `event_page_view` |
-| `app/(auth)/signup/_signup-form.tsx` | `account_created` funnel event |
-| `app/api/stripe/webhook/route.ts` | `tier_upgraded` |
-| `app/api/advisor/accept-request/route.ts` | `advisor_connected` |
-| `lib/events/upgradeContext.ts` | Personalized upgrade copy |
+Verify domain `hello@mywealthmaps.com` in Resend (or change `from` in drip route).
 
 ---
 
-## Sprint 6 backlog
+## Files you need for Sprint 7
 
-- [ ] Admin funnel dashboard (conversion by `event_slug`, `referral_code`)
-- [ ] Attorney PDF template for `variant=attorney`
-- [ ] Email drip provider + sequences per event type
-- [ ] Google Search Console indexing verification (24 event URLs)
+### Search Console / SEO
+
+| File | Why |
+|------|-----|
+| `app/sitemap.ts` | Submit `/sitemap.xml` |
+| `app/robots.ts` | Crawl rules + sitemap pointer |
+| `app/layout.tsx` | Add Google verification meta when Search Console provides tag |
+| `lib/events/content.ts` | 24 slugs to spot-check indexing |
+
+### Funnel / reporting
+
+| File | Why |
+|------|-----|
+| `app/admin/funnel-tab.tsx` | Extend step counts (full 30d query) or tier join |
+| `app/api/analytics/funnel/route.ts` | Event contract |
+| `supabase/migrations/20260523000000_funnel_events.sql` | Join to `profiles` for tier report |
+
+### Email drip expansion
+
+| File | Why |
+|------|-----|
+| `lib/emails/drip-templates.ts` | Add sequences for remaining top slugs |
+| `app/api/email/drip/route.ts` | Send + log contract |
+| `app/api/cron/notifications/route.ts` | Steps 2–3 timing |
+| `app/api/email-capture/route.ts` | Step 1 trigger |
+
+### Distribution
+
+| File | Why |
+|------|-----|
+| `lib/events/referral.ts` | Advisor share URLs for newsletter kit |
+| `app/(public)/event/[slug]/_referral-tracker.tsx` | Pattern for attorney `?ref=` |
+
+---
+
+## Sprint 7 backlog
+
+- [ ] Google Search Console — verify + submit sitemap; confirm event URLs indexed
+- [ ] Admin funnel — full 30-day step counts (today viz uses last 50 events)
+- [ ] Event → tier conversion report (`funnel_events` ↔ `profiles.consumer_tier`)
+- [ ] Drip sequences for more event slugs (only 3 custom + default today)
+- [ ] Advisor newsletter kit (copy + links from `lib/events/referral.ts`)
+- [ ] Attorney `?ref=` on event pages (advisor-only `?ref=` today)
+- [ ] `EVENT_UPGRADE_COPY` for 16 Sprint 5 slugs in `upgradeContext.ts`
 - [ ] Per-age calendar trigger slugs (62/65/70/73) — today all `approaching-retirement`
-- [ ] Life event context on new advisor connections
-- [ ] Attorney `?ref=` on event pages (advisor-only today)
+
+---
+
+## Known limitations (carry forward)
+
+- Admin funnel bar chart counts from **last 50 events**; slug/referral tables use **30-day** data.
+- Drip `from` address must be verified in Resend.
+- `NEXT_PUBLIC_SITE_URL` still appears in some routes — prefer `NEXT_PUBLIC_APP_URL` for new work.
 
 ---
 

@@ -61,6 +61,9 @@ export async function GET(request: NextRequest) {
     }
 
     const isAdvisor = profile.role === 'advisor'
+    const variant = searchParams.get('variant') ?? null
+    const isAttorneyVariant = variant === 'attorney'
+    const includeTax = isAdvisor || isAttorneyVariant
 
     // Run all data fetches in parallel
     const [
@@ -73,6 +76,8 @@ export async function GET(request: NextRequest) {
       documentsResult,
       trustsResult,
       beneficiariesResult,
+      conflictsResult,
+      assetsSummaryResult,
     ] = await Promise.all([
       // 1. Household + profile data
       supabase
@@ -102,13 +107,13 @@ export async function GET(request: NextRequest) {
       // 4. Incapacity recommendations
       supabase.rpc('generate_incapacity_recommendations', { p_household_id: householdId }),
 
-      // 5. Federal estate tax (advisor only)
-      isAdvisor
+      // 5. Federal estate tax (advisor + attorney variant)
+      includeTax
         ? supabase.rpc('calculate_federal_estate_tax', { p_household_id: householdId })
         : Promise.resolve({ data: null, error: null }),
 
-      // 6. State estate tax (advisor only)
-      isAdvisor
+      // 6. State estate tax (advisor + attorney variant)
+      includeTax
         ? supabase.rpc('calculate_state_estate_tax', { p_household_id: householdId })
         : Promise.resolve({ data: null, error: null }),
 
@@ -128,6 +133,18 @@ export async function GET(request: NextRequest) {
       supabase
         .from('asset_beneficiaries')
         .select('beneficiary_name, relationship, allocation_pct, special_needs, distribution_age, is_minor')
+        .eq('owner_id', user.id),
+
+      // 10. Beneficiary conflicts (for attorney variant)
+      supabase
+        .from('beneficiary_conflicts')
+        .select('conflict_type, severity, description, recommended_action')
+        .eq('household_id', householdId),
+
+      // 11. Assets summary (for attorney variant gross estate)
+      supabase
+        .from('assets')
+        .select('type, value')
         .eq('owner_id', user.id),
     ])
 
@@ -153,16 +170,20 @@ export async function GET(request: NextRequest) {
       role: profile.role,
       consumer_tier: profile.consumer_tier,
       advisor_name: isAdvisor ? (profile.full_name ?? null) : null,
+      variant: variant ?? null,
       household: householdResult.data,
       completeness: completenessResult.data,
       recommendations: recommendationsResult.data ?? null,
       incapacity: incapacityResult.data,
-      // Tax data: only included for advisors
-      federal_estate_tax: isAdvisor ? estateTaxResult.data : null,
-      state_estate_tax: isAdvisor ? stateTaxResult.data : null,
+      // Tax data: only included for advisors and attorney variant
+      federal_estate_tax: includeTax ? estateTaxResult.data : null,
+      state_estate_tax: includeTax ? stateTaxResult.data : null,
       documents: documentsResult.data ?? [],
       trusts: trustsResult.data ?? [],
       beneficiaries: beneficiariesResult.data ?? [],
+      // Attorney variant extras
+      conflicts: isAttorneyVariant ? (conflictsResult.data ?? []) : [],
+      assets_summary: isAttorneyVariant ? (assetsSummaryResult.data ?? []) : [],
     }
 
     return NextResponse.json(payload)

@@ -386,6 +386,72 @@ const s = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 1.5,
   },
+  attorneyBanner: {
+    backgroundColor: '#f0fdf4',
+    borderLeftWidth: 3,
+    borderLeftColor: GREEN,
+    padding: 10,
+    borderRadius: 3,
+    marginBottom: 16,
+  },
+  attorneyBannerText: {
+    fontSize: 8,
+    color: '#166534',
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 2,
+  },
+  attorneyBannerSub: {
+    fontSize: 7,
+    color: '#15803d',
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: GRAY_LIGHT,
+    borderRadius: 5,
+    padding: 10,
+  },
+  infoCardLabel: {
+    fontSize: 7,
+    color: GRAY_MID,
+    marginBottom: 3,
+    textTransform: 'uppercase',
+  },
+  infoCardValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: NAVY,
+  },
+  conflictRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  conflictSeverityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+    marginTop: 1,
+  },
+  conflictLabel: {
+    fontSize: 8,
+    color: GRAY_DARK,
+    flex: 1,
+  },
+  conflictAction: {
+    fontSize: 7,
+    color: GRAY_MID,
+    marginTop: 2,
+    flex: 1,
+  },
 })
 
 // --- Helpers ---
@@ -460,6 +526,32 @@ type EstatePlanPdfData = {
   } | null
   documents?: PdfDoc[] | null
   trusts?: PdfTrust[] | null
+}
+
+type PdfConflict = {
+  conflict_type?: string | null
+  severity?: string | null
+  description?: string | null
+  recommended_action?: string | null
+}
+
+type PdfAssetSummary = {
+  type?: string | null
+  value?: number | null
+}
+
+type PdfBeneficiary = {
+  beneficiary_name?: string | null
+  relationship?: string | null
+  allocation_pct?: number | null
+  is_minor?: boolean | null
+  special_needs?: boolean | null
+}
+
+type AttorneyPdfData = EstatePlanPdfData & {
+  conflicts?: PdfConflict[]
+  assets_summary?: PdfAssetSummary[]
+  beneficiaries?: PdfBeneficiary[]
 }
 
 const clientName = (h: PdfHousehold) => {
@@ -667,6 +759,216 @@ const DocumentsSection = ({ data }: { data: EstatePlanPdfData }) => {
   )
 }
 
+// --- Attorney Header (overrides shared header) ---
+const AttorneyPDFHeader = ({ data }: { data: AttorneyPdfData }) => (
+  <View>
+    <View style={s.headerAccent} />
+    <View style={s.header}>
+      <Text style={s.headerAppName}>MY WEALTH MAPS — ATTORNEY INTAKE SUMMARY</Text>
+      <Text style={s.headerClientName}>{clientName(data.household)}</Text>
+      <Text style={s.headerSubtitle}>
+        {data.household.state_primary}
+        {data.household.filing_status === 'mfj' ? '  |  Married Filing Jointly' : ''}
+        {'  |  Prepared for attorney review'}
+      </Text>
+      <View style={s.headerMeta}>
+        <View>
+          <Text style={s.headerMetaLabel}>DOCUMENT TYPE</Text>
+          <Text style={s.headerMetaValue}>Attorney Intake Summary</Text>
+        </View>
+        <View>
+          <Text style={s.headerMetaLabel}>PREPARED BY</Text>
+          <Text style={s.headerMetaValue}>Client via My Wealth Maps</Text>
+        </View>
+        <View>
+          <Text style={s.headerMetaLabel}>GENERATED</Text>
+          <Text style={s.headerMetaValue}>{fmtDate(data.generated_at)}</Text>
+        </View>
+      </View>
+    </View>
+  </View>
+)
+
+// --- Household Profile (attorney) ---
+const AttorneyProfileSection = ({ data }: { data: AttorneyPdfData }) => {
+  const h = data.household
+  const grossEstate = (data.assets_summary ?? [])
+    .reduce((sum, a) => sum + (a.value ?? 0), 0)
+  const fedTax = data.federal_estate_tax?.estimated_tax ?? 0
+  const stateTax = data.state_estate_tax?.estimated_state_tax ?? 0
+
+  return (
+    <Section title="Household Profile">
+      <View style={s.infoGrid}>
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>Primary Client</Text>
+          <Text style={s.infoCardValue}>
+            {[h.person1_first_name, h.person1_last_name].filter(Boolean).join(' ') || '—'}
+          </Text>
+        </View>
+        {h.has_spouse && (
+          <View style={s.infoCard}>
+            <Text style={s.infoCardLabel}>Spouse</Text>
+            <Text style={s.infoCardValue}>
+              {[h.person2_first_name, h.person2_last_name].filter(Boolean).join(' ') || '—'}
+            </Text>
+          </View>
+        )}
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>State of Domicile</Text>
+          <Text style={s.infoCardValue}>{h.state_primary ?? '—'}</Text>
+        </View>
+      </View>
+      <View style={s.infoGrid}>
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>Gross Estate (Est.)</Text>
+          <Text style={s.infoCardValue}>{fmt$(grossEstate)}</Text>
+        </View>
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>Est. Federal Estate Tax</Text>
+          <Text style={[s.infoCardValue, fedTax > 0 ? { color: RED } : {}]}>
+            {fmt$(fedTax)}
+          </Text>
+        </View>
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>Est. State Estate Tax</Text>
+          <Text style={[s.infoCardValue, stateTax > 0 ? { color: RED } : {}]}>
+            {fmt$(stateTax)}
+          </Text>
+        </View>
+      </View>
+    </Section>
+  )
+}
+
+// --- Document Status (attorney) ---
+const AttorneyDocumentSection = ({ data }: { data: AttorneyPdfData }) => {
+  const inc = data.incapacity
+  const docs = data.documents ?? []
+  const trusts = data.trusts ?? []
+
+  const docItems = [
+    { label: 'Will or Trust', complete: !!(docs.length > 0 || trusts.length > 0) },
+    { label: 'Durable Power of Attorney', complete: inc?.has_dpoa ?? false },
+    { label: 'Medical POA / Healthcare Proxy', complete: inc?.has_medical_poa ?? false },
+    { label: 'Advance Healthcare Directive', complete: inc?.has_advance_directive ?? false },
+    { label: 'Living Will', complete: inc?.has_living_will ?? false },
+  ]
+
+  return (
+    <Section title="Document Status">
+      <View style={s.table}>
+        {docItems.map((item, i) => (
+          <View key={i} style={[s.consumerCheckRow, i % 2 !== 0 ? { backgroundColor: GRAY_LIGHT } : {}]} wrap={false}>
+            <View style={[s.consumerCheckDot, { backgroundColor: item.complete ? GREEN : RED }]} />
+            <Text style={s.consumerCheckLabel}>{item.label}</Text>
+            <Text style={[s.consumerCheckStatus, { color: item.complete ? GREEN : RED }]}>
+              {item.complete ? 'On File' : 'Missing'}
+            </Text>
+          </View>
+        ))}
+      </View>
+      {trusts.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ fontSize: 7, color: GRAY_MID, marginBottom: 4 }}>Trusts on file:</Text>
+          <View style={s.docGrid}>
+            {trusts.map((t, i) => (
+              <View key={i} style={[s.docChip, { borderLeftColor: GREEN }]}>
+                <Text style={[s.docChipLabel, { color: NAVY }]}>{capitalize(t.trust_type ?? '')}</Text>
+                <Text style={s.docChipStatus}>Active</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </Section>
+  )
+}
+
+// --- Conflicts (attorney) ---
+const AttorneyConflictsSection = ({ data }: { data: AttorneyPdfData }) => {
+  const conflicts = data.conflicts ?? []
+  if (conflicts.length === 0) return (
+    <Section title="Open Issues">
+      <View style={s.ctaBanner}>
+        <Text style={[s.ctaBannerText, { color: '#166534' }]}>
+          No critical conflicts detected in the plan data.
+        </Text>
+      </View>
+    </Section>
+  )
+
+  return (
+    <Section title="Open Issues for Attorney Review">
+      <View style={s.table}>
+        {conflicts.map((c, i) => (
+          <View key={i} style={s.conflictRow} wrap={false}>
+            <View style={[
+              s.conflictSeverityDot,
+              { backgroundColor: c.severity === 'critical' ? RED : c.severity === 'warning' ? GOLD : GRAY_MID }
+            ]} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.conflictLabel}>{c.description ?? capitalize(c.conflict_type ?? '')}</Text>
+              {c.recommended_action && (
+                <Text style={s.conflictAction}>{'Recommended: ' + c.recommended_action}</Text>
+              )}
+            </View>
+            <Text style={{
+              fontSize: 7,
+              fontFamily: 'Helvetica-Bold',
+              color: c.severity === 'critical' ? RED : GOLD,
+              marginLeft: 8,
+            }}>
+              {(c.severity ?? '').toUpperCase()}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Section>
+  )
+}
+
+// --- Beneficiary Summary (attorney) ---
+const AttorneyBeneficiarySection = ({ data }: { data: AttorneyPdfData }) => {
+  const bens = data.beneficiaries ?? []
+  if (bens.length === 0) return null
+  return (
+    <Section title="Beneficiary Designations">
+      <View style={s.table}>
+        <View style={s.tableHeader}>
+          <Text style={[s.tableHeaderCell, { width: '35%' }]}>Beneficiary</Text>
+          <Text style={[s.tableHeaderCell, { width: '25%' }]}>Relationship</Text>
+          <Text style={[s.tableHeaderCell, { width: '20%' }]}>Allocation</Text>
+          <Text style={[s.tableHeaderCell, { width: '20%' }]}>Notes</Text>
+        </View>
+        {bens.slice(0, 12).map((b, i) => (
+          <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
+            <Text style={[s.tableCell, { width: '35%' }]}>{b.beneficiary_name ?? '—'}</Text>
+            <Text style={[s.tableCell, { width: '25%' }]}>{capitalize(b.relationship ?? '')}</Text>
+            <Text style={[s.tableCell, { width: '20%' }]}>{b.allocation_pct ?? '—'}%</Text>
+            <Text style={[s.tableCell, { width: '20%' }]}>
+              {b.is_minor ? 'Minor' : ''}
+              {b.special_needs ? ' Special needs' : ''}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Section>
+  )
+}
+
+// --- Attorney disclaimer ---
+const AttorneyDisclaimerSection = () => (
+  <View style={{ marginTop: 16, backgroundColor: GRAY_LIGHT, borderRadius: 5, padding: 12 }}>
+    <Text style={{ fontSize: 7, color: GRAY_MID, lineHeight: 1.6 }}>
+      This document was prepared by the client using My Wealth Maps, a self-guided estate and financial planning tool.
+      All figures are self-reported estimates and have not been independently verified.
+      This document is not legal advice and does not constitute an attorney-client relationship.
+      Asset values, tax estimates, and document status reflect client-entered data as of the date shown above.
+    </Text>
+  </View>
+)
+
 // --- Consumer T3 Checklist ---
 const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
   const inc = data.incapacity
@@ -730,6 +1032,30 @@ export const ConsumerEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => 
         <CompletenessSection data={data} />
         <ConsumerChecklistSection data={data} />
         <IncapacitySection data={data} />
+      </View>
+      <PDFFooter data={data} />
+    </Page>
+  </Document>
+)
+
+// --- Attorney Intake Summary PDF ---
+export const AttorneyEstatePlanPDF = ({ data }: { data: AttorneyPdfData }) => (
+  <Document title={`Attorney Intake Summary — ${clientName(data.household)}`} author="My Wealth Maps">
+    <Page size="LETTER" style={s.page}>
+      <AttorneyPDFHeader data={data} />
+      <View style={s.body}>
+        <View style={s.attorneyBanner}>
+          <Text style={s.attorneyBannerText}>Prepared for Attorney Review</Text>
+          <Text style={s.attorneyBannerSub}>
+            Client-reported data from My Wealth Maps · Not independently verified ·
+            For intake and planning purposes only
+          </Text>
+        </View>
+        <AttorneyProfileSection data={data} />
+        <AttorneyDocumentSection data={data} />
+        <AttorneyConflictsSection data={data} />
+        <AttorneyBeneficiarySection data={data} />
+        <AttorneyDisclaimerSection />
       </View>
       <PDFFooter data={data} />
     </Page>

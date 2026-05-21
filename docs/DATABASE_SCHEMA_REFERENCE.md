@@ -166,11 +166,12 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `email_captures`
 
-- **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`
-- **Purpose:** marketing leads from public assessment and event assessment email capture flows.
+- **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`, `drip_step_1_sent_at`, `drip_step_2_sent_at`, `drip_step_3_sent_at`, `unsubscribed_at`
+- **Purpose:** marketing leads from public assessment and event assessment email capture flows; Resend drip sequence tracking.
 - **Constraints:** unique `(email, source)` — duplicate inserts ignored by API.
 - **RLS:** service role full access; `anon` / `authenticated` may insert via `POST /api/email-capture` (no public read).
-- **Migration:** `20260520000000_create_email_captures.sql`
+- **Drip:** step 1 on capture (`POST /api/email-capture` → `POST /api/email/drip`); steps 2–3 via notifications cron; unsubscribe sets `unsubscribed_at`.
+- **Migrations:** `20260520000000_create_email_captures.sql`, `20260524000000_email_captures_drip.sql`
 
 ### `connection_requests`
 
@@ -304,6 +305,7 @@ After each schema-affecting session:
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
+- `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`
 
 **`app_config` keys (Sprint 5 A/B):** `ab_upgrade_copy` (`"personalized"` | `"generic"`), `ab_assessment_gate` (`"score_visible"` | `"full_gate"`). Toggle in Supabase SQL editor; no deploy required.
 

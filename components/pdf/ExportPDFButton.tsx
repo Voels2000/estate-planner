@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
-import { AdvisorEstatePlanPDF, ConsumerEstatePlanPDF } from './EstatePlanPDF'
+import { AdvisorEstatePlanPDF, ConsumerEstatePlanPDF, AttorneyEstatePlanPDF } from './EstatePlanPDF'
 
 interface ExportPDFButtonProps {
   householdId: string
@@ -35,7 +35,9 @@ export function ExportPDFButton({ householdId, role, variant, className }: Expor
       const data = await res.json()
 
       // 2. Pick the right PDF component based on role
-      const doc = role === 'advisor'
+      const doc = variant === 'attorney'
+        ? <AttorneyEstatePlanPDF data={data} />
+        : role === 'advisor'
         ? <AdvisorEstatePlanPDF data={data} />
         : <ConsumerEstatePlanPDF data={data} />
 

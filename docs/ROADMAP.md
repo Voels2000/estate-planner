@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 6 current)
+# Last updated: May 2026 (Sprint 7 current)
 
 ---
 
@@ -21,38 +21,57 @@
 
 ## Current sprint
 
-### Sprint 6 — Measurement, attorney PDF, growth distribution (Weeks 19–22)
-**Goal:** Act on funnel data, ship attorney-ready PDF content, begin outbound distribution.
+### Sprint 7 — SEO verification, funnel depth, distribution (Weeks 23–26)
+**Goal:** Index public event pages, improve funnel reporting, expand outbound distribution.
+
+**SEO & indexing**
+- `[ ]` Google Search Console — verify property, submit `sitemap.xml`, confirm 24 event URLs indexed
+- `[ ]` Add Search Console HTML verification tag to `app/layout.tsx` metadata
 
 **Analytics & reporting**
-- `[ ]` Admin funnel dashboard — query `funnel_events` by `event_name`, `event_slug`, `referral_code`
 - `[ ]` Event → tier conversion report (join `funnel_events` to `profiles.consumer_tier`)
-- `[ ]` Document standard SQL queries for weekly funnel review
-
-**Product polish**
-- `[ ]` Attorney PDF template — `variant=attorney` in export API + `EstatePlanPDF`
-- `[ ]` Upgrade `EVENT_UPGRADE_COPY` in `upgradeContext.ts` for 16 new event slugs (optional)
+- `[ ]` Admin funnel — full 30-day step counts (bar chart today uses last 50 events only)
 
 **Growth**
-- `[ ]` Email drip — provider decision + 3-email sequence per top event slug
-- `[ ]` Search Console — submit sitemap / verify 24 event URLs indexed
+- `[ ]` Expand drip sequences in `lib/emails/drip-templates.ts` (3 custom + default today)
 - `[ ]` Advisor newsletter kit — shareable links from `lib/events/referral.ts`
 - `[ ]` Attorney referral tag on event pages (parallel to advisor `?ref=`)
+
+**Product polish**
+- `[ ]` Upgrade `EVENT_UPGRADE_COPY` in `upgradeContext.ts` for 16 new event slugs (optional)
 
 **Deferred from earlier sprints**
 - `[ ]` Per-milestone age trigger event slugs (62/65/70/73)
 - `[ ]` Life event context on new advisor connections
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
 
-**Success criteria for Sprint 6**
-- Weekly funnel review cadence with real conversion numbers
-- Attorney export used in production (track `variant=attorney` downloads)
-- At least one distribution channel live (email drip or Search Console verified)
+**Success criteria for Sprint 7**
+- Search Console shows sitemap submitted and event URLs indexing
+- Weekly funnel review includes tier conversion (not just step counts)
+- At least 3 additional event-specific drip sequences live
 
 ---
 
 
 ## Completed sprints
+
+### Sprint 6 — Measurement, attorney PDF, growth distribution (Weeks 19–22) ✅
+**Goal:** Act on funnel data, ship attorney-ready PDF content, begin outbound distribution.
+
+**Shipped**
+- `[x]` Admin funnel tab — `funnel-tab.tsx`; 30-day slug/referral data; SQL cheat sheet
+- `[x]` Attorney PDF — `AttorneyEstatePlanPDF`; `variant=attorney` API branch (conflicts, assets, tax)
+- `[x]` SEO — `app/sitemap.ts`, `app/robots.ts` (canonical `NEXT_PUBLIC_APP_URL`)
+- `[x]` Resend drip — 3-step sequence; step 1 on capture; steps 2–3 in notifications cron; unsubscribe
+- `[x]` Migration `20260524000000_email_captures_drip.sql`
+
+**Deferred to Sprint 7**
+- `[ ]` Search Console verification and indexing confirmation
+- `[ ]` Event → tier conversion report
+- `[ ]` Advisor newsletter kit
+- `[ ]` Attorney `?ref=` on event pages
+
+---
 
 ### Sprint 5 — Analytics, optimization, event pages (Weeks 15–18) ✅
 **Goal:** Full funnel measured, A/B tests running, remaining event pages published.
@@ -63,9 +82,9 @@
 - `[x]` 16 new event slugs in `lib/events/content-sprint5.ts` (24 total, SSG)
 - `[x]` Idempotent migration policies for re-run safety
 
-**Deferred to Sprint 6**
-- `[ ]` Admin funnel dashboards
-- `[ ]` Content distribution (newsletters, LinkedIn, partnerships)
+**Deferred to Sprint 6+**
+- `[x]` Admin funnel dashboards (Sprint 6)
+- `[~]` Content distribution — drip live; Search Console + newsletter kit in Sprint 7
 - `[ ]` Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 
 ---

@@ -6,6 +6,7 @@ import type { AdvisorTier } from '@/lib/types'
 import DebugTab from './debug-tab'
 import TaxRulesTab from './tax-rules-tab'
 import TermsTab from './terms-tab'
+import { FunnelTab } from './funnel-tab'
 
 type Profile = {
   id: string
@@ -92,9 +93,18 @@ type Props = {
   titlingCategories: TitlingCategory[]
   termsVersion:  string
   termsSections: { title: string; body: string }[]
+  funnelBySlug: { event_slug: string | null; event_name: string }[]
+  funnelByReferral: { referral_code: string | null; event_name: string }[]
+  recentFunnelEvents: {
+    event_name: string
+    event_slug: string | null
+    referral_code: string | null
+    created_at: string
+    properties: Record<string, unknown> | null
+  }[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -113,6 +123,9 @@ export function AdminClient({
   titlingCategories: initialTitlingCategories,
   termsVersion,
   termsSections,
+  funnelBySlug,
+  funnelByReferral,
+  recentFunnelEvents,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -306,6 +319,7 @@ export function AdminClient({
     { key: 'users',      label: 'Users',           icon: '👥' },
     { key: 'usage',      label: 'Usage',           icon: '📈' },
     { key: 'feedback',   label: 'Feedback',        icon: '💬' },
+    { key: 'funnel',     label: 'Funnel',          icon: '📉' },
     { key: 'settings',   label: 'Settings',        icon: '⚙️' },
     { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
     { key: 'categories', label: 'Categories',      icon: '🗂️' },
@@ -645,6 +659,14 @@ export function AdminClient({
             onDelete={handleDeleteTitlingCategory}
           />
         </div>
+      )}
+
+      {activeTab === 'funnel' && (
+        <FunnelTab
+          funnelBySlug={funnelBySlug}
+          funnelByReferral={funnelByReferral}
+          recentFunnelEvents={recentFunnelEvents}
+        />
       )}
 
       {activeTab === 'tax_rules' && <TaxRulesTab />}

@@ -447,18 +447,29 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - Referral + funnel: `_referral-tracker.tsx` posts `?ref=` to `/api/referral/track` and fires `event_page_view` via `/api/analytics/funnel`.
 - Content is **TypeScript** (`EventContent` records), not MDX.
 
-**Email capture (Sprint 2):**
+**Email capture + drip (Sprint 2 + Sprint 6):**
 
-- API: `POST /api/email-capture` → `email_captures` table (`email`, `source`, `score`, unique on `(email, source)`).
-- Used by event assessment results screen (`source=event-assess-{slug}`). Drip sequence not yet implemented.
+- API: `POST /api/email-capture` → `email_captures` (`email`, `source`, `score`, unique on `(email, source)`).
+- Used by event assessment results (`source=event-assess-{slug}`). **Drip (Sprint 6):** step 1 fired non-blocking to `POST /api/email/drip`; steps 2–3 in `GET /api/cron/notifications` job 7; templates in `lib/emails/drip-templates.ts`; unsubscribe via `GET /api/email/unsubscribe`.
+- Tracking columns: `drip_step_1/2/3_sent_at`, `unsubscribed_at` (migration `20260524000000_email_captures_drip.sql`).
 - Event assessment saves for logged-in users write to `assessment_results` with `_event_slug` / `_type: 'event'` in `answers` JSONB (no dedicated `event_slug` column).
+
+**SEO (Sprint 6):**
+
+- `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
+- `app/robots.ts` — allow `/`; disallow dashboard, advisor, admin, `/api/`; `sitemap` points to `/sitemap.xml`.
+
+**Admin funnel (Sprint 6):**
+
+- Tab on `/admin` — `app/admin/funnel-tab.tsx`; server fetch in `app/admin/page.tsx` via `createAdminClient()` (funnel_events not readable with user RLS).
+- Funnel viz uses last 50 events; slug/referral breakdowns use 30-day queries; embedded SQL cheat sheet for weekly review.
 
 **Consumer professional connection surfaces (current):**
 
 | Surface | Route | Purpose |
 |---------|-------|---------|
 | My Advisor | `/my-advisor` | Accepted `advisor_clients` + `advisor_directory` listing (`profile_id`); invite-via-email when no connection; pending requests; access log; revoke |
-| Print / export | `/print` | Tier 3+ consumers; dual export mode (full vs attorney summary); `ExportPDFButton` `variant=attorney` |
+| Print / export | `/print` | Tier 3+ consumers; dual export mode; `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` (conflicts, gross estate, tax) |
 | My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
 | Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
 | Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |
@@ -694,7 +705,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **A/B flags** in `app_config`: `ab_assessment_gate` (`score_visible` | `full_gate`) — server `app/(public)/assess/page.tsx` → `_assess-client.tsx`; `ab_upgrade_copy` (`personalized` | `generic`) — `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts`.
 - **Signup attribution:** `mwm_referral_code` / `mwm_referral_slug` in sessionStorage; cleared after `account_created` funnel event.
 
-**Current sprint (Sprint 6):** Funnel reporting, attorney PDF template, growth distribution. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+**Current sprint (Sprint 7):** Search Console verification, funnel depth (tier conversion), distribution polish. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 
