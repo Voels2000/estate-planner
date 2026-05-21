@@ -5,6 +5,13 @@ import { Analytics } from '@vercel/analytics/next'
 export const metadata: Metadata = {
   title: 'My Wealth Maps — Financial, Retirement & Estate Planning',
   description: 'Educate yourself, assess your planning needs, and build your financial, retirement, and estate plan.',
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+        },
+      }
+    : {}),
 }
 
 export default function RootLayout({
