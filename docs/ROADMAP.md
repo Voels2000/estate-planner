@@ -26,7 +26,7 @@
 
 **SEO & indexing (deferred to launch)**
 - `[~]` `robots.ts` blocks all crawlers pre-launch; `sitemap.ts` ready; verification wired via `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in `app/layout.tsx`
-- `[ ]` **At launch:** restore permissive `robots.ts`, submit `sitemap.xml` in Search Console, verify property
+- `[ ]` **At launch:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) — robots, Search Console, domain, Resend
 
 **Analytics & reporting**
 - `[ ]` Event → tier conversion report (join `funnel_events` to `profiles.consumer_tier`)

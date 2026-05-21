@@ -16,7 +16,7 @@
 
 ## Current sprint — Sprint 7 (Weeks 23–26)
 
-**Goal:** Deepen funnel reporting and distribution. **SEO / Search Console deferred until launch** (see launch checklist below).
+**Goal:** Deepen funnel reporting and distribution. **SEO / Search Console deferred until launch** — see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
@@ -109,20 +109,13 @@ Verify domain `hello@mywealthmaps.com` in Resend (or change `from` in drip route
 
 `app/robots.ts` currently **disallows `/` for all crawlers**. `app/sitemap.ts` remains ready but is not linked from robots until launch. Search Console setup deferred.
 
-### Launch checklist (SEO + domain)
-
-- [ ] Flip `app/robots.ts` back to allow public routes, disallow app/dashboard/advisor/api (see git history `bffbfaa` parent or Sprint 6 commit)
-- [ ] Uncomment `sitemap` line in `robots.ts`
-- [ ] Search Console — add property, set `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in Vercel, verify
-- [ ] Submit `sitemap.xml` in Search Console
-- [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel (Production)
-- [ ] Resend `from` → `hello@mywealthmaps.com` (verify domain in Resend)
+**Launch tasks:** tracked in **[LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)** (SEO, domain, Resend, ops confirmation). Update that file when items complete.
 
 ---
 
 ## Sprint 7 backlog
 
-- [ ] ~~Google Search Console~~ — deferred to launch (see checklist above)
+- [ ] ~~Google Search Console~~ — deferred to launch ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 - [ ] Admin funnel — full 30-day step counts (today viz uses last 50 events)
 - [ ] Event → tier conversion report (`funnel_events` ↔ `profiles.consumer_tier`)
 - [ ] Drip sequences for more event slugs (only 3 custom + default today)

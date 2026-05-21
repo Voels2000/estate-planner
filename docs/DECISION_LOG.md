@@ -226,7 +226,7 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 **Reasoning:** Avoid indexing staging/Vercel URL and incomplete public surfaces before `mywealthmaps.com` cutover. Sitemap and verification (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) are ready to enable in one launch checklist.
 
-**At launch:** Restore permissive robots (allow public, disallow app routes), uncomment sitemap line, verify Search Console, set `NEXT_PUBLIC_APP_URL` to production domain, verify Resend sender.
+**At launch:** See [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) for the full task list.
 
 ---
 
