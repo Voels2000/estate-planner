@@ -21,6 +21,9 @@ const PUBLIC_PATHS = [
   '/event',
   '/mfa-enroll',
   '/mfa-challenge',
+  '/sitemap.xml',
+  '/robots.txt',
+  '/education',
 ]
 
 const ATTORNEY_ONLY_PATHS = [
