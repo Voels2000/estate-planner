@@ -8,11 +8,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pre-launch SEO gate (May 2026)
+
+- **Application:** `app/robots.ts` — `disallow: /` for all crawlers; sitemap URL commented out until launch.
+- **Application:** `proxy.ts` — `PUBLIC_PATHS` adds `/education`, `/sitemap.xml`, `/robots.txt` (public access without auth).
+- **Application:** `app/layout.tsx` — optional `metadata.verification.google` via `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (enable at launch).
+
 ## Sprint 6 — admin funnel, attorney PDF, SEO, Resend drip (May 2026)
 
 - **Admin:** `app/admin/funnel-tab.tsx` — reads `funnel_events` via `createAdminClient()` (service role; user client cannot read funnel rows).
 - **PDF:** `AttorneyEstatePlanPDF` in `components/pdf/EstatePlanPDF.tsx`; `POST /api/export-estate-plan?variant=attorney` adds `beneficiary_conflicts`, `assets` summary, tax RPCs.
-- **SEO:** `app/sitemap.ts` (static routes + `EVENT_SLUGS` event + assess URLs); `app/robots.ts` (disallow dashboard/advisor/api).
+- **SEO:** `app/sitemap.ts` (static routes + `EVENT_SLUGS` event + assess URLs); initial `app/robots.ts` (allow public, disallow app routes) — superseded by pre-launch block above.
 - **Migration:** `20260524000000_email_captures_drip.sql` — `drip_step_1/2/3_sent_at`, `unsubscribed_at` on `email_captures`.
 - **Email:** `lib/emails/drip-templates.ts`; `POST /api/email/drip` (Resend; auth `INTERNAL_API_KEY` or `CRON_SECRET`); `GET /api/email/unsubscribe`.
 - **Cron:** `app/api/cron/notifications/route.ts` job 7 — drip steps 2–3 by age since step 1.

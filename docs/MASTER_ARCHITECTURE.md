@@ -434,7 +434,7 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
 - Routes under `(public)/` inherit this nav: education, assess, find-advisor, find-attorney, **pricing**, event pages.
 - Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start. Homepage copy targets **$2M–$30M** segment.
-- `proxy.ts` `PUBLIC_PATHS` includes `/event` and `/pricing` for unauthenticated access.
+- `proxy.ts` `PUBLIC_PATHS` includes `/event`, `/pricing`, `/education`, `/sitemap.xml`, `/robots.txt` for unauthenticated access.
 
 **Life event landing pages (Sprint 2):**
 
@@ -457,7 +457,7 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 **SEO (Sprint 6):**
 
 - `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
-- `app/robots.ts` — allow `/`; disallow dashboard, advisor, admin, `/api/`; `sitemap` points to `/sitemap.xml`.
+- `app/robots.ts` — **pre-launch:** `disallow: /` for all crawlers; sitemap line commented out. **At launch:** allow public routes, disallow app routes, uncomment sitemap URL.
 
 **Admin funnel (Sprint 6):**
 

@@ -333,7 +333,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` → `referral_clicks` |
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin review on `/admin` Funnel tab |
 | **Email drip** | Event assess email capture | `POST /api/email-capture` → step 1 `POST /api/email/drip`; steps 2–3 cron; `GET /api/email/unsubscribe` |
-| **SEO** | Public marketing URLs | `/sitemap.xml` from `app/sitemap.ts`; `app/robots.ts` blocks app routes |
+| **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |
 | **Assess A/B gate** | `/assess` results (logged out) | Server reads `ab_assessment_gate` from `app_config`; `score_visible` vs `full_gate` |
 | **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
 | **Find advisor (not handoff)** | **Ask your advisor about this →** on strategy education cards | Links to `/find-advisor` only — no message to connected advisor |

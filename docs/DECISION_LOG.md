@@ -220,6 +220,16 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ---
 
+### May 2026 — Block all crawlers pre-launch
+
+**Decision:** `app/robots.ts` returns `disallow: /` for `userAgent: *` and omits the `sitemap` URL until product launch. `app/sitemap.ts` stays in the codebase. Google Search Console setup deferred.
+
+**Reasoning:** Avoid indexing staging/Vercel URL and incomplete public surfaces before `mywealthmaps.com` cutover. Sitemap and verification (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) are ready to enable in one launch checklist.
+
+**At launch:** Restore permissive robots (allow public, disallow app routes), uncomment sitemap line, verify Search Console, set `NEXT_PUBLIC_APP_URL` to production domain, verify Resend sender.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

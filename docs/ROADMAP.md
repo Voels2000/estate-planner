@@ -24,9 +24,9 @@
 ### Sprint 7 — SEO verification, funnel depth, distribution (Weeks 23–26)
 **Goal:** Index public event pages, improve funnel reporting, expand outbound distribution.
 
-**SEO & indexing**
-- `[ ]` Google Search Console — verify property, submit `sitemap.xml`, confirm 24 event URLs indexed
-- `[ ]` Add Search Console HTML verification tag to `app/layout.tsx` metadata
+**SEO & indexing (deferred to launch)**
+- `[~]` `robots.ts` blocks all crawlers pre-launch; `sitemap.ts` ready; verification wired via `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in `app/layout.tsx`
+- `[ ]` **At launch:** restore permissive `robots.ts`, submit `sitemap.xml` in Search Console, verify property
 
 **Analytics & reporting**
 - `[ ]` Event → tier conversion report (join `funnel_events` to `profiles.consumer_tier`)
@@ -46,9 +46,9 @@
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
 
 **Success criteria for Sprint 7**
-- Search Console shows sitemap submitted and event URLs indexing
 - Weekly funnel review includes tier conversion (not just step counts)
 - At least 3 additional event-specific drip sequences live
+- **Launch (separate):** Search Console verified, sitemap submitted, permissive `robots.ts` live
 
 ---
 

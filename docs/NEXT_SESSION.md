@@ -9,20 +9,20 @@
 > My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–6 shipped: 24 life event
 > pages, funnel analytics + admin Funnel tab, attorney PDF export, sitemap/robots, Resend
 > 3-step email drip, A/B tests, advisor distribution. Canonical URL: `NEXT_PUBLIC_APP_URL`.
-> **Current: Sprint 7** — Search Console, conversion reporting, distribution polish.
+> **Current: Sprint 7** — funnel reporting, distribution; SEO blocked pre-launch (`robots.ts`).
 > Today's task: [FILL IN BELOW].
 
 ---
 
 ## Current sprint — Sprint 7 (Weeks 23–26)
 
-**Goal:** Verify SEO indexing, deepen funnel reporting, expand drip and advisor distribution.
+**Goal:** Deepen funnel reporting and distribution. **SEO / Search Console deferred until launch** (see launch checklist below).
 
 See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
-1. **Search Console** — verify property, submit `sitemap.xml`, confirm event URLs indexed
-2. **Funnel reporting** — event → tier conversion; optional 30-day step counts in admin
-3. **Distribution** — advisor newsletter kit; more drip sequences; attorney `?ref=` on events
+1. **Funnel reporting** — event → tier conversion; optional 30-day step counts in admin
+2. **Distribution** — advisor newsletter kit; more drip sequences; attorney `?ref=` on events
+3. **At launch only** — restore `robots.ts`, Search Console, submit `sitemap.xml`, domain cutover
 
 ---
 
@@ -32,7 +32,9 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 |------|----------------|
 | Admin funnel | `app/admin/funnel-tab.tsx` — conversion viz, by-slug/referral tables, recent feed, SQL cheat sheet; data via `createAdminClient()` |
 | Attorney PDF | `AttorneyEstatePlanPDF` + `variant=attorney` in `/api/export-estate-plan` (conflicts, assets, tax) |
-| SEO | `app/sitemap.ts` (static + 24 events + assess URLs), `app/robots.ts` |
+| SEO | `app/sitemap.ts` ready; `app/robots.ts` permissive version in git before pre-launch block |
+| Proxy | `proxy.ts` — `/education`, `/sitemap.xml`, `/robots.txt` in `PUBLIC_PATHS` |
+| Search Console | `app/layout.tsx` — `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (set at launch) |
 | Email drip | Resend — `lib/emails/drip-templates.ts`, `POST /api/email/drip`, unsubscribe route, cron steps 2–3, step 1 on capture |
 | Schema | `20260524000000_email_captures_drip.sql` — drip sent timestamps + `unsubscribed_at` |
 | Auth | `INTERNAL_API_KEY` for internal drip calls; `CRON_SECRET` also accepted on drip route |
@@ -68,14 +70,14 @@ Verify domain `hello@mywealthmaps.com` in Resend (or change `from` in drip route
 
 ## Files you need for Sprint 7
 
-### Search Console / SEO
+### SEO (at launch only)
 
 | File | Why |
 |------|-----|
-| `app/sitemap.ts` | Submit `/sitemap.xml` |
-| `app/robots.ts` | Crawl rules + sitemap pointer |
-| `app/layout.tsx` | Add Google verification meta when Search Console provides tag |
-| `lib/events/content.ts` | 24 slugs to spot-check indexing |
+| `app/robots.ts` | Restore allow/disallow rules + uncomment sitemap (see `fb6aa9b` era) |
+| `app/sitemap.ts` | Submit `/sitemap.xml` in Search Console |
+| `app/layout.tsx` | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in Vercel |
+| `proxy.ts` | `PUBLIC_PATHS` already includes `/education`, `/sitemap.xml`, `/robots.txt` |
 
 ### Funnel / reporting
 
@@ -103,9 +105,24 @@ Verify domain `hello@mywealthmaps.com` in Resend (or change `from` in drip route
 
 ---
 
+## Pre-launch (SEO blocked)
+
+`app/robots.ts` currently **disallows `/` for all crawlers**. `app/sitemap.ts` remains ready but is not linked from robots until launch. Search Console setup deferred.
+
+### Launch checklist (SEO + domain)
+
+- [ ] Flip `app/robots.ts` back to allow public routes, disallow app/dashboard/advisor/api (see git history `bffbfaa` parent or Sprint 6 commit)
+- [ ] Uncomment `sitemap` line in `robots.ts`
+- [ ] Search Console — add property, set `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in Vercel, verify
+- [ ] Submit `sitemap.xml` in Search Console
+- [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel (Production)
+- [ ] Resend `from` → `hello@mywealthmaps.com` (verify domain in Resend)
+
+---
+
 ## Sprint 7 backlog
 
-- [ ] Google Search Console — verify + submit sitemap; confirm event URLs indexed
+- [ ] ~~Google Search Console~~ — deferred to launch (see checklist above)
 - [ ] Admin funnel — full 30-day step counts (today viz uses last 50 events)
 - [ ] Event → tier conversion report (`funnel_events` ↔ `profiles.consumer_tier`)
 - [ ] Drip sequences for more event slugs (only 3 custom + default today)
