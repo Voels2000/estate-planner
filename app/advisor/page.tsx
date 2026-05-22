@@ -8,7 +8,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
+import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
 import AdvisorClient from './_advisor-client-wrapper'
 
 export default async function AdvisorPage() {
@@ -78,31 +80,22 @@ export default async function AdvisorPage() {
     if (ownerId) healthScoreMap[ownerId] = hs.score
   }
 
-  const { data: assets } = clientIds.length > 0
-    ? await supabase
-        .from('assets')
-        .select('owner_id, value')
-        .in('owner_id', clientIds)
-    : { data: [] }
-
-  const { data: liabilities } = clientIds.length > 0
-    ? await supabase
-        .from('liabilities')
-        .select('owner_id, balance')
-        .in('owner_id', clientIds)
-    : { data: [] }
-
-  // Calculate net worth per client
+  // Net worth per client — engine-aligned via estate composition (matches client Overview tab
+  // and consumer dashboard). Raw assets/liabilities tables omit real estate, businesses, and
+  // mortgage rollups that live in separate tables / the composition RPC.
   const netWorthMap: Record<string, number> = {}
-  for (const clientId of clientIds) {
-    const totalAssets = (assets ?? [])
-      .filter(a => a.owner_id === clientId)
-      .reduce((sum, a) => sum + Number(a.value), 0)
-    const totalLiabilities = (liabilities ?? [])
-      .filter(l => l.owner_id === clientId)
-      .reduce((sum, l) => sum + Number(l.balance), 0)
-    netWorthMap[clientId] = totalAssets - totalLiabilities
-  }
+  await Promise.all(
+    clientIds.map(async (clientId) => {
+      const householdId = ownerToHousehold[clientId]
+      if (!householdId) {
+        netWorthMap[clientId] = 0
+        return
+      }
+      const composition = await classifyEstateAssets(supabase, householdId, 'advisor')
+      const { netWorth } = buildNetWorthSummaryFromComposition({ composition })
+      netWorthMap[clientId] = netWorth
+    }),
+  )
 
   const { data: advisorListing } = await supabase
     .from('advisor_directory')
