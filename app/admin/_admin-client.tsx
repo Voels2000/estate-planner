@@ -102,6 +102,8 @@ type Props = {
     created_at: string
     properties: Record<string, unknown> | null
   }[]
+  funnelStepCounts: Record<string, number>
+  tierConversion: { tier: string; counts: Record<string, number> }[]
 }
 
 type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
@@ -126,6 +128,8 @@ export function AdminClient({
   funnelBySlug,
   funnelByReferral,
   recentFunnelEvents,
+  funnelStepCounts,
+  tierConversion,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -666,6 +670,8 @@ export function AdminClient({
           funnelBySlug={funnelBySlug}
           funnelByReferral={funnelByReferral}
           recentFunnelEvents={recentFunnelEvents}
+          funnelStepCounts={funnelStepCounts}
+          tierConversion={tierConversion}
         />
       )}
 

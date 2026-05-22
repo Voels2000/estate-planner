@@ -459,10 +459,11 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 - `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
 - `app/robots.ts` — **pre-launch:** `disallow: /` for all crawlers; sitemap line commented out. **At launch:** allow public routes, disallow app routes, uncomment sitemap URL.
 
-**Admin funnel (Sprint 6):**
+**Admin funnel (Sprint 6 + Sprint 7):**
 
 - Tab on `/admin` — `app/admin/funnel-tab.tsx`; server fetch in `app/admin/page.tsx` via `createAdminClient()` (funnel_events not readable with user RLS).
-- Funnel viz uses last 50 events; slug/referral breakdowns use 30-day queries; embedded SQL cheat sheet for weekly review.
+- **Sprint 7:** 30-day `funnelStepCounts` for bar chart; `tierConversion` (join `funnel_events.user_id` → `profiles.consumer_tier`); **By Tier** tab.
+- Slug/referral breakdowns use 30-day queries; embedded SQL cheat sheet for weekly review.
 
 **Consumer professional connection surfaces (current):**
 
@@ -679,7 +680,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 
-**Age triggers (Sprint 3):** `GET /api/cron/age-triggers` — daily 15:00 UTC (`vercel.json`); inserts `life_events` with `source='calendar_trigger'` when `person1_birth_year` / `person2_birth_year` hits ages 62, 65, 70, or 73 in the current calendar year (deduped per user/event/year). Maps to `approaching-retirement` event slug.
+**Age triggers (Sprint 3 + Sprint 7):** `GET /api/cron/age-triggers` — daily 15:00 UTC (`vercel.json`); inserts `life_events` with `source='calendar_trigger'` when birth year hits ages 62, 65, 70, or 73 (deduped per user/event/year). **Sprint 7 slugs:** 62 → `social-security-timing`, 65 → `medicare-eligibility`, 70/73 → `rmd-start-age`.
 
 **In-app life events (Sprint 3):**
 
@@ -692,8 +693,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Advisor/attorney distribution (Sprint 4):**
 
-- **Referral:** `lib/events/referral.ts` builds `?ref=` URLs; `app/(public)/event/[slug]/_referral-tracker.tsx` → `POST /api/referral/track`; `referral_clicks` + `advisor_directory.referral_code`.
-- **Advisor portal:** `app/advisor/page.tsx` loads referral code from `advisor_directory` by `profile_id`; `_advisor-client.tsx` shows copyable event links.
+- **Referral:** `lib/events/referral.ts` builds `?ref=` URLs for all **24** `EVENT_SLUGS`; `app/(public)/event/[slug]/_referral-tracker.tsx` → `POST /api/referral/track`; `referral_clicks` + `advisor_directory.referral_code` only (attorneys: no `referral_code` on `attorney_listings` yet — Sprint 8).
+- **Advisor portal:** `app/advisor/page.tsx` loads referral code from `advisor_directory` by `profile_id`; `_advisor-client.tsx` **Newsletter Kit** — grouped links, email + plain-text templates.
 - **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` — UI complete; PDF content branch on `variant=attorney` deferred.
 
@@ -705,7 +706,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **A/B flags** in `app_config`: `ab_assessment_gate` (`score_visible` | `full_gate`) — server `app/(public)/assess/page.tsx` → `_assess-client.tsx`; `ab_upgrade_copy` (`personalized` | `generic`) — `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts`.
 - **Signup attribution:** `mwm_referral_code` / `mwm_referral_slug` in sessionStorage; cleared after `account_created` funnel event.
 
-**Current sprint (Sprint 7):** Search Console verification, funnel depth (tier conversion), distribution polish. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+**Email drip (Sprint 6 + Sprint 7):** 12 custom `EVENT_SEQUENCES` in `lib/emails/drip-templates.ts` (`DripEventSlug` union); remaining event slugs use `DEFAULT_SEQUENCE`.
+
+**Current sprint (Sprint 8):** Attorney referral attribution, launch checklist execution, signup referral persistence. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 

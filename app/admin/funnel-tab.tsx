@@ -20,21 +20,39 @@ type ReferralRow = {
   event_name: string
 }
 
+type TierConversionEntry = {
+  tier: string // 'free' | 'tier_1' | 'tier_2' | 'tier_3'
+  counts: Record<string, number>
+}
+
 type Props = {
   funnelBySlug: SlugRow[]
   funnelByReferral: ReferralRow[]
   recentFunnelEvents: FunnelEvent[]
+  /** NEW: server-aggregated 30-day count by event_name */
+  funnelStepCounts: Record<string, number>
+  /** NEW: event → tier conversion breakdown */
+  tierConversion: TierConversionEntry[]
 }
 
 const FUNNEL_STEPS = [
-  { name: 'event_page_view', label: 'Event Page View', color: '#6366f1' },
-  { name: 'event_assess_start', label: 'Assessment Started', color: '#8b5cf6' },
-  { name: 'event_assess_complete', label: 'Assessment Completed', color: '#a855f7' },
-  { name: 'email_captured', label: 'Email Captured', color: '#c9a84c' },
-  { name: 'account_created', label: 'Account Created', color: '#10b981' },
-  { name: 'tier_upgraded', label: 'Tier Upgraded', color: '#0f1f3d' },
-  { name: 'advisor_connected', label: 'Advisor Connected', color: '#4a7c6f' },
+  { name: 'event_page_view',      label: 'Event Page View',      color: '#6366f1' },
+  { name: 'event_assess_start',   label: 'Assessment Started',   color: '#8b5cf6' },
+  { name: 'event_assess_complete',label: 'Assessment Completed', color: '#a855f7' },
+  { name: 'email_captured',       label: 'Email Captured',       color: '#c9a84c' },
+  { name: 'account_created',      label: 'Account Created',      color: '#10b981' },
+  { name: 'tier_upgraded',        label: 'Tier Upgraded',        color: '#0f1f3d' },
+  { name: 'advisor_connected',    label: 'Advisor Connected',    color: '#4a7c6f' },
 ]
+
+const TIER_META: Record<string, { label: string; color: string; dot: string }> = {
+  free:   { label: 'Free / Unsubscribed', color: '#e5e7eb', dot: '#9ca3af' },
+  tier_1: { label: 'Financial (Tier 1)',  color: '#dbeafe', dot: '#3b82f6' },
+  tier_2: { label: 'Retirement (Tier 2)', color: '#ede9fe', dot: '#8b5cf6' },
+  tier_3: { label: 'Estate (Tier 3)',     color: '#d1fae5', dot: '#10b981' },
+}
+
+const TIER_ORDER = ['tier_3', 'tier_2', 'tier_1', 'free']
 
 function fmt(n: number) {
   return n.toLocaleString()
@@ -45,17 +63,19 @@ function pct(num: number, den: number) {
   return `${Math.round((num / den) * 100)}%`
 }
 
-export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }: Props) {
-  const [detailTab, setDetailTab] = useState<'slug' | 'referral' | 'feed'>('slug')
+export function FunnelTab({
+  funnelBySlug,
+  funnelByReferral,
+  recentFunnelEvents,
+  funnelStepCounts,
+  tierConversion,
+}: Props) {
+  const [detailTab, setDetailTab] = useState<'slug' | 'referral' | 'tier' | 'feed'>('slug')
 
-  const stepCounts = useMemo(() => {
-    const allCounts: Record<string, number> = {}
-    for (const step of FUNNEL_STEPS) allCounts[step.name] = 0
-    for (const e of recentFunnelEvents) {
-      if (e.event_name in allCounts) allCounts[e.event_name]++
-    }
-    return allCounts
-  }, [recentFunnelEvents])
+  // Use server-aggregated 30-day counts for bar chart.
+  // funnelStepCounts is the authoritative source; recentFunnelEvents (last 50) only
+  // used for the recent feed and slug/referral breakdowns that supplement the 30-day query.
+  const stepCounts = funnelStepCounts
 
   const topCount = Math.max(1, stepCounts['event_page_view'] ?? 1)
 
@@ -95,22 +115,32 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
       .sort((a, b) => (b.counts['account_created'] ?? 0) - (a.counts['account_created'] ?? 0))
   }, [funnelByReferral, recentFunnelEvents])
 
-  const views = stepCounts['event_page_view'] ?? 0
-  const assessStarts = stepCounts['event_assess_start'] ?? 0
+  // Sort tiers in canonical order; include any unexpected tiers at the end
+  const sortedTierConversion = useMemo(() => {
+    const ordered = TIER_ORDER
+      .map(t => tierConversion.find(r => r.tier === t))
+      .filter(Boolean) as TierConversionEntry[]
+    const extras = tierConversion.filter(r => !TIER_ORDER.includes(r.tier))
+    return [...ordered, ...extras]
+  }, [tierConversion])
+
+  const views          = stepCounts['event_page_view']       ?? 0
+  const assessStarts   = stepCounts['event_assess_start']    ?? 0
   const assessComplete = stepCounts['event_assess_complete'] ?? 0
-  const emails = stepCounts['email_captured'] ?? 0
-  const accounts = stepCounts['account_created'] ?? 0
-  const upgrades = stepCounts['tier_upgraded'] ?? 0
+  const emails         = stepCounts['email_captured']        ?? 0
+  const accounts       = stepCounts['account_created']       ?? 0
+  const upgrades       = stepCounts['tier_upgraded']         ?? 0
 
   return (
     <div className="space-y-8">
 
+      {/* ── Conversion Funnel Bar Chart ── */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-1">
           Conversion Funnel
         </h2>
         <p className="text-xs text-neutral-400 mb-4">
-          Last 50 events captured · Drop-off rates between steps
+          Last 30 days · All events · Drop-off rates between steps
         </p>
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="space-y-3">
@@ -168,10 +198,10 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
 
           <div className="mt-6 pt-6 border-t border-neutral-100 grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'View → Assess', value: pct(assessStarts, views) },
-              { label: 'Assess → Complete', value: pct(assessComplete, assessStarts) },
+              { label: 'View → Assess',      value: pct(assessStarts, views) },
+              { label: 'Assess → Complete',  value: pct(assessComplete, assessStarts) },
               { label: 'Complete → Account', value: pct(accounts, assessComplete) },
-              { label: 'Account → Upgrade', value: pct(upgrades, accounts) },
+              { label: 'Account → Upgrade',  value: pct(upgrades, accounts) },
             ].map(stat => (
               <div key={stat.label} className="text-center">
                 <p className="text-xs text-neutral-500 mb-1">{stat.label}</p>
@@ -182,12 +212,14 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
         </div>
       </section>
 
+      {/* ── Detail Tabs ── */}
       <section>
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
           {[
-            { key: 'slug' as const, label: 'By Event Page' },
+            { key: 'slug'     as const, label: 'By Event Page' },
             { key: 'referral' as const, label: 'By Referral Code' },
-            { key: 'feed' as const, label: 'Recent Events' },
+            { key: 'tier'     as const, label: 'By Tier' },
+            { key: 'feed'     as const, label: 'Recent Events' },
           ].map(t => (
             <button
               key={t.key}
@@ -204,6 +236,7 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
           ))}
         </div>
 
+        {/* ── By Event Page ── */}
         {detailTab === 'slug' && (
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100">
@@ -264,6 +297,7 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
           </div>
         )}
 
+        {/* ── By Referral Code ── */}
         {detailTab === 'referral' && (
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100">
@@ -315,6 +349,132 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
           </div>
         )}
 
+        {/* ── By Tier (NEW) ── */}
+        {detailTab === 'tier' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100">
+                <h3 className="text-sm font-semibold text-neutral-900">Event → Tier Conversion</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Funnel step counts broken down by subscriber tier (last 30 days · authenticated events only)
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-neutral-100">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap w-52">
+                        Tier
+                      </th>
+                      {FUNNEL_STEPS.map(s => (
+                        <th key={s.name} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap">
+                          {s.label}
+                        </th>
+                      ))}
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap">
+                        Upgrade Rate
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {sortedTierConversion.length === 0 ? (
+                      <tr>
+                        <td colSpan={FUNNEL_STEPS.length + 2} className="px-4 py-8 text-center text-sm text-neutral-400">
+                          No authenticated funnel events yet — tier data appears once users are logged in
+                        </td>
+                      </tr>
+                    ) : sortedTierConversion.map(({ tier, counts }) => {
+                      const meta = TIER_META[tier] ?? { label: tier, color: '#f3f4f6', dot: '#6b7280' }
+                      const tierAccounts = counts['account_created'] ?? 0
+                      const tierUpgrades = counts['tier_upgraded'] ?? 0
+                      return (
+                        <tr key={tier} className="hover:bg-neutral-50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block w-2 h-2 rounded-full shrink-0"
+                                style={{ background: meta.dot }}
+                              />
+                              <span
+                                className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                style={{ background: meta.color, color: '#1f2937' }}
+                              >
+                                {meta.label}
+                              </span>
+                            </div>
+                          </td>
+                          {FUNNEL_STEPS.map(s => (
+                            <td key={s.name} className="px-4 py-3 text-sm text-neutral-700">
+                              {fmt(counts[s.name] ?? 0)}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 text-sm font-semibold text-neutral-900">
+                            {pct(tierUpgrades, tierAccounts)}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Tier summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {TIER_ORDER.map(tier => {
+                const entry = tierConversion.find(r => r.tier === tier)
+                const meta  = TIER_META[tier]
+                const accs  = entry?.counts['account_created'] ?? 0
+                const ups   = entry?.counts['tier_upgraded']   ?? 0
+                const views = entry?.counts['event_page_view'] ?? 0
+                return (
+                  <div
+                    key={tier}
+                    className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span
+                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                        style={{ background: meta.dot }}
+                      />
+                      <p className="text-xs font-semibold text-neutral-600 truncate">
+                        {meta.label}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between">
+                        <p className="text-xs text-neutral-400">Page views</p>
+                        <p className="text-xs font-semibold text-neutral-800">{fmt(views)}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-xs text-neutral-400">Accounts</p>
+                        <p className="text-xs font-semibold text-green-700">{fmt(accs)}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-xs text-neutral-400">Upgrades</p>
+                        <p className="text-xs font-semibold text-indigo-700">{fmt(ups)}</p>
+                      </div>
+                      <div className="pt-1 border-t border-neutral-100 flex justify-between">
+                        <p className="text-xs text-neutral-400">Acct→Upgrade</p>
+                        <p className="text-xs font-bold text-neutral-900">{pct(ups, accs)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-amber-800">
+                <span className="font-semibold">Note:</span> Tier conversion only counts events where
+                the user was authenticated (has a profile). Anonymous page views, assessments, and email
+                captures are excluded — these appear in the full funnel bar chart above.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Recent Events Feed ── */}
         {detailTab === 'feed' && (
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100">
@@ -363,6 +523,7 @@ export function FunnelTab({ funnelBySlug, funnelByReferral, recentFunnelEvents }
         )}
       </section>
 
+      {/* ── SQL Cheat Sheet ── */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">
           Weekly Review Queries
@@ -398,6 +559,19 @@ where created_at >= now() - interval '30 days'
   and event_slug is not null
 group by event_slug
 order by accounts desc;`,
+            },
+            {
+              label: 'Event → tier conversion (authenticated users)',
+              sql: `select
+  p.consumer_tier,
+  f.event_name,
+  count(*) as events
+from funnel_events f
+join profiles p on p.id = f.user_id
+where f.created_at >= now() - interval '30 days'
+  and f.user_id is not null
+group by p.consumer_tier, f.event_name
+order by p.consumer_tier nulls last, events desc;`,
             },
             {
               label: 'Referral code performance',

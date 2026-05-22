@@ -8,6 +8,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 7 — funnel depth, newsletter kit, drip + personalization (May 2026)
+
+- **Admin:** `app/admin/page.tsx` — 30-day `funnelStepCounts`; `tierConversion` via `funnel_events` + `profiles.consumer_tier`; props to `funnel-tab.tsx` (**By Tier** tab).
+- **Advisor:** `app/advisor/_advisor-client.tsx` — Newsletter Kit (24 event links, email + plain-text copy); `lib/events/referral.ts` — `buildAllEventReferralUrls` for all `EVENT_SLUGS`.
+- **Email:** `lib/emails/drip-templates.ts` — 12 custom `EVENT_SEQUENCES` (`DripEventSlug` union); other slugs use `DEFAULT_SEQUENCE`.
+- **Product:** `lib/events/upgradeContext.ts` — `EVENT_UPGRADE_COPY` for all 24 slugs (tier 2/3).
+- **Cron:** `app/api/cron/age-triggers/route.ts` — per-age event slugs (62/65/70/73).
+- **No schema change:** attorney referral still advisor-only (`advisor_directory.referral_code`); `attorney_listings` has no referral column.
+
 ## Pre-launch SEO gate (May 2026)
 
 - **Application:** `app/robots.ts` — `disallow: /` for all crawlers; sitemap URL commented out until launch.

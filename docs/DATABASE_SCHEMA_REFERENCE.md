@@ -76,9 +76,16 @@ This is a developer reference, not a full SQL DDL dump.
 ### `referral_clicks`
 
 - **Key columns:** `id`, `referral_code`, `advisor_id`, `listing_id`, `event_slug`, `source_url`, `resolved`, `created_at`
-- **Purpose:** log event-page visits with `?ref=`; resolved when code matches `advisor_directory`.
+- **Purpose:** log event-page visits with `?ref=`; resolved when code matches `advisor_directory` only (unresolved rows when code is unknown or attorney-only — Sprint 8).
 - **RLS:** advisors read own rows (`auth.uid() = advisor_id`); service role full access for API inserts.
 - **Migration:** `20260522000000_advisor_referrals.sql`
+
+### `attorney_listings`
+
+- **Key columns:** `id`, `profile_id`, `firm_name`, `contact_name`, `email`, `city`, `state`, `bio`, `is_verified`, `is_active` (no `referral_code` column today)
+- **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory` (that table does not exist).
+- **Consumer UI:** `/my-attorney` pending rows join `attorney_listings` for display.
+- **Sprint 8 backlog:** add `referral_code` (unique) for event-page attorney attribution parallel to `advisor_directory`.
 
 ### `attorney_clients`
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 7 current)
+# Last updated: May 2026 (Sprint 8 current)
 
 ---
 
@@ -21,39 +21,56 @@
 
 ## Current sprint
 
-### Sprint 7 — SEO verification, funnel depth, distribution (Weeks 23–26)
-**Goal:** Index public event pages, improve funnel reporting, expand outbound distribution.
+### Sprint 8 — Attorney referral, launch, attribution polish (Weeks 27–30)
+**Goal:** Attorney event-page attribution, execute launch checklist when ready, close remaining distribution gaps.
 
-**SEO & indexing (deferred to launch)**
-- `[~]` `robots.ts` blocks all crawlers pre-launch; `sitemap.ts` ready; verification wired via `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` in `app/layout.tsx`
-- `[ ]` **At launch:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) — robots, Search Console, domain, Resend
+**Attorney distribution**
+- `[ ]` Migration: `attorney_listings.referral_code` (unique) — table is `attorney_listings`, not `attorney_directory`
+- `[ ]` Extend `POST /api/referral/track` (or `?aref=`) to log attorney clicks
+- `[ ]` Attorney portal share links (mirror advisor newsletter kit pattern)
 
-**Analytics & reporting**
-- `[ ]` Event → tier conversion report (join `funnel_events` to `profiles.consumer_tier`)
-- `[ ]` Admin funnel — full 30-day step counts (bar chart today uses last 50 events only)
+**Launch (deferred from Sprint 7 — see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))**
+- `[ ]` Restore permissive `app/robots.ts` + submit `sitemap.xml`
+- `[ ]` Search Console verify + `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`
+- `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
 
-**Growth**
-- `[ ]` Expand drip sequences in `lib/emails/drip-templates.ts` (3 custom + default today)
-- `[ ]` Advisor newsletter kit — shareable links from `lib/events/referral.ts`
-- `[ ]` Attorney referral tag on event pages (parallel to advisor `?ref=`)
-
-**Product polish**
-- `[ ]` Upgrade `EVENT_UPGRADE_COPY` in `upgradeContext.ts` for 16 new event slugs (optional)
+**Growth polish**
+- `[ ]` Drip custom sequences for remaining 12 event slugs (12 `DripEventSlug` types covered; 12 Sprint 5-only pages on default)
+- `[ ]` Signup attribution from `mwm_referral_code`
+- `[ ]` Life event context on new advisor connections
 
 **Deferred from earlier sprints**
-- `[ ]` Per-milestone age trigger event slugs (62/65/70/73)
-- `[ ]` Life event context on new advisor connections
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
+- `[ ]` Blended family as separate slug (optional)
 
-**Success criteria for Sprint 7**
-- Weekly funnel review includes tier conversion (not just step counts)
-- At least 3 additional event-specific drip sequences live
-- **Launch (separate):** Search Console verified, sitemap submitted, permissive `robots.ts` live
+**Success criteria for Sprint 8**
+- Attorneys can share tracked event links from portal
+- Launch checklist items checked off when product goes live
+- Referral attribution visible in funnel/admin or signup path
 
 ---
 
 
 ## Completed sprints
+
+### Sprint 7 — Funnel depth, distribution, personalization (Weeks 23–26) ✅
+**Goal:** Improve funnel reporting, advisor distribution kit, expand drip and upgrade personalization.
+
+**Shipped**
+- `[x]` Admin funnel — 30-day `funnelStepCounts`; `tierConversion` by tier; By Tier tab
+- `[x]` Advisor newsletter kit — 24 referral URLs, grouped UI, email + plain-text copy
+- `[x]` `buildAllEventReferralUrls` — all 24 `EVENT_SLUGS`
+- `[x]` Drip — 12 custom `EVENT_SEQUENCES` (original + key Sprint 5 slugs in union)
+- `[x]` `EVENT_UPGRADE_COPY` — all 24 slugs, tier 2 and 3
+- `[x]` Age triggers — per-age slugs (62/65/70/73)
+
+**Deferred to Sprint 8**
+- `[ ]` Launch / Search Console ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
+- `[ ]` Attorney referral codes on `attorney_listings`
+- `[ ]` Drip for all 24 slugs (12 still on default)
+- `[ ]` Signup referral persistence
+
+---
 
 ### Sprint 6 — Measurement, attorney PDF, growth distribution (Weeks 19–22) ✅
 **Goal:** Act on funnel data, ship attorney-ready PDF content, begin outbound distribution.
@@ -65,11 +82,11 @@
 - `[x]` Resend drip — 3-step sequence; step 1 on capture; steps 2–3 in notifications cron; unsubscribe
 - `[x]` Migration `20260524000000_email_captures_drip.sql`
 
-**Deferred to Sprint 7**
-- `[ ]` Search Console verification and indexing confirmation
-- `[ ]` Event → tier conversion report
-- `[ ]` Advisor newsletter kit
-- `[ ]` Attorney `?ref=` on event pages
+**Deferred to Sprint 7+**
+- `[ ]` Search Console verification and indexing confirmation (→ launch checklist, Sprint 8)
+- `[x]` Event → tier conversion report (Sprint 7)
+- `[x]` Advisor newsletter kit (Sprint 7)
+- `[ ]` Attorney `?ref=` on event pages (Sprint 8)
 
 ---
 
@@ -84,7 +101,7 @@
 
 **Deferred to Sprint 6+**
 - `[x]` Admin funnel dashboards (Sprint 6)
-- `[~]` Content distribution — drip live; Search Console + newsletter kit in Sprint 7
+- `[x]` Content distribution — drip live; newsletter kit (Sprint 7); Search Console at launch
 - `[ ]` Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 
 ---
@@ -118,7 +135,7 @@
 
 **Deferred**
 - `[ ]` Event-specific dashboard alerts beyond banner
-- `[ ]` Per-milestone copy (SS 62, Medicare 65, Roth 70½, RMD 73) — all map to `approaching-retirement` today
+- `[x]` Per-milestone calendar slugs (62/65/70/73) — Sprint 7 age-triggers cron
 - `[ ]` Segment-specific triggers (business $5M/$10M, multi-state RE, estate growth velocity)
 - `[ ]` A/B on upgrade gates (moved to Sprint 5)
 

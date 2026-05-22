@@ -2,12 +2,20 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isValidLifeEventType } from '@/lib/events/lifeEventSlugs'
 import { NextResponse } from 'next/server'
 
-/** Age milestones → life event slug (see Sprint 3 spec). */
+/**
+ * Age milestones → life event slug.
+ *
+ * Sprint 7: per-age slugs replace the blanket 'approaching-retirement' fallback.
+ *   62 → social-security-timing   (earliest SS filing eligibility)
+ *   65 → medicare-eligibility     (Medicare Part A/B enrollment window)
+ *   70 → rmd-start-age            (Roth conversion urgency peaks; RMD clock approaching)
+ *   73 → rmd-start-age            (Required Minimum Distributions begin under SECURE 2.0)
+ */
 const AGE_MILESTONES: { age: number; event_type: string }[] = [
-  { age: 62, event_type: 'approaching-retirement' },
-  { age: 65, event_type: 'approaching-retirement' },
-  { age: 70, event_type: 'approaching-retirement' },
-  { age: 73, event_type: 'approaching-retirement' },
+  { age: 62, event_type: 'social-security-timing' },
+  { age: 65, event_type: 'medicare-eligibility' },
+  { age: 70, event_type: 'rmd-start-age' },
+  { age: 73, event_type: 'rmd-start-age' },
 ]
 
 export async function GET(request: Request) {

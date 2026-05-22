@@ -30,15 +30,50 @@ type AdvisorClient = {
 }
 
 const EVENT_REFERRAL_LABELS: Record<string, string> = {
-  'selling-a-business': 'Selling a business',
-  'death-of-spouse': 'Death of a spouse',
-  'serious-diagnosis': 'Serious diagnosis',
-  'receiving-inheritance': 'Receiving an inheritance',
-  divorce: 'Divorce',
-  'approaching-retirement': 'Approaching retirement',
-  'large-rsu-vest': 'Large RSU vest',
-  'new-child-grandchild': 'New child / grandchild',
+  'selling-a-business':       'Selling a business',
+  'death-of-spouse':          'Death of a spouse',
+  'serious-diagnosis':        'Serious diagnosis',
+  'receiving-inheritance':    'Receiving an inheritance',
+  'divorce':                  'Divorce',
+  'approaching-retirement':   'Approaching retirement',
+  'large-rsu-vest':           'Large RSU vest / liquidity event',
+  'new-child-grandchild':     'New child or grandchild',
+  'getting-married':          'Getting married',
+  'remarriage-blended-family':'Remarriage / blended family',
+  'aging-parent-needs-care':  'Aging parent needs care',
+  'loss-of-parent':           'Loss of a parent',
+  'starting-a-business':      'Starting a business',
+  'selling-a-home':           'Selling a home',
+  'multi-state-real-estate':  'Multi-state real estate',
+  'child-reaching-adulthood': 'Child reaching adulthood',
+  'disability-early-retirement':'Disability / early retirement',
+  'estate-tax-law-change':    'Estate tax law change',
+  'first-time-high-net-worth':'First-time high-net-worth',
+  'major-job-change':         'Major job change',
+  'five-year-plan-review':    'Five-year plan review',
+  'rmd-start-age':            'RMD start age (73)',
+  'medicare-eligibility':     'Medicare eligibility (65)',
+  'social-security-timing':   'Social Security timing (62)',
 }
+
+const EVENT_REFERRAL_GROUPS: { label: string; slugs: string[] }[] = [
+  {
+    label: 'Business & Wealth Events',
+    slugs: ['selling-a-business', 'starting-a-business', 'large-rsu-vest', 'first-time-high-net-worth', 'major-job-change'],
+  },
+  {
+    label: 'Family & Life Transitions',
+    slugs: ['death-of-spouse', 'serious-diagnosis', 'divorce', 'getting-married', 'remarriage-blended-family', 'new-child-grandchild', 'child-reaching-adulthood', 'loss-of-parent', 'aging-parent-needs-care', 'disability-early-retirement'],
+  },
+  {
+    label: 'Real Estate & Inheritance',
+    slugs: ['selling-a-home', 'multi-state-real-estate', 'receiving-inheritance'],
+  },
+  {
+    label: 'Retirement & Tax Planning',
+    slugs: ['approaching-retirement', 'rmd-start-age', 'medicare-eligibility', 'social-security-timing', 'estate-tax-law-change', 'five-year-plan-review'],
+  },
+]
 
 type Props = {
   advisorClients: AdvisorClient[]
@@ -95,6 +130,8 @@ export default function AdvisorClientPage({
   void advisorId
   const [clients, setClients] = useState(advisorClients)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const [newsletterTab, setNewsletterTab] = useState<'links' | 'email' | 'text'>('links')
+  const [copiedNewsletter, setCopiedNewsletter] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -307,49 +344,176 @@ export default function AdvisorClientPage({
         </div>
       </div>
 
-      {referralCode && eventReferralUrls && (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-            Referral links
-          </h2>
-          <p className="text-sm text-neutral-600 mb-4">
-            Share these links with prospects. When they sign up from an event page, the visit is
-            attributed to your code <span className="font-mono font-medium text-neutral-800">{referralCode}</span>.
-          </p>
-          <div className="space-y-2">
-            {Object.entries(eventReferralUrls).map(([slug, url]) => (
-              <div
-                key={slug}
-                className="flex items-center justify-between gap-3 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2"
-              >
-                <span className="text-sm text-neutral-700 shrink-0">
-                  {EVENT_REFERRAL_LABELS[slug] ?? slug}
-                </span>
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs text-neutral-400 truncate hidden sm:block max-w-[240px]">
-                    {url}
-                  </span>
+      {referralCode && eventReferralUrls && (() => {
+        const emailCopy = `Subject: A planning resource for [life event] clients
+
+I wanted to share a resource I've been recommending to clients navigating specific life events.
+
+My Wealth Maps is an estate and financial planning tool built for the $2M–$30M segment. It helps clients understand their estate tax exposure, identify gaps in their plan, and arrive at our meetings with real questions.
+
+I have a direct link for each situation — click the one most relevant to your client:
+
+${EVENT_REFERRAL_GROUPS.flatMap(g =>
+  [`${g.label}:`, ...g.slugs.map(s => `• ${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`), '']
+).join('\n')}
+When a client signs up through your link, their visit is attributed to your referral code (${referralCode}).
+
+— [Your name]`
+
+        const textCopy = `My Wealth Maps — estate planning for $2M–$30M households.
+
+${EVENT_REFERRAL_GROUPS.flatMap(g =>
+  g.slugs.map(s => `${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`)
+).join('\n')}
+Ref: ${referralCode}`
+
+        return (
+          <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-6 pt-6 pb-4 border-b border-neutral-100">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-1">
+                    Newsletter Kit
+                  </h2>
+                  <p className="text-sm text-neutral-600">
+                    Your referral code:{' '}
+                    <span className="font-mono font-semibold text-neutral-900">{referralCode}</span>
+                    {' '}· Signups from your links are attributed to you automatically.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                {([
+                  { key: 'links' as const, label: '🔗 All Links' },
+                  { key: 'email' as const, label: '✉️ Email Copy' },
+                  { key: 'text' as const, label: '📱 Plain Text' },
+                ] as const).map(t => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setNewsletterTab(t.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      newsletterTab === t.key
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {newsletterTab === 'links' && (
+              <div className="p-6 space-y-6">
+                {EVENT_REFERRAL_GROUPS.map(group => {
+                  const groupSlugs = group.slugs.filter(s => eventReferralUrls[s])
+                  if (groupSlugs.length === 0) return null
+                  return (
+                    <div key={group.label}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">
+                        {group.label}
+                      </p>
+                      <div className="space-y-1.5">
+                        {groupSlugs.map(slug => {
+                          const url = eventReferralUrls[slug]
+                          return (
+                            <div
+                              key={slug}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2"
+                            >
+                              <span className="text-sm text-neutral-700 shrink-0">
+                                {EVENT_REFERRAL_LABELS[slug] ?? slug}
+                              </span>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs text-neutral-400 truncate hidden sm:block max-w-[220px]">
+                                  {url}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(url)
+                                      setCopiedSlug(slug)
+                                      setTimeout(() => setCopiedSlug(null), 2000)
+                                    } catch {
+                                      window.prompt('Copy this link:', url)
+                                    }
+                                  }}
+                                  className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                                >
+                                  {copiedSlug === slug ? '✓ Copied' : 'Copy'}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {newsletterTab === 'email' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Email template — paste into your newsletter or client email
+                  </p>
                   <button
                     type="button"
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(url)
-                        setCopiedSlug(slug)
-                        setTimeout(() => setCopiedSlug(null), 2000)
+                        await navigator.clipboard.writeText(emailCopy)
+                        setCopiedNewsletter(true)
+                        setTimeout(() => setCopiedNewsletter(false), 2000)
                       } catch {
-                        window.prompt('Copy this link:', url)
+                        window.prompt('Copy this text:', emailCopy)
                       }
                     }}
-                    className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
                   >
-                    {copiedSlug === slug ? 'Copied ✓' : 'Copy'}
+                    {copiedNewsletter ? '✓ Copied' : 'Copy all'}
                   </button>
                 </div>
+                <pre className="text-xs text-neutral-700 bg-neutral-50 border border-neutral-200 rounded-xl p-4 whitespace-pre-wrap leading-relaxed font-sans overflow-x-auto max-h-[480px] overflow-y-auto">
+                  {emailCopy}
+                </pre>
               </div>
-            ))}
+            )}
+
+            {newsletterTab === 'text' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Plain text — for SMS, Slack, or plain-text emails
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(textCopy)
+                        setCopiedNewsletter(true)
+                        setTimeout(() => setCopiedNewsletter(false), 2000)
+                      } catch {
+                        window.prompt('Copy this text:', textCopy)
+                      }
+                    }}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                  >
+                    {copiedNewsletter ? '✓ Copied' : 'Copy all'}
+                  </button>
+                </div>
+                <pre className="text-xs text-neutral-700 bg-neutral-50 border border-neutral-200 rounded-xl p-4 whitespace-pre-wrap leading-relaxed font-mono overflow-x-auto max-h-[480px] overflow-y-auto">
+                  {textCopy}
+                </pre>
+              </div>
+            )}
+
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {showFirmBanner && isFirmOwner === true && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">

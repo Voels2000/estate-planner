@@ -8,7 +8,7 @@
 
 Single source of truth for **go-live tasks** that are intentionally deferred while the app runs on the Vercel preview URL. Check items here (not only in sprint notes) and update this file when launch work completes.
 
-**Related docs:** [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint), [ROADMAP.md](./ROADMAP.md) (Sprint 7 SEO items), [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch crawl block decision).
+**Related docs:** [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint), [ROADMAP.md](./ROADMAP.md) (Sprint 8 launch items), [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch crawl block decision).
 
 ---
 
@@ -78,7 +78,7 @@ Single source of truth for **go-live tasks** that are intentionally deferred whi
 When all items above are checked:
 
 1. Update checkboxes in this file (or note completion date in a short changelog section below).
-2. Update [ROADMAP.md](./ROADMAP.md) — mark Sprint 7 SEO / launch items complete.
+2. Update [ROADMAP.md](./ROADMAP.md) — mark Sprint 8 launch items complete.
 3. Update [NEXT_SESSION.md](./NEXT_SESSION.md) — remove or shorten pre-launch warning; point to completed state here.
 4. Optional [DECISION_LOG.md](./DECISION_LOG.md) entry if launch policy changes (e.g. staging crawl rules).
 

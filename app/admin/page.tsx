@@ -43,8 +43,8 @@ export default async function AdminPage() {
     .from('advisor_tiers')
     .select('*')
     .order('display_order')
-  
-    const { data: assetTypes } = await supabase
+
+  const { data: assetTypes } = await supabase
     .from('asset_types')
     .select('value, label, sort_order, is_active')
     .order('sort_order')
@@ -83,7 +83,7 @@ export default async function AdminPage() {
     .from('ref_succession_plans')
     .select('value, label, sort_order, is_active')
     .order('sort_order')
-  
+
   const { data: refPropertyTypes } = await supabase
     .from('ref_property_types')
     .select('value, label, sort_order, is_active')
@@ -110,34 +110,86 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Funnel analytics (service role — funnel_events RLS is not admin-readable via user client)
+  // ─── Funnel analytics (service role — funnel_events RLS is not admin-readable via user client) ───
   const admin = createAdminClient()
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString()
 
   const [
     { data: funnelBySlug },
     { data: funnelByReferral },
     { data: recentFunnelEvents },
+    // NEW: full 30-day step counts (replaces client-side last-50 count)
+    { data: funnelStepCounts },
+    // NEW: event → tier conversion (funnel_events joined to profiles.consumer_tier)
+    { data: tierConversionRaw },
   ] = await Promise.all([
     admin
       .from('funnel_events')
       .select('event_slug, event_name')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+      .gte('created_at', thirtyDaysAgoISO)
       .not('event_slug', 'is', null),
+
     admin
       .from('funnel_events')
       .select('referral_code, event_name')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+      .gte('created_at', thirtyDaysAgoISO)
       .not('referral_code', 'is', null),
+
     admin
       .from('funnel_events')
       .select('event_name, event_slug, referral_code, created_at, properties')
       .order('created_at', { ascending: false })
       .limit(50),
+
+    // Full 30-day aggregation by event_name — used for bar chart step counts
+    // Supabase JS client doesn't support GROUP BY directly; fetch all rows and aggregate server-side.
+    // This avoids a raw SQL RPC call while keeping the data fresh.
+    admin
+      .from('funnel_events')
+      .select('event_name')
+      .gte('created_at', thirtyDaysAgoISO),
+
+    // Tier conversion: all funnel events with a user_id in the last 30 days,
+    // joined to profiles to get consumer_tier. Anon events (user_id null) are excluded
+    // intentionally — tier is only meaningful once a profile exists.
+    admin
+      .from('funnel_events')
+      .select('event_name, profiles!inner(consumer_tier)')
+      .gte('created_at', thirtyDaysAgoISO)
+      .not('user_id', 'is', null),
   ])
 
-  // Compute stats
+  // Aggregate step counts server-side (avoids raw SQL RPC)
+  const stepCountMap: Record<string, number> = {}
+  for (const row of funnelStepCounts ?? []) {
+    stepCountMap[row.event_name] = (stepCountMap[row.event_name] ?? 0) + 1
+  }
+
+  // Aggregate tier conversion: Map<tier, Map<event_name, count>>
+  // consumer_tier values: 1 (Financial), 2 (Retirement), 3 (Estate), null (free/unsubscribed)
+  type TierConversionRow = {
+    event_name: string
+    profiles: { consumer_tier: number | null } | { consumer_tier: number | null }[]
+  }
+  const tierConversionMap = new Map<string, Record<string, number>>()
+
+  for (const row of (tierConversionRaw ?? []) as TierConversionRow[]) {
+    const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+    const consumerTier = profile?.consumer_tier ?? null
+    const tier = consumerTier != null ? `tier_${consumerTier}` : 'free'
+    if (!tierConversionMap.has(tier)) tierConversionMap.set(tier, {})
+    const m = tierConversionMap.get(tier)!
+    m[row.event_name] = (m[row.event_name] ?? 0) + 1
+  }
+
+  const tierConversion = Array.from(tierConversionMap.entries()).map(([tier, counts]) => ({
+    tier,
+    counts,
+  }))
+
+  // ─── Compute stats ───
   const now = new Date()
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfWeek = new Date(now)
@@ -194,6 +246,9 @@ export default async function AdminPage() {
       funnelBySlug={funnelBySlug ?? []}
       funnelByReferral={funnelByReferral ?? []}
       recentFunnelEvents={recentFunnelEvents ?? []}
+      // NEW props
+      funnelStepCounts={stepCountMap}
+      tierConversion={tierConversion}
     />
   )
 }
