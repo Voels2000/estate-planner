@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## RMD start age — SECURE Act cohort fix (May 2026)
+
+- **No schema change.**
+- **Engine:** `lib/calculations/rmdStartAge.ts` — `getRmdStartAge(birthYear)` (72 / 73 / 75 by cohort).
+- **Bug fix:** `app/advisor/clients/[clientId]/_tabs/RetirementTab.tsx` — was hardcoded `rmdAge = 73`; now per-person birth year (e.g. born 1960 → start at **75**).
+- **Aligned:** `projection-complete.ts`, `lib/calculations/rmd.ts`, `lib/dashboard/calculations.ts`, `lib/monte-carlo.ts`, `app/(dashboard)/rmd/_rmd-client.tsx`, `app/(dashboard)/roth/page.tsx`, `app/(dashboard)/my-estate-trust-strategy/page.tsx`, `app/admin/debug-tab.tsx`.
+- **Tests:** `scripts/test-engines.ts` — cohort assertions for 1949–1970 birth years.
+
 ## Sprint 9 — signup attribution, full drip, robots (May 2026)
 
 - **Migration:** `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code` (indexed, nullable).

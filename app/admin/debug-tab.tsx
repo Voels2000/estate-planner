@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 
 type DebugTrace = {
   engine: string
@@ -251,7 +252,8 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         // RMD for this year
         const rmdRow = ((rmdTable ?? []) as RmdRow[]).find((r) => r.age === p1Age)
         const rmdFactor = rmdRow?.factor ?? null
-        const rmdAmount = rmdFactor && p1Age >= 73 ? Math.round(taxDeferred / rmdFactor) : 0
+        const p1RmdStartAge = getRmdStartAge(householdData.person1_birth_year ?? 1960)
+        const rmdAmount = rmdFactor && p1Age >= p1RmdStartAge ? Math.round(taxDeferred / rmdFactor) : 0
 
         newTraces.push({
           engine: 'Asset Projection',
@@ -271,9 +273,9 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             { label: 'Phase', value: isRetired ? 'Retirement' : 'Accumulation' },
             { label: 'Growth rate applied', value: fmtPct(growthRate * 100) },
             { label: 'Projected growth this year', value: fmtDollars(totalAssets * growthRate) },
-            { label: 'RMD age threshold', value: '73 (SECURE Act 2.0)' },
-            { label: 'RMD applies this year', value: p1Age >= 73 ? 'Yes' : 'No' },
-            { label: 'IRS life expectancy factor', value: rmdFactor ?? 'N/A (under 73)' },
+            { label: 'RMD age threshold', value: String(p1RmdStartAge) },
+            { label: 'RMD applies this year', value: p1Age >= p1RmdStartAge ? 'Yes' : 'No' },
+            { label: 'IRS life expectancy factor', value: rmdFactor ?? `N/A (under ${p1RmdStartAge})` },
             { label: 'RMD amount', value: fmtDollars(rmdAmount), note: rmdFactor ? `${fmtDollars(taxDeferred)} ÷ ${rmdFactor}` : 'Not required' },
           ],
           outputs: {
@@ -361,7 +363,8 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         const totalTaxDeferred = rmdEligibleAssets.reduce((s: number, a) => s + Number(a.value ?? 0), 0)
         const rmdRow = ((rmdTable ?? []) as RmdRow[]).find((r) => r.age === p1Age)
         const factor = rmdRow?.factor ?? null
-        const rmdRequired = p1Age >= 73
+        const rmdStartAge = getRmdStartAge(p1Birth)
+        const rmdRequired = p1Age >= rmdStartAge
         const totalRmd = rmdRequired && factor ? Math.round(totalTaxDeferred / factor) : 0
 
         newTraces.push({
@@ -376,7 +379,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           },
           steps: [
             { label: 'Person 1 age in selected year', value: p1Age },
-            { label: 'RMD start age (SECURE Act 2.0)', value: 73 },
+            { label: 'RMD start age (SECURE Act 2.0)', value: rmdStartAge },
             { label: 'RMD required this year', value: rmdRequired ? 'Yes' : 'No' },
             {
               label: 'RMD-eligible accounts',
@@ -384,7 +387,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
               note: rmdEligibleAssets.map((a) => a.name ?? a.type).join(', ') || 'None',
             },
             { label: 'Total tax-deferred balance', value: fmtDollars(totalTaxDeferred) },
-            { label: 'IRS Uniform Lifetime Factor', value: factor ?? 'N/A', note: factor ? `Age ${p1Age} from IRS table` : 'Age below 73' },
+            { label: 'IRS Uniform Lifetime Factor', value: factor ?? 'N/A', note: factor ? `Age ${p1Age} from IRS table` : `Age below ${rmdStartAge}` },
             { label: 'RMD calculation', value: factor ? `${fmtDollars(totalTaxDeferred)} ÷ ${factor}` : 'Not applicable' },
             { label: 'Total RMD amount', value: fmtDollars(totalRmd) },
             { label: 'Per-account RMD', value: rmdEligibleAssets.length > 0 && factor ? fmtDollars(totalRmd / rmdEligibleAssets.length) : '—', note: 'Evenly split across eligible accounts' },

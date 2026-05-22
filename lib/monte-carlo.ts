@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/insurance'
+import { getRmdStartAge as getRMDStartAge } from '@/lib/calculations/rmdStartAge'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,11 +97,6 @@ function portfolioReturn(stocks: number, bonds: number, cash: number): number {
     randomNormal(ASSET_ASSUMPTIONS.bonds.mean, ASSET_ASSUMPTIONS.bonds.stdDev) * b +
     randomNormal(ASSET_ASSUMPTIONS.cash.mean, ASSET_ASSUMPTIONS.cash.stdDev) * c
   )
-}
-
-// SECURE 2.0: RMD age is 73 if born before 1960, 75 if born 1960 or later
-function getRMDStartAge(birthYear: number): number {
-  return birthYear >= 1960 ? 75 : 73
 }
 
 function getRMDDivisor(age: number): number {

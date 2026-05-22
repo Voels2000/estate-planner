@@ -7,7 +7,9 @@
  * Supabase-dependent functions (runProjection, computeRmd) are skipped —
  * they require a live DB connection and are covered by manual QA.
  */
- 
+
+import { getRmdStartAge } from '../lib/calculations/rmdStartAge'
+
 // ─────────────────────────────────────────────────────────────
 // Test harness
 // ─────────────────────────────────────────────────────────────
@@ -311,8 +313,17 @@ assert('MFJ $600k gain → capped at $500k', calcSection121Exclusion(true, 10, '
 // 8. RMD factor math (pure calculation, no DB)
 // ─────────────────────────────────────────────────────────────
  
-section('8. RMD factor math (no DB)')
- 
+section('8. RMD start age (SECURE Act cohorts)')
+
+assert('Born 1949 → RMD age 72', getRmdStartAge(1949), 72)
+assert('Born 1950 → RMD age 72', getRmdStartAge(1950), 72)
+assert('Born 1951 → RMD age 73', getRmdStartAge(1951), 73)
+assert('Born 1959 → RMD age 73', getRmdStartAge(1959), 73)
+assert('Born 1960 → RMD age 75', getRmdStartAge(1960), 75)
+assert('Born 1970 → RMD age 75', getRmdStartAge(1970), 75)
+
+section('8b. RMD factor math (no DB)')
+
 function calcRmdAmount(balance: number, factor: number): number {
   if (factor <= 0 || balance <= 0) return 0
   return Math.round((balance / factor) * 100) / 100

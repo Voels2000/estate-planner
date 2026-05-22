@@ -268,6 +268,18 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ---
 
+### May 2026 — Centralized RMD start age (SECURE Act birth-year cohorts)
+
+**Decision:** Single source of truth `getRmdStartAge(birthYear)` in `lib/calculations/rmdStartAge.ts`: age **72** (born 1950 or earlier), **73** (1951–1959), **75** (1960 or later). All engines and UI surfaces import this helper; advisor client Retirement tab uses **per-person** birth year (fixes hardcoded age 73).
+
+**Reasoning:** Alan Voels (born 1960) and others in the 1960+ cohort must see RMD at **75**, not 73. Duplicated inline `>= 1960 ? 75 : 73` logic missed the pre-1951 age-72 cohort and left advisor Retirement messaging wrong.
+
+**Implementation:** `rmdStartAge.ts`; consumers include `projection-complete.ts`, `lib/calculations/rmd.ts`, `lib/dashboard/calculations.ts`, `lib/monte-carlo.ts`, `app/(dashboard)/rmd/_rmd-client.tsx`, `app/advisor/clients/[clientId]/_tabs/RetirementTab.tsx`, `app/admin/debug-tab.tsx`.
+
+**Note:** Age cron still fires `rmd-start-age` life events at ages **70** and **73** for marketing urgency; that is separate from when RMDs are **required** in projection math.
+
+---
+
 ### May 2026 — Block all crawlers pre-launch
 
 **Decision:** `app/robots.ts` returns `disallow: /` for `userAgent: *` and omits the `sitemap` URL until product launch. `app/sitemap.ts` stays in the codebase. Google Search Console setup deferred.

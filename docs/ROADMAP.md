@@ -44,6 +44,7 @@
 
 **Sprint 9 shipped (partial)**
 - `[x]` Signup referral attribution — `_signup-form.tsx` + profiles columns
+- `[x]` RMD start age — `lib/calculations/rmdStartAge.ts`; advisor Retirement tab + engine alignment (72/73/75 by birth year)
 
 **Success criteria for Sprint 9**
 - Launch checklist complete when product goes live

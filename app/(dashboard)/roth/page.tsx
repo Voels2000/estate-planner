@@ -10,6 +10,7 @@ import { getUserAccess } from "@/lib/get-user-access";
 import UpgradeBanner from "@/app/(dashboard)/_components/UpgradeBanner";
 import { RothClient } from "./_roth-client";
 import { runRothAnalysis } from "@/lib/calculations/roth-analysis";
+import { getRmdStartAge } from "@/lib/calculations/rmdStartAge";
 import { resolveDeduction } from "@/lib/tax/resolve-deduction";
 
 export default async function RothPage() {
@@ -149,7 +150,7 @@ export default async function RothPage() {
   const stateCode = hh.state_primary?.toUpperCase() ?? null;
 
   // ── RMD start age ───────────────────────────────────────────────────────
-  const rmdStartAge = hh.person1_birth_year >= 1960 ? 75 : 73;
+  const rmdStartAge = getRmdStartAge(hh.person1_birth_year ?? 1960);
 
   // ── Standard deduction ──────────────────────────────────────────────────
   const standardDeduction = resolveDeduction(

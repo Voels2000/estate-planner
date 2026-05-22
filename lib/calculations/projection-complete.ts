@@ -10,6 +10,7 @@ import {
   calculateStateIncomeTax,
   type StateIncomeTaxBracket as SharedStateIncomeTaxBracket,
 } from '@/lib/calculations/stateIncomeTax'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 
 export type YearRow = {
   year: number
@@ -565,12 +566,6 @@ function classifyPooledAssets(
 }
 
 // ─── RMD ──────────────────────────────────────────────────────────────────────
-
-function getRmdStartAge(birthYear: number): number {
-  if (birthYear >= 1960) return 75
-  if (birthYear >= 1951) return 73
-  return 72
-}
 
 function getRmdAmount(age: number, taxDeferredBalance: number, birthYear: number): number {
   const rmdAge = getRmdStartAge(birthYear)

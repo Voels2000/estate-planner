@@ -7,6 +7,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 
 // Account types subject to RMD rules
 export const RMD_ELIGIBLE_TYPES = [
@@ -50,14 +51,6 @@ export type RmdResult = {
   rmd_start_age: number
   is_first_year: boolean
   first_year_deferral_available: boolean
-}
-
-/** Determine RMD start age per SECURE Act 2.0 */
-function getRmdStartAge(birthYear: number): number {
-  // Born 1951–1959: age 73. Born 1960+: age 75
-  if (birthYear >= 1960) return 75
-  if (birthYear >= 1951) return 73
-  return 72 // pre-SECURE Act
 }
 
 /** Determine which IRS table to use */

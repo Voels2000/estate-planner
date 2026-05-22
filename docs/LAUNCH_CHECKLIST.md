@@ -37,6 +37,7 @@ These must be complete before launch. Update status as sprints close them.
 
 ### Core planning loop
 
+- [x] **RMD start age by birth year** — `getRmdStartAge` (72 / 73 / 75); advisor Retirement tab + projection/dashboard/RMD calculator aligned (verify 1960+ cohort shows age **75**)
 - [ ] **Business succession planning page** — currently commented out of sidebar; evaluate before launch
 - [ ] **Mobile nav audit** — responsive layout review across all consumer-facing routes
 - [ ] **Projections + Lifetime Snapshot** — consolidation or clear navigation between pages (currently two separate surfaces with overlapping content)

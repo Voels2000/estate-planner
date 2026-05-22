@@ -180,6 +180,10 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/digital-assets` | `DigitalAssetIntakeForm` | `/api/consumer/digital-assets` | |
 | `/businesses` | `_business-form-client.tsx` | `/api/businesses`, `/api/businesses/[id]` | Legacy top-level routes; `afterHouseholdWriteForOwner` |
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
+| `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
+| `/roth` | `roth/_roth-client.tsx` | Read-heavy; uses projection + `getRmdStartAge` for conversion window | Tier 2 |
+
+**Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 
 All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (see `tests/e2e/consumer/consumer-financial-writes.spec.ts`).
 

@@ -16,6 +16,7 @@ import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -290,12 +291,6 @@ export default async function MyEstateTrustStrategyPage({
     .reduce((s, a) => s + Number(a.value ?? 0), 0)
 
   // RMD calculation — IRS Uniform Lifetime Table approximation
-  // RMD start age: 73 for born 1951-1959, 75 for born 1960+
-  function getRMDStartAge(birthYear: number): number {
-    if (birthYear >= 1960) return 75
-    if (birthYear >= 1951) return 73
-    return 72
-  }
   function getRMDFactor(age: number): number {
     // Simplified IRS Uniform Lifetime Table — factor decreases ~1 per year after 72
     return Math.max(1.0, 27.4 - (age - 72))
@@ -303,7 +298,7 @@ export default async function MyEstateTrustStrategyPage({
 
   const p1BirthYear = householdRow.person1_birth_year ?? new Date().getFullYear() - 50
   const p1CurrentAge = new Date().getFullYear() - p1BirthYear
-  const rmdStartAge = getRMDStartAge(p1BirthYear)
+  const rmdStartAge = getRmdStartAge(p1BirthYear)
   const annualRMD =
     p1CurrentAge >= rmdStartAge && preIRABalance > 0
       ? Math.round(preIRABalance / getRMDFactor(p1CurrentAge))

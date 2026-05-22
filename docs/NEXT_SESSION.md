@@ -33,6 +33,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 | **Signup attribution** | `_signup-form.tsx` — reads/clears `mwm_referral_*` + `mwm_attorney_referral_*`; `profiles.referral_code` + `profiles.attorney_referral_code`; `account_created` funnel with both codes in `properties` (fire-and-forget profile write) |
 | **Migration** | `20260529000000_profiles_referral_attribution.sql` |
 | **Email drip** | `lib/emails/drip-templates.ts` — `DripEventSlug` + `EVENT_SEQUENCES` for all **24** event pages |
+| **RMD cohorts** | `lib/calculations/rmdStartAge.ts` — 72/73/75 by birth year; advisor Retirement tab no longer hardcodes 73 |
 
 ---
 

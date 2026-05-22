@@ -8,6 +8,7 @@
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { getRmdStartAge as rmdStartAge } from '@/lib/calculations/rmdStartAge'
 
 type Household = {
   id: string
@@ -64,12 +65,6 @@ const uniformFactors: Record<number, number> = {
   84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9,
   90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9,
   96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4,
-}
-
-function rmdStartAge(birthYear: number): number {
-  if (birthYear >= 1960) return 75
-  if (birthYear >= 1951) return 73
-  return 72
 }
 
 function formatDollars(n: number) {

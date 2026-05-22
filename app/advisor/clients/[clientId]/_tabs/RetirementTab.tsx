@@ -6,6 +6,7 @@
  */
 
 import { getSsBenefitFromPia, getFraFromBirthYear } from '@/lib/calculations/projection-complete'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { formatCurrency, getAge } from '../_utils'
 
@@ -59,10 +60,12 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
   const totalTraditional  = traditionalAssets.reduce((s, a) => s + Number(a.value ?? 0), 0)
   const totalRoth         = rothAssets.reduce((s, a) => s + Number(a.value ?? 0), 0)
 
-  // ── RMD exposure ─────────────────────────────────────────────────────────
-  const rmdAge = 73 // SECURE 2.0
-  const p1YearsToRMD = Math.max(0, rmdAge - p1Age)
-  const p2YearsToRMD = p2Age !== null ? Math.max(0, rmdAge - p2Age) : null
+  // ── RMD exposure (SECURE Act / SECURE 2.0 cohort by birth year) ─────────
+  const p1RmdAge = person1BirthYear != null ? getRmdStartAge(person1BirthYear) : 75
+  const p2RmdAge =
+    household.has_spouse && person2BirthYear != null ? getRmdStartAge(person2BirthYear) : null
+  const p1YearsToRMD = Math.max(0, p1RmdAge - p1Age)
+  const p2YearsToRMD = p2Age !== null && p2RmdAge !== null ? Math.max(0, p2RmdAge - p2Age) : null
   const hasRMDExposure = totalTraditional > 0 && (p1YearsToRMD <= 10 || (p2YearsToRMD !== null && p2YearsToRMD <= 10))
 
   // ── Roth conversion opportunity ───────────────────────────────────────────
@@ -77,8 +80,8 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4">
           <p className="text-sm font-semibold text-amber-800">RMD Planning Window</p>
           <p className="text-sm text-amber-700 mt-0.5">
-            {p1YearsToRMD <= 10 && `${household.person1_first_name} begins RMDs in ${p1YearsToRMD} year${p1YearsToRMD !== 1 ? 's' : ''} (age ${rmdAge}). `}
-            {p2YearsToRMD !== null && p2YearsToRMD <= 10 && `${household.person2_first_name} begins RMDs in ${p2YearsToRMD} year${p2YearsToRMD !== 1 ? 's' : ''} (age ${rmdAge}). `}
+            {p1YearsToRMD <= 10 && `${household.person1_first_name} begins RMDs in ${p1YearsToRMD} year${p1YearsToRMD !== 1 ? 's' : ''} (age ${p1RmdAge}). `}
+            {p2YearsToRMD !== null && p2YearsToRMD <= 10 && `${household.person2_first_name} begins RMDs in ${p2YearsToRMD} year${p2YearsToRMD !== 1 ? 's' : ''} (age ${p2RmdAge}). `}
             {formatCurrency(totalTraditional, true)} in traditional retirement accounts subject to RMD.
             {rothConversionOpportunity && ' Consider Roth conversion strategy before RMD onset.'}
           </p>
@@ -125,7 +128,7 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
               name={household.person1_first_name ?? 'Person 1'}
               age={p1Age}
               yearsToRMD={p1YearsToRMD}
-              rmdAge={rmdAge}
+              rmdAge={p1RmdAge}
               traditionalBalance={
                 retirementAssets
                   .filter(a => a.owner === 'person1' && accountType(a) !== 'roth_ira')
@@ -137,7 +140,7 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
                 name={household.person2_first_name ?? 'Person 2'}
                 age={p2Age}
                 yearsToRMD={p2YearsToRMD}
-                rmdAge={rmdAge}
+                rmdAge={p2RmdAge ?? 75}
                 traditionalBalance={
                   retirementAssets
                     .filter(a => a.owner === 'person2' && accountType(a) !== 'roth_ira')

@@ -571,7 +571,9 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/projections/loadProjectionData.ts` (shared projection fetch for `/api/projection`, `/projections`, `/scenarios` pages)
 - `lib/projections/mappers/mapProjectionRows.ts` (consumer projections API row mapping)
 - `lib/projections/selectors/getProjectionSummary.ts` (consumer projections derived metrics)
-- `lib/dashboard/calculations.ts` (shared SS/RMD calculation helpers)
+- `lib/calculations/rmdStartAge.ts` (canonical SECURE Act RMD start age by birth year: 72 / 73 / 75)
+- `lib/calculations/rmd.ts` (full RMD engine — IRS tables, aggregation, inherited IRA rules)
+- `lib/dashboard/calculations.ts` (shared SS/RMD helpers; re-exports `getRmdStartAge`, `calcRmdAmount`)
 - `lib/dashboard/setupProgress.ts` (dashboard setup progress derivation)
 - `lib/dashboard/retirementSnapshot.ts` (retirement horizon snapshot derivation)
 - `lib/dashboard/rmdStatus.ts` (RMD requirement/planned rollup derivation)
@@ -608,6 +610,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Dashboard empty-state rendering is componentized under `app/(dashboard)/dashboard/_components/*` to keep the route file orchestration-focused.
 - Dashboard client route composition in `app/(dashboard)/_dashboard-client.tsx` now delegates rendering to feature components under `app/(dashboard)/_components/dashboard/*` (`DashboardIntroSection`, `FinancialSummarySection`, `RetirementSummarySection`, `EstateSummarySection`) while keeping data flow unchanged.
 - Shared financial rollup view-models are now being introduced under `lib/view-models/*`; `lib/view-models/netWorthSummary.ts` is used by both consumer dashboard and advisor overview surfaces.
+- **RMD start age (SECURE Act cohorts):** `getRmdStartAge(birthYear)` in `lib/calculations/rmdStartAge.ts` — born ≤1950 → **72**, 1951–1959 → **73**, ≥1960 → **75**. Used by projection engine, dashboard `rmdStatus`, RMD Calculator, Roth analysis, Monte Carlo, trust-strategy annual RMD estimate, and advisor client **Retirement** tab (per-person birth year; no hardcoded 73).
 - `lib/view-models/retirementSnapshot.ts` now centralizes dashboard retirement snapshot object construction (composition-only refactor; calculations remain in `lib/dashboard/retirementSnapshot.ts` + `lib/dashboard/incomeSnapshot.ts`).
 - `lib/view-models/taxScopeBadges.ts` now centralizes advisory metric scope badge mapping (`federal`, `state`, `both`, `strategy`) to keep label/class semantics consistent where scope chips are rendered.
 - `lib/view-models/projectionSummaryCards.ts` now centralizes consumer projection summary card composition (labels, values, highlights) while calculation inputs still come from the shared projections selector pipeline.
@@ -660,6 +663,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Advisor client domicile breakeven — state income timeline labels
 - Confirm staleness-trigger regeneration after financial write
 - Decide whether stored `projection_scenarios` need backfill after bracket/RPC changes
+- **RMD cohort smoke:** household with `person1_birth_year = 1960` → dashboard “not required until” year = birth year + **75**; advisor client Retirement tab shows RMD start **75** (not 73)
 
 Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core).
 
