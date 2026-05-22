@@ -706,7 +706,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **A/B flags** in `app_config`: `ab_assessment_gate` (`score_visible` | `full_gate`) — server `app/(public)/assess/page.tsx` → `_assess-client.tsx`; `ab_upgrade_copy` (`personalized` | `generic`) — `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts`.
 - **Signup attribution:** `mwm_referral_code` / `mwm_referral_slug` in sessionStorage; cleared after `account_created` funnel event.
 
-**Email drip (Sprint 6 + Sprint 7):** 12 custom `EVENT_SEQUENCES` in `lib/emails/drip-templates.ts` (`DripEventSlug` union); remaining event slugs use `DEFAULT_SEQUENCE`.
+**Email drip (Sprint 6 + Sprint 7):** Custom `EVENT_SEQUENCES` for all 12 `DripEventSlug` union members; 12 event pages outside the union use `DEFAULT_SEQUENCE` (Sprint 8 backlog).
 
 **Current sprint (Sprint 8):** Attorney referral attribution, launch checklist execution, signup referral persistence. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 

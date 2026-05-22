@@ -12,7 +12,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 - **Admin:** `app/admin/page.tsx` — 30-day `funnelStepCounts`; `tierConversion` via `funnel_events` + `profiles.consumer_tier`; props to `funnel-tab.tsx` (**By Tier** tab).
 - **Advisor:** `app/advisor/_advisor-client.tsx` — Newsletter Kit (24 event links, email + plain-text copy); `lib/events/referral.ts` — `buildAllEventReferralUrls` for all `EVENT_SLUGS`.
-- **Email:** `lib/emails/drip-templates.ts` — 12 custom `EVENT_SEQUENCES` (`DripEventSlug` union); other slugs use `DEFAULT_SEQUENCE`.
+- **Email:** `lib/emails/drip-templates.ts` — custom `EVENT_SEQUENCES` for all 12 `DripEventSlug` union members; 12 other event slugs (outside union) use `DEFAULT_SEQUENCE`.
 - **Product:** `lib/events/upgradeContext.ts` — `EVENT_UPGRADE_COPY` for all 24 slugs (tier 2/3).
 - **Cron:** `app/api/cron/age-triggers/route.ts` — per-age event slugs (62/65/70/73).
 - **No schema change:** attorney referral still advisor-only (`advisor_directory.referral_code`); `attorney_listings` has no referral column.

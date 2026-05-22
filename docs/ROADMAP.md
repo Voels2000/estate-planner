@@ -35,7 +35,7 @@
 - `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
 
 **Growth polish**
-- `[ ]` Drip custom sequences for remaining 12 event slugs (12 `DripEventSlug` types covered; 12 Sprint 5-only pages on default)
+- `[ ]` Drip custom sequences for 12 event slugs **not in `DripEventSlug`** (union fully sequenced in Sprint 7; default drip for `remarriage-blended-family`, `aging-parent-needs-care`, `starting-a-business`, `selling-a-home`, `multi-state-real-estate`, `child-reaching-adulthood`, `disability-early-retirement`, `major-job-change`, `five-year-plan-review`, `rmd-start-age`, `medicare-eligibility`, `social-security-timing`)
 - `[ ]` Signup attribution from `mwm_referral_code`
 - `[ ]` Life event context on new advisor connections
 
@@ -60,15 +60,14 @@
 - `[x]` Admin funnel — 30-day `funnelStepCounts`; `tierConversion` by tier; By Tier tab
 - `[x]` Advisor newsletter kit — 24 referral URLs, grouped UI, email + plain-text copy
 - `[x]` `buildAllEventReferralUrls` — all 24 `EVENT_SLUGS`
-- `[x]` Drip — 12 custom `EVENT_SEQUENCES` (original + key Sprint 5 slugs in union)
+- `[x]` Drip — custom `EVENT_SEQUENCES` for all **12** `DripEventSlug` union members
 - `[x]` `EVENT_UPGRADE_COPY` — all 24 slugs, tier 2 and 3
 - `[x]` Age triggers — per-age slugs (62/65/70/73)
 
-**Deferred to Sprint 8**
-- `[ ]` Launch / Search Console ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
-- `[ ]` Attorney referral codes on `attorney_listings`
-- `[ ]` Drip for all 24 slugs (12 still on default)
-- `[ ]` Signup referral persistence
+**Carried to Sprint 8** (see Current sprint above)
+- Launch / Search Console — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
+- Drip for 12 slugs outside `DripEventSlug` union (listed under Sprint 8 Growth polish)
+- Signup referral persistence
 
 ---
 
@@ -82,11 +81,11 @@
 - `[x]` Resend drip — 3-step sequence; step 1 on capture; steps 2–3 in notifications cron; unsubscribe
 - `[x]` Migration `20260524000000_email_captures_drip.sql`
 
-**Deferred to Sprint 7+**
-- `[ ]` Search Console verification and indexing confirmation (→ launch checklist, Sprint 8)
+**Deferred to Sprint 7+** (resolved or moved)
+- `[ ]` Search Console verification → Sprint 8 launch checklist
 - `[x]` Event → tier conversion report (Sprint 7)
 - `[x]` Advisor newsletter kit (Sprint 7)
-- `[ ]` Attorney `?ref=` on event pages (Sprint 8)
+- `[-]` Attorney `?ref=` on event pages → **Sprint 8** (`attorney_listings.referral_code`; no `attorney_directory` table)
 
 ---
 
@@ -119,9 +118,9 @@
 
 **Deferred**
 - `[ ]` Life event context on new advisor connections (connection metadata)
-- `[ ]` Attorney referral tag on event pages (advisor `?ref=` only today)
+- `[-]` Attorney `?ref=` on event pages → **Sprint 8** (`attorney_listings`; advisor `?ref=` via `advisor_directory` only today)
 - `[ ]` Attorney portal readiness score (advisor-only today)
-- `[ ]` Signup attribution from `mwm_referral_code`
+- `[ ]` Signup attribution from `mwm_referral_code` → Sprint 8 Growth polish
 
 ---
 

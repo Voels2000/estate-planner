@@ -33,7 +33,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 |------|----------------|
 | Admin funnel depth | `funnelStepCounts` (30-day bar chart); `tierConversion` by `consumer_tier`; **By Tier** tab in `funnel-tab.tsx` |
 | Advisor newsletter kit | `app/advisor/_advisor-client.tsx` — grouped links, email + plain-text templates; `buildAllEventReferralUrls` all **24** slugs |
-| Email drip expansion | `EVENT_SEQUENCES` — **12** event-specific 3-email sequences (`DripEventSlug` union); other slugs use default |
+| Email drip expansion | Custom `EVENT_SEQUENCES` for all **12** `DripEventSlug` union members; 12 other event pages (not in union) use `DEFAULT_SEQUENCE` |
 | Upgrade copy | `EVENT_UPGRADE_COPY` — tier 2/3 copy for all **24** slugs in `upgradeContext.ts` |
 | Age triggers | `app/api/cron/age-triggers/route.ts` — 62→`social-security-timing`, 65→`medicare-eligibility`, 70/73→`rmd-start-age` |
 
@@ -102,7 +102,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 | File | Why |
 |------|-----|
-| `lib/emails/drip-templates.ts` | Custom sequences for remaining 12 event slugs (Sprint 5-only pages still on `DEFAULT_SEQUENCE`) |
+| `lib/emails/drip-templates.ts` | Add slugs to `DripEventSlug` + `EVENT_SEQUENCES` for the 12 pages outside the union (today: `DEFAULT_SEQUENCE`) |
 | `app/(auth)/signup/_signup-form.tsx` | Persist `mwm_referral_code` / slug on profile or funnel |
 | `app/api/advisor/accept-request/route.ts` (or connect flow) | Life-event context when advisor accepts client |
 | `lib/events/content.ts` | `EVENT_SLUGS` — 24 slugs reference |
@@ -134,7 +134,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 - [ ] Attorney referral — migration + API + portal share links
 - [ ] Launch checklist execution (Search Console, domain, Resend domain verify)
-- [ ] Drip sequences for 12 remaining event slugs (optional; default drip works today)
+- [ ] Drip sequences for 12 remaining event slugs not in `DripEventSlug` (e.g. `remarriage-blended-family`, `aging-parent-needs-care`, `starting-a-business`, … — optional; default drip works today)
 - [ ] Signup attribution from `mwm_referral_code` to profile/advisor link
 - [ ] Life event context on new advisor connections
 - [ ] Segment-specific dashboard alerts (business $5M, multi-state RE)
@@ -143,8 +143,8 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 ## Known limitations
 
-- `attorney_listings` has no `referral_code`; `?ref=` on events only resolves advisors
-- Drip `DripEventSlug` covers 12 slugs; other 12 event pages use `DEFAULT_SEQUENCE`
+- `attorney_listings` has no `referral_code`; `?ref=` on events only resolves `advisor_directory` (no `attorney_directory` table)
+- **Drip:** `DripEventSlug` is a 12-member union; Sprint 7 wrote custom sequences for **all 12** union members. The other 12 event pages are **not** in the union and always use `DEFAULT_SEQUENCE`: `remarriage-blended-family`, `aging-parent-needs-care`, `starting-a-business`, `selling-a-home`, `multi-state-real-estate`, `child-reaching-adulthood`, `disability-early-retirement`, `major-job-change`, `five-year-plan-review`, `rmd-start-age`, `medicare-eligibility`, `social-security-timing` (age cron can insert the last three; drip still uses default until Sprint 8 sequences).
 - `NEXT_PUBLIC_SITE_URL` still in some legacy routes — prefer `NEXT_PUBLIC_APP_URL`
 
 ---
