@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AttorneyDashboardClient } from './_attorney-dashboard-client'
+import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
 
 export default async function AttorneyDashboardPage() {
   const supabase = await createClient()
@@ -22,9 +23,14 @@ export default async function AttorneyDashboardPage() {
   // 3. Look up this attorney's listing by profile_id
   const { data: attorneyListing } = await supabase
     .from('attorney_listings')
-    .select('id')
+    .select('id, referral_code')
     .eq('profile_id', user.id)
     .maybeSingle()
+
+  const referralCode = attorneyListing?.referral_code ?? null
+  const eventReferralUrls = referralCode
+    ? buildAllAttorneyEventReferralUrls(referralCode)
+    : null
 
   // 4. Fetch all active clients using the listing ID
   const { data: clients } = attorneyListing
@@ -106,6 +112,8 @@ export default async function AttorneyDashboardPage() {
     <AttorneyDashboardClient
       attorneyName={profile?.full_name ?? 'Attorney'}
       clients={clientCards}
+      referralCode={referralCode}
+      eventReferralUrls={eventReferralUrls}
     />
   )
 }

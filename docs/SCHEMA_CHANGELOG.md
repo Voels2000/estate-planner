@@ -8,6 +8,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 8 — attorney referral attribution (May 2026)
+
+- **Migration:** `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code` (unique, backfilled); `referral_clicks.listing_type` (`advisor` | `attorney`); `attorney_listing_id` → `attorney_listings(id)`; `attorney_profile_id` → `auth.users(id)`; attorney RLS select policy.
+- **API:** `POST /api/referral/track` — `type: 'attorney'` resolves `attorney_listings`; advisor path unchanged; both set `listing_type`.
+- **Application:** `_referral-tracker.tsx` — `?aref=` + `mwm_attorney_referral_code` sessionStorage; `lib/events/referral.ts` — `buildAttorneyReferralUrl`, `buildAllAttorneyEventReferralUrls`; attorney portal newsletter kit.
+
 ## Sprint 7 — funnel depth, newsletter kit, drip + personalization (May 2026)
 
 - **Admin:** `app/admin/page.tsx` — 30-day `funnelStepCounts`; `tierConversion` via `funnel_events` + `profiles.consumer_tier`; props to `funnel-tab.tsx` (**By Tier** tab).
@@ -15,7 +21,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **Email:** `lib/emails/drip-templates.ts` — custom `EVENT_SEQUENCES` for all 12 `DripEventSlug` union members; 12 other event slugs (outside union) use `DEFAULT_SEQUENCE`.
 - **Product:** `lib/events/upgradeContext.ts` — `EVENT_UPGRADE_COPY` for all 24 slugs (tier 2/3).
 - **Cron:** `app/api/cron/age-triggers/route.ts` — per-age event slugs (62/65/70/73).
-- **No schema change:** attorney referral still advisor-only (`advisor_directory.referral_code`); `attorney_listings` has no referral column.
+- **No schema change (superseded by Sprint 8):** attorney referral was advisor-only until `20260528000000_attorney_referrals.sql`.
 
 ## Pre-launch SEO gate (May 2026)
 

@@ -50,3 +50,46 @@ export function buildAllEventReferralUrls(
     slugs.map(slug => [slug, buildAdvisorReferralUrl(slug, advisorCode, baseUrl)]),
   )
 }
+
+export function buildAttorneyReferralUrl(
+  eventSlug: string,
+  attorneyCode: string,
+  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+): string {
+  return `${baseUrl}/event/${eventSlug}?aref=${encodeURIComponent(attorneyCode)}`
+}
+
+export function buildAllAttorneyEventReferralUrls(
+  attorneyCode: string,
+  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+): Record<string, string> {
+  const slugs = [
+    'selling-a-business',
+    'death-of-spouse',
+    'serious-diagnosis',
+    'receiving-inheritance',
+    'divorce',
+    'approaching-retirement',
+    'large-rsu-vest',
+    'new-child-grandchild',
+    'getting-married',
+    'remarriage-blended-family',
+    'aging-parent-needs-care',
+    'loss-of-parent',
+    'starting-a-business',
+    'selling-a-home',
+    'multi-state-real-estate',
+    'child-reaching-adulthood',
+    'disability-early-retirement',
+    'estate-tax-law-change',
+    'first-time-high-net-worth',
+    'major-job-change',
+    'five-year-plan-review',
+    'rmd-start-age',
+    'medicare-eligibility',
+    'social-security-timing',
+  ]
+  return Object.fromEntries(
+    slugs.map(slug => [slug, buildAttorneyReferralUrl(slug, attorneyCode, baseUrl)]),
+  )
+}

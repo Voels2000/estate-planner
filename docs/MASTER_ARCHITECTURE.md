@@ -693,8 +693,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Advisor/attorney distribution (Sprint 4):**
 
-- **Referral:** `lib/events/referral.ts` builds `?ref=` URLs for all **24** `EVENT_SLUGS`; `app/(public)/event/[slug]/_referral-tracker.tsx` → `POST /api/referral/track`; `referral_clicks` + `advisor_directory.referral_code` only (attorneys: no `referral_code` on `attorney_listings` yet — Sprint 8).
-- **Advisor portal:** `app/advisor/page.tsx` loads referral code from `advisor_directory` by `profile_id`; `_advisor-client.tsx` **Newsletter Kit** — grouped links, email + plain-text templates.
+- **Referral:** `lib/events/referral.ts` — advisor `?ref=` (`buildAllEventReferralUrls`) and attorney `?aref=` (`buildAllAttorneyEventReferralUrls`) for all **24** slugs; `_referral-tracker.tsx` → `POST /api/referral/track` with `type: 'advisor' | 'attorney'`; `referral_clicks` with `listing_type`.
+- **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
+- **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
 - **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` — UI complete; PDF content branch on `variant=attorney` deferred.
 
@@ -708,7 +709,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6 + Sprint 7):** Custom `EVENT_SEQUENCES` for all 12 `DripEventSlug` union members; 12 event pages outside the union use `DEFAULT_SEQUENCE` (Sprint 8 backlog).
 
-**Current sprint (Sprint 8):** Attorney referral attribution, launch checklist execution, signup referral persistence. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+**Current sprint (Sprint 9):** Launch checklist, signup referral persistence, optional drip for 12 non-union slugs. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 

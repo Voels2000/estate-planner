@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 8 current)
+# Last updated: May 2026 (Sprint 9 current)
 
 ---
 
@@ -21,37 +21,52 @@
 
 ## Current sprint
 
-### Sprint 8 — Attorney referral, launch, attribution polish (Weeks 27–30)
-**Goal:** Attorney event-page attribution, execute launch checklist when ready, close remaining distribution gaps.
+### Sprint 9 — Launch, signup attribution, growth polish (Weeks 31–34)
+**Goal:** Execute launch checklist when ready; persist advisor/attorney referral codes through signup; close remaining drip and connection polish.
 
-**Attorney distribution**
-- `[ ]` Migration: `attorney_listings.referral_code` (unique) — table is `attorney_listings`, not `attorney_directory`
-- `[ ]` Extend `POST /api/referral/track` (or `?aref=`) to log attorney clicks
-- `[ ]` Attorney portal share links (mirror advisor newsletter kit pattern)
-
-**Launch (deferred from Sprint 7 — see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))**
+**Launch** ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 - `[ ]` Restore permissive `app/robots.ts` + submit `sitemap.xml`
 - `[ ]` Search Console verify + `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`
 - `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
 
+**Attribution**
+- `[ ]` Signup persistence — `mwm_referral_code`, `mwm_attorney_referral_code`, slugs → profile or funnel
+- `[ ]` Admin funnel — optional attorney click report (`listing_type = 'attorney'`)
+
 **Growth polish**
-- `[ ]` Drip custom sequences for 12 event slugs **not in `DripEventSlug`** (union fully sequenced in Sprint 7; default drip for `remarriage-blended-family`, `aging-parent-needs-care`, `starting-a-business`, `selling-a-home`, `multi-state-real-estate`, `child-reaching-adulthood`, `disability-early-retirement`, `major-job-change`, `five-year-plan-review`, `rmd-start-age`, `medicare-eligibility`, `social-security-timing`)
-- `[ ]` Signup attribution from `mwm_referral_code`
+- `[ ]` Drip custom sequences for 12 event slugs **not in `DripEventSlug`**
 - `[ ]` Life event context on new advisor connections
 
 **Deferred from earlier sprints**
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
 - `[ ]` Blended family as separate slug (optional)
 
-**Success criteria for Sprint 8**
-- Attorneys can share tracked event links from portal
-- Launch checklist items checked off when product goes live
-- Referral attribution visible in funnel/admin or signup path
+**Success criteria for Sprint 9**
+- Launch checklist complete when product goes live
+- Referral codes survive signup and appear in funnel/admin
+- Optional: all 24 event pages have custom drip sequences
 
 ---
 
 
 ## Completed sprints
+
+### Sprint 8 — Attorney referral attribution (Weeks 27–30) ✅
+**Goal:** Attorney event-page attribution parallel to advisor `?ref=` distribution.
+
+**Shipped**
+- `[x]` Migration `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`; `referral_clicks` attorney columns + `listing_type`; attorney RLS
+- `[x]` `POST /api/referral/track` — `type: 'attorney' | 'advisor'`; advisor path unchanged
+- `[x]` `_referral-tracker.tsx` — `?aref=`; `mwm_attorney_referral_*` sessionStorage
+- `[x]` `buildAttorneyReferralUrl` / `buildAllAttorneyEventReferralUrls` — 24 slugs
+- `[x]` Attorney portal newsletter kit — three-tab UI (blue styling)
+
+**Carried to Sprint 9**
+- Launch checklist
+- Signup referral persistence
+- Drip for 12 non-union slugs
+
+---
 
 ### Sprint 7 — Funnel depth, distribution, personalization (Weeks 23–26) ✅
 **Goal:** Improve funnel reporting, advisor distribution kit, expand drip and upgrade personalization.
@@ -85,7 +100,7 @@
 - `[ ]` Search Console verification → Sprint 8 launch checklist
 - `[x]` Event → tier conversion report (Sprint 7)
 - `[x]` Advisor newsletter kit (Sprint 7)
-- `[-]` Attorney `?ref=` on event pages → **Sprint 8** (`attorney_listings.referral_code`; no `attorney_directory` table)
+- `[x]` Attorney `?aref=` on event pages (Sprint 8 — `attorney_listings.referral_code`)
 
 ---
 
@@ -118,7 +133,7 @@
 
 **Deferred**
 - `[ ]` Life event context on new advisor connections (connection metadata)
-- `[-]` Attorney `?ref=` on event pages → **Sprint 8** (`attorney_listings`; advisor `?ref=` via `advisor_directory` only today)
+- `[x]` Attorney `?aref=` on event pages (Sprint 8)
 - `[ ]` Attorney portal readiness score (advisor-only today)
 - `[ ]` Signup attribution from `mwm_referral_code` → Sprint 8 Growth polish
 

@@ -330,8 +330,10 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
 | **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanReadinessCard` |
 | **Export for attorney** | `/print` (tier 3+) | `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` via `/api/export-estate-plan?variant=attorney` |
-| **Event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` → `referral_clicks` (advisor codes only; attorney codes unresolved until Sprint 8) |
-| **Advisor newsletter kit** | Advisor portal home | `buildAllEventReferralUrls` — 24 slugs; grouped copy UI in `_advisor-client.tsx` |
+| **Advisor event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` (`type: 'advisor'`) → `referral_clicks` |
+| **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |
+| **Advisor newsletter kit** | Advisor portal | `buildAllEventReferralUrls` — 24 `?ref=` links |
+| **Attorney newsletter kit** | Attorney portal `/attorney` | `buildAllAttorneyEventReferralUrls` — 24 `?aref=` links |
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin **Funnel** tab — 30-day step counts, tier conversion, slug/referral tables |
 | **Email drip** | Event assess email capture | `POST /api/email-capture` → step 1 `POST /api/email/drip`; steps 2–3 cron; `GET /api/email/unsubscribe` |
 | **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |

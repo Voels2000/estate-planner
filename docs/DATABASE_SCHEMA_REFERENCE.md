@@ -75,17 +75,19 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `referral_clicks`
 
-- **Key columns:** `id`, `referral_code`, `advisor_id`, `listing_id`, `event_slug`, `source_url`, `resolved`, `created_at`
-- **Purpose:** log event-page visits with `?ref=`; resolved when code matches `advisor_directory` only (unresolved rows when code is unknown or attorney-only — Sprint 8).
-- **RLS:** advisors read own rows (`auth.uid() = advisor_id`); service role full access for API inserts.
-- **Migration:** `20260522000000_advisor_referrals.sql`
+- **Key columns:** `id`, `referral_code`, `listing_type` (`advisor` | `attorney`), `advisor_id`, `listing_id` (→ `advisor_directory`), `attorney_listing_id` (→ `attorney_listings`), `attorney_profile_id` (→ `auth.users`), `event_slug`, `source_url`, `resolved`, `created_at`
+- **Purpose:** log event-page visits — advisor `?ref=` or attorney `?aref=`
+- **RLS:** advisors read `auth.uid() = advisor_id`; attorneys read `auth.uid() = attorney_profile_id`; service role full access for API inserts
+- **Migrations:** `20260522000000_advisor_referrals.sql`, `20260528000000_attorney_referrals.sql`
 
 ### `attorney_listings`
 
-- **Key columns:** `id`, `profile_id`, `firm_name`, `contact_name`, `email`, `city`, `state`, `bio`, `is_verified`, `is_active` (no `referral_code` column today)
-- **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory` (that table does not exist).
-- **Consumer UI:** `/my-attorney` pending rows join `attorney_listings` for display.
-- **Sprint 8 backlog:** add `referral_code` (unique) for event-page attorney attribution parallel to `advisor_directory`.
+- **Key columns:** `id`, `profile_id`, `firm_name`, `contact_name`, `email`, `phone`, `website`, `city`, `state`, `bar_number`, `bio`, `fee_structure`, `specializations`, `states_licensed`, `languages`, `serves_remote`, `credentials`, `is_verified`, `is_active`, `submitted_by`, `requested_by`, `referral_code`, `created_at`
+- **Legacy:** `attorney_id` column exists but is unused (always null) — use `id` as PK; `attorney_clients.attorney_id` references `attorney_listings.id`
+- **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory`
+- **Referral:** unique `referral_code`; event links use `?aref=`; resolved in `referral_clicks.attorney_listing_id`
+- **Migration:** `20260528000000_attorney_referrals.sql`
+- **Application:** `/attorney` portal newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
 
 ### `attorney_clients`
 
@@ -310,6 +312,7 @@ After each schema-affecting session:
 - `20260520000000_create_email_captures.sql` — `email_captures` table for public marketing lead capture
 - `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
+- `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`
