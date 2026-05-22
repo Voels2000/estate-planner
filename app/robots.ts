@@ -1,15 +1,36 @@
 import type { MetadataRoute } from 'next'
 
-// const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
-        disallow: '/', // Block all crawlers until launch
+        allow: [
+          '/',
+          '/event/',
+          '/education',
+          '/assess',
+          '/find-advisor',
+          '/find-attorney',
+          '/pricing',
+        ],
+        disallow: [
+          '/dashboard',
+          '/admin',
+          '/advisor',
+          '/attorney',
+          '/api/',
+          '/login',
+          '/signup',
+          '/settings',
+          '/print',
+          '/claim-listing',
+          '/billing',
+        ],
       },
     ],
-    // sitemap: `${BASE_URL}/sitemap.xml`,  // Uncomment at launch
+    sitemap: `${BASE_URL}/sitemap.xml`,
   }
 }
