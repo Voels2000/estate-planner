@@ -43,8 +43,10 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `profiles`
 
-- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`
+- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`
 - **Purpose:** user identity attributes and subscription/role flags.
+- **Referral attribution (Sprint 9):** set once at signup from event-page sessionStorage; join `referral_code` → `advisor_directory.referral_code`, `attorney_referral_code` → `attorney_listings.referral_code`.
+- **Migration:** `20260529000000_profiles_referral_attribution.sql`
 
 ### `households`
 
@@ -313,6 +315,7 @@ After each schema-affecting session:
 - `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 - `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
+- `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code`
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`

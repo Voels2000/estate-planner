@@ -24,7 +24,7 @@ These must be complete before launch. Update status as sprints close them.
 
 ### Distribution & attribution
 
-- [ ] **Signup referral attribution** — `mwm_referral_code` and `mwm_attorney_referral_code` persisted from sessionStorage to profile or `funnel_events` on account creation (`app/(auth)/signup/_signup-form.tsx`)
+- [x] **Signup referral attribution** — `mwm_referral_code` and `mwm_attorney_referral_code` persisted from sessionStorage to `profiles` + `funnel_events` on account creation (`app/(auth)/signup/_signup-form.tsx`; migration `20260529000000_profiles_referral_attribution.sql`)
 - [ ] **Advisor referral loop proven** — at least one advisor has shared links and a click has resolved correctly in `referral_clicks` (manual verification in Supabase)
 - [ ] **Attorney referral loop proven** — at least one attorney row exists in `attorney_listings` with a `referral_code`; `?aref=` click resolves correctly in `referral_clicks`
 - [ ] **Life event context on advisor connection** — when advisor accepts a client who arrived via a life event page, `life_events` context is visible in advisor portal (currently lost at connection time)
@@ -109,6 +109,7 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 - [ ] `20260523000001_app_config_ab_tests.sql`
 - [ ] `20260524000000_email_captures_drip.sql`
 - [ ] `20260528000000_attorney_referrals.sql` (Sprint 8 — ✅ confirmed applied)
+- [ ] `20260529000000_profiles_referral_attribution.sql` (Sprint 9 — apply before prod signup attribution)
 - [ ] Attorney referral code trigger confirmed: `attorney_listings_referral_code_trigger` (✅ confirmed Sprint 8)
 
 ---
@@ -132,4 +133,5 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 | Date | Sprint | Notes |
 |------|--------|-------|
 | May 2026 | Sprint 8 | Attorney referral migration applied; trigger confirmed |
+| May 2026 | Sprint 9 | Signup referral attribution — profiles + funnel_events |
 | — | — | _Record launch date and who verified Search Console / domain_ |

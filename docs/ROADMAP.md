@@ -30,7 +30,7 @@
 - `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
 
 **Attribution**
-- `[ ]` Signup persistence — `mwm_referral_code`, `mwm_attorney_referral_code`, slugs → profile or funnel
+- `[x]` Signup persistence — `mwm_referral_code`, `mwm_attorney_referral_code` → `profiles` + `funnel_events` (`20260529000000_profiles_referral_attribution.sql`)
 - `[ ]` Admin funnel — optional attorney click report (`listing_type = 'attorney'`)
 
 **Growth polish**
@@ -41,9 +41,12 @@
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
 - `[ ]` Blended family as separate slug (optional)
 
+**Sprint 9 shipped (partial)**
+- `[x]` Signup referral attribution — `_signup-form.tsx` + profiles columns
+
 **Success criteria for Sprint 9**
 - Launch checklist complete when product goes live
-- Referral codes survive signup and appear in funnel/admin
+- `[x]` Referral codes survive signup and appear in funnel/admin
 - Optional: all 24 event pages have custom drip sequences
 
 ---

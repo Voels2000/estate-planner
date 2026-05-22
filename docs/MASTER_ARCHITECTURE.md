@@ -705,7 +705,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Custom funnel:** table `funnel_events`; `POST /api/analytics/funnel`; `lib/analytics/useFunnelEvent.ts` (fire-and-forget).
 - **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `tier_upgraded`, `advisor_connected`.
 - **A/B flags** in `app_config`: `ab_assessment_gate` (`score_visible` | `full_gate`) — server `app/(public)/assess/page.tsx` → `_assess-client.tsx`; `ab_upgrade_copy` (`personalized` | `generic`) — `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts`.
-- **Signup attribution:** `mwm_referral_code` / `mwm_referral_slug` in sessionStorage; cleared after `account_created` funnel event.
+- **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
 
 **Email drip (Sprint 6 + Sprint 7):** Custom `EVENT_SEQUENCES` for all 12 `DripEventSlug` union members; 12 event pages outside the union use `DEFAULT_SEQUENCE` (Sprint 8 backlog).
 

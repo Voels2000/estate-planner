@@ -10,7 +10,7 @@
 > advisor + attorney referral (`?ref=` / `?aref=`), newsletter kits on both portals, admin funnel
 > with tier conversion, 12 custom drip sequences, attorney PDF, Resend drip. SEO blocked
 > pre-launch — see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
-> **Current: Sprint 9** — launch ops, signup attribution, drip polish.
+> **Current: Sprint 9** — launch ops, drip polish (signup attribution ✅).
 > Today's task: [FILL IN BELOW].
 
 ---
@@ -22,8 +22,16 @@
 See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 1. **Launch** — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (robots, Search Console, domain, Resend)
-2. **Signup attribution** — `mwm_referral_code`, `mwm_attorney_referral_code` → profile or funnel
-3. **Polish** — drip for 12 slugs outside `DripEventSlug`; life-event context on advisor connections
+2. **Polish** — drip for 12 slugs outside `DripEventSlug`; life-event context on advisor connections
+
+---
+
+## Sprint 9 partial ✅
+
+| Area | What shipped |
+|------|----------------|
+| **Signup attribution** | `_signup-form.tsx` — reads/clears `mwm_referral_*` + `mwm_attorney_referral_*`; `profiles.referral_code` + `profiles.attorney_referral_code`; `account_created` funnel with both codes in `properties` (fire-and-forget profile write) |
+| **Migration** | `20260529000000_profiles_referral_attribution.sql` |
 
 ---
 
@@ -63,6 +71,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 | `20260523000001_app_config_ab_tests.sql` | A/B seed rows |
 | `20260524000000_email_captures_drip.sql` | Drip + unsubscribe columns |
 | `20260528000000_attorney_referrals.sql` | `attorney_listings.referral_code`; attorney columns on `referral_clicks` |
+| `20260529000000_profiles_referral_attribution.sql` | `profiles.referral_code`, `profiles.attorney_referral_code` |
 
 ---
 
@@ -88,14 +97,6 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 | `app/robots.ts` | Restore allow rules + sitemap |
 | `app/layout.tsx` | Search Console verification env |
 
-### Signup attribution
-
-| File | Why |
-|------|-----|
-| `app/(auth)/signup/_signup-form.tsx` | Read `mwm_referral_code`, `mwm_attorney_referral_code` from sessionStorage |
-| `app/api/analytics/funnel/route.ts` | `account_created` with referral metadata |
-| `app/(public)/event/[slug]/_referral-tracker.tsx` | Session keys already set |
-
 ### Drip expansion (optional)
 
 | File | Why |
@@ -120,7 +121,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 ## Sprint 9 backlog
 
 - [ ] Launch checklist (Search Console, domain, Resend, permissive robots)
-- [ ] Signup persistence for advisor + attorney referral session keys
+- [x] Signup persistence for advisor + attorney referral session keys (Sprint 9)
 - [ ] Drip sequences for 12 slugs outside `DripEventSlug` union
 - [ ] Life event context on new advisor connections
 - [ ] Segment-specific dashboard alerts
@@ -130,7 +131,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 ## Known limitations
 
-- **Signup:** `mwm_referral_code` / `mwm_attorney_referral_code` stored in sessionStorage but not yet written to profile on account creation
+- **Signup:** Both referral codes persisted at account creation; join `profiles.referral_code` → `advisor_directory`, `profiles.attorney_referral_code` → `attorney_listings`
 - **Drip:** 12 event pages outside `DripEventSlug` still use `DEFAULT_SEQUENCE`
 - **Attorney listing:** Needs `profile_id` + migration-applied `referral_code` for portal kit to appear
 - `NEXT_PUBLIC_SITE_URL` in some legacy email routes — prefer `NEXT_PUBLIC_APP_URL`

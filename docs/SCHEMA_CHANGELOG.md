@@ -8,6 +8,11 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 9 — signup referral attribution (May 2026)
+
+- **Migration:** `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code` (indexed, nullable).
+- **Application:** `app/(auth)/signup/_signup-form.tsx` — reads/clears `mwm_referral_*` and `mwm_attorney_referral_*`; fire-and-forget profile update; `account_created` funnel `properties` includes `advisor_referral_code` / `attorney_referral_code`.
+
 ## Sprint 8 — attorney referral attribution (May 2026)
 
 - **Migration:** `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code` (unique, backfilled); `referral_clicks.listing_type` (`advisor` | `attorney`); `attorney_listing_id` → `attorney_listings(id)`; `attorney_profile_id` → `auth.users(id)`; attorney RLS select policy.

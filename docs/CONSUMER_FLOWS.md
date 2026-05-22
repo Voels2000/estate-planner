@@ -334,6 +334,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |
 | **Advisor newsletter kit** | Advisor portal | `buildAllEventReferralUrls` — 24 `?ref=` links |
 | **Attorney newsletter kit** | Attorney portal `/attorney` | `buildAllAttorneyEventReferralUrls` — 24 `?aref=` links |
+| **Signup attribution** | `/signup` after `signUp` + `signInWithPassword` | `_signup-form.tsx` → `profiles` + `POST /api/analytics/funnel` (`account_created`); both advisor and attorney session keys |
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin **Funnel** tab — 30-day step counts, tier conversion, slug/referral tables |
 | **Email drip** | Event assess email capture | `POST /api/email-capture` → step 1 `POST /api/email/drip`; steps 2–3 cron; `GET /api/email/unsubscribe` |
 | **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |
