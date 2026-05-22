@@ -8,10 +8,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint 9 — signup referral attribution (May 2026)
+## Sprint 9 — signup attribution, full drip, robots (May 2026)
 
 - **Migration:** `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code` (indexed, nullable).
-- **Application:** `app/(auth)/signup/_signup-form.tsx` — reads/clears `mwm_referral_*` and `mwm_attorney_referral_*`; fire-and-forget profile update; `account_created` funnel `properties` includes `advisor_referral_code` / `attorney_referral_code`.
+- **Signup:** `app/(auth)/signup/_signup-form.tsx` — reads/clears `mwm_referral_*` and `mwm_attorney_referral_*`; fire-and-forget profile update; `account_created` funnel `properties` includes `advisor_referral_code` / `attorney_referral_code`.
+- **Email:** `lib/emails/drip-templates.ts` — `DripEventSlug` expanded to all 24 event slugs; custom `EVENT_SEQUENCES` for each.
+- **SEO:** `app/robots.ts` — permissive allow/disallow + sitemap URL.
 
 ## Sprint 8 — attorney referral attribution (May 2026)
 

@@ -238,6 +238,16 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ---
 
+### May 2026 — One custom drip sequence per event slug (24 total)
+
+**Decision:** Expand `DripEventSlug` and `EVENT_SEQUENCES` to cover all 24 life event pages. Keep `DEFAULT_SEQUENCE` only as fallback for unknown slugs.
+
+**Reasoning:** Launch checklist required parity with public event content; age-milestone slugs (`rmd-start-age`, `medicare-eligibility`, `social-security-timing`) should match age-trigger cron messaging in drip emails.
+
+**Implementation:** `lib/emails/drip-templates.ts` (Sprint 9).
+
+---
+
 ### May 2026 — Signup persists both referral codes on `profiles`
 
 **Decision:** On account creation, write `profiles.referral_code` (advisor `?ref=`) and `profiles.attorney_referral_code` (attorney `?aref=`) from sessionStorage once; mirror both in `funnel_events.properties` on `account_created`. Fire-and-forget profile update so navigation is never blocked. If both codes exist, persist both.

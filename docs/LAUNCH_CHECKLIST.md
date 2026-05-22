@@ -31,8 +31,8 @@ These must be complete before launch. Update status as sprints close them.
 
 ### Email drip
 
-- [ ] **All 24 event slugs have custom drip sequences** — 12 slugs outside `DripEventSlug` union currently use `DEFAULT_SEQUENCE`: `remarriage-blended-family`, `aging-parent-needs-care`, `starting-a-business`, `selling-a-home`, `multi-state-real-estate`, `child-reaching-adulthood`, `disability-early-retirement`, `major-job-change`, `five-year-plan-review`, `rmd-start-age`, `medicare-eligibility`, `social-security-timing`
-- [ ] **Age-triggered slugs in drip union** — `rmd-start-age`, `medicare-eligibility`, `social-security-timing` inserted by age cron but still hit `DEFAULT_SEQUENCE`; add to `DripEventSlug` + write sequences
+- [x] **All 24 event slugs have custom drip sequences** — `DripEventSlug` union + `EVENT_SEQUENCES` cover all 24 slugs (`lib/emails/drip-templates.ts`, Sprint 9)
+- [x] **Age-triggered slugs in drip union** — `rmd-start-age`, `medicare-eligibility`, `social-security-timing` in union with custom sequences (age cron + drip aligned)
 - [ ] **Drip smoke test on production** — trigger step 1 via event assess email capture; confirm delivery from `hello@mywealthmaps.com`; confirm steps 2 and 3 fire on schedule via cron
 
 ### Core planning loop
@@ -52,7 +52,7 @@ These must be complete before launch. Update status as sprints close them.
 ### Segment-specific features
 
 - [ ] **Segment-specific dashboard alerts** — business $5M/$10M threshold alert; multi-state real estate probate risk alert (currently generic banner only)
-- [ ] **Per-milestone upgrade copy** — `social-security-timing` (62), `medicare-eligibility` (65), `rmd-start-age` (70/73) age cron slugs have personalized upgrade copy (✅ Sprint 7) but drip is still generic (see drip gate above)
+- [x] **Per-milestone upgrade copy** — upgrade copy (Sprint 7) + custom drip sequences for age-milestone slugs (Sprint 9)
 
 ### Quality & polish
 
@@ -69,7 +69,7 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 
 ### Code
 
-- [ ] **`app/robots.ts`** — already updated (Sprint 9); confirm permissive rules are deployed and `https://mywealthmaps.com/robots.txt` is correct before Search Console submission
+- [x] **`app/robots.ts`** — permissive rules in repo (Sprint 9); confirm deployed at `https://mywealthmaps.com/robots.txt` before Search Console submission
 - [ ] **`app/layout.tsx`** — no change needed; `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` already wired via env
 
 ### Vercel Production env vars
@@ -118,7 +118,8 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 
 | Area | Status |
 |------|--------|
-| Crawlers | `app/robots.ts` — permissive rules written (Sprint 9), deploy when ready |
+| Crawlers | `app/robots.ts` — permissive rules in repo (Sprint 9); verify on prod domain after deploy |
+| Email drip | All 24 slugs have custom sequences in code (Sprint 9); prod smoke test still required |
 | Sitemap | `app/sitemap.ts` ready; sitemap line restored in `robots.ts` |
 | Search Console | Not set up — defer until launch day |
 | Public URL | `NEXT_PUBLIC_APP_URL` still on Vercel preview URL — update at launch |
@@ -134,4 +135,5 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 |------|--------|-------|
 | May 2026 | Sprint 8 | Attorney referral migration applied; trigger confirmed |
 | May 2026 | Sprint 9 | Signup referral attribution — profiles + funnel_events |
+| May 2026 | Sprint 9 | Drip — all 24 event slugs custom sequences in `drip-templates.ts` |
 | — | — | _Record launch date and who verified Search Console / domain_ |

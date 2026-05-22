@@ -8,9 +8,9 @@
 
 > My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–8 shipped: 24 event pages,
 > advisor + attorney referral (`?ref=` / `?aref=`), newsletter kits on both portals, admin funnel
-> with tier conversion, 12 custom drip sequences, attorney PDF, Resend drip. SEO blocked
-> pre-launch — see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
-> **Current: Sprint 9** — launch ops, drip polish (signup attribution ✅).
+> with tier conversion, **24** custom drip sequences, attorney PDF, Resend drip, signup attribution.
+> Permissive `robots.ts` in repo — deploy + [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) for go-live.
+> **Current: Sprint 9** — launch ops, advisor connection polish.
 > Today's task: [FILL IN BELOW].
 
 ---
@@ -21,8 +21,8 @@
 
 See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
-1. **Launch** — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (robots, Search Console, domain, Resend)
-2. **Polish** — drip for 12 slugs outside `DripEventSlug`; life-event context on advisor connections
+1. **Launch** — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (Search Console, domain, Resend, prod drip smoke test)
+2. **Polish** — life-event context on advisor connections
 
 ---
 
@@ -32,6 +32,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 |------|----------------|
 | **Signup attribution** | `_signup-form.tsx` — reads/clears `mwm_referral_*` + `mwm_attorney_referral_*`; `profiles.referral_code` + `profiles.attorney_referral_code`; `account_created` funnel with both codes in `properties` (fire-and-forget profile write) |
 | **Migration** | `20260529000000_profiles_referral_attribution.sql` |
+| **Email drip** | `lib/emails/drip-templates.ts` — `DripEventSlug` + `EVENT_SEQUENCES` for all **24** event pages |
 
 ---
 
@@ -55,7 +56,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 |------|----------------|
 | Admin funnel | 30-day counts + tier conversion; By Tier tab |
 | Advisor newsletter kit | 24 `?ref=` URLs |
-| Drip | All 12 `DripEventSlug` union members sequenced |
+| Drip (partial) | 12 custom sequences (expanded to 24 in Sprint 9) |
 | Upgrade copy | All 24 slugs |
 | Age triggers | Per-age event slugs (62/65/70/73) |
 
@@ -97,12 +98,6 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 | `app/robots.ts` | Restore allow rules + sitemap |
 | `app/layout.tsx` | Search Console verification env |
 
-### Drip expansion (optional)
-
-| File | Why |
-|------|-----|
-| `lib/emails/drip-templates.ts` | Extend `DripEventSlug` + sequences for 12 non-union slugs |
-
 ### Advisor polish (optional)
 
 | File | Why |
@@ -112,17 +107,17 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 ---
 
-## Pre-launch (unchanged)
+## Pre-launch
 
-`app/robots.ts` blocks all crawlers. **[LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)**.
+`app/robots.ts` allows public marketing routes + sitemap (deploy before Search Console). Remaining gates: **[LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)** Section 1.
 
 ---
 
 ## Sprint 9 backlog
 
-- [ ] Launch checklist (Search Console, domain, Resend, permissive robots)
+- [ ] Launch checklist (Search Console, domain, Resend, prod drip smoke test)
 - [x] Signup persistence for advisor + attorney referral session keys (Sprint 9)
-- [ ] Drip sequences for 12 slugs outside `DripEventSlug` union
+- [x] Drip sequences for all 24 event slugs (Sprint 9)
 - [ ] Life event context on new advisor connections
 - [ ] Segment-specific dashboard alerts
 - [ ] Admin funnel: attorney click breakdown (`referral_clicks.listing_type = 'attorney'`)
@@ -132,7 +127,7 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 ## Known limitations
 
 - **Signup:** Both referral codes persisted at account creation; join `profiles.referral_code` → `advisor_directory`, `profiles.attorney_referral_code` → `attorney_listings`
-- **Drip:** 12 event pages outside `DripEventSlug` still use `DEFAULT_SEQUENCE`
+- **Drip:** All 24 event slugs have custom sequences; `DEFAULT_SEQUENCE` only for unknown/null slugs
 - **Attorney listing:** Needs `profile_id` + migration-applied `referral_code` for portal kit to appear
 - `NEXT_PUBLIC_SITE_URL` in some legacy email routes — prefer `NEXT_PUBLIC_APP_URL`
 

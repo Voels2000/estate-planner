@@ -11,6 +11,18 @@ export type DripEventSlug =
   | 'loss-of-parent'
   | 'estate-tax-law-change'
   | 'first-time-high-net-worth'
+  | 'remarriage-blended-family'
+  | 'aging-parent-needs-care'
+  | 'starting-a-business'
+  | 'selling-a-home'
+  | 'multi-state-real-estate'
+  | 'child-reaching-adulthood'
+  | 'disability-early-retirement'
+  | 'major-job-change'
+  | 'five-year-plan-review'
+  | 'rmd-start-age'
+  | 'medicare-eligibility'
+  | 'social-security-timing'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
 
@@ -336,6 +348,294 @@ const EVENT_SEQUENCES: Partial<Record<DripEventSlug, DripSequence>> = {
       subject: 'The professionals worth knowing at $2M+',
       headline: 'An estate attorney + financial advisor at this wealth level',
       body: 'At $2M+, the cost of professional estate planning is a rounding error on the assets at risk. The cost of not planning — lost exemptions, probate, estate tax — is not. Find specialists who work with $2M–$30M households.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'remarriage-blended-family': {
+    email1: {
+      subject: 'Your blended family planning assessment results',
+      headline: 'Remarriage with children from prior relationships changes everything about your estate plan',
+      body: 'Your assessment identified the gaps most common in blended family situations. Without careful trust structuring, assets intended for your children may pass to a surviving spouse — and vice versa. Here\'s your action plan.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/remarriage-blended-family`,
+    },
+    email2: {
+      subject: 'The estate planning problem most blended families discover too late',
+      headline: 'A simple will doesn\'t protect both your spouse and your children',
+      body: 'When you leave everything to a surviving spouse outright, your children from a prior relationship depend entirely on that spouse\'s generosity. A QTIP trust or similar structure can provide for your spouse during their lifetime while ensuring your children receive their inheritance.',
+      cta: 'Understand blended family trust structures',
+      ctaUrl: `${BASE_URL}/event/remarriage-blended-family#action-plan`,
+    },
+    email3: {
+      subject: 'Estate attorneys who specialize in blended family planning',
+      headline: 'An estate attorney experienced in blended family trust structures',
+      body: 'QTIP trusts, separate property agreements, and beneficiary alignment across both spouses\' estates require an attorney who specializes in blended family situations. Find estate attorneys in your area who work with $2M–$30M blended households.',
+      cta: 'Find an estate attorney',
+      ctaUrl: `${BASE_URL}/find-attorney`,
+    },
+  },
+
+  'aging-parent-needs-care': {
+    email1: {
+      subject: 'Your assessment results — planning while a parent needs care',
+      headline: 'A parent\'s care needs can affect both their estate and yours',
+      body: 'Your assessment identified the planning gaps most relevant when a parent is aging or needs care. Medicaid lookback rules, gift documentation, and your own plan\'s exposure to caregiving costs all warrant attention now.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/aging-parent-needs-care`,
+    },
+    email2: {
+      subject: 'The Medicaid lookback rule most families learn about too late',
+      headline: 'Gifts made within five years of a Medicaid application can disqualify coverage',
+      body: 'If your parent may eventually need Medicaid-funded nursing care, gifts they made in the prior five years — including transfers to family members — are counted. Understanding this now, while options still exist, can protect both your parent\'s care access and their estate.',
+      cta: 'Review the key planning considerations',
+      ctaUrl: `${BASE_URL}/event/aging-parent-needs-care#action-plan`,
+    },
+    email3: {
+      subject: 'Elder law attorneys and advisors who specialize in care planning',
+      headline: 'An elder law attorney for your parent — and an estate attorney for your own plan',
+      body: 'Elder law attorneys specialize in Medicaid planning, care coordination, and asset protection for aging parents. While addressing your parent\'s situation, it\'s also the right time to review your own plan — caregiving responsibilities often affect your own retirement timeline.',
+      cta: 'Find an estate attorney',
+      ctaUrl: `${BASE_URL}/find-attorney`,
+    },
+  },
+
+  'starting-a-business': {
+    email1: {
+      subject: 'Your new business planning assessment results',
+      headline: 'Starting a business changes your estate plan from day one',
+      body: 'Your assessment identified the planning gaps most relevant when starting a business. Entity structure, buy-sell agreements, and personal asset protection are decisions that are much easier to make now — before the business has significant value — than later.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/starting-a-business`,
+    },
+    email2: {
+      subject: 'The estate planning decision most new business owners defer too long',
+      headline: 'Your business entity structure determines what your heirs inherit',
+      body: 'An LLC or S-Corp can provide liability protection during your lifetime. But how the business is titled, whether it\'s in a trust, and what a buy-sell agreement says determines what happens at your death. These decisions are most flexible when the business is new and its value is low.',
+      cta: 'Review business estate planning basics',
+      ctaUrl: `${BASE_URL}/event/starting-a-business#action-plan`,
+    },
+    email3: {
+      subject: 'The advisors who specialize in business owner estate planning',
+      headline: 'An estate attorney and financial advisor who work with business owners',
+      body: 'Business owner estate planning requires an estate attorney (entity structure, buy-sell agreements, trust ownership), a financial advisor (business valuation, income planning), and a CPA (entity tax treatment). Find specialists who work with $2M–$30M business owners.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'selling-a-home': {
+    email1: {
+      subject: 'Your home sale planning assessment results',
+      headline: 'A home sale generates proceeds that need a plan',
+      body: 'Your assessment identified the planning considerations most relevant to a significant home sale. Capital gains exclusions, proceeds titling, and the impact on your overall estate all warrant attention before or at closing.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/selling-a-home`,
+    },
+    email2: {
+      subject: 'The capital gains exclusion most sellers don\'t fully use',
+      headline: 'Up to $500K excluded — but the rules are specific',
+      body: 'Married couples can exclude up to $500,000 in home sale gains from federal income tax if they\'ve lived in the home for two of the prior five years. But partial exclusions, second homes, and homes held in trust have different rules. Understanding your specific situation before closing can save significantly.',
+      cta: 'Review the capital gains rules',
+      ctaUrl: `${BASE_URL}/event/selling-a-home#action-plan`,
+    },
+    email3: {
+      subject: 'The advisors to involve before a significant home sale',
+      headline: 'A CPA and financial advisor before closing',
+      body: 'A significant home sale requires a CPA (capital gains calculation, exclusion qualification, 1031 exchange if applicable) and a financial advisor (proceeds deployment, updated projections, estate impact). An estate attorney may also be needed if the home was held in trust.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'multi-state-real-estate': {
+    email1: {
+      subject: 'Your multi-state real estate assessment results',
+      headline: 'Property in multiple states creates probate risk in every state',
+      body: 'Your assessment identified the estate planning gaps most relevant to multi-state property ownership. Without trust ownership of each property, your estate may face separate probate proceedings in every state where you own real estate — a costly and time-consuming process for your heirs.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/multi-state-real-estate`,
+    },
+    email2: {
+      subject: 'The multi-state probate problem most property owners don\'t see coming',
+      headline: 'Each state where you own real estate has jurisdiction over that property',
+      body: 'Your will is probated in your state of residence. But real estate is governed by the state where it sits. A vacation home in another state, rental properties across state lines — each requires a separate ancillary probate unless the property is owned by a trust or LLC. At $2M–$30M, this is both avoidable and worth avoiding.',
+      cta: 'Review multi-state probate risk',
+      ctaUrl: `${BASE_URL}/event/multi-state-real-estate#action-plan`,
+    },
+    email3: {
+      subject: 'Estate attorneys who specialize in multi-state property planning',
+      headline: 'An estate attorney who can coordinate across states',
+      body: 'Retitling real estate into a revocable trust, structuring LLC ownership, and coordinating beneficiary designations across multiple states requires an estate attorney familiar with multi-state property planning. Find specialists who work with $2M–$30M real estate portfolios.',
+      cta: 'Find an estate attorney',
+      ctaUrl: `${BASE_URL}/find-attorney`,
+    },
+  },
+
+  'child-reaching-adulthood': {
+    email1: {
+      subject: 'Your assessment results — planning as a child reaches adulthood',
+      headline: 'A child turning 18 changes your estate plan in ways most parents don\'t address',
+      body: 'Your assessment identified the planning updates most relevant when a child reaches adulthood. At 18, they can no longer be covered by your healthcare proxy and durable power of attorney — and any inheritance they receive may come to them outright without the structure you intended.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/child-reaching-adulthood`,
+    },
+    email2: {
+      subject: 'What changes when your child turns 18',
+      headline: 'At 18, your child needs their own legal documents — and your plan needs updating',
+      body: 'A child who turns 18 is a legal adult. If they are in an accident, you have no legal authority to make healthcare decisions without a healthcare proxy naming you. Your estate plan may also distribute assets to them outright at 18 — an age most parents consider too young for a significant inheritance without trustee oversight.',
+      cta: 'Review what changes at 18',
+      ctaUrl: `${BASE_URL}/event/child-reaching-adulthood#action-plan`,
+    },
+    email3: {
+      subject: 'Estate attorneys who can update both your plan and your child\'s documents',
+      headline: 'An estate attorney for the update — and basic documents for your child',
+      body: 'When a child reaches adulthood, most estate attorneys recommend updating trust distribution provisions and drafting basic documents for the child (healthcare proxy, durable power of attorney). Find estate attorneys in your area who work with $2M–$30M families.',
+      cta: 'Find an estate attorney',
+      ctaUrl: `${BASE_URL}/find-attorney`,
+    },
+  },
+
+  'disability-early-retirement': {
+    email1: {
+      subject: 'Your assessment results — planning around disability or early retirement',
+      headline: 'Disability or early retirement changes the urgency of several planning decisions',
+      body: 'Your assessment identified the gaps most relevant to your situation. When earned income stops earlier than planned, Social Security filing strategy, income sequencing, and incapacity documents all become more urgent — not less.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/disability-early-retirement`,
+    },
+    email2: {
+      subject: 'The incapacity planning gap disability makes urgent',
+      headline: 'A durable power of attorney and healthcare proxy before you need them',
+      body: 'Disability often arrives without warning. A durable power of attorney gives a trusted person authority over your financial affairs if you cannot manage them. A healthcare proxy ensures your medical wishes are followed. Without these documents in place, your family may need court intervention — slow, expensive, and public.',
+      cta: 'Review incapacity planning essentials',
+      ctaUrl: `${BASE_URL}/event/disability-early-retirement#action-plan`,
+    },
+    email3: {
+      subject: 'Advisors who specialize in disability and early retirement planning',
+      headline: 'A financial advisor and estate attorney for your situation',
+      body: 'Disability and early retirement planning requires a financial advisor (income replacement, Social Security strategy, portfolio sequencing) and an estate attorney (incapacity documents, trust funding, beneficiary review). Find specialists who work with $2M–$30M households navigating this transition.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'major-job-change': {
+    email1: {
+      subject: 'Your job change planning assessment results',
+      headline: 'A major job change affects your retirement accounts, equity, and estate plan',
+      body: 'Your assessment identified the planning gaps most relevant to a job change. 401(k) rollover decisions, unvested equity forfeitures, deferred compensation timing, and beneficiary designations on old employer accounts are all time-sensitive.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/major-job-change`,
+    },
+    email2: {
+      subject: 'The 401(k) rollover decision most people get wrong',
+      headline: 'Rolling over to an IRA vs. new employer plan — the estate implications differ',
+      body: 'Rolling a 401(k) into an IRA gives you more investment flexibility but removes some creditor protection available in employer plans. Rolling into a new employer\'s 401(k) may preserve those protections. The right answer depends on your state, your assets, and your estate plan — not just investment options.',
+      cta: 'Review the rollover considerations',
+      ctaUrl: `${BASE_URL}/event/major-job-change#action-plan`,
+    },
+    email3: {
+      subject: 'The advisors to involve during a job transition',
+      headline: 'A financial advisor and CPA during your transition window',
+      body: 'A major job change requires a financial advisor (rollover strategy, equity planning, updated projections) and a CPA (deferred compensation tax treatment, stock option timing, capital gains). An estate attorney should review beneficiary designations on old employer accounts.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'five-year-plan-review': {
+    email1: {
+      subject: 'Your five-year plan review assessment results',
+      headline: 'A lot changes in five years — here\'s what your plan needs to reflect',
+      body: 'Your assessment identified the gaps most common in plans that haven\'t been reviewed recently. Asset values, family circumstances, tax law, and your own goals have likely all shifted. Here\'s what needs attention.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/five-year-plan-review`,
+    },
+    email2: {
+      subject: 'The parts of your estate plan most likely to be outdated',
+      headline: 'Beneficiary designations, trust provisions, and exemption amounts all change',
+      body: 'The federal estate tax exemption has changed multiple times in the past five years and is scheduled to change again. Beneficiary designations on retirement accounts and life insurance may name people or relationships that no longer reflect your wishes. Trust distribution ages may no longer match your intentions for your beneficiaries.',
+      cta: 'Review what typically goes stale',
+      ctaUrl: `${BASE_URL}/event/five-year-plan-review#action-plan`,
+    },
+    email3: {
+      subject: 'Estate attorneys who specialize in plan reviews',
+      headline: 'An estate attorney for a full plan review',
+      body: 'A five-year plan review with an estate attorney typically covers your will and trust documents, beneficiary designations across all accounts, healthcare proxy and durable power of attorney currency, and estate tax exposure given current law. Find estate attorneys in your area who work with $2M–$30M households.',
+      cta: 'Find an estate attorney',
+      ctaUrl: `${BASE_URL}/find-attorney`,
+    },
+  },
+
+  'rmd-start-age': {
+    email1: {
+      subject: 'Your RMD planning assessment results',
+      headline: 'Required Minimum Distributions begin at 73 — here\'s what that means for your plan',
+      body: 'Your assessment identified the planning considerations most relevant as RMDs approach. RMDs change your taxable income, your Roth conversion opportunity, and how retirement assets will ultimately pass to your heirs. Here\'s your action plan.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/rmd-start-age`,
+    },
+    email2: {
+      subject: 'The Roth conversion window that closes when RMDs begin',
+      headline: 'Converting before 73 reduces both your tax bill and your taxable estate',
+      body: 'Once RMDs begin, they count as ordinary income and can push you into higher tax brackets. Converting traditional IRA assets to Roth before 73 — while you have control over your taxable income — can reduce lifetime taxes and leave Roth assets to heirs income-tax-free. This window is closing.',
+      cta: 'Model your Roth conversion opportunity',
+      ctaUrl: `${BASE_URL}/event/rmd-start-age#action-plan`,
+    },
+    email3: {
+      subject: 'Advisors who specialize in RMD and distribution planning',
+      headline: 'A financial advisor for RMD strategy and a CPA for tax coordination',
+      body: 'RMD planning at the $2M–$30M level requires a financial advisor (withdrawal sequencing, Roth conversion modeling, beneficiary IRA strategy) and a CPA (income tax impact, QCD opportunities for charitable giving). An estate attorney should review beneficiary designations on all retirement accounts.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'medicare-eligibility': {
+    email1: {
+      subject: 'Your Medicare planning assessment results',
+      headline: 'Medicare eligibility at 65 is a planning inflection point',
+      body: 'Your assessment identified the considerations most relevant as you approach Medicare eligibility. Healthcare cost assumptions, IRMAA surcharge exposure, and the interaction between Medicare timing and early retirement income all affect your broader financial plan.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/medicare-eligibility`,
+    },
+    email2: {
+      subject: 'The IRMAA surcharge most high-income retirees don\'t plan for',
+      headline: 'Medicare Part B and D premiums increase significantly above certain income thresholds',
+      body: 'Medicare\'s Income-Related Monthly Adjustment Amount (IRMAA) adds significant surcharges to Part B and Part D premiums for higher-income retirees. These surcharges are based on income from two years prior — meaning decisions made today affect your premiums at 65. Roth conversions, asset sales, and RMD timing all affect IRMAA exposure.',
+      cta: 'Review Medicare income planning',
+      ctaUrl: `${BASE_URL}/event/medicare-eligibility#action-plan`,
+    },
+    email3: {
+      subject: 'Advisors who specialize in Medicare and retirement income planning',
+      headline: 'A financial advisor who coordinates Medicare with your retirement income plan',
+      body: 'Medicare planning at the $2M–$30M level requires a financial advisor who understands IRMAA thresholds, Medigap vs. Medicare Advantage tradeoffs, and how retirement income decisions interact with healthcare costs. Find advisors in your area who specialize in retirement income planning.',
+      cta: 'Find an advisor',
+      ctaUrl: `${BASE_URL}/find-advisor`,
+    },
+  },
+
+  'social-security-timing': {
+    email1: {
+      subject: 'Your Social Security timing assessment results',
+      headline: 'Social Security timing is one of the highest-leverage retirement decisions you have',
+      body: 'Your assessment identified the considerations most relevant to your Social Security filing decision. Filing age, spousal benefit coordination, survivor benefit strategy, and the interaction with your other retirement income sources all affect the lifetime value of your Social Security benefit significantly.',
+      cta: 'See your action plan',
+      ctaUrl: `${BASE_URL}/event/social-security-timing`,
+    },
+    email2: {
+      subject: 'The Social Security break-even analysis most people get wrong',
+      headline: 'Break-even age is only part of the calculation',
+      body: 'The standard Social Security break-even analysis compares cumulative benefits at different filing ages. But it ignores survivor benefits, spousal coordination, portfolio longevity, and tax implications of benefits at different income levels. For married couples especially, the optimal filing strategy depends on both spouses\' ages, health, and benefit amounts.',
+      cta: 'Understand the full filing decision',
+      ctaUrl: `${BASE_URL}/event/social-security-timing#action-plan`,
+    },
+    email3: {
+      subject: 'Advisors who specialize in Social Security optimization',
+      headline: 'A financial advisor for Social Security strategy',
+      body: 'Social Security optimization at the $2M–$30M level requires a financial advisor who can model filing scenarios across both spouses, coordinate with portfolio withdrawal strategy, and account for survivor benefit implications. Find advisors in your area who specialize in retirement income planning.',
       cta: 'Find an advisor',
       ctaUrl: `${BASE_URL}/find-advisor`,
     },

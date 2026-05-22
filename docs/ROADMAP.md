@@ -25,7 +25,8 @@
 **Goal:** Execute launch checklist when ready; persist advisor/attorney referral codes through signup; close remaining drip and connection polish.
 
 **Launch** ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
-- `[ ]` Restore permissive `app/robots.ts` + submit `sitemap.xml`
+- `[x]` Restore permissive `app/robots.ts` (in repo; deploy + verify `/robots.txt`)
+- `[ ]` Submit `sitemap.xml` in Search Console
 - `[ ]` Search Console verify + `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`
 - `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
 
@@ -34,7 +35,7 @@
 - `[ ]` Admin funnel — optional attorney click report (`listing_type = 'attorney'`)
 
 **Growth polish**
-- `[ ]` Drip custom sequences for 12 event slugs **not in `DripEventSlug`**
+- `[x]` Drip custom sequences — all **24** event slugs in `lib/emails/drip-templates.ts`
 - `[ ]` Life event context on new advisor connections
 
 **Deferred from earlier sprints**
@@ -65,9 +66,9 @@
 - `[x]` Attorney portal newsletter kit — three-tab UI (blue styling)
 
 **Carried to Sprint 9**
-- Launch checklist
-- Signup referral persistence
-- Drip for 12 non-union slugs
+- Launch checklist (partial — robots code done)
+- Signup referral persistence (done)
+- Drip for all 24 slugs (done)
 
 ---
 
