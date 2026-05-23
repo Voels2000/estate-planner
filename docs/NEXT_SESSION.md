@@ -51,7 +51,14 @@ Seed scripts are idempotent — re-run if accounts are missing on a new environm
 |------|-------|-------|
 | Consumer (Playwright) | `david@rolobe.resend.app` | Estate tier (3), active subscription, `PLAYWRIGHT_HOUSEHOLD_ID` in `.env.test` |
 | Advisor (Playwright) | `advisor2@rolobe.resend.app` | Seeded via `scripts/seed-michael-johnson-advisor-demo.ts` |
+| Advisor (test listing) | `test-advisor@mywealthmaps.test` | Seeded via `scripts/seed-test-advisor.ts` |
 | Attorney (test listing) | `test-attorney@mywealthmaps.test` | Seeded via `scripts/seed-test-attorney.ts` |
+
+### Advisor referral (smoke test sections A and C)
+
+- `referral_code`: `c91dcd1b`
+- Smoke test URL: `/event/selling-a-business?ref=c91dcd1b`
+- Re-run `seed-test-advisor.ts` to confirm code if needed — script is idempotent
 
 ### Attorney referral (smoke test sections B and D)
 
@@ -64,6 +71,9 @@ Seed scripts are idempotent — re-run if accounts are missing on a new environm
 ```bash
 # Load both env files first
 set -a && source .env.local && source .env.test && set +a
+
+# Advisor listing (idempotent)
+npx tsx scripts/seed-test-advisor.ts
 
 # Attorney listing (idempotent)
 npx tsx scripts/seed-test-attorney.ts

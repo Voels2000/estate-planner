@@ -8,6 +8,11 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Advisor directory referral_code trigger (June 2026)
+
+- **Migration:** `20260601000000_advisor_directory_referral_code_trigger.sql`
+  - `public.generate_advisor_referral_code()` — before insert on `advisor_directory`; 8-char code from `gen_random_uuid()` when `referral_code` is null.
+
 ## Sprint 13 — Test seed scripts, smoke test extension, prod env matrix (May 2026)
 
 **No schema change.**
