@@ -45,7 +45,7 @@ const EVENT_REFERRAL_LABELS: Record<string, string> = {
   'first-time-high-net-worth': 'First-time high-net-worth',
   'major-job-change': 'Major job change',
   'five-year-plan-review': 'Five-year plan review',
-  'rmd-start-age': 'RMD start age (73)',
+  'rmd-start-age': 'RMD start age (72–75, by birth year)',
   'medicare-eligibility': 'Medicare eligibility (65)',
   'social-security-timing': 'Social Security timing (62)',
 }

@@ -1445,27 +1445,29 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
     shortTitle: 'RMD Start Age',
     category: 'retirement',
     urgency: 'high',
-    heroLine: 'Required Minimum Distributions begin at 73 — and the planning decisions you make before that birthday have decade-long tax consequences.',
-    subhead: 'RMDs are taxable income. For households with large tax-deferred balances, RMDs can push you into higher tax brackets, increase Medicare premiums, and create estate planning complexity. The Roth conversion window before RMDs begin is one of the highest-leverage planning opportunities available.',
+    heroLine:
+      'Required Minimum Distributions begin between age 72 and 75 — and the planning decisions you make before that birthday have decade-long tax consequences.',
+    subhead:
+      'Your RMD start age depends on your birth year — 72, 73, or 75 under current law. For households with large tax-deferred balances, RMDs can push you into higher tax brackets, increase Medicare premiums, and create estate planning complexity. The Roth conversion window before RMDs begin is one of the highest-leverage planning opportunities available.',
     whatChanges: [
       'RMDs from traditional IRAs and 401(k)s are taxable income in the year received',
       'Large RMDs can push you into higher federal and state income tax brackets',
       'IRMAA Medicare surcharges are triggered by income thresholds — RMDs can cross those thresholds',
-      'The Roth conversion window before age 73 is often the lowest-tax period of your life',
+      'The Roth conversion window before RMDs begin (ages 72–75, depending on birth year) is often the lowest-tax period of your life',
       'First-year RMDs can be deferred to April 1 of the following year — but creates a double-RMD year',
     ],
     actions: [
       {
         priority: 1,
-        title: 'Calculate your expected RMD amounts starting at 73',
-        description: 'Use the IRS Uniform Lifetime Table to project your RMDs. For large tax-deferred balances, the amounts can be significant.',
+        title: 'Calculate your expected RMD amounts for your start age (72, 73, or 75)',
+        description: 'Use the IRS Uniform Lifetime Table and your birth year to project when RMDs begin and how large they will be. For large tax-deferred balances, the amounts can be significant.',
         linkedFeature: '/rmd',
         urgencyDays: 30,
       },
       {
         priority: 1,
         title: 'Model Roth conversion opportunities before RMDs begin',
-        description: 'The gap between retirement and age 73 is often the lowest-tax period of your life. Converting tax-deferred assets now reduces future RMD burden.',
+        description: 'The gap between retirement and your RMD start age is often the lowest-tax period of your life. Converting tax-deferred assets now reduces future RMD burden.',
         linkedFeature: '/roth',
         urgencyDays: 60,
       },
@@ -1492,7 +1494,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
     assessmentQuestions: [
       {
         id: 'rs1',
-        question: 'Have you calculated your expected RMD amounts starting at 73?',
+        question: 'Have you calculated your expected RMD amounts for your birth-year start age (72, 73, or 75)?',
         options: [
           { label: 'Yes — projected and planning around them', score: 3 },
           { label: 'Roughly estimated', score: 2 },
@@ -1502,7 +1504,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
       },
       {
         id: 'rs2',
-        question: 'Have you evaluated Roth conversion opportunities before age 73?',
+        question: 'Have you evaluated Roth conversion opportunities before your RMDs begin?',
         options: [
           { label: 'Yes — conversion strategy in place', score: 3 },
           { label: 'Aware of the opportunity but haven\'t acted', score: 2 },

@@ -572,15 +572,15 @@ const EVENT_SEQUENCES: Partial<Record<DripEventSlug, DripSequence>> = {
   'rmd-start-age': {
     email1: {
       subject: 'Your RMD planning assessment results',
-      headline: 'Required Minimum Distributions begin at 73 — here\'s what that means for your plan',
+      headline: 'Required Minimum Distributions begin between ages 72 and 75 — here\'s what that means for your plan',
       body: 'Your assessment identified the planning considerations most relevant as RMDs approach. RMDs change your taxable income, your Roth conversion opportunity, and how retirement assets will ultimately pass to your heirs. Here\'s your action plan.',
       cta: 'See your action plan',
       ctaUrl: `${BASE_URL}/event/rmd-start-age`,
     },
     email2: {
       subject: 'The Roth conversion window that closes when RMDs begin',
-      headline: 'Converting before 73 reduces both your tax bill and your taxable estate',
-      body: 'Once RMDs begin, they count as ordinary income and can push you into higher tax brackets. Converting traditional IRA assets to Roth before 73 — while you have control over your taxable income — can reduce lifetime taxes and leave Roth assets to heirs income-tax-free. This window is closing.',
+      headline: 'Converting before RMDs begin reduces both your tax bill and your taxable estate',
+      body: 'Once RMDs begin, they count as ordinary income and can push you into higher tax brackets. Converting traditional IRA assets to Roth before your RMD start age — while you have control over your taxable income — can reduce lifetime taxes and leave Roth assets to heirs income-tax-free. This window is closing.',
       cta: 'Model your Roth conversion opportunity',
       ctaUrl: `${BASE_URL}/event/rmd-start-age#action-plan`,
     },
