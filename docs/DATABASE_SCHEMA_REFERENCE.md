@@ -321,11 +321,12 @@ After each schema-affecting session:
 - `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
 - `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code`
 - `20260530000000_sprint9_10_gates.sql` — `profiles.onboarding_invite_advisor_completed_at`; `advisor_clients.connection_life_event_*`; `households.succession_*`
+- `20260531000000_remove_ab_test_app_config.sql` — removes pre-launch A/B rows from `app_config` (Sprint 12)
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`
 
-**`app_config` keys (Sprint 5 A/B):** `ab_upgrade_copy` (`"personalized"` | `"generic"`), `ab_assessment_gate` (`"score_visible"` | `"full_gate"`). Toggle in Supabase SQL editor; no deploy required.
+**`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 
 ---
 

@@ -20,16 +20,14 @@
 **Goal:** Close A/B tests with data-driven decisions. Mobile audit. Copy pass.
 
 **Shipped this session:**
-- Persona alerts on `/dashboard` — business $5M / $10M (`buildPersonaDashboardAlerts`); multi-state RE when ≥2 `situs_state` values
-- `loadDashboardCoreInputs` — `situs_state` on `real_estate` select (no extra query)
-- Planning empty states — `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` on `/projections` + `/complete` (profile only; no tier-3 generate link)
+- Persona alerts on `/dashboard` — business $5M / $10M; multi-state RE (`situs_state`)
+- Planning empty states — profile-only CTAs on `/projections` + `/complete`
+- **A/B collapse (no pre-launch traffic):** `personalized` upgrade copy; `score_visible` assess; removed `abTests.ts` + `app_config` A/B rows
+- **EVENT_UPGRADE_COPY** — `scripts/verify-event-upgrade-copy.ts` (24/24 slugs)
 
 **Next (Sprint 12 remaining):**
-- `[ ]` `ab_upgrade_copy` — pick winner; remove losing variant
-- `[ ]` `ab_assessment_gate` — pick winner; remove losing variant
-- `[ ]` `EVENT_UPGRADE_COPY` — prod smoke for winning personalized variant
 - `[ ]` Mobile nav audit (consumer public + dashboard)
-- `[ ]` In-app copy audit (Sprint 2 deferred)
+- `[ ]` In-app copy audit (after A/B collapse — surfaces stable)
 
 See [ROADMAP.md](./ROADMAP.md).
 
@@ -80,5 +78,6 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 | `lib/planning/planningEmptyState.ts` | TIER2 vs TIER3 CTAs |
 | `app/(dashboard)/dashboard/page.tsx` | `personaAlerts` prop |
 | `app/(dashboard)/_dashboard-client.tsx` | Alert banners |
-| `lib/events/upgradeContext.ts` | A/B upgrade copy |
-| `app/(public)/assess/` | A/B assessment gate |
+| `lib/events/upgradeContext.ts` | `EVENT_UPGRADE_COPY` (personalized only) |
+| `scripts/verify-event-upgrade-copy.ts` | 24-slug upgrade copy smoke |
+| `app/(public)/assess/` | Scores visible logged-out; gap report gated |

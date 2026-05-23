@@ -102,6 +102,10 @@ const EVENT_UPGRADE_COPY: Record<string, Record<2 | 3, string>> = {
   },
 }
 
+/**
+ * Returns event-specific upgrade copy when the user's latest life event has tier copy.
+ * Pre-launch A/B (`ab_upgrade_copy`) collapsed to personalized only (Sprint 12).
+ */
 export async function getEventUpgradeValueProp(
   supabase: SupabaseClient,
   userId: string,
@@ -109,11 +113,6 @@ export async function getEventUpgradeValueProp(
   fallback: string,
 ): Promise<string> {
   try {
-    const { getUpgradeCopyVariant } = await import('@/lib/analytics/abTests')
-    if ((await getUpgradeCopyVariant()) === 'generic') {
-      return fallback
-    }
-
     const { data } = await supabase
       .from('life_events')
       .select('event_type')
@@ -128,4 +127,12 @@ export async function getEventUpgradeValueProp(
   } catch {
     return fallback
   }
+}
+
+/** Slugs missing tier-2 or tier-3 strings in EVENT_UPGRADE_COPY (prod smoke / CI). */
+export function findMissingEventUpgradeCopy(slugs: readonly string[]): string[] {
+  return slugs.filter((slug) => {
+    const row = EVENT_UPGRADE_COPY[slug]
+    return !row?.[2]?.trim() || !row?.[3]?.trim()
+  })
 }

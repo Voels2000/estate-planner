@@ -34,6 +34,16 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ## Decision log
 
+### May 2026 — Pre-launch A/B collapse: personalized + score_visible (Sprint 12)
+
+**Decision:** With no live traffic, do not wait on `funnel_events` for A/B winners. Ship **`personalized`** upgrade copy only (`getEventUpgradeValueProp` always uses `EVENT_UPGRADE_COPY`). Ship **`score_visible`** assessment behavior only (logged-out users see scores; gap report gated behind signup). Remove `lib/analytics/abTests.ts`, branching code, and `app_config` rows `ab_upgrade_copy` / `ab_assessment_gate` (migration `20260531000000_remove_ab_test_app_config.sql`). Keep `app_config` for other keys. Post-launch A/B when baseline conversion exists.
+
+**Reasoning:** Pre-launch split tests cannot reach significance; PRODUCT_STRATEGY favors specificity over generic upgrade copy; assessment conversion depends on demonstrating value (scores) before account creation.
+
+**Alternatives considered:** Default to higher `tier_upgraded` variant without data (N/A). Keep flags until 4 weeks live (rejected — delays launch hygiene).
+
+---
+
 ### May 2026 — Planning empty-state CTAs: profile-only on tier-1/2 surfaces (Sprint 12)
 
 **Decision:** `/projections` and `/complete` use `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` (profile link only). The “Generate estate plan →” link stays on tier-3 `/my-estate-strategy` (inline `POST /api/consumer/generate-base-case`). Export `planningMissingProjectionActions(tier)` for callers that need tier-aware lists; do not merge TIER2 and TIER3 into one constant.
@@ -46,23 +56,13 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ### May 2026 — A/B test exit criteria (Sprint 10, settled)
 
-**Decision:** Both A/B tests (`ab_upgrade_copy`, `ab_assessment_gate`) use the same exit
-framework for Sprint 11–12:
+**Decision (superseded May 2026 Sprint 12):** Pre-launch there was no traffic to apply this
+framework. Winners chosen by product strategy prior: **`personalized`** upgrade copy,
+**`score_visible`** assessment gate. See entry “Pre-launch A/B collapse” above.
 
-| Test | Primary metric | Threshold | Decision owner |
-|------|----------------|-----------|----------------|
-| `ab_upgrade_copy` | `tier_upgraded` in `funnel_events` | 50 events per variant **or** 4 weeks elapsed | Product owner (Alan) |
-| `ab_assessment_gate` | `tier_upgraded` in `funnel_events` | Same | Product owner (Alan) |
-
-For `ab_assessment_gate`, also monitor funnel drop-off `event_assess_complete` → `account_created`
-as a secondary signal when interpreting the primary metric.
-
-Sprint 11 is the final measurement window. Sprint 12 ships the winner and removes the losing
-variant. If criteria are not met by end of Sprint 11, default to the variant with higher
-`tier_upgraded` rate in `funnel_events`.
-
-**Reasoning:** Prevents split-test code from becoming permanent launch debt. Secondary metric
-on assessment gate catches gate friction that tier upgrades alone might miss.
+**Original framework (for post-launch tests):** Primary metric `tier_upgraded` in
+`funnel_events`; 50 events per variant or 4 weeks; owner Alan; secondary metric on assess
+gate: `event_assess_complete` → `account_created`.
 
 **Alternatives considered:** Gut-feel winner selection (rejected). Indefinite dual variants at
 launch (rejected).

@@ -1,7 +1,6 @@
 import AssessClient from './_assess-client'
-import { getAssessmentGateVariant } from '@/lib/analytics/abTests'
 
-export default async function AssessPage() {
-  const gateVariant = await getAssessmentGateVariant()
-  return <AssessClient gateVariant={gateVariant} />
+/** Assessment always shows scores to logged-out users; gap report gated behind signup (Sprint 12). */
+export default function AssessPage() {
+  return <AssessClient />
 }

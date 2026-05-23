@@ -15,6 +15,8 @@ import {
   planningMissingProjectionActions,
 } from '../lib/planning/planningEmptyState'
 import { buildPersonaDashboardAlerts } from '../lib/dashboard/personaAlerts'
+import { EVENT_SLUGS } from '../lib/events/content'
+import { findMissingEventUpgradeCopy } from '../lib/events/upgradeContext'
 import {
   charitableTopicsUseProfileData,
   buildPersonalizedCharitableTopics,
@@ -441,6 +443,15 @@ const sparse = buildPersonalizedCharitableTopics({
 })
 assertBool('sparse build → usedProfileInputs false', sparse.usedProfileInputs === false, true)
 assertBool('sparse build still returns topics', sparse.topics.length > 0, true)
+
+// ─────────────────────────────────────────────────────────────
+// Sprint 12 — EVENT_UPGRADE_COPY completeness (personalized path only)
+// ─────────────────────────────────────────────────────────────
+
+console.log('\n── EVENT_UPGRADE_COPY — all slugs (Sprint 12) ──')
+const missingUpgradeCopy = findMissingEventUpgradeCopy(EVENT_SLUGS)
+assertBool('all event slugs have tier 2+3 copy', missingUpgradeCopy.length === 0, true)
+assertBool('24 life event slugs', EVENT_SLUGS.length === 24, true)
 
 // ─────────────────────────────────────────────────────────────
 // Sprint 12 — planning empty CTAs + persona dashboard alerts

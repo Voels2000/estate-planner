@@ -238,11 +238,7 @@ function getLevel(pct: number) {
 
 type Answers = Record<string, number>
 
-export default function AssessClient({
-  gateVariant,
-}: {
-  gateVariant: 'score_visible' | 'full_gate'
-}) {
+export default function AssessClient() {
   const [screen, setScreen] = useState<'intro' | 'questions' | 'results'>('intro')
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Answers>({})
@@ -779,9 +775,7 @@ export default function AssessClient({
   const rl = getLevel(rp)
   const el = getLevel(ep)
 
-  // Logged-out: score_visible shows scores + gated gap report; full_gate hides scores too
   const isLoggedOut = showSaveCTA
-  const showScores = !isLoggedOut || gateVariant === 'score_visible'
 
   return (
     <main style={{
@@ -828,8 +822,7 @@ export default function AssessClient({
           </div>
         )}
 
-        {/* Overall score — visible when logged in or score_visible A/B variant */}
-        {showScores && (
+        {/* Overall score — visible to logged-out users; gap report gated below */}
         <div style={{
           background: 'linear-gradient(135deg, #0f1f3d 0%, #2a4a7f 100%)',
           borderRadius: 12, padding: '36px 32px',
@@ -883,10 +876,8 @@ export default function AssessClient({
             }}>{level.label}</div>
           </div>
         </div>
-        )}
 
         {/* Pillar scores */}
-        {showScores && (
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -935,9 +926,8 @@ export default function AssessClient({
             </div>
           ))}
         </div>
-        )}
 
-        {/* Gate — logged-out users see CTA instead of gap report (or instead of scores in full_gate) */}
+        {/* Gate — logged-out users see CTA instead of full gap report */}
         {isLoggedOut ? (
           <div style={{
             background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',

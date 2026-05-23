@@ -41,12 +41,9 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 > ✅ Decision criteria documented in DECISION_LOG (May 2026). Sprint 11 is the final
 > measurement window; Sprint 12 implements winners and removes losing variants.
 
-- `[ ]` `ab_upgrade_copy` — decide `personalized` vs `generic` winner; remove losing variant
-  (doc ref: LAUNCH_CHECKLIST § A/B)
-- `[ ]` `ab_assessment_gate` — decide `score_visible` vs `full_gate` winner; remove losing variant
-  (doc ref: LAUNCH_CHECKLIST § A/B)
-- `[ ]` `EVENT_UPGRADE_COPY` — confirm all 24 slugs render correctly in a production-like env
-  for the winning `personalized` variant (doc ref: LAUNCH_CHECKLIST § A/B)
+- `[x]` `ab_upgrade_copy` — pre-launch: no traffic; shipped **personalized** only; removed `generic` + `app_config` row
+- `[x]` `ab_assessment_gate` — pre-launch: shipped **score_visible** only; removed `full_gate` + `app_config` row
+- `[x]` `EVENT_UPGRADE_COPY` — `scripts/verify-event-upgrade-copy.ts` + `findMissingEventUpgradeCopy()` (24/24 slugs)
 
 **UX**
 - `[ ]` Mobile nav audit — responsive layout review across all consumer-facing routes, both

@@ -8,9 +8,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint 12 — persona dashboard alerts, planning empty CTAs (May 2026)
+## Sprint 12 — A/B collapse, persona alerts, planning empty CTAs (May 2026)
 
-- **No schema change.**
+- **Migration:** `20260531000000_remove_ab_test_app_config.sql` — deletes `ab_upgrade_copy`, `ab_assessment_gate` from `app_config`.
+- **Removed:** `lib/analytics/abTests.ts`; assess/upgrade A/B branching.
+- **Shipped:** personalized `EVENT_UPGRADE_COPY` only; assess `score_visible` behavior only.
+- **Verify:** `scripts/verify-event-upgrade-copy.ts` — 24 slugs × tier 2/3 strings.
 - **Loader:** `loadDashboardCoreInputs` — `real_estate` select adds `situs_state` (same parallel fetch).
 - **Application:** `lib/dashboard/personaAlerts.ts` — business $5M/$10M + multi-state RE (≥2 distinct `situs_state`).
 - **Application:** `lib/planning/planningEmptyState.ts` — `TIER2` vs `TIER3` empty-state CTAs.

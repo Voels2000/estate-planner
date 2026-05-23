@@ -52,9 +52,9 @@ These must be complete before launch. Update status as sprints close them.
 ### A/B tests & personalization
 
 - [x] **A/B decision criteria defined** — DECISION_LOG: `tier_upgraded`, 50 events/variant or 4 weeks, owner Alan (Sprint 10)
-- [ ] **`ab_upgrade_copy` evaluated** — `personalized` vs `generic` variant decision made; losing variant removed (Sprint 12)
-- [ ] **`ab_assessment_gate` evaluated** — `score_visible` vs `full_gate` decision made (Sprint 12)
-- [ ] **`EVENT_UPGRADE_COPY`** — all 24 slugs written (✅ Sprint 7); confirm rendering correctly in production for `personalized` variant
+- [x] **`ab_upgrade_copy` collapsed** — personalized only (no pre-launch traffic); `lib/analytics/abTests.ts` removed (Sprint 12)
+- [x] **`ab_assessment_gate` collapsed** — score_visible only; assess always shows scores to logged-out users (Sprint 12)
+- [x] **`EVENT_UPGRADE_COPY`** — 24/24 slugs verified via `scripts/verify-event-upgrade-copy.ts` (Sprint 12)
 
 ### Segment-specific features
 
@@ -120,7 +120,7 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 - [ ] `20260521000000_create_life_events.sql`
 - [ ] `20260522000000_advisor_referrals.sql`
 - [ ] `20260523000000_funnel_events.sql`
-- [ ] `20260523000001_app_config_ab_tests.sql`
+- [x] `20260523000001_app_config_ab_tests.sql` (superseded: `20260531000000_remove_ab_test_app_config.sql` removes A/B rows)
 - [ ] `20260524000000_email_captures_drip.sql`
 - [ ] `20260528000000_attorney_referrals.sql` (Sprint 8 — ✅ confirmed applied)
 - [ ] `20260529000000_profiles_referral_attribution.sql` (Sprint 9)

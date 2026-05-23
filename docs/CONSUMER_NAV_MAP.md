@@ -60,7 +60,7 @@ Demo/admin test users may see **multiple** portal links if their profile has ele
 | Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
 | Education Guide | `/education` | `(public)/education/layout.tsx` | Shared `(public)` nav + education header; auth-gated |
-| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | A/B gate: `app_config.ab_assessment_gate` (`score_visible` \| `full_gate`); `localStorage` pending assessment |
+| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
 

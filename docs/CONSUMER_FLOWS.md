@@ -390,7 +390,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin **Funnel** tab — 30-day step counts, tier conversion, slug/referral tables |
 | **Email drip** | Event assess email capture | 3-step sequence per event slug (24 custom in `drip-templates.ts`); `POST /api/email-capture` → drip step 1; steps 2–3 cron |
 | **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |
-| **Assess A/B gate** | `/assess` results (logged out) | Server reads `ab_assessment_gate` from `app_config`; `score_visible` vs `full_gate` |
+| **Assess results gate** | `/assess` results (logged out) | Scores always visible; gap report + next steps require account (Sprint 12 — `score_visible` only) |
 | **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
 | **Find advisor (not handoff)** | **Ask your advisor about this →** on strategy education cards | Links to `/find-advisor` only — no message to connected advisor |
 
