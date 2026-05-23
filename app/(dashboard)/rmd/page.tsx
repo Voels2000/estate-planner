@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { RmdClient } from './_rmd-client'
 
 export default async function RmdPage() {
@@ -16,11 +17,7 @@ export default async function RmdPage() {
   if (!user) redirect('/login')
 
   if (access.tier < 2) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
@@ -35,11 +32,7 @@ export default async function RmdPage() {
           requiredTier={2}
           moduleName="RMD Planner"
           valueProposition={valueProposition}
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )

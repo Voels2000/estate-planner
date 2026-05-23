@@ -1,6 +1,6 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 12 current)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
 
 ---
 

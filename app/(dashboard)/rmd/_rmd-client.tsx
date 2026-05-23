@@ -380,7 +380,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       <p className="mt-4 text-xs text-neutral-400">
         * RMD calculations use the IRS Uniform Lifetime Table (2022 final regulations).
         Balances shown are projections at {household.growth_rate_retirement ?? 5}% annual growth.
-        Consult a tax advisor for your specific situation.
+        Your advisor can help coordinate RMD timing with your broader income and tax strategy.
       </p>
     </div>
   )

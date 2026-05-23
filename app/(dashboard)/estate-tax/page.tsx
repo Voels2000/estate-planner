@@ -39,6 +39,7 @@ export default async function EstateTaxPage() {
           requiredTier={3}
           moduleName="Estate Tax Snapshot"
           valueProposition="See exactly how your estate tax is calculated, what's driving it, and how much headroom you have before federal tax kicks in."
+          ctaLabel="See your estate tax breakdown →"
           householdContext={{
             grossEstate,
             statePrimary: householdRow?.state_primary ?? null,

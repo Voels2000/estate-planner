@@ -8,6 +8,7 @@ import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectio
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import DomicileAnalysisClient from './_domicile-analysis-client'
 
 export const metadata = { title: 'Domicile Analysis | Estate Planner' }
@@ -21,11 +22,7 @@ export default async function DomicileAnalysisPage() {
   if (!user) redirect('/login')
 
   if (access.tier < 3) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
@@ -40,11 +37,7 @@ export default async function DomicileAnalysisPage() {
           requiredTier={3}
           moduleName="Domicile Analysis"
           valueProposition={valueProposition}
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )

@@ -232,7 +232,7 @@ export function SSClient({ data: initialData }: { data: SSData | null }) {
       </div>
 
       <div className='rounded-xl bg-emerald-50 border border-emerald-200 p-4'>
-        <p className='text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1'>Illustrative summary</p>
+        <p className='text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1'>Projected summary</p>
         <p className='text-sm text-emerald-900'>{recommendation}</p>
       </div>
 

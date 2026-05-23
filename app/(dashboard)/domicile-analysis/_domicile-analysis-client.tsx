@@ -204,7 +204,7 @@ export default function DomicileAnalysisClient({
       <h1 className="mb-1 text-2xl font-bold text-neutral-900">Domicile Analysis</h1>
       <p className="mb-8 text-sm text-neutral-500">
         Multi-state comparison against your claimed domicile and a practical
-        checklist. This is educational only and not legal advice.
+        checklist. Figures are calculated from your entered assets and applicable state tax rules. Your estate attorney can advise on the timing and mechanics of a domicile change.
       </p>
 
       {isAdvisor && (

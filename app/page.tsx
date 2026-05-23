@@ -80,9 +80,7 @@ export default async function HomePage() {
         <span style={{ color: 'var(--mwm-gold)', fontWeight: 500 }}>
           Educational platform only.
         </span>
-        {' '}Nothing here constitutes financial, legal, tax, or investment
-        advice. Always consult a licensed professional before making any
-        planning decisions.
+        {' '}Nothing here constitutes financial, legal, tax, or investment advice.
       </div>
 
       {/* HERO */}

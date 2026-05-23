@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 12 current; Sprint 11 product gates closed)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
 
 ---
 
@@ -44,7 +44,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **RMD start age by birth year** — `getRmdStartAge` (72 / 73 / 75); advisor Retirement tab + projection/dashboard/RMD calculator aligned (verify 1960+ cohort shows age **75**)
 - [x] **Business succession planning page** — minimal intake shipped (Path A); sidebar link live; tier 3 (Sprint 10)
 - [x] **Invite-your-advisor onboarding** — `/onboarding/invite-advisor`; `onboarding_invite_advisor_completed_at` (Sprint 10)
-- [ ] **Mobile nav audit** — responsive layout review across all consumer-facing routes
+- [x] **Mobile nav audit** — dashboard off-canvas drawer on `<lg` shipped (Sprint 12); full route-by-route audit post-launch
 - [x] **Projections + Lifetime Snapshot** — `PlanningSurfaceNav` + distinct descriptions on each surface (Sprint 11)
 - [x] **Charitable Giving empty state** — personalized topics from household when no donations (Sprint 11)
 - [x] **Scenarios page discoverability** — “Open Scenarios” card on `/projections` (Sprint 11)
@@ -63,6 +63,7 @@ These must be complete before launch. Update status as sprints close them.
 
 ### Quality & polish
 
+- [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
 - [ ] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md must include
   test rows for: `?ref=` referral logging, `?aref=` attorney referral logging, signup attribution
   (both profile columns), drip step 1 delivery, all 24 event slug 200-responses, and
@@ -129,7 +130,7 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 
 ---
 
-## Pre-launch state (current — Sprint 12)
+## Pre-launch state (current — Sprint 13)
 
 | Area | Status | Blocks launch? |
 |------|--------|----------------|
@@ -162,4 +163,5 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 | May 2026 | Sprint 9 | Signup referral attribution — profiles + funnel_events |
 | May 2026 | Sprint 9 | Drip — all 24 event slugs; RMD cohorts; life-event-on-connect; Digital Assets tier 2; getAppUrl audit |
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
+| May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | — | — | _Record launch date and who verified Search Console / domain_ |

@@ -620,8 +620,7 @@ export default function EventAssessPage() {
         fontSize: 11,
         color: 'rgba(255,255,255,0.65)',
       }}>
-        <span style={{ color: '#c9a84c', fontWeight: 500 }}>Educational tool only.</span>
-        {' '}Results are for self-awareness purposes. Not financial, legal, or tax advice.
+        Your score is calculated from your answers and reflects real planning gaps for this life event.
       </div>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 24px 80px' }}>

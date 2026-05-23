@@ -397,7 +397,7 @@ export default function ScenariosClient({
       )}
 
       <p className="mt-8 text-sm text-muted-foreground max-w-3xl">
-        Disclaimer: Scenario projections model income tax and investment growth only. They do not model estate tax, state estate tax, property tax, sales tax, or other non-income taxes. For a full estate tax analysis, see{' '}
+        Scope: Scenario projections model income tax and investment growth only. They do not model estate tax, state estate tax, property tax, sales tax, or other non-income taxes. For a full estate tax analysis, see{' '}
         <Link href="/my-estate-strategy" className="underline underline-offset-2 hover:text-foreground">
           My Estate Strategy
         </Link>

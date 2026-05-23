@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { MonteCarloClient } from './_monte-carlo-client'
 
 export const metadata = {
@@ -21,11 +22,7 @@ export default async function MonteCarloPage() {
   if (!user) redirect('/login')
 
   if (access.tier < 2) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">Monte Carlo</h1>
@@ -33,11 +30,7 @@ export default async function MonteCarloPage() {
           requiredTier={2}
           moduleName="Monte Carlo"
           valueProposition="Run probability-of-success simulations across thousands of retirement scenarios."
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )

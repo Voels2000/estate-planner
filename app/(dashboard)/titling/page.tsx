@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import TitlingClient from './_titling-client'
 
 // Exclude P&C lines — same as app/(dashboard)/insurance/page.tsx
@@ -19,11 +20,7 @@ export default async function TitlingPage() {
   if (!user) redirect('/login')
 
   if (access.tier < 3) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
@@ -38,11 +35,7 @@ export default async function TitlingPage() {
           requiredTier={3}
           moduleName="Titling & Beneficiaries"
           valueProposition={valueProposition}
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )

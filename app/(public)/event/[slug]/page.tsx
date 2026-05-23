@@ -251,9 +251,7 @@ export default async function EventPage({
         fontSize: 11,
         color: 'rgba(255,255,255,0.65)',
       }}>
-        <span style={{ color: '#c9a84c', fontWeight: 500 }}>Educational tool only.</span>
-        {' '}This page does not constitute financial, legal, or tax advice.
-        Always consult a licensed professional.
+        Built for households with $2M–$30M in assets.
       </div>
 
       {/* Hero */}

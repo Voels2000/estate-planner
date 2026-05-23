@@ -731,7 +731,7 @@ export default function EstateTaxClient({
       )}
 
       <p className="text-xs text-neutral-400 mt-6">
-        Illustrative only — not tax or legal advice. Consult a qualified estate planning attorney.
+        Estate tax figures are calculated from your entered assets, titling, and applicable federal and state rules. Review with your estate attorney for transaction-specific decisions.
       </p>
     </div>
   )

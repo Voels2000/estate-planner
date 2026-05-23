@@ -8,7 +8,9 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint 12 — A/B collapse, persona alerts, planning empty CTAs (May 2026)
+## Sprint 12 — A/B collapse, persona alerts, planning empty CTAs, copy audit (May 2026)
+
+**Copy (no migration):** In-app copy audit across dashboard, `(public)/`, landing (`app/page.tsx`), share estate-flow. See DECISION_LOG.
 
 - **Migration:** `20260531000000_remove_ab_test_app_config.sql` — deletes `ab_upgrade_copy`, `ab_assessment_gate` from `app_config`.
 - **Removed:** `lib/analytics/abTests.ts`; assess/upgrade A/B branching.

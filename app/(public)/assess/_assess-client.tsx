@@ -433,9 +433,7 @@ export default function AssessClient() {
           padding: '11px 32px', fontSize: 11,
           color: 'rgba(255,255,255,0.65)', lineHeight: 1.5,
         }}>
-          <span style={{ color: '#c9a84c', fontWeight: 500 }}>Educational tool only.</span>
-          {' '}This assessment does not constitute financial, legal, or tax advice.
-          Results are for self-awareness purposes only.
+          Your results are based on your answers and reflect your actual planning gaps across financial, retirement, and estate planning.
         </div>
 
         {/* Hero */}
@@ -516,11 +514,7 @@ export default function AssessClient() {
             borderRadius: 8, padding: '14px 18px',
             marginBottom: 28, fontSize: 12, color: '#7a5a00', lineHeight: 1.55,
           }}>
-            📋 <strong>How your answers are used:</strong> Your responses generate
-            your personalized readiness report within this session.
-            This tool helps identify planning areas to discuss with
-            licensed professionals — it does not assess the quality
-            of any existing plan or provide advice.
+            📋 <strong>How your answers are used:</strong> Your answers are used to calculate your readiness score and identify specific planning gaps. Nothing is stored until you create an account.
           </div>
 
           <div style={{ textAlign: 'center' }}>
@@ -1091,12 +1085,7 @@ export default function AssessClient() {
           borderRadius: 8, padding: '14px 18px',
           fontSize: 12, color: '#7a5a00', lineHeight: 1.6,
         }}>
-          <strong>Assessment Disclaimer:</strong> This Planning Readiness Assessment
-          is an educational and organizational tool only. Your score and gap analysis
-          are based solely on your self-reported answers and are intended to prompt
-          reflection and professional conversation — not to constitute financial, legal,
-          or tax advice. Always consult a licensed financial advisor, estate attorney,
-          and/or CPA for guidance specific to your situation.
+          Your score reflects your answers to this assessment. A financial advisor or estate attorney can help you act on specific gaps — connect one in the app after you create your account.
         </div>
       </div>
     </main>

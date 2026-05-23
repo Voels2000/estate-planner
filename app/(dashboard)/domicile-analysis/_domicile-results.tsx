@@ -236,7 +236,7 @@ export default function DomicileResults({
       {(score > 65 || hasDualEstateTax) && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-5">
           <p className="mb-1 text-sm font-medium text-blue-900">
-            Consider consulting an estate planning attorney
+            Your estate attorney can advise on the timing and mechanics of a domicile change for your specific situation.
           </p>
           <p className="mb-3 text-sm text-blue-700">
             Your domicile profile has complexity that benefits from professional legal guidance. An

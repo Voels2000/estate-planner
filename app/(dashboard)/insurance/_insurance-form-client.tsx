@@ -436,7 +436,7 @@ export default function InsuranceFormClient({
                       </label>
                       <p className="text-xs text-neutral-400 mt-0.5">
                         Check this only when the policy has been formally transferred to the ILIT and all legal requirements are met.
-                        This removes the death benefit from your gross estate. Consult your estate attorney.
+                        This removes the death benefit from your gross estate. Your estate attorney can confirm when the ILIT transfer is complete for estate tax purposes.
                       </p>
                     </div>
                   </div>

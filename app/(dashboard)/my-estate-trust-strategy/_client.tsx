@@ -857,7 +857,7 @@ export default function MyEstateTrustStrategyClient({
                 </div>
               </div>
               <p className="mt-3 text-xs text-neutral-400">
-                Illustrative strategies are excluded from the tax reduction calculation.
+                Pending strategies are not included in the tax reduction total until you save them to your plan.
               </p>
             </div>
           )}

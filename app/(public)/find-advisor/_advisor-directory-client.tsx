@@ -149,8 +149,7 @@ export function PublicAdvisorDirectoryClient({
       {/* Disclaimer */}
       <div style={{ background: '#1a3460', borderLeft: '4px solid #c9a84c',
         padding: '11px 32px', fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
-        <span style={{ color: '#c9a84c', fontWeight: 500 }}>Educational platform only.</span>
-        {' '}Nothing here constitutes financial, legal, tax, or investment advice.
+        Advisor listings are provided for discovery. Engage directly to discuss your situation and confirm fit.
       </div>
 
       {/* Header */}

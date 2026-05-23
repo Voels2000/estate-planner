@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import DigitalAssetsClient from './_digital-assets-client'
 
@@ -21,11 +22,7 @@ export default async function DigitalAssetsPage() {
   if (!user) redirect('/sign-in')
 
   if (access.tier < 2 && !access.isAdvisor) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
@@ -40,11 +37,7 @@ export default async function DigitalAssetsPage() {
           requiredTier={2}
           moduleName="Digital Assets"
           valueProposition={valueProposition}
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )
@@ -72,7 +65,7 @@ export default async function DigitalAssetsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Digital Assets</h1>
           <p className="text-gray-600 mt-1 text-sm">
             Catalogue your digital assets so your executor and beneficiaries can locate and manage
-            them. Credentials are never required - just enough information to act on your behalf.
+            them. Credentials are never required - the key details to act on your behalf.
           </p>
         </div>
 

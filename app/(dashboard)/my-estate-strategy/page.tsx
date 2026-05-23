@@ -50,6 +50,7 @@ export default async function MyEstateStrategyPage() {
           requiredTier={3}
           moduleName="Estate Value & Tax Horizons"
           valueProposition="See how your estate grows over time, federal and state tax exposure at each horizon, and how strategies change the picture."
+          ctaLabel="See your estate horizons →"
           householdContext={{
             grossEstate: compositionForBanner.gross_estate ?? null,
             statePrimary: household.state_primary ?? null,

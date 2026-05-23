@@ -26,6 +26,7 @@ interface UpgradeBannerProps {
   requiredTier: 2 | 3
   moduleName: string
   valueProposition: string
+  ctaLabel?: string
   householdContext?: {
     grossEstate?: number | null
     statePrimary?: string | null
@@ -37,6 +38,7 @@ export default function UpgradeBanner({
   requiredTier,
   moduleName,
   valueProposition,
+  ctaLabel = 'Upgrade to unlock →',
   householdContext,
 }: UpgradeBannerProps) {
   const pathname = usePathname()
@@ -103,7 +105,7 @@ export default function UpgradeBanner({
         href={billingHref}
         className="inline-flex shrink-0 items-center justify-center rounded-md bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-amber-50 sm:self-center"
       >
-        Upgrade to unlock
+        {ctaLabel}
       </Link>
     </div>
   )

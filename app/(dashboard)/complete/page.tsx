@@ -15,6 +15,7 @@ import {
   PLANNING_NO_HOUSEHOLD_ACTIONS,
 } from '@/lib/planning/planningEmptyState'
 import { loadProjectionData } from '@/lib/projections/loadProjectionData'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import CompleteClient from './_complete-client'
 
 export default async function CompletePage() {
@@ -26,11 +27,7 @@ export default async function CompletePage() {
   if (!user) redirect('/login')
 
   if (access.tier < 2) {
-    const { data: householdRow } = await supabase
-      .from('households')
-      .select('state_primary')
-      .eq('owner_id', user.id)
-      .single()
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
@@ -45,11 +42,7 @@ export default async function CompletePage() {
           requiredTier={2}
           moduleName="Lifetime Snapshot"
           valueProposition={valueProposition}
-          householdContext={{
-            grossEstate: null,
-            statePrimary: householdRow?.state_primary ?? null,
-            firstName: null,
-          }}
+          householdContext={householdContext}
         />
       </div>
     )

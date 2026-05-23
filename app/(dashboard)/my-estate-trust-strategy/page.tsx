@@ -2,6 +2,7 @@ import { getUserAccess } from '@/lib/get-user-access'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import MyEstateTrustStrategyClient from './_client'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
@@ -74,6 +75,8 @@ export default async function MyEstateTrustStrategyPage({
   if (!user) redirect('/login')
 
   if (access.tier < 3) {
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
+
     return (
       <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-gray-900">My Estate & Trust Strategy</h1>
@@ -81,6 +84,7 @@ export default async function MyEstateTrustStrategyPage({
           requiredTier={3}
           moduleName="Gifting, Strategies & Trusts"
           valueProposition="Track gifting, charitable giving, and estate transfer strategies in one place."
+          householdContext={householdContext}
         />
       </div>
     )

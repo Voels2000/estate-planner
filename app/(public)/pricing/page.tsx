@@ -463,7 +463,7 @@ export default async function PricingPage() {
             },
             {
               q: 'Is this financial advice?',
-              a: 'No. My Wealth Maps is an educational and organizational platform. Always consult a licensed professional for personalized advice.',
+              a: 'Questions about which plan fits your situation? Start with the free assessment.',
             },
           ].map(item => (
             <div key={item.q} style={{

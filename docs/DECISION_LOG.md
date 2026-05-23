@@ -34,6 +34,16 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ## Decision log
 
+### May 2026 — In-app copy audit: advisor-forward, scope not disclaimer (Sprint 12)
+
+**Decision:** Replace hedging disclaimer patterns (“Educational tool only”, “not constitute advice”, “Always consult”) with product-positioning or scope copy across dashboard, public event/assess, upgrade gates, directories, and shared links. Keep `approximately` on derived estate figures in `UpgradeBanner`. Keep beneficiary-view “informational purposes” on third-party surfaces. Scenarios comparison footer uses **`Scope:`** not **`Disclaimer:`**.
+
+**Reasoning:** Target segment ($2M–$30M) expects a planning tool that prepares them for professional relationships — not copy that implies numbers are untrustworthy before use.
+
+**Alternatives considered:** Remove all disclaimer bars (rejected on beneficiary/share edge cases where audience lacks product context).
+
+---
+
 ### May 2026 — Mobile: desktop-first planning app, drawer nav on phones (Sprint 12)
 
 **Decision:** Consumer planning app is **desktop-first** (segment 50–65, complex modeling). On viewports below `lg`, the fixed sidebar becomes an off-canvas drawer (hamburger, overlay, closes on navigate). A short note in the mobile sidebar sets expectations. **Public routes** (`(public)/layout`, event pages) stay separate — acquisition on phone is the priority there; no planning sidebar on those routes. Full responsive audit deferred post-launch.

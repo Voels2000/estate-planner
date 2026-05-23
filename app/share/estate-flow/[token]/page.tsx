@@ -22,7 +22,7 @@ export default async function EstateFlowSharePage({ params }: Props) {
   // Still fetch household name for display
   const { data: linkRow } = await supabase
     .from('estate_flow_share_links')
-    .select('household_id, expires_at, is_revoked')
+    .select('household_id, expires_at, is_revoked, created_at')
     .eq('token', token)
     .single()
 
@@ -44,6 +44,7 @@ export default async function EstateFlowSharePage({ params }: Props) {
         displayPersonFirstName(household?.person1_name) || household?.name || 'Estate Plan'
       }
       expiresAt={linkRow.expires_at}
+      generatedAt={linkRow.created_at}
       token={token}
     />
   )

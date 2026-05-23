@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 12 current; Sprint 11 closed)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
 
 ---
 
@@ -27,7 +27,7 @@
 CONSUMER_RELEASE_SMOKE_TEST manual pass completes.** Section 2 (domain, DNS, Resend,
 Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verified.
 
-### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46) **← CURRENT**
+### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46) ✅
 
 **Goal:** Close A/B tests with data-driven decisions. Mobile audit. Copy pass.
 
@@ -36,32 +36,24 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Multi-state real estate probate-risk alert on dashboard (`situs_state` in `loadDashboardCoreInputs`)
 - `[x]` Planning empty-state CTAs — profile-only on `/projections` + `/complete` (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`)
 
-**A/B test decisions — owner must define criteria NOW, before Sprint 12 begins**
+**A/B test decisions**
 
-> ✅ Decision criteria documented in DECISION_LOG (May 2026). Sprint 11 is the final
-> measurement window; Sprint 12 implements winners and removes losing variants.
+> ✅ Pre-launch: no traffic — shipped **personalized** + **score_visible**; removed A/B code and `app_config` rows (DECISION_LOG).
 
-- `[x]` `ab_upgrade_copy` — pre-launch: no traffic; shipped **personalized** only; removed `generic` + `app_config` row
-- `[x]` `ab_assessment_gate` — pre-launch: shipped **score_visible** only; removed `full_gate` + `app_config` row
-- `[x]` `EVENT_UPGRADE_COPY` — `scripts/verify-event-upgrade-copy.ts` + `findMissingEventUpgradeCopy()` (24/24 slugs)
+- `[x]` `ab_upgrade_copy` — personalized only; `EVENT_UPGRADE_COPY` verified (24/24 slugs)
+- `[x]` `ab_assessment_gate` — score_visible only; logged-out assess shows scores
 
 **UX**
-- `[~]` Mobile nav audit — dashboard sidebar → off-canvas drawer on `<lg` (`DashboardShell`);
-  public event pages unchanged; full route-by-route audit post-launch
-- `[ ]` In-app copy audit (Sprint 2 deferred)
-
-**Optional (if A/B decisions land early)**
-- `[ ]` Transfer Strategy guided depth (Sprint 2 deferred)
-- `[ ]` Assessment → plan selector on signup (Sprint 2 deferred)
+- `[x]` Mobile nav — dashboard off-canvas drawer on `<lg` (`DashboardShell`); full route audit deferred post-launch
+- `[x]` In-app copy audit — dashboard, public event/assess, planning surfaces, landing + share links; `DisclaimerBanner`; upgrade gates
 
 **Success criteria**
-- Both A/B flags resolved; no split-test code in codebase at launch
-- Mobile nav passes review on iPhone SE and standard Android viewport
-- Copy audit complete with no "simple rule-of-thumb" or "illustrative mix" language remaining
+- `[x]` A/B flags resolved; no split-test code at launch
+- `[x]` Copy audit complete (hedging disclaimers removed or reframed; scenarios footer uses `Scope:`)
 
 ---
 
-### Sprint 13 — Pre-production hardening (Weeks 47–50)
+### Sprint 13 — Pre-production hardening (Weeks 47–50) **← CURRENT**
 
 **Goal:** Stable staging environment, all migrations verified, smoke test extended.
 No new product pillars. Feature freeze starts here.

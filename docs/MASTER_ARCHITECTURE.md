@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 12 current; Sprint 11 closed; see SCHEMA_CHANGELOG)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; see SCHEMA_CHANGELOG)
 
 ---
 
@@ -729,7 +729,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 12):** A/B test winners, mobile nav audit, copy pass. Persona dashboard alerts shipped (business $5M/$10M, multi-state RE via `situs_state` in `loadDashboardCoreInputs`).
+**Current sprint (Sprint 13):** Pre-production hardening — staging migrations, extended smoke test, referral/drip production verification.
+
+**Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business

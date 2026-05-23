@@ -34,10 +34,11 @@ interface Props {
   flowData: unknown
   householdName: string
   expiresAt: string
+  generatedAt: string
   token: string
 }
 
-export default function SharePageClient({ flowData, householdName, expiresAt }: Props) {
+export default function SharePageClient({ flowData, householdName, expiresAt, generatedAt }: Props) {
   const graph = flowData as EstateFlowGraph
 
   const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
@@ -51,6 +52,11 @@ export default function SharePageClient({ flowData, householdName, expiresAt }: 
   if (graph.summary.has_digital_assets) docNames.push('Digital Asset Inventory')
 
   const expiryDate = new Date(expiresAt).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const generatedDate = new Date(generatedAt).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -195,7 +201,7 @@ export default function SharePageClient({ flowData, householdName, expiresAt }: 
 
         {/* Disclaimer */}
         <div className="px-4 py-3 bg-gray-100 rounded-xl text-xs text-gray-500 leading-relaxed">
-          This estate planning summary is provided for informational purposes only and does not constitute legal, tax, or financial advice. The estate structure shown reflects planning information as of the date this link was generated. Please consult with a qualified estate planning attorney and financial advisor before making any decisions based on this information.
+          This summary reflects planning information as of {generatedDate}. Figures are based on data entered by the household and are intended to support professional review.
         </div>
       </div>
     </div>

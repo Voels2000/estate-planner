@@ -360,7 +360,7 @@ export default function BusinessFormClient({
               <p className="text-xs text-neutral-500 mb-3">
                 Mark this business interest as outside your taxable estate only when a legal
                 transfer is complete and effective (e.g. gifted, placed in irrevocable trust).
-                Consult your estate attorney before marking as excluded.
+                Your estate attorney can confirm when a transfer is complete before you mark this as excluded.
               </p>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Estate Status</label>

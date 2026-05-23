@@ -20,7 +20,8 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
       <div className="mx-auto max-w-2xl px-4 py-12">
         <h1 className="text-2xl font-bold text-neutral-900 mb-2">Export Estate Plan</h1>
         <p className="text-neutral-500">
-          Upgrade to Estate Planning (Tier 3) to export your estate plan summary.
+          Export a full estate plan summary — including conflicts, asset titling, and estate
+          tax exposure — for your attorney or advisor review. Available with the Estate plan.
         </p>
       </div>
     )

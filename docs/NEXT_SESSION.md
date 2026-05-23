@@ -1,45 +1,41 @@
 # NEXT_SESSION.md
-# Sprint 12 — Session Start Document
+# Sprint 13 — Session Start Document
 # Updated: May 2026
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — $2M–$30M estate/financial planning. **Sprint 11 closed. Sprint 12 is current.**
-> Persona dashboard alerts + planning empty-state CTAs shipped. Next: A/B winners, mobile nav audit, copy pass.
-> Before coding: read **Known limitations** below (attribution edge case + `CONNECTED_ADVISOR_CLIENT_STATUSES`).
-> A/B criteria settled in DECISION_LOG.md — implement winners and remove losing variants.
-> Apply migration `20260530000000_sprint9_10_gates.sql` on staging/prod if not already applied.
+> My Wealth Maps — $2M–$30M estate/financial planning. **Sprint 12 closed. Sprint 13 is current.**
+> Sprint 12 shipped: A/B collapse, persona alerts, mobile drawer, full copy audit.
+> Next: staging migrations, extended smoke test rows, referral/drip production verification.
+> Apply migrations on staging/prod per LAUNCH_CHECKLIST if not already applied.
 > Today's task: [FILL IN BELOW].
 
 ---
 
-## Current sprint — Sprint 12 (Weeks 43–46)
+## Current sprint — Sprint 13 (Weeks 47–50)
 
-**Goal:** Close A/B tests with data-driven decisions. Mobile audit. Copy pass.
+**Goal:** Stable staging, all migrations verified, smoke test extended. Feature freeze.
 
-**Shipped this session:**
-- Persona alerts on `/dashboard` — business $5M / $10M; multi-state RE (`situs_state`)
-- Planning empty states — profile-only CTAs on `/projections` + `/complete`
-- **A/B collapse (no pre-launch traffic):** `personalized` upgrade copy; `score_visible` assess; removed `abTests.ts` + `app_config` A/B rows
-- **EVENT_UPGRADE_COPY** — `scripts/verify-event-upgrade-copy.ts` (24/24 slugs)
+**Next:**
+- `[ ]` Staging deploy with all migrations verified
+- `[ ]` Extend CONSUMER_RELEASE_SMOKE_TEST.md (referral, drip, attribution rows) — required before Sprint 14
+- `[ ]` Referral loop proven (advisor + attorney) on production
+- `[ ]` Drip smoke test on production
 
-**Next (Sprint 12 remaining):**
-- `[~]` Mobile nav — dashboard drawer shipped; public event pages spot-check; full audit post-launch
-- `[ ]` In-app copy audit (after A/B collapse — surfaces stable)
-
-See [ROADMAP.md](./ROADMAP.md).
+See [ROADMAP.md](./ROADMAP.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 ---
 
-## Sprint 11 completed ✅
+## Sprint 12 completed ✅
 
 | Area | What shipped |
 |------|----------------|
-| **Planning surfaces** | `PlanningSurfaceNav`; `ScenariosExploreCard`; `/complete` uses `loadProjectionData` |
-| **Charitable** | `buildPersonalizedCharitableTopics()` + `charitableTopicsUseProfileData()` gate |
-| **Tier / empty state** | `/complete` tier 2; profile-only empty CTAs on projections + lifetime snapshot |
+| **A/B** | Personalized upgrade copy; score_visible assess; removed `abTests.ts` + `app_config` A/B rows |
+| **Persona** | Dashboard business $5M/$10M + multi-state RE alerts |
+| **Mobile** | Consumer dashboard drawer nav (`<lg`) |
+| **Copy** | DisclaimerBanner; upgrade gates; public event/assess; directories; domicile; scenarios `Scope:`; landing + share |
 
 ---
 
@@ -69,15 +65,10 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 ---
 
-## Files for Sprint 12
+## Files for Sprint 13
 
 | Path | Notes |
 |------|--------|
-| `lib/dashboard/personaAlerts.ts` | Business thresholds + multi-state RE |
-| `lib/dashboard/loaders.ts` | `situs_state` on `real_estate` |
-| `lib/planning/planningEmptyState.ts` | TIER2 vs TIER3 CTAs |
-| `app/(dashboard)/dashboard/page.tsx` | `personaAlerts` prop |
-| `app/(dashboard)/_dashboard-client.tsx` | Alert banners |
-| `lib/events/upgradeContext.ts` | `EVENT_UPGRADE_COPY` (personalized only) |
-| `scripts/verify-event-upgrade-copy.ts` | 24-slug upgrade copy smoke |
-| `app/(public)/assess/` | Scores visible logged-out; gap report gated |
+| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Add referral/drip/attribution rows |
+| `docs/LAUNCH_CHECKLIST.md` | Section 1 gates |
+| `supabase/migrations/` | Verify applied on staging/prod |
