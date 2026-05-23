@@ -10,7 +10,7 @@
 >
 > **Sprint 14 is feature freeze — fixes only from test failures.**
 >
-> **Today's task:** Manual planning app smoke test — **Core sections 1–3** using `david@rolobe.resend.app` on https://estate-planner-gules.vercel.app. Then **estate planning sections 4–7**. Reference: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md).
+> **Sprint 14 manual smoke §1–7 passed** (2026-05-23). **Fix before launch:** Admin Portal in consumer sidebar; asset add form save button below viewport. Reference: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) sign-off.
 
 ---
 
@@ -22,12 +22,21 @@
 
 **Next (in order):**
 - `[x]` **Smoke §2.4 (financial save + recompute)** — automated: `consumer-core-recompute.spec.ts` (staging ~15.5s, May 2026)
-- `[ ]` **Core §1 + §3** — login/dashboard, profile save (manual or extend E2E)
-- `[ ]` **Core §2.1–2.3** — assets UI save (API covered by financial-writes + core-recompute)
-- `[ ]` **Estate planning sections 4–7**
+- `[x]` **Core sections 1–3** — PASSED 2026-05-23
+- `[x]` **Estate planning sections 4–7** — PASSED 2026-05-23
+- `[ ]` **Sprint 14 bugs (fix before launch)** — see below
 - `[ ]` Optional sections 8–11 (time permitting)
 - `[ ]` Drip steps 2–3 on schedule; full end-to-end acquisition path if not already signed off
-- `[ ]` LAUNCH_CHECKLIST Section 1 fully checked; sign-off form in smoke test doc
+- `[~]` LAUNCH_CHECKLIST Section 1 — manual smoke §1–7 signed off; two bugs remain
+
+### Bugs from smoke (fix before launch)
+
+- `[ ]` **Admin Portal visible in sidebar for consumer role** — should be hidden (`david@rolobe.resend.app` saw Admin Portal link)
+- `[ ]` **Asset add form: save button below viewport without zoom-out** — form height or sticky button fix needed
+
+### Post-launch (not blockers)
+
+- `[ ]` **Dashboard / profile slow renders** — initial dashboard load and post-profile-save render; performance ticket after launch
 
 See [ROADMAP.md](./ROADMAP.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 

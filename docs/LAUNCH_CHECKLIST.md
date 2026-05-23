@@ -171,8 +171,11 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Migrations | 67 applied (Sprint 13) | Re-check if Sprint 14 adds any |
 | Acquisition smoke A–G | **Passed** staging | — |
 | Smoke §2.4 (recompute) | **Automated** — `consumer-core-recompute.spec.ts` | Run on deploy |
-| Planning smoke Core §1 + §3 | Manual / extend E2E | Sprint 14 |
-| Planning smoke estate 4–7 | Not started | Yes |
+| Manual smoke §1–3 | ✅ Passed 2026-05-23 | — |
+| Manual smoke §4–7 | ✅ Passed 2026-05-23 | — |
+| Admin Portal consumer visibility | ❌ Bug — fix before launch | Yes |
+| Asset form save button viewport | ❌ Bug — fix before launch | Yes |
+| Dashboard/profile slow renders | Post-launch performance ticket | No |
 | E2E consumer (staging) | 52+ tests incl. core-recompute | Re-run after fixes |
 | `INTERNAL_API_KEY` | Vercel Production ✅ | — |
 | Public URL / Search Console | Preview URL; Sprint 15 cutover | Section 2 |
@@ -190,5 +193,5 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
-| May 2026 | Sprint 14 | **Current** — `consumer-core-recompute` (§2.4); planning smoke Core 1–7; feature freeze |
+| May 2026 | Sprint 14 | Manual smoke §1–7 **passed** 2026-05-23; bugs: Admin Portal sidebar, asset form save viewport |
 | — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |

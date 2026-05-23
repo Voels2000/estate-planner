@@ -71,8 +71,9 @@ escalate — do not slip it into Sprint 14 without explicit sign-off.**
 
 **Planning regression (CONSUMER_RELEASE_SMOKE_TEST) — Sprint 14 focus**
 - `[x]` **Smoke §2.4 automated** — `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (staging verified)
-- `[ ]` **Core sections 1–3: pass** (§2.4 covered by E2E; §1 + §3 manual or extend)
-- `[ ]` **Estate planning sections 4–7: pass**
+- `[x]` **Core sections 1–3: pass** — manual 2026-05-23 (§2.4 covered by E2E)
+- `[x]` **Estate planning sections 4–7: pass** — manual 2026-05-23
+- `[ ]` **Fix before launch:** Admin Portal in consumer sidebar; asset form save button viewport
 - `[ ]` Optional sections 8–11 (run as time permits; flag any failures)
 - `[ ]` Sign-off form completed with tester name, date, environment, deploy/commit
 
