@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 9 current)
+# Last updated: May 2026 (Sprint 9 current; Sprints 10–15 plan added)
 
 ---
 
@@ -21,6 +21,12 @@
 
 ## Current sprint
 
+## ⚠️ Go-live gate
+
+**No public go-live until all LAUNCH_CHECKLIST Section 1 gates are checked AND
+CONSUMER_RELEASE_SMOKE_TEST manual pass completes.** Section 2 (domain, DNS, Resend,
+Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verified.
+
 ### Sprint 9 — Launch, signup attribution, growth polish (Weeks 31–34)
 **Goal:** Execute launch checklist when ready; persist advisor/attorney referral codes through signup; close remaining drip and connection polish.
 
@@ -36,7 +42,17 @@
 
 **Growth polish**
 - `[x]` Drip custom sequences — all **24** event slugs in `lib/emails/drip-templates.ts`
-- `[ ]` Life event context on new advisor connections
+- `[ ]` **[HARD GATE]** Life event context on new advisor connections — when advisor accepts
+  a client who arrived via a life event page, the event type must be visible in the advisor
+  portal Overview tab. This is a Sprint 9 hard requirement, not optional. It has been
+  deferred since Sprint 4. Do not carry to Sprint 10.
+  - File: `app/api/advisor/accept-request/route.ts`
+  - Data: pass `life_events` context at connection-accept time into advisor client view
+  - Test: manual verification in Supabase + advisor portal spot-check
+
+**Quality gates (Sprint 9 — must not carry)**
+- `[ ]` Digital Assets `FEATURE_TIERS` key addition (`lib/tiers.ts`) — currently missing; tier gate enforced only in `page.tsx`
+- `[ ]` `NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` audit — find all remaining legacy references across email routes and replace
 
 **Deferred from earlier sprints**
 - `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
@@ -49,10 +65,204 @@
 **Success criteria for Sprint 9**
 - Launch checklist complete when product goes live
 - `[x]` Referral codes survive signup and appear in funnel/admin
-- Optional: all 24 event pages have custom drip sequences
+- `[x]` All 24 event pages have custom drip sequences
 
 ---
 
+### Sprint 10 — Persona depth, advisor flywheel, segment alerts (Weeks 35–38)
+
+**Goal:** Close the three-persona coverage gap. Business owner and real estate accumulator
+personas must have their defining dashboard signals before Sprint 11. Reframe internally
+as "close persona gaps" not just "alerts."
+
+**Persona: Business owner**
+- `[ ]` Business $5M / $10M threshold alert on dashboard (doc ref: LAUNCH_CHECKLIST § Segment)
+- `[ ]` Business succession page — final decision: ship minimal version OR formally descope to
+  post-launch with a DECISION_LOG entry. Commented-out route must be resolved either way.
+  Do not leave dead code in the sidebar.
+
+**Persona: Real estate accumulator**
+- `[ ]` Multi-state real estate probate-risk alert on dashboard (doc ref: LAUNCH_CHECKLIST § Segment,
+  ROADMAP Sprint 3 deferred)
+
+**Advisor flywheel**
+- `[ ]` Confirm life-event-on-connect shipped and visible in advisor portal (carry-forward verify
+  from Sprint 9; if not shipped, this becomes Sprint 10's first task before anything else)
+- `[ ]` Evaluate: "Ask your advisor about this →" on Transfer Strategy education cards links to
+  `/find-advisor` (public directory). For users with a connected advisor, this should offer
+  an in-app action. Add to DECISION_LOG if deferred post-launch.
+- `[ ]` Invite-your-advisor onboarding step — PRODUCT_STRATEGY principle 4 names this as primary
+  onboarding, not buried in settings. Decision required: is this a launch gate or post-launch?
+  Add DECISION_LOG entry either way. Do not let it slide silently again.
+
+**Optional (sprint permitting)**
+- `[ ]` Event-specific dashboard alerts beyond LifeEventBanner (Sprint 3 deferred)
+- `[ ]` Attorney portal readiness score (Sprint 4 deferred)
+- `[ ]` Admin funnel: attorney click breakdown by `listing_type` (NEXT_SESSION item)
+
+**Success criteria**
+- Business owner and RE accumulator personas each have at least one segment-specific signal on dashboard
+- Business succession route: decision made and logged, dead code resolved
+- Invite-your-advisor: decision logged
+- Life-event-on-connect: verified in advisor portal
+
+---
+
+### Sprint 11 — Planning-app coherence (Weeks 39–42)
+
+**Goal:** Close cross-links and empty states that break the planning flow. No new feature pillars.
+
+- `[ ]` Projections + Lifetime Snapshot — merge into a single surface OR add clear navigation
+  between them. Cross-links currently point in both directions with overlapping content.
+  (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
+- `[ ]` Scenarios discoverability — entry point from Projections summary cards is missing
+  (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
+- `[ ]` Charitable Giving empty state — personalized suggestions from household data instead of
+  generic copy (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
+
+**Success criteria**
+- A consumer on `/projections` can navigate to `/scenarios` without knowing the URL
+- Projections and Lifetime Snapshot have either merged or have explicit non-overlapping roles
+- Charitable Giving empty state uses at least one household field (state, filing status, or asset type)
+
+---
+
+### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46)
+
+**Goal:** Close A/B tests with data-driven decisions. Mobile audit. Copy pass.
+
+**A/B test decisions — owner must define criteria NOW, before Sprint 12 begins**
+
+> ⚠️ These tests cannot be decided in Sprint 12 if the data isn't ready. The decision
+> criteria must be defined by the end of Sprint 10 so Sprint 11 can be the final
+> measurement window. Document criteria in DECISION_LOG before Sprint 11 starts.
+
+- `[ ]` `ab_upgrade_copy` — decide `personalized` vs `generic` winner; remove losing variant
+  (doc ref: LAUNCH_CHECKLIST § A/B)
+- `[ ]` `ab_assessment_gate` — decide `score_visible` vs `full_gate` winner; remove losing variant
+  (doc ref: LAUNCH_CHECKLIST § A/B)
+- `[ ]` `EVENT_UPGRADE_COPY` — confirm all 24 slugs render correctly in a production-like env
+  for the winning `personalized` variant (doc ref: LAUNCH_CHECKLIST § A/B)
+
+**UX**
+- `[ ]` Mobile nav audit — responsive layout review across all consumer-facing routes, both
+  public and dashboard (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
+- `[ ]` In-app copy audit (Sprint 2 deferred)
+
+**Optional (if A/B decisions land early)**
+- `[ ]` Transfer Strategy guided depth (Sprint 2 deferred)
+- `[ ]` Assessment → plan selector on signup (Sprint 2 deferred)
+
+**Success criteria**
+- Both A/B flags resolved; no split-test code in codebase at launch
+- Mobile nav passes review on iPhone SE and standard Android viewport
+- Copy audit complete with no "simple rule-of-thumb" or "illustrative mix" language remaining
+
+---
+
+### Sprint 13 — Pre-production hardening (Weeks 47–50)
+
+**Goal:** Stable staging environment, all migrations verified, smoke test extended.
+No new product pillars. Feature freeze starts here.
+
+**Staging**
+- `[ ]` Staging / production-like deploy with ALL migrations applied and verified
+- `[ ]` `20260529000000_profiles_referral_attribution.sql` confirmed on staging
+- `[ ]` All prior migrations confirmed (see LAUNCH_CHECKLIST § Supabase prod migrations)
+
+**Smoke test extension — write BEFORE Sprint 14 begins**
+
+Add the following test rows to CONSUMER_RELEASE_SMOKE_TEST.md (section "Public routes"
+and a new "Acquisition & attribution" section):
+
+- `?ref=` advisor referral link → click logs to `referral_clicks` (Supabase verify)
+- `?aref=` attorney referral link → click logs to `referral_clicks` with `listing_type='attorney'`
+- Signup with `?ref=` in session → `profiles.referral_code` populated (Supabase verify)
+- Signup with `?aref=` in session → `profiles.attorney_referral_code` populated
+- Drip step 1 fires on event assess email capture (Resend log or inbox verify)
+- All 24 event slugs return 200 (not 404) — automated or spot-check list
+- Event-specific assessment loads for at least 4 representative slugs across content files
+- Life-event-on-connect: advisor portal shows event context after accept
+
+> ⚠️ Define "referral loop proven" precisely before Sprint 14 begins:
+> Supabase query: `select * from referral_clicks where listing_type='advisor' limit 5;`
+> Pass = at least one row exists with a valid `advisor_directory_id` and correct `referral_code`.
+> Same query for `listing_type='attorney'`.
+
+**Automated**
+- `[ ]` `npm run test:e2e:consumer` green on CI
+- `[ ]` `npm run test:e2e:advisor` green on CI
+
+**Success criteria**
+- All migrations applied on staging and verified by spot-check (not assumed)
+- Extended smoke test doc written and reviewed before Sprint 14 begins
+- Both E2E suites green
+
+---
+
+### Sprint 14 — Full test execution — feature freeze (Weeks 51–54)
+
+**Goal:** All LAUNCH_CHECKLIST Section 1 validation gates pass. No new features.
+Fix failures only.
+
+**Rule: No new features, no new migrations in Sprint 14. If a fix requires a new migration,
+escalate — do not slip it into Sprint 14 without explicit sign-off.**
+
+**Acquisition & growth (LAUNCH_CHECKLIST)**
+- `[ ]` Advisor referral loop proven — Supabase query passes (definition from Sprint 13)
+- `[ ]` Attorney referral loop proven — Supabase query passes
+- `[ ]` Attorney referral production test — register test attorney, confirm `referral_code`
+  auto-generated by trigger, portal newsletter kit renders, `?aref=` click logs correctly
+- `[ ]` Drip steps 1–3 on production-like URL with Resend — inbox verify all 3 arrive on schedule
+- `[ ]` End-to-end acquisition path: new consumer signup → household setup → assessment →
+  email capture → drip step 1 → advisor connection → advisor portal view; all steps verified
+  on the production-like URL
+
+**Planning regression (CONSUMER_RELEASE_SMOKE_TEST)**
+- `[ ]` Core sections 1–3: pass
+- `[ ]` Estate planning sections 4–7: pass
+- `[ ]` Optional sections 8–11 (run as time permits; flag any failures)
+- `[ ]` New acquisition/attribution test rows from Sprint 13: pass
+- `[ ]` Sign-off form completed with tester name, date, environment, deploy/commit
+
+**Automated**
+- `[ ]` `npm run test:e2e:consumer` green
+- `[ ]` `npm run test:e2e:advisor` green
+
+**Fix loop**
+- Fix all Sprint 14 test failures; re-run affected smoke sections until pass
+- If a fix touches a planning engine: re-run Core + Estate planning sections
+- If a fix touches auth/signup: re-run acquisition path end-to-end
+
+**Success criteria = LAUNCH_CHECKLIST Section 1 fully checked**
+
+---
+
+### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58)
+
+**Goal:** Execute LAUNCH_CHECKLIST Section 2. This is an ops sprint — no product features,
+no code changes beyond environment variables and DNS.
+
+- `[ ]` `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel Production
+- `[ ]` Custom domain attached in Vercel; SSL active
+- `[ ]` DNS cutover (A/CNAME → Vercel)
+- `[ ]` Redeploy after `NEXT_PUBLIC_APP_URL` change (sitemap, drip links, referral URLs update)
+- `[ ]` Resend domain verify — SPF/DKIM for `mywealthmaps.com`; `from` address confirmed
+- `[ ]` `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` env var set; meta tag confirmed in `app/layout.tsx`
+- `[ ]` Search Console property added; ownership verified; sitemap submitted
+- `[ ]` Priority event URLs indexing requested: `/event/selling-a-business`,
+  `/event/death-of-spouse`, `/event/approaching-retirement`, `/event/estate-tax-law-change`,
+  `/event/serious-diagnosis`
+- `[ ]` Short production smoke (Core sections 1–3 only, ~10 min) after domain cutover
+- `[ ]` Completion log entry added to LAUNCH_CHECKLIST with date and verifier name
+
+**Success criteria**
+- `https://mywealthmaps.com` resolves to the app with SSL
+- `robots.txt` returns permissive rules at the live domain
+- Sitemap submitted in Search Console
+- Post-cutover smoke passes
+
+---
 
 ## Completed sprints
 
@@ -222,16 +432,27 @@
 
 ---
 
-## Backlog (not yet scheduled)
+## Backlog (not yet scheduled — confirmed post-launch)
 
-- Projections + Lifetime Snapshot consolidation into single page
-- Charitable Giving empty state — personalized suggestions from household data
-- Mobile nav audit and responsive improvements
-- Scenarios page discoverability — entry point from Projections summary cards
-- Life event pages — 24 live (Sprint 2 + Sprint 5); see `lib/events/content-sprint5.ts`
-- Business succession planning page (currently commented out of sidebar)
-- Digital Assets feature key addition to FEATURE_TIERS
-- Add `/education` to `proxy.ts` `PUBLIC_PATHS` if education should be reachable without proxy login redirect (page layout still auth-gates)
+The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
+(see DECISION_LOG.md) documenting the reasoning.
+
+- **ATG / horizon wiring (IRC §2001(b))** — `adjusted_taxable_gifts` intake not designed;
+  `calculate_estate_composition` ATG add-back removed Session 121. Post-launch design required.
+  (MASTER_ARCHITECTURE.md Open Backlog #3)
+- **Consumer Monte Carlo full parity** — inflation + simulation count accepted from advisor today;
+  full assumption field parity deferred (MASTER_ARCHITECTURE.md Open Backlog #2)
+- **`/api/businesses` + `/api/insurance` → `/api/consumer/*` rename** — canonical paths today;
+  namespace cleanup deferred (MASTER_ARCHITECTURE.md Open Backlog #1, #4)
+- **"Ask your advisor →" in-app action for connected advisors** — currently links to
+  `/find-advisor` for all users including those with a connected advisor; see DECISION_LOG
+- **Add `/education` to `proxy.ts` `PUBLIC_PATHS`** — only if education should be reachable
+  without proxy login redirect; page layout still auth-gates
+
+**Items requiring a Sprint 10 decision before they can be backlogged or scheduled:**
+- Business succession planning page (currently commented out — must ship or remove dead code)
+- Invite-your-advisor as primary onboarding step (PRODUCT_STRATEGY principle 4)
+- Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 
 ---
 

@@ -17,6 +17,11 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 ## When to update docs
 
+> **Sprint hygiene rule:** Add "Doc sync pass" as the final task in every sprint.
+> Checklists get skipped under deadline pressure; a sprint item does not.
+> At minimum, update: ROADMAP.md (sprint status), MASTER_ARCHITECTURE.md (Current vs Target),
+> NEXT_SESSION.md (handoff block), and DECISION_LOG.md (any new settled decisions).
+
 - Engine logic changes (`projection-complete`, `roth-analysis`, tax engines, strategy engines)
 - New API routes or route behavior changes
 - Database schema changes (new tables/columns/migrations/RPC signatures)
@@ -53,6 +58,22 @@ When you touch consumer UX or APIs, update in this order:
 5. **Write path or deploy smoke** → Playwright spec + [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
 Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
+
+## Pre-Sprint-14 gate checklist (run at end of Sprint 13)
+
+Before Sprint 14 begins, confirm all of the following are true:
+
+- [ ] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
+- [ ] Supabase verification queries for advisor and attorney referral loops documented in smoke test
+- [ ] Both A/B test decision criteria documented in DECISION_LOG with named owner
+- [ ] Business succession decision logged in DECISION_LOG; dead code resolved
+- [ ] Invite-your-advisor decision logged in DECISION_LOG
+- [ ] All Sprint 13 migrations applied to staging and verified
+- [ ] `npm run test:e2e:consumer` green on CI
+- [ ] `npm run test:e2e:advisor` green on CI
+- [ ] MASTER_ARCHITECTURE.md Current vs Target table reviewed and updated
+- [ ] Sprint 14 feature freeze rule communicated to all engineers: no new features,
+      no new migrations without explicit sign-off
 
 ## Verification pass
 

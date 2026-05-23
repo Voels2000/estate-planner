@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 2 complete; notification cron consolidated to Vercel)
+# Last updated: May 2026 (Sprint 9 partial — through Session 127+; see SCHEMA_CHANGELOG for session history)
 
 ---
 
@@ -52,6 +52,14 @@ Consumers and advisors share one **household** data model but operate in separat
 **Consumer CTAs that do not notify the linked advisor**
 
 - Transfer Strategies **About this strategy** card: **Ask your advisor about this →** → `/find-advisor` (public directory). No in-app message to the connected advisor.
+
+**Known advisor flywheel gaps (post-Sprint 9 / open backlog):**
+
+| Gap | Current behavior | Target behavior | Sprint |
+|-----|-----------------|-----------------|--------|
+| Life-event context on advisor connect | Lost at connection time | Visible in advisor portal Overview | Sprint 9 hard gate |
+| "Ask your advisor →" for connected users | Links to `/find-advisor` for all users | In-app action when advisor connected | Post-launch |
+| Invite-your-advisor onboarding | Footer link on `/my-advisor` only | Primary onboarding step (PRODUCT_STRATEGY principle 4) | Decision Sprint 10 |
 
 Sidebar portal link visibility: [CONSUMER_NAV_MAP.md → Sidebar portal links](./CONSUMER_NAV_MAP.md#sidebar-portal-links-consumer-layout).
 
@@ -713,7 +721,10 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 9):** Launch checklist, signup referral persistence, optional drip for 12 non-union slugs. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+**Current sprint (Sprint 9 / finish):** Launch checklist, signup referral persistence (shipped),
+drip all 24 slugs (shipped), life-event-on-connect (hard gate — not yet shipped), Digital Assets
+FEATURE_TIERS key (must not carry), SITE_URL audit. See [ROADMAP.md](./ROADMAP.md) for full
+Sprint 9–15 plan.
 
 ---
 
@@ -751,11 +762,38 @@ Two concepts must stay separate until product designs unified intake:
 
 ---
 
-## Open Backlog (High Priority)
+## Open Backlog
 
-1. Deferred cleanup: keep `/api/strategy-line-items` as canonical consumer path for now; revisit `/api/consumer/strategy-*` endpoint naming during a broader consumer API label cleanup.
-2. Expand consumer Monte Carlo engine parity with advisor assumption fields beyond inflation/simulation count.
-3. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake; wire §2001(b) ATG into estate composition and horizon `lifetimeGiftsUsed` (today only `calculate_gifting_summary.lifetime_exemption_used` / `gift_history` planning path affects horizons). See [Open design decisions](#open-design-decisions).
-4. Mirror `/api/businesses` and `/api/insurance` under `/api/consumer/*` or document permanent legacy status.
-5. Keep this file updated with **Current vs Target** deltas and the [Migration status](#migration-status-at-a-glance) table each session.
+### High priority — pre-launch decisions required (Sprint 10)
+
+These items need a Sprint 10 decision (ship minimal vs formally descope) before they can
+be scheduled or removed:
+
+- **Business succession planning page** — commented out of sidebar; business owner persona gap.
+  Path A: ship minimal. Path B: remove dead code + DECISION_LOG entry. (See DECISION_LOG.)
+- **Invite-your-advisor onboarding step** — PRODUCT_STRATEGY principle 4; currently footer only.
+  Path A: launch gate (Sprint 10). Path B: post-launch with logged decision. (See DECISION_LOG.)
+
+### High priority — confirmed post-launch
+
+1. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake;
+   wire §2001(b) ATG into estate composition and horizon `lifetimeGiftsUsed`. Session 121 removed
+   add-back from RPC. (See Open design decisions section.)
+2. **Consumer Monte Carlo full parity** — expand assumption fields beyond inflation/simulation count
+   to match full advisor assumption set.
+3. **`/api/strategy-line-items` → optional consumer namespace cleanup** — keep as canonical path
+   for now; revisit during a broader `/api/consumer/*` label cleanup.
+4. **Mirror `/api/businesses` and `/api/insurance`** under `/api/consumer/*` or document permanent
+   legacy status.
+5. **"Ask your advisor →" in-app action for connected users** — currently links to `/find-advisor`
+   for all users including those with a connected advisor. Post-launch: CTA should offer an in-app
+   flag or message when `advisor_clients` row exists in accepted status. (See DECISION_LOG.)
+
+### Confirmed post-launch (no Sprint assignment)
+
+- `/education` to `proxy.ts` `PUBLIC_PATHS` — only if education reachable without proxy redirect
+- Blended family as separate slug (optional; `remarriage-blended-family` covers today)
+- Admin funnel: attorney click breakdown by `listing_type` (can ship Sprint 10 if time permits)
+
+Keep this file updated with **Current vs Target** deltas and the [Migration status](#migration-status-at-a-glance) table each session.
 

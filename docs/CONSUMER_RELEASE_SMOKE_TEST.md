@@ -197,6 +197,93 @@ Open while logged out or in a private window unless noted:
 
 ---
 
+## Acquisition & attribution — Sprint 13+ (required before Sprint 14 test pass)
+
+Run these after Sprint 13 staging deploy. Requires a test advisor account and test attorney
+listing in Supabase with generated `referral_code`.
+
+### A. Advisor referral click logging
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| A.1 | Visit `/event/selling-a-business?ref={advisor_referral_code}` (use a real code from `advisor_directory`) | Page loads; no error | ☐ |
+| A.2 | In Supabase: `select * from referral_clicks where listing_type='advisor' order by created_at desc limit 1;` | Row exists with correct `referral_code` and non-null `advisor_directory_id` | ☐ |
+
+### B. Attorney referral click logging
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| B.1 | Visit `/event/selling-a-business?aref={attorney_referral_code}` (use a real code from `attorney_listings`) | Page loads; no error | ☐ |
+| B.2 | In Supabase: `select * from referral_clicks where listing_type='attorney' order by created_at desc limit 1;` | Row exists with correct `attorney_listing_id` | ☐ |
+
+### C. Signup attribution — advisor referral code
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| C.1 | In a private window: visit `/event/selling-a-business?ref={advisor_referral_code}` | Referral tracker fires; `mwm_referral_code` set in sessionStorage | ☐ |
+| C.2 | Create a new test account via `/signup` | Signup succeeds | ☐ |
+| C.3 | In Supabase: `select referral_code from profiles where id = {new_user_id};` | `referral_code` matches the advisor code used in C.1 | ☐ |
+| C.4 | In Supabase: check `funnel_events` for `account_created` event with `properties->>'advisor_referral_code'` set | Row exists | ☐ |
+
+### D. Signup attribution — attorney referral code
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| D.1 | In a private window: visit `/event/selling-a-business?aref={attorney_referral_code}` | `mwm_attorney_referral_code` set in sessionStorage | ☐ |
+| D.2 | Create a new test account | Signup succeeds | ☐ |
+| D.3 | In Supabase: `select attorney_referral_code from profiles where id = {new_user_id};` | `attorney_referral_code` matches the attorney code from D.1 | ☐ |
+
+### E. Drip step 1 delivery
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| E.1 | Submit event assess on `/event/selling-a-business/assess` with a fresh email address | Email capture succeeds; no error | ☐ |
+| E.2 | Check inbox (or Resend dashboard) within 2 minutes | Drip step 1 email received from `hello@mywealthmaps.com` | ☐ |
+| E.3 | In Supabase: `select drip_step_1_sent_at from email_captures where email = '{test_email}';` | `drip_step_1_sent_at` is not null | ☐ |
+
+### F. Life-event context on advisor connect
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| F.1 | As a test consumer: visit `/event/serious-diagnosis`, complete the event assess (log the event) | Event logged in `life_events` | ☐ |
+| F.2 | Connect to a test advisor via `/my-advisor` | Connection request sent | ☐ |
+| F.3 | As the test advisor: accept the connection in the advisor portal | Connection accepted | ☐ |
+| F.4 | As the test advisor: view the client Overview tab in `/advisor/clients/[clientId]` | Life event context (`serious-diagnosis`) visible in client overview | ☐ |
+
+### G. Event slug coverage (all 24)
+
+Spot-check at least 8 slugs across both content files. Full automated check preferred.
+
+| Slug | Status | Pass? |
+|------|--------|-------|
+| `/event/selling-a-business` | Original 8 | ☐ |
+| `/event/death-of-spouse` | Original 8 | ☐ |
+| `/event/serious-diagnosis` | Original 8 | ☐ |
+| `/event/receiving-inheritance` | Original 8 | ☐ |
+| `/event/divorce` | Original 8 | ☐ |
+| `/event/approaching-retirement` | Original 8 | ☐ |
+| `/event/large-rsu-vest` | Original 8 | ☐ |
+| `/event/new-child-grandchild` | Original 8 | ☐ |
+| (4 Sprint 5 slugs of your choice) | Sprint 5 | ☐ |
+| `/event/rmd-start-age` | Age trigger | ☐ |
+| `/event/medicare-eligibility` | Age trigger | ☐ |
+| `/event/social-security-timing` | Age trigger | ☐ |
+
+---
+
+## Acquisition & attribution sign-off
+
+| Field | Value |
+|-------|--------|
+| Tester name | |
+| Date | |
+| Environment | ☐ Staging ☐ Production-like |
+| Sections A–F | ☐ Pass ☐ Fail (note which steps failed) |
+| Section G slug coverage | of 24 slugs verified 200 |
+| Issues found | |
+
+---
+
 ## Quick regression (navigation only)
 
 Open each URL while logged in; expect a real page (not 404), main heading visible:
@@ -229,6 +316,8 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 | **Core** (sections 1–3) | ☐ Pass ☐ Fail |
 | **Estate planning** (sections 4–7) | ☐ Pass ☐ Fail ☐ Skipped (tier) |
 | **Optional** (8–11) | ☐ Pass ☐ Fail ☐ N/A |
+| **Acquisition & attribution** (sections A–G) | ☐ Pass ☐ Fail ☐ Skipped (pre-Sprint 13) |
+| Supabase referral queries | ☐ Advisor loop proven ☐ Attorney loop proven |
 | Issues found | |
 
 ---
@@ -248,3 +337,8 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 Engineers can run `npm run test:e2e:consumer` with `.env.test` (see `playwright.config.ts`). That covers login, dashboard UI, and a subset of consumer APIs — **not** a substitute for this manual pass on a real account.
 
 `consumer-strategy-writes.spec.ts` soft-deletes all Playwright-named `strategy_line_items` in `afterEach` on the fixture household (`PLAYWRIGHT_HOUSEHOLD_ID` / David Chen). The charitable composition case waits 2s after DAF POST then polls `POST /api/estate-composition` for up to 20s (`after > beforeTotal`) so async `afterHouseholdWrite` recompute can complete. If manual testing overlaps those scenario names (`Playwright *`, `daf`/`charitable` at `base`), re-run e2e or delete those rows before relying on estate composition totals.
+
+For acquisition & attribution tests, the Supabase queries in sections A–D of the
+"Acquisition & attribution" section above are the authoritative verification method.
+No Playwright spec covers the full `?ref=` → Supabase → `profiles` path end-to-end;
+manual verification is required for Sprint 14 sign-off.

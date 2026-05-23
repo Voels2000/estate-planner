@@ -32,6 +32,131 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ## Decision log
 
+### May 2026 — A/B test decision criteria must be defined before Sprint 11
+
+**Decision:** Both A/B tests (`ab_upgrade_copy`, `ab_assessment_gate`) require documented
+decision criteria — specific metric, specific threshold, named decision owner — before Sprint 11
+begins. Sprint 11 is the final measurement window. Sprint 12 implements the winner and removes
+the losing variant. Tests that reach Sprint 12 without defined criteria will default to keeping
+the variant with the higher `tier_upgraded` conversion rate in the `funnel_events` data.
+
+**Reasoning:** A/B tests without defined exit criteria become permanent features by default.
+Both of these tests control core conversion surfaces (assessment gate and upgrade copy). They
+must be resolved before launch — running split-test code in production is a complexity debt
+that grows each sprint.
+
+**Alternatives considered:** Keeping both variants at launch (rejected — adds ongoing complexity
+and makes conversion analysis harder post-launch). Picking winners by gut feel without data
+(rejected — these tests exist precisely to get data; the data should drive the call).
+
+**Owner:** Product lead must document criteria in a follow-up DECISION_LOG entry by end of Sprint 10.
+
+---
+
+### May 2026 — Business succession page: ship minimal or formally descope
+
+**Decision to make (Sprint 10):** Business succession (`/business-succession`) is commented
+out of the sidebar and has no implementation. The business owner ($3M–$15M) is one of the
+three primary personas in PRODUCT_STRATEGY, and succession planning is their defining need.
+One of two paths must be chosen in Sprint 10 and documented here:
+
+**Path A — Ship minimal:** Add a minimal business succession page (even a structured intake
+form + educational framing) to `/business-succession` and restore the sidebar link. Minimum
+viable: capture existence of succession plan (yes/no), key-person dependency, and buy-sell
+agreement status. Surfaces a conflict if no plan exists.
+
+**Path B — Formally descope to post-launch:** Document as post-launch in this DECISION_LOG,
+remove the commented-out sidebar code and the route reference from CONSUMER_NAV_MAP.md, and
+add a post-launch backlog item in ROADMAP.md.
+
+**What must not happen:** Leaving the commented-out route in the codebase without a decision.
+Dead code with no owner is a maintenance risk and a persona gap signal.
+
+---
+
+### May 2026 — Invite-your-advisor onboarding: launch gate or post-launch
+
+**Decision to make (Sprint 10):** PRODUCT_STRATEGY principle 4 states: "Invite your advisor
+should be a primary onboarding step, not buried in settings." Currently, the invite lives as
+a `mailto:` card on `/my-advisor` in the no-connection state. It is not surfaced during onboarding.
+
+**Path A — Launch gate:** Add invite-your-advisor as an explicit step in the post-signup
+onboarding flow (after profile setup, before dashboard). Sequesters the flywheel from day one.
+
+**Path B — Post-launch:** Keep the current `/my-advisor` placement. Accept the flywheel
+starts later in the user lifecycle. Document this explicitly in DECISION_LOG so PRODUCT_STRATEGY
+principle 4 is not cited as a gap in future reviews without context.
+
+**Reasoning for requiring a decision now:** This item has been deferred since Sprint 2 without
+a logged decision. Every sprint it appears as "deferred" without clarity on whether it's a launch
+requirement or a post-launch item. That ambiguity wastes planning bandwidth every sprint.
+
+---
+
+### May 2026 — "Ask your advisor →" links to public directory for all users
+
+**Decision (interim):** The "Ask your advisor about this →" CTA on Transfer Strategy education
+cards links to `/find-advisor` for all users, including users with a connected advisor. This
+means a connected advisor does not receive any signal when their client is reviewing a strategy
+they recommended.
+
+**This is a known gap in the advisor flywheel.** The full behavior should be: if the user
+has a connected advisor, this CTA offers an in-app action (message, flag, or notification).
+If no connected advisor, it links to `/find-advisor`.
+
+**Deferred to post-launch** because implementing advisor messaging or flagging is a new feature
+category (not a fix) and would land in Sprint 10 or later, which risks the launch timeline.
+
+**Post-launch:** Add an in-app advisor flag action on strategy education cards for users with
+`advisor_clients` rows in accepted status.
+
+---
+
+### May 2026 — "Referral loop proven" requires exact verification queries, not prose
+
+**Decision:** The LAUNCH_CHECKLIST items "Advisor referral loop proven" and "Attorney referral
+loop proven" must have exact Supabase verification queries documented before Sprint 14 begins.
+Prose criteria ("a click has resolved correctly") are not sufficient for a launch gate.
+
+**Advisor referral verified query (add to CONSUMER_RELEASE_SMOKE_TEST.md § Sprint 13):**
+
+```sql
+select rc.id, rc.referral_code, rc.listing_type, rc.advisor_directory_id, rc.created_at
+from referral_clicks rc
+where rc.listing_type = 'advisor'
+order by rc.created_at desc
+limit 5;
+```
+
+Pass = at least one row with a non-null `advisor_directory_id` and `referral_code` matching
+an active row in `advisor_directory`.
+
+**Attorney referral verified query:**
+
+```sql
+select rc.id, rc.referral_code, rc.listing_type, rc.attorney_listing_id, rc.created_at
+from referral_clicks rc
+where rc.listing_type = 'attorney'
+order by rc.created_at desc
+limit 5;
+```
+
+Pass = at least one row with non-null `attorney_listing_id`.
+
+**Signup attribution verified query:**
+
+```sql
+select p.id, p.referral_code, p.attorney_referral_code, p.created_at
+from profiles p
+where p.referral_code is not null or p.attorney_referral_code is not null
+order by p.created_at desc
+limit 5;
+```
+
+Pass = at least one row with referral code matching a test signup.
+
+---
+
 ### May 2026 — Event assessments separate from general assess; email capture before drip
 
 **Decision:** Each life event page has its own 5-question assessment at `/event/[slug]/assess` (not the generic 20-question `/assess`). Anonymous users can submit email via `POST /api/email-capture` to receive a checklist; logged-in users persist to `assessment_results` with event metadata in `answers` JSONB. Email drip sequences deferred until ESP is chosen.

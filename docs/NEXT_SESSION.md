@@ -6,11 +6,13 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–8 shipped: 24 event pages,
-> advisor + attorney referral (`?ref=` / `?aref=`), newsletter kits on both portals, admin funnel
-> with tier conversion, **24** custom drip sequences, attorney PDF, Resend drip, signup attribution.
-> Permissive `robots.ts` in repo — deploy + [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) for go-live.
-> **Current: Sprint 9** — launch ops, advisor connection polish.
+> My Wealth Maps — $2M–$30M estate/financial planning. Sprints 0–8 shipped. Sprint 9
+> partially shipped: signup attribution ✅, drip all 24 slugs ✅, permissive robots.ts ✅,
+> RMD cohorts ✅. Sprint 9 **hard gates still open:** life-event-on-connect (advisor portal),
+> Digital Assets FEATURE_TIERS key, SITE_URL audit.
+> Sprint plan through Sprint 15 go-live now in ROADMAP.md.
+> **Five decisions require Sprint 10 owner action** — see DECISION_LOG.md (A/B criteria,
+> business succession, invite-your-advisor, "Ask your advisor" CTA, referral loop queries).
 > Today's task: [FILL IN BELOW].
 
 ---
@@ -114,14 +116,30 @@ See [ROADMAP.md](./ROADMAP.md). Suggested order:
 
 ---
 
-## Sprint 9 backlog
+## Sprint 9 remaining hard gates (do not carry to Sprint 10)
 
-- [ ] Launch checklist (Search Console, domain, Resend, prod drip smoke test)
-- [x] Signup persistence for advisor + attorney referral session keys (Sprint 9)
-- [x] Drip sequences for all 24 event slugs (Sprint 9)
-- [ ] Life event context on new advisor connections
-- [ ] Segment-specific dashboard alerts
-- [ ] Admin funnel: attorney click breakdown (`referral_clicks.listing_type = 'attorney'`)
+- [ ] **Life-event context on advisor connect** — `app/api/advisor/accept-request/route.ts`;
+  pass `life_events` context at accept time; verify in advisor portal Overview
+- [ ] **Digital Assets `FEATURE_TIERS` key** — add to `lib/tiers.ts`; currently only `page.tsx` gate
+- [ ] **`NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` audit** — find all remaining legacy
+  references in email routes and replace
+
+## Sprint 10 pre-work (owner decisions needed before Sprint 10 begins)
+
+- [ ] **A/B decision criteria** — document metric + threshold + decision owner in DECISION_LOG
+  for both `ab_upgrade_copy` and `ab_assessment_gate`. Must be set before Sprint 11.
+- [ ] **Business succession** — choose Path A (ship minimal) or Path B (formal descope + remove
+  dead code). Add DECISION_LOG entry. Remove commented-out sidebar route either way.
+- [ ] **Invite-your-advisor** — choose launch gate or post-launch. Add DECISION_LOG entry.
+
+## Sprint 10 backlog (after decisions above)
+
+- [ ] Business $5M/$10M threshold alert (business owner persona)
+- [ ] Multi-state RE probate-risk alert (RE accumulator persona)
+- [ ] Confirm life-event-on-connect visible in advisor portal (if not shipped in Sprint 9)
+- [ ] Event-specific dashboard alerts beyond LifeEventBanner (Sprint 3 deferred)
+- [ ] Attorney portal readiness score (Sprint 4 deferred, optional)
+- [ ] Admin funnel attorney click breakdown (optional, if time permits)
 
 ---
 
