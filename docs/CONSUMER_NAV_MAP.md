@@ -38,11 +38,11 @@ Rendered at the **bottom** of the main `<nav>` scroll area (above the footer blo
 |------|----------------|--------|--------|
 | 💼 Advisor Portal | `role === 'advisor'` **or** `isSuperuser` | `/advisor` | Professional users switching hats; not shown to consumer-only accounts |
 | ⚖️ Attorney Portal | `role === 'attorney'` **or** `isAttorney` **or** `isSuperuser` | `/attorney` | Same pattern |
-| ⚙️ Admin Portal | `role === 'admin'` **or** `isAdmin` **or** `isSuperuser` | `/admin` | Tabs include **Funnel** (conversion by slug/referral) |
+| ⚙️ Admin Portal | `role !== 'consumer'` **and** (`role === 'admin'` **or** `isAdmin` **or** `isSuperuser`) | `/admin` | Tabs include **Funnel** (conversion by slug/referral) |
 
 Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
-Demo/admin test users may see **multiple** portal links if their profile has elevated roles — that is expected, not a consumer-only UX bug.
+**Consumers never see** Advisor, Attorney, or Admin portal links — including Playwright accounts that had `is_superuser` for tier unlocks (`scripts/seed-test-consumer-estate.ts` clears that flag).
 
 ---
 

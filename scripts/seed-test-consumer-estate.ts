@@ -32,7 +32,7 @@ async function seedConsumerEstateTier() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, email, consumer_tier, subscription_status')
+    .select('id, email, consumer_tier, subscription_status, is_superuser')
     .eq('email', playwrightEmail)
     .maybeSingle()
 
@@ -46,17 +46,23 @@ async function seedConsumerEstateTier() {
   console.log(`  email: ${profile.email}`)
   console.log(`  consumer_tier: ${profile.consumer_tier}`)
   console.log(`  subscription_status: ${profile.subscription_status}`)
+  console.log(`  is_superuser: ${profile.is_superuser}`)
 
-  if (profile.consumer_tier === 3) {
-    console.log('Already on estate tier — no change needed.')
+  const needsTier = profile.consumer_tier !== 3
+  const needsSuperuserClear = profile.is_superuser === true
+
+  if (!needsTier && !needsSuperuserClear) {
+    console.log('Already on estate tier with consumer-only flags — no change needed.')
     return
   }
 
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
-      consumer_tier: 3,
-      subscription_status: 'active',
+      ...(needsTier
+        ? { consumer_tier: 3, subscription_status: 'active' as const }
+        : {}),
+      ...(needsSuperuserClear ? { is_superuser: false } : {}),
     })
     .eq('id', profile.id)
 
@@ -65,7 +71,8 @@ async function seedConsumerEstateTier() {
     process.exit(1)
   }
 
-  console.log('Updated to estate tier (tier 3).')
+  if (needsTier) console.log('Updated to estate tier (tier 3).')
+  if (needsSuperuserClear) console.log('Cleared is_superuser so consumer smoke matches production UX.')
 }
 
 seedConsumerEstateTier().catch((err) => {

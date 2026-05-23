@@ -372,12 +372,12 @@ function AssetModal({ editAsset, assetTypes, person1Name, person2Name, liquidity
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
+      <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
           <h2 className="text-base font-semibold text-neutral-900">{editAsset ? 'Edit Asset' : 'Add Asset'}</h2>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Asset Type</label>

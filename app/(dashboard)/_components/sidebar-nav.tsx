@@ -113,6 +113,8 @@ export function SidebarNav({
   hasHousehold?: boolean
 }) {
   const isLockedUser = hasHousehold === false
+  /** Consumers never see professional portal links, even with is_superuser (smoke / dev accounts). */
+  const showProfessionalPortals = role !== 'consumer'
   const pathname = usePathname()
   const router = useRouter()
 
@@ -373,7 +375,7 @@ export function SidebarNav({
         })}
 
         {/* Advisor Portal */}
-        {(role === 'advisor' || isSuperuser) &&
+        {showProfessionalPortals && (role === 'advisor' || isSuperuser) &&
           (isLockedUser ? (
             <Link
               href="#"
@@ -400,7 +402,7 @@ export function SidebarNav({
           ))}
 
         {/* Attorney Portal */}
-        {(role === 'attorney' || isAttorney || isSuperuser) &&
+        {showProfessionalPortals && (role === 'attorney' || isAttorney || isSuperuser) &&
           (isLockedUser ? (
             <Link
               href="#"
@@ -427,7 +429,7 @@ export function SidebarNav({
           ))}
 
         {/* Admin Portal */}
-        {(role === 'admin' || isAdmin || isSuperuser) &&
+        {showProfessionalPortals && (role === 'admin' || isAdmin || isSuperuser) &&
           (isLockedUser ? (
             <Link
               href="#"
