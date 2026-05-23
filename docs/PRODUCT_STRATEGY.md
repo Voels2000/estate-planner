@@ -1,6 +1,6 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 13; advisor referral trigger; RMD event copy cohort range)
+# Last updated: May 2026 (Sprint 14 current; Sprint 13 closed)
 
 ---
 

@@ -60,23 +60,22 @@ When you touch consumer UX or APIs, update in this order:
 
 Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
-## Pre-Sprint-14 gate checklist (run at end of Sprint 13)
+## Pre-Sprint-14 gate checklist — Sprint 13 closed ✅
 
-Before Sprint 14 begins, confirm all of the following are true:
+- [x] Acquisition & attribution smoke A–G passed (staging)
+- [x] 67 migrations applied and verified
+- [x] E2E 51/0/1 on staging
+- [x] Test seed scripts committed and run
+- [x] Supabase verification queries documented in smoke test
+- [x] `INTERNAL_API_KEY` on Vercel Production
+- [x] Sprint 13 launch blockers fixed (RMD copy, advisor referral trigger)
 
-- [x] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
-- [x] Test seed scripts committed (`seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`)
-- [x] `rmd-start-age` event/drip copy aligned to 72/73/75 cohort range (DECISION_LOG)
-- [ ] Supabase verification queries for advisor and attorney referral loops documented in smoke test
-- [x] Both A/B test decision criteria documented in DECISION_LOG with named owner (Sprint 10)
-- [x] Business succession decision logged in DECISION_LOG; minimal page shipped (Sprint 10)
-- [x] Invite-your-advisor decision logged in DECISION_LOG; onboarding shipped (Sprint 10)
-- [ ] All Sprint 13 migrations applied to staging and verified
-- [ ] `npm run test:e2e:consumer` green on CI
-- [ ] `npm run test:e2e:advisor` green on CI
-- [ ] MASTER_ARCHITECTURE.md Current vs Target table reviewed and updated
-- [ ] Sprint 14 feature freeze rule communicated to all engineers: no new features,
-      no new migrations without explicit sign-off
+## Sprint 14 focus (current)
+
+- [ ] CONSUMER_RELEASE_SMOKE_TEST Core sections 1–3
+- [ ] Estate planning sections 4–7
+- [ ] LAUNCH_CHECKLIST Section 1 fully checked
+- [ ] No new features / no new migrations without sign-off
 
 ## Pre-Sprint-15 go-live env vars (ops — no code)
 

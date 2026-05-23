@@ -154,6 +154,17 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### May 2026 — Sprint 13 smoke test purpose: find launch blockers before feature freeze ends
+
+**Decision:** Sprint 13 success is measured by staging verification (migrations, E2E, acquisition smoke A–G),
+not by shipping new pillars. Two blockers were found and fixed during Sprint 13 manual smoke: (1) `rmd-start-age`
+event copy hardcoded age 73 despite `getRmdStartAge()` supporting 72/73/75; (2) `advisor_directory` lacked
+`referral_code` auto-generation on insert (migration `20260601000000`).
+
+**Sprint 14:** Feature freeze — planning smoke Core 1–7 on staging; fixes only from test failures.
+
+---
+
 ### May 2026 — `rmd-start-age` event copy uses cohort range, not a single age
 
 **Decision:** Public-facing copy for `/event/rmd-start-age` (hero, subhead, assessment, action plan,

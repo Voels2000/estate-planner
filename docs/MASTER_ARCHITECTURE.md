@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 13; advisor referral trigger; rmd-start-age copy; see SCHEMA_CHANGELOG)
+# Last updated: May 2026 (Sprint 14 current; Sprint 13 closed; see SCHEMA_CHANGELOG)
 
 ---
 
@@ -767,8 +767,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 13):** Staging migrations (incl. advisor referral trigger), smoke test doc (A–G),
-three test seed scripts, `rmd-start-age` copy aligned to cohorts; Sprint 14 = execute smoke + referral/drip proof.
+**Current sprint (Sprint 14):** Feature freeze — manual planning smoke (Core 1–3, estate 4–7) on staging;
+fixes only. Sprint 13 closed: 67 migrations, E2E 51/0/1, acquisition A–G passed, advisor trigger + RMD copy blockers fixed.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 

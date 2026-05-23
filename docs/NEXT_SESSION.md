@@ -1,97 +1,76 @@
 # NEXT_SESSION.md
-# Sprint 13 — Session Start Document
+# Sprint 14 — Session Start Document
 # Updated: May 2026
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — $2M–$30M estate/financial planning. **Sprint 12 closed. Sprint 13 is current.**
-> Sprint 12 shipped: A/B collapse, persona alerts, mobile drawer, full copy audit.
-> Next: apply `20260601000000` on staging/prod; Sprint 14 smoke (referral/drip); seed scripts on staging.
-> Apply migrations on staging/prod per LAUNCH_CHECKLIST if not already applied.
-> Today's task: [FILL IN BELOW].
+> My Wealth Maps — **Sprint 14 beginning.** Sprint 13 fully closed: 67 migrations applied, E2E 51/0/1, all seed scripts committed, acquisition & attribution smoke A–G passed, `INTERNAL_API_KEY` added to Vercel, RMD copy fixed, advisor referral trigger added. **Two real launch blockers caught and fixed in Sprint 13 smoke test.**
+>
+> **Sprint 14 is feature freeze — fixes only from test failures.**
+>
+> **Today's task:** Manual planning app smoke test — **Core sections 1–3** using `david@rolobe.resend.app` on https://estate-planner-gules.vercel.app. Then **estate planning sections 4–7**. Reference: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md).
 
 ---
 
-## Current sprint — Sprint 13 (Weeks 47–50)
+## Current sprint — Sprint 14 (Weeks 51–54)
 
-**Goal:** Stable staging, all migrations verified, smoke test extended. Feature freeze.
+**Goal:** All LAUNCH_CHECKLIST Section 1 gates pass. No new features. Fix failures only.
 
-**Next:**
-- `[ ]` Staging deploy with all migrations verified
-- `[x]` Extend CONSUMER_RELEASE_SMOKE_TEST.md (acquisition & attribution A–G)
-- `[x]` Test seed scripts — attorney, advisor, consumer (`seed-test-*.ts`)
-- `[x]` Advisor `referral_code` trigger migration in repo (`20260601000000`)
-- `[x]` `rmd-start-age` event + drip copy — 72/73/75 range (not hardcoded 73)
-- `[ ]` Run all seed scripts on staging; confirm referral codes match NEXT_SESSION below
-- `[ ]` Apply `20260601000000_advisor_directory_referral_code_trigger.sql` on staging/prod
-- `[ ]` Referral loop proven (advisor + attorney) on production
-- `[ ]` Drip smoke test on production
-- `[ ]` Sprint 15: verify all Production env vars in LAUNCH_CHECKLIST before domain cutover
+**Rule:** No new features, no new migrations without explicit sign-off.
 
-See [ROADMAP.md](./ROADMAP.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+**Next (in order):**
+- `[ ]` **Core sections 1–3** — login, financial save + recompute, planning surfaces (`david@rolobe.resend.app`, staging URL)
+- `[ ]` **Estate planning sections 4–7**
+- `[ ]` Optional sections 8–11 (time permitting)
+- `[ ]` Drip steps 2–3 on schedule; full end-to-end acquisition path if not already signed off
+- `[ ]` LAUNCH_CHECKLIST Section 1 fully checked; sign-off form in smoke test doc
 
----
+See [ROADMAP.md](./ROADMAP.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
-## Sprint 13 shipped (recent) ✅
-
-| Area | What shipped |
-|------|----------------|
-| **Seeds** | `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate` |
-| **Referral** | `advisor_directory_referral_code_trigger` migration |
-| **Copy** | `rmd-start-age` hero, assess, drip, newsletter labels → birth-year cohort range |
+**Environment:** https://estate-planner-gules.vercel.app
 
 ---
 
-## Sprint 12 completed ✅
+## Sprint 13 closed ✅
 
-| Area | What shipped |
-|------|----------------|
-| **A/B** | Personalized upgrade copy; score_visible assess; removed `abTests.ts` + `app_config` A/B rows |
-| **Persona** | Dashboard business $5M/$10M + multi-state RE alerts |
-| **Mobile** | Consumer dashboard drawer nav (`<lg`) |
-| **Copy** | DisclaimerBanner; upgrade gates; public event/assess; directories; domicile; scenarios `Scope:`; landing + share |
+| Area | Outcome |
+|------|---------|
+| **Migrations** | 67 applied (local + remote in sync, incl. `20260601000000` advisor referral trigger) |
+| **E2E** | 51 passed, 0 failed, 1 skipped (staging) |
+| **Seeds** | `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate` committed + run |
+| **Smoke** | Acquisition & attribution sections **A–G passed** on staging |
+| **Vercel** | `INTERNAL_API_KEY` confirmed on Production |
+| **Blockers fixed** | (1) `rmd-start-age` hardcoded age 73 → birth-year range 72–75; (2) missing `advisor_directory` `referral_code` trigger |
 
 ---
 
-## Sprint 14 test account references
-
-All accounts exist on staging (https://estate-planner-gules.vercel.app) and production Supabase.
-Seed scripts are idempotent — re-run if accounts are missing on a new environment.
+## Test account references
 
 | Role | Email | Notes |
 |------|-------|-------|
-| Consumer (Playwright) | `david@rolobe.resend.app` | Estate tier (3), active subscription, `PLAYWRIGHT_HOUSEHOLD_ID` in `.env.test` |
-| Advisor (Playwright) | `advisor2@rolobe.resend.app` | Seeded via `scripts/seed-michael-johnson-advisor-demo.ts` |
-| Advisor (test listing) | `test-advisor@mywealthmaps.test` | Seeded via `scripts/seed-test-advisor.ts` |
-| Attorney (test listing) | `test-attorney@mywealthmaps.test` | Seeded via `scripts/seed-test-attorney.ts` |
+| **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription |
+| **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
+| **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | `aref`: **6fd027d3** |
+| **Advisor (test listing)** | `test-advisor@mywealthmaps.test` | `ref`: **c91dcd1b** |
 
-### Advisor referral (smoke test sections A and C)
+### Advisor referral (smoke sections A and C)
 
 - `referral_code`: `c91dcd1b`
-- Smoke test URL: `/event/selling-a-business?ref=c91dcd1b`
-- Re-run `seed-test-advisor.ts` to confirm code if needed — script is idempotent
+- URL: `/event/selling-a-business?ref=c91dcd1b`
 
-### Attorney referral (smoke test sections B and D)
+### Attorney referral (smoke sections B and D)
 
 - `referral_code`: `6fd027d3`
-- Smoke test URL: `/event/selling-a-business?aref=6fd027d3`
-- Re-run `seed-test-attorney.ts` to confirm code if needed — script is idempotent
+- URL: `/event/selling-a-business?aref=6fd027d3`
 
-### Seed script usage
+### Seed scripts (idempotent)
 
 ```bash
-# Load both env files first
 set -a && source .env.local && source .env.test && set +a
-
-# Advisor listing (idempotent)
 npx tsx scripts/seed-test-advisor.ts
-
-# Attorney listing (idempotent)
 npx tsx scripts/seed-test-attorney.ts
-
-# Consumer tier (idempotent)
 npx tsx scripts/seed-test-consumer-estate.ts
 ```
 
@@ -101,13 +80,11 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Anonymous cross-device attribution
 
-`referral_clicks` has **no `user_id`** — clicks are logged anonymously at event-page visit (`POST /api/referral/track`). Per-user attribution at signup uses `funnel_events.event_slug` (`account_created` / `event_page_view`) and `profiles.referral_code` written from sessionStorage.
+`referral_clicks` has **no `user_id`** — clicks are logged anonymously at event-page visit (`POST /api/referral/track`). Per-user attribution at signup uses `funnel_events` and `profiles.referral_code` / `attorney_referral_code` from sessionStorage.
 
-**Edge case:** A user who visits `/event/selling-a-business?ref=` on device A, then signs up on device B without the same sessionStorage, may have `profiles.referral_code` but no matching funnel row with `event_slug`. `pickConnectionLifeEvent()` then falls back to the latest `referral_clicks.event_slug` for that code (weak signal — may not be that user's click). **Not a launch blocker;** document if product later needs cross-device event slug persistence (e.g. `profiles.referral_event_slug` at signup).
+**Edge case:** Visit with `?ref=` on device A, signup on device B without sessionStorage — weak funnel match. Not a launch blocker.
 
 ### Advisor connection status — canonical import
-
-Any code that checks whether an advisor–consumer link is **live** must use:
 
 ```ts
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
@@ -117,20 +94,16 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 ### Planning empty-state CTAs (do not regress)
 
-- **`/projections`, `/complete`:** `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` only — rows come from `computeCompleteProjection` on server render.
-- **`/my-estate-strategy` (tier 3):** inline `POST /api/consumer/generate-base-case` for `projection_scenarios` / horizons.
-- Do **not** merge TIER2 and TIER3 lists — see comment block in `lib/planning/planningEmptyState.ts`.
+- **`/projections`, `/complete`:** `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` only
+- **`/my-estate-strategy` (tier 3):** `POST /api/consumer/generate-base-case`
+- Do **not** merge TIER2 and TIER3 lists — `lib/planning/planningEmptyState.ts`
 
 ---
 
-## Files for Sprint 13
+## Key files for Sprint 14
 
 | Path | Notes |
 |------|--------|
-| `scripts/seed-test-attorney.ts` | Test attorney + `referral_code` |
-| `scripts/seed-test-advisor.ts` | Test advisor + `referral_code` |
-| `scripts/seed-test-consumer-estate.ts` | Playwright consumer → tier 3 |
-| `supabase/migrations/20260601000000_advisor_directory_referral_code_trigger.sql` | Apply before prod advisor inserts |
-| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Acquisition & attribution A–G |
-| `docs/LAUNCH_CHECKLIST.md` | Section 1 gates; § Production env vars (Sprint 15) |
-| `supabase/migrations/` | Verify applied on staging/prod |
+| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Core 1–3, estate 4–7; acquisition A–G ✅ staging |
+| `docs/LAUNCH_CHECKLIST.md` | Section 1 gates |
+| `lib/calculations/rmdStartAge.ts` | Engine truth for RMD cohorts (72/73/75) |

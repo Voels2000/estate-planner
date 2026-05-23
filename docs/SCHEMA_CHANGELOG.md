@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 13 closed — staging verified (May 2026)
+
+- **Migrations:** 67 applied (local + remote in sync).
+- **E2E:** 51 passed, 0 failed, 1 skipped on staging URL.
+- **Smoke:** CONSUMER_RELEASE_SMOKE_TEST acquisition & attribution A–G passed.
+- **Blockers fixed:** `rmd-start-age` public copy (72–75 range); `20260601000000` advisor `referral_code` trigger.
+- **Ops:** `INTERNAL_API_KEY` on Vercel Production; test seed scripts committed.
+
 ## Advisor directory referral_code trigger (June 2026)
 
 - **Migration:** `20260601000000_advisor_directory_referral_code_trigger.sql`

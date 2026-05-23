@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 13 current; advisor referral trigger + RMD event copy)
+# Last updated: May 2026 (Sprint 14 current; Sprint 13 closed)
 
 ---
 
@@ -29,8 +29,8 @@ These must be complete before launch. Update status as sprints close them.
 ### Distribution & attribution
 
 - [x] **Signup referral attribution** — `mwm_referral_code` and `mwm_attorney_referral_code` persisted from sessionStorage to `profiles` + `funnel_events` on account creation (`app/(auth)/signup/_signup-form.tsx`; migration `20260529000000_profiles_referral_attribution.sql`)
-- [ ] **Advisor referral loop proven** — at least one advisor has shared links and a click has resolved correctly in `referral_clicks` (manual verification in Supabase)
-- [ ] **Attorney referral loop proven** — at least one attorney row exists in `attorney_listings` with a `referral_code`; `?aref=` click resolves correctly in `referral_clicks`
+- [x] **Advisor referral loop proven (staging)** — sections A/C passed Sprint 13; `?ref=` → `referral_clicks` verified
+- [x] **Attorney referral loop proven (staging)** — sections B/D passed Sprint 13; test listing + `?aref=` verified
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
 
 ### Email drip
@@ -114,7 +114,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
 - [ ] `RECOMPUTE_SECRET` → matches local secret; recompute smoke passes after deploy
 - [ ] `RESEND_API_KEY` → confirm set
-- [ ] `INTERNAL_API_KEY` → confirm set
+- [x] `INTERNAL_API_KEY` → confirmed set on Vercel Production (Sprint 13)
 - [ ] `CRON_SECRET` → confirm set
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirm set
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` → confirm set
@@ -156,16 +156,11 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Supabase prod migrations (confirm applied)
 
-- [ ] `20260521000000_create_life_events.sql`
-- [ ] `20260522000000_advisor_referrals.sql`
-- [ ] `20260523000000_funnel_events.sql`
-- [x] `20260523000001_app_config_ab_tests.sql` (superseded: `20260531000000_remove_ab_test_app_config.sql` removes A/B rows)
-- [ ] `20260524000000_email_captures_drip.sql`
-- [ ] `20260528000000_attorney_referrals.sql` (Sprint 8 — ✅ confirmed applied)
-- [ ] `20260529000000_profiles_referral_attribution.sql` (Sprint 9)
-- [ ] **`20260530000000_sprint9_10_gates.sql`** (Sprint 9/10 — **required** for invite-advisor gate, succession intake, connection life-event columns)
-- [ ] **`20260601000000_advisor_directory_referral_code_trigger.sql`** — `advisor_directory_referral_code_trigger` on insert
-- [ ] Attorney referral code trigger confirmed: `attorney_listings_referral_code_trigger` (✅ confirmed Sprint 8; backfill via `seed-test-attorney.ts` if absent)
+**Sprint 13:** 67 migrations applied — local and remote in sync (incl. `20260601000000`). Re-verify before prod cutover if new migrations land in Sprint 14.
+
+- [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
+- [ ] Final prod spot-check before Sprint 15 go-live (no new migrations in Sprint 14 without sign-off)
+- [ ] Attorney referral code trigger: `attorney_listings_referral_code_trigger` (Sprint 8; backfill via `seed-test-attorney.ts` if absent)
 
 ---
 
@@ -207,5 +202,6 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 9 | Drip — all 24 event slugs; RMD cohorts; life-event-on-connect; Digital Assets tier 2; getAppUrl audit |
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
-| May 2026 | Sprint 13 | Test seed scripts; acquisition smoke A–G; prod env matrix; advisor referral trigger; `rmd-start-age` copy |
+| May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
+| May 2026 | Sprint 14 | **Current** — planning smoke Core 1–7; feature freeze |
 | — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |

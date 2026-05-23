@@ -217,11 +217,12 @@ Open while logged out or in a private window unless noted:
 
 ---
 
-## Acquisition & attribution — Sprint 13+ (required before Sprint 14 test pass)
+## Acquisition & attribution — Sprint 13+ ✅ passed staging (May 2026)
 
-Run these after Sprint 13 staging deploy. Requires a test advisor account (real
-`advisor_directory.referral_code`) and test attorney from `scripts/seed-test-attorney.ts`
-(see **Test data setup** above).
+**Status:** Sections **A–G passed** on https://estate-planner-gules.vercel.app (Sprint 13).
+Sprint 14 continues with **Core 1–3** and **estate 4–7** below.
+
+Requires test listings from `seed-test-advisor.ts` / `seed-test-attorney.ts` (see **Test data setup**).
 
 ### A. Advisor referral click logging
 
