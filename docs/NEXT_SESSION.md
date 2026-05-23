@@ -21,7 +21,9 @@
 **Rule:** No new features, no new migrations without explicit sign-off.
 
 **Next (in order):**
-- `[ ]` **Core sections 1–3** — login, financial save + recompute, planning surfaces (`david@rolobe.resend.app`, staging URL)
+- `[x]` **Smoke §2.4 (financial save + recompute)** — automated: `consumer-core-recompute.spec.ts` (staging ~15.5s, May 2026)
+- `[ ]` **Core §1 + §3** — login/dashboard, profile save (manual or extend E2E)
+- `[ ]` **Core §2.1–2.3** — assets UI save (API covered by financial-writes + core-recompute)
 - `[ ]` **Estate planning sections 4–7**
 - `[ ]` Optional sections 8–11 (time permitting)
 - `[ ]` Drip steps 2–3 on schedule; full end-to-end acquisition path if not already signed off
@@ -30,6 +32,28 @@
 See [ROADMAP.md](./ROADMAP.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 **Environment:** https://estate-planner-gules.vercel.app
+
+### Staging recompute — verified ✅ (May 2026)
+
+`consumer-core-recompute` and gift-history recompute tests **passing** on staging (~15.5s / ~9.7s). Direct `POST /api/recompute-estate-health` returns 200. **§2.4 is automated** — re-run after deploy:
+
+```bash
+npx playwright test tests/e2e/consumer/consumer-core-recompute.spec.ts --project=consumer
+```
+
+If both recompute tests **timeout** after a deploy, staging recompute is broken again — manual §2.4 would be a **false green** (asset saves, stale scores).
+
+**Check Vercel → staging deployment → Logs** after a test save. Search for:
+
+| Log | Meaning |
+|-----|---------|
+| `[triggerEstateHealthRecompute] skipped — missing production env` | `RECOMPUTE_SECRET` and/or `NEXT_PUBLIC_APP_URL` not set on that deployment |
+| `[triggerEstateHealthRecompute] non-ok response` status **403** | Secret mismatch between save handler and `/api/recompute-estate-health` |
+| `[triggerEstateHealthRecompute] fetch failed` | Bad `NEXT_PUBLIC_APP_URL`, cold start, or network from serverless to self |
+
+Saves return **200** either way — `afterHouseholdWrite` is fire-and-forget (`lib/estate/triggerEstateHealthRecompute.ts`).
+
+**Fix:** Align `RECOMPUTE_SECRET` with `.env.local`, confirm `NEXT_PUBLIC_APP_URL` is the staging URL, redeploy, re-run `npx playwright test tests/e2e/consumer/consumer-core-recompute.spec.ts --project=consumer`.
 
 ---
 
@@ -104,6 +128,8 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 | Path | Notes |
 |------|--------|
+| `tests/e2e/consumer/consumer-core-recompute.spec.ts` | Smoke §2.4 — asset POST → `computed_at` poll → dashboard |
+| `tests/e2e/helpers/estate-health-poll.ts` | Shared `fetchEstateHealthComputedAt` / `pollComputedAtChanged` |
+| `docs/E2E_RELEASE_TEST_PLAN.md` | Automate vs manual map |
 | `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Core 1–3, estate 4–7; acquisition A–G ✅ staging |
 | `docs/LAUNCH_CHECKLIST.md` | Section 1 gates |
-| `lib/calculations/rmdStartAge.ts` | Engine truth for RMD cohorts (72/73/75) |

@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 14 — consumer-core-recompute E2E (May 2026)
+
+**No schema change.**
+
+- **Tests:** `tests/e2e/consumer/consumer-core-recompute.spec.ts` — smoke §2.4 (asset POST → `computed_at` poll 15s → dashboard).
+- **Helper:** `tests/e2e/helpers/estate-health-poll.ts` — shared poll; `consumer-gift-history` imports (25s / 1.5s unchanged).
+- **Docs:** `E2E_RELEASE_TEST_PLAN.md`; staging verified (~15.5s core-recompute, ~9.7s gift recompute).
+
 ## Sprint 13 closed — staging verified (May 2026)
 
 - **Migrations:** 67 applied (local + remote in sync).

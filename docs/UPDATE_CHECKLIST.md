@@ -14,6 +14,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Consumer journeys and routes |
 | [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
+| [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
+| [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 
 ## When to update docs
 
@@ -72,7 +74,8 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 ## Sprint 14 focus (current)
 
-- [ ] CONSUMER_RELEASE_SMOKE_TEST Core sections 1–3
+- [x] `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (smoke §2.4 automated; staging pass)
+- [ ] CONSUMER_RELEASE_SMOKE_TEST Core §1 + §3 (§2.4 via E2E)
 - [ ] Estate planning sections 4–7
 - [ ] LAUNCH_CHECKLIST Section 1 fully checked
 - [ ] No new features / no new migrations without sign-off

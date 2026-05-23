@@ -393,7 +393,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 7. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
 8. Optional: accept or decline one advisor recommendation on the dashboard.
 
-**Automated smoke (CI / local):** `npm run test:e2e:consumer` (50 tests). Requires `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID` (strategy + gift-history + recompute cases), and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for gift-history recompute polling.
+**Automated smoke (CI / local):** `npm run test:e2e:consumer` (52+ tests). Requires `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID` (strategy, gift-history, `consumer-core-recompute`), and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for `estate-health-poll.ts`. **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4 (asset POST → `computed_at` poll → dashboard).
 
 **Advisor automated smoke:** `npm run test:e2e:advisor` (44 tests). Requires `PLAYWRIGHT_ADVISOR_EMAIL` / `PLAYWRIGHT_ADVISOR_PASSWORD` (canonical: `advisor2@rolobe.resend.app`). Session 126 preset API/UI tests (`advisor-presets.spec.ts`) require deploy of `/api/advisor/presets` routes; 7 preset cases 404 until then (37/44 pass pre-deploy). Michael Johnson UI paths: `SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app npx tsx scripts/seed-michael-johnson-advisor-demo.ts`; strategy API household link: `scripts/seed-advisor2-playwright-fixture.ts`.
 
@@ -767,8 +767,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 14):** Feature freeze — manual planning smoke (Core 1–3, estate 4–7) on staging;
-fixes only. Sprint 13 closed: 67 migrations, E2E 51/0/1, acquisition A–G passed, advisor trigger + RMD copy blockers fixed.
+**Current sprint (Sprint 14):** Feature freeze — planning smoke (estate 4–7 manual; Core §2.4 automated via `consumer-core-recompute`).
+Sprint 13 closed: 67 migrations, acquisition A–G, advisor trigger + RMD copy blockers fixed.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 

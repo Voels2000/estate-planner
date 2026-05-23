@@ -59,6 +59,8 @@ For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./
 
 ### 2. Financial save (consumer API + recompute)
 
+> **Automated (§2.4):** `tests/e2e/consumer/consumer-core-recompute.spec.ts` — POST asset, poll `estate_health_scores.computed_at` (15s), dashboard net worth/readiness. Run on each staging deploy; manual steps 2.1–2.3 optional spot-check.
+
 Pick **one** module you already use (Assets is simplest).
 
 | Step | Action | Expected | Pass? |
@@ -66,7 +68,7 @@ Pick **one** module you already use (Assets is simplest).
 | 2.1 | Go to **Assets** (`/assets`) | Page loads, list or empty state | ☐ |
 | 2.2 | **Add** a small test asset (e.g. “Smoke Test CD”, $10,000) or **edit** an existing value | Save succeeds, no red error banner | ☐ |
 | 2.3 | Row appears / updates in the table without a full page error | ☐ |
-| 2.4 | Return to **Dashboard**, hard refresh (⌘⇧R / Ctrl+Shift+R) | Net worth and/or readiness score reflect the change (or action items update) | ☐ |
+| 2.4 | Return to **Dashboard**, hard refresh (⌘⇧R / Ctrl+Shift+R) | Net worth and/or readiness score reflect the change (or action items update) | ☐ manual · ✅ E2E |
 
 **Optional repeat:** Edit one row on **Income** or **Expenses** — same expectations.
 

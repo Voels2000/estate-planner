@@ -441,6 +441,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | Spec | Covers |
 |------|--------|
 | `tests/e2e/consumer/dashboard.spec.ts` | Dashboard load, net worth, disclaimer |
+| `tests/e2e/consumer/consumer-core-recompute.spec.ts` | Asset POST → `computed_at` poll → dashboard net worth/readiness (smoke §2) |
 | `tests/e2e/consumer/consumer-financial-writes.spec.ts` | Consumer CRUD: assets, income, expenses, RE, liabilities |
 | `tests/e2e/consumer/consumer-api-writes.spec.ts` | Additional API smoke |
 | `tests/e2e/consumer/consumer-strategy-writes.spec.ts` | Strategy line items, charitable, recommendations |
@@ -450,7 +451,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 
 Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment.
 
-**Automated vs manual:** E2E specs are living contracts for APIs and key UI loads. Post-deploy human checks (login, save, recompute, gated profile redirect) live in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — do not skip for production releases.
+**Automated vs manual:** E2E specs are living contracts for APIs and key UI loads. **Smoke §2.4 (recompute)** is automated in `consumer-core-recompute.spec.ts` (see [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md)). Remaining human checks live in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — do not skip for production releases.
 
 ---
 

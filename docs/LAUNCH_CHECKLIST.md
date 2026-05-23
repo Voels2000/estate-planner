@@ -164,32 +164,19 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ---
 
-## Pre-launch state (current — Sprint 13)
+## Pre-launch state (current — Sprint 14)
 
 | Area | Status | Blocks launch? |
 |------|--------|----------------|
-| Crawlers | `app/robots.ts` permissive rules in repo; verify on prod domain after deploy | Section 2 only |
-| Email drip | All 24 slugs have custom sequences in code; prod smoke test still required | Yes — Sprint 14 |
-| Sitemap | `app/sitemap.ts` ready; sitemap line in `robots.ts` | Section 2 only |
-| Search Console | Not set up — Sprint 15 only | Section 2 only |
-| Public URL | `NEXT_PUBLIC_APP_URL` still on Vercel preview URL | Section 2 only |
-| Email drip `from` | `hello@mywealthmaps.com` — domain must be verified in Resend at launch | Section 2 only |
-| Attorney referral | Migration applied ✅; trigger live ✅; no attorney rows in prod yet | Yes — Sprint 14 |
-| Advisor referral | Code live; loop unproven in production | Yes — Sprint 14 |
-| Life-event-on-connect | Shipped (Sprint 9/10) | Verify in Sprint 14 smoke |
-| Digital Assets tier | Shipped — tier 2 + `FEATURE_TIERS` | — |
-| App URLs in email | Shipped — `getAppUrl()` | — |
-| Business succession | Shipped — minimal intake (Sprint 10) | — |
-| Invite-your-advisor | Shipped — onboarding step (Sprint 10) | Apply migration on prod |
-| A/B test decision criteria | Defined in DECISION_LOG (Sprint 10) | Sprint 12 implements winners |
-| Persona alerts (business + RE) | Shipped Sprint 12 | `lib/dashboard/personaAlerts.ts` |
-| Projections / scenarios / charitable | Sprint 11 scope | Yes — before launch |
-| Extended smoke test (referral/drip/attribution rows) | Written (sections A–G); Sprint 14 execution | Yes — Sprint 14 pass |
-| Test account seed scripts | Shipped (attorney, advisor, consumer) | Run on staging before Sprint 14 |
-| Advisor `referral_code` on insert | Migration `20260601000000` in repo | Apply on staging/prod |
-| `rmd-start-age` public copy | Aligned to 72/73/75 cohort range | Spot-check `/event/rmd-start-age` in Sprint 14 |
-| Production env var matrix | Documented § Section 2 | Sprint 15 — verify in Vercel dashboard |
-| RMD start age by birth year | Shipped (`getRmdStartAge` 72/73/75) | Verify in Sprint 14 smoke |
+| Migrations | 67 applied (Sprint 13) | Re-check if Sprint 14 adds any |
+| Acquisition smoke A–G | **Passed** staging | — |
+| Smoke §2.4 (recompute) | **Automated** — `consumer-core-recompute.spec.ts` | Run on deploy |
+| Planning smoke Core §1 + §3 | Manual / extend E2E | Sprint 14 |
+| Planning smoke estate 4–7 | Not started | Yes |
+| E2E consumer (staging) | 52+ tests incl. core-recompute | Re-run after fixes |
+| `INTERNAL_API_KEY` | Vercel Production ✅ | — |
+| Public URL / Search Console | Preview URL; Sprint 15 cutover | Section 2 |
+| Production env var matrix | Documented § Section 2 | Sprint 15 |
 
 ---
 
@@ -203,5 +190,5 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
-| May 2026 | Sprint 14 | **Current** — planning smoke Core 1–7; feature freeze |
+| May 2026 | Sprint 14 | **Current** — `consumer-core-recompute` (§2.4); planning smoke Core 1–7; feature freeze |
 | — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |

@@ -1,4 +1,5 @@
-import { test, expect, type APIRequestContext } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { fetchEstateHealthComputedAt, pollComputedAtChanged } from '../helpers/estate-health-poll'
 
 const GIFT_API = '/api/consumer/gift-history'
 const TAX_YEAR = new Date().getFullYear()
@@ -16,62 +17,6 @@ function baseAnnualPayload(recipientName: string, amount = 1000) {
     gift_type: 'annual' as const,
     donor_person: 'person1' as const,
   }
-}
-
-function parseAccessTokenFromStorage(cookies: { name: string; value: string }[]): string | null {
-  const authCookie = cookies.find((c) => c.name.includes('auth-token'))
-  if (!authCookie?.value) return null
-  try {
-    const raw = authCookie.value.replace(/^base64-/, '')
-    const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as {
-      access_token?: string
-    }
-    return parsed.access_token ?? null
-  } catch {
-    return null
-  }
-}
-
-async function fetchEstateHealthComputedAt(
-  request: APIRequestContext,
-  householdId: string,
-): Promise<string | null> {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://fnzvlmrqwcqwiqueevux.supabase.co'
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!anonKey) return null
-
-  const storage = await request.storageState()
-  const accessToken = parseAccessTokenFromStorage(storage.cookies)
-  if (!accessToken) return null
-
-  const res = await request.get(
-    `${supabaseUrl}/rest/v1/estate_health_scores?household_id=eq.${householdId}&select=computed_at&limit=1`,
-    {
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  )
-  if (!res.ok()) return null
-  const rows = (await res.json()) as { computed_at?: string }[]
-  return rows[0]?.computed_at ?? null
-}
-
-async function pollComputedAtChanged(
-  request: APIRequestContext,
-  householdId: string,
-  before: string | null,
-  timeoutMs = 25_000,
-): Promise<string> {
-  const deadline = Date.now() + timeoutMs
-  while (Date.now() < deadline) {
-    const current = await fetchEstateHealthComputedAt(request, householdId)
-    if (current && current !== before) return current
-    await new Promise((r) => setTimeout(r, 1500))
-  }
-  throw new Error('estate_health_scores.computed_at did not change after gift write')
 }
 
 test.describe('Consumer gift-history API', () => {
@@ -193,7 +138,9 @@ test.describe('Consumer gift-history API', () => {
     expect(createRes.status(), await createRes.text()).toBe(201)
     const created = await createRes.json()
 
-    const after = await pollComputedAtChanged(request, householdId!, before)
+    const after = await pollComputedAtChanged(request, householdId!, before, {
+      errorMessage: 'estate_health_scores.computed_at did not change after gift write',
+    })
     expect(after).toBeTruthy()
 
     await request.delete(GIFT_API, { data: { id: created.id } })

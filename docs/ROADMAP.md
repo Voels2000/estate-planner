@@ -70,14 +70,17 @@ escalate — do not slip it into Sprint 14 without explicit sign-off.**
 - `[ ]` End-to-end acquisition path — full signup → drip → advisor portal (if not fully signed off)
 
 **Planning regression (CONSUMER_RELEASE_SMOKE_TEST) — Sprint 14 focus**
-- `[ ]` **Core sections 1–3: pass** ← current
+- `[x]` **Smoke §2.4 automated** — `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (staging verified)
+- `[ ]` **Core sections 1–3: pass** (§2.4 covered by E2E; §1 + §3 manual or extend)
 - `[ ]` **Estate planning sections 4–7: pass**
 - `[ ]` Optional sections 8–11 (run as time permits; flag any failures)
 - `[ ]` Sign-off form completed with tester name, date, environment, deploy/commit
 
 **Automated**
-- `[x]` `npm run test:e2e:consumer` — 51 passed, 0 failed, 1 skipped (staging, Sprint 13)
-- `[ ]` Re-run E2E after any Sprint 14 fixes
+- `[x]` `consumer-core-recompute.spec.ts` — POST asset → poll `computed_at` (15s) → dashboard (smoke §2.4)
+- `[x]` `estate-health-poll.ts` — shared helper; `consumer-gift-history` recompute unchanged (25s / 1.5s)
+- `[x]` Consumer E2E on staging — 52+ tests incl. core-recompute (May 2026)
+- `[ ]` Re-run full consumer project after Sprint 14 fixes
 
 **Fix loop**
 - Fix all Sprint 14 test failures; re-run affected smoke sections until pass
