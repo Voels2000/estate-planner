@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix)
+# Last updated: May 2026 (Sprint 13 current; advisor referral trigger + RMD event copy)
 
 ---
 
@@ -69,9 +69,12 @@ These must be complete before launch. Update status as sprints close them.
   life-event-on-connect)
 - [x] **"Referral loop proven" definition confirmed** — exact Supabase queries in
   CONSUMER_RELEASE_SMOKE_TEST.md and DECISION_LOG.md (advisor + attorney `referral_clicks`)
-- [x] **Test account seed scripts (Sprint 13)** — `scripts/seed-test-attorney.ts` (test attorney +
-  `referral_code`); `scripts/seed-test-consumer-estate.ts` (Playwright consumer → tier 3).
-  Run against staging/prod before Sprint 14 smoke; see smoke test “Test data setup”.
+- [x] **Test account seed scripts (Sprint 13)** — `seed-test-attorney.ts`, `seed-test-advisor.ts`,
+  `seed-test-consumer-estate.ts` (idempotent). Run on staging before Sprint 14 smoke; codes in
+  NEXT_SESSION.md § Sprint 14 test account references.
+- [x] **`rmd-start-age` event copy** — hero, assess, drip, newsletter labels use birth-year range
+  (72/73/75); SEO title/description may still say 73 for search intent (`lib/events/content-sprint5.ts`,
+  `lib/emails/drip-templates.ts`).
 
 - [x] **App URL in emails** — `lib/app-url.ts` `getAppUrl()` on email routes (Sprint 9)
 - [x] **Digital Assets tier gate** — `FEATURE_TIERS['digital-assets'] = 2` + `UpgradeBanner` on page (Sprint 9)
@@ -119,18 +122,17 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 
 **Not required in Vercel Production:**
 
-- `SUPABASE_URL` — used only by local/staging seed scripts (`scripts/seed-test-attorney.ts`,
-  `scripts/seed-test-consumer-estate.ts`). Vercel’s Supabase integration sets project URL/keys;
+- `SUPABASE_URL` — used only by local/staging seed scripts (`seed-test-attorney.ts`,
+  `seed-test-advisor.ts`, `seed-test-consumer-estate.ts`). Vercel’s Supabase integration sets URL/keys;
   do not add a separate `SUPABASE_URL` for production deploys.
 
 **Seed scripts (staging / local only — not Vercel env):**
 
 ```bash
-# Attorney test listing + referral_code (idempotent)
-set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
-
-# Playwright consumer → estate tier 3 (requires .env.test for PLAYWRIGHT_CONSUMER_EMAIL)
-set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+set -a && source .env.local && source .env.test && set +a
+npx tsx scripts/seed-test-advisor.ts
+npx tsx scripts/seed-test-attorney.ts
+npx tsx scripts/seed-test-consumer-estate.ts
 ```
 
 ### Domain & DNS
@@ -162,7 +164,8 @@ set -a && source .env.local && source .env.test && set +a && npx tsx scripts/see
 - [ ] `20260528000000_attorney_referrals.sql` (Sprint 8 — ✅ confirmed applied)
 - [ ] `20260529000000_profiles_referral_attribution.sql` (Sprint 9)
 - [ ] **`20260530000000_sprint9_10_gates.sql`** (Sprint 9/10 — **required** for invite-advisor gate, succession intake, connection life-event columns)
-- [ ] Attorney referral code trigger confirmed: `attorney_listings_referral_code_trigger` (✅ confirmed Sprint 8)
+- [ ] **`20260601000000_advisor_directory_referral_code_trigger.sql`** — `advisor_directory_referral_code_trigger` on insert
+- [ ] Attorney referral code trigger confirmed: `attorney_listings_referral_code_trigger` (✅ confirmed Sprint 8; backfill via `seed-test-attorney.ts` if absent)
 
 ---
 
@@ -187,7 +190,9 @@ set -a && source .env.local && source .env.test && set +a && npx tsx scripts/see
 | Persona alerts (business + RE) | Shipped Sprint 12 | `lib/dashboard/personaAlerts.ts` |
 | Projections / scenarios / charitable | Sprint 11 scope | Yes — before launch |
 | Extended smoke test (referral/drip/attribution rows) | Written (sections A–G); Sprint 14 execution | Yes — Sprint 14 pass |
-| Test account seed scripts | Shipped (`seed-test-attorney`, `seed-test-consumer-estate`) | Run on staging before Sprint 14 |
+| Test account seed scripts | Shipped (attorney, advisor, consumer) | Run on staging before Sprint 14 |
+| Advisor `referral_code` on insert | Migration `20260601000000` in repo | Apply on staging/prod |
+| `rmd-start-age` public copy | Aligned to 72/73/75 cohort range | Spot-check `/event/rmd-start-age` in Sprint 14 |
 | Production env var matrix | Documented § Section 2 | Sprint 15 — verify in Vercel dashboard |
 | RMD start age by birth year | Shipped (`getRmdStartAge` 72/73/75) | Verify in Sprint 14 smoke |
 
@@ -202,5 +207,5 @@ set -a && source .env.local && source .env.test && set +a && npx tsx scripts/see
 | May 2026 | Sprint 9 | Drip — all 24 event slugs; RMD cohorts; life-event-on-connect; Digital Assets tier 2; getAppUrl audit |
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
-| May 2026 | Sprint 13 | Test seed scripts; acquisition smoke sections A–G; production env var matrix for Sprint 15 |
+| May 2026 | Sprint 13 | Test seed scripts; acquisition smoke A–G; prod env matrix; advisor referral trigger; `rmd-start-age` copy |
 | — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix)
+# Last updated: May 2026 (Sprint 13 current; advisor trigger + RMD event copy)
 
 ---
 
@@ -65,10 +65,13 @@ No new product pillars. Feature freeze starts here.
 - `[ ]` All prior migrations confirmed (see LAUNCH_CHECKLIST § Supabase prod migrations)
 
 **Test account seed scripts**
-- `[x]` `scripts/seed-test-attorney.ts` — idempotent test attorney (`test-attorney@mywealthmaps.test`);
-  prints `referral_code` for smoke sections B and D
-- `[x]` `scripts/seed-test-consumer-estate.ts` — ensures `PLAYWRIGHT_CONSUMER_EMAIL` profile is
-  estate tier (3) + `subscription_status: active`
+- `[x]` `scripts/seed-test-attorney.ts` — test attorney listing; smoke sections B and D
+- `[x]` `scripts/seed-test-advisor.ts` — test advisor listing (`test-advisor@mywealthmaps.test`); smoke A and C
+- `[x]` `scripts/seed-test-consumer-estate.ts` — Playwright consumer → estate tier (3)
+
+**Referral + content hardening**
+- `[x]` `20260601000000_advisor_directory_referral_code_trigger.sql` — auto `referral_code` on advisor insert
+- `[x]` `rmd-start-age` user-facing copy — event hero/assess/actions, drip emails, newsletter labels (72–75 range; SEO title may keep 73)
 
 **Smoke test extension — written (execute in Sprint 14)**
 
@@ -95,7 +98,7 @@ CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G cover:
 **Success criteria**
 - All migrations applied on staging and verified by spot-check (not assumed)
 - Extended smoke test doc written and reviewed before Sprint 14 begins ✅
-- Seed scripts run on staging; test attorney `referral_code` recorded for smoke B/D
+- Seed scripts run on staging; test advisor/attorney `referral_code`s in NEXT_SESSION.md
 - Both E2E suites green
 
 ---

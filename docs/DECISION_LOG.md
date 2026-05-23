@@ -154,6 +154,21 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### May 2026 — `rmd-start-age` event copy uses cohort range, not a single age
+
+**Decision:** Public-facing copy for `/event/rmd-start-age` (hero, subhead, assessment, action plan,
+drip emails, advisor/attorney newsletter labels) describes RMD start ages **72, 73, or 75** by birth
+year. Do not state “RMDs begin at 73” in user-facing surfaces. **SEO** `title` / `seoDescription`
+may still mention 73 where search intent targets that cohort.
+
+**Reasoning:** `getRmdStartAge()` is cohort-accurate in engines; marketing copy that hardcodes 73
+is wrong for born ≤1950 (72) and ≥1960 (75). Range copy prompts users to determine their age without
+requiring household data on the event page.
+
+**Age cron:** Still fires life events at 70 and 73 for urgency — separate from legal RMD start age in projections.
+
+---
+
 ### May 2026 — Production environment variables are a Sprint 15 launch gate
 
 **Decision:** Before Sprint 15 go-live (domain cutover), every Production env var in

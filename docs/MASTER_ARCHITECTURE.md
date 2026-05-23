@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix; see SCHEMA_CHANGELOG)
+# Last updated: May 2026 (Sprint 13; advisor referral trigger; rmd-start-age copy; see SCHEMA_CHANGELOG)
 
 ---
 
@@ -372,6 +372,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 | Script | Purpose |
 |--------|---------|
 | `scripts/seed-test-attorney.ts` | Idempotent `test-attorney@mywealthmaps.test`; prints `referral_code` for smoke `?aref=` |
+| `scripts/seed-test-advisor.ts` | Idempotent `test-advisor@mywealthmaps.test`; prints `referral_code` for smoke `?ref=` |
 | `scripts/seed-test-consumer-estate.ts` | Ensures `PLAYWRIGHT_CONSUMER_EMAIL` is estate tier (3) |
 
 ```bash
@@ -661,7 +662,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Dashboard empty-state rendering is componentized under `app/(dashboard)/dashboard/_components/*` to keep the route file orchestration-focused.
 - Dashboard client route composition in `app/(dashboard)/_dashboard-client.tsx` now delegates rendering to feature components under `app/(dashboard)/_components/dashboard/*` (`DashboardIntroSection`, `FinancialSummarySection`, `RetirementSummarySection`, `EstateSummarySection`) while keeping data flow unchanged.
 - Shared financial rollup view-models are now being introduced under `lib/view-models/*`; `lib/view-models/netWorthSummary.ts` is used by both consumer dashboard and advisor overview surfaces.
-- **RMD start age (SECURE Act cohorts):** `getRmdStartAge(birthYear)` in `lib/calculations/rmdStartAge.ts` — born ≤1950 → **72**, 1951–1959 → **73**, ≥1960 → **75**. Used by projection engine, dashboard `rmdStatus`, RMD Calculator, Roth analysis, Monte Carlo, trust-strategy annual RMD estimate, and advisor client **Retirement** tab (per-person birth year; no hardcoded 73).
+- **RMD start age (SECURE Act cohorts):** `getRmdStartAge(birthYear)` in `lib/calculations/rmdStartAge.ts` — born ≤1950 → **72**, 1951–1959 → **73**, ≥1960 → **75**. Used by projection engine, dashboard `rmdStatus`, RMD Calculator, Roth analysis, Monte Carlo, trust-strategy annual RMD estimate, and advisor client **Retirement** tab (per-person birth year; no hardcoded 73). **Event page** `/event/rmd-start-age` (`content-sprint5.ts`) and drip templates use **range copy** (72–75); SEO meta may still say 73.
+- **Advisor referral codes:** `20260601000000_advisor_directory_referral_code_trigger.sql` — `generate_advisor_referral_code()` before insert on `advisor_directory` when `referral_code` is null.
 - `lib/view-models/retirementSnapshot.ts` now centralizes dashboard retirement snapshot object construction (composition-only refactor; calculations remain in `lib/dashboard/retirementSnapshot.ts` + `lib/dashboard/incomeSnapshot.ts`).
 - `lib/view-models/taxScopeBadges.ts` now centralizes advisory metric scope badge mapping (`federal`, `state`, `both`, `strategy`) to keep label/class semantics consistent where scope chips are rendered.
 - `lib/view-models/projectionSummaryCards.ts` now centralizes consumer projection summary card composition (labels, values, highlights) while calculation inputs still come from the shared projections selector pipeline.
@@ -765,8 +767,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 13):** Pre-production hardening — staging migrations, smoke test doc (A–G),
-test seed scripts, referral/drip production verification; Production env matrix documented for Sprint 15.
+**Current sprint (Sprint 13):** Staging migrations (incl. advisor referral trigger), smoke test doc (A–G),
+three test seed scripts, `rmd-start-age` copy aligned to cohorts; Sprint 14 = execute smoke + referral/drip proof.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 

@@ -13,12 +13,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **Migration:** `20260601000000_advisor_directory_referral_code_trigger.sql`
   - `public.generate_advisor_referral_code()` — before insert on `advisor_directory`; 8-char code from `gen_random_uuid()` when `referral_code` is null.
 
-## Sprint 13 — Test seed scripts, smoke test extension, prod env matrix (May 2026)
+## `rmd-start-age` public copy — SECURE Act range (May 2026)
 
 **No schema change.**
 
-- **Scripts:** `scripts/seed-test-attorney.ts` — test `attorney_listings` row + `referral_code` (backfill if trigger absent); `scripts/seed-test-consumer-estate.ts` — `profiles.consumer_tier = 3` for `PLAYWRIGHT_CONSUMER_EMAIL`.
-- **Docs:** CONSUMER_RELEASE_SMOKE_TEST acquisition A–G; LAUNCH_CHECKLIST Production env var matrix (Sprint 15 go-live); ROADMAP / NEXT_SESSION / MASTER_ARCHITECTURE sync.
+- **Content:** `lib/events/content-sprint5.ts` — hero, subhead, `whatChanges`, actions, assessment questions use ages **72–75** by birth year (not fixed 73).
+- **Drip:** `lib/emails/drip-templates.ts` — `rmd-start-age` email 1–2 headlines/body aligned.
+- **Newsletter labels:** advisor + attorney dashboards — `RMD start age (72–75, by birth year)`.
+- **SEO:** `title` / `seoDescription` may still reference 73 for search intent.
+
+## Sprint 13 — Test seed scripts, smoke test extension, prod env matrix (May 2026)
+
+**No schema change** (except advisor trigger migration above).
+
+- **Scripts:** `seed-test-attorney.ts`, `seed-test-advisor.ts`, `seed-test-consumer-estate.ts`.
+- **Docs:** CONSUMER_RELEASE_SMOKE_TEST acquisition A–G; LAUNCH_CHECKLIST Production env matrix; NEXT_SESSION test account refs.
 
 ## Sprint 12 — A/B collapse, persona alerts, planning empty CTAs, copy audit (May 2026)
 

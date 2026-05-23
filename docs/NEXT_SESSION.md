@@ -8,7 +8,7 @@
 
 > My Wealth Maps — $2M–$30M estate/financial planning. **Sprint 12 closed. Sprint 13 is current.**
 > Sprint 12 shipped: A/B collapse, persona alerts, mobile drawer, full copy audit.
-> Next: staging migrations, extended smoke test rows, referral/drip production verification.
+> Next: apply `20260601000000` on staging/prod; Sprint 14 smoke (referral/drip); seed scripts on staging.
 > Apply migrations on staging/prod per LAUNCH_CHECKLIST if not already applied.
 > Today's task: [FILL IN BELOW].
 
@@ -21,13 +21,26 @@
 **Next:**
 - `[ ]` Staging deploy with all migrations verified
 - `[x]` Extend CONSUMER_RELEASE_SMOKE_TEST.md (acquisition & attribution A–G)
-- `[x]` Test seed scripts — `seed-test-attorney.ts`, `seed-test-consumer-estate.ts`
-- `[ ]` Run seed scripts on staging; record test attorney `referral_code` for smoke B/D
+- `[x]` Test seed scripts — attorney, advisor, consumer (`seed-test-*.ts`)
+- `[x]` Advisor `referral_code` trigger migration in repo (`20260601000000`)
+- `[x]` `rmd-start-age` event + drip copy — 72/73/75 range (not hardcoded 73)
+- `[ ]` Run all seed scripts on staging; confirm referral codes match NEXT_SESSION below
+- `[ ]` Apply `20260601000000_advisor_directory_referral_code_trigger.sql` on staging/prod
 - `[ ]` Referral loop proven (advisor + attorney) on production
 - `[ ]` Drip smoke test on production
 - `[ ]` Sprint 15: verify all Production env vars in LAUNCH_CHECKLIST before domain cutover
 
 See [ROADMAP.md](./ROADMAP.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+
+---
+
+## Sprint 13 shipped (recent) ✅
+
+| Area | What shipped |
+|------|----------------|
+| **Seeds** | `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate` |
+| **Referral** | `advisor_directory_referral_code_trigger` migration |
+| **Copy** | `rmd-start-age` hero, assess, drip, newsletter labels → birth-year cohort range |
 
 ---
 
@@ -114,8 +127,10 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 | Path | Notes |
 |------|--------|
-| `scripts/seed-test-attorney.ts` | Test attorney + `referral_code`; `source .env.local` |
-| `scripts/seed-test-consumer-estate.ts` | Playwright consumer → tier 3; needs `.env.test` for email |
+| `scripts/seed-test-attorney.ts` | Test attorney + `referral_code` |
+| `scripts/seed-test-advisor.ts` | Test advisor + `referral_code` |
+| `scripts/seed-test-consumer-estate.ts` | Playwright consumer → tier 3 |
+| `supabase/migrations/20260601000000_advisor_directory_referral_code_trigger.sql` | Apply before prod advisor inserts |
 | `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Acquisition & attribution A–G |
 | `docs/LAUNCH_CHECKLIST.md` | Section 1 gates; § Production env vars (Sprint 15) |
 | `supabase/migrations/` | Verify applied on staging/prod |

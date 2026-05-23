@@ -1,6 +1,6 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 13 current; go-live env matrix in LAUNCH_CHECKLIST)
+# Last updated: May 2026 (Sprint 13; advisor referral trigger; RMD event copy cohort range)
 
 ---
 

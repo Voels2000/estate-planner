@@ -286,7 +286,7 @@ Spot-check at least 8 slugs across both content files. Full automated check pref
 | `/event/large-rsu-vest` | Original 8 | ☐ |
 | `/event/new-child-grandchild` | Original 8 | ☐ |
 | (4 Sprint 5 slugs of your choice) | Sprint 5 | ☐ |
-| `/event/rmd-start-age` | Age trigger | ☐ |
+| `/event/rmd-start-age` | Age trigger; hero mentions **72–75** by birth year (not “at 73” only) | ☐ |
 | `/event/medicare-eligibility` | Age trigger | ☐ |
 | `/event/social-security-timing` | Age trigger | ☐ |
 

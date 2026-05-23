@@ -65,7 +65,8 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 Before Sprint 14 begins, confirm all of the following are true:
 
 - [x] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
-- [x] Test seed scripts committed (`seed-test-attorney`, `seed-test-consumer-estate`)
+- [x] Test seed scripts committed (`seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`)
+- [x] `rmd-start-age` event/drip copy aligned to 72/73/75 cohort range (DECISION_LOG)
 - [ ] Supabase verification queries for advisor and attorney referral loops documented in smoke test
 - [x] Both A/B test decision criteria documented in DECISION_LOG with named owner (Sprint 10)
 - [x] Business succession decision logged in DECISION_LOG; minimal page shipped (Sprint 10)
