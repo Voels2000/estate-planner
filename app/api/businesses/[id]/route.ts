@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -24,7 +25,7 @@ async function resolveBusinessAuth(
     .select('id')
     .eq('advisor_id', userId)
     .eq('client_id', biz.owner_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .single()
 
   return { ownerId: biz.owner_id, allowed: !!link }

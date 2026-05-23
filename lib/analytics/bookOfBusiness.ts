@@ -3,6 +3,7 @@
 // across all clients for an advisor. Reads from stored projection data only.
 
 import { createClient } from '@/lib/supabase/client'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ export async function fetchBookOfBusiness(advisorId: string): Promise<BookOfBusi
     .from('advisor_clients')
     .select('client_id, status')
     .eq('advisor_id', advisorId)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
 
   if (!clientRows || clientRows.length === 0) {
     return emptyData()

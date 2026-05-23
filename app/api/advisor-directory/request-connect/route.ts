@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
+import { getAppUrl } from '@/lib/app-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,8 +89,7 @@ export async function POST(request: Request) {
 
   // 8. Fire email + notifications (fire-and-forget)
   const consumerLabel = profile.full_name?.trim() || profile.email || 'A potential client'
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mywealthmaps.com'
+  const appUrl = getAppUrl()
   const claimUrl = `${appUrl}/claim-listing/${claimToken}`
 
   ;(async () => {

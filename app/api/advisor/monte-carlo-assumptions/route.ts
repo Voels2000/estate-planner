@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'
 
 async function assertAdvisorAccess(supabase: Awaited<ReturnType<typeof createClient>>, advisorId: string, clientHouseholdId: string) {
@@ -21,7 +22,7 @@ async function assertAdvisorAccess(supabase: Awaited<ReturnType<typeof createCli
     .select('id')
     .eq('advisor_id', advisorId)
     .eq('client_id', household.owner_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
 
   return !!link

@@ -43,21 +43,25 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `profiles`
 
-- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`
+- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`, `onboarding_invite_advisor_completed_at`
 - **Purpose:** user identity attributes and subscription/role flags.
 - **Referral attribution (Sprint 9):** set once at signup from event-page sessionStorage; join `referral_code` → `advisor_directory.referral_code`, `attorney_referral_code` → `attorney_listings.referral_code`.
-- **Migration:** `20260529000000_profiles_referral_attribution.sql`
+- **Invite-advisor gate (Sprint 10):** `onboarding_invite_advisor_completed_at` — set when consumer completes or skips `/onboarding/invite-advisor` (same timestamp for both; no separate skipped flag).
+- **Migrations:** `20260529000000_profiles_referral_attribution.sql`, `20260530000000_sprint9_10_gates.sql`
 
 ### `households`
 
-- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`
+- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
 - **Purpose:** central planning record for person/spouse demographics and modeling defaults.
+- **Succession intake (Sprint 10):** minimal business succession booleans; `PATCH /api/consumer/succession-intake`.
 
 ### `advisor_clients`
 
-- **Key columns:** `advisor_id`, `client_id`, `status`, `accepted_at`, `advisor_pdf_access`
+- **Key columns:** `advisor_id`, `client_id`, `status`, `accepted_at`, `advisor_pdf_access`, `connection_life_event_type`, `connection_life_event_at`
 - **Purpose:** advisor-client link and authorization boundary for advisor workflows.
-- **Consumer UI:** `/my-advisor` reads accepted connection (`status='accepted'`) joined to `profiles` and `advisor_directory` (via `profile_id`); revoke sets `status='revoked'`.
+- **Connected statuses:** use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) from `lib/advisor/clientConnectionStatus.ts` in all new queries — not a single hardcoded status.
+- **Consumer UI:** `/my-advisor` reads connected link (`.in('status', ['active', 'accepted'])`); revoke sets `status='revoked'`.
+- **Life event at accept (Sprint 9):** `connection_life_event_*` populated in `accept-request` via `pickConnectionLifeEvent()`.
 
 ### `advisor_directory`
 
@@ -104,8 +108,8 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `real_estate`
 
-- **Key columns:** `owner_id`, `current_value`, `mortgage_balance`, `monthly_payment`, `planned_sale_year`
-- **Purpose:** property FMV and mortgage dynamics in projection and estate views.
+- **Key columns:** `owner_id`, `current_value`, `mortgage_balance`, `monthly_payment`, `planned_sale_year`, `situs_state`, `titling`
+- **Purpose:** property FMV and mortgage dynamics in projection and estate views; `situs_state` = physical location (multi-state probate alert on dashboard).
 
 ### `businesses`
 
@@ -316,6 +320,7 @@ After each schema-affecting session:
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 - `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
 - `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code`
+- `20260530000000_sprint9_10_gates.sql` — `profiles.onboarding_invite_advisor_completed_at`; `advisor_clients.connection_life_event_*`; `households.succession_*`
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`

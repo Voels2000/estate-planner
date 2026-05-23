@@ -12,6 +12,7 @@ import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 const RATE_WINDOW_MS = 60 * 60 * 1000
 const RATE_MAX = 100
@@ -121,7 +122,7 @@ async function assertCanReadHousehold(
       .select('id')
       .eq('advisor_id', userId)
       .eq('client_id', householdOwnerId)
-      .eq('status', 'active')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle()
     return !!link
   }

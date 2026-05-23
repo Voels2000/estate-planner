@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { generateBaseCase } from '@/lib/actions/generate-base-case'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       .select('id')
       .eq('advisor_id', user.id)
       .eq('client_id', household.owner_id)
-      .eq('status', 'active')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .single()
 
     if (!link) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
+import { getAppUrl } from '@/lib/app-url'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
     }
 
     const seatCount = Math.max(1, ctx.seat_count ?? 1)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+    const siteUrl = getAppUrl()
 
     console.log('[firm-checkout] stripe.checkout.sessions.create', {
       lineItemPriceId: priceId,

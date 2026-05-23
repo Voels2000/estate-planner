@@ -65,9 +65,9 @@ Before Sprint 14 begins, confirm all of the following are true:
 
 - [ ] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
 - [ ] Supabase verification queries for advisor and attorney referral loops documented in smoke test
-- [ ] Both A/B test decision criteria documented in DECISION_LOG with named owner
-- [ ] Business succession decision logged in DECISION_LOG; dead code resolved
-- [ ] Invite-your-advisor decision logged in DECISION_LOG
+- [x] Both A/B test decision criteria documented in DECISION_LOG with named owner (Sprint 10)
+- [x] Business succession decision logged in DECISION_LOG; minimal page shipped (Sprint 10)
+- [x] Invite-your-advisor decision logged in DECISION_LOG; onboarding shipped (Sprint 10)
 - [ ] All Sprint 13 migrations applied to staging and verified
 - [ ] `npm run test:e2e:consumer` green on CI
 - [ ] `npm run test:e2e:advisor` green on CI

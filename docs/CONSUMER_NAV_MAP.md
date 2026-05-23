@@ -101,7 +101,8 @@ Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts` (24 slugs). A
 | Assets | `/assets` | Assets | 1 | `assets` |
 | Real Estate | `/real-estate` | Real Estate | 1 | `real-estate` |
 | Business Interests | `/businesses` | Business Interests | 1 | `businesses` |
-| Digital Assets | `/digital-assets` | Digital Assets | 1 | — (tier 1 page; no `FEATURE_TIERS` key yet) |
+| Digital Assets | `/digital-assets` | Digital Assets | 2 | `digital-assets` |
+| Business Succession | `/business-succession` | Business Succession | 3 | `business-succession` |
 | Liabilities | `/liabilities` | Liabilities | 1 | `liabilities` |
 | Life & Estate Insurance | `/insurance` | Life & Estate Insurance | 1 | `insurance` |
 | Property & Casualty | `/property-casualty` | Property & Casualty Insurance | 1 | `insurance` |
@@ -154,7 +155,7 @@ Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts` (24 slugs). A
 | `/my-advisor` | My Advisor | — | Connection UI; not tier-gated (sidebar link for `role === 'consumer'`) |
 | `/my-advisor-directory` | Find a Financial Advisor | — | |
 | `/unlock-estate` | — | — | Upgrade flow |
-| `/business-succession` | — | 3 | Commented out of sidebar |
+| `/onboarding/invite-advisor` | Invite your advisor | — | Post-profile gate; not in sidebar |
 | `/referrals` | Attorney referral | — | |
 
 ---

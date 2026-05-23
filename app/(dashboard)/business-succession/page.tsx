@@ -1,50 +1,78 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import BusinessSuccessionClient from './_business-succession-client';
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import BusinessSuccessionClient from './_business-succession-client'
 
 export default async function BusinessSuccessionPage() {
-  const supabase = await createClient();
-
+  const access = await getUserAccess()
+  const supabase = await createClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile) redirect('/login');
-
-  // Former tier/advisor gate removed — dashboard layout enforces subscription; navigate freely.
+  if (access.tier < 3 && !access.isAdvisor) {
+    const { data: householdRow } = await supabase
+      .from('households')
+      .select('state_primary')
+      .eq('owner_id', user.id)
+      .single()
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      3,
+      'Document business succession and continuity planning alongside your estate plan.',
+    )
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Business Succession</h1>
+        <UpgradeBanner
+          requiredTier={3}
+          moduleName="Business Succession"
+          valueProposition={valueProposition}
+          householdContext={{
+            grossEstate: null,
+            statePrimary: householdRow?.state_primary ?? null,
+            firstName: null,
+          }}
+        />
+      </div>
+    )
+  }
 
   const { data: household } = await supabase
     .from('households')
-    .select('id')
+    .select(
+      'id, succession_plan_in_place, succession_key_person_identified, succession_buy_sell_in_place',
+    )
     .eq('owner_id', user.id)
-    .single();
+    .single()
 
   if (!household) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
-          <p className="text-2xl mb-3">🏢</p>
-          <h2 className="text-lg font-semibold text-amber-900 mb-2">Your household profile isn&apos;t set up yet</h2>
-          <p className="text-sm text-amber-700">Your advisor needs to complete your household setup before you can view your business succession plan. Please reach out to your advisor to get started.</p>
+      <div className="mx-auto max-w-2xl px-4 py-8">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
+          <h2 className="text-lg font-semibold text-amber-900">Complete your profile first</h2>
+          <p className="mt-2 text-sm text-amber-700">
+            Set up your household on the Profile page before documenting succession planning.
+          </p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <BusinessSuccessionClient
-        householdId={household.id}
-        userRole={profile.role}
+        initial={{
+          succession_plan_in_place: household.succession_plan_in_place,
+          succession_key_person_identified: household.succession_key_person_identified,
+          succession_buy_sell_in_place: household.succession_buy_sell_in_place,
+        }}
       />
     </div>
-  );
+  )
 }

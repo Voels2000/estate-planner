@@ -9,6 +9,16 @@
  */
 
 import { getRmdStartAge } from '../lib/calculations/rmdStartAge'
+import { planningSurfaceFromPathname } from '../lib/planning/planningSurfaceFromPath'
+import {
+  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2,
+  planningMissingProjectionActions,
+} from '../lib/planning/planningEmptyState'
+import { buildPersonaDashboardAlerts } from '../lib/dashboard/personaAlerts'
+import {
+  charitableTopicsUseProfileData,
+  buildPersonalizedCharitableTopics,
+} from '../lib/charitable/buildPersonalizedCharitableTopics'
 
 // ─────────────────────────────────────────────────────────────
 // Test harness
@@ -387,6 +397,98 @@ assert('WA estate $3.193M → state tax $100k', wa2.state_estate_tax, 100000)
 const wa3 = computeStateEstateTax('TX', 5000000, WA_BRACKETS)
 assert('TX (no estate tax) → $0', wa3.state_estate_tax, 0)
  
+// ─────────────────────────────────────────────────────────────
+// Sprint 11 — planning nav + charitable personalization
+// ─────────────────────────────────────────────────────────────
+
+console.log('\n── Planning surface pathname (Sprint 11) ──')
+assertBool('/complete → complete', planningSurfaceFromPathname('/complete') === 'complete', true)
+assertBool('/scenarios → scenarios', planningSurfaceFromPathname('/scenarios') === 'scenarios', true)
+assertBool('/projections → projections', planningSurfaceFromPathname('/projections') === 'projections', true)
+
+console.log('\n── Charitable profile note gate ──')
+assertBool(
+  'empty profile → no profile inputs',
+  charitableTopicsUseProfileData({
+    statePrimary: null,
+    filingStatus: null,
+    person1BirthYear: null,
+    person2BirthYear: null,
+    hasSpouse: false,
+    person1Name: null,
+  }),
+  false,
+)
+assertBool(
+  'state present → profile inputs',
+  charitableTopicsUseProfileData({
+    statePrimary: 'CA',
+    filingStatus: null,
+    person1BirthYear: null,
+    person2BirthYear: null,
+    hasSpouse: false,
+    person1Name: null,
+  }),
+  true,
+)
+const sparse = buildPersonalizedCharitableTopics({
+  statePrimary: null,
+  filingStatus: null,
+  person1BirthYear: null,
+  person2BirthYear: null,
+  hasSpouse: false,
+  person1Name: null,
+})
+assertBool('sparse build → usedProfileInputs false', sparse.usedProfileInputs === false, true)
+assertBool('sparse build still returns topics', sparse.topics.length > 0, true)
+
+// ─────────────────────────────────────────────────────────────
+// Sprint 12 — planning empty CTAs + persona dashboard alerts
+// ─────────────────────────────────────────────────────────────
+
+console.log('\n── Planning empty-state CTAs (Sprint 12) ──')
+assertBool(
+  'tier 2 actions = profile only',
+  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2.length === 1 &&
+    PLANNING_MISSING_PROJECTION_ACTIONS_TIER2[0].href === '/profile',
+  true,
+)
+assertBool(
+  'tier 1 user → profile only',
+  planningMissingProjectionActions(1).length === 1,
+  true,
+)
+assertBool(
+  'tier 3 user → profile + generate',
+  planningMissingProjectionActions(3).length === 2,
+  true,
+)
+
+console.log('\n── Persona dashboard alerts (Sprint 12) ──')
+const at5m = buildPersonaDashboardAlerts({
+  businesses: [{ estimated_value: 6_000_000, ownership_pct: 100 }],
+  businessInterests: [],
+  realEstate: [],
+})
+assertBool('business $6M → 5m alert', at5m.businessThreshold === '5m', true)
+const at10m = buildPersonaDashboardAlerts({
+  businesses: [{ estimated_value: 12_000_000, ownership_pct: 50 }],
+  businessInterests: [],
+  realEstate: [],
+})
+assertBool('business $6M owned → 10m alert', at10m.businessThreshold === '10m', true)
+const multiState = buildPersonaDashboardAlerts({
+  businesses: [],
+  businessInterests: [],
+  realEstate: [{ situs_state: 'FL' }, { situs_state: 'NY' }],
+})
+assertBool('two situs states → multi-state alert', multiState.multiStateRealEstate === true, true)
+assertBool(
+  'distinct states sorted',
+  multiState.distinctPropertyStates.join(',') === 'FL,NY',
+  true,
+)
+
 // ─────────────────────────────────────────────────────────────
 // Summary
 // ─────────────────────────────────────────────────────────────

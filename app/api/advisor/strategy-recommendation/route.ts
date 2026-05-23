@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 import { resolveStrategyLineItemCategory } from '@/lib/strategy/resolveStrategyLineItemCategory'
 import {
@@ -31,7 +32,7 @@ async function verifyAdvisorAccess(
     .select('id')
     .eq('advisor_id', advisorId)
     .eq('client_id', household.owner_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
   if (!link) {
     return {

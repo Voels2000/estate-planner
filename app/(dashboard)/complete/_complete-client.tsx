@@ -8,6 +8,13 @@
 import { useState } from 'react'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { PLANNING_SURFACES } from '@/lib/planning/planningSurfaces'
+import { PlanningSurfaceNav } from '@/app/(dashboard)/_components/PlanningSurfaceNav'
+import { PlanningProjectionEmptyState } from '@/app/(dashboard)/_components/PlanningProjectionEmptyState'
+import {
+  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2,
+  PLANNING_MISSING_PROJECTION_DESCRIPTION,
+} from '@/lib/planning/planningEmptyState'
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
@@ -94,9 +101,12 @@ export default function CompleteClient({
 
   if (!rows?.length) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        No projection data available.
-      </div>
+      <PlanningProjectionEmptyState
+        title="No projection data yet"
+        description={PLANNING_MISSING_PROJECTION_DESCRIPTION}
+        actions={[...PLANNING_MISSING_PROJECTION_ACTIONS_TIER2]}
+        icon="📈"
+      />
     )
   }
 
@@ -111,12 +121,20 @@ export default function CompleteClient({
     <div className="p-6 max-w-[1600px] mx-auto">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Lifetime Snapshot</h1>
-      <p className="text-sm text-neutral-500 mb-6">
-        {p2
-          ? `${p1} & ${p2} — year-by-year income, taxes, expenses, assets, and estate`
-          : `${p1} — year-by-year income, taxes, expenses, assets, and estate`}
-      </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 mb-1">Lifetime Snapshot</h1>
+          <p className="text-sm text-neutral-600 max-w-xl">
+            {PLANNING_SURFACES.find((s) => s.id === 'complete')!.description}
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            {p2
+              ? `${p1} & ${p2} — year-by-year detail`
+              : `${p1} — year-by-year detail`}
+          </p>
+        </div>
+        <PlanningSurfaceNav className="sm:pt-1" />
+      </div>
 
       {/* ── Summary cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">

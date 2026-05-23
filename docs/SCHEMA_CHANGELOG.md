@@ -8,6 +8,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 12 — persona dashboard alerts, planning empty CTAs (May 2026)
+
+- **No schema change.**
+- **Loader:** `loadDashboardCoreInputs` — `real_estate` select adds `situs_state` (same parallel fetch).
+- **Application:** `lib/dashboard/personaAlerts.ts` — business $5M/$10M + multi-state RE (≥2 distinct `situs_state`).
+- **Application:** `lib/planning/planningEmptyState.ts` — `TIER2` vs `TIER3` empty-state CTAs.
+
 ## RMD start age — SECURE Act cohort fix (May 2026)
 
 - **No schema change.**
@@ -15,6 +22,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **Bug fix:** `app/advisor/clients/[clientId]/_tabs/RetirementTab.tsx` — was hardcoded `rmdAge = 73`; now per-person birth year (e.g. born 1960 → start at **75**).
 - **Aligned:** `projection-complete.ts`, `lib/calculations/rmd.ts`, `lib/dashboard/calculations.ts`, `lib/monte-carlo.ts`, `app/(dashboard)/rmd/_rmd-client.tsx`, `app/(dashboard)/roth/page.tsx`, `app/(dashboard)/my-estate-trust-strategy/page.tsx`, `app/admin/debug-tab.tsx`.
 - **Tests:** `scripts/test-engines.ts` — cohort assertions for 1949–1970 birth years.
+
+## Sprint 9–10 — gates migration, succession, invite-advisor, connection context (May 2026)
+
+- **Migration:** `20260530000000_sprint9_10_gates.sql`
+  - `profiles.onboarding_invite_advisor_completed_at` — invite-advisor layout gate (NULL = active; skip and complete both set timestamp)
+  - `advisor_clients.connection_life_event_type`, `connection_life_event_at` — snapshot at accept
+  - `households.succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
+- **Application:** `lib/life-events/connectionContext.ts` — `pickConnectionLifeEvent()` (funnel → referral_clicks → life_events)
+- **Application:** `lib/advisor/clientConnectionStatus.ts` — `CONNECTED_ADVISOR_CLIENT_STATUSES`
+- **Application:** `lib/app-url.ts` — `getAppUrl()` for email links
+- **Routes:** `/onboarding/invite-advisor`, `/business-succession` minimal intake; `PATCH /api/consumer/succession-intake`; `POST /api/consumer/onboarding-invite-advisor`
+- **Tiers:** `FEATURE_TIERS['digital-assets'] = 2`
 
 ## Sprint 9 — signup attribution, full drip, robots (May 2026)
 

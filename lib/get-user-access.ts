@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveConsumerTier } from '@/lib/tiers'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { cache } from 'react'
 
 export type UserAccess = {
@@ -53,7 +54,7 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
       .from('advisor_clients')
       .select('id')
       .eq('client_id', user.id)
-      .in('status', ['active', 'accepted'])
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle()
     isAdvisorClient = !!clientRow
   }

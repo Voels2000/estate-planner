@@ -13,6 +13,7 @@ import {
   formatCurrency, getAge, getComplexityStyle,
   computeGaps, severityBadge, severityDot, type Gap
 } from '../_utils'
+import { formatLifeEventLabel } from '@/lib/life-events/eventLabels'
 
 function getClientDisplayName(household: ClientViewShellProps['household']) {
   if (household.has_spouse) {
@@ -32,6 +33,8 @@ export default function OverviewTab({
   estateComposition,
   planReadinessScore,
   planReadinessComputedAt,
+  connectionLifeEventType,
+  connectionLifeEventAt,
 }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
@@ -67,6 +70,29 @@ export default function OverviewTab({
         computedAt={planReadinessComputedAt ?? null}
         clientName={clientName}
       />
+
+      {connectionLifeEventType && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4">
+          <p className="text-sm font-semibold text-indigo-900">Life event at connection</p>
+          <p className="text-sm text-indigo-800 mt-1">
+            Client was planning around{' '}
+            <span className="font-medium">{formatLifeEventLabel(connectionLifeEventType)}</span>
+            {connectionLifeEventAt && (
+              <span className="text-indigo-700">
+                {' '}
+                (logged{' '}
+                {new Date(connectionLifeEventAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+                )
+              </span>
+            )}
+            . Use this context in your first meeting.
+          </p>
+        </div>
+      )}
 
       {/* ── Gap alert banner ── */}
       {(criticalCount > 0 || highCount > 0) && (

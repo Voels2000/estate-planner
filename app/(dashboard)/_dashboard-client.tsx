@@ -124,6 +124,13 @@ type Props = {
   estateCallout?: EstateCalloutCardProps | null
   pendingLifeEvents?: LifeEvent[]
   hasAdvisorConnection?: boolean
+  successionGap?: boolean
+  personaAlerts?: {
+    businessThreshold: '5m' | '10m' | null
+    businessOwnershipValue: number
+    multiStateRealEstate: boolean
+    distinctPropertyStates: string[]
+  } | null
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +174,8 @@ export function DashboardClient(props: Props) {
     estateCallout,
     pendingLifeEvents = [],
     hasAdvisorConnection = false,
+    successionGap = false,
+    personaAlerts = null,
   } = props
 
   void consumerTier
@@ -199,6 +208,60 @@ export function DashboardClient(props: Props) {
         pendingEvents={pendingLifeEvents}
         hasAdvisorConnection={hasAdvisorConnection}
       />
+
+      {successionGap && (
+        <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900">Business succession plan missing</p>
+          <p className="mt-1 text-xs text-amber-800">
+            You have business interests on file but no documented succession plan. Complete the quick
+            intake to flag continuity risks on your estate summary.
+          </p>
+          <a
+            href="/business-succession"
+            className="mt-2 inline-block text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
+          >
+            Document succession planning →
+          </a>
+        </div>
+      )}
+
+      {personaAlerts?.businessThreshold && (
+        <div className="mt-4 mb-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <p className="text-sm font-semibold text-blue-900">
+            {personaAlerts.businessThreshold === '10m'
+              ? 'Business interests at $10M+ on file'
+              : 'Business interests at $5M+ on file'}
+          </p>
+          <p className="mt-1 text-xs text-blue-800">
+            {personaAlerts.businessThreshold === '10m'
+              ? 'At this scale, buy-sell agreements, succession timing, and estate tax coordination usually need a dedicated plan — not just a will update.'
+              : 'Crossing $5M in business value is a common trigger for succession planning, key-person coverage, and coordinating entity value with your personal estate.'}
+          </p>
+          <a
+            href="/business-succession"
+            className="mt-2 inline-block text-xs font-medium text-blue-900 underline-offset-2 hover:underline"
+          >
+            Review business succession →
+          </a>
+        </div>
+      )}
+
+      {personaAlerts?.multiStateRealEstate && (
+        <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900">Multi-state real estate on file</p>
+          <p className="mt-1 text-xs text-amber-800">
+            Properties in {personaAlerts.distinctPropertyStates.join(', ')} ({personaAlerts.distinctPropertyStates.length}{' '}
+            states). Real estate titled in your personal name may require ancillary probate in each state — trust or LLC
+            ownership is often used to avoid separate court proceedings.
+          </p>
+          <a
+            href="/real-estate"
+            className="mt-2 inline-block text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
+          >
+            Review property titling →
+          </a>
+        </div>
+      )}
 
       {conflictReport &&
         (conflictReport.critical > 0 || conflictReport.warnings > 0) &&

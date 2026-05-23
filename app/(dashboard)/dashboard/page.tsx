@@ -44,6 +44,8 @@ import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssu
 import { DashboardClient } from '../_dashboard-client'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
 import type { LifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -123,12 +125,22 @@ export default async function DashboardPage() {
       .from('advisor_clients')
       .select('id')
       .eq('client_id', user!.id)
-      .eq('status', 'accepted')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle(),
   ])
 
   const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
   const hasAdvisorConnection = !!advisorConnection
+  const hasBusinessInterests =
+    (businesses?.length ?? 0) > 0 || (businessInterests?.length ?? 0) > 0
+  const successionGap =
+    hasBusinessInterests && household.succession_plan_in_place !== true
+
+  const personaAlerts = buildPersonaDashboardAlerts({
+    businesses: businesses ?? [],
+    businessInterests: businessInterests ?? [],
+    realEstate: realEstate ?? [],
+  })
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
   const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
@@ -436,6 +448,8 @@ export default async function DashboardPage() {
       estateCallout={estateCallout}
       pendingLifeEvents={pendingLifeEvents}
       hasAdvisorConnection={hasAdvisorConnection}
+      successionGap={successionGap}
+      personaAlerts={personaAlerts}
     />
   )
 }

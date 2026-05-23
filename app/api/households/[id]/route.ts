@@ -4,6 +4,7 @@
 // Auth-gated — caller must be the household owner OR an active advisor for the household.
 
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { triggerHouseholdRecompute } from '@/lib/consumer/afterHouseholdWrite'
 import { NextResponse } from 'next/server'
 
@@ -64,7 +65,7 @@ export async function PATCH(
         .select('id')
         .eq('advisor_id', user.id)
         .eq('client_id', household.owner_id)
-        .eq('status', 'active')
+        .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
         .single()
       isAdvisor = !!link
     }

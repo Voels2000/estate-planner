@@ -48,7 +48,7 @@ export async function POST() {
       .from('advisor_clients')
       .update({
         client_id: user.id,
-        status: 'accepted',
+        status: 'active',
         accepted_at: new Date().toISOString(),
         billing_transferred: true,
         billing_transferred_at: new Date().toISOString(),

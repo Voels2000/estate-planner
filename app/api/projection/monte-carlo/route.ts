@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import {
   runMonteCarloSimulation,
   MONTE_CARLO_SYSTEM_DEFAULTS,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     .select('id')
     .eq('advisor_id', user.id)
     .eq('client_id', household.owner_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
   if (!link) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

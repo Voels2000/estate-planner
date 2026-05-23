@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const { user, isSuperuser, isConsumer } = await getAccessContext()
@@ -96,9 +97,11 @@ export async function POST(req: NextRequest) {
       // profile_id is set if the attorney has a platform account; null if not yet signed up.
       const hasAccount = !!attorneyListing.profile_id
 
+      const appUrl = getAppUrl()
+
       if (hasAccount) {
         // Existing attorney — notification only, login CTA
-        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-notify`, {
+        await fetch(`${appUrl}/api/email/attorney-notify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -109,9 +112,9 @@ export async function POST(req: NextRequest) {
         })
       } else {
         // New attorney — invite with signup link
-        const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?role=attorney&connectionToken=${connection.id}&email=${encodeURIComponent(attorneyListing.email)}`
+        const signupUrl = `${appUrl}/signup?role=attorney&connectionToken=${connection.id}&email=${encodeURIComponent(attorneyListing.email)}`
 
-        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-invite`, {
+        await fetch(`${appUrl}/api/email/attorney-invite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

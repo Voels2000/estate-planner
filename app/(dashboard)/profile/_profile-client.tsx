@@ -191,9 +191,11 @@ export function ProfileClient({
       const returnTo =
         requiredParam && profileComplete && fromParam?.startsWith('/')
           ? fromParam
-          : householdId || created
-            ? '/dashboard'
-            : '/health-check'
+          : profileComplete && (householdId || created)
+            ? '/onboarding/invite-advisor'
+            : householdId || created
+              ? '/dashboard'
+              : '/health-check'
 
       setTimeout(() => {
         router.push(returnTo)

@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import { summarizeScenario, type ScenarioSummary } from '@/lib/scenarios/summarizeScenario'
+import { PLANNING_SURFACES } from '@/lib/planning/planningSurfaces'
+import { PlanningSurfaceNav } from '@/app/(dashboard)/_components/PlanningSurfaceNav'
 
 type Household = {
   id: string
@@ -245,11 +247,15 @@ export default function ScenariosClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Scenarios</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          Compare up to 3 scenarios side by side. Base Case is locked to your profile. Customize Scenario B and C freely.
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Scenarios</h1>
+          <p className="mt-1 text-sm text-neutral-600 max-w-xl">
+            {PLANNING_SURFACES.find((s) => s.id === 'scenarios')!.description} Base Case is locked to your profile;
+            customize Scenario B and C freely.
+          </p>
+        </div>
+        <PlanningSurfaceNav className="sm:pt-1" />
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}

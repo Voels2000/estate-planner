@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 // ── POST — create note ────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     .select('id')
     .eq('advisor_id', ctx.user.id)
     .eq('client_id', client_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .single()
 
   if (!link) return NextResponse.json({ error: 'Client not linked' }, { status: 403 })

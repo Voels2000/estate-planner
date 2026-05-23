@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -113,7 +114,8 @@ export async function POST(req: NextRequest) {
   // ── 8. Send email to other party (non-fatal) ────────────────
   if (notifyEmail) {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/send`, {
+      const appUrl = getAppUrl()
+      await fetch(`${appUrl}/api/email/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
             <p><strong>${revokerProfile?.full_name ?? 'A user'}</strong> has revoked 
             attorney access on EstatePlanner.</p>
             <p>Any documents already uploaded remain safely stored in the client vault.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard">Go to Dashboard</a></p>
+            <p><a href="${appUrl}/dashboard">Go to Dashboard</a></p>
           `,
         }),
       })

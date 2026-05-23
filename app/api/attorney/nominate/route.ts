@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -101,7 +102,8 @@ export async function POST(req: NextRequest) {
 
   // ── 6. Notify admin (non-fatal) ─────────────────────────────
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/send`, {
+    const appUrl = getAppUrl()
+    await fetch(`${appUrl}/api/email/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
             <li><strong>Nominated by advisor:</strong> ${user.id}</li>
           </ul>
           <p>Log in to the admin portal to review and approve this listing.</p>
-          <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/attorney-listings">
+          <p><a href="${appUrl}/admin/attorney-listings">
             Review Nomination
           </a></p>
         `,

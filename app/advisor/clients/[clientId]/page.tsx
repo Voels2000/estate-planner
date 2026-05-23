@@ -311,6 +311,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       strategySetSummary={strategySetSummary}
       planReadinessScore={healthScore}
       planReadinessComputedAt={healthScoreComputedAt}
+      connectionLifeEventType={link.connection_life_event_type}
+      connectionLifeEventAt={link.connection_life_event_at}
     />
   )
 }

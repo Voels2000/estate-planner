@@ -7,6 +7,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 
@@ -20,6 +21,8 @@ type AdvisorClientLink = {
   accepted_at: string | null
   client_id: string
   client_status: string | null
+  connection_life_event_type: string | null
+  connection_life_event_at: string | null
 }
 
 export async function loadAdvisorContextOrRedirect(
@@ -48,10 +51,10 @@ export async function loadAdvisorClientLinkOrRedirect(
 ): Promise<AdvisorClientLink> {
   const { data: link, error: linkError } = await supabase
     .from('advisor_clients')
-    .select('id, status, accepted_at, client_id, client_status')
+    .select('id, status, accepted_at, client_id, client_status, connection_life_event_type, connection_life_event_at')
     .eq('advisor_id', params.advisorId)
     .eq('client_id', params.clientId)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .single<AdvisorClientLink>()
 
   if (linkError || !link) redirect('/advisor')

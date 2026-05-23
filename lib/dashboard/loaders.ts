@@ -133,7 +133,10 @@ export async function loadDashboardCoreInputs(supabase: ServerSupabase, userId: 
     supabase.from('liabilities').select('balance').eq('owner_id', userId),
     supabase.from('income').select('amount, source, start_year, end_year').eq('owner_id', userId),
     supabase.from('expenses').select('amount').eq('owner_id', userId),
-    supabase.from('real_estate').select('current_value, mortgage_balance, monthly_payment, titling').eq('owner_id', userId),
+    supabase
+      .from('real_estate')
+      .select('current_value, mortgage_balance, monthly_payment, titling, situs_state')
+      .eq('owner_id', userId),
     supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', userId),
     supabase
       .from('business_interests')

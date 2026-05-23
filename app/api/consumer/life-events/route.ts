@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import { isValidLifeEventType } from '@/lib/events/lifeEventSlugs'
 
@@ -67,7 +68,7 @@ async function notifyAdvisorOfLifeEvent(
       .from('advisor_clients')
       .select('advisor_id')
       .eq('client_id', userId)
-      .eq('status', 'accepted')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle()
 
     if (!connection?.advisor_id) return

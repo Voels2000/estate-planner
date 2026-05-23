@@ -4,11 +4,16 @@ import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { EducationalTopicsCards } from '@/app/(dashboard)/_components/dashboard/EducationalTopicsCards';
+import {
+  buildPersonalizedCharitableTopics,
+  type CharitableHouseholdContext,
+} from '@/lib/charitable/buildPersonalizedCharitableTopics';
 
 interface CharitableGivingDashboardProps {
   householdId: string;
   userRole: 'consumer' | 'advisor';
   consumerTier?: number;
+  householdContext?: CharitableHouseholdContext | null;
 }
 
 interface DonationRow {
@@ -94,6 +99,7 @@ const getErrorMessage = (error: unknown): string =>
 export default function CharitableGivingDashboard({
   householdId,
   userRole,
+  householdContext = null,
 }: CharitableGivingDashboardProps) {
   const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
@@ -253,10 +259,33 @@ export default function CharitableGivingDashboard({
   if (!summary) return null;
 
   const { summary: s, deduction_detail: dd, qcd_summary: qcd } = summary;
-  const recommendations = summary.recommendations.filter((rec) => {
+  const rpcRecommendations = summary.recommendations.filter((rec) => {
     const text = `${rec.title} ${rec.detail}`.toLowerCase();
     return !text.includes('tcja') && !text.includes('sunset');
   });
+  const usePersonalizedEmpty =
+    s.donation_count === 0 && householdContext != null
+  const personalized =
+    householdContext != null ? buildPersonalizedCharitableTopics(householdContext) : null
+  const recommendations = usePersonalizedEmpty && personalized
+    ? personalized.topics.map((t) => ({
+        type: t.key,
+        priority: t.priority,
+        title: t.title,
+        detail: t.detail,
+      }))
+    : rpcRecommendations.length > 0
+      ? rpcRecommendations
+      : personalized
+        ? personalized.topics.map((t) => ({
+            type: t.key,
+            priority: t.priority,
+            title: t.title,
+            detail: t.detail,
+          }))
+        : rpcRecommendations
+  const showProfileDataNote =
+    usePersonalizedEmpty && personalized?.usedProfileInputs === true
 
   return (
     <Fragment>
@@ -437,15 +466,32 @@ export default function CharitableGivingDashboard({
             </div>
 
             {activeTab === 'topics' && (
-              <EducationalTopicsCards
-                topics={recommendations.map((rec, i) => ({
-                  key: `${rec.type}-${i}`,
-                  title: rec.title,
-                  detail: rec.detail,
-                  priority: rec.priority,
-                }))}
-                cardClassName="border-l-4 rounded-r-lg p-4 bg-gray-50"
-              />
+              <>
+                {showProfileDataNote && (
+                  <p className="mb-3 text-sm text-gray-600 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    No donations logged for {summary.tax_year} yet. Suggestions below use your profile
+                    {householdContext?.statePrimary
+                      ? ` (${householdContext.statePrimary})`
+                      : ''}
+                    , filing status, and ages.
+                  </p>
+                )}
+                {usePersonalizedEmpty && !showProfileDataNote && (
+                  <p className="mb-3 text-sm text-gray-600 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    No donations logged for {summary.tax_year} yet. Complete Profile for state, birth
+                    year, and retirement balances to unlock tailored suggestions.
+                  </p>
+                )}
+                <EducationalTopicsCards
+                  topics={recommendations.map((rec, i) => ({
+                    key: `${rec.type}-${i}`,
+                    title: rec.title,
+                    detail: rec.detail,
+                    priority: rec.priority,
+                  }))}
+                  cardClassName="border-l-4 rounded-r-lg p-4 bg-gray-50"
+                />
+              </>
             )}
 
             {activeTab === 'deductions' && (

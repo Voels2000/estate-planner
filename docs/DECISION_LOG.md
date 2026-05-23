@@ -27,69 +27,93 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Conflict alerts must be above the fold on the dashboard.** The specific named alerts are the highest-value content. They cannot be the last thing before the footer.
 - **Pricing is positioned against professional fees**, not against consumer tools. Never price-compare to LegalZoom or Trust & Will in copy or positioning.
 - **The assessment is the primary public conversion mechanism.** Score is visible without an account. Full breakdown requires account creation.
+- **Advisor connection queries** must use `CONNECTED_ADVISOR_CLIENT_STATUSES` from `lib/advisor/clientConnectionStatus.ts` (`active` | `accepted`) — never hardcode a single status in new code.
+- **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 
 ---
 
 ## Decision log
 
-### May 2026 — A/B test decision criteria must be defined before Sprint 11
+### May 2026 — Planning empty-state CTAs: profile-only on tier-1/2 surfaces (Sprint 12)
 
-**Decision:** Both A/B tests (`ab_upgrade_copy`, `ab_assessment_gate`) require documented
-decision criteria — specific metric, specific threshold, named decision owner — before Sprint 11
-begins. Sprint 11 is the final measurement window. Sprint 12 implements the winner and removes
-the losing variant. Tests that reach Sprint 12 without defined criteria will default to keeping
-the variant with the higher `tier_upgraded` conversion rate in the `funnel_events` data.
+**Decision:** `/projections` and `/complete` use `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` (profile link only). The “Generate estate plan →” link stays on tier-3 `/my-estate-strategy` (inline `POST /api/consumer/generate-base-case`). Export `planningMissingProjectionActions(tier)` for callers that need tier-aware lists; do not merge TIER2 and TIER3 into one constant.
 
-**Reasoning:** A/B tests without defined exit criteria become permanent features by default.
-Both of these tests control core conversion surfaces (assessment gate and upgrade copy). They
-must be resolved before launch — running split-test code in production is a complexity debt
-that grows each sprint.
+**Reasoning:** Lifetime snapshot and projections rows come from `computeCompleteProjection` on each server render once profile inputs exist — not from `projection_scenarios`. Sending tier-2 users to `/my-estate-strategy` hit a tier-3 upgrade wall and implied a manual generate step that does not apply.
 
-**Alternatives considered:** Keeping both variants at launch (rejected — adds ongoing complexity
-and makes conversion analysis harder post-launch). Picking winners by gut feel without data
-(rejected — these tests exist precisely to get data; the data should drive the call).
-
-**Owner:** Product lead must document criteria in a follow-up DECISION_LOG entry by end of Sprint 10.
+**Alternatives considered:** Inline generate on `/complete` (rejected — redundant with server-side compute). Single shared CTA list (rejected — regresses tier-2 UX).
 
 ---
 
-### May 2026 — Business succession page: ship minimal or formally descope
+### May 2026 — A/B test exit criteria (Sprint 10, settled)
 
-**Decision to make (Sprint 10):** Business succession (`/business-succession`) is commented
-out of the sidebar and has no implementation. The business owner ($3M–$15M) is one of the
-three primary personas in PRODUCT_STRATEGY, and succession planning is their defining need.
-One of two paths must be chosen in Sprint 10 and documented here:
+**Decision:** Both A/B tests (`ab_upgrade_copy`, `ab_assessment_gate`) use the same exit
+framework for Sprint 11–12:
 
-**Path A — Ship minimal:** Add a minimal business succession page (even a structured intake
-form + educational framing) to `/business-succession` and restore the sidebar link. Minimum
-viable: capture existence of succession plan (yes/no), key-person dependency, and buy-sell
-agreement status. Surfaces a conflict if no plan exists.
+| Test | Primary metric | Threshold | Decision owner |
+|------|----------------|-----------|----------------|
+| `ab_upgrade_copy` | `tier_upgraded` in `funnel_events` | 50 events per variant **or** 4 weeks elapsed | Product owner (Alan) |
+| `ab_assessment_gate` | `tier_upgraded` in `funnel_events` | Same | Product owner (Alan) |
 
-**Path B — Formally descope to post-launch:** Document as post-launch in this DECISION_LOG,
-remove the commented-out sidebar code and the route reference from CONSUMER_NAV_MAP.md, and
-add a post-launch backlog item in ROADMAP.md.
+For `ab_assessment_gate`, also monitor funnel drop-off `event_assess_complete` → `account_created`
+as a secondary signal when interpreting the primary metric.
 
-**What must not happen:** Leaving the commented-out route in the codebase without a decision.
-Dead code with no owner is a maintenance risk and a persona gap signal.
+Sprint 11 is the final measurement window. Sprint 12 ships the winner and removes the losing
+variant. If criteria are not met by end of Sprint 11, default to the variant with higher
+`tier_upgraded` rate in `funnel_events`.
+
+**Reasoning:** Prevents split-test code from becoming permanent launch debt. Secondary metric
+on assessment gate catches gate friction that tier upgrades alone might miss.
+
+**Alternatives considered:** Gut-feel winner selection (rejected). Indefinite dual variants at
+launch (rejected).
 
 ---
 
-### May 2026 — Invite-your-advisor onboarding: launch gate or post-launch
+### May 2026 — Business succession: Path A minimal intake (Sprint 10, settled)
 
-**Decision to make (Sprint 10):** PRODUCT_STRATEGY principle 4 states: "Invite your advisor
-should be a primary onboarding step, not buried in settings." Currently, the invite lives as
-a `mailto:` card on `/my-advisor` in the no-connection state. It is not surfaced during onboarding.
+**Decision:** **Path A — Ship minimal.** `/business-succession` is live in the sidebar (tier 3).
+Minimum intake on `households`: `succession_plan_in_place`, `succession_key_person_identified`,
+`succession_buy_sell_in_place`. Dashboard shows an above-the-fold amber alert when the user has
+business interests and `succession_plan_in_place` is not true. Full `BusinessSuccessionDashboard`
+remains available for advisor workflows; consumer page is the minimal three-question form only.
 
-**Path A — Launch gate:** Add invite-your-advisor as an explicit step in the post-signup
-onboarding flow (after profile setup, before dashboard). Sequesters the flywheel from day one.
+**Reasoning:** Business-owner persona ($3M–$15M) is a primary segment; succession is their
+defining need. Minimal intake closes the persona gap without blocking launch on full planning UI.
 
-**Path B — Post-launch:** Keep the current `/my-advisor` placement. Accept the flywheel
-starts later in the user lifecycle. Document this explicitly in DECISION_LOG so PRODUCT_STRATEGY
-principle 4 is not cited as a gap in future reviews without context.
+**Alternatives considered:** Path B post-launch descope (rejected — leaves dead sidebar comment
+and persona gap). Full dashboard for consumers at launch (rejected — scope).
 
-**Reasoning for requiring a decision now:** This item has been deferred since Sprint 2 without
-a logged decision. Every sprint it appears as "deferred" without clarity on whether it's a launch
-requirement or a post-launch item. That ambiguity wastes planning bandwidth every sprint.
+---
+
+### May 2026 — Invite-your-advisor: Path A post-profile onboarding (Sprint 10, settled)
+
+**Decision:** **Path A — Launch gate.** After minimum viable profile save, consumers route to
+`/onboarding/invite-advisor` (email invite via `mailto:`, find-advisor link, or skip). One column
+only: `profiles.onboarding_invite_advisor_completed_at`. **Skip and continue both set the same
+timestamp** (dismissed = seen; no separate `skipped` boolean). NULL means the layout gate is active.
+`POST /api/consumer/onboarding-invite-advisor` is used for skip. Layout gate redirects consumers
+with MVP profile who have not completed this step. `/my-advisor` retains the invite card for later.
+
+**Deploy:** Column must exist via `20260530000000_sprint9_10_gates.sql` before first prod deploy of this gate.
+
+**Reasoning:** Aligns with PRODUCT_STRATEGY principle 4 (advisor flywheel from day one) without
+building in-app advisor messaging at launch.
+
+**Alternatives considered:** Path B footer-only on `/my-advisor` (rejected for launch).
+
+---
+
+### May 2026 — Advisor client link status: `active` and `accepted` (Sprint 9/10)
+
+**Decision:** Treat `advisor_clients.status` in `('active', 'accepted')` as a connected link on
+both consumer and advisor surfaces. Canonical constant: `CONNECTED_ADVISOR_CLIENT_STATUSES` in
+`lib/advisor/clientConnectionStatus.ts`. New accepts write `active`; legacy `link-pending` now
+writes `active` (was `accepted`). Advisor client detail loader and advisor API access checks use
+the shared constant so roster + client workspace stay symmetric with `/my-advisor`.
+
+**Connection life event at accept:** Prefer `funnel_events.event_slug` (signup/event attribution),
+then `referral_clicks.event_slug` for `profiles.referral_code`, then explicit `life_events`, then
+calendar triggers — implemented in `pickConnectionLifeEvent()`.
 
 ---
 

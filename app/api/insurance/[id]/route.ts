@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import { NextRequest, NextResponse } from 'next/server'
@@ -31,7 +32,7 @@ async function resolvePolicyAuth(
     .select('id')
     .eq('advisor_id', userId)
     .eq('client_id', pol.user_id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .single()
 
   return { policyUserId: pol.user_id, allowed: !!link }

@@ -1,12 +1,12 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 9 current)
+# Last updated: May 2026 (Sprint 12 current)
 
 ---
 
 ## ⚡ Quick context block — paste this at the start of every new AI session
 
-> My Wealth Maps is a self-guided estate and financial planning tool for households with $2M–$30M in assets. This segment is severely underserved — banks sell products instead of planning, attorneys are reactive not proactive, and consumer tools like LegalZoom are too simple for this level of complexity. Over 50% of our target users have no will or estate plan at all. Our product is the first tool built specifically for the complexity of this segment, at a price point this segment can justify ($50–200/month vs $5K–50K in annual professional fees). We have three paid tiers (Financial, Retirement, Estate) and a public site with education, assessment (A/B-gated results), **24 life event pages** with assessments, Vercel + funnel analytics + admin Funnel tab, **24 custom email drip sequences**, attorney PDF export, in-app life events, **advisor (`?ref=`) and attorney (`?aref=`) referral** with signup attribution, and advisor/attorney directories. **Current sprint: Sprint 9** — launch ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)); see [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
+> My Wealth Maps is a self-guided estate and financial planning tool for households with $2M–$30M in assets. This segment is severely underserved — banks sell products instead of planning, attorneys are reactive not proactive, and consumer tools like LegalZoom are too simple for this level of complexity. Over 50% of our target users have no will or estate plan at all. Our product is the first tool built specifically for the complexity of this segment, at a price point this segment can justify ($50–200/month vs $5K–50K in annual professional fees). We have three paid tiers (Financial, Retirement, Estate) and a public site with education, assessment (A/B-gated results), **24 life event pages** with assessments, Vercel + funnel analytics + admin Funnel tab, **24 custom email drip sequences**, attorney PDF export, in-app life events, **advisor (`?ref=`) and attorney (`?aref=`) referral** with signup attribution, **invite-advisor onboarding**, minimal **business succession** intake, and advisor/attorney directories. **Current sprint: Sprint 11** — planning-app coherence; Sprints 9–10 closed. See [ROADMAP.md](./ROADMAP.md) and [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ---
 

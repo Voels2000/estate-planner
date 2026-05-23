@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
+import { getAppUrl } from '@/lib/app-url'
+import { pickConnectionLifeEvent } from '@/lib/life-events/connectionContext'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +50,7 @@ export async function POST(request: Request) {
     .from('advisor_clients')
     .select('id')
     .eq('advisor_id', user.id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
 
   const { data: advisorProfile } = await admin
     .from('profiles')
@@ -85,6 +88,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Consumer profile not found' }, { status: 404 })
   }
 
+  const lifeEventSnapshot = await pickConnectionLifeEvent(admin, row.client_id)
+
   // Directly activate — no second confirmation step required (Sprint 55 architectural change)
   // Advisor gets immediate read-only access to estate documents and strategy output
   const { error: updateError } = await admin
@@ -92,6 +97,8 @@ export async function POST(request: Request) {
     .update({
       status: 'active',
       accepted_at: new Date().toISOString(),
+      connection_life_event_type: lifeEventSnapshot?.event_type ?? null,
+      connection_life_event_at: lifeEventSnapshot?.recorded_at ?? null,
       // Clear any stale invite token fields
       invite_token: null,
       invite_expires_at: null,
@@ -106,14 +113,23 @@ export async function POST(request: Request) {
   void admin.from('funnel_events').insert({
     event_name: 'advisor_connected',
     user_id: row.client_id,
-    properties: { advisor_id: user.id, advisor_client_id: row.id },
+    properties: {
+      advisor_id: user.id,
+      advisor_client_id: row.id,
+      ...(lifeEventSnapshot
+        ? {
+            connection_life_event_type: lifeEventSnapshot.event_type,
+            connection_life_event_label: lifeEventSnapshot.event_label,
+          }
+        : {}),
+    },
   }).then(({ error: funnelErr }) => {
     if (funnelErr) console.error('advisor_connected funnel event:', funnelErr)
   })
 
   // Notify consumer that advisor accepted — no action required from consumer
   const advisorLabel = profile.full_name?.trim() || profile.email || 'Your advisor'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const appUrl = getAppUrl()
 
   try {
     await resend.emails.send({

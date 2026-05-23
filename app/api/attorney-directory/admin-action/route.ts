@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const { isAdmin, isSuperuser, user } = await getAccessContext()
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to approve listing' }, { status: 500 })
     }
 
+    const appUrl = getAppUrl()
+
     // Email attorney — approval notification
     if (listing.email) {
       try {
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
                   Consumers can now find your listing and request to connect with you.
                 </p>
                 <div style="text-align:center;margin:32px 0">
-                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/login"
+                  <a href="${appUrl}/login"
                     style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">
                     Log In to Attorney Portal
                   </a>

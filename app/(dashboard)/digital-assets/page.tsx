@@ -6,16 +6,49 @@
 // Sprint 63 - Consumer digital asset inventory page
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getUserAccess } from '@/lib/get-user-access'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import DigitalAssetsClient from './_digital-assets-client'
 
 export default async function DigitalAssetsPage() {
+  const access = await getUserAccess()
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
+
+  if (access.tier < 2 && !access.isAdvisor) {
+    const { data: householdRow } = await supabase
+      .from('households')
+      .select('state_primary')
+      .eq('owner_id', user.id)
+      .single()
+    const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
+    const valueProposition = await getEventUpgradeValueProp(
+      supabase,
+      user.id,
+      2,
+      'Catalogue digital assets so your executor can locate accounts and platforms.',
+    )
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Digital Assets</h1>
+        <UpgradeBanner
+          requiredTier={2}
+          moduleName="Digital Assets"
+          valueProposition={valueProposition}
+          householdContext={{
+            grossEstate: null,
+            statePrimary: householdRow?.state_primary ?? null,
+            firstName: null,
+          }}
+        />
+      </div>
+    )
+  }
 
   const { data: household } = await supabase
     .from('households')

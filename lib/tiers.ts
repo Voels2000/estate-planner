@@ -80,6 +80,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   gifting:               3,
   charitable:            3,
   'business-succession': 3,
+  'digital-assets':      2,
   'my-family':           3,
   'trust-will':          3,
 }

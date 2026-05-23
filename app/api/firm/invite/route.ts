@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
+import { getAppUrl } from '@/lib/app-url'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
@@ -107,10 +108,7 @@ export async function POST(request: Request) {
     }
 
     const firmName = ctx.firm_name ?? 'Your firm'
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      process.env.NEXT_PUBLIC_APP_URL ??
-      'http://localhost:3000'
+    const siteUrl = getAppUrl()
     const signupUrl = `${siteUrl}/signup?invite_token=${encodeURIComponent(inviteToken)}&firm_id=${encodeURIComponent(ctx.firm_id)}&role=advisor`
 
     const { error: emailError } = await resend.emails.send({

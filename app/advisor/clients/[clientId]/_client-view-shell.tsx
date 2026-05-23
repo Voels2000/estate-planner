@@ -365,4 +365,6 @@ export interface ClientViewShellProps {
     pendingAdvisorCount: number
     projectedCount: number
   }
+  connectionLifeEventType?: string | null
+  connectionLifeEventAt?: string | null
 }

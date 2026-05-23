@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 9 partial — through Session 127+; see SCHEMA_CHANGELOG for session history)
+# Last updated: May 2026 (Sprint 12 current; Sprint 11 closed; see SCHEMA_CHANGELOG)
 
 ---
 
@@ -44,7 +44,7 @@ Consumers and advisors share one **household** data model but operate in separat
 
 **3. Access and notifications**
 
-- Link boundary: `advisor_clients` (`status='accepted'`).
+- Link boundary: `advisor_clients` with `status` in `CONNECTED_ADVISOR_CLIENT_STATUSES` (`'active'` | `'accepted'`). Import from `lib/advisor/clientConnectionStatus.ts` — do not hardcode a single status in new code.
 - Advisor workspace: `/advisor/clients/[clientId]?tab=…`
 - Consumer: `/my-advisor` (connection, revoke, pending `connection_requests`); optional `advisor_pdf_access`.
 - Attorneys: `attorney_clients`, `/my-attorney`, `/settings/attorney-access` (parallel, not advisor portal).
@@ -53,13 +53,20 @@ Consumers and advisors share one **household** data model but operate in separat
 
 - Transfer Strategies **About this strategy** card: **Ask your advisor about this →** → `/find-advisor` (public directory). No in-app message to the connected advisor.
 
-**Known advisor flywheel gaps (post-Sprint 9 / open backlog):**
+**Advisor flywheel — shipped (Sprint 9/10):**
 
-| Gap | Current behavior | Target behavior | Sprint |
-|-----|-----------------|-----------------|--------|
-| Life-event context on advisor connect | Lost at connection time | Visible in advisor portal Overview | Sprint 9 hard gate |
-| "Ask your advisor →" for connected users | Links to `/find-advisor` for all users | In-app action when advisor connected | Post-launch |
-| Invite-your-advisor onboarding | Footer link on `/my-advisor` only | Primary onboarding step (PRODUCT_STRATEGY principle 4) | Decision Sprint 10 |
+| Feature | Implementation |
+|---------|----------------|
+| Life-event at connect | `pickConnectionLifeEvent()` on accept — priority: `funnel_events.event_slug` → `referral_clicks.event_slug` (via `profiles.referral_code`) → `life_events`; stored on `advisor_clients.connection_life_event_*`; banner on advisor Overview |
+| Invite-your-advisor | `/onboarding/invite-advisor`; `profiles.onboarding_invite_advisor_completed_at` (skip sets same timestamp); layout gate in `(dashboard)/layout.tsx` |
+| Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
+
+**Known limitations / open gaps:**
+
+| Gap | Notes | Sprint |
+|-----|-------|--------|
+| Cross-device event slug attribution | `referral_clicks` has no `user_id`; anonymous click log. Per-user slug from `funnel_events` at signup; cross-device signup may miss `event_slug` on funnel row — see NEXT_SESSION.md | Post-launch if needed |
+| "Ask your advisor →" for connected users | Links to `/find-advisor` for all users | Post-launch (DECISION_LOG) |
 
 Sidebar portal link visibility: [CONSUMER_NAV_MAP.md → Sidebar portal links](./CONSUMER_NAV_MAP.md#sidebar-portal-links-consumer-layout).
 
@@ -721,10 +728,11 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 9 / finish):** Launch checklist, signup referral persistence (shipped),
-drip all 24 slugs (shipped), life-event-on-connect (hard gate — not yet shipped), Digital Assets
-FEATURE_TIERS key (must not carry), SITE_URL audit. See [ROADMAP.md](./ROADMAP.md) for full
-Sprint 9–15 plan.
+**Current sprint (Sprint 12):** A/B test winners, mobile nav audit, copy pass. Persona dashboard alerts shipped (business $5M/$10M, multi-state RE via `situs_state` in `loadDashboardCoreInputs`).
+
+**Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
+Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business
+succession, invite-advisor onboarding, A/B criteria in DECISION_LOG. See [ROADMAP.md](./ROADMAP.md).
 
 ---
 
@@ -764,16 +772,6 @@ Two concepts must stay separate until product designs unified intake:
 
 ## Open Backlog
 
-### High priority — pre-launch decisions required (Sprint 10)
-
-These items need a Sprint 10 decision (ship minimal vs formally descope) before they can
-be scheduled or removed:
-
-- **Business succession planning page** — commented out of sidebar; business owner persona gap.
-  Path A: ship minimal. Path B: remove dead code + DECISION_LOG entry. (See DECISION_LOG.)
-- **Invite-your-advisor onboarding step** — PRODUCT_STRATEGY principle 4; currently footer only.
-  Path A: launch gate (Sprint 10). Path B: post-launch with logged decision. (See DECISION_LOG.)
-
 ### High priority — confirmed post-launch
 
 1. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake;
@@ -787,7 +785,9 @@ be scheduled or removed:
    legacy status.
 5. **"Ask your advisor →" in-app action for connected users** — currently links to `/find-advisor`
    for all users including those with a connected advisor. Post-launch: CTA should offer an in-app
-   flag or message when `advisor_clients` row exists in accepted status. (See DECISION_LOG.)
+   flag or message when `advisor_clients` row exists in `CONNECTED_ADVISOR_CLIENT_STATUSES`. (See DECISION_LOG.)
+6. **Cross-device referral event slug** — optional `profiles.referral_event_slug` at signup if product
+   requires event context when sessionStorage does not survive to account creation (see NEXT_SESSION.md).
 
 ### Confirmed post-launch (no Sprint assignment)
 

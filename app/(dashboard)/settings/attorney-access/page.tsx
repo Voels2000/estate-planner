@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { AttorneyAccessClient } from './_attorney-access-client'
@@ -60,7 +61,7 @@ export default async function AttorneyAccessPage() {
     .from('advisor_clients')
     .select('id, advisor_pdf_access')
     .eq('client_id', user.id)
-    .eq('status', 'active')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
 
   // ── Shape data ─────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 9 current; Sprints 10–15 plan added)
+# Last updated: May 2026 (Sprint 12 current; Sprint 11 closed)
 
 ---
 
@@ -27,115 +27,19 @@
 CONSUMER_RELEASE_SMOKE_TEST manual pass completes.** Section 2 (domain, DNS, Resend,
 Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verified.
 
-### Sprint 9 — Launch, signup attribution, growth polish (Weeks 31–34)
-**Goal:** Execute launch checklist when ready; persist advisor/attorney referral codes through signup; close remaining drip and connection polish.
-
-**Launch** ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
-- `[x]` Restore permissive `app/robots.ts` (in repo; deploy + verify `/robots.txt`)
-- `[ ]` Submit `sitemap.xml` in Search Console
-- `[ ]` Search Console verify + `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`
-- `[ ]` Production `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`; Resend domain verify
-
-**Attribution**
-- `[x]` Signup persistence — `mwm_referral_code`, `mwm_attorney_referral_code` → `profiles` + `funnel_events` (`20260529000000_profiles_referral_attribution.sql`)
-- `[ ]` Admin funnel — optional attorney click report (`listing_type = 'attorney'`)
-
-**Growth polish**
-- `[x]` Drip custom sequences — all **24** event slugs in `lib/emails/drip-templates.ts`
-- `[ ]` **[HARD GATE]** Life event context on new advisor connections — when advisor accepts
-  a client who arrived via a life event page, the event type must be visible in the advisor
-  portal Overview tab. This is a Sprint 9 hard requirement, not optional. It has been
-  deferred since Sprint 4. Do not carry to Sprint 10.
-  - File: `app/api/advisor/accept-request/route.ts`
-  - Data: pass `life_events` context at connection-accept time into advisor client view
-  - Test: manual verification in Supabase + advisor portal spot-check
-
-**Quality gates (Sprint 9 — must not carry)**
-- `[ ]` Digital Assets `FEATURE_TIERS` key addition (`lib/tiers.ts`) — currently missing; tier gate enforced only in `page.tsx`
-- `[ ]` `NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` audit — find all remaining legacy references across email routes and replace
-
-**Deferred from earlier sprints**
-- `[ ]` Segment-specific dashboard alerts (business $5M, multi-state RE)
-- `[ ]` Blended family as separate slug (optional)
-
-**Sprint 9 shipped (partial)**
-- `[x]` Signup referral attribution — `_signup-form.tsx` + profiles columns
-- `[x]` RMD start age — `lib/calculations/rmdStartAge.ts`; advisor Retirement tab + engine alignment (72/73/75 by birth year)
-
-**Success criteria for Sprint 9**
-- Launch checklist complete when product goes live
-- `[x]` Referral codes survive signup and appear in funnel/admin
-- `[x]` All 24 event pages have custom drip sequences
-
----
-
-### Sprint 10 — Persona depth, advisor flywheel, segment alerts (Weeks 35–38)
-
-**Goal:** Close the three-persona coverage gap. Business owner and real estate accumulator
-personas must have their defining dashboard signals before Sprint 11. Reframe internally
-as "close persona gaps" not just "alerts."
-
-**Persona: Business owner**
-- `[ ]` Business $5M / $10M threshold alert on dashboard (doc ref: LAUNCH_CHECKLIST § Segment)
-- `[ ]` Business succession page — final decision: ship minimal version OR formally descope to
-  post-launch with a DECISION_LOG entry. Commented-out route must be resolved either way.
-  Do not leave dead code in the sidebar.
-
-**Persona: Real estate accumulator**
-- `[ ]` Multi-state real estate probate-risk alert on dashboard (doc ref: LAUNCH_CHECKLIST § Segment,
-  ROADMAP Sprint 3 deferred)
-
-**Advisor flywheel**
-- `[ ]` Confirm life-event-on-connect shipped and visible in advisor portal (carry-forward verify
-  from Sprint 9; if not shipped, this becomes Sprint 10's first task before anything else)
-- `[ ]` Evaluate: "Ask your advisor about this →" on Transfer Strategy education cards links to
-  `/find-advisor` (public directory). For users with a connected advisor, this should offer
-  an in-app action. Add to DECISION_LOG if deferred post-launch.
-- `[ ]` Invite-your-advisor onboarding step — PRODUCT_STRATEGY principle 4 names this as primary
-  onboarding, not buried in settings. Decision required: is this a launch gate or post-launch?
-  Add DECISION_LOG entry either way. Do not let it slide silently again.
-
-**Optional (sprint permitting)**
-- `[ ]` Event-specific dashboard alerts beyond LifeEventBanner (Sprint 3 deferred)
-- `[ ]` Attorney portal readiness score (Sprint 4 deferred)
-- `[ ]` Admin funnel: attorney click breakdown by `listing_type` (NEXT_SESSION item)
-
-**Success criteria**
-- Business owner and RE accumulator personas each have at least one segment-specific signal on dashboard
-- Business succession route: decision made and logged, dead code resolved
-- Invite-your-advisor: decision logged
-- Life-event-on-connect: verified in advisor portal
-
----
-
-### Sprint 11 — Planning-app coherence (Weeks 39–42)
-
-**Goal:** Close cross-links and empty states that break the planning flow. No new feature pillars.
-
-- `[ ]` Projections + Lifetime Snapshot — merge into a single surface OR add clear navigation
-  between them. Cross-links currently point in both directions with overlapping content.
-  (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
-- `[ ]` Scenarios discoverability — entry point from Projections summary cards is missing
-  (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
-- `[ ]` Charitable Giving empty state — personalized suggestions from household data instead of
-  generic copy (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
-
-**Success criteria**
-- A consumer on `/projections` can navigate to `/scenarios` without knowing the URL
-- Projections and Lifetime Snapshot have either merged or have explicit non-overlapping roles
-- Charitable Giving empty state uses at least one household field (state, filing status, or asset type)
-
----
-
-### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46)
+### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46) **← CURRENT**
 
 **Goal:** Close A/B tests with data-driven decisions. Mobile audit. Copy pass.
 
+**Persona alerts (first — deferred since Sprint 3; do not bury under A/B/mobile)**
+- `[x]` Business $5M / $10M threshold alert on dashboard (`lib/dashboard/personaAlerts.ts`)
+- `[x]` Multi-state real estate probate-risk alert on dashboard (`situs_state` in `loadDashboardCoreInputs`)
+- `[x]` Planning empty-state CTAs — profile-only on `/projections` + `/complete` (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`)
+
 **A/B test decisions — owner must define criteria NOW, before Sprint 12 begins**
 
-> ⚠️ These tests cannot be decided in Sprint 12 if the data isn't ready. The decision
-> criteria must be defined by the end of Sprint 10 so Sprint 11 can be the final
-> measurement window. Document criteria in DECISION_LOG before Sprint 11 starts.
+> ✅ Decision criteria documented in DECISION_LOG (May 2026). Sprint 11 is the final
+> measurement window; Sprint 12 implements winners and removes losing variants.
 
 - `[ ]` `ab_upgrade_copy` — decide `personalized` vs `generic` winner; remove losing variant
   (doc ref: LAUNCH_CHECKLIST § A/B)
@@ -168,6 +72,7 @@ No new product pillars. Feature freeze starts here.
 **Staging**
 - `[ ]` Staging / production-like deploy with ALL migrations applied and verified
 - `[ ]` `20260529000000_profiles_referral_attribution.sql` confirmed on staging
+- `[ ]` `20260530000000_sprint9_10_gates.sql` confirmed on staging (invite-advisor gate + succession + connection life-event columns)
 - `[ ]` All prior migrations confirmed (see LAUNCH_CHECKLIST § Supabase prod migrations)
 
 **Smoke test extension — write BEFORE Sprint 14 begins**
@@ -265,6 +170,52 @@ no code changes beyond environment variables and DNS.
 ---
 
 ## Completed sprints
+
+### Sprint 11 — Planning-app coherence (Weeks 39–42) ✅
+
+**Goal:** Close cross-links and empty states that break the planning flow. No new feature pillars.
+
+**Shipped**
+- `[x]` Projections + Lifetime Snapshot — `PlanningSurfaceNav`; `loadProjectionData` on `/complete`
+- `[x]` Scenarios discoverability — `ScenariosExploreCard` on `/projections`
+- `[x]` Charitable Giving empty state — `buildPersonalizedCharitableTopics()` + profile note gate
+- `[x]` `/complete` tier gate aligned to tier 2; pathname-based nav active pill
+- `[x]` Planning empty states — tier-2 surfaces use profile-only CTA (Sprint 12 hardening shipped same release)
+
+---
+
+### Sprint 10 — Persona depth, advisor flywheel (Weeks 35–38) ✅
+**Goal:** Close hard gates and log Sprint 10 decisions. Persona threshold alerts carry to Sprint 11.
+
+**Shipped**
+- `[x]` Business succession Path A — minimal intake (`households.succession_*`); `/business-succession` tier 3; dashboard alert
+- `[x]` Invite-your-advisor Path A — `/onboarding/invite-advisor`; `profiles.onboarding_invite_advisor_completed_at` (skip = same timestamp)
+- `[x]` A/B exit criteria in DECISION_LOG — `tier_upgraded`, 50 events/variant or 4 weeks, owner Alan
+- `[x]` `CONNECTED_ADVISOR_CLIENT_STATUSES` — canonical `active` | `accepted` import; advisor APIs aligned
+- `[x]` Life-event-on-connect verified — `pickConnectionLifeEvent()`; advisor Overview banner
+- `[x]` Migration `20260530000000_sprint9_10_gates.sql`
+
+**Carry-forward (shipped Sprint 12)**
+- `[x]` Business $5M / $10M dashboard alert
+- `[x]` Multi-state RE probate-risk dashboard alert
+
+---
+
+### Sprint 9 — Launch, signup attribution, growth polish (Weeks 31–34) ✅
+**Goal:** Referral persistence, drip completeness, Sprint 9 hard gates.
+
+**Shipped**
+- `[x]` Signup attribution — `20260529000000_profiles_referral_attribution.sql`
+- `[x]` Drip — all **24** event slugs in `lib/emails/drip-templates.ts`
+- `[x]` RMD — `lib/calculations/rmdStartAge.ts` (72/73/75)
+- `[x]` Life-event-on-connect — `connection_life_event_*` on `advisor_clients`; `accept-request` + advisor Overview
+- `[x]` Digital Assets — `FEATURE_TIERS['digital-assets'] = 2`; page tier gate
+- `[x]` URL audit — `lib/app-url.ts` `getAppUrl()` on email routes
+- `[x]` `app/robots.ts` permissive rules in repo
+
+**Launch ops (Sprint 15)** — Search Console, domain, prod drip smoke still open
+
+---
 
 ### Sprint 8 — Attorney referral attribution (Weeks 27–30) ✅
 **Goal:** Attorney event-page attribution parallel to advisor `?ref=` distribution.
@@ -449,10 +400,10 @@ The following items are explicitly deferred to post-launch. Each has a DECISION_
 - **Add `/education` to `proxy.ts` `PUBLIC_PATHS`** — only if education should be reachable
   without proxy login redirect; page layout still auth-gates
 
-**Items requiring a Sprint 10 decision before they can be backlogged or scheduled:**
-- Business succession planning page (currently commented out — must ship or remove dead code)
-- Invite-your-advisor as primary onboarding step (PRODUCT_STRATEGY principle 4)
-- Blended family as separate slug (optional; `remarriage-blended-family` covers today)
+**Resolved in Sprint 10 (see DECISION_LOG):** business succession Path A minimal intake;
+invite-your-advisor Path A onboarding; A/B exit criteria.
+
+**Still backlog:** Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 
 ---
 

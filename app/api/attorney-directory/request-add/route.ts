@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -82,9 +83,10 @@ export async function POST(req: NextRequest) {
 
   // ── 6. Send invite email to attorney ──────────────────────
   try {
-    const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?role=attorney&email=${encodeURIComponent(emailLower)}`
+    const appUrl = getAppUrl()
+    const signupUrl = `${appUrl}/signup?role=attorney&email=${encodeURIComponent(emailLower)}`
 
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/attorney-invite`, {
+    await fetch(`${appUrl}/api/email/attorney-invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

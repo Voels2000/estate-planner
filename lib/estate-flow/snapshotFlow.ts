@@ -4,6 +4,7 @@
 // Share links stored in estate_flow_share_links with 90-day expiry.
 
 import { createClient } from '@/lib/supabase/client'
+import { getAppUrl } from '@/lib/app-url'
 import type { EstateFlowGraph } from './generateEstateFlow'
 
 // ─── Save snapshot ────────────────────────────────────────────────────────────
@@ -181,5 +182,5 @@ function generateToken(): string {
 
 function getBaseUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mywealthmaps.com'
+  return getAppUrl()
 }

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { getAppUrl } from '@/lib/app-url'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import MyAdvisorClient from './_my-advisor-client'
 
 export default async function MyAdvisorPage() {
@@ -27,7 +29,7 @@ export default async function MyAdvisorPage() {
       )
     `)
     .eq('client_id', user.id)
-    .eq('status', 'accepted')
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
 
   // Try to get advisor listing details
@@ -86,7 +88,7 @@ export default async function MyAdvisorPage() {
     .single()
 
   const consumerName = profile?.full_name ?? 'Your client'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+  const appUrl = getAppUrl()
 
   const inviteEmailBody = encodeURIComponent(
     `Hi,\n\nI've been using My Wealth Maps to organize my estate and financial plan, and I'd like to invite you to connect so you can view my plan and collaborate with me.\n\nClick here to join: ${appUrl}/signup?role=advisor\n\nOnce you're set up, search for me by email to connect.\n\nThanks,\n${consumerName}`,

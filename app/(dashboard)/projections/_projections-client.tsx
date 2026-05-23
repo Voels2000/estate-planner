@@ -17,6 +17,12 @@ import { ProjectionsHeader } from '@/app/(dashboard)/projections/_components/Pro
 import { ProjectionAssumptions } from '@/app/(dashboard)/projections/_components/ProjectionAssumptions'
 import { formatDollars } from '@/app/(dashboard)/projections/_utils'
 import { buildProjectionSummaryCards } from '@/lib/view-models/projectionSummaryCards'
+import { ScenariosExploreCard } from '@/app/(dashboard)/projections/_components/ScenariosExploreCard'
+import {
+  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2,
+  PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS,
+  PLANNING_NO_HOUSEHOLD_ACTIONS,
+} from '@/lib/planning/planningEmptyState'
 
 type ProjectionsClientProps = {
   initialHousehold: HouseholdProjectionProfile | null
@@ -41,7 +47,7 @@ export function ProjectionsClient({
     return (
       <ProjectionEmptyState
         title="Complete your profile first"
-        actions={[{ href: '/profile', label: 'Go to Profile →' }]}
+        actions={[...PLANNING_NO_HOUSEHOLD_ACTIONS]}
       />
     )
   }
@@ -50,11 +56,8 @@ export function ProjectionsClient({
     return (
       <ProjectionEmptyState
         title="No projection data yet"
-        description="Complete profile, income, and assets, then run your estate plan to generate projections."
-        actions={[
-          { href: '/profile', label: 'Complete profile →' },
-          { href: '/my-estate-strategy', label: 'Generate estate plan →' },
-        ]}
+        description={PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS}
+        actions={[...PLANNING_MISSING_PROJECTION_ACTIONS_TIER2]}
       />
     )
   }
@@ -77,7 +80,7 @@ export function ProjectionsClient({
       <ProjectionAssumptions household={household} />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {cards.map((card) => (
           <SummaryCard
             key={card.label}
@@ -88,6 +91,8 @@ export function ProjectionsClient({
           />
         ))}
       </div>
+
+      <ScenariosExploreCard />
 
       {/* Chart / Table / Income tabs */}
       <ProjectionTabs

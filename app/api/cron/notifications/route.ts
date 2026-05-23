@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { NextResponse } from 'next/server'
 
@@ -279,7 +280,7 @@ export async function GET(request: Request) {
       .from('advisor_clients')
       .select('advisor_id')
       .eq('client_id', event.user_id)
-      .eq('status', 'accepted')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle()
 
     if (!connection?.advisor_id) continue

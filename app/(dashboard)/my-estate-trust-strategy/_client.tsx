@@ -11,6 +11,7 @@ import type {
   TrustWillRecommendation,
 } from '@/lib/trusts/types'
 import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
+import type { CharitableHouseholdContext } from '@/lib/charitable/buildPersonalizedCharitableTopics'
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
@@ -94,6 +95,7 @@ interface Props {
     headroom: number
   }
   marginalStateEstateRatePct?: number
+  charitableHouseholdContext?: CharitableHouseholdContext | null
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -129,6 +131,7 @@ export default function MyEstateTrustStrategyClient({
   trustWillGuidance,
   trustEstateSummary,
   marginalStateEstateRatePct = 0,
+  charitableHouseholdContext = null,
 }: Props) {
   const router = useRouter()
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
@@ -660,6 +663,7 @@ export default function MyEstateTrustStrategyClient({
           householdId={householdId}
           userRole={userRole}
           consumerTier={consumerTier}
+          householdContext={charitableHouseholdContext}
         />
       )}
 

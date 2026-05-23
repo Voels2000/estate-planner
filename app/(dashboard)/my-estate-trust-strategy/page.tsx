@@ -90,7 +90,9 @@ export default async function MyEstateTrustStrategyPage({
 
   const { data: householdRow } = await supabase
     .from('households')
-    .select('id, filing_status, person1_birth_year, base_case_scenario_id, state_primary')
+    .select(
+      'id, filing_status, person1_birth_year, person2_birth_year, person1_name, has_spouse, base_case_scenario_id, state_primary',
+    )
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -537,6 +539,15 @@ export default async function MyEstateTrustStrategyPage({
         }}
         trustEstateSummary={trustEstateSummary}
         marginalStateEstateRatePct={marginalStateEstateRate}
+        charitableHouseholdContext={{
+          statePrimary: householdRow.state_primary ?? null,
+          filingStatus: householdRow.filing_status ?? null,
+          person1BirthYear: householdRow.person1_birth_year ?? null,
+          person2BirthYear: householdRow.person2_birth_year ?? null,
+          hasSpouse: householdRow.has_spouse ?? false,
+          person1Name: householdRow.person1_name ?? null,
+          preIraBalance: estateContext.preIRABalance,
+        }}
       />
     </div>
   )

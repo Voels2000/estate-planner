@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────
 
 import { createClient } from '@/lib/supabase/server'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
@@ -106,7 +107,7 @@ export default async function DomicileAnalysisPage() {
         'client_id, profiles!advisor_clients_client_id_fkey(id, full_name, email)'
       )
       .eq('advisor_id', user.id)
-      .eq('status', 'active')
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
 
     clients = (advisorClients ?? []).map((ac) => {
       const raw = ac.profiles as

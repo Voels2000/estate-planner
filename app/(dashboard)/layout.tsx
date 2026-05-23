@@ -2,7 +2,10 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
 import { TrialBanner } from './_components/trial-banner'
+import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { isMinimumViableProfile } from '@/lib/estate/profileGate'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 export default async function DashboardLayout({
   children,
@@ -19,15 +22,23 @@ export default async function DashboardLayout({
 
   const { data: profileFull } = await supabase
     .from('profiles')
-    .select('role, subscription_status, trial_started_at, consumer_tier, is_admin, is_attorney, is_superuser')
+    .select(
+      'role, subscription_status, trial_started_at, consumer_tier, is_admin, is_attorney, is_superuser, onboarding_invite_advisor_completed_at',
+    )
     .eq('id', sessionUser.id)
     .single()
 
   const { data: householdRow } = await supabase
     .from('households')
-    .select('id')
+    .select('id, state_primary, filing_status, person1_birth_year')
     .eq('owner_id', user.id)
     .maybeSingle()
+
+  const needsInviteAdvisorOnboarding =
+    !isSuperuser &&
+    profileFull?.role === 'consumer' &&
+    !profileFull?.onboarding_invite_advisor_completed_at &&
+    isMinimumViableProfile(householdRow ?? {}).complete
 
   const hasHousehold = !!householdRow
 
@@ -46,6 +57,7 @@ export default async function DashboardLayout({
           hasHousehold={hasHousehold}
         />
         <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
+          <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
           <main className="flex-1">{children}</main>
         </div>
       </div>
@@ -73,7 +85,7 @@ export default async function DashboardLayout({
       .from('advisor_clients')
       .select('id')
       .eq('client_id', sessionUser.id)
-      .in('status', ['active', 'accepted'])
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle()
     isAdvisorClient = !!clientRow
   }
@@ -120,6 +132,7 @@ export default async function DashboardLayout({
             expiryTimestamp={trialExpiry!.getTime()}
           />
         )}
+        <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
         <main className="flex-1">{children}</main>
       </div>
     </div>

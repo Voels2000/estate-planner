@@ -107,7 +107,7 @@ Each feature section below uses this shape:
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
 | **Write APIs** | `PATCH /api/consumer/profile` |
-| **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; else `/dashboard` or `/health-check` |
+| **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete (new household or existing) → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
 | **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` |
 | **E2E** | Implicit via gated-page tests; manual smoke §3 |
 
@@ -120,6 +120,27 @@ Each feature section below uses this shape:
 | Primary DOB | `person1_birth_year` **or** legacy `date_of_birth_1` |
 
 Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?required=true&missing=state_primary,filing_status,…&from=/estate-tax` (`lib/estate/requireMinimumProfile.ts`).
+
+### Invite your advisor — `/onboarding/invite-advisor`
+
+| | |
+|--|--|
+| **User goal** | Invite an existing advisor or skip; completes post-profile onboarding gate |
+| **Tier / gate** | Consumers only; requires MVP profile; blocked when `onboarding_invite_advisor_completed_at` is set |
+| **Server** | `app/(dashboard)/onboarding/invite-advisor/page.tsx` |
+| **Client** | `_invite-advisor-client.tsx` — mailto invite, link to `/find-advisor`, skip |
+| **Write APIs** | `POST /api/consumer/onboarding-invite-advisor` — skip and continue both set `onboarding_invite_advisor_completed_at` |
+| **Layout gate** | `(dashboard)/layout.tsx` + `InviteAdvisorOnboardingGate` redirect until column set |
+| **Migration** | `profiles.onboarding_invite_advisor_completed_at` in `20260530000000_sprint9_10_gates.sql` |
+
+### Business succession — `/business-succession`
+
+| | |
+|--|--|
+| **User goal** | Document succession plan, key-person dependency, buy-sell status (minimal intake) |
+| **Tier / gate** | Tier 3 (`FEATURE_TIERS['business-succession']`); `UpgradeBanner` when below tier |
+| **Write APIs** | `PATCH /api/consumer/succession-intake` → `households.succession_*` |
+| **Dashboard** | Amber alert when business interests exist and `succession_plan_in_place` is not true |
 
 ```mermaid
 flowchart TD
@@ -177,7 +198,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/expenses` | expenses client | `/api/consumer/expenses` | |
 | `/liabilities` | liabilities client | `/api/consumer/liabilities` | |
 | `/real-estate` | real estate client | `/api/consumer/real-estate` | |
-| `/digital-assets` | `DigitalAssetIntakeForm` | `/api/consumer/digital-assets` | |
+| `/digital-assets` | `DigitalAssetIntakeForm` | `/api/consumer/digital-assets` | Tier 2; `FEATURE_TIERS['digital-assets']`; `UpgradeBanner` when below tier |
 | `/businesses` | `_business-form-client.tsx` | `/api/businesses`, `/api/businesses/[id]` | Legacy top-level routes; `afterHouseholdWriteForOwner` |
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
@@ -186,6 +207,33 @@ Consumers build the household balance sheet and cash flows before estate surface
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 
 All normalized consumer CRUD routes call **`afterHouseholdWrite`** on success (see `tests/e2e/consumer/consumer-financial-writes.spec.ts`).
+
+### Planning surfaces — projections, lifetime snapshot, scenarios (Sprint 11)
+
+Three related routes share projection engines but answer different questions. **`PlanningSurfaceNav`** (`lib/planning/planningSurfaces.ts`) links them on every surface.
+
+| Route | Tier | Role | Discoverability |
+|-------|------|------|-----------------|
+| `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
+| `/complete` | 2 | Full year-by-year `YearRow` table (expandable column groups) | Nav pills → projections / scenarios |
+| `/scenarios` | 1 | Side-by-side what-if (base + B + C); saves via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
+
+| Route | Data load | Empty state CTA |
+|-------|-----------|-----------------|
+| `/projections` | `loadProjectionData` → `ProjectionsClient` | `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
+| `/complete` | `loadProjectionData` → `CompleteClient` | Same — rows from `computeCompleteProjection`, not `generate-base-case` |
+| `/scenarios` | `loadProjectionData` + client variant query strings | (scenario-specific UI) |
+
+**Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
+
+### Dashboard persona alerts (Sprint 12)
+
+On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loadDashboardCoreInputs` payload (no extra query):
+
+| Alert | Condition | CTA |
+|-------|-----------|-----|
+| Business $5M / $10M | `computeBusinessOwnershipValue` ≥ threshold | `/business-succession` |
+| Multi-state RE | ≥2 distinct non-empty `real_estate.situs_state` | `/real-estate` |
 
 ### Health check — `/health-check`
 
@@ -267,7 +315,7 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | **Sub-tabs (client state)** | **Planning topics** · **Deduction Detail** · **Donation History** — not in URL; `useState<'topics' \| 'deductions' \| 'history'>` (default: Planning topics); sub-nav renders after client hydration |
 | **Read APIs / RPCs** | `calculate_charitable_summary(p_household_id)` — summary cards, `recommendations[]`, `deduction_detail`, `donation_history`, optional QCD eligibility |
 | **Above sub-tabs (always visible)** | Four summary cards (total donated, tax deductible, QCD, capital gains avoided); optional QCD eligibility banner; **Log a Donation** modal; **Save to my plan →** on total donated (`strategy_source: daf`) |
-| **Planning topics** | RPC `recommendations[]` → `EducationalTopicsCards` (prevalence groups via `lib/estate/planningTopicPresentation.ts`); client filters TCJA/sunset strings; empty → `EDUCATIONAL_TOPICS_EMPTY_MESSAGE` (“No topics to display at this time based on your profile inputs”) — profile-driven, not a route |
+| **Planning topics** | RPC `recommendations[]` when donations exist; if `donation_count === 0`, **`buildPersonalizedCharitableTopics(householdContext)`** from state, filing status, ages, pre-IRA balance (passed from trust-strategy `page.tsx`); client filters TCJA/sunset strings on RPC topics |
 | **Deduction Detail** | `deduction_detail`: itemizing vs standard, AGI limits (60% cash / 30% assets), deductible amounts, carryforward |
 | **Donation History** | `donation_history[]` table with delete; empty copy “No donations logged yet…” (distinct from planning-topics empty) |
 | **Write APIs** | Donation insert/delete via Supabase `charitable_donations` from component (not `/api/consumer/*`); **Save to my plan →** → `POST /api/strategy-line-items` (`strategy_source: daf` or `charitable`, `scenario_name: base`); DAF panel also uses `CharitableStrategyForm` on Transfer Strategies tab |
