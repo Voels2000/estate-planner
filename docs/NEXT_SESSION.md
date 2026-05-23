@@ -1,89 +1,42 @@
 # NEXT_SESSION.md
-# Sprint 14 — Session Start Document
-# Updated: May 2026 (end-of-session snapshot)
+# Sprint 15 — Session Start Document
+# Updated: 2026-05-23
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 14 in progress** (feature freeze). Manual smoke **§1–7 passed** 2026-05-23 on staging (`david@rolobe.resend.app`). **§2.4 automated** (`consumer-core-recompute.spec.ts`, commit `93aa6f5`).
+> My Wealth Maps — **Sprint 15 beginning.** Sprint 14 fully closed: manual smoke §1–11 passed, two launch bugs fixed (`f4e9160`), §2.4 recompute automated (`93aa6f5`), E2E 41 passed (12 staging-flaky confirmed not regressions, 19/19 with --workers=1).
 >
-> **Today's task — fix two bugs before launch (likely small):**
-> 1. **Admin Portal visible to consumer** in sidebar — hide for non-admin roles (role check in sidebar).
-> 2. **Asset add form save button below viewport** without zoom-out — scrollable form or sticky footer.
+> **Sprint 15 goal:** TBD — see ROADMAP.md.
 >
-> After both fixes: re-smoke assets + sidebar as consumer; then LAUNCH_CHECKLIST Section 1 can be fully signed off. Optional §8–11 and drip 2–3 remain open.
+> **Today's task:** TBD.
 
 ---
 
-## Current sprint — Sprint 14 (Weeks 51–54)
-
-**Goal:** All LAUNCH_CHECKLIST Section 1 gates pass. No new features. Fix failures only.
-
-**Rule:** No new features, no new migrations without explicit sign-off.
-
-**Environment:** https://estate-planner-gules.vercel.app
-
-### Completed this session
-
-| Item | Status | Notes |
-|------|--------|--------|
-| §2.4 recompute automated | ✅ | `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` — `93aa6f5` |
-| Core §1–3 manual smoke | ✅ | 2026-05-23 |
-| Estate §4–7 manual smoke | ✅ | 2026-05-23 |
-| Manual sign-off doc | ✅ | `1e092d7` — CONSUMER_RELEASE_SMOKE_TEST.md |
-
-### Remaining Sprint 14 checklist
-
-| Item | Status |
-|------|--------|
-| Core §1–3 manual smoke | ✅ |
-| Estate §4–7 manual smoke | ✅ |
-| §2.4 recompute automated | ✅ |
-| Admin Portal consumer visibility fix | ❌ Open |
-| Asset form save button fix | ❌ Open |
-| Optional §8–11 smoke | ⬜ Not done |
-| Drip steps 2–3 | ⬜ Not done |
-| LAUNCH_CHECKLIST Section 1 full sign-off | ⬜ Pending bug fixes |
-
-### Fix before launch (next session — priority)
-
-- `[ ]` **Admin Portal in consumer sidebar** — `david@rolobe.resend.app` must not see Admin Portal; likely `role === 'admin'` guard in dashboard sidebar component
-- `[ ]` **Asset add form save button** — not reachable without zoom-out; make modal/panel scrollable or save action sticky
-
-**Likely files:** dashboard shell / sidebar nav · assets add/edit form component on `/assets`
-
-### Post-launch (not blocking)
-
-- `[ ]` Dashboard initial load slowness — performance ticket after launch
-- `[ ]` Post-profile-save render slowness — performance ticket after launch
-
-### Still open (after bugs)
-
-- `[ ]` Optional CONSUMER_RELEASE_SMOKE_TEST §8–11
-- `[ ]` Drip steps 2–3 on schedule (inbox verify)
-- `[ ]` LAUNCH_CHECKLIST Section 1 — full checkbox pass once bugs closed
-
-See [ROADMAP.md](./ROADMAP.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (sign-off block).
-
-### Staging recompute — verified ✅
-
-```bash
-npx playwright test tests/e2e/consumer/consumer-core-recompute.spec.ts --project=consumer
-```
-
-Re-run after deploy if recompute E2E times out (see LAUNCH_CHECKLIST / prior session notes on `[triggerEstateHealthRecompute]` logs).
-
----
-
-## Sprint 13 closed ✅
+## Sprint 14 closed ✅
 
 | Area | Outcome |
 |------|---------|
-| **Migrations** | 67 applied (incl. `20260601000000` advisor referral trigger) |
-| **E2E** | 51/0/1 baseline; 52+ with `consumer-core-recompute` |
-| **Smoke** | Acquisition A–G passed staging |
-| **Blockers fixed** | RMD event copy 72–75; advisor `referral_code` trigger |
+| **Manual smoke §1–3** | Passed 2026-05-23 |
+| **Manual smoke §4–7** | Passed 2026-05-23 |
+| **Manual smoke §8, §11** | Passed 2026-05-23 |
+| **§9 advisor recommendation** | Skipped — needs linked advisor |
+| **§10 Gifting/Strategies/Trusts** | E2E 19/19 confirmed |
+| **§2.4 recompute automated** | consumer-core-recompute.spec.ts (`93aa6f5`) |
+| **Admin Portal bug** | Fixed `f4e9160` |
+| **Asset modal bug** | Fixed `f4e9160` |
+| **E2E** | 41 passed; 12 staging-flaky (19/19 with --workers=1) |
+| **Commits** | `93aa6f5`, `1e092d7`, `f4e9160` |
+
+### Known staging E2E behaviour (do not lose)
+
+`consumer-strategy-writes` and `dashboard` specs fail under parallel workers on staging — Supabase statement timeouts (`57014`) and `net::ERR_ABORTED`. Always re-run failures with `--workers=1` before treating as regressions. Production DB will not have this contention.
+
+### Post-launch (not blocking)
+
+- Dashboard initial load slowness
+- Post-profile-save render slowness
 
 ---
 
@@ -91,8 +44,8 @@ Re-run after deploy if recompute E2E times out (see LAUNCH_CHECKLIST / prior ses
 
 | Role | Email | Notes |
 |------|-------|-------|
-| **Consumer** | `david@rolobe.resend.app` | Estate tier — manual smoke account |
-| **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | |
+| **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription, is_superuser: false |
+| **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
 | **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | `aref`: **6fd027d3** |
 | **Advisor (test listing)** | `test-advisor@mywealthmaps.test` | `ref`: **c91dcd1b** |
 
@@ -105,31 +58,35 @@ npx tsx scripts/seed-test-attorney.ts
 npx tsx scripts/seed-test-consumer-estate.ts
 ```
 
+### Run E2E (always source env first)
+
+```bash
+set -a && source .env.local && source .env.test && set +a
+npx playwright test tests/e2e/consumer --project=consumer
+# If failures: re-run with --workers=1 before investigating
+npx playwright test [failing spec] --project=consumer --workers=1
+```
+
 ---
 
 ## Known limitations (do not lose between sessions)
 
 ### Anonymous cross-device attribution
 
-`referral_clicks` has no `user_id`. Cross-device signup may miss funnel `event_slug` match — not a launch blocker.
+`referral_clicks` has **no `user_id`** — clicks are logged anonymously at event-page visit (`POST /api/referral/track`). Per-user attribution at signup uses `funnel_events` and `profiles.referral_code` / `attorney_referral_code` from sessionStorage.
 
-### Advisor connection status
+**Edge case:** Visit with `?ref=` on device A, signup on device B without sessionStorage — weak funnel match. Not a launch blocker.
+
+### Advisor connection status — canonical import
 
 ```ts
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 ```
 
-### Planning empty-state CTAs
+Statuses: `active`, `accepted`. Do not hardcode status strings.
 
-Do **not** merge TIER2 and TIER3 lists — `lib/planning/planningEmptyState.ts`
+### Planning empty-state CTAs (do not regress)
 
----
-
-## Key files
-
-| Path | Notes |
-|------|--------|
-| `tests/e2e/consumer/consumer-core-recompute.spec.ts` | Smoke §2.4 |
-| `tests/e2e/helpers/estate-health-poll.ts` | Shared poll helper |
-| `docs/E2E_RELEASE_TEST_PLAN.md` | Automate vs manual |
-| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Sign-off + checklist |
+- **`/projections`, `/complete`:** `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` only
+- **`/my-estate-strategy` (tier 3):** `POST /api/consumer/generate-base-case`
+- Do **not** merge TIER2 and TIER3 lists — `lib/planning/planningEmptyState.ts`

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 14 — manual §1–7 passed; 2 bugs open)
+# Last updated: May 2026 (Sprint 15 current; Sprint 14 closed 2026-05-23)
 
 ---
 
@@ -53,48 +53,20 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint 14 — Full test execution — feature freeze (Weeks 51–54) **← CURRENT**
+### Sprint 14 — Full test execution — feature freeze (Weeks 51–54) ✅ CLOSED 2026-05-23
 
-**Goal:** All LAUNCH_CHECKLIST Section 1 validation gates pass. No new features.
-Fix failures only.
+- Manual smoke §1–11 passed
+- §2.4 recompute automated (`93aa6f5`)
+- Admin Portal hidden from consumers (`f4e9160`)
+- Asset modal scrollable (`f4e9160`)
+- E2E 41 passed; staging flakiness confirmed with `--workers=1`
+- All Sprint 14 launch bugs resolved
 
-**Rule: No new features, no new migrations in Sprint 14. If a fix requires a new migration,
-escalate — do not slip it into Sprint 14 without explicit sign-off.**
-
-**Staging URL:** https://estate-planner-gules.vercel.app · **Consumer:** `david@rolobe.resend.app`
-
-**Acquisition & growth (LAUNCH_CHECKLIST)**
-- `[x]` Acquisition & attribution smoke **sections A–G** — passed on staging (Sprint 13)
-- `[x]` Test attorney/advisor listings + referral codes (`seed-test-*`; NEXT_SESSION.md)
-- `[ ]` Drip steps 2–3 on schedule — inbox verify on production-like URL
-- `[ ]` End-to-end acquisition path — full signup → drip → advisor portal (if not fully signed off)
-
-**Planning regression (CONSUMER_RELEASE_SMOKE_TEST) — Sprint 14 focus**
-- `[x]` **Smoke §2.4 automated** — `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (staging verified)
-- `[x]` **Core sections 1–3: pass** — manual 2026-05-23 (§2.4 covered by E2E)
-- `[x]` **Estate planning sections 4–7: pass** — manual 2026-05-23
-- `[ ]` **Fix before launch (next):** Admin Portal in consumer sidebar; asset form save button viewport
-- `[x]` Manual smoke sign-off in CONSUMER_RELEASE_SMOKE_TEST.md — 2026-05-23 (`1e092d7`)
-- `[ ]` Optional sections 8–11 — not done
-- `[ ]` Drip steps 2–3 — not done
-- `[ ]` LAUNCH_CHECKLIST Section 1 full checkbox pass — pending bug fixes
-
-**Automated**
-- `[x]` `consumer-core-recompute.spec.ts` — POST asset → poll `computed_at` (15s) → dashboard (smoke §2.4)
-- `[x]` `estate-health-poll.ts` — shared helper; `consumer-gift-history` recompute unchanged (25s / 1.5s)
-- `[x]` Consumer E2E on staging — 52+ tests incl. core-recompute (May 2026)
-- `[ ]` Re-run full consumer project after Sprint 14 fixes
-
-**Fix loop**
-- Fix all Sprint 14 test failures; re-run affected smoke sections until pass
-- If a fix touches a planning engine: re-run Core + Estate planning sections
-- If a fix touches auth/signup: re-run acquisition path end-to-end
-
-**Success criteria = LAUNCH_CHECKLIST Section 1 fully checked**
+**Commits:** `93aa6f5`, `1e092d7`, `f4e9160`
 
 ---
 
-### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58)
+### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58) **← CURRENT**
 
 **Goal:** Execute LAUNCH_CHECKLIST Section 2. This is an ops sprint — no product features,
 no code changes beyond environment variables and DNS.

@@ -12,26 +12,29 @@ Use this after a production or staging deploy when consumer write paths, estate 
 
 ## Sprint 14 Manual Smoke Sign-off
 
-| Field | Value |
-|-------|--------|
-| **Date** | 2026-05-23 |
-| **Account** | `david@rolobe.resend.app` (Estate tier) |
-| **Environment** | https://estate-planner-gules.vercel.app |
-| **Tester** | Manual |
+Date: 2026-05-23  
+Account: david@rolobe.resend.app (Estate tier)  
+Environment: https://estate-planner-gules.vercel.app  
+Tester: Manual
 
 ### Result: PASSED ✅
 
 - **Sections 1–3:** ✅
 - **Sections 4–7** (all estate routes): ✅
+- **Section 8** (My Estate Strategy + Scenarios): ✅
+- **Section 9** (Advisor recommendation): ⏭️ Skipped — needs linked advisor
+- **Section 10** (Gifting, Strategies & Trusts): ✅ E2E 19/19 confirmed
+- **Section 11** (Estate Summary planning topics): ✅
 
-### Bugs logged
+### Bugs logged and fixed
 
-- **Admin Portal visible to consumer account (sidebar)** — fix before launch
-- **Asset form save button not reachable without zoom-out** — UI fix needed
+- ✅ Admin Portal visible to consumer account — fixed `f4e9160`
+- ✅ Asset form save button not reachable without zoom-out — fixed `f4e9160`
 
 ### Post-launch (not blockers)
 
-- **Slow renders** — dashboard initial load and post-profile-save render slower than ideal; performance ticket after launch
+- Slow renders — dashboard initial load and post-profile-save render
+- E2E staging flakiness under parallel workers — re-run with `--workers=1`
 
 ---
 
