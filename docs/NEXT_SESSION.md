@@ -42,6 +42,38 @@ See [ROADMAP.md](./ROADMAP.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 ---
 
+## Sprint 14 test account references
+
+All accounts exist on staging (https://estate-planner-gules.vercel.app) and production Supabase.
+Seed scripts are idempotent — re-run if accounts are missing on a new environment.
+
+| Role | Email | Notes |
+|------|-------|-------|
+| Consumer (Playwright) | `david@rolobe.resend.app` | Estate tier (3), active subscription, `PLAYWRIGHT_HOUSEHOLD_ID` in `.env.test` |
+| Advisor (Playwright) | `advisor2@rolobe.resend.app` | Seeded via `scripts/seed-michael-johnson-advisor-demo.ts` |
+| Attorney (test listing) | `test-attorney@mywealthmaps.test` | Seeded via `scripts/seed-test-attorney.ts` |
+
+### Attorney referral (smoke test sections B and D)
+
+- `referral_code`: `6fd027d3`
+- Smoke test URL: `/event/selling-a-business?aref=6fd027d3`
+- Re-run `seed-test-attorney.ts` to confirm code if needed — script is idempotent
+
+### Seed script usage
+
+```bash
+# Load both env files first
+set -a && source .env.local && source .env.test && set +a
+
+# Attorney listing (idempotent)
+npx tsx scripts/seed-test-attorney.ts
+
+# Consumer tier (idempotent)
+npx tsx scripts/seed-test-consumer-estate.ts
+```
+
+---
+
 ## Known limitations (do not lose between sessions)
 
 ### Anonymous cross-device attribution
