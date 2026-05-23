@@ -34,6 +34,14 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 
 ## Decision log
 
+### May 2026 — Mobile: desktop-first planning app, drawer nav on phones (Sprint 12)
+
+**Decision:** Consumer planning app is **desktop-first** (segment 50–65, complex modeling). On viewports below `lg`, the fixed sidebar becomes an off-canvas drawer (hamburger, overlay, closes on navigate). A short note in the mobile sidebar sets expectations. **Public routes** (`(public)/layout`, event pages) stay separate — acquisition on phone is the priority there; no planning sidebar on those routes. Full responsive audit deferred post-launch.
+
+**Reasoning:** Matches eMoney-style complex tools; avoids landscape-only use of the app shell without a full mobile redesign. Event-page mobile is the real acquisition surface.
+
+---
+
 ### May 2026 — Pre-launch A/B collapse: personalized + score_visible (Sprint 12)
 
 **Decision:** With no live traffic, do not wait on `funnel_events` for A/B winners. Ship **`personalized`** upgrade copy only (`getEventUpgradeValueProp` always uses `EVENT_UPGRADE_COPY`). Ship **`score_visible`** assessment behavior only (logged-out users see scores; gap report gated behind signup). Remove `lib/analytics/abTests.ts`, branching code, and `app_config` rows `ab_upgrade_copy` / `ab_assessment_gate` (migration `20260531000000_remove_ab_test_app_config.sql`). Keep `app_config` for other keys. Post-launch A/B when baseline conversion exists.

@@ -26,7 +26,7 @@
 - **EVENT_UPGRADE_COPY** — `scripts/verify-event-upgrade-copy.ts` (24/24 slugs)
 
 **Next (Sprint 12 remaining):**
-- `[ ]` Mobile nav audit (consumer public + dashboard)
+- `[~]` Mobile nav — dashboard drawer shipped; public event pages spot-check; full audit post-launch
 - `[ ]` In-app copy audit (after A/B collapse — surfaces stable)
 
 See [ROADMAP.md](./ROADMAP.md).

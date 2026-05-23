@@ -46,8 +46,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` `EVENT_UPGRADE_COPY` — `scripts/verify-event-upgrade-copy.ts` + `findMissingEventUpgradeCopy()` (24/24 slugs)
 
 **UX**
-- `[ ]` Mobile nav audit — responsive layout review across all consumer-facing routes, both
-  public and dashboard (doc ref: LAUNCH_CHECKLIST § Core planning, ROADMAP backlog)
+- `[~]` Mobile nav audit — dashboard sidebar → off-canvas drawer on `<lg` (`DashboardShell`);
+  public event pages unchanged; full route-by-route audit post-launch
 - `[ ]` In-app copy audit (Sprint 2 deferred)
 
 **Optional (if A/B decisions land early)**

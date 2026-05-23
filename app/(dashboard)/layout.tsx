@@ -1,11 +1,42 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
+import { DashboardShell } from './_components/dashboard-shell'
 import { TrialBanner } from './_components/trial-banner'
 import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { isMinimumViableProfile } from '@/lib/estate/profileGate'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+
+function DashboardMain({
+  children,
+  showBanner,
+  trialSecondsLeft,
+  trialMinutesLeft,
+  trialExpiry,
+  needsInviteAdvisorOnboarding,
+}: {
+  children: React.ReactNode
+  showBanner?: boolean
+  trialSecondsLeft?: number
+  trialMinutesLeft?: number
+  trialExpiry?: Date
+  needsInviteAdvisorOnboarding: boolean
+}) {
+  return (
+    <>
+      {showBanner && trialExpiry && (
+        <TrialBanner
+          secondsLeft={trialSecondsLeft ?? 0}
+          minutesLeft={trialMinutesLeft ?? 0}
+          expiryTimestamp={trialExpiry.getTime()}
+        />
+      )}
+      <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
+      <main className="flex-1">{children}</main>
+    </>
+  )
+}
 
 export default async function DashboardLayout({
   children,
@@ -45,22 +76,24 @@ export default async function DashboardLayout({
   // Superuser: use actual role as primary identity, unlock everything on top
   if (isSuperuser) {
     return (
-      <div className="flex min-h-screen bg-neutral-50">
-        <SidebarNav
-          user={sessionUser}
-          role={profileFull?.role ?? profile?.role}
-          tier={3}
-          isAdvisor={profileFull?.role === 'advisor'}
-          isAdmin
-          isAttorney
-          isSuperuser
-          hasHousehold={hasHousehold}
-        />
-        <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
-          <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
-          <main className="flex-1">{children}</main>
-        </div>
-      </div>
+      <DashboardShell
+        sidebar={
+          <SidebarNav
+            user={sessionUser}
+            role={profileFull?.role ?? profile?.role}
+            tier={3}
+            isAdvisor={profileFull?.role === 'advisor'}
+            isAdmin
+            isAttorney
+            isSuperuser
+            hasHousehold={hasHousehold}
+          />
+        }
+      >
+        <DashboardMain needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}>
+          {children}
+        </DashboardMain>
+      </DashboardShell>
     )
   }
 
@@ -114,27 +147,28 @@ export default async function DashboardLayout({
     trialActive
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      <SidebarNav
-        user={sessionUser}
-        role={profileFull?.role}
-        tier={tier}
-        isAdvisor={isAdvisorResolved || isAdvisorClient}
-        isAdmin={isAdminResolved}
-        isAttorney={isAttorneyResolved}
-        hasHousehold={hasHousehold}
-      />
-      <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
-        {showBanner && (
-          <TrialBanner
-            secondsLeft={trialSecondsLeft}
-            minutesLeft={trialMinutesLeft}
-            expiryTimestamp={trialExpiry!.getTime()}
-          />
-        )}
-        <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
-        <main className="flex-1">{children}</main>
-      </div>
-    </div>
+    <DashboardShell
+      sidebar={
+        <SidebarNav
+          user={sessionUser}
+          role={profileFull?.role}
+          tier={tier}
+          isAdvisor={isAdvisorResolved || isAdvisorClient}
+          isAdmin={isAdminResolved}
+          isAttorney={isAttorneyResolved}
+          hasHousehold={hasHousehold}
+        />
+      }
+    >
+      <DashboardMain
+        showBanner={showBanner}
+        trialSecondsLeft={trialSecondsLeft}
+        trialMinutesLeft={trialMinutesLeft}
+        trialExpiry={trialExpiry ?? undefined}
+        needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+      >
+        {children}
+      </DashboardMain>
+    </DashboardShell>
   )
 }

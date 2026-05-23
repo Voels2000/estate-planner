@@ -166,7 +166,7 @@ export function SidebarNav({
   }
 
   return (
-    <aside className="ml-2 my-2 w-64 shrink-0 border border-neutral-200 bg-white flex flex-col rounded-xl overflow-hidden">
+    <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white lg:my-2 lg:ml-2 lg:w-64">
       {/* Header */}
       <div className="px-6 py-5 border-b border-neutral-200">
         <div className="flex items-start justify-between gap-2">
@@ -693,6 +693,11 @@ export function SidebarNav({
             </Link>
           )}
         </div>
+
+        <p className="mx-3 mb-2 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2 text-[11px] leading-relaxed text-neutral-500 lg:hidden">
+          Detailed estate and tax modeling is easiest on a desktop or tablet in landscape. You can
+          review summaries here on your phone.
+        </p>
 
         <div className="px-3 pb-4 pt-1 border-t border-neutral-100">
           <button
