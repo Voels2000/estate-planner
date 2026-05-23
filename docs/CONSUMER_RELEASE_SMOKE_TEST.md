@@ -19,7 +19,27 @@ Use this after a production or staging deploy when consumer write paths, estate 
 | Tier | **Estate (tier 3)** for My Family + Titling; **Retirement (tier 2)+** for Allocation |
 | Baseline | Open **Dashboard** and note **Estate Readiness Score** (0–100) and any **Action Items** |
 
-**Pass criteria for “recompute worked”:** Within ~10 seconds of a successful save, refresh Dashboard — score, gaps, or action items should **change or stay consistent** (not silently stale). If nothing ever updates after multiple saves, flag for engineering (check `RECOMPUTE_SECRET` / `NEXT_PUBLIC_APP_URL` in Vercel).
+**Pass criteria for “recompute worked”:** Within ~10 seconds of a successful save, refresh Dashboard — score, gaps, or action items should **change or stay consistent** (not silently stale). If nothing ever updates after multiple saves, flag for engineering (check `RECOMPUTE_SECRET` / `NEXT_PUBLIC_APP_URL` in Vercel — see [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live)).
+
+---
+
+## Test data setup (staging / pre-Sprint 14)
+
+Run once per environment before acquisition sections B and D. Idempotent.
+
+```bash
+# Test attorney listing + referral_code
+set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
+
+# Playwright consumer account → estate tier (tier 3)
+set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+```
+
+- **Attorney:** `test-attorney@mywealthmaps.test` — script prints `referral_code` for `?aref=` in sections B and D.
+- **Consumer:** uses `PLAYWRIGHT_CONSUMER_EMAIL` from `.env.test` — no new user created.
+- **Advisor `?ref=`:** use a real `referral_code` from `advisor_directory` (no dedicated seed script).
+
+For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 ---
 
@@ -199,8 +219,9 @@ Open while logged out or in a private window unless noted:
 
 ## Acquisition & attribution — Sprint 13+ (required before Sprint 14 test pass)
 
-Run these after Sprint 13 staging deploy. Requires a test advisor account and test attorney
-listing in Supabase with generated `referral_code`.
+Run these after Sprint 13 staging deploy. Requires a test advisor account (real
+`advisor_directory.referral_code`) and test attorney from `scripts/seed-test-attorney.ts`
+(see **Test data setup** above).
 
 ### A. Advisor referral click logging
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix)
 
 ---
 
@@ -64,10 +64,15 @@ No new product pillars. Feature freeze starts here.
 - `[ ]` `20260530000000_sprint9_10_gates.sql` confirmed on staging (invite-advisor gate + succession + connection life-event columns)
 - `[ ]` All prior migrations confirmed (see LAUNCH_CHECKLIST § Supabase prod migrations)
 
-**Smoke test extension — write BEFORE Sprint 14 begins**
+**Test account seed scripts**
+- `[x]` `scripts/seed-test-attorney.ts` — idempotent test attorney (`test-attorney@mywealthmaps.test`);
+  prints `referral_code` for smoke sections B and D
+- `[x]` `scripts/seed-test-consumer-estate.ts` — ensures `PLAYWRIGHT_CONSUMER_EMAIL` profile is
+  estate tier (3) + `subscription_status: active`
 
-Add the following test rows to CONSUMER_RELEASE_SMOKE_TEST.md (section "Public routes"
-and a new "Acquisition & attribution" section):
+**Smoke test extension — written (execute in Sprint 14)**
+
+CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G cover:
 
 - `?ref=` advisor referral link → click logs to `referral_clicks` (Supabase verify)
 - `?aref=` attorney referral link → click logs to `referral_clicks` with `listing_type='attorney'`
@@ -89,7 +94,8 @@ and a new "Acquisition & attribution" section):
 
 **Success criteria**
 - All migrations applied on staging and verified by spot-check (not assumed)
-- Extended smoke test doc written and reviewed before Sprint 14 begins
+- Extended smoke test doc written and reviewed before Sprint 14 begins ✅
+- Seed scripts run on staging; test attorney `referral_code` recorded for smoke B/D
 - Both E2E suites green
 
 ---
@@ -137,6 +143,25 @@ escalate — do not slip it into Sprint 14 without explicit sign-off.**
 **Goal:** Execute LAUNCH_CHECKLIST Section 2. This is an ops sprint — no product features,
 no code changes beyond environment variables and DNS.
 
+**Vercel Production environment variables (verify all before cutover)**
+
+See LAUNCH_CHECKLIST § “Vercel Production env vars” and MASTER_ARCHITECTURE § Production
+environment variables. Every row must be checked in Vercel → Settings → Environment Variables → Production:
+
+| Variable | Launch action |
+|----------|----------------|
+| `NEXT_PUBLIC_APP_URL` | `https://mywealthmaps.com` (replace preview URL) |
+| `RECOMPUTE_SECRET` | Must match `.env.local`; test recompute after deploy |
+| `RESEND_API_KEY` | Confirm set |
+| `INTERNAL_API_KEY` | Confirm set |
+| `CRON_SECRET` | Confirm set |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Confirm set |
+| `SUPABASE_SERVICE_ROLE_KEY` | Confirm set |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Set at launch only |
+
+Do **not** add `SUPABASE_URL` to Vercel Production — seed scripts use it locally/staging only.
+
+- `[ ]` All Production env vars in table above verified in Vercel dashboard
 - `[ ]` `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel Production
 - `[ ]` Custom domain attached in Vercel; SSL active
 - `[ ]` DNS cutover (A/CNAME → Vercel)

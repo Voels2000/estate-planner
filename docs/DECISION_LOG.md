@@ -154,6 +154,23 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### May 2026 — Production environment variables are a Sprint 15 launch gate
+
+**Decision:** Before Sprint 15 go-live (domain cutover), every Production env var in
+[LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live)
+must be verified in the Vercel dashboard. `NEXT_PUBLIC_APP_URL` switches from the preview URL to
+`https://mywealthmaps.com`. `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` is set at launch only.
+`RECOMPUTE_SECRET` must match the value in `.env.local` (shell-source `.env.local` with quoted values
+if the secret contains `!` or `#`).
+
+**Not in Vercel Production:** `SUPABASE_URL` — used only by local/staging seed scripts
+(`seed-test-attorney`, `seed-test-consumer-estate`). Vercel’s Supabase integration sets URL/keys for deploys.
+
+**Reasoning:** Missing `RECOMPUTE_SECRET` or wrong `NEXT_PUBLIC_APP_URL` silently breaks estate health
+recompute and drip/referral links. A single checklist prevents ops drift between preview and production.
+
+---
+
 ### May 2026 — "Referral loop proven" requires exact verification queries, not prose
 
 **Decision:** The LAUNCH_CHECKLIST items "Advisor referral loop proven" and "Attorney referral

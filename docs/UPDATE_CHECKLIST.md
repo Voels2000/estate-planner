@@ -31,7 +31,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
-- Launch / go-live work (robots, Search Console, domain cutover, production email) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- Test data for staging smoke (attorney listing, Playwright consumer tier) → `scripts/seed-test-attorney.ts`, `scripts/seed-test-consumer-estate.ts`; document in CONSUMER_RELEASE_SMOKE_TEST.md
 
 ## Required updates before merge
 
@@ -63,7 +64,8 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 Before Sprint 14 begins, confirm all of the following are true:
 
-- [ ] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
+- [x] CONSUMER_RELEASE_SMOKE_TEST.md acquisition & attribution sections A–G written and reviewed
+- [x] Test seed scripts committed (`seed-test-attorney`, `seed-test-consumer-estate`)
 - [ ] Supabase verification queries for advisor and attorney referral loops documented in smoke test
 - [x] Both A/B test decision criteria documented in DECISION_LOG with named owner (Sprint 10)
 - [x] Business succession decision logged in DECISION_LOG; minimal page shipped (Sprint 10)
@@ -74,6 +76,18 @@ Before Sprint 14 begins, confirm all of the following are true:
 - [ ] MASTER_ARCHITECTURE.md Current vs Target table reviewed and updated
 - [ ] Sprint 14 feature freeze rule communicated to all engineers: no new features,
       no new migrations without explicit sign-off
+
+## Pre-Sprint-15 go-live env vars (ops — no code)
+
+Before domain cutover, verify in **Vercel → Production**:
+
+- [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
+- [ ] `RECOMPUTE_SECRET`, `RESEND_API_KEY`, `INTERNAL_API_KEY`, `CRON_SECRET` — all set
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — confirmed
+- [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` — set at launch
+- [ ] Redeploy after env changes; run Core smoke (~10 min)
+
+Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
 
 ## Verification pass
 

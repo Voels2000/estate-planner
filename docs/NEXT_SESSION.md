@@ -20,9 +20,12 @@
 
 **Next:**
 - `[ ]` Staging deploy with all migrations verified
-- `[ ]` Extend CONSUMER_RELEASE_SMOKE_TEST.md (referral, drip, attribution rows) — required before Sprint 14
+- `[x]` Extend CONSUMER_RELEASE_SMOKE_TEST.md (acquisition & attribution A–G)
+- `[x]` Test seed scripts — `seed-test-attorney.ts`, `seed-test-consumer-estate.ts`
+- `[ ]` Run seed scripts on staging; record test attorney `referral_code` for smoke B/D
 - `[ ]` Referral loop proven (advisor + attorney) on production
 - `[ ]` Drip smoke test on production
+- `[ ]` Sprint 15: verify all Production env vars in LAUNCH_CHECKLIST before domain cutover
 
 See [ROADMAP.md](./ROADMAP.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
@@ -69,6 +72,8 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 | Path | Notes |
 |------|--------|
-| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Add referral/drip/attribution rows |
-| `docs/LAUNCH_CHECKLIST.md` | Section 1 gates |
+| `scripts/seed-test-attorney.ts` | Test attorney + `referral_code`; `source .env.local` |
+| `scripts/seed-test-consumer-estate.ts` | Playwright consumer → tier 3; needs `.env.test` for email |
+| `docs/CONSUMER_RELEASE_SMOKE_TEST.md` | Acquisition & attribution A–G |
+| `docs/LAUNCH_CHECKLIST.md` | Section 1 gates; § Production env vars (Sprint 15) |
 | `supabase/migrations/` | Verify applied on staging/prod |

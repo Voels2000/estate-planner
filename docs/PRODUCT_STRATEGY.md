@@ -1,6 +1,6 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
+# Last updated: May 2026 (Sprint 13 current; go-live env matrix in LAUNCH_CHECKLIST)
 
 ---
 

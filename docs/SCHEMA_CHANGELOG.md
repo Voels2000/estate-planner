@@ -8,6 +8,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 13 — Test seed scripts, smoke test extension, prod env matrix (May 2026)
+
+**No schema change.**
+
+- **Scripts:** `scripts/seed-test-attorney.ts` — test `attorney_listings` row + `referral_code` (backfill if trigger absent); `scripts/seed-test-consumer-estate.ts` — `profiles.consumer_tier = 3` for `PLAYWRIGHT_CONSUMER_EMAIL`.
+- **Docs:** CONSUMER_RELEASE_SMOKE_TEST acquisition A–G; LAUNCH_CHECKLIST Production env var matrix (Sprint 15 go-live); ROADMAP / NEXT_SESSION / MASTER_ARCHITECTURE sync.
+
 ## Sprint 12 — A/B collapse, persona alerts, planning empty CTAs, copy audit (May 2026)
 
 **Copy (no migration):** In-app copy audit across dashboard, `(public)/`, landing (`app/page.tsx`), share estate-flow. See DECISION_LOG.

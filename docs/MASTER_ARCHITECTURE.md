@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; see SCHEMA_CHANGELOG)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix; see SCHEMA_CHANGELOG)
 
 ---
 
@@ -341,9 +341,45 @@ Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealth
 | Variable | Purpose |
 |----------|---------|
 | `RECOMPUTE_SECRET` | Shared secret; must match on the caller and `/api/recompute-estate-health` |
-| `NEXT_PUBLIC_APP_URL` | Public app URL used for the server-to-server recompute `fetch` (e.g. `https://your-app.vercel.app`) |
+| `NEXT_PUBLIC_APP_URL` | Public app URL used for the server-to-server recompute `fetch` (e.g. `https://mywealthmaps.com` at launch) |
 
 If either is missing in production, recompute is skipped and a **one-time** `console.warn` is emitted per process. Failed recompute attempts log `console.error` with `householdId`, HTTP status, and response snippet — search hosting logs (e.g. Vercel) for `[triggerEstateHealthRecompute]`.
+
+**Full Production env matrix (Sprint 15 go-live):** [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
+
+---
+
+## Production environment variables (Sprint 15 go-live)
+
+Before domain cutover, verify **every** variable in **Vercel → Settings → Environment Variables → Production**.
+Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+
+| Variable | Where it's needed | Launch note |
+|----------|-------------------|-------------|
+| `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, recompute `fetch` | Replace preview URL with `https://mywealthmaps.com` |
+| `RECOMPUTE_SECRET` | `afterHouseholdWrite` → `/api/recompute-estate-health` | Must match `.env.local` (quote value if it contains `!` or `#`) |
+| `RESEND_API_KEY` | Drip and transactional email | Confirm set |
+| `INTERNAL_API_KEY` | Drip + cron internal server calls | Confirm set |
+| `CRON_SECRET` | `/api/cron/notifications`, `/api/cron/age-triggers` | Confirm set |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client | Confirm set |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin client, webhooks, server writes bypassing RLS | Confirm set (often via Vercel Supabase integration) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | `app/layout.tsx` Search Console meta | Set at launch only |
+
+**Not in Vercel Production:** `SUPABASE_URL` — only for local/staging seed scripts. Vercel Supabase integration supplies project URL/keys for deploys.
+
+**Test account seed scripts (staging / local, not Vercel env):**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/seed-test-attorney.ts` | Idempotent `test-attorney@mywealthmaps.test`; prints `referral_code` for smoke `?aref=` |
+| `scripts/seed-test-consumer-estate.ts` | Ensures `PLAYWRIGHT_CONSUMER_EMAIL` is estate tier (3) |
+
+```bash
+set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
+set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+```
+
+See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE_TEST.md#test-data-setup-staging--pre-sprint-14).
 
 **Post-deploy smoke checklist (manual, ~5 min):**
 
@@ -729,7 +765,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 13):** Pre-production hardening — staging migrations, extended smoke test, referral/drip production verification.
+**Current sprint (Sprint 13):** Pre-production hardening — staging migrations, smoke test doc (A–G),
+test seed scripts, referral/drip production verification; Production env matrix documented for Sprint 15.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 

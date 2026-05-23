@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed)
+# Last updated: May 2026 (Sprint 13 current; Sprint 12 closed; seed scripts + prod env matrix)
 
 ---
 
@@ -64,12 +64,14 @@ These must be complete before launch. Update status as sprints close them.
 ### Quality & polish
 
 - [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
-- [ ] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md must include
-  test rows for: `?ref=` referral logging, `?aref=` attorney referral logging, signup attribution
-  (both profile columns), drip step 1 delivery, all 24 event slug 200-responses, and
-  life-event-on-connect advisor portal visibility. Must be written before Sprint 14 begins.
-- [ ] **"Referral loop proven" definition confirmed** — exact Supabase queries for advisor and
-  attorney referral verification documented in the smoke test before Sprint 14 begins.
+- [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
+  attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
+  life-event-on-connect)
+- [x] **"Referral loop proven" definition confirmed** — exact Supabase queries in
+  CONSUMER_RELEASE_SMOKE_TEST.md and DECISION_LOG.md (advisor + attorney `referral_clicks`)
+- [x] **Test account seed scripts (Sprint 13)** — `scripts/seed-test-attorney.ts` (test attorney +
+  `referral_code`); `scripts/seed-test-consumer-estate.ts` (Playwright consumer → tier 3).
+  Run against staging/prod before Sprint 14 smoke; see smoke test “Test data setup”.
 
 - [x] **App URL in emails** — `lib/app-url.ts` `getAppUrl()` on email routes (Sprint 9)
 - [x] **Digital Assets tier gate** — `FEATURE_TIERS['digital-assets'] = 2` + `UpgradeBanner` on page (Sprint 9)
@@ -87,15 +89,49 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 - [x] **`app/robots.ts`** — permissive rules in repo (Sprint 9); confirm deployed at `https://mywealthmaps.com/robots.txt` before Search Console submission
 - [ ] **`app/layout.tsx`** — no change needed; `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` already wired via env
 
-### Vercel Production env vars
+### Vercel Production env vars (required before Sprint 15 go-live)
 
-Set in Vercel dashboard → Settings → Environment Variables (Production only), then redeploy:
+Set in **Vercel dashboard → Settings → Environment Variables → Production**, then redeploy.
+Check each row in the dashboard before domain cutover. Full matrix is the **go-live source of truth**
+for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-environment-variables-sprint-15-go-live)).
+
+| Variable | Where it's needed | Status to verify |
+|----------|-------------------|------------------|
+| `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, estate-health recompute `fetch` | Currently preview URL — **update to `https://mywealthmaps.com` at launch** |
+| `RECOMPUTE_SECRET` | Estate health recompute after consumer/strategy saves (`afterHouseholdWrite`) | Must match value in local `.env.local`; quoted if value contains `!` or `#` |
+| `RESEND_API_KEY` | Email drip delivery (`/api/email/drip`, capture flows) | Confirm set |
+| `INTERNAL_API_KEY` | Drip + cron internal calls (server-to-server auth) | Confirm set |
+| `CRON_SECRET` | `/api/cron/notifications` and `/api/cron/age-triggers` (Vercel cron + optional GH manual) | Confirm set |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | Confirm set |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | Confirm set (often via Vercel Supabase integration) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Set at launch only** — content from Google HTML tag method |
+
+**Checklist (Production environment only):**
 
 - [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
-- [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → content value from Google HTML tag method
+- [ ] `RECOMPUTE_SECRET` → matches local secret; recompute smoke passes after deploy
 - [ ] `RESEND_API_KEY` → confirm set
-- [ ] `INTERNAL_API_KEY` → confirm matches drip + cron callers
-- [ ] `CRON_SECRET` → confirm set for `/api/cron/notifications` and `/api/cron/age-triggers`
+- [ ] `INTERNAL_API_KEY` → confirm set
+- [ ] `CRON_SECRET` → confirm set
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirm set
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` → confirm set
+- [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → set at launch; meta tag visible in page source
+
+**Not required in Vercel Production:**
+
+- `SUPABASE_URL` — used only by local/staging seed scripts (`scripts/seed-test-attorney.ts`,
+  `scripts/seed-test-consumer-estate.ts`). Vercel’s Supabase integration sets project URL/keys;
+  do not add a separate `SUPABASE_URL` for production deploys.
+
+**Seed scripts (staging / local only — not Vercel env):**
+
+```bash
+# Attorney test listing + referral_code (idempotent)
+set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
+
+# Playwright consumer → estate tier 3 (requires .env.test for PLAYWRIGHT_CONSUMER_EMAIL)
+set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+```
 
 ### Domain & DNS
 
@@ -150,7 +186,9 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 | A/B test decision criteria | Defined in DECISION_LOG (Sprint 10) | Sprint 12 implements winners |
 | Persona alerts (business + RE) | Shipped Sprint 12 | `lib/dashboard/personaAlerts.ts` |
 | Projections / scenarios / charitable | Sprint 11 scope | Yes — before launch |
-| Extended smoke test (referral/drip/attribution rows) | Not written | Yes — Sprint 13 |
+| Extended smoke test (referral/drip/attribution rows) | Written (sections A–G); Sprint 14 execution | Yes — Sprint 14 pass |
+| Test account seed scripts | Shipped (`seed-test-attorney`, `seed-test-consumer-estate`) | Run on staging before Sprint 14 |
+| Production env var matrix | Documented § Section 2 | Sprint 15 — verify in Vercel dashboard |
 | RMD start age by birth year | Shipped (`getRmdStartAge` 72/73/75) | Verify in Sprint 14 smoke |
 
 ---
@@ -164,4 +202,5 @@ Set in Vercel dashboard → Settings → Environment Variables (Production only)
 | May 2026 | Sprint 9 | Drip — all 24 event slugs; RMD cohorts; life-event-on-connect; Digital Assets tier 2; getAppUrl audit |
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
-| — | — | _Record launch date and who verified Search Console / domain_ |
+| May 2026 | Sprint 13 | Test seed scripts; acquisition smoke sections A–G; production env var matrix for Sprint 15 |
+| — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |
