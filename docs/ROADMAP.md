@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 14 current; Sprint 13 closed)
+# Last updated: May 2026 (Sprint 14 — manual §1–7 passed; 2 bugs open)
 
 ---
 
@@ -73,9 +73,11 @@ escalate — do not slip it into Sprint 14 without explicit sign-off.**
 - `[x]` **Smoke §2.4 automated** — `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (staging verified)
 - `[x]` **Core sections 1–3: pass** — manual 2026-05-23 (§2.4 covered by E2E)
 - `[x]` **Estate planning sections 4–7: pass** — manual 2026-05-23
-- `[ ]` **Fix before launch:** Admin Portal in consumer sidebar; asset form save button viewport
-- `[ ]` Optional sections 8–11 (run as time permits; flag any failures)
-- `[ ]` Sign-off form completed with tester name, date, environment, deploy/commit
+- `[ ]` **Fix before launch (next):** Admin Portal in consumer sidebar; asset form save button viewport
+- `[x]` Manual smoke sign-off in CONSUMER_RELEASE_SMOKE_TEST.md — 2026-05-23 (`1e092d7`)
+- `[ ]` Optional sections 8–11 — not done
+- `[ ]` Drip steps 2–3 — not done
+- `[ ]` LAUNCH_CHECKLIST Section 1 full checkbox pass — pending bug fixes
 
 **Automated**
 - `[x]` `consumer-core-recompute.spec.ts` — POST asset → poll `computed_at` (15s) → dashboard (smoke §2.4)

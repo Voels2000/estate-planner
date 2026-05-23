@@ -1,6 +1,6 @@
 # PRODUCT_STRATEGY.md
 # My Wealth Maps — Product Strategy Reference
-# Last updated: May 2026 (Sprint 14; smoke §2.4 automated in Playwright)
+# Last updated: May 2026 (Sprint 14; §1–7 manual passed; 2 bugs open)
 
 ---
 

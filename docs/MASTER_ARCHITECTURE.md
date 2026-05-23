@@ -767,8 +767,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
-**Current sprint (Sprint 14):** Feature freeze — planning smoke (estate 4–7 manual; Core §2.4 automated via `consumer-core-recompute`).
-Sprint 13 closed: 67 migrations, acquisition A–G, advisor trigger + RMD copy blockers fixed.
+**Current sprint (Sprint 14):** Manual smoke §1–7 **passed** 2026-05-23; §2.4 automated (`93aa6f5`). **Open:** hide Admin Portal for consumers; asset form save in viewport. Optional §8–11 + drip 2–3 remain.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 

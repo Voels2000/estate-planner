@@ -13,7 +13,9 @@ dotenv -e .env.test -- npx playwright test --project=advisor
 dotenv -e .env.test -- npx playwright test --project=public
 ```
 
-**Staging recompute:** If `consumer-core-recompute` and gift-history recompute tests both time out, check Vercel logs for `[triggerEstateHealthRecompute]` before manual smoke §2.4 — see [NEXT_SESSION.md](./NEXT_SESSION.md#before-manual-smoke-24--verify-staging-recompute).
+**Staging recompute:** Verified May 2026 — `consumer-core-recompute` passing (~15.5s). If tests time out after deploy, see [NEXT_SESSION.md](./NEXT_SESSION.md).
+
+**Sprint 14 manual smoke (2026-05-23):** Core §1–7 passed; bugs logged — Admin Portal in consumer sidebar, asset form save below viewport (fix before launch).
 
 ---
 

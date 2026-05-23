@@ -8,6 +8,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 14 — manual smoke §1–7 + open bugs (May 2026)
+
+**No schema change.**
+
+- **E2E:** `93aa6f5` — `consumer-core-recompute.spec.ts`, `estate-health-poll.ts`
+- **Manual smoke:** `1e092d7` — Core §1–3 + estate §4–7 passed staging 2026-05-23
+- **Open before launch:** Admin Portal in consumer sidebar; asset form save below viewport
+- **Post-launch:** dashboard / profile render performance
+
 ## Sprint 14 — consumer-core-recompute E2E (May 2026)
 
 **No schema change.**

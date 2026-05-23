@@ -74,10 +74,13 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 ## Sprint 14 focus (current)
 
-- [x] `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (smoke §2.4 automated; staging pass)
-- [ ] CONSUMER_RELEASE_SMOKE_TEST Core §1 + §3 (§2.4 via E2E)
-- [ ] Estate planning sections 4–7
-- [ ] LAUNCH_CHECKLIST Section 1 fully checked
+- [x] `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (`93aa6f5`)
+- [x] Manual smoke Core §1–3 + estate §4–7 (`1e092d7`, 2026-05-23)
+- [ ] **Fix:** Admin Portal hidden for consumer role (sidebar)
+- [ ] **Fix:** Asset form save button reachable without zoom
+- [ ] LAUNCH_CHECKLIST Section 1 full sign-off (after bugs)
+- [ ] Optional smoke §8–11; drip steps 2–3
+- [ ] Post-launch perf: dashboard load + post-profile-save render
 - [ ] No new features / no new migrations without sign-off
 
 ## Pre-Sprint-15 go-live env vars (ops — no code)

@@ -154,6 +154,19 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### May 2026 — Sprint 14 manual smoke bugs (fix before launch)
+
+**Decision:** Two issues from manual smoke §1–7 (2026-05-23) must be fixed before LAUNCH_CHECKLIST Section 1 is fully signed off:
+
+1. **Admin Portal in consumer sidebar** — consumers must never see admin navigation; gate on profile `role` (or equivalent) in dashboard shell.
+2. **Asset add form save button** — must be reachable without browser zoom; use scrollable form body and/or sticky footer for primary save action.
+
+**Post-launch (not blocking):** Dashboard initial load and post-profile-save render slowness — track as performance work after launch.
+
+**Completed same sprint:** `consumer-core-recompute.spec.ts` (`93aa6f5`); manual sign-off `1e092d7`.
+
+---
+
 ### May 2026 — Sprint 13 smoke test purpose: find launch blockers before feature freeze ends
 
 **Decision:** Sprint 13 success is measured by staging verification (migrations, E2E, acquisition smoke A–G),
