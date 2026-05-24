@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 14 closed — smoke §1–11 passed; bugs fixed)
+# Last updated: May 2026 (Sprint 15 — waitlist mode live; go-live env matrix updated)
 
 ---
 
@@ -89,6 +89,37 @@ These must be complete before launch. Update status as sprints close them.
 
 Run these on launch day after all Section 1 gates are checked. Do not run early.
 
+### Waitlist mode (pre-launch — disable at go-live)
+
+Public signup is gated behind a waitlist while the site is live but not yet accepting accounts.
+Implementation: `lib/waitlist-mode.ts`, `proxy.ts` (runtime `/signup` → `/waitlist` redirect),
+`app/(auth)/signup/page.tsx` (backup redirect), `app/(public)/waitlist/`, `getSignupHref()` on public CTAs.
+
+**Enable waitlist (current pre-launch state):**
+
+Set both in **Vercel → Production** (and `.env.local` for local dev), then redeploy:
+
+| Variable | Purpose |
+|----------|---------|
+| `WAITLIST_MODE=true` | Runtime gate in `proxy.ts` and server components — works without rebuild |
+| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client bundle: public CTAs link directly to `/waitlist` |
+
+**Invite / token signups bypass the gate** (still reach `/signup`): `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
+
+**Disable waitlist when ready to go live (open public signup):**
+
+1. In **Vercel → Settings → Environment Variables → Production**, **delete or set to `false`**:
+   - `WAITLIST_MODE`
+   - `NEXT_PUBLIC_WAITLIST_MODE`
+2. **Redeploy** — required so client CTAs stop linking to `/waitlist`.
+3. **Verify after deploy:**
+   - `GET /signup` → signup form (not 307 to `/waitlist`)
+   - Landing / nav **Get started** → `/signup`
+   - `/waitlist` still loads (page remains; optional to remove from nav later)
+   - `/signup?invite=…` still works for advisor/attorney/firm invites
+
+Do **not** disable waitlist until Section 1 product gates and production drip smoke are signed off.
+
 ### Code
 
 - [x] **`app/robots.ts`** — permissive rules in repo (Sprint 9); confirm deployed at `https://mywealthmaps.com/robots.txt` before Search Console submission
@@ -110,6 +141,8 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | Confirm set |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | Confirm set (often via Vercel Supabase integration) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Set at launch only** — content from Google HTML tag method |
+| `WAITLIST_MODE` | `proxy.ts` + server signup redirect | **`true` pre-launch** — remove or `false` at go-live (see § Waitlist mode) |
+| `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | **`true` pre-launch** — remove or `false` at go-live; redeploy required |
 
 **Checklist (Production environment only):**
 
@@ -121,6 +154,8 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirm set
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` → confirm set
 - [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → set at launch; meta tag visible in page source
+- [x] `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → `true` while pre-launch (Sprint 15)
+- [ ] **At go-live:** unset both waitlist vars → redeploy → confirm `/signup` open
 
 **Not required in Vercel Production:**
 
@@ -186,6 +221,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Optional smoke §9 | Skipped — needs linked advisor | No |
 | Drip steps 2–3 | Not verified | Section 1 remainder |
 | Section 1 product gates | Sprint 14 smoke + bugs closed | Drip prod smoke + E2E path remain |
+| Waitlist mode | **On** — public signup → `/waitlist` | Disable at go-live (§ Section 2) |
 
 ---
 
@@ -200,4 +236,5 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
 | May 2026 | Sprint 14 | **Closed** — smoke §1–11 passed; bugs fixed `f4e9160`; E2E 41 passed (staging flakiness `--workers=1`) |
-| — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars_ |
+| May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`); runtime proxy redirect + force-dynamic signup |
+| — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars + waitlist disabled_ |

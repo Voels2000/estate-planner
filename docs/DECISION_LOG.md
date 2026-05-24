@@ -503,6 +503,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### May 2026 — Waitlist mode gates public signup pre-launch (Sprint 15)
+
+**Decision:** While the marketing site is live but not yet accepting accounts, public signup is disabled via env flags. Visitors to `/signup` or public **Get started** CTAs see `/waitlist` (email capture only). Invite/token signup flows bypass the gate (`?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`).
+
+**Reasoning:** Allow domain cutover, SEO prep, and drip testing without open self-serve signup. Runtime redirect in `proxy.ts` avoids stale static `/signup` when env vars change after build.
+
+**Implementation:** `lib/waitlist-mode.ts`, `proxy.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx` (`force-dynamic`), `getSignupHref()` on public CTAs, `POST /api/email-capture` skips drip for `source: 'waitlist'`.
+
+**At go-live:** Unset or set `false` for `WAITLIST_MODE` and `NEXT_PUBLIC_WAITLIST_MODE` in Vercel Production, redeploy, verify `/signup` open. See [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+
+---
+
 ### May 2026 — Block all crawlers pre-launch
 
 **Decision:** `app/robots.ts` returns `disallow: /` for `userAgent: *` and omits the `sitemap` URL until product launch. `app/sitemap.ts` stays in the codebase. Google Search Console setup deferred.

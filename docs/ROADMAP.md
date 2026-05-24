@@ -68,8 +68,14 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58) **← CURRENT**
 
-**Goal:** Execute LAUNCH_CHECKLIST Section 2. This is an ops sprint — no product features,
-no code changes beyond environment variables and DNS.
+**Goal:** Execute LAUNCH_CHECKLIST Section 2. Ops sprint — env vars, DNS, waitlist → open signup at cutover.
+
+**Waitlist mode (pre-launch — disable at go-live)**
+
+- `[x]` Waitlist page + email capture (`/waitlist`, `POST /api/email-capture`)
+- `[x]` Runtime `/signup` → `/waitlist` redirect in `proxy.ts` (`bb9a191`)
+- `[x]` `getSignupHref()` wired on public CTAs; invite flows bypass gate
+- `[ ]` **At go-live:** unset `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → redeploy → verify `/signup`
 
 **Vercel Production environment variables (verify all before cutover)**
 
@@ -86,9 +92,12 @@ environment variables. Every row must be checked in Vercel → Settings → Envi
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Confirm set |
 | `SUPABASE_SERVICE_ROLE_KEY` | Confirm set |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Set at launch only |
+| `WAITLIST_MODE` | `true` pre-launch — **unset/`false` at go-live** |
+| `NEXT_PUBLIC_WAITLIST_MODE` | `true` pre-launch — **unset/`false` at go-live** (redeploy) |
 
 Do **not** add `SUPABASE_URL` to Vercel Production — seed scripts use it locally/staging only.
 
+- `[ ]` **Disable waitlist** — unset both waitlist env vars; redeploy; `/signup` shows form
 - `[ ]` All Production env vars in table above verified in Vercel dashboard
 - `[ ]` `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel Production
 - `[ ]` Custom domain attached in Vercel; SSL active

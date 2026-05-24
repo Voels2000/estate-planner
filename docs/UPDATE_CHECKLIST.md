@@ -33,7 +33,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
-- Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - Test data for staging smoke (attorney listing, Playwright consumer tier) → `scripts/seed-test-attorney.ts`, `scripts/seed-test-consumer-estate.ts`; document in CONSUMER_RELEASE_SMOKE_TEST.md
 
 ## Required updates before merge
@@ -72,16 +72,13 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] `INTERNAL_API_KEY` on Vercel Production
 - [x] Sprint 13 launch blockers fixed (RMD copy, advisor referral trigger)
 
-## Sprint 14 focus (current)
+## Sprint 15 focus (current)
 
-- [x] `consumer-core-recompute.spec.ts` + `estate-health-poll.ts` (`93aa6f5`)
-- [x] Manual smoke Core §1–3 + estate §4–7 (`1e092d7`, 2026-05-23)
-- [ ] **Fix:** Admin Portal hidden for consumer role (sidebar)
-- [ ] **Fix:** Asset form save button reachable without zoom
-- [ ] LAUNCH_CHECKLIST Section 1 full sign-off (after bugs)
-- [ ] Optional smoke §8–11; drip steps 2–3
+- [x] Waitlist mode — runtime proxy redirect + docs (`bb9a191`)
+- [ ] LAUNCH_CHECKLIST Section 2 — domain, Resend, Search Console
+- [ ] **Go-live:** disable waitlist env vars + redeploy
+- [ ] LAUNCH_CHECKLIST Section 1 remainder (drip prod smoke, E2E path)
 - [ ] Post-launch perf: dashboard load + post-profile-save render
-- [ ] No new features / no new migrations without sign-off
 
 ## Pre-Sprint-15 go-live env vars (ops — no code)
 
@@ -91,6 +88,8 @@ Before domain cutover, verify in **Vercel → Production**:
 - [ ] `RECOMPUTE_SECRET`, `RESEND_API_KEY`, `INTERNAL_API_KEY`, `CRON_SECRET` — all set
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — confirmed
 - [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` — set at launch
+- [x] `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → `true` (pre-launch)
+- [ ] **At go-live:** unset both waitlist vars → redeploy
 - [ ] Redeploy after env changes; run Core smoke (~10 min)
 
 Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).

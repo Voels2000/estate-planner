@@ -390,7 +390,8 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |
 | **Advisor newsletter kit** | Advisor portal | `buildAllEventReferralUrls` — 24 `?ref=` links |
 | **Attorney newsletter kit** | Attorney portal `/attorney` | `buildAllAttorneyEventReferralUrls` — 24 `?aref=` links |
-| **Signup attribution** | `/signup` after `signUp` + `signInWithPassword` | `_signup-form.tsx` → `profiles` + `POST /api/analytics/funnel` (`account_created`); both advisor and attorney session keys |
+| **Signup attribution** | `/signup` after `signUp` + `signInWithPassword` (or `/waitlist` email capture when waitlist mode on) | `_signup-form.tsx` → `profiles` + `POST /api/analytics/funnel` (`account_created`); waitlist: `POST /api/email-capture` (`source: 'waitlist'`) |
+| **Waitlist (pre-launch)** | `/waitlist`; `/signup` redirected when `WAITLIST_MODE` or `NEXT_PUBLIC_WAITLIST_MODE` is `true` | `lib/waitlist-mode.ts`, `proxy.ts`, `getSignupHref()`; invite query params bypass gate |
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin **Funnel** tab — 30-day step counts, tier conversion, slug/referral tables |
 | **Email drip** | Event assess email capture | 3-step sequence per event slug (24 custom in `drip-templates.ts`); `POST /api/email-capture` → drip step 1; steps 2–3 cron |
 | **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |

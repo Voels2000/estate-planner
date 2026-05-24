@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 15 — Session Start Document
-# Updated: 2026-05-23
+# Updated: 2026-05-24
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 15 beginning.** Sprint 14 fully closed: manual smoke §1–11 passed, two launch bugs fixed (`f4e9160`), §2.4 recompute automated (`93aa6f5`), E2E 41 passed (12 staging-flaky confirmed not regressions, 19/19 with --workers=1).
+> My Wealth Maps — **Sprint 15 (go-live ops).** Sprint 14 closed. Waitlist mode live: public signup gated to `/waitlist` via `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` (`bb9a191` runtime proxy redirect).
 >
-> **Sprint 15 goal:** TBD — see ROADMAP.md.
+> **Sprint 15 goal:** LAUNCH_CHECKLIST Section 2 — domain, env vars, Search Console. **Disable waitlist** when opening public signup (see LAUNCH_CHECKLIST § Waitlist mode).
 >
 > **Today's task:** TBD.
 
@@ -37,6 +37,21 @@
 
 - Dashboard initial load slowness
 - Post-profile-save render slowness
+
+### Waitlist mode (pre-launch — do not lose)
+
+Public signup is **off** while waitlist env vars are `true`. Visitors hitting `/signup` or **Get started** CTAs land on `/waitlist` (email capture only).
+
+| Env var | Where |
+|---------|--------|
+| `WAITLIST_MODE=true` | `proxy.ts` runtime redirect; server signup page |
+| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client `getSignupHref()` — requires redeploy when changed |
+
+**Bypass:** invite/token URLs still reach signup — `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
+
+**Go-live:** delete or set both to `false` in Vercel Production → redeploy → verify `/signup` shows form. Full steps: [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+
+Key files: `lib/waitlist-mode.ts`, `proxy.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx`.
 
 ---
 
