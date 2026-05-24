@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-24 (Sprint 16 current; Sprint 15 closed)
+# Last updated: 2026-05-24 (Sprint 17 current; Sprint 16 closed)
 
 ---
 
@@ -109,13 +109,15 @@ The site is in waitlist mode by default on `VERCEL_ENV=production`. To open sign
 
 **Pre-launch (current):** waitlist is on by default on Vercel Production — no env vars required. Optionally set `WAITLIST_MODE=true` / `NEXT_PUBLIC_WAITLIST_MODE=true` for explicit control or local dev. Invite/token signups bypass the gate: `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
 
-Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates and production drip smoke are signed off.
+Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **Sprint C-4 billing disclosures** ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)), and production drip smoke are signed off.
 
 ### Code
 
 - [x] **`app/robots.ts`** — permissive rules deployed at `https://mywealthmaps.com/robots.txt` (2026-05-24)
 - [x] **`app/layout.tsx`** — no change needed; Search Console verified via Cloudflare (meta tag env not required)
-- [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited for investment-advice trigger language. `scripts/audit-ux-language.sh` passes with 0 findings. `lib/compliance/language-policy.ts` committed. All `DISCLAIMER_STRINGS` surfaces wired: dashboard, projections, Monte Carlo, Roth, allocation, assess, my-attorney, estate-tax, my-estate-strategy, PDF export cover, global footer (`DisclaimerBanner` + homepage). Completed: 2026-05-24
+- [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited; `audit-ux-language.sh` 0 findings; all `DISCLAIMER_STRINGS` surfaces wired. Completed: 2026-05-24 (`788aa08`)
+- [x] **RLS security (Sprint C-3 Phase 1)** — `20260602000000_sprint_c3_rls_fixes.sql` applied or ready to push; advisor joins `active` + `accepted`. Completed: 2026-06-02 (`236890c`)
+- [ ] **Billing disclosures (Sprint C-4)** — Washington auto-renewal (RCW 19.316), FTC click-to-cancel, Stripe receipts — **required before open signups**. [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 
 ### Vercel Production env vars (Sprint 15 go-live — verified 2026-05-24)
 
@@ -135,7 +137,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Not needed** — verified via Cloudflare domain provider (2026-05-24) |
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
-| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — billing setup first |
+| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — C-4 billing disclosures + Stripe production first |
 
 **Checklist (Production environment only):**
 
@@ -147,7 +149,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirmed set (2026-05-24)
 - [x] `SUPABASE_SERVICE_ROLE_KEY` → confirmed set (2026-05-24)
 - [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed**; Search Console verified via Cloudflare (2026-05-24)
-- [ ] **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open (pending billing setup)
+- [ ] **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open (pending C-4 + Stripe production)
 
 **Not required in Vercel Production:**
 
@@ -203,18 +205,22 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Resend domain | ✅ Verified (2026-05-24) | — |
 | Post-cutover smoke §1–3 | ✅ Passed production (2026-05-24) | — |
 | Waitlist mode | ✅ Active — public signup → `/waitlist` | — |
-| Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — billing setup first | Yes |
+| Sprint C-3 RLS (Phase 1) | ✅ `236890c` — push migration to production before open signups | Yes (data isolation) |
+| Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — C-4 billing disclosures + Stripe production | Yes |
+| Sprint C-4 billing disclosures | ☐ Open — RCW 19.316, FTC cancel, Stripe receipts | Yes |
 | Section 1 remainder | Drip prod smoke steps 2–3; E2E path; attorney referral prod test | No (waitlist gate) |
-| Dashboard/profile slow renders | Sprint 16 perf ticket — dashboard load slowness | No |
+| Dashboard/profile slow renders | Sprint 17 perf ticket — dashboard load slowness | No |
 
-### Sprint 16 — open items (post-cutover)
+### Sprint 17 — open items (post-cutover)
 
 | Item | Notes |
 |------|-------|
-| **Billing setup** | Stripe production — required before `PUBLIC_SIGNUP_OPEN=true` |
-| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| **Sprint C-4 billing disclosures** | RCW 19.316 + FTC negative option + Stripe receipts — **blocks `PUBLIC_SIGNUP_OPEN`** |
+| **Stripe production billing** | Production keys; checkout + webhook |
+| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` after C-4 signed off |
 | **Drip step 2 check** | `consumer21@rolobe.resend.app` on **2026-05-26** |
 | **Post-launch performance** | Dashboard initial load slowness ticket |
+| **Monte Carlo UI string pass** | ✅ Done — assumptions label + insight strings + upgrade copy |
 
 ---
 
@@ -231,4 +237,6 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 14 | **Closed** — smoke §1–11 passed; bugs fixed `f4e9160`; E2E 41 passed (staging flakiness `--workers=1`) |
 | May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`, `3ceb125`); runtime middleware redirect + force-dynamic signup |
 | 2026-05-24 | Sprint 15 | **Closed** — Domain live, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed. Open signups pending billing setup — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy when ready. |
+| 2026-06-02 | Sprint C-3 | **Closed** — RLS policy fixes (`236890c` / `20260602000000_sprint_c3_rls_fixes.sql`). |
+| 2026-05-24 | Sprint 16 | **Closed** — C-2b UX language audit complete (`788aa08`). Billing, C-4 disclosures, open signups carried to Sprint 17. |
 | 2026-05-24 | Sprint 15 cont. | Preview waitlist mode enabled; sitemap XML fixed (`73648e5`); middleware infra bypass added; test accounts cleaned up (`3f732e3`); dev workflow established (local → preview → production) |

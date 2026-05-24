@@ -8,13 +8,42 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint 16 — billing + open signups (May 2026)
+## Sprint C-3 — RLS security fixes (2026-06-02)
+
+**Migration:** `20260602000000_sprint_c3_rls_fixes.sql` — **commit `236890c`**
+
+**RLS policy changes (no new tables):**
+
+- **businesses:** advisor SELECT fixed — was `auth.uid() IS NOT NULL` (any signed-in user could read all rows); now `advisor_clients` join on `owner_id`
+- **assets:** `Advisors can manage client assets` recreated — status `active` and `accepted` (was `active` only)
+- **monte_carlo_runs:** owner ALL + advisor SELECT added (RLS on with zero policies — non–service-role access was blocked); join key `user_id`
+- **advisor_clients:** `Advisors manage their clients` ALL policy — added `WITH CHECK (advisor_id = auth.uid())`
+- **profiles:** `Users can insert own profile` — `WITH CHECK (id = auth.uid())`
+- **Reference tables:** authenticated read-only on `federal_estate_tax_parameters`, `advisor_tier_config`, `attorney_tier_config`, `charitable_deduction_limits`, `charitable_vehicle_types`, `qcd_limits`
+- **change_log:** service-role-only policy (no authenticated read)
+
+All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts`.
+
+**Apply:** `npx supabase db push` or run migration on linked project before relying on consumer RLS paths without admin client.
+
+**Follow-up (Sprint 17):** ✅ UI pass complete — `MonteCarloAssumptionsPanel.tsx` label + `lib/monte-carlo.ts` insights. Column `monte_carlo_runs.success_rate` unchanged (internal/API only).
+
+---
+
+## Sprint 17 — billing disclosures + open signups (May 2026)
+
+**No schema change.**
+
+- **Sprint 16 closed 2026-05-24:** C-2b UX language audit complete (`788aa08`); all `DISCLAIMER_STRINGS` surfaces wired.
+- **Sprint 17 open:** Sprint C-4 billing disclosures (RCW 19.316, FTC cancel, Stripe receipts); Stripe production billing; `PUBLIC_SIGNUP_OPEN=true` after C-4; drip step 2 verify `consumer21@` on 2026-05-26; dashboard load perf ticket.
+- **Doc:** [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+
+## Sprint 16 — C-2b UX language audit (May 2026)
 
 **No schema change.**
 
 - **Sprint 15 closed 2026-05-24:** domain live; Search Console via Cloudflare; waitlist active; smoke §1–3 passed.
-- **Sprint 16 open:** Stripe production billing; `PUBLIC_SIGNUP_OPEN=true`; drip step 2 verify `consumer21@` on 2026-05-26; dashboard load perf ticket.
-- **Ops:** `scripts/cleanup-test-accounts.ts` — delete stray production test signup accounts before open signups.
+- **Sprint 16 closed 2026-05-24:** C-2b complete (`788aa08`); billing/open signups carried to Sprint 17.
 
 ## Sprint 14 — manual smoke §1–7 + open bugs (May 2026)
 

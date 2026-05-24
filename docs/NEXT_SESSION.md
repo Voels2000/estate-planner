@@ -1,36 +1,61 @@
 # NEXT_SESSION.md
-# Sprint 16 — Session Start Document
+# Sprint 17 — Session Start Document
 # Updated: 2026-05-24
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 16 beginning.** Sprint 15 closed 2026-05-24: `mywealthmaps.com` live, waitlist active, post-cutover smoke §1–3 passed.
+> My Wealth Maps — **Sprint 17 beginning.** Sprint 16 closed 2026-05-24: C-2b UX language audit (`788aa08`). **Sprint C-3 Phase 1 closed 2026-06-02:** RLS policy fixes (`236890c`). Waitlist active.
 >
-> **Sprint 16 goal:** Stripe billing setup → open signups (`PUBLIC_SIGNUP_OPEN=true`) → drip step 2 verify on 2026-05-26.
+> **Sprint 17 goal:** Stripe billing setup → Washington auto-renewal disclosures (C-4) → `PUBLIC_SIGNUP_OPEN=true`.
 >
-> **Today's task:** TBD.
+> **Today's task:** TBD — start with [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) manual walkthrough (signup → paid → cancel).
 
 ---
 
-## Sprint 16 — remaining
+## Sprint 17 — remaining
 
 | Item | Notes |
 |------|-------|
-| **Billing setup** | Stripe — required before opening signups |
-| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| **Sprint C-4 billing disclosures** | **Blocks open signups** — RCW 19.316 auto-renewal copy on checkout; FTC click-to-cancel self-serve; Stripe receipts with renewal amount. See [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| **Stripe production billing** | Production keys, checkout + webhook verified |
+| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy — **after C-4 signed off** |
 | **Drip step 2 check** | Check `consumer21@rolobe.resend.app` on **2026-05-26** (day 3 after step 1 capture) |
 | **Post-launch performance** | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
-| **Sprint C-2b UX Language Audit** | ✅ Complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` passes 0 findings (2026-05-24) |
+| **Monte Carlo UI string pass** | ✅ `MonteCarloAssumptionsPanel.tsx` "Scenarios Reaching Goal (%)"; `lib/monte-carlo.ts` insight strings; `/monte-carlo` upgrade copy |
 
-### Opening signups — go-live flip (after billing ready)
+### Go-live gate (do not skip)
 
-1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
-2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
-3. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+1. Complete C-4 checklist — manual signup → `/billing` → Stripe Checkout → receipt → self-serve cancel
+2. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
+3. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
+4. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
 
 Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+
+---
+
+## Sprint 16 closed ✅
+
+| Area | Outcome |
+|------|---------|
+| **Sprint C-2b UX Language Audit** | ✅ Complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (`788aa08`) |
+| **Billing setup** | **Carried to Sprint 17** |
+| **Open signups** | **Carried to Sprint 17** — blocked on C-4 billing disclosures |
+| **Drip step 2 check** | **Carried to Sprint 17** — due 2026-05-26 |
+
+**Commits:** `788aa08` (C-2b disclaimer surfaces)
+
+---
+
+## Sprint C-3 Phase 1 closed ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **RLS security fixes** | ✅ `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`) — businesses, assets, `monte_carlo_runs`, reference tables, `advisor_clients`, profiles |
+
+**Commits:** `236890c`
 
 ---
 
@@ -47,7 +72,6 @@ Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH
 | **Sitemap / crawl infra** | Middleware bypass for `/sitemap.xml`, `/robots.txt`, `/_next/`, `/api/` (`73648e5`) |
 | **Test account cleanup** | `scripts/cleanup-test-accounts.ts` (`3f732e3`) |
 | **Dev workflow** | local → preview → production |
-| **Open signups** | **Carried to Sprint 16** — billing setup first |
 
 **Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`, `3f732e3`, `73648e5`
 
@@ -55,7 +79,7 @@ Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH
 
 1. **Local** — `npm run dev` with `.env.local`
 2. **Preview** — push branch → Vercel preview (`estate-planner-gules.vercel.app`); set `WAITLIST_MODE=true` on Preview to match production gating
-3. **Production** — merge to `main` → `mywealthmaps.com`; flip `PUBLIC_SIGNUP_OPEN=true` when billing is ready
+3. **Production** — merge to `main` → `mywealthmaps.com`; flip `PUBLIC_SIGNUP_OPEN=true` when C-4 + billing ready
 
 ---
 
@@ -96,7 +120,7 @@ Disposable addresses for production waitlist / drip captures. Inbound forwards v
 
 | Email | Notes |
 |-------|-------|
-| `consumer21@rolobe.resend.app` | **Sprint 16:** drip step 2 check due **2026-05-26** (day 3) |
+| `consumer21@rolobe.resend.app` | **Sprint 17:** drip step 2 check due **2026-05-26** (day 3) |
 
 ### Seed scripts (idempotent)
 

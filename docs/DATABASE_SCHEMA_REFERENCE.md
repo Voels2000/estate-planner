@@ -325,6 +325,7 @@ After each schema-affecting session:
 - `20260523000000_funnel_events.sql` — `funnel_events`
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`
+- `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

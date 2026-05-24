@@ -29,7 +29,7 @@ export default async function MonteCarloPage() {
         <UpgradeBanner
           requiredTier={2}
           moduleName="Monte Carlo"
-          valueProposition="Run probability-of-success simulations across thousands of retirement scenarios."
+          valueProposition="Model thousands of retirement scenarios and see how often outcomes reached your stated goal."
           householdContext={householdContext}
         />
       </div>

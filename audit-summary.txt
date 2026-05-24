@@ -1,0 +1,8 @@
+# UX Language Audit — Summary
+# 2026-05-24 11:10
+# Total flagged instances: 0
+
+| Phrase | Hits | Severity |
+|--------|------|----------|
+
+Full findings: audit-results.txt

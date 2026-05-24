@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-24 (Sprint 16 current; Sprint 15 closed 2026-05-24)
+# Last updated: 2026-05-24 (Sprint 17 current; Sprint 16 closed 2026-05-24)
 
 ---
 
@@ -66,25 +66,50 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint 16 — Billing, open signups, drip verify (Weeks 59–62) **← CURRENT**
+### Sprint 17 — Billing disclosures (C-4), open signups (Weeks 63–66) **← CURRENT**
 
-**Goal:** Stripe production billing ready, flip `PUBLIC_SIGNUP_OPEN`, verify drip step 2 on production, track post-launch perf.
+**Goal:** Stripe production billing + Sprint C-4 auto-renewal disclosures → flip `PUBLIC_SIGNUP_OPEN` → verify drip step 2.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Billing setup** | `[ ]` | Stripe production config — **required before opening signups** |
-| **Open signups** | `[ ]` | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy ([LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
+| **Sprint C-4 billing disclosures** | `[ ]` | **Blocks open signups** — RCW 19.316 + FTC negative option + Stripe receipts. [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
+| **Open signups** | `[ ]` | Set `PUBLIC_SIGNUP_OPEN=true` — **after C-4** ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 | **Drip step 2 check** | `[ ]` | Verify `consumer21@rolobe.resend.app` receives drip step 2 on **2026-05-26** (day 3) |
 | **Post-launch performance** | `[ ]` | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
+| **Monte Carlo UI string pass** | `[x]` | `MonteCarloAssumptionsPanel.tsx` + `lib/monte-carlo.ts` insights — UX audit rules |
 
-**Cross-sprint (closed):** Sprint C-2b UX Language Audit — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (2026-05-24). Manual per-surface checklist QA still open in [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md).
-
-**Section 1 remainder (non-blocking while waitlist active):** drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production.
+**Cross-sprint (closed):** Sprint C-3 Phase 1 — RLS policy fixes `236890c` (2026-06-02). Sprint C-2b UX language audit — `788aa08` (2026-05-24).
 
 **Success criteria**
+- C-4 manual walkthrough signed off (signup → paid → receipt → self-serve cancel)
 - Stripe checkout works on production for new consumer tier upgrade
 - `/signup` open after env flip; Core §1–3 smoke passes again
 - Drip step 2 confirmed for `consumer21@`
+
+---
+
+### Sprint 16 — C-2b UX language audit ✅ CLOSED 2026-05-24
+
+**Goal:** Compliance language policy; wire remaining disclaimer surfaces.
+
+- `[x]` Sprint C-2b complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (`788aa08`)
+- `[ ]` Billing setup — **carried to Sprint 17**
+- `[ ]` Open signups — **carried to Sprint 17** (blocked on C-4)
+- `[ ]` Drip step 2 check — **carried to Sprint 17**
+
+**Commits:** `788aa08`
+
+---
+
+### Sprint C-3 — RLS security (Phase 1) ✅ CLOSED 2026-06-02
+
+**Goal:** Close critical RLS gaps from security audit before open signups.
+
+- `[x]` `20260602000000_sprint_c3_rls_fixes.sql` — businesses, assets, `monte_carlo_runs`, reference tables, `advisor_clients`, profiles (`236890c`)
+- `[x]` Advisor joins use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`)
+
+**Commits:** `236890c`
 
 ---
 
@@ -102,7 +127,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Sitemap XML + middleware infra bypass — `/sitemap.xml`, `/robots.txt` never gated (`73648e5`)
 - `[x]` Test account cleanup script — `scripts/cleanup-test-accounts.ts` (`3f732e3`)
 - `[x]` Dev workflow — local → preview → production
-- `[ ]` Open signups — **carried to Sprint 16** (billing setup first)
+- `[ ]` Open signups — **carried to Sprint 17** (C-4 billing disclosures first)
 
 **Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`, `3f732e3`, `73648e5`
 

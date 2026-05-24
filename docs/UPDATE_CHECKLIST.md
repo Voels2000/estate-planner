@@ -17,6 +17,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | Compliance language policy — education vs. advice framing |
+| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (blocks open signups) |
 
 ## When to update docs
 
@@ -83,16 +84,22 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
 - [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
-## Sprint 16 focus (current)
+## Sprint 17 focus (current)
 
 | Item | Notes |
 |------|-------|
-| [ ] **Billing setup** | Stripe production — required before opening signups |
-| [ ] **Open signups** | `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| [ ] **Sprint C-4 billing disclosures** | RCW 19.316 + FTC click-to-cancel + Stripe receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| [ ] **Stripe production billing** | Required before opening signups |
+| [ ] **Open signups** | `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy — **after C-4** |
 | [ ] **Drip step 2 check** | `consumer21@rolobe.resend.app` on **2026-05-26** |
 | [ ] **Post-launch performance** | Dashboard load slowness ticket |
+| [x] **Monte Carlo UI string pass** | `MonteCarloAssumptionsPanel.tsx` + `lib/monte-carlo.ts` + upgrade banner copy — UX audit rules |
 
-Section 1 remainder (non-blocking): drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production.
+## Sprint 16 focus — closed ✅ 2026-05-24
+
+- [x] **Sprint C-2b UX Language Audit** — all `DISCLAIMER_STRINGS` surfaces wired (`788aa08`); `audit-ux-language.sh` 0 findings
+- [x] **Sprint C-3 RLS (Phase 1)** — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`); push to production DB before open signups
+- [ ] Billing + open signups — carried to Sprint 17 (blocked on C-4)
 
 ## Pre-Sprint-15 go-live env vars — closed ✅ 2026-05-24
 
@@ -102,7 +109,7 @@ Verified in **Vercel → Production**:
 - [x] `RECOMPUTE_SECRET`, `RESEND_API_KEY`, `INTERNAL_API_KEY`, `CRON_SECRET` — all set
 - [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — confirmed
 - [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed** (Cloudflare Search Console verification)
-- [ ] **Open signups:** `PUBLIC_SIGNUP_OPEN=true` → Sprint 16 (after billing)
+- [ ] **Open signups:** `PUBLIC_SIGNUP_OPEN=true` → Sprint 17 (after C-4 billing disclosures)
 
 Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 

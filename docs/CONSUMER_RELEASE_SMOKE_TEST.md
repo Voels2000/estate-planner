@@ -33,10 +33,11 @@ Tester: Manual
 
 ### Post-launch (not blockers)
 
-- **Sprint 16 perf ticket:** Dashboard initial load slowness; post-profile-save render slowness
+- **Sprint 17 perf ticket:** Dashboard initial load slowness; post-profile-save render slowness
+- **Before open signups:** Complete [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4) — auto-renewal disclosures, self-serve cancel, Stripe receipts
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
 
-### Sprint 16 — production drip verify
+### Sprint 17 — production drip verify
 
 | Check | Due | Account |
 |-------|-----|---------|

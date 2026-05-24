@@ -259,19 +259,17 @@ export function runSimulation(inputs: MonteCarloInputs): MonteCarloResult {
   const boostedFinals = runSimulationRaw({ ...inputs, monthly_contribution: monthly_contribution + 500, simulation_count: 1000 })
   const boostedSuccess = Math.round((boostedFinals.filter(b => b > 0).length / 1000) * 100)
 
-  const planLabel = has_spouse ? 'joint plan' : 'plan'
-
   const insight = success_rate >= 90
-    ? `Excellent outlook. Your ${planLabel} succeeds in ${success_rate}% of simulations — you are well-positioned for retirement.`
+    ? `${success_rate}% of simulated scenarios reached the target you entered — a strong share of outcomes met your stated goal.`
     : success_rate >= 75
-    ? `Good outlook. Your ${planLabel} succeeds in ${success_rate}% of simulations. Minor adjustments could push you above 90%.`
+    ? `${success_rate}% of simulated scenarios reached the target you entered.`
     : success_rate >= 60
-    ? `Moderate risk. Your ${planLabel} succeeds in ${success_rate}% of simulations. Consider increasing contributions or adjusting spending.`
-    : `High risk. Your ${planLabel} only succeeds in ${success_rate}% of simulations. Many households in this range discuss plan adjustments with an advisor.`
+    ? `${success_rate}% of simulated scenarios reached the target you entered. Fewer scenarios reached your target than in higher ranges — you may want to discuss this with your advisor.`
+    : `${success_rate}% of simulated scenarios reached the target you entered. Many households in this range discuss assumptions and spending targets with an advisor.`
 
   const insight_boost = success_rate < 90
-    ? `Increasing monthly contributions by ${formatCurrency(500)} raises your suess rate from ${success_rate}% to ${boostedSuccess}%.`
-    : `Your current plan is on track. Maintaining your contribution rate keeps you in the top tier of retirement readiness.`
+    ? `In this model, monthly contributions ${formatCurrency(500)} higher show ${boostedSuccess}% of scenarios reaching your target (vs ${success_rate}% with your current inputs).`
+    : `At your current inputs, ${success_rate}% of simulated scenarios reached the target you entered.`
 
   return {
     success_rate, safe_withdrawal_rate,

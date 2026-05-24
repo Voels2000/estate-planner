@@ -52,7 +52,7 @@ const FIELDS: Array<{
   { key: 'returnMeanPct', dbKey: 'return_mean_pct', label: 'Expected Annual Return', min: 2, max: 12, step: 0.25, suffix: '%' },
   { key: 'volatilityPct', dbKey: 'volatility_pct', label: 'Annual Volatility', min: 5, max: 25, step: 0.5, suffix: '%' },
   { key: 'withdrawalRatePct', dbKey: 'withdrawal_rate_pct', label: 'Annual Withdrawal Rate', min: 1, max: 8, step: 0.25, suffix: '%' },
-  { key: 'successThreshold', dbKey: 'success_threshold', label: 'Success Rate Target', min: 50, max: 99, step: 1, suffix: '%' },
+  { key: 'successThreshold', dbKey: 'success_threshold', label: 'Scenarios Reaching Goal (%)', min: 50, max: 99, step: 1, suffix: '%' },
   { key: 'simulationCount', dbKey: 'simulation_count', label: 'Simulation Runs', min: 500, max: 10000, step: 500 },
   { key: 'planningHorizonYr', dbKey: 'planning_horizon_yr', label: 'Planning Horizon', min: 10, max: 50, step: 1, suffix: 'yrs' },
   { key: 'inflationRatePct', dbKey: 'inflation_rate_pct', label: 'Inflation Assumption', min: 1, max: 6, step: 0.25, suffix: '%' },

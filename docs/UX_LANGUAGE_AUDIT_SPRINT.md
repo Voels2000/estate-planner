@@ -211,6 +211,7 @@ bash scripts/audit-ux-language.sh
 | Threshold language | [ ] | Do NOT say "financial planners typically target 80%+" — this implies a recommendation |
 | Below-threshold copy | [ ] | Do NOT say "your plan needs improvement" or "you should increase savings" — say "Fewer scenarios reached your target. You may want to discuss this with your advisor." |
 | Advisor-shared scenarios | [ ] | "Your advisor shared a Monte Carlo scenario. Review the assumptions below." — clear attribution to advisor |
+| **Monte Carlo UI string pass (Sprint 17)** | [x] | `MonteCarloAssumptionsPanel.tsx` — "Scenarios Reaching Goal (%)"; `lib/monte-carlo.ts` — scenario/goal framing; `/monte-carlo` upgrade banner |
 
 **Inline disclaimer required:**
 > "Monte Carlo results show a range of possible outcomes based on your inputs.
@@ -536,7 +537,7 @@ Files to prioritize:
 **Scope:** Fix all FAIL items from the audit. Priority order:
 
 1. Asset allocation — remove any platform-suggested target allocation
-2. Monte Carlo — remove "plan success rate" / "you should increase savings" language
+2. Monte Carlo — `MonteCarloAssumptionsPanel.tsx` + `lib/monte-carlo.ts` insight strings (Sprint 17); remove "plan success rate" / "you should increase savings" language
 3. Transfer Strategies tab — remove all personalized "for your situation" framing from strategy panels
 4. Social Security — remove "optimal claiming age" declarations
 5. Domicile Analysis — remove "best state" recommendations
@@ -628,7 +629,8 @@ This sprint is done when:
 |-----|-------------|
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) | Source of truth for all consumer surfaces audited here |
 | [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Route and tier reference |
-| [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Add completion gate here before open signups |
+| [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gates; C-4 required before open signups |
+| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Remaining signup gate after C-2b |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Add spot-check of disclaimer presence to smoke test §1–3 |
 | [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) | Follow doc sync process when strings change |
 | [`lib/compliance/language-policy.ts`](../lib/compliance/language-policy.ts) | Canonical disclaimer strings and banned phrases |
@@ -637,4 +639,4 @@ This sprint is done when:
 ---
 
 *Sprint C-2b created 2026-05-24. Owner: Product + Engineering.  
-Must complete before `PUBLIC_SIGNUP_OPEN=true`.*
+C-2b engineering complete (`788aa08`). **Remaining signup gate:** Sprint C-4 billing disclosures — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).*
