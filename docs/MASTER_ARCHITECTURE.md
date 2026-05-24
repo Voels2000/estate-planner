@@ -364,12 +364,15 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client | Confirm set |
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin client, webhooks, server writes bypassing RLS | Confirm set (often via Vercel Supabase integration) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | `app/layout.tsx` Search Console meta | Set at launch only |
-| `WAITLIST_MODE` | `proxy.ts`, `isWaitlistMode()` server-side | `true` pre-launch; unset/`false` at go-live |
-| `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` in public CTAs | `true` pre-launch; unset/`false` at go-live (redeploy) |
+| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | Set `true` at go-live |
+| `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
+| `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` in public CTAs | Optional — redeploy when changed |
 
 **Not in Vercel Production:** `SUPABASE_URL` — only for local/staging seed scripts. Vercel Supabase integration supplies project URL/keys for deploys.
 
-**Waitlist mode (pre-launch):** When either waitlist var is `true`, `proxy.ts` redirects `/signup` → `/waitlist` at request time (invite query params bypass). `app/(auth)/signup/page.tsx` is `force-dynamic` with the same check as backup. Public CTAs use `getSignupHref()` from `lib/waitlist-mode.ts`. Disable both vars and redeploy to open signup — see [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+**Opening signups (go-live flip):** Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup`. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+
+**Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass.
 
 **Test account seed scripts (staging / local, not Vercel env):**
 
@@ -768,7 +771,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
-- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — `isWaitlistMode()`, `getSignupHref()`, `shouldBypassWaitlistForSignup()`. Pre-launch: env `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` = `true`; `/waitlist` email capture via `POST /api/email-capture` (`source: 'waitlist'`, no drip). Disable both env vars at go-live to open `/signup`.
+- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. `middleware.ts` runtime redirect (`3ceb125`, renamed from `proxy.ts`).
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 

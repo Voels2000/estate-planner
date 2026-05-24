@@ -6,9 +6,9 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 15 (go-live ops).** Sprint 14 closed. Waitlist mode live: public signup gated to `/waitlist` via `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` (`bb9a191` runtime proxy redirect).
+> My Wealth Maps — **Sprint 15 (go-live ops).** Sprint 14 closed. Waitlist on by default on Production (`3ceb125` — `middleware.ts` redirect).
 >
-> **Sprint 15 goal:** LAUNCH_CHECKLIST Section 2 — domain, env vars, Search Console. **Disable waitlist** when opening public signup (see LAUNCH_CHECKLIST § Waitlist mode).
+> **Sprint 15 goal:** LAUNCH_CHECKLIST Section 2 — domain, env vars, Search Console. **Open signups** via `PUBLIC_SIGNUP_OPEN=true` (see LAUNCH_CHECKLIST § Opening signups — go-live flip).
 >
 > **Today's task:** TBD.
 
@@ -38,18 +38,19 @@
 - Dashboard initial load slowness
 - Post-profile-save render slowness
 
-### Waitlist mode (pre-launch — do not lose)
+### Opening signups — go-live flip
 
-Public signup is **off** while waitlist env vars are `true`. Visitors hitting `/signup` or **Get started** CTAs land on `/waitlist` (email capture only).
+Site is in waitlist mode by default on `VERCEL_ENV=production`. To open signups:
 
-| Env var | Where |
-|---------|--------|
-| `WAITLIST_MODE=true` | `middleware.ts` runtime redirect; server signup page |
-| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client `getSignupHref()` — requires redeploy when changed |
+1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
+2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
+3. Run Core §1–3 smoke on production
 
-**Bypass:** invite/token URLs still reach signup — `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
+To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
 
-**Go-live:** set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup` shows form. Full steps: [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+**middleware.ts** handles the runtime redirect (`3ceb125` — renamed from `proxy.ts`; Next.js 16 Turbopack skipped `proxy.ts` in the middleware manifest).
+
+Full steps: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 Key files: `lib/waitlist-mode.ts`, `middleware.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx`.
 

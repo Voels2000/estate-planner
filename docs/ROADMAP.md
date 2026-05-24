@@ -97,7 +97,7 @@ environment variables. Every row must be checked in Vercel → Settings → Envi
 
 Do **not** add `SUPABASE_URL` to Vercel Production — seed scripts use it locally/staging only.
 
-- `[ ]` **Disable waitlist** — unset both waitlist env vars; redeploy; `/signup` shows form
+- `[ ]` **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy (see LAUNCH_CHECKLIST § Opening signups — go-live flip)
 - `[ ]` All Production env vars in table above verified in Vercel dashboard
 - `[ ]` `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel Production
 - `[ ]` Custom domain attached in Vercel; SSL active

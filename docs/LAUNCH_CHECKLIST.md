@@ -89,37 +89,27 @@ These must be complete before launch. Update status as sprints close them.
 
 Run these on launch day after all Section 1 gates are checked. Do not run early.
 
-### Waitlist mode (pre-launch — disable at go-live)
+### Opening signups — go-live flip
 
-Public signup is gated behind a waitlist while the site is live but not yet accepting accounts.
-Implementation: `lib/waitlist-mode.ts`, `middleware.ts` (runtime `/signup` → `/waitlist` redirect),
-`app/(auth)/signup/page.tsx` (backup redirect), `app/(public)/waitlist/`, `getSignupHref()` on public CTAs.
+The site is in waitlist mode by default on `VERCEL_ENV=production`. To open signups:
 
-**Enable waitlist (current pre-launch state):**
-
-Waitlist is **on by default** on Vercel Production (`VERCEL_ENV=production`) — no env vars required.
-Optionally set both for explicit control or local dev:
-
-| Variable | Purpose |
-|----------|---------|
-| `WAITLIST_MODE=true` | Explicit runtime gate in `middleware.ts` and server components |
-| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client bundle: public CTAs link directly to `/waitlist` (requires redeploy) |
-
-**Invite / token signups bypass the gate** (still reach `/signup`): `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
-
-**Disable waitlist when ready to go live (open public signup):**
-
-1. In **Vercel → Settings → Environment Variables → Production**, set:
-   - `PUBLIC_SIGNUP_OPEN=true`
-   - (Optional) remove or set `false` for `WAITLIST_MODE` and `NEXT_PUBLIC_WAITLIST_MODE`
-2. **Redeploy** — required if you changed `NEXT_PUBLIC_*` vars.
-3. **Verify after deploy:**
-   - `GET /signup` → signup form (not 307 to `/waitlist`)
-   - Landing / nav **Get started** → `/signup`
-   - `/waitlist` still loads (page remains; optional to remove from nav later)
+1. In **Vercel → Settings → Environment Variables → Production**, add:
+   - `PUBLIC_SIGNUP_OPEN` = `true`
+2. **Redeploy** (recommended after any Production env change; required if you also changed `NEXT_PUBLIC_*` vars — those are baked into the client bundle at build time)
+3. **Verify on production:**
+   - `https://mywealthmaps.com/signup` → shows signup form (not `/waitlist` redirect)
+   - `https://mywealthmaps.com` → **Get Started** goes to `/signup`
+   - `https://mywealthmaps.com/login` → still works
    - `/signup?invite=…` still works for advisor/attorney/firm invites
+4. Run post-cutover smoke — **Core §1–3** on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
 
-Do **not** disable waitlist until Section 1 product gates and production drip smoke are signed off.
+**To re-enable waitlist mode:** remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
+
+**Implementation:** `lib/waitlist-mode.ts`, `middleware.ts` (runtime `/signup` → `/waitlist` redirect; renamed from `proxy.ts` in `3ceb125` to fix Next.js Turbopack empty middleware manifest), `app/(auth)/signup/page.tsx` (backup redirect), `app/(public)/waitlist/`, `getSignupHref()` on public CTAs.
+
+**Pre-launch (current):** waitlist is on by default on Vercel Production — no env vars required. Optionally set `WAITLIST_MODE=true` / `NEXT_PUBLIC_WAITLIST_MODE=true` for explicit control or local dev. Invite/token signups bypass the gate: `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
+
+Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates and production drip smoke are signed off.
 
 ### Code
 

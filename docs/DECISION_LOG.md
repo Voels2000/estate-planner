@@ -507,11 +507,11 @@ Pass = at least one row with referral code matching a test signup.
 
 **Decision:** While the marketing site is live but not yet accepting accounts, public signup is disabled via env flags. Visitors to `/signup` or public **Get started** CTAs see `/waitlist` (email capture only). Invite/token signup flows bypass the gate (`?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`).
 
-**Reasoning:** Allow domain cutover, SEO prep, and drip testing without open self-serve signup. Runtime redirect in `proxy.ts` avoids stale static `/signup` when env vars change after build.
+**Reasoning:** Allow domain cutover, SEO prep, and drip testing without open self-serve signup. Runtime redirect in `middleware.ts` avoids stale static `/signup` when env vars change after build.
 
-**Implementation:** `lib/waitlist-mode.ts`, `proxy.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx` (`force-dynamic`), `getSignupHref()` on public CTAs, `POST /api/email-capture` skips drip for `source: 'waitlist'`.
+**Implementation:** `lib/waitlist-mode.ts`, `middleware.ts` (renamed from `proxy.ts` in `3ceb125`), `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx` (`force-dynamic`), `getSignupHref()` on public CTAs, `POST /api/email-capture` skips drip for `source: 'waitlist'`. Default on when `VERCEL_ENV=production`.
 
-**At go-live:** Unset or set `false` for `WAITLIST_MODE` and `NEXT_PUBLIC_WAITLIST_MODE` in Vercel Production, redeploy, verify `/signup` open. See [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+**At go-live:** Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production, redeploy, verify `/signup` open. To re-enable waitlist, remove the var and redeploy. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 ---
 

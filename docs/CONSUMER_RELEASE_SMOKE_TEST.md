@@ -46,7 +46,7 @@ Tester: Manual
 | Account | Consumer with an existing household and some assets already entered |
 | Tier | **Estate (tier 3)** for My Family + Titling; **Retirement (tier 2)+** for Allocation |
 | Baseline | Open **Dashboard** and note **Estate Readiness Score** (0–100) and any **Action Items** |
-| Waitlist mode | If `WAITLIST_MODE` is on, public **Get started** goes to `/waitlist` — use invite URL or disable waitlist to test full signup (see [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live)) |
+| Waitlist mode | If waitlist is on (default on Production), public **Get started** goes to `/waitlist` — set `PUBLIC_SIGNUP_OPEN=true` or use invite URL to test full signup (see [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 
 **Pass criteria for “recompute worked”:** Within ~10 seconds of a successful save, refresh Dashboard — score, gaps, or action items should **change or stay consistent** (not silently stale). If nothing ever updates after multiple saves, flag for engineering (check `RECOMPUTE_SECRET` / `NEXT_PUBLIC_APP_URL` in Vercel — see [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live)).
 
