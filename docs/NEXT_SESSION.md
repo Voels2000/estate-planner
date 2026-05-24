@@ -41,11 +41,20 @@ Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH
 | **Vercel Production env vars** | Verified (2026-05-24) |
 | **Search Console** | Verified via Cloudflare domain provider; sitemap submitted (2026-05-24) |
 | **Resend domain** | `mywealthmaps.com` verified (2026-05-24) |
-| **Waitlist mode** | Active on Production (`middleware.ts`, `3ceb125`) |
+| **Waitlist mode** | Active on Production (`middleware.ts`, `3ceb125`); Preview enabled (2026-05-24) |
 | **Post-cutover smoke §1–3** | Passed on production (2026-05-24) |
+| **Sitemap / crawl infra** | Middleware bypass for `/sitemap.xml`, `/robots.txt`, `/_next/`, `/api/` (`73648e5`) |
+| **Test account cleanup** | `scripts/cleanup-test-accounts.ts` (`3f732e3`) |
+| **Dev workflow** | local → preview → production |
 | **Open signups** | **Carried to Sprint 16** — billing setup first |
 
-**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`
+**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`, `3f732e3`, `73648e5`
+
+### Dev deploy workflow (2026-05-24)
+
+1. **Local** — `npm run dev` with `.env.local`
+2. **Preview** — push branch → Vercel preview (`estate-planner-gules.vercel.app`); set `WAITLIST_MODE=true` on Preview to match production gating
+3. **Production** — merge to `main` → `mywealthmaps.com`; flip `PUBLIC_SIGNUP_OPEN=true` when billing is ready
 
 ---
 
