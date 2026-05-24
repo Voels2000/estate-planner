@@ -95,11 +95,14 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Vercel Production env vars verified (2026-05-24)
 - `[x]` Resend domain verified — SPF/DKIM (2026-05-24)
 - `[x]` Search Console — verified via **Cloudflare** (not meta tag); sitemap submitted (2026-05-24)
-- `[x]` Waitlist mode active — `middleware.ts` redirect (`3ceb125`)
+- `[x]` Waitlist mode active — `middleware.ts` redirect (`3ceb125`); Preview enabled (2026-05-24)
 - `[x]` Post-cutover smoke §1–3 passed on production (2026-05-24)
+- `[x]` Sitemap XML + middleware infra bypass — `/sitemap.xml`, `/robots.txt` never gated (`73648e5`)
+- `[x]` Test account cleanup script — `scripts/cleanup-test-accounts.ts` (`3f732e3`)
+- `[x]` Dev workflow — local → preview → production
 - `[ ]` Open signups — **carried to Sprint 16** (billing setup first)
 
-**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`
+**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`, `3f732e3`, `73648e5`
 
 ---
 

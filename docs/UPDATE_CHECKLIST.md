@@ -78,6 +78,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] LAUNCH_CHECKLIST Section 2 — domain, DNS, Resend, Search Console (Cloudflare)
 - [x] Post-cutover smoke §1–3 on production
 - [x] Completion log entry in LAUNCH_CHECKLIST
+- [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
 
 ## Sprint 16 focus (current)
 
