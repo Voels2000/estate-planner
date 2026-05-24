@@ -27,15 +27,15 @@ export default async function ImportPage() {
 
   const { data: rawJobs } = await supabase
     .from('ingestion_jobs')
-    .select('id, original_filename, source_format, status, row_count, committed_at, created_at, error_message')
+    .select('id, file_name, file_type, original_filename, source_format, status, row_count, committed_at, created_at, error_message')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
 
   const jobs = (rawJobs ?? []).map((job) => ({
     id: job.id,
-    file_name: job.original_filename ?? 'Unknown file',
-    file_type: job.source_format ?? '',
+    file_name: job.file_name ?? job.original_filename ?? 'Unknown file',
+    file_type: job.file_type ?? job.source_format ?? '',
     status: job.status,
     row_count: job.row_count,
     committed_at: job.committed_at,

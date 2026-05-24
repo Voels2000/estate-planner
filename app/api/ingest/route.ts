@@ -86,15 +86,18 @@ export async function POST(req: NextRequest) {
     const detectedTable: ImportTable = detectTable(headers) ?? 'assets'
     const suggestedMap = suggestFieldMap(headers, detectedTable)
     const householdId = await resolveOwnedHouseholdId(supabase, user.id)
+    const format = sourceFormat(ext)
 
     const { data: job, error: jobError } = await supabase
       .from('ingestion_jobs')
       .insert({
         owner_id: user.id,
         household_id: householdId,
-        status: 'pending',
-        source_format: sourceFormat(ext),
+        file_name: file.name,
+        file_type: format,
         original_filename: file.name,
+        source_format: format,
+        status: 'pending',
         detected_table: detectedTable,
         headers,
         rows,
