@@ -97,9 +97,8 @@ The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** f
 
 Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 
-- [ ] **[LEGAL_TODO.md](./LEGAL_TODO.md)** — replace 3 TODO placeholders (entity name, address, registered agent) in `/privacy` and `/terms`
+- [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
-- [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration)
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
 - [ ] **C-4 manual walkthrough** — signup → paid → receipt → self-serve cancel ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md))
 
@@ -266,7 +265,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 | Item | Owner | Notes |
 |------|-------|-------|
-| **LEGAL_TODO.md** | You | Replace TODO placeholders; email aliases; counsel sign-off |
+| **LEGAL_TODO.md** | You | Counsel handoff + one-commit legal update — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | **Stripe Dashboard config** | You | invoice.upcoming, portal cancel, receipts |
 | **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | **Stripe production billing** | You | Production keys; checkout + webhook |

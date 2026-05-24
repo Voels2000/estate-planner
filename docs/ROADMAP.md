@@ -74,7 +74,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **LEGAL_TODO.md** | `[ ]` | **Blocker** — replace 3 TODO placeholders; counsel sign-off; email aliases |
+| **LEGAL_TODO.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases |
 | **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |

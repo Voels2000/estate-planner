@@ -831,7 +831,7 @@ Two concepts must stay separate until product designs unified intake:
 
 ### High priority — Sprint 17 (go-live prep)
 
-1. **LEGAL_TODO.md** — replace TODO placeholders; email aliases; counsel sign-off ToS §10/§11/§13 — **blocks `PUBLIC_SIGNUP_OPEN`**
+1. **LEGAL_TODO.md** — counsel handoff (flag ToS §10/§11/§13; one consolidated redline); placeholders + redlines in one commit — **blocks `PUBLIC_SIGNUP_OPEN`**
 2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)

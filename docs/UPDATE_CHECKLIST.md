@@ -18,7 +18,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
-| [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist (placeholders, counsel, email aliases) |
+| [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) (one redline, one commit) |
 
 ## When to update docs
 
@@ -89,7 +89,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 | Item | Notes |
 |------|-------|
-| [ ] **LEGAL_TODO.md** | Replace 3 TODO placeholders; privacy@/security@/legal@ aliases; counsel sign-off ToS §10/§11/§13 |
+| [ ] **LEGAL_TODO.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | [ ] **Stripe Dashboard config** | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | [ ] **C-4 manual walkthrough** | Signup → paid → receipt → self-serve cancel on production |
 | [ ] **Stripe production billing** | Required before opening signups |

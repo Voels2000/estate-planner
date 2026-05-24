@@ -8,7 +8,7 @@
 
 > My Wealth Maps — **Sprint 17 (go-live prep).** All compliance code sprints **closed** (C-2b → C-5 on `main`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
-> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — replace 3 TODO placeholders; email aliases; counsel sign-off on ToS §10/§11/§13; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
+> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 
@@ -41,6 +41,8 @@
 | **Core §1–3 smoke** — fresh email; signup → confirm → login → dashboard | You | Go-live day |
 | **Drip step 2 check** | Ops | No — `consumer21@rolobe.resend.app` |
 | **Post-launch performance** | Backlog | No |
+
+**Counsel handoff:** Send ToS with §10/§11/§13 flagged; ask for **one consolidated redline**. Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live — see [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos).
 
 ### Go-live gate (exact order)
 

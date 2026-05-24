@@ -108,7 +108,7 @@ Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sect
 | Privacy Policy (WCPA) | ✅ `/privacy` | Replace TODO placeholders per [LEGAL_TODO.md](./LEGAL_TODO.md) |
 | Counsel sign-off | ☐ Pending | ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration) |
 
-**Action:** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) before go-live. Sync `/terms/accept` dynamic sections with `/terms` after legal review if needed.
+**Action:** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) before go-live. Send ToS to counsel with §10/§11/§13 flagged; request **one consolidated redline**; apply redlines + TODO placeholders in **one final commit**. Sync `/terms/accept` dynamic sections in the same commit.
 
 ---
 
