@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
+import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { EducationMetaBadges } from '@/components/education/EducationMetaBadges'
@@ -25,6 +26,10 @@ export default async function EducationModulePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const module = await getEducationModule(slug)
   const modules = await listEducationModules()
   if (!module) notFound()
@@ -47,7 +52,7 @@ export default async function EducationModulePage({
               <h1 className="mt-3 text-3xl font-semibold tracking-tight">{module.title}</h1>
             </div>
             <div className="shrink-0">
-              <ModuleProgressToggle slug={module.slug} />
+              {user ? <ModuleProgressToggle slug={module.slug} /> : null}
             </div>
           </div>
         </div>
