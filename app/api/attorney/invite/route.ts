@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
+    const { user, isAttorney } = await getAccessContext()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!isAttorney) {
+      return NextResponse.json({ error: 'Only attorneys can send invites' }, { status: 403 })
+    }
+
+    const supabase = await createClient()
 
     const { invitedEmail } = await request.json()
 
@@ -18,15 +22,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // Get attorney profile
     const { data: attorney } = await supabase
       .from('profiles')
-      .select('full_name, role, is_attorney')
+      .select('full_name')
       .eq('id', user.id)
       .single()
 
-    if (!attorney || (attorney.role !== 'attorney' && !attorney.is_attorney)) {
-      return NextResponse.json({ error: 'Only attorneys can send invites' }, { status: 403 })
+    if (!attorney) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Check for existing pending invite

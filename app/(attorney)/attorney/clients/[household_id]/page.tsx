@@ -14,15 +14,6 @@ export default async function AttorneyClientPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_attorney')
-    .eq('id', user.id)
-    .single()
-
-  const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
-  if (!isAttorney) redirect('/dashboard')
-
   const { household_id } = await params
 
   const { data: connection } = await supabase

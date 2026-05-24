@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { AttorneySignOut } from './_components/attorney-sign-out'
 
 export default async function AttorneyLayout({
@@ -7,24 +7,10 @@ export default async function AttorneyLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isAttorney } = await getAccessContext()
 
-  if (!user) {
-    redirect('/login')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_attorney')
-    .eq('id', user.id)
-    .single()
-
-  const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
-
-  if (!isAttorney) {
-    redirect('/dashboard')
-  }
+  if (!user) redirect('/login')
+  if (!isAttorney) redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-neutral-50">

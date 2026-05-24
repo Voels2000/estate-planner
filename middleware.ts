@@ -147,26 +147,27 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status, firm_role')
+    .select('role, subscription_status, firm_role, is_superuser')
     .eq('id', user.id)
     .single()
 
+  const isSuperuser = profile?.is_superuser === true
   const subscription_status = profile?.subscription_status ?? null
   const hasActiveSubscription = ['active', 'trialing', 'canceling'].includes(
     subscription_status
   )
   const isAdvisor = profile?.role === 'advisor'
   const isFirmMember = profile?.firm_role === 'member'
-  if (isAdvisor && !isFirmMember && !hasActiveSubscription) {
+  if (isAdvisor && !isSuperuser && !isFirmMember && !hasActiveSubscription) {
     return redirectPreservingCookies(request, '/billing', supabaseResponse)
   }
 
-  // Check 2 — attorney route guards only
+  // Check 2 — attorney route guards only (superusers may access all portals)
   const isAttorneyPath = ATTORNEY_ONLY_PATHS.some((p) => pathname.startsWith(p))
   const isAdvisorPath = pathname.startsWith('/advisor')
   const isAdvisorToolPath = pathname.startsWith('/prospect')
 
-  if (isAttorneyPath || isAdvisorPath || isAdvisorToolPath) {
+  if (!isSuperuser && (isAttorneyPath || isAdvisorPath || isAdvisorToolPath)) {
     const role = profile?.role
 
     // Attorneys can only access attorney routes

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { resend } from '@/lib/resend'
@@ -7,27 +8,24 @@ import { resend } from '@/lib/resend'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const admin = createAdminClient()
-
-  // 1. Auth check
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { user, isAttorney } = await getAccessContext()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  // 2. Attorney check
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_attorney, full_name')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || (profile.role !== 'attorney' && !profile.is_attorney)) {
+  if (!isAttorney) {
     return NextResponse.json({ error: 'Attorney access required' }, { status: 403 })
   }
 
-  // 3. Parse body
+  const supabase = await createClient()
+  const admin = createAdminClient()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  // Parse body
   const { attorney_client_id } = await request.json()
   if (!attorney_client_id) {
     return NextResponse.json({ error: 'attorney_client_id is required' }, { status: 400 })
@@ -79,7 +77,7 @@ export async function POST(request: Request) {
   // 8. Send invite email
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const acceptUrl = `${appUrl}/attorney-invite/${token}`
-  const attorneyLabel = profile.full_name?.trim() || 'Your attorney'
+  const attorneyLabel = profile?.full_name?.trim() || 'Your attorney'
 
   ;(async () => {
     try {

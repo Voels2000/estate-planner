@@ -1,35 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { fireReferralStatusUpdateNotification } from '@/lib/server-notifications'
 
 const VALID_STATUSES = ['pending', 'contacted', 'converted', 'closed'] as const
 type ReferralStatus = (typeof VALID_STATUSES)[number]
 
 export async function PATCH(req: NextRequest) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { user, isAdmin } = await getAccessContext()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const isAdmin = profile.role === 'admin' || profile.is_admin === true
   if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const supabase = await createClient()
 
   const body = (await req.json()) as {
     referral_id?: string

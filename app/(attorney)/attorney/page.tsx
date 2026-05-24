@@ -6,21 +6,14 @@ import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
 export default async function AttorneyDashboardPage() {
   const supabase = await createClient()
 
-  // 1. Auth check
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // 2. Confirm attorney role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_attorney, full_name')
+    .select('full_name')
     .eq('id', user.id)
     .single()
-
-  const isAttorney = profile?.role === 'attorney' || profile?.is_attorney === true
-  if (!isAttorney) redirect('/dashboard')
-
-  // 3. Look up this attorney's listing by profile_id
   const { data: attorneyListing } = await supabase
     .from('attorney_listings')
     .select('id, referral_code')

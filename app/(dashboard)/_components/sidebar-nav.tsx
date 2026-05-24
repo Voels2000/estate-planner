@@ -115,8 +115,8 @@ export function SidebarNav({
   initialUnreadCount?: number
 }) {
   const isLockedUser = hasHousehold === false
-  /** Consumers never see professional portal links, even with is_superuser (smoke / dev accounts). */
-  const showProfessionalPortals = role !== 'consumer'
+  /** Superusers may keep role=consumer for smoke testing but still need portal links. */
+  const showProfessionalPortals = role !== 'consumer' || isSuperuser
   const pathname = usePathname()
   const router = useRouter()
 

@@ -1,20 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 import { AdminAttorneyDirectoryClient } from './_admin-attorney-directory-client'
 
 export default async function AdminAttorneyDirectoryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isAdmin } = await getAccessContext()
   if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin' && profile?.is_admin !== true) redirect('/dashboard')
+  if (!isAdmin) redirect('/dashboard')
 
   const admin = createAdminClient()
 

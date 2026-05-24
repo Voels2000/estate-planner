@@ -1,24 +1,18 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccessContext } from '@/lib/access/getAccessContext'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-
-  // ── 1. Auth + admin check ──────────────────────────────────
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { user, isAdmin } = await getAccessContext()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin' && profile?.is_admin !== true) {
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const supabase = await createClient()
 
   // ── 2. Parse body ──────────────────────────────────────────
   const { version, sections } = await req.json()

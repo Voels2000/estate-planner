@@ -68,7 +68,7 @@ export default async function DashboardLayout({
             user={sessionUser}
             role={profileFull?.role ?? profile?.role}
             tier={3}
-            isAdvisor={profileFull?.role === 'advisor'}
+            isAdvisor
             isAdmin
             isAttorney
             isSuperuser
