@@ -18,7 +18,7 @@ Two sections:
 
 Do not execute Section 2 until all Section 1 items are checked.
 
-**Related docs:** [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+**Related docs:** [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) (WA business + compliance readiness) · [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 

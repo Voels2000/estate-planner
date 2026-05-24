@@ -6,6 +6,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 | Doc | Purpose |
 |-----|---------|
+| [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) | Washington business formation, compliance sprint summary, go-live readiness (85%) |
 | [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | Current sprint handoff — paste block, task list, file paths |
