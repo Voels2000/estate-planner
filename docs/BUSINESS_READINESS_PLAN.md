@@ -349,7 +349,7 @@ Negative Option Rule (2024).
 | What are the platform language rules? | `lib/compliance/language-policy.ts` |
 | What are the billing disclosure strings? | `lib/compliance/billing-disclosures.ts` |
 | How do we verify a release? | `docs/CONSUMER_RELEASE_SMOKE_TEST.md` |
-| What performance work shipped pre-launch? | `docs/PERF_SPRINT_P1.md` |
+| What performance work shipped pre-launch? | `docs/PERF_SPRINT_P1.md` (P-1 + P-2) |
 | What changed in which session? | `docs/SCHEMA_CHANGELOG.md` |
 | What needs updating before a merge? | `docs/UPDATE_CHECKLIST.md` |
 
@@ -374,7 +374,7 @@ All of the following are committed to `main` and live on production:
 | `docs/COMPLIANCE_CALENDAR.md` | Ongoing compliance schedule |
 | `docs/LEGAL_TODO.md` | Pre-go-live legal review checklist |
 | `docs/BILLING_DISCLOSURES_SPRINT.md` | Stripe Dashboard manual checklist |
-| `docs/PERF_SPRINT_P1.md` | Sprint P-1 performance quick wins + post-launch read model |
+| `docs/PERF_SPRINT_P1.md` | Sprint P-1 + P-2 performance refactors |
 | `scripts/perf-diagnostic.sql` | Supabase performance diagnostic queries |
 | `.github/workflows/ux-language-audit.yml` | CI enforcement on every PR |
 

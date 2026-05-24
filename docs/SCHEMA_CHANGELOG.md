@@ -8,6 +8,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint P-2 — Recommendations cache (2026-06-02)
+
+**Migration:** `20260602130000_sprint_p2_recommendations_cache.sql` — **commit `47a38f3`**
+
+**Schema change:**
+
+- `estate_health_scores.recommendations` jsonb DEFAULT `'[]'::jsonb — cached output of `generate_estate_recommendations` RPC
+
+**Apply:** Run in Supabase SQL Editor or `npx supabase db push` before deploying code that selects this column.
+
+**Code (same commit):** Recompute persists recommendations; dashboard reads cache; projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext`. See [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
+
+---
+
 ## Sprint P-1 — Performance indexes (2026-06-02)
 
 **Migration:** `20260602120000_sprint_p1_indexes.sql` — **commit `5c24160`**
@@ -87,7 +101,8 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 **No schema change.**
 
 - **Compliance code (C-2b through C-5):** ✅ All closed on `main` — see commit log in [NEXT_SESSION.md](./NEXT_SESSION.md)
-- **Sprint P-1 closed 2026-06-02:** Performance quick wins (`5c24160`); indexes in prod. Post-launch: dashboard read model.
+- **Sprint P-1 closed 2026-06-02:** Performance quick wins (`5c24160`); indexes in prod.
+- **Sprint P-2 closed 2026-06-02:** Recommendations cache, projections cache-first, auth dedup (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`.
 - **Sprint 17 remaining (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard + C-4 walkthrough; counsel sign-off; go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke
 - **Docs:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) · [LEGAL_TODO.md](./LEGAL_TODO.md)
 
@@ -105,7 +120,7 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **E2E:** `93aa6f5` — `consumer-core-recompute.spec.ts`, `estate-health-poll.ts`
 - **Manual smoke:** `1e092d7` — Core §1–3 + estate §4–7 passed staging 2026-05-23
 - **Open before launch:** Admin Portal in consumer sidebar; asset form save below viewport
-- **Post-launch:** dashboard read model (Sprint P-2) — materialize estate RPCs at recompute; see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+- **Post-launch:** estate composition read model — materialize `calculate_estate_composition` at recompute (recommendations done in P-2); see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
 
 ## Sprint 14 — consumer-core-recompute E2E (May 2026)
 

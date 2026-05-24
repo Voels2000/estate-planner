@@ -154,11 +154,21 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### June 2026 — Sprint P-2 closed; recommendations cached at recompute
+
+**Decision:** Sprint P-2 (`47a38f3`) shipped pre-launch: `estate_health_scores.recommendations` jsonb populated during `/api/recompute-estate-health`; dashboard reads cache on load (empty array before first recompute — never live RPC on hot path). Projections serve fresh `outputs_s1_first` via cache-first branch in `loadProjectionData`. Layout uses `getDashboardLayoutContext` (React `cache()`) for single auth/profile/household/notifications load per request.
+
+**Remaining post-launch perf:** Materialize `calculate_estate_composition` at recompute — recommendations done; composition still on-demand on some surfaces.
+
+**Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors) · Migration: `20260602130000_sprint_p2_recommendations_cache.sql`
+
+---
+
 ### June 2026 — Sprint P-1 closed; first post-launch perf sprint = dashboard read model
 
 **Decision:** Sprint P-1 (`5c24160`) shipped pre-launch quick wins: dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, and `idx_assets_owner_id` / `idx_liabilities_owner_id` (applied in production).
 
-**Post-launch engineering priority (Sprint P-2):** Production `pg_stat_statements` (Query A) shows top load from `projection_scenarios` INSERTs and estate RPCs (`calculate_estate_composition`, `generate_estate_recommendations`) on the dashboard path. **First post-launch perf sprint** should materialize those RPC outputs during recompute (dashboard read model), not call them on every page load. Defer detailed design until real traffic provides measurement baseline.
+**Post-launch engineering priority (Sprint P-2):** Production `pg_stat_statements` (Query A) shows top load from `projection_scenarios` INSERTs and estate RPCs (`calculate_estate_composition`, `generate_estate_recommendations`) on the dashboard path. **Sprint P-2 addressed** recommendations cache + projections cache-first + auth dedup (`47a38f3`). **Remaining:** materialize `calculate_estate_composition` at recompute.
 
 **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
 

@@ -237,8 +237,8 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `estate_health_scores`
 
-- **Key columns:** `household_id`, `score`, `component_scores`, `computed_at`
-- **Purpose:** cached health score summary (read path should avoid recomputing synchronously).
+- **Key columns:** `household_id`, `score`, `component_scores`, `computed_at`, `recommendations` (jsonb — cached `generate_estate_recommendations` output; Sprint P-2)
+- **Purpose:** cached health score summary + recommendations (read path should avoid recomputing synchronously).
 
 ### `household_alerts`
 
@@ -326,6 +326,8 @@ After each schema-affecting session:
 - `20260523000001_app_config_ab_tests.sql` — A/B flags in `app_config`
 - `20260524000000_email_captures_drip.sql` — drip + unsubscribe columns on `email_captures`
 - `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
+- `20260602120000_sprint_p1_indexes.sql` — Sprint P-1 — `idx_assets_owner_id`, `idx_liabilities_owner_id` (`5c24160`)
+- `20260602130000_sprint_p2_recommendations_cache.sql` — Sprint P-2 — `estate_health_scores.recommendations` jsonb (`47a38f3`)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

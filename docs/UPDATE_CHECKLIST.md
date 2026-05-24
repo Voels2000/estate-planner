@@ -20,7 +20,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
-| [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 — performance quick wins + post-launch read model backlog |
+| [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 + P-2 — performance quick wins and pre-launch refactors |
 
 ## When to update docs
 
@@ -95,6 +95,14 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Indexes `idx_assets_owner_id`, `idx_liabilities_owner_id` — applied in production
 - [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) + [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
 
+## Sprint P-2 focus — closed ✅ 2026-06-02
+
+- [x] Recommendations cache on `estate_health_scores` — recompute persists, dashboard reads cache (`47a38f3`)
+- [x] Projections cache-first in `loadProjectionData` — serve `outputs_s1_first` when fresh
+- [x] Layout auth dedup via `getDashboardLayoutContext` (React `cache()`)
+- [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
+- [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
+
 ## Sprint 17 focus (current — go-live prep, non-code)
 
 | Item | Notes |
@@ -106,7 +114,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | [ ] **Go-live day** | Supabase Auth ON → verify `/auth/callback` → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email |
 | [ ] **Drip step 2 check** | `consumer21@rolobe.resend.app` |
 | [x] **Sprint P-1 perf quick wins** | `5c24160` — see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
-| [ ] **Post-launch performance (P-2)** | Dashboard read model — materialize RPC outputs at recompute |
+| [x] **Sprint P-2 pre-launch refactors** | `47a38f3` — recommendations cache, projections cache-first, auth dedup |
 
 **Compliance code (C-2b–C-5):** ✅ All closed on `main` — see [NEXT_SESSION.md](./NEXT_SESSION.md) commit log.
 

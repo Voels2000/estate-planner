@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
+# Last updated: 2026-06-02 (Sprint P-2 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -334,7 +334,7 @@ Runtime behavior:
 
 ## Estate health recompute — operations
 
-Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealthRecompute`, which POSTs to `/api/recompute-estate-health` with header `x-recompute-secret`. The route runs `computeEstateHealthScore` and `detectConflicts` in the background so dashboard pages stay fast.
+Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealthRecompute`, which POSTs to `/api/recompute-estate-health` with header `x-recompute-secret`. The route runs `computeEstateHealthScore`, `detectConflicts`, and `generate_estate_recommendations` (cached to `estate_health_scores.recommendations`) in the background so dashboard pages stay fast. **Sprint P-2:** dashboard reads recommendations from cache on load — no live RPC call.
 
 **Required environment (staging + production):**
 
@@ -627,7 +627,9 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/calculations/roth-analysis.ts`
 - `lib/domicile/moveBreakeven.ts`
 - `lib/my-estate-strategy/horizonSnapshots.ts`
-- `lib/projections/loadProjectionData.ts` (shared projection fetch for `/api/projection`, `/projections`, `/scenarios` pages)
+- `lib/projections/loadProjectionData.ts` (shared projection fetch for `/api/projection`, `/projections`, `/scenarios`, `/complete` pages; **Sprint P-2:** cache-first via `outputs_s1_first` when not stale)
+- `lib/projections/staleness.ts` (`isProjectionStale`, `getLatestTimestampMs`)
+- `lib/access/getDashboardLayoutContext.ts` (React `cache()` — layout auth/profile/household/notifications dedup; Sprint P-2)
 - `lib/projections/mappers/mapProjectionRows.ts` (consumer projections API row mapping)
 - `lib/projections/selectors/getProjectionSummary.ts` (consumer projections derived metrics)
 - `lib/calculations/rmdStartAge.ts` (canonical SECURE Act RMD start age by birth year: 72 / 73 / 75)
@@ -785,7 +787,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
 
-**Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql). **Post-launch:** dashboard read model (materialize estate RPCs at recompute) — [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
+**Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql).
+
+**Sprint P-2 (closed 2026-06-02):** Pre-launch perf refactors — `estate_health_scores.recommendations` cache (recompute persists RPC output; dashboard reads cache); projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext` (`47a38f3`). Migration: `20260602130000_sprint_p2_recommendations_cache.sql`. See [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
 
 **Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
 
@@ -807,7 +811,8 @@ succession, invite-advisor onboarding, A/B criteria in DECISION_LOG. See [ROADMA
 | Consumer Monte Carlo | Inflation + simulation count from accepted advisor row | Full advisor assumption parity | Backlog item below |
 | Federal income tax | `federal_tax_brackets` required in canonical projection | No hardcoded fallback | Implemented |
 | State income tax | `state_income_tax_brackets` in user paths | Retire `state_income_tax_rates` archive | Admin archive only |
-| Estate health recompute | Server `afterHouseholdWrite` + secret header | No client `/api/recompute-estate-health` | Session 101+ |
+| Estate health recompute | Server `afterHouseholdWrite` + secret header; persists score, conflicts, recommendations | No client `/api/recompute-estate-health` | Session 101+; recommendations cache P-2 |
+| Projections load | Cache-first `outputs_s1_first` when fresh | Full 11-query compute when stale or overrides | Sprint P-2 |
 | Trust UI | Single page `/my-estate-trust-strategy` tabs | `/trust-will` redirect only | Session 116 |
 
 ---
@@ -838,7 +843,7 @@ Two concepts must stay separate until product designs unified intake:
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
 5. **Drip step 2 production verify** — `consumer21@rolobe.resend.app`.
-6. **Dashboard read model (Sprint P-2, post-launch)** — materialize `calculate_estate_composition` + `generate_estate_recommendations` at recompute; highest ceiling per Query A / [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
+6. **Estate composition read model (post-launch)** — materialize `calculate_estate_composition` at recompute; recommendations done in P-2; highest remaining ceiling per Query A / [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
 
 ### High priority — confirmed post-launch
 

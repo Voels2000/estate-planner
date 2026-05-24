@@ -81,7 +81,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
 | **Drip step 2 check** | `[ ]` | `consumer21@rolobe.resend.app` when running drip smoke |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
-| **Post-launch performance (P-2)** | `[ ]` | Dashboard read model — materialize RPC outputs at recompute ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
+| **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
 **Compliance commit log (all on `main`):**
 
@@ -96,6 +96,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `2e1dff3` | C-5 | Privacy Policy, Terms of Service, footer, sitemap |
 | `695a860` | C-5 | Legal pages follow-up |
 | `5c24160` | P-1 | Performance quick wins — dashboard Promise.all, indexes, debounce, next/font |
+| `47a38f3` | P-2 | Pre-launch perf — recommendations cache, projections cache-first, auth dedup |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
@@ -117,6 +118,19 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Indexes applied in production — `idx_assets_owner_id`, `idx_liabilities_owner_id`
 
 **Commits:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+
+---
+
+### Sprint P-2 — Pre-launch performance refactors ✅ CLOSED 2026-06-02
+
+**Goal:** Remove hot-path RPCs and redundant auth queries before open signups.
+
+- `[x]` `estate_health_scores.recommendations` jsonb — persisted during recompute (`20260602130000_sprint_p2_recommendations_cache.sql`)
+- `[x]` Dashboard reads recommendations from cache — no `generate_estate_recommendations` on load
+- `[x]` `loadProjectionData` cache-first — serve `outputs_s1_first` when projection is fresh
+- `[x]` `getDashboardLayoutContext` — React `cache()` dedup for layout auth/profile/household/notifications
+
+**Commits:** `47a38f3` · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
 
 ---
 

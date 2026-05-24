@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
+# Updated: 2026-06-02 (Sprint P-2 closed; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5 and **Sprint P-1 perf quick wins** closed on `main` (`5c24160`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5 and **Sprint P-1 + P-2 perf** closed on `main` (`5c24160`, `47a38f3`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -40,7 +40,19 @@
 
 **Commit:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · **Diagnostics:** [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
 
-**Post-launch (highest ceiling):** Dashboard read model — materialize `calculate_estate_composition` + `generate_estate_recommendations` during recompute, not on every page load (Query A signal). See [DECISION_LOG.md](./DECISION_LOG.md) June 2026 entry.
+---
+
+## Sprint P-2 closed ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **Recommendations cache** | `estate_health_scores.recommendations` jsonb; persisted during recompute; dashboard reads cache (no RPC on load) |
+| **Projections cache-first** | `loadProjectionData` serves fresh `outputs_s1_first`; skips 11-query load + `computeCompleteProjection` when not stale |
+| **Auth dedup** | `getDashboardLayoutContext` via React `cache()` — one profile+household+notifications load per request in layout |
+
+**Commit:** `47a38f3` · **Migration:** `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy if not already applied · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
+
+**Remaining post-launch perf:** Materialize `calculate_estate_composition` at recompute (recommendations done; composition still on-demand on some surfaces).
 
 ---
 
@@ -57,7 +69,6 @@
 | **`PUBLIC_SIGNUP_OPEN=true`** + redeploy | You | Go-live day |
 | **Core §1–3 smoke** — fresh email; signup → confirm → login → dashboard | You | Go-live day |
 | **Drip step 2 check** | Ops | No — `consumer21@rolobe.resend.app` |
-| **Post-launch performance (P-2)** | Backlog | Dashboard read model — after real traffic baseline |
 
 **Counsel handoff:** Send ToS with §10/§11/§13 flagged; ask for **one consolidated redline**. Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live — see [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos).
 

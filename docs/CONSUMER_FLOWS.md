@@ -181,7 +181,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Server** | `app/(dashboard)/dashboard/page.tsx` — loaders in `lib/dashboard/loaders.ts`; may trigger async base-case regen when projection stale |
 | **Client** | `app/(dashboard)/_dashboard-client.tsx`, `dashboard/_components/*` |
 | **Write APIs** | None on dashboard (read-only hub) |
-| **Read APIs / RPCs** | `classifyEstateAssets`, `generate_estate_recommendations`, cached `estate_health_scores`, `beneficiary_conflicts`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share) |
+| **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/*`, `components/dashboard/EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
@@ -220,8 +220,8 @@ Three related routes share projection engines but answer different questions. **
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|
-| `/projections` | `loadProjectionData` → `ProjectionsClient` | `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
-| `/complete` | `loadProjectionData` → `CompleteClient` | Same — rows from `computeCompleteProjection`, not `generate-base-case` |
+| `/projections` | `loadProjectionData` → `ProjectionsClient` | Cache-first when fresh (`outputs_s1_first`); full compute when stale. `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
+| `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale |
 | `/scenarios` | `loadProjectionData` + client variant query strings | (scenario-specific UI) |
 
 **Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
@@ -435,7 +435,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 |-----|----------|
 | `calculate_estate_composition` | Gross estate, buckets, strategy totals, tax estimates |
 | `calculate_gifting_summary` | Annual/lifetime gifting limits |
-| `generate_estate_recommendations` | Dashboard action items |
+| `generate_estate_recommendations` | Recompute path + manual client refresh only (not dashboard load — Sprint P-2) |
 
 ---
 
