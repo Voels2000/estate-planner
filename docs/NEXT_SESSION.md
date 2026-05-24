@@ -46,7 +46,8 @@
 |------|-------|-------|
 | **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription, is_superuser: false |
 | **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
-| **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | `aref`: **6fd027d3** |
+| **Attorney (portal login)** | `test-attorney-portal@rolobe.resend.app` | Password: `TestAttorney123!` · `seed-test-attorney.ts` links `profile_id` for `/attorney` newsletter kit |
+| **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | Listing email · `aref`: **6fd027d3** |
 | **Advisor (test listing)** | `test-advisor@mywealthmaps.test` | `ref`: **c91dcd1b** |
 
 ### Seed scripts (idempotent)
