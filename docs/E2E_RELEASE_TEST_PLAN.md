@@ -7,7 +7,7 @@ Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playw
 **Staging URL:** https://estate-planner-gules.vercel.app  
 **Consumer account:** `david@rolobe.resend.app` (estate tier) · **Advisor:** `advisor2@rolobe.resend.app`
 
-**Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed on `main`. Remaining before open signups: [LEGAL_TODO.md](./LEGAL_TODO.md), C-4 manual Stripe walkthrough, go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke with fresh email (signup → confirm → login).
+**Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed; legal + go-live ops remain. **Sprint P-1 (2026-06-02):** Perf quick wins `5c24160`; indexes applied in prod.
 
 **Run automated:**
 ```bash

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-02 (Sprint 17 go-live prep; compliance C-2b–C-5 closed)
+# Last updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -80,7 +80,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
 | **Drip step 2 check** | `[ ]` | `consumer21@rolobe.resend.app` when running drip smoke |
-| **Post-launch performance** | `[ ]` | Dashboard load slowness — perf ticket (not blocking) |
+| **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
+| **Post-launch performance (P-2)** | `[ ]` | Dashboard read model — materialize RPC outputs at recompute ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
 **Compliance commit log (all on `main`):**
 
@@ -94,12 +95,28 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `462bda9` | C-4 | Billing disclosures, RCW 19.316, cancellation, renewal reminders |
 | `2e1dff3` | C-5 | Privacy Policy, Terms of Service, footer, sitemap |
 | `695a860` | C-5 | Legal pages follow-up |
+| `5c24160` | P-1 | Performance quick wins — dashboard Promise.all, indexes, debounce, next/font |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
 - C-4 manual walkthrough signed off (signup → paid → receipt → self-serve cancel)
 - Go-live sequence executed per LAUNCH_CHECKLIST
 - `/signup` open after env flip; Core §1–3 smoke passes with fresh email
+
+---
+
+### Sprint P-1 — Performance quick wins ✅ CLOSED 2026-06-02
+
+**Goal:** Pre-launch dashboard TTFB improvements without changing calculation logic.
+
+- `[x]` Dashboard sequential block → `Promise.all` (`dashboard/page.tsx`)
+- `[x]` Advisor client — read `beneficiary_conflicts` cache only (no `detectConflicts` on render)
+- `[x]` Recompute 3s debounce per household (`triggerEstateHealthRecompute.ts`)
+- `[x]` Notification unread count server-fetched in layout
+- `[x]` `next/font` — Playfair Display + DM Sans
+- `[x]` Indexes applied in production — `idx_assets_owner_id`, `idx_liabilities_owner_id`
+
+**Commits:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
 
 ---
 

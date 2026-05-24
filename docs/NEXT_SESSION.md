@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02
+# Updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** All compliance code sprints **closed** (C-2b → C-5 on `main`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5 and **Sprint P-1 perf quick wins** closed on `main` (`5c24160`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -27,6 +27,23 @@
 
 ---
 
+## Sprint P-1 closed ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **Dashboard Promise.all** | Parallelized sequential block — ~200–400ms TTFB improvement |
+| **Advisor conflict cache read** | Removed `detectConflicts()` write-on-read on advisor client page |
+| **Recompute debounce** | 3s per `householdId` in `triggerEstateHealthRecompute.ts` |
+| **Notification count** | Server-fetched in layout; client refresh on panel actions only |
+| **next/font** | Self-hosted Playfair Display + DM Sans (no CDN) |
+| **Indexes (prod applied)** | `idx_assets_owner_id`, `idx_liabilities_owner_id` |
+
+**Commit:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · **Diagnostics:** [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
+
+**Post-launch (highest ceiling):** Dashboard read model — materialize `calculate_estate_composition` + `generate_estate_recommendations` during recompute, not on every page load (Query A signal). See [DECISION_LOG.md](./DECISION_LOG.md) June 2026 entry.
+
+---
+
 ## Sprint 17 — remaining (non-code)
 
 | Item | Owner | Blocks open signups? |
@@ -40,7 +57,7 @@
 | **`PUBLIC_SIGNUP_OPEN=true`** + redeploy | You | Go-live day |
 | **Core §1–3 smoke** — fresh email; signup → confirm → login → dashboard | You | Go-live day |
 | **Drip step 2 check** | Ops | No — `consumer21@rolobe.resend.app` |
-| **Post-launch performance** | Backlog | No |
+| **Post-launch performance (P-2)** | Backlog | Dashboard read model — after real traffic baseline |
 
 **Counsel handoff:** Send ToS with §10/§11/§13 flagged; ask for **one consolidated redline**. Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live — see [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos).
 

@@ -1,6 +1,7 @@
 # PERF_SPRINT_P1.md
 # Sprint P-1 — Performance Quick Wins
 # Completed: 2026-06-02
+# Commit: 5c24160
 
 ---
 

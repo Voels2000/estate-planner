@@ -33,7 +33,7 @@ Tester: Manual
 
 ### Post-launch (not blockers)
 
-- **Sprint 17 perf ticket:** Dashboard initial load slowness; post-profile-save render slowness
+- **Sprint P-1 (2026-06-02):** Dashboard quick wins shipped (`5c24160`) — Promise.all, indexes, debounce, next/font. Re-verify dashboard TTFB after deploy; remaining ceiling is read-model sprint ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)).
 - **Before open signups (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)); go-live day: signup → **confirm email** → login → dashboard
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
 

@@ -154,6 +154,16 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 
 ---
 
+### June 2026 — Sprint P-1 closed; first post-launch perf sprint = dashboard read model
+
+**Decision:** Sprint P-1 (`5c24160`) shipped pre-launch quick wins: dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, and `idx_assets_owner_id` / `idx_liabilities_owner_id` (applied in production).
+
+**Post-launch engineering priority (Sprint P-2):** Production `pg_stat_statements` (Query A) shows top load from `projection_scenarios` INSERTs and estate RPCs (`calculate_estate_composition`, `generate_estate_recommendations`) on the dashboard path. **First post-launch perf sprint** should materialize those RPC outputs during recompute (dashboard read model), not call them on every page load. Defer detailed design until real traffic provides measurement baseline.
+
+**Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
+
+---
+
 ### May 2026 — Sprint 14 manual smoke bugs (fix before launch)
 
 **Decision:** Two issues from manual smoke §1–7 (2026-05-23) must be fixed before LAUNCH_CHECKLIST Section 1 is fully signed off:

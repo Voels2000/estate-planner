@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (Sprint 17 go-live prep; compliance C-2b–C-5 code complete)
+# Last updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -785,6 +785,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
 
+**Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql). **Post-launch:** dashboard read model (materialize estate RPCs at recompute) — [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
+
 **Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
@@ -836,7 +838,7 @@ Two concepts must stay separate until product designs unified intake:
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
 5. **Drip step 2 production verify** — `consumer21@rolobe.resend.app`.
-6. **Dashboard initial load slowness** — post-launch perf ticket (see Sprint 14 smoke notes).
+6. **Dashboard read model (Sprint P-2, post-launch)** — materialize `calculate_estate_composition` + `generate_estate_recommendations` at recompute; highest ceiling per Query A / [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
 
 ### High priority — confirmed post-launch
 
