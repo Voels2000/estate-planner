@@ -8,6 +8,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint F-1 — Import feature (2026-06-02)
+
+**Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql`
+
+- **`ingestion_jobs` table:** parse result store for file import (`owner_id`, `household_id`, `status`, `source_format`, `headers`, `rows`, `field_map`)
+- **RLS:** owner-scoped ALL policy
+- **Indexes:** `owner_id`, `created_at DESC`
+
+**Apply:** Run in Supabase SQL Editor before deploying `POST /api/ingest`.
+
+---
+
 ## Sprint P-2 — Recommendations cache (2026-06-02)
 
 **Migration:** `20260602130000_sprint_p2_recommendations_cache.sql` — **commit `47a38f3`**

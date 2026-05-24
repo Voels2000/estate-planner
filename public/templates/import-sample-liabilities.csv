@@ -1,0 +1,4 @@
+name,type,balance,interest_rate,monthly_payment,notes
+Home Mortgage,mortgage,420000,6.25,2850,30-year fixed
+Auto Loan,auto,18500,4.9,410,
+Credit Card,credit_card,3200,22.99,,

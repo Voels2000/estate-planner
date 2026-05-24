@@ -1,0 +1,5 @@
+name,type,value,owner,notes
+Primary Residence,primary_residence,850000,person1,123 Main St
+Brokerage Account,taxable_brokerage,245000,person1,Fidelity
+Traditional 401k,traditional_401k,580000,person1,Current employer
+Roth IRA,roth_ira,95000,person2,

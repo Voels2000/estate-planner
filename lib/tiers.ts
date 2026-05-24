@@ -38,7 +38,7 @@ export const TIER_FEATURES = {
     'Roth Conversion',
     'Monte Carlo simulations',
     'Lifetime financial snapshot',
-    'Data import (CSV/PDF/DOCX)',
+    'Data import (CSV/Excel)',
   ],
   3: [
     'Everything in Retirement',

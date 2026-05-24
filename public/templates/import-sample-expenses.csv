@@ -1,0 +1,5 @@
+category,amount,start_year,end_year,inflation_adjust
+housing,42000,2026,,true
+healthcare,12000,2026,,true
+travel,8000,2026,2035,true
+charitable,5000,2026,,true

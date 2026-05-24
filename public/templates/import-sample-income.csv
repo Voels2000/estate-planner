@@ -1,0 +1,4 @@
+source,amount,start_year,end_year,inflation_adjust,owner
+salary,185000,2026,2035,true,person1
+social_security,42000,2032,,true,person1
+pension,36000,2030,2045,true,person2

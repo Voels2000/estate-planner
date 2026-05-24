@@ -38,6 +38,13 @@ const STATUS_STYLES: Record<string, string> = {
   failed: 'bg-red-100 text-red-700',
 }
 
+const IMPORT_TEMPLATES = [
+  { href: '/templates/import-sample.csv', label: 'Assets template' },
+  { href: '/templates/import-sample-liabilities.csv', label: 'Liabilities template' },
+  { href: '/templates/import-sample-income.csv', label: 'Income template' },
+  { href: '/templates/import-sample-expenses.csv', label: 'Expenses template' },
+] as const
+
 export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
   const [jobs, setJobs] = useState<IngestionJob[]>(initialJobs)
   const [step, setStep] = useState<'upload' | 'review' | 'done'>('upload')
@@ -76,7 +83,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
     setError(null)
     setIsCommitting(true)
     try {
-      const res = await fetch('/api/ingest/commit', {
+      const res = await fetch('/api/import/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,7 +127,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Import Data</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Upload a file to import assets, liabilities, income, or expenses. Supports .csv, .xlsx, .docx, and .pdf.
+          Upload a file to import assets, liabilities, income, or expenses. Supports CSV and Excel (.csv, .xlsx, .xls).
         </p>
       </div>
 
@@ -130,6 +137,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
 
       {/* Step 1 — Upload */}
       {step === 'upload' && (
+        <>
         <div
           onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
           onDragLeave={() => setIsDragging(false)}
@@ -153,7 +161,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
               <div className="text-5xl">📂</div>
               <div>
                 <p className="text-sm font-semibold text-neutral-700">Drop your file here</p>
-                <p className="text-xs text-neutral-400 mt-1">or click to browse — .csv, .xlsx, .docx, .pdf</p>
+                <p className="text-xs text-neutral-400 mt-1">or click to browse — .csv, .xlsx, .xls</p>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -161,16 +169,37 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
               >
                 Choose File
               </button>
+              {/* PDF/DOCX parsing deferred post-launch — text extraction is unreliable
+                  for structured financial data. CSV/XLSX only for Sprint F-1. */}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.xlsx,.xls,.docx,.pdf"
+                accept=".csv,.xlsx,.xls"
                 className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
               />
             </div>
           )}
         </div>
+        <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+          <p className="text-xs font-medium text-neutral-600">Sample templates</p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Download a starter CSV with the expected column headers for each table type.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {IMPORT_TEMPLATES.map((template) => (
+              <a
+                key={template.href}
+                href={template.href}
+                download
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 underline-offset-2 hover:underline"
+              >
+                {template.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        </>
       )}
 
       {/* Step 2 — Review field mapping */}

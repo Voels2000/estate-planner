@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
+import { hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { ImportClient } from './_import-client'
 
@@ -11,25 +12,36 @@ export default async function ImportPage() {
 
   if (!user) redirect('/login')
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('import', access.tier, access.isAdvisor, access.isTrial)) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Document Import</h1>
+        <h1 className="mb-4 text-2xl font-bold text-gray-900">Import Data</h1>
         <UpgradeBanner
-          requiredTier={3}
-          moduleName="Document Import"
-          valueProposition="Import and organize existing estate documents into your secure vault."
+          requiredTier={2}
+          moduleName="Import Data"
+          valueProposition="Upload CSV or Excel files to import assets, liabilities, income, and expenses in bulk."
         />
       </div>
     )
   }
 
-  const { data: jobs } = await supabase
+  const { data: rawJobs } = await supabase
     .from('ingestion_jobs')
-    .select('id, file_name, file_type, status, row_count, committed_at, created_at, error_message')
+    .select('id, original_filename, source_format, status, row_count, committed_at, created_at, error_message')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return <ImportClient jobs={jobs ?? []} />
+  const jobs = (rawJobs ?? []).map((job) => ({
+    id: job.id,
+    file_name: job.original_filename ?? 'Unknown file',
+    file_type: job.source_format ?? '',
+    status: job.status,
+    row_count: job.row_count,
+    committed_at: job.committed_at,
+    created_at: job.created_at,
+    error_message: job.error_message,
+  }))
+
+  return <ImportClient jobs={jobs} />
 }
