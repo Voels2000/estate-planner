@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-24 (Sprint 17 current; Sprint 16 closed 2026-05-24)
+# Last updated: 2026-06-02 (Sprint 17 go-live prep; compliance C-2b–C-5 closed)
 
 ---
 
@@ -66,26 +66,51 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint 17 — Billing disclosures (C-4), open signups (Weeks 63–66) **← CURRENT**
+### Sprint 17 — Go-live prep (Weeks 63–66) **← CURRENT**
 
-**Goal:** Stripe production billing + Sprint C-4 auto-renewal disclosures → flip `PUBLIC_SIGNUP_OPEN` → verify drip step 2.
+**Goal:** Legal review + Stripe/Supabase Dashboard config → flip `PUBLIC_SIGNUP_OPEN` → production smoke with fresh email.
+
+**Compliance code (C-2b through C-5):** ✅ All closed on `main` — see commit log below.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Sprint C-4 billing disclosures** | `[ ]` | **Blocks open signups** — RCW 19.316 + FTC negative option + Stripe receipts. [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| **LEGAL_TODO.md** | `[ ]` | **Blocker** — replace 3 TODO placeholders; counsel sign-off; email aliases |
+| **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
-| **Open signups** | `[ ]` | Set `PUBLIC_SIGNUP_OPEN=true` — **after C-4** ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
-| **Drip step 2 check** | `[ ]` | Verify `consumer21@rolobe.resend.app` receives drip step 2 on **2026-05-26** (day 3) |
-| **Post-launch performance** | `[ ]` | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
-| **Monte Carlo UI string pass** | `[x]` | `MonteCarloAssumptionsPanel.tsx` + `lib/monte-carlo.ts` insights — UX audit rules |
+| **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
+| **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
+| **Drip step 2 check** | `[ ]` | `consumer21@rolobe.resend.app` when running drip smoke |
+| **Post-launch performance** | `[ ]` | Dashboard load slowness — perf ticket (not blocking) |
 
-**Cross-sprint (closed):** Sprint C-3 Phase 1 — RLS policy fixes `236890c` (2026-06-02). Sprint C-2b UX language audit — `788aa08` (2026-05-24).
+**Compliance commit log (all on `main`):**
+
+| Commit | Sprint | Key work |
+|--------|--------|----------|
+| `788aa08` | C-2b | UX language audit — 32 findings → 0 |
+| `236890c` | C-3 | RLS fixes — businesses leak, monte_carlo_runs, accepted status parity |
+| `56a4407` | C-3 | Auth callback, MFA middleware, security headers, PII logging |
+| `cda2ccc` | C-3 | Monte Carlo UI strings, doc sync |
+| `d854c05` | C-3 | Audit artifacts gitignored |
+| `462bda9` | C-4 | Billing disclosures, RCW 19.316, cancellation, renewal reminders |
+| `2e1dff3` | C-5 | Privacy Policy, Terms of Service, footer, sitemap |
+| `695a860` | C-5 | Legal pages follow-up |
 
 **Success criteria**
+- [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
 - C-4 manual walkthrough signed off (signup → paid → receipt → self-serve cancel)
-- Stripe checkout works on production for new consumer tier upgrade
-- `/signup` open after env flip; Core §1–3 smoke passes again
-- Drip step 2 confirmed for `consumer21@`
+- Go-live sequence executed per LAUNCH_CHECKLIST
+- `/signup` open after env flip; Core §1–3 smoke passes with fresh email
+
+---
+
+### Compliance sprints C-2b – C-5 ✅ CLOSED (code)
+
+| Sprint | Status | Commits |
+|--------|--------|---------|
+| C-2b UX language audit | ✅ | `788aa08` |
+| C-3 RLS + auth/security | ✅ | `236890c`, `56a4407`, `cda2ccc`, `d854c05` |
+| C-4 Billing disclosures | ✅ code | `462bda9` |
+| C-5 Privacy + Terms | ✅ code | `2e1dff3`, `695a860` |
 
 ---
 
@@ -95,21 +120,44 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 - `[x]` Sprint C-2b complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (`788aa08`)
 - `[ ]` Billing setup — **carried to Sprint 17**
-- `[ ]` Open signups — **carried to Sprint 17** (blocked on C-4)
+- `[ ]` Open signups — **Sprint 17 go-live day** (after legal + manual verify)
 - `[ ]` Drip step 2 check — **carried to Sprint 17**
 
 **Commits:** `788aa08`
 
 ---
 
-### Sprint C-3 — RLS security (Phase 1) ✅ CLOSED 2026-06-02
+### Sprint C-3 — RLS + auth/security ✅ CLOSED 2026-06-02
 
-**Goal:** Close critical RLS gaps from security audit before open signups.
+**Goal:** Close critical RLS gaps and ship auth/security hardening before open signups.
 
-- `[x]` `20260602000000_sprint_c3_rls_fixes.sql` — businesses, assets, `monte_carlo_runs`, reference tables, `advisor_clients`, profiles (`236890c`)
-- `[x]` Advisor joins use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`)
+- `[x]` Phase 1 — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`)
+- `[x]` Phase 1b + Phase 3 — `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging (`56a4407`)
+- `[x]` Docs + Monte Carlo UX strings (`cda2ccc`); audit artifacts gitignored (`d854c05`)
 
-**Commits:** `236890c`
+**Commits:** `236890c`, `56a4407`, `cda2ccc`, `d854c05`
+
+---
+
+### Sprint C-4 — Billing disclosures ✅ CLOSED 2026-06-02 (code)
+
+**Goal:** RCW 19.316 auto-renewal + FTC negative option compliance.
+
+- `[x]` `lib/compliance/billing-disclosures.ts`; pre-checkout, cancel flow, renewal reminders (`462bda9`)
+- `[ ]` Manual Stripe Dashboard verify + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+
+**Commits:** `462bda9`
+
+---
+
+### Sprint C-5 — Privacy Policy + Terms ✅ CLOSED 2026-06-02 (code)
+
+**Goal:** Public legal pages, footer links, sitemap.
+
+- `[x]` `/privacy`, `/terms`, `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`)
+- `[ ]` [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders, counsel, email aliases
+
+**Commits:** `2e1dff3`, `695a860`
 
 ---
 
@@ -127,7 +175,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Sitemap XML + middleware infra bypass — `/sitemap.xml`, `/robots.txt` never gated (`73648e5`)
 - `[x]` Test account cleanup script — `scripts/cleanup-test-accounts.ts` (`3f732e3`)
 - `[x]` Dev workflow — local → preview → production
-- `[ ]` Open signups — **carried to Sprint 17** (C-4 billing disclosures first)
+- `[ ]` Open signups — **Sprint 17 go-live day** (see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 
 **Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`, `3f732e3`, `73648e5`
 

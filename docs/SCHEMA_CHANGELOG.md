@@ -8,6 +8,43 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint C-5 — Privacy Policy + Terms of Service (2026-06-02)
+
+**No schema change.**
+
+- **Commits:** `2e1dff3`, `695a860`
+- **Routes:** `/privacy` (WCPA structure), `/terms` (full ToS); post-checkout accept at `/terms/accept`
+- **Components:** `components/legal/LegalDocumentLayout.tsx`, `components/layout/LegalFooterLinks.tsx`
+- **Content:** `lib/legal/privacy-policy-sections.ts`, `lib/legal/terms-of-service-sections.ts`
+- **SEO:** `app/sitemap.ts`, `app/robots.ts` include `/privacy`, `/terms`
+- **Manual remaining:** [LEGAL_TODO.md](./LEGAL_TODO.md) — 3 TODO placeholders; counsel sign-off; email aliases
+
+---
+
+## Sprint C-4 — Billing disclosures (2026-06-02)
+
+**No schema change.**
+
+- **Commit:** `462bda9`
+- **Copy:** `lib/compliance/billing-disclosures.ts` — preCheckout, activeSubscription, cancellationConfirm, renewalReminderEmail
+- **Surfaces:** `app/billing/_billing-client.tsx`, pricing page; cancel via Stripe portal; `invoice.upcoming` webhook renewal reminder
+- **Manual remaining:** Stripe Dashboard config + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+
+---
+
+## Sprint C-3 Phase 1b + Phase 3 — Auth + security (2026-06-02)
+
+**No schema change.**
+
+- **Commit:** `56a4407`
+- **Routes:** `/auth/callback` (exchangeCodeForSession, welcome email on confirm); `/auth/confirm-email`
+- **Signup:** `_signup-form.tsx` redirects to confirm-email (no immediate password sign-in)
+- **Middleware:** AAL2 MFA enforcement → `/mfa-challenge`
+- **Security:** `next.config.ts` headers (HSTS, CSP); PII removed from Stripe webhook logs; welcome route auth guard
+- **Script:** `scripts/security-audit.sh`
+
+---
+
 ## Sprint C-3 — RLS security fixes (2026-06-02)
 
 **Migration:** `20260602000000_sprint_c3_rls_fixes.sql` — **commit `236890c`**
@@ -30,13 +67,13 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 
 ---
 
-## Sprint 17 — billing disclosures + open signups (May 2026)
+## Sprint 17 — go-live prep (June 2026)
 
 **No schema change.**
 
-- **Sprint 16 closed 2026-05-24:** C-2b UX language audit complete (`788aa08`); all `DISCLAIMER_STRINGS` surfaces wired.
-- **Sprint 17 open:** Sprint C-4 billing disclosures (RCW 19.316, FTC cancel, Stripe receipts); Stripe production billing; `PUBLIC_SIGNUP_OPEN=true` after C-4; drip step 2 verify `consumer21@` on 2026-05-26; dashboard load perf ticket.
-- **Doc:** [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+- **Compliance code (C-2b through C-5):** ✅ All closed on `main` — see commit log in [NEXT_SESSION.md](./NEXT_SESSION.md)
+- **Sprint 17 remaining (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard + C-4 walkthrough; counsel sign-off; go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke
+- **Docs:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) · [LEGAL_TODO.md](./LEGAL_TODO.md)
 
 ## Sprint 16 — C-2b UX language audit (May 2026)
 

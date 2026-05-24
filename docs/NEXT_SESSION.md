@@ -1,40 +1,59 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-24
+# Updated: 2026-06-02
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 beginning.** Sprint 16 closed 2026-05-24: C-2b UX language audit (`788aa08`). **Sprint C-3 Phase 1 closed 2026-06-02:** RLS policy fixes (`236890c`). Waitlist active.
+> My Wealth Maps — **Sprint 17 (go-live prep).** All compliance code sprints **closed** (C-2b → C-5 on `main`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
-> **Sprint 17 goal:** Stripe billing setup → Washington auto-renewal disclosures (C-4) → `PUBLIC_SIGNUP_OPEN=true`.
+> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — replace 3 TODO placeholders; email aliases; counsel sign-off on ToS §10/§11/§13; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
-> **Today's task:** TBD — start with [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) manual walkthrough (signup → paid → cancel).
+> **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 
 ---
 
-## Sprint 17 — remaining
+## Compliance sprints — all closed ✅ (code complete)
 
-| Item | Notes |
-|------|-------|
-| **Sprint C-4 billing disclosures** | **Blocks open signups** — RCW 19.316 auto-renewal copy on checkout; FTC click-to-cancel self-serve; Stripe receipts with renewal amount. See [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
-| **Stripe production billing** | Production keys, checkout + webhook verified |
-| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy — **after C-4 signed off** |
-| **Drip step 2 check** | Check `consumer21@rolobe.resend.app` on **2026-05-26** (day 3 after step 1 capture) |
-| **Post-launch performance** | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
-| **Monte Carlo UI string pass** | ✅ `MonteCarloAssumptionsPanel.tsx` "Scenarios Reaching Goal (%)"; `lib/monte-carlo.ts` insight strings; `/monte-carlo` upgrade copy |
+| Sprint | Scope | Commit(s) | Status |
+|--------|-------|-----------|--------|
+| **C-2b** | UX language audit — 32 findings → 0 | `788aa08` | ✅ |
+| **C-3** | RLS fixes (`236890c`); auth callback, MFA, security headers, PII logging (`56a4407`); Monte Carlo UX + docs (`cda2ccc`); audit artifacts gitignored (`d854c05`) | `236890c`, `56a4407`, `cda2ccc`, `d854c05` | ✅ |
+| **C-4** | Billing disclosures — RCW 19.316, FTC Negative Option, renewal reminders | `462bda9` | ✅ code — manual Stripe walkthrough remains |
+| **C-5** | Privacy Policy (`/privacy`), Terms of Service (`/terms`), footer links, sitemap | `2e1dff3`, `695a860` | ✅ — legal review + TODO placeholders remain |
 
-### Go-live gate (do not skip)
+**Audit scripts (must stay 0):** `bash scripts/audit-ux-language.sh` · `bash scripts/security-audit.sh`
 
-Follow the **exact order** in [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip):
+---
 
-Note: Supabase Auth settings (email confirmation, secure email change, min password 12) stay **OFF** until go-live; Phase 1b auth callback can stay on a branch until then.
+## Sprint 17 — remaining (non-code)
 
-1. Complete C-4 checklist — manual signup → `/billing` → Stripe Checkout → receipt → self-serve cancel
-2. **Launch day:** Supabase Auth ON → deploy Phase 1b (`/auth/callback` + signup fix) → `PUBLIC_SIGNUP_OPEN=true` → redeploy
-3. Verify signup surfaces + **fresh-email** flow: signup → confirm email → login
-4. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+| Item | Owner | Blocks open signups? |
+|------|-------|----------------------|
+| **LEGAL_TODO.md** — replace TODO placeholders (entity name, address, registered agent) | You | **Yes** |
+| **Email aliases** — privacy@, security@, legal@ | You | **Yes** |
+| **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration) | Counsel | **Yes** |
+| **Stripe Dashboard** — invoice.upcoming webhook, Customer Portal cancel, receipt emails | You | **Yes** (manual verify) |
+| **Stripe production billing** | You | **Yes** |
+| **Supabase Auth** — email confirm ON, secure email change ON, min password 12 | You | Go-live day |
+| **`PUBLIC_SIGNUP_OPEN=true`** + redeploy | You | Go-live day |
+| **Core §1–3 smoke** — fresh email; signup → confirm → login → dashboard | You | Go-live day |
+| **Drip step 2 check** | Ops | No — `consumer21@rolobe.resend.app` |
+| **Post-launch performance** | Backlog | No |
+
+### Go-live gate (exact order)
+
+**Pre-flip (legal + config):** See [LEGAL_TODO.md](./LEGAL_TODO.md) and [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) manual checklist.
+
+**Go-live day:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip):
+
+1. Supabase Dashboard → email confirmations ON, secure email change ON, min password **12**
+2. Verify `/auth/callback` + signup → confirm-email flow on **staging** (code on `main` since `56a4407`)
+3. Vercel Production → `PUBLIC_SIGNUP_OPEN=true` → redeploy
+4. Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)) with **fresh email**
+
+**Note:** Supabase Auth dashboard switches stay **OFF** until go-live day — test accounts and seed scripts depend on current settings.
 
 ---
 
@@ -43,23 +62,41 @@ Note: Supabase Auth settings (email confirmation, secure email change, min passw
 | Area | Outcome |
 |------|---------|
 | **Sprint C-2b UX Language Audit** | ✅ Complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (`788aa08`) |
-| **Billing setup** | **Carried to Sprint 17** |
-| **Open signups** | **Carried to Sprint 17** — blocked on C-4 billing disclosures |
-| **Drip step 2 check** | **Carried to Sprint 17** — due 2026-05-26 |
 
-**Commits:** `788aa08` (C-2b disclaimer surfaces)
+**Commits:** `788aa08`
 
 ---
 
-## Sprint C-3 Phase 1 closed ✅ (2026-06-02)
+## Sprint C-3 closed ✅ (2026-06-02)
+
+| Phase | Outcome | Commits |
+|-------|---------|---------|
+| **Phase 1 — RLS** | `20260602000000_sprint_c3_rls_fixes.sql` | `236890c` |
+| **Phase 1b + Phase 3 — Auth/security** | `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging, welcome route auth | `56a4407` |
+| **Docs + Monte Carlo UX** | Master doc sync, Monte Carlo insight strings | `cda2ccc` |
+| **Hygiene** | Audit artifacts gitignored | `d854c05` |
+
+---
+
+## Sprint C-4 closed ✅ (code)
 
 | Area | Outcome |
 |------|---------|
-| **RLS security fixes** | ✅ `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`) — businesses, assets, `monte_carlo_runs`, reference tables, `advisor_clients`, profiles |
+| **Billing disclosures** | `lib/compliance/billing-disclosures.ts`; pre-checkout on billing/pricing; cancel flow; `invoice.upcoming` renewal reminder | `462bda9` |
 
-**Commits:** `236890c`, `cda2ccc` (docs + Monte Carlo UX)
+**Manual remaining:** Stripe Dashboard config + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 
-**Paused — Phase 1b (go-live):** `/auth/callback` route + signup form fix for enforced email confirmation. Keep on a ready branch; merge/deploy as **step 2** of [LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip). Supabase Auth dashboard switches (email confirm, secure email change, min password 12) stay **OFF** until that sequence.
+---
+
+## Sprint C-5 closed ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **Privacy Policy** | `/privacy` — WCPA structure; TODO placeholders for entity/address/agent | `2e1dff3`, `695a860` |
+| **Terms of Service** | `/terms` — RCW 19.316 billing terms; post-checkout accept at `/terms/accept` | `2e1dff3`, `695a860` |
+| **Footer / SEO** | `LegalFooterLinks` on public + dashboard; sitemap + robots | `2e1dff3`, `695a860` |
+
+**Manual remaining:** [LEGAL_TODO.md](./LEGAL_TODO.md)
 
 ---
 
@@ -83,7 +120,7 @@ Note: Supabase Auth settings (email confirmation, secure email change, min passw
 
 1. **Local** — `npm run dev` with `.env.local`
 2. **Preview** — push branch → Vercel preview (`estate-planner-gules.vercel.app`); set `WAITLIST_MODE=true` on Preview to match production gating
-3. **Production** — merge to `main` → `mywealthmaps.com`; flip `PUBLIC_SIGNUP_OPEN=true` when C-4 + billing ready
+3. **Production** — merge to `main` → `mywealthmaps.com`; flip `PUBLIC_SIGNUP_OPEN=true` on go-live day per checklist
 
 ---
 
@@ -124,7 +161,7 @@ Disposable addresses for production waitlist / drip captures. Inbound forwards v
 
 | Email | Notes |
 |-------|-------|
-| `consumer21@rolobe.resend.app` | **Sprint 17:** drip step 2 check due **2026-05-26** (day 3) |
+| `consumer21@rolobe.resend.app` | Drip step 2 check (when running drip smoke) |
 
 ### Seed scripts (idempotent)
 
@@ -167,3 +204,8 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 - **`/projections`, `/complete`:** `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` only
 - **`/my-estate-strategy` (tier 3):** `POST /api/consumer/generate-base-case`
 - Do **not** merge TIER2 and TIER3 lists — `lib/planning/planningEmptyState.ts`
+
+### Legal pages vs in-app terms accept
+
+- **Public ToS:** `/terms` — full Terms of Service (Sprint C-5)
+- **Post-checkout accept:** `/terms/accept` — dynamic `app_config.terms_sections` + accept button (sync with `/terms` after legal review per [LEGAL_TODO.md](./LEGAL_TODO.md))

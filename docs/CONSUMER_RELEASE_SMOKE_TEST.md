@@ -34,7 +34,7 @@ Tester: Manual
 ### Post-launch (not blockers)
 
 - **Sprint 17 perf ticket:** Dashboard initial load slowness; post-profile-save render slowness
-- **Before open signups:** Complete [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4) — auto-renewal disclosures, self-serve cancel, Stripe receipts
+- **Before open signups (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)); go-live day: signup → **confirm email** → login → dashboard
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
 
 ### Sprint 17 — production drip verify

@@ -63,6 +63,8 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
+| Privacy Policy | `/privacy` | `(public)/privacy` | `LegalFooterLinks` in public footer; WCPA structure (Sprint C-5) |
+| Terms of Service | `/terms` | `(public)/terms` | `LegalFooterLinks`; post-checkout accept at `/terms/accept` (Sprint C-5) |
 
 **Life event pages (`app/(public)/event/[slug]/`):**
 

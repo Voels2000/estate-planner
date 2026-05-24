@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 17 current; Sprint 16 closed)
+# Last updated: 2026-06-02 (Sprint 17 go-live prep; compliance C-2b–C-5 code complete)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -370,7 +370,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 **Not in Vercel Production:** `SUPABASE_URL` — only for local/staging seed scripts. Vercel Supabase integration supplies project URL/keys for deploys.
 
-**Opening signups (go-live flip):** Complete Sprint C-4 ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)) first. Then set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup`. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+**Opening signups (go-live flip):** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 **Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass.
 
@@ -781,7 +781,11 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-2b (closed 2026-05-24):** Compliance language policy — `lib/compliance/language-policy.ts`, `scripts/audit-ux-language.sh`, CI workflow; all `DISCLAIMER_STRINGS` surfaces wired. See [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md).
 
-**Sprint C-3 Phase 1 (closed 2026-06-02):** RLS policy fixes — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`). Advisor-scoped policies use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) via `lib/advisor/clientConnectionStatus.ts`. Critical fix: `businesses` advisor SELECT no longer uses `auth.uid() IS NOT NULL`.
+**Sprint C-3 (closed 2026-06-02):** RLS policy fixes — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`). Auth callback, confirm-email, MFA middleware, security headers, PII logging (`56a4407`). Advisor-scoped policies use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) via `lib/advisor/clientConnectionStatus.ts`. Critical fix: `businesses` advisor SELECT no longer uses `auth.uid() IS NOT NULL`.
+
+**Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
+
+**Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business
@@ -825,13 +829,14 @@ Two concepts must stay separate until product designs unified intake:
 
 ## Open Backlog
 
-### High priority — Sprint 17 (current)
+### High priority — Sprint 17 (go-live prep)
 
-1. **Sprint C-4 billing disclosures** — RCW 19.316 auto-renewal copy, FTC self-serve cancel, Stripe receipts — **blocks `PUBLIC_SIGNUP_OPEN`**. [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
-2. **Stripe production billing** — production keys; checkout + webhook on production.
-3. **Open public signups** — set `PUBLIC_SIGNUP_OPEN=true` after C-4 signed off; re-run Core §1–3 smoke.
-3. **Drip step 2 production verify** — `consumer21@rolobe.resend.app` on **2026-05-26**.
-4. **Dashboard initial load slowness** — post-launch perf ticket (see Sprint 14 smoke notes).
+1. **LEGAL_TODO.md** — replace TODO placeholders; email aliases; counsel sign-off ToS §10/§11/§13 — **blocks `PUBLIC_SIGNUP_OPEN`**
+2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+3. **Stripe production billing** — production keys; checkout + webhook on production.
+4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
+5. **Drip step 2 production verify** — `consumer21@rolobe.resend.app`.
+6. **Dashboard initial load slowness** — post-launch perf ticket (see Sprint 14 smoke notes).
 
 ### High priority — confirmed post-launch
 

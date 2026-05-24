@@ -629,8 +629,9 @@ This sprint is done when:
 |-----|-------------|
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) | Source of truth for all consumer surfaces audited here |
 | [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Route and tier reference |
-| [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gates; C-4 required before open signups |
-| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Remaining signup gate after C-2b |
+| [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gates; legal + C-4 manual verify before open signups |
+| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | C-4 manual Stripe verify (code complete) |
+| [LEGAL_TODO.md](./LEGAL_TODO.md) | C-5 legal gate |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Add spot-check of disclaimer presence to smoke test §1–3 |
 | [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) | Follow doc sync process when strings change |
 | [`lib/compliance/language-policy.ts`](../lib/compliance/language-policy.ts) | Canonical disclaimer strings and banned phrases |
@@ -639,4 +640,4 @@ This sprint is done when:
 ---
 
 *Sprint C-2b created 2026-05-24. Owner: Product + Engineering.  
-C-2b engineering complete (`788aa08`). **Remaining signup gate:** Sprint C-4 billing disclosures — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).*
+C-2b engineering complete (`788aa08`). Compliance code C-2b–C-5 closed on `main`. **Remaining signup gates (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual verify — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).*
