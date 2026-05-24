@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-24 (Sprint 15 closed — domain live; open signups pending billing)
+# Last updated: 2026-05-24 (Sprint 16 current; Sprint 15 closed)
 
 ---
 
@@ -204,7 +204,16 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Waitlist mode | ✅ Active — public signup → `/waitlist` | — |
 | Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — billing setup first | Yes |
 | Section 1 remainder | Drip prod smoke steps 2–3; E2E path; attorney referral prod test | No (waitlist gate) |
-| Dashboard/profile slow renders | Post-launch performance ticket | No |
+| Dashboard/profile slow renders | Sprint 16 perf ticket — dashboard load slowness | No |
+
+### Sprint 16 — open items (post-cutover)
+
+| Item | Notes |
+|------|-------|
+| **Billing setup** | Stripe production — required before `PUBLIC_SIGNUP_OPEN=true` |
+| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| **Drip step 2 check** | `consumer21@rolobe.resend.app` on **2026-05-26** |
+| **Post-launch performance** | Dashboard initial load slowness ticket |
 
 ---
 

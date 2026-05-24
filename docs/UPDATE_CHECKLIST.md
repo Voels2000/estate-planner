@@ -72,27 +72,35 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] `INTERNAL_API_KEY` on Vercel Production
 - [x] Sprint 13 launch blockers fixed (RMD copy, advisor referral trigger)
 
-## Sprint 15 focus (current)
+## Sprint 15 focus — closed ✅ 2026-05-24
 
-- [x] Waitlist mode — runtime proxy redirect + docs (`bb9a191`)
-- [ ] LAUNCH_CHECKLIST Section 2 — domain, Resend, Search Console
-- [ ] **Go-live:** disable waitlist env vars + redeploy
-- [ ] LAUNCH_CHECKLIST Section 1 remainder (drip prod smoke, E2E path)
-- [ ] Post-launch perf: dashboard load + post-profile-save render
+- [x] Waitlist mode — runtime middleware redirect + docs (`3ceb125`)
+- [x] LAUNCH_CHECKLIST Section 2 — domain, DNS, Resend, Search Console (Cloudflare)
+- [x] Post-cutover smoke §1–3 on production
+- [x] Completion log entry in LAUNCH_CHECKLIST
 
-## Pre-Sprint-15 go-live env vars (ops — no code)
+## Sprint 16 focus (current)
 
-Before domain cutover, verify in **Vercel → Production**:
+| Item | Notes |
+|------|-------|
+| [ ] **Billing setup** | Stripe production — required before opening signups |
+| [ ] **Open signups** | `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| [ ] **Drip step 2 check** | `consumer21@rolobe.resend.app` on **2026-05-26** |
+| [ ] **Post-launch performance** | Dashboard load slowness ticket |
 
-- [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
-- [ ] `RECOMPUTE_SECRET`, `RESEND_API_KEY`, `INTERNAL_API_KEY`, `CRON_SECRET` — all set
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — confirmed
-- [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` — set at launch
-- [x] `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → `true` (pre-launch)
-- [ ] **At go-live:** unset both waitlist vars → redeploy
-- [ ] Redeploy after env changes; run Core smoke (~10 min)
+Section 1 remainder (non-blocking): drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production.
 
-Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
+## Pre-Sprint-15 go-live env vars — closed ✅ 2026-05-24
+
+Verified in **Vercel → Production**:
+
+- [x] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
+- [x] `RECOMPUTE_SECRET`, `RESEND_API_KEY`, `INTERNAL_API_KEY`, `CRON_SECRET` — all set
+- [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — confirmed
+- [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed** (Cloudflare Search Console verification)
+- [ ] **Open signups:** `PUBLIC_SIGNUP_OPEN=true` → Sprint 16 (after billing)
+
+Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 
 ## Verification pass
 

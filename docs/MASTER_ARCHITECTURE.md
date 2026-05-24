@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: May 2026 (Sprint 15 current; waitlist mode documented)
+# Last updated: May 2026 (Sprint 16 current; Sprint 15 closed)
 
 ---
 
@@ -821,6 +821,13 @@ Two concepts must stay separate until product designs unified intake:
 
 ## Open Backlog
 
+### High priority — Sprint 16 (current)
+
+1. **Stripe production billing** — required before `PUBLIC_SIGNUP_OPEN=true`; consumer checkout + webhook on production keys.
+2. **Open public signups** — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy; re-run Core §1–3 smoke.
+3. **Drip step 2 production verify** — `consumer21@rolobe.resend.app` on **2026-05-26**.
+4. **Dashboard initial load slowness** — post-launch perf ticket (see Sprint 14 smoke notes).
+
 ### High priority — confirmed post-launch
 
 1. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake;
@@ -840,7 +847,7 @@ Two concepts must stay separate until product designs unified intake:
 
 ### Confirmed post-launch (no Sprint assignment)
 
-- `/education` to `proxy.ts` `PUBLIC_PATHS` — only if education reachable without proxy redirect
+- `/education` to `middleware.ts` `PUBLIC_PATHS` — only if education reachable without middleware redirect
 - Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 - Admin funnel: attorney click breakdown by `listing_type` (can ship Sprint 10 if time permits)
 

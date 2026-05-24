@@ -33,8 +33,16 @@ Tester: Manual
 
 ### Post-launch (not blockers)
 
-- Slow renders — dashboard initial load and post-profile-save render
+- **Sprint 16 perf ticket:** Dashboard initial load slowness; post-profile-save render slowness
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
+
+### Sprint 16 — production drip verify
+
+| Check | Due | Account |
+|-------|-----|---------|
+| Drip step 2 delivery | **2026-05-26** | `consumer21@rolobe.resend.app` |
+
+Confirm step 2 email from `hello@mywealthmaps.com` after day-3 cron. Step 3 follows per `lib/emails/drip-templates.ts` schedule.
 
 ---
 

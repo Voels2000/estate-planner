@@ -3,8 +3,11 @@
 Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playwright specs and manual-only steps.
 **Strategy:** Automate contracts (auth, APIs, routes, recompute signals); keep human sign-off for copy, visual math, and complex UI flows.
 
+**Production URL:** https://mywealthmaps.com  
 **Staging URL:** https://estate-planner-gules.vercel.app  
 **Consumer account:** `david@rolobe.resend.app` (estate tier) · **Advisor:** `advisor2@rolobe.resend.app`
+
+**Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 16:** drip step 2 check `consumer21@rolobe.resend.app` on 2026-05-26.
 
 **Run automated:**
 ```bash

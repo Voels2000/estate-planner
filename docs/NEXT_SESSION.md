@@ -6,11 +6,30 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 16 beginning.** Sprint 15 closed 2026-05-24: domain live on `mywealthmaps.com`, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed on production.
+> My Wealth Maps — **Sprint 16 beginning.** Sprint 15 closed 2026-05-24: `mywealthmaps.com` live, waitlist active, post-cutover smoke §1–3 passed.
 >
-> **Sprint 16 goal:** Billing/payment setup + open public signups (`PUBLIC_SIGNUP_OPEN=true`).
+> **Sprint 16 goal:** Stripe billing setup → open signups (`PUBLIC_SIGNUP_OPEN=true`) → drip step 2 verify on 2026-05-26.
 >
 > **Today's task:** TBD.
+
+---
+
+## Sprint 16 — remaining
+
+| Item | Notes |
+|------|-------|
+| **Billing setup** | Stripe — required before opening signups |
+| **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
+| **Drip step 2 check** | Check `consumer21@rolobe.resend.app` on **2026-05-26** (day 3 after step 1 capture) |
+| **Post-launch performance** | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
+
+### Opening signups — go-live flip (after billing ready)
+
+1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
+2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
+3. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+
+Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 ---
 
@@ -24,26 +43,9 @@
 | **Resend domain** | `mywealthmaps.com` verified (2026-05-24) |
 | **Waitlist mode** | Active on Production (`middleware.ts`, `3ceb125`) |
 | **Post-cutover smoke §1–3** | Passed on production (2026-05-24) |
-| **Open signups** | **Pending** — billing setup first; then `PUBLIC_SIGNUP_OPEN=true` + redeploy |
+| **Open signups** | **Carried to Sprint 16** — billing setup first |
 
-**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`
-
----
-
-## Sprint 16 — remaining
-
-- [ ] **Billing / payment setup** — Stripe production config; consumer checkout path ready before open signups
-- [ ] **Open signups** — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup`, homepage CTA, `/login` ([LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip))
-- [ ] **Drip step 2 check** — `consumer21@rolobe.resend.app` — verify drip step 2 fires on **2026-05-26** (day 3 after step 1 capture)
-- [ ] Section 1 remainder — drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production
-
-### Opening signups — go-live flip (when billing ready)
-
-1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
-2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
-3. Run Core §1–3 smoke on production
-
-To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
+**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`
 
 ---
 
@@ -59,17 +61,12 @@ To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and re
 | **§2.4 recompute automated** | consumer-core-recompute.spec.ts (`93aa6f5`) |
 | **Admin Portal bug** | Fixed `f4e9160` |
 | **Asset modal bug** | Fixed `f4e9160` |
-| **E2E** | 41 passed; 12 staging-flaky (19/19 with --workers=1) |
+| **E2E** | 41 passed; 12 staging-flaky (19/19 with `--workers=1`) |
 | **Commits** | `93aa6f5`, `1e092d7`, `f4e9160` |
 
 ### Known staging E2E behaviour (do not lose)
 
 `consumer-strategy-writes` and `dashboard` specs fail under parallel workers on staging — Supabase statement timeouts (`57014`) and `net::ERR_ABORTED`. Always re-run failures with `--workers=1` before treating as regressions. Production DB will not have this contention.
-
-### Post-launch (not blocking)
-
-- Dashboard initial load slowness
-- Post-profile-save render slowness
 
 ---
 
@@ -78,11 +75,18 @@ To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and re
 | Role | Email | Notes |
 |------|-------|-------|
 | **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription, is_superuser: false |
-| **Consumer (drip test)** | `consumer21@rolobe.resend.app` | Drip step 2 check due **2026-05-26** (day 3) |
 | **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
 | **Attorney (portal login)** | `test-attorney-portal@rolobe.resend.app` | Password: `TestAttorney123!` · `seed-test-attorney.ts` links `profile_id` for `/attorney` newsletter kit |
 | **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | Listing email · `aref`: **6fd027d3** |
 | **Advisor (test listing)** | `test-advisor@mywealthmaps.test` | `ref`: **c91dcd1b** |
+
+### Resend production test inboxes (`@rolobe.resend.app`)
+
+Disposable addresses for production waitlist / drip captures. Inbound forwards via `app/api/resend/inbound/route.ts`. Cleanup stray signup accounts: `scripts/cleanup-test-accounts.ts`.
+
+| Email | Notes |
+|-------|-------|
+| `consumer21@rolobe.resend.app` | **Sprint 16:** drip step 2 check due **2026-05-26** (day 3) |
 
 ### Seed scripts (idempotent)
 

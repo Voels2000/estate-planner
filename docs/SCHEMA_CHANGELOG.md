@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint 16 — billing + open signups (May 2026)
+
+**No schema change.**
+
+- **Sprint 15 closed 2026-05-24:** domain live; Search Console via Cloudflare; waitlist active; smoke §1–3 passed.
+- **Sprint 16 open:** Stripe production billing; `PUBLIC_SIGNUP_OPEN=true`; drip step 2 verify `consumer21@` on 2026-05-26; dashboard load perf ticket.
+- **Ops:** `scripts/cleanup-test-accounts.ts` — delete stray production test signup accounts before open signups.
+
 ## Sprint 14 — manual smoke §1–7 + open bugs (May 2026)
 
 **No schema change.**

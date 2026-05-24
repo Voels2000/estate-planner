@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: May 2026 (Sprint 15 current; Sprint 14 closed 2026-05-23)
+# Last updated: 2026-05-24 (Sprint 16 current; Sprint 15 closed 2026-05-24)
 
 ---
 
@@ -66,57 +66,55 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58) **← CURRENT**
+### Sprint 16 — Billing, open signups, drip verify (Weeks 59–62) **← CURRENT**
 
-**Goal:** Execute LAUNCH_CHECKLIST Section 2. Ops sprint — env vars, DNS, waitlist → open signup at cutover.
+**Goal:** Stripe production billing ready, flip `PUBLIC_SIGNUP_OPEN`, verify drip step 2 on production, track post-launch perf.
 
-**Waitlist mode (pre-launch — disable at go-live)**
+| Item | Status | Notes |
+|------|--------|-------|
+| **Billing setup** | `[ ]` | Stripe production config — **required before opening signups** |
+| **Open signups** | `[ ]` | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy ([LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
+| **Drip step 2 check** | `[ ]` | Verify `consumer21@rolobe.resend.app` receives drip step 2 on **2026-05-26** (day 3) |
+| **Post-launch performance** | `[ ]` | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
 
-- `[x]` Waitlist page + email capture (`/waitlist`, `POST /api/email-capture`)
-- `[x]` Runtime `/signup` → `/waitlist` redirect in `proxy.ts` (`bb9a191`)
-- `[x]` `getSignupHref()` wired on public CTAs; invite flows bypass gate
-- `[ ]` **At go-live:** unset `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → redeploy → verify `/signup`
-
-**Vercel Production environment variables (verify all before cutover)**
-
-See LAUNCH_CHECKLIST § “Vercel Production env vars” and MASTER_ARCHITECTURE § Production
-environment variables. Every row must be checked in Vercel → Settings → Environment Variables → Production:
-
-| Variable | Launch action |
-|----------|----------------|
-| `NEXT_PUBLIC_APP_URL` | `https://mywealthmaps.com` (replace preview URL) |
-| `RECOMPUTE_SECRET` | Must match `.env.local`; test recompute after deploy |
-| `RESEND_API_KEY` | Confirm set |
-| `INTERNAL_API_KEY` | Confirm set |
-| `CRON_SECRET` | Confirm set |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Confirm set |
-| `SUPABASE_SERVICE_ROLE_KEY` | Confirm set |
-| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Set at launch only |
-| `WAITLIST_MODE` | `true` pre-launch — **unset/`false` at go-live** |
-| `NEXT_PUBLIC_WAITLIST_MODE` | `true` pre-launch — **unset/`false` at go-live** (redeploy) |
-
-Do **not** add `SUPABASE_URL` to Vercel Production — seed scripts use it locally/staging only.
-
-- `[ ]` **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy (see LAUNCH_CHECKLIST § Opening signups — go-live flip)
-- `[ ]` All Production env vars in table above verified in Vercel dashboard
-- `[ ]` `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` in Vercel Production
-- `[ ]` Custom domain attached in Vercel; SSL active
-- `[ ]` DNS cutover (A/CNAME → Vercel)
-- `[ ]` Redeploy after `NEXT_PUBLIC_APP_URL` change (sitemap, drip links, referral URLs update)
-- `[ ]` Resend domain verify — SPF/DKIM for `mywealthmaps.com`; `from` address confirmed
-- `[ ]` `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` env var set; meta tag confirmed in `app/layout.tsx`
-- `[ ]` Search Console property added; ownership verified; sitemap submitted
-- `[ ]` Priority event URLs indexing requested: `/event/selling-a-business`,
-  `/event/death-of-spouse`, `/event/approaching-retirement`, `/event/estate-tax-law-change`,
-  `/event/serious-diagnosis`
-- `[ ]` Short production smoke (Core sections 1–3 only, ~10 min) after domain cutover
-- `[ ]` Completion log entry added to LAUNCH_CHECKLIST with date and verifier name
+**Section 1 remainder (non-blocking while waitlist active):** drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production.
 
 **Success criteria**
-- `https://mywealthmaps.com` resolves to the app with SSL
-- `robots.txt` returns permissive rules at the live domain
-- Sitemap submitted in Search Console
-- Post-cutover smoke passes
+- Stripe checkout works on production for new consumer tier upgrade
+- `/signup` open after env flip; Core §1–3 smoke passes again
+- Drip step 2 confirmed for `consumer21@`
+
+---
+
+### Sprint 15 — Go-live (Section 2 ops) ✅ CLOSED 2026-05-24
+
+**Goal:** Execute LAUNCH_CHECKLIST Section 2 — domain, DNS, Search Console, waitlist mode.
+
+- `[x]` Domain live — `mywealthmaps.com` + SSL (2026-05-24)
+- `[x]` DNS cutover + `NEXT_PUBLIC_APP_URL` → production URL (2026-05-24)
+- `[x]` Vercel Production env vars verified (2026-05-24)
+- `[x]` Resend domain verified — SPF/DKIM (2026-05-24)
+- `[x]` Search Console — verified via **Cloudflare** (not meta tag); sitemap submitted (2026-05-24)
+- `[x]` Waitlist mode active — `middleware.ts` redirect (`3ceb125`)
+- `[x]` Post-cutover smoke §1–3 passed on production (2026-05-24)
+- `[ ]` Open signups — **carried to Sprint 16** (billing setup first)
+
+**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`, `b97f945`
+
+---
+
+### Sprint 15 — Go-live (Section 2 ops only) (Weeks 55–58) — archived detail
+
+**Waitlist mode (shipped)**
+
+- `[x]` Waitlist page + email capture (`/waitlist`, `POST /api/email-capture`)
+- `[x]` Runtime `/signup` → `/waitlist` redirect in `middleware.ts` (`3ceb125`; renamed from `proxy.ts`)
+- `[x]` `getSignupHref()` wired on public CTAs; invite flows bypass gate
+- `[x]` Default on for `VERCEL_ENV=production`; flip via `PUBLIC_SIGNUP_OPEN=true` at go-live
+
+**Vercel Production environment variables — verified 2026-05-24**
+
+See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` **not needed** — Search Console verified via Cloudflare.
 
 ---
 
