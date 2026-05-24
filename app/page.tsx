@@ -4,6 +4,7 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { getSignupHref, isWaitlistMode } from '@/lib/waitlist-mode'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { LegalFooterLinks } from '@/components/layout/LegalFooterLinks'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -754,6 +755,18 @@ export default async function HomePage() {
             Find an Advisor →
           </ButtonLink>
         </div>
+
+        <footer
+          style={{
+            borderTop: '1px solid #e2e8f0',
+            padding: '24px 32px 40px',
+            textAlign: 'center',
+            fontSize: 13,
+            color: '#718096',
+          }}
+        >
+          <LegalFooterLinks linkClassName="text-[#4a5568] hover:text-[#0f1f3d]" />
+        </footer>
 
       </div>
       </main>

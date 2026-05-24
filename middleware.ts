@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/terms',
+  '/terms/accept',
+  '/privacy',
   '/share/',
   '/beneficiary/',
   '/assess',

@@ -9,4 +9,6 @@ export const ROUTES = {
   profile: '/profile',
   confirmEmail: '/confirm-email',
   terms: '/terms',
+  termsAccept: '/terms/accept',
+  privacy: '/privacy',
 } as const

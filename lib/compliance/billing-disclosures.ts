@@ -9,6 +9,12 @@
  * - Must include: amount, frequency, renewal date notice, cancellation method
  */
 
+export const LEGAL_URLS = {
+  tos: 'https://mywealthmaps.com/terms',
+  privacy: 'https://mywealthmaps.com/privacy',
+  billing: 'https://mywealthmaps.com/billing',
+} as const
+
 export const BILLING_DISCLOSURES = {
   /**
    * Shown directly above/below the checkout CTA on any upgrade or
@@ -18,7 +24,8 @@ export const BILLING_DISCLOSURES = {
     `By continuing, you authorize My Wealth Maps to charge ${price} ` +
     `${interval === 'month' ? 'per month' : 'per year'} for the ${planName} plan, ` +
     `starting today. Your subscription renews automatically until you cancel. ` +
-    `Cancel anytime from your account settings — no cancellation fees.`,
+    `Cancel anytime from your account settings — no cancellation fees. ` +
+    `By subscribing you agree to our Terms of Service and Privacy Policy.`,
 
   /**
    * Shown on the billing/account page confirming renewal terms for
@@ -45,7 +52,7 @@ export const BILLING_DISCLOSURES = {
     body: (planName: string, price: string, renewalDate: string) =>
       `Your ${planName} subscription will automatically renew on ${renewalDate} ` +
       `for ${price}. To cancel before renewal, visit your account settings at ` +
-      `https://mywealthmaps.com/billing.`,
+      `${LEGAL_URLS.billing}.`,
   },
 
   /** Global pricing-page auto-renewal notice (RCW 19.316). */

@@ -2,26 +2,23 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Stripe from 'stripe'
-import { TermsClient } from './_terms-client'
+import { TermsClient } from '../_terms-client'
 import { PRICE_ID_TO_TIER } from '@/lib/tiers'
 
-export default async function TermsPage({
+export default async function TermsAcceptPage({
   searchParams,
 }: {
   searchParams: Promise<{ returnTo?: string; session_id?: string }>
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { returnTo, session_id } = await searchParams
   const safePath = returnTo?.startsWith('/') ? returnTo : '/dashboard'
 
-  console.log('Terms page — session_id:', session_id)
-  console.log('Terms page — user.id:', user.id)
-
-  // If we have a Stripe session_id, verify payment and update profile immediately
-  // This handles the race condition where webhook hasn't fired yet
   if (session_id) {
     try {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -30,7 +27,6 @@ export default async function TermsPage({
       const session = await stripe.checkout.sessions.retrieve(session_id)
 
       if (session.status === 'complete' && session.payment_status === 'paid') {
-        console.log('Payment confirmed — updating profile for user:', user.id)
         const admin = createAdminClient()
         const subId = session.subscription as string | null
         let renewalIso: string | null = null
@@ -43,24 +39,24 @@ export default async function TermsPage({
           consumerTier = priceId ? (PRICE_ID_TO_TIER[priceId] ?? null) : null
         }
 
-        const { data, error } = await admin
+        const { error } = await admin
           .from('profiles')
           .update({
             subscription_status: 'active',
             stripe_customer_id: session.customer as string,
+            stripe_subscription_id: subId,
             subscription_plan: priceId,
             ...(consumerTier ? { consumer_tier: consumerTier } : {}),
             ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
           })
           .eq('id', user.id)
-          .select()
 
-        console.log('Profile update result — data:', JSON.stringify(data))
-        console.log('Profile update result — error:', JSON.stringify(error))
+        if (error) {
+          console.error('Terms accept profile update error:', error.message)
+        }
       }
     } catch (err) {
-      console.error('Stripe session verification error:', err)
-      // Non-fatal — continue to show T&C regardless
+      console.error('Stripe session verification error:', err instanceof Error ? err.message : err)
     }
   }
 
@@ -70,7 +66,6 @@ export default async function TermsPage({
     .eq('id', user.id)
     .single()
 
-  // Already accepted — skip straight to destination
   if (profile?.terms_accepted_at) redirect(safePath)
 
   return <TermsClient returnTo={safePath} />

@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
           '/find-advisor',
           '/find-attorney',
           '/pricing',
+          '/privacy',
+          '/terms',
         ],
         disallow: [
           '/dashboard',
