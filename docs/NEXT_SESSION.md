@@ -1,16 +1,49 @@
 # NEXT_SESSION.md
-# Sprint 15 — Session Start Document
+# Sprint 16 — Session Start Document
 # Updated: 2026-05-24
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 15 (go-live ops).** Sprint 14 closed. Waitlist on by default on Production (`3ceb125` — `middleware.ts` redirect).
+> My Wealth Maps — **Sprint 16 beginning.** Sprint 15 closed 2026-05-24: domain live on `mywealthmaps.com`, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed on production.
 >
-> **Sprint 15 goal:** LAUNCH_CHECKLIST Section 2 — domain, env vars, Search Console. **Open signups** via `PUBLIC_SIGNUP_OPEN=true` (see LAUNCH_CHECKLIST § Opening signups — go-live flip).
+> **Sprint 16 goal:** Billing/payment setup + open public signups (`PUBLIC_SIGNUP_OPEN=true`).
 >
 > **Today's task:** TBD.
+
+---
+
+## Sprint 15 closed ✅
+
+| Area | Outcome |
+|------|---------|
+| **Domain / DNS / SSL** | `mywealthmaps.com` live (2026-05-24) |
+| **Vercel Production env vars** | Verified (2026-05-24) |
+| **Search Console** | Verified via Cloudflare domain provider; sitemap submitted (2026-05-24) |
+| **Resend domain** | `mywealthmaps.com` verified (2026-05-24) |
+| **Waitlist mode** | Active on Production (`middleware.ts`, `3ceb125`) |
+| **Post-cutover smoke §1–3** | Passed on production (2026-05-24) |
+| **Open signups** | **Pending** — billing setup first; then `PUBLIC_SIGNUP_OPEN=true` + redeploy |
+
+**Commits:** `7afaedb`, `bb9a191`, `3ceb125`, `729d411`
+
+---
+
+## Sprint 16 — remaining
+
+- [ ] **Billing / payment setup** — Stripe production config; consumer checkout path ready before open signups
+- [ ] **Open signups** — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup`, homepage CTA, `/login` ([LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip))
+- [ ] **Drip step 2 check** — `consumer21@rolobe.resend.app` — verify drip step 2 fires on **2026-05-26** (day 3 after step 1 capture)
+- [ ] Section 1 remainder — drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production
+
+### Opening signups — go-live flip (when billing ready)
+
+1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
+2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
+3. Run Core §1–3 smoke on production
+
+To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
 
 ---
 
@@ -38,22 +71,6 @@
 - Dashboard initial load slowness
 - Post-profile-save render slowness
 
-### Opening signups — go-live flip
-
-Site is in waitlist mode by default on `VERCEL_ENV=production`. To open signups:
-
-1. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
-2. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
-3. Run Core §1–3 smoke on production
-
-To re-enable waitlist: remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
-
-**middleware.ts** handles the runtime redirect (`3ceb125` — renamed from `proxy.ts`; Next.js 16 Turbopack skipped `proxy.ts` in the middleware manifest).
-
-Full steps: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
-
-Key files: `lib/waitlist-mode.ts`, `middleware.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx`.
-
 ---
 
 ## Test account references
@@ -61,6 +78,7 @@ Key files: `lib/waitlist-mode.ts`, `middleware.ts`, `app/(public)/waitlist/`, `a
 | Role | Email | Notes |
 |------|-------|-------|
 | **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription, is_superuser: false |
+| **Consumer (drip test)** | `consumer21@rolobe.resend.app` | Drip step 2 check due **2026-05-26** (day 3) |
 | **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
 | **Attorney (portal login)** | `test-attorney-portal@rolobe.resend.app` | Password: `TestAttorney123!` · `seed-test-attorney.ts` links `profile_id` for `/attorney` newsletter kit |
 | **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | Listing email · `aref`: **6fd027d3** |

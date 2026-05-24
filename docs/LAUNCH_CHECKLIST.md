@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: May 2026 (Sprint 15 — waitlist mode live; go-live env matrix updated)
+# Last updated: 2026-05-24 (Sprint 15 closed — domain live; open signups pending billing)
 
 ---
 
@@ -113,10 +113,10 @@ Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates and productio
 
 ### Code
 
-- [x] **`app/robots.ts`** — permissive rules in repo (Sprint 9); confirm deployed at `https://mywealthmaps.com/robots.txt` before Search Console submission
-- [ ] **`app/layout.tsx`** — no change needed; `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` already wired via env
+- [x] **`app/robots.ts`** — permissive rules deployed at `https://mywealthmaps.com/robots.txt` (2026-05-24)
+- [x] **`app/layout.tsx`** — no change needed; Search Console verified via Cloudflare (meta tag env not required)
 
-### Vercel Production env vars (required before Sprint 15 go-live)
+### Vercel Production env vars (Sprint 15 go-live — verified 2026-05-24)
 
 Set in **Vercel dashboard → Settings → Environment Variables → Production**, then redeploy.
 Check each row in the dashboard before domain cutover. Full matrix is the **go-live source of truth**
@@ -124,29 +124,29 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 
 | Variable | Where it's needed | Status to verify |
 |----------|-------------------|------------------|
-| `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, estate-health recompute `fetch` | Currently preview URL — **update to `https://mywealthmaps.com` at launch** |
-| `RECOMPUTE_SECRET` | Estate health recompute after consumer/strategy saves (`afterHouseholdWrite`) | Must match value in local `.env.local`; quoted if value contains `!` or `#` |
-| `RESEND_API_KEY` | Email drip delivery (`/api/email/drip`, capture flows) | Confirm set |
-| `INTERNAL_API_KEY` | Drip + cron internal calls (server-to-server auth) | Confirm set |
-| `CRON_SECRET` | `/api/cron/notifications` and `/api/cron/age-triggers` (Vercel cron + optional GH manual) | Confirm set |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | Confirm set |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | Confirm set (often via Vercel Supabase integration) |
-| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Set at launch only** — content from Google HTML tag method |
+| `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, estate-health recompute `fetch` | ✅ `https://mywealthmaps.com` (2026-05-24) |
+| `RECOMPUTE_SECRET` | Estate health recompute after consumer/strategy saves (`afterHouseholdWrite`) | ✅ Verified (2026-05-24) |
+| `RESEND_API_KEY` | Email drip delivery (`/api/email/drip`, capture flows) | ✅ Verified (2026-05-24) |
+| `INTERNAL_API_KEY` | Drip + cron internal calls (server-to-server auth) | ✅ Verified (2026-05-24) |
+| `CRON_SECRET` | `/api/cron/notifications` and `/api/cron/age-triggers` (Vercel cron + optional GH manual) | ✅ Verified (2026-05-24) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | ✅ Verified (2026-05-24) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | ✅ Verified (2026-05-24) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Not needed** — verified via Cloudflare domain provider (2026-05-24) |
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
-| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | Set `true` at go-live |
+| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — billing setup first |
 
 **Checklist (Production environment only):**
 
-- [ ] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com`
-- [ ] `RECOMPUTE_SECRET` → matches local secret; recompute smoke passes after deploy
-- [ ] `RESEND_API_KEY` → confirm set
-- [x] `INTERNAL_API_KEY` → confirmed set on Vercel Production (Sprint 13)
-- [ ] `CRON_SECRET` → confirm set
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirm set
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` → confirm set
-- [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → set at launch; meta tag visible in page source
-- [ ] **At go-live:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open
+- [x] `NEXT_PUBLIC_APP_URL` → `https://mywealthmaps.com` (2026-05-24)
+- [x] `RECOMPUTE_SECRET` → matches local secret; recompute smoke passes after deploy (2026-05-24)
+- [x] `RESEND_API_KEY` → confirmed set (2026-05-24)
+- [x] `INTERNAL_API_KEY` → confirmed set on Vercel Production (2026-05-24)
+- [x] `CRON_SECRET` → confirmed set (2026-05-24)
+- [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirmed set (2026-05-24)
+- [x] `SUPABASE_SERVICE_ROLE_KEY` → confirmed set (2026-05-24)
+- [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed**; Search Console verified via Cloudflare (2026-05-24)
+- [ ] **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open (pending billing setup)
 
 **Not required in Vercel Production:**
 
@@ -165,54 +165,46 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Domain & DNS
 
-- [ ] **Custom domain** — `mywealthmaps.com` attached in Vercel and SSL active
-- [ ] **DNS cutover** — A/CNAME records pointing to Vercel
-- [ ] **Redeploy** after `NEXT_PUBLIC_APP_URL` change — sitemap, drip links, referral URLs all use this value
+- [x] **Custom domain** — `mywealthmaps.com` attached in Vercel and SSL active (2026-05-24)
+- [x] **DNS cutover** — A/CNAME records pointing to Vercel (2026-05-24)
+- [x] **Redeploy** after `NEXT_PUBLIC_APP_URL` change — sitemap, drip links, referral URLs all use this value (2026-05-24)
 
 ### Resend (email)
 
-- [ ] **Verify domain** `mywealthmaps.com` in Resend — SPF/DKIM DNS records added and verified
-- [ ] **Confirm `from` address** — `hello@mywealthmaps.com` in `app/api/email/drip/route.ts`
-- [ ] **Confirm any other Resend sends** use verified domain
+- [x] **Verify domain** `mywealthmaps.com` in Resend — SPF/DKIM DNS records added and verified (2026-05-24)
+- [x] **Confirm `from` address** — `hello@mywealthmaps.com` in `app/api/email/drip/route.ts` (2026-05-24)
+- [x] **Confirm any other Resend sends** use verified domain (2026-05-24)
 
 ### Search Console
 
-- [ ] **Add property** — URL-prefix for `https://mywealthmaps.com`
-- [ ] **Verify ownership** — meta tag method; `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` env var triggers tag in `app/layout.tsx`
-- [ ] **Submit sitemap** — Sitemaps → `https://mywealthmaps.com/sitemap.xml` → Submit
-- [ ] **Spot-check indexing requests** — manually request indexing for priority event URLs: `/event/selling-a-business`, `/event/death-of-spouse`, `/event/approaching-retirement`, `/event/estate-tax-law-change`, `/event/serious-diagnosis`
+- [x] **Add property** — URL-prefix for `https://mywealthmaps.com` (2026-05-24)
+- [x] **Verify ownership** — via Cloudflare domain provider (not meta tag / `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) (2026-05-24)
+- [x] **Submit sitemap** — Sitemaps → `https://mywealthmaps.com/sitemap.xml` → Submit (2026-05-24)
+- [x] **Spot-check indexing requests** — manually request indexing for priority event URLs: `/event/selling-a-business`, `/event/death-of-spouse`, `/event/approaching-retirement`, `/event/estate-tax-law-change`, `/event/serious-diagnosis` (2026-05-24)
 
 ### Supabase prod migrations (confirm applied)
 
-**Sprint 13:** 67 migrations applied — local and remote in sync (incl. `20260601000000`). Re-verify before prod cutover if new migrations land in Sprint 14.
+**Sprint 13:** 67 migrations applied — local and remote in sync (incl. `20260601000000`).
 
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
-- [ ] Final prod spot-check before Sprint 15 go-live (no new migrations in Sprint 14 without sign-off)
-- [ ] Attorney referral code trigger: `attorney_listings_referral_code_trigger` (Sprint 8; backfill via `seed-test-attorney.ts` if absent)
+- [x] Final prod spot-check before Sprint 15 go-live (2026-05-24)
+- [x] Attorney referral code trigger: `attorney_listings_referral_code_trigger` (Sprint 8; backfill via `seed-test-attorney.ts` if absent) (2026-05-24)
 
 ---
 
-## Pre-launch state (current — Sprint 15)
+## Production state (current — post Sprint 15 cutover)
 
-| Area | Status | Blocks launch? |
-|------|--------|----------------|
-| Migrations | 67 applied (Sprint 13) | Re-check if Sprint 14 adds any |
-| Acquisition smoke A–G | **Passed** staging | — |
-| Smoke §2.4 (recompute) | **Automated** — `consumer-core-recompute.spec.ts` | Run on deploy |
-| Manual smoke §1–3 | ✅ Passed 2026-05-23 | — |
-| Manual smoke §4–7 | ✅ Passed 2026-05-23 | — |
-| Manual smoke §8, §11 | ✅ Passed 2026-05-23 | — |
-| Admin Portal consumer visibility | ✅ Fixed f4e9160 2026-05-23 | — |
-| Asset form save button viewport | ✅ Fixed f4e9160 2026-05-23 | — |
+| Area | Status | Blocks open signups? |
+|------|--------|----------------------|
+| Domain / DNS / SSL | ✅ Live `mywealthmaps.com` (2026-05-24) | — |
+| Vercel Production env vars | ✅ Verified (2026-05-24) | — |
+| Search Console | ✅ Verified via Cloudflare; sitemap submitted (2026-05-24) | — |
+| Resend domain | ✅ Verified (2026-05-24) | — |
+| Post-cutover smoke §1–3 | ✅ Passed production (2026-05-24) | — |
+| Waitlist mode | ✅ Active — public signup → `/waitlist` | — |
+| Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — billing setup first | Yes |
+| Section 1 remainder | Drip prod smoke steps 2–3; E2E path; attorney referral prod test | No (waitlist gate) |
 | Dashboard/profile slow renders | Post-launch performance ticket | No |
-| E2E consumer suite | ✅ 41 passed; staging flakiness confirmed not regressions | Re-run with `--workers=1` if red |
-| `INTERNAL_API_KEY` | Vercel Production ✅ | — |
-| Public URL / Search Console | Preview URL; Sprint 15 cutover | Section 2 |
-| Production env var matrix | Documented § Section 2 | Sprint 15 |
-| Optional smoke §9 | Skipped — needs linked advisor | No |
-| Drip steps 2–3 | Not verified | Section 1 remainder |
-| Section 1 product gates | Sprint 14 smoke + bugs closed | Drip prod smoke + E2E path remain |
-| Waitlist mode | **On** — public signup → `/waitlist` | Disable at go-live (§ Section 2) |
 
 ---
 
@@ -227,5 +219,5 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
 | May 2026 | Sprint 14 | **Closed** — smoke §1–11 passed; bugs fixed `f4e9160`; E2E 41 passed (staging flakiness `--workers=1`) |
-| May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`); runtime proxy redirect + force-dynamic signup |
-| — | — | _Record launch date and who verified Search Console / domain + Vercel Production env vars + waitlist disabled_ |
+| May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`, `3ceb125`); runtime middleware redirect + force-dynamic signup |
+| 2026-05-24 | Sprint 15 | **Closed** — Domain live, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed. Open signups pending billing setup — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy when ready. |
