@@ -2,6 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isWaitlistMode, shouldBypassWaitlistForSignup } from '@/lib/waitlist-mode'
 
+/** Crawlable SEO + static infra — never auth-gated or redirected. */
+const INFRA_BYPASS_PATHS = [
+  '/api/',
+  '/_next/',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+] as const
+
 const PUBLIC_PATHS = [
   '/login',
   '/signup',
@@ -11,7 +20,6 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/terms',
-  '/api/',
   '/share/',
   '/beneficiary/',
   '/assess',
@@ -23,10 +31,21 @@ const PUBLIC_PATHS = [
   '/event',
   '/mfa-enroll',
   '/mfa-challenge',
-  '/sitemap.xml',
-  '/robots.txt',
   '/education',
 ]
+
+function isInfraBypassPath(pathname: string): boolean {
+  return INFRA_BYPASS_PATHS.some((p) =>
+    p.endsWith('/') ? pathname.startsWith(p) : pathname === p
+  )
+}
+
+function isPublicPath(pathname: string): boolean {
+  return (
+    isInfraBypassPath(pathname) ||
+    PUBLIC_PATHS.some((p) => pathname.startsWith(p))
+  )
+}
 
 const ATTORNEY_ONLY_PATHS = [
   '/attorney/',
@@ -56,8 +75,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/waitlist', request.url))
   }
 
-  // Let public paths through with no checks
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  // Infra + public paths — no auth or role checks
+  if (isPublicPath(pathname)) {
     return NextResponse.next()
   }
 
@@ -148,6 +167,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Skip middleware for static assets and crawlable infra (also listed in
+     * INFRA_BYPASS_PATHS as a runtime fallback if the matcher changes).
+     */
+    '/((?!_next/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
