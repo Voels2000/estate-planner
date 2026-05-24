@@ -458,13 +458,13 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ---
 
-## Sprint F-1 — Financial data import ✅ closed 2026-06-02
+## Sprint F-1 — Financial data import ✅ closed & verified 2026-06-02
 
 - `[x]` `POST /api/ingest` — CSV/XLSX parse, table detection, field mapping (`d3400b1`)
-- `[x]` `ingestion_jobs` migration + RLS
-- `[x]` `/import` tier 2 gate aligned; client commit URL fix
+- `[x]` `ingestion_jobs` migration + RLS; schema cleanup to 14 columns (`file_name`, `file_type`)
+- `[x]` `/import` tier 2 gate aligned; client commit URL + PGRST204 fixes (`b5bb0b1`)
 - `[x]` Sample CSV templates + doc sync
-- `[ ]` Apply migration in production; smoke I.1–I.4
+- `[x]` Production smoke I.1–I.4 — 4 asset rows, `status = committed`
 
 **Post-launch:** PDF/DOCX import parsing.
 

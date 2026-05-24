@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (Sprint F-1 import)
+# Updated: 2026-06-02 (Sprint F-1 import verified)
 
 ---
 
@@ -71,19 +71,19 @@
 
 ---
 
-## Sprint F-1 closed ✅ (2026-06-02)
+## Sprint F-1 closed ✅ (2026-06-02) — verified in production
 
 | Area | Outcome |
 |------|---------|
 | **Parse API** | `POST /api/ingest` — CSV/XLSX only; auto-detect table + field mapping |
-| **Commit** | `POST /api/import/commit` (existing); client URL mismatch fixed |
-| **Schema** | `ingestion_jobs` table + RLS — migration `20260602140000_sprint_f1_ingestion_jobs.sql` |
-| **Tier gate** | `/import` aligned to tier 2 (`hasFeatureAccess('import', …)`) |
+| **Commit** | `POST /api/import/commit` — INSERT_COLUMNS allowlist; 4 assets rows smoke-tested |
+| **Schema** | `ingestion_jobs` — final 14 columns: `file_name`, `file_type` (NOT NULL); legacy names removed |
+| **Tier gate** | `/import` tier 2 via `hasFeatureAccess('import', …)` |
 | **Templates** | `public/templates/import-sample*.csv` |
 
-**Commit:** `d3400b1` · **Apply migration manually** before testing import in production.
+**Commits:** `d3400b1`, `0f8cf2d`, `b5bb0b1`, schema cleanup (this session)
 
-**Smoke:** Tier 2+ → `/import` → upload assets template → review mapping → commit → verify rows in `assets`.
+**Smoke passed:** upload `import-sample.csv` → review → commit → `ingestion_jobs.status = committed`; import history correct.
 
 ---
 

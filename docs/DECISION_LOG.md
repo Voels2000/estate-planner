@@ -357,13 +357,19 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
-### June 2026 — Financial data import: CSV/XLSX only (Sprint F-1)
+### June 2026 — ingestion_jobs column consolidation (Sprint F-1 cleanup)
+
+**Decision:** Consolidate `ingestion_jobs` to a single 14-column schema: `file_name` and `file_type` (NOT NULL) replace legacy `original_filename` / `source_format` duplicates. Production cleanup applied via SQL; migration file rewritten to match.
+
+**Reasoning:** Dual column names caused Postgres 23502 (NOT NULL on legacy columns) and PGRST204 (updates referencing columns missing on patched tables). One canonical name per concept simplifies code and PostgREST schema cache.
+
+---
 
 **Decision:** Ship bulk financial import at `/import` for **CSV and Excel only** (`.csv`, `.xlsx`, `.xls`). Defer PDF/DOCX parsing post-launch.
 
 **Reasoning:** Tabular formats produce reliable header detection and field mapping. PDF/DOCX require best-effort text extraction with unreliable column structure — bad UX for a data-entry accelerator aimed at retirement-tier users getting data in quickly.
 
-**Implication:** Tier 2 gate (`FEATURE_TIERS.import`). Parse → review mapping → commit flow. Apply `20260602140000_sprint_f1_ingestion_jobs.sql` before deploy. Sample templates in `public/templates/`.
+**Implication:** Tier 2 gate. Final schema uses `file_name` + `file_type` (NOT NULL). Smoke verified: 4 asset rows committed.
 
 ---
 

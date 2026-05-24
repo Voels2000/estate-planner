@@ -215,7 +215,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Client** | `_import-client.tsx` — drop zone, field mapping review, commit |
 | **Write APIs** | `POST /api/ingest` (parse + job create); `POST /api/import/commit` (bulk insert) |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
-| **Migration** | `20260602140000_sprint_f1_ingestion_jobs.sql` — apply before deploy |
+| **Migration** | `20260602140000_sprint_f1_ingestion_jobs.sql` — 14 columns (`file_name`, `file_type`); verified in production |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 

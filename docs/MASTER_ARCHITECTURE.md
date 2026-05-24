@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (Sprint F-1 import; education nav fix; Sprint P-2 closed; Sprint 17 go-live prep)
+# Last updated: 2026-06-02 (Sprint F-1 import complete; education nav fix; Sprint 17 go-live prep)
 
 ---
 
@@ -721,7 +721,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - **Commit API:** `POST /api/import/commit` — unchanged Sprint F-1; maps rows via user-adjusted `field_map`, coerces types, validates required fields, bulk `insert` into `assets` | `liabilities` | `income` | `expenses`; marks job `committed`.
 - **Target tables + required fields:** assets (`name`, `type`, `value`); liabilities (`name`, `type`, `balance`); income (`source`, `amount`, `start_year`); expenses (`category`, `amount`, `start_year`).
 - **Templates:** `public/templates/import-sample*.csv` — downloadable from import UI.
-- **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — apply before deploy (`ingestion_jobs` + owner-scoped RLS).
+- **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — 14-column schema (`file_name`, `file_type` NOT NULL; no legacy `original_filename` / `source_format`). **Verified in production** (parse → commit → history).
 
 **Post-launch backlog:** PDF/DOCX text extraction; automated purge of `ingestion_jobs` rows older than 24h; optional commit-from-`job_id` without re-posting rows for large files.
 

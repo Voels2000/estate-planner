@@ -100,17 +100,17 @@ export async function POST(req: NextRequest) {
     const { error: insertError } = await supabase.from(target_table).insert(transformed)
     if (insertError) throw insertError
 
-    // Mark job committed — status only; legacy ingestion_jobs may lack committed_at / field_map
     const { error: jobUpdateError } = await supabase
       .from('ingestion_jobs')
-      .update({ status: 'committed' })
+      .update({
+        status: 'committed',
+        committed_at: new Date().toISOString(),
+        field_map,
+      })
       .eq('id', job_id)
       .eq('owner_id', user.id)
 
-    if (jobUpdateError) {
-      console.error('ingestion_jobs update error:', jobUpdateError)
-      // Rows already inserted — don't fail the import for job bookkeeping
-    }
+    if (jobUpdateError) throw jobUpdateError
 
     return NextResponse.json({ committed: transformed.length, skipped: rows.length - transformed.length })
   } catch (err) {

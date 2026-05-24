@@ -260,9 +260,9 @@ Open while logged out or in a private window unless noted:
 
 ---
 
-## Import data — Sprint F-1 (tier 2+)
+## Import data — Sprint F-1 (tier 2+) ✅ passed production 2026-06-02
 
-Requires migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied. Use tier 2+ test account.
+Migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied; schema cleanup consolidated to `file_name` / `file_type`. Use tier 2+ test account.
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|

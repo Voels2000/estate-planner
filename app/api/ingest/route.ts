@@ -95,8 +95,6 @@ export async function POST(req: NextRequest) {
         household_id: householdId,
         file_name: file.name,
         file_type: format,
-        original_filename: file.name,
-        source_format: format,
         status: 'pending',
         detected_table: detectedTable,
         headers,

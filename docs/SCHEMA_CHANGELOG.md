@@ -10,13 +10,13 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ## Sprint F-1 — Import feature (2026-06-02)
 
-**Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — **commit `d3400b1`**
+**Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — **commits `d3400b1` → `b5bb0b1`**
 
-- **`ingestion_jobs` table:** parse result store for file import (`owner_id`, `household_id`, `status`, `source_format`, `headers`, `rows`, `field_map`)
+- **`ingestion_jobs` table:** 14-column final schema — `file_name` (text NOT NULL), `file_type` (`csv` \| `xlsx` NOT NULL), `owner_id`, `household_id`, `status`, `detected_table`, `headers`, `rows`, `field_map`, `row_count`, `error_message`, `created_at`, `committed_at`
+- **Production cleanup:** dropped legacy duplicate columns; consolidated `original_filename` → `file_name`, `source_format` → `file_type`
 - **RLS:** owner-scoped ALL policy
 - **Indexes:** `owner_id`, `created_at DESC`
-
-**Apply:** Run in Supabase SQL Editor before deploying `POST /api/ingest`.
+- **Verified:** CSV parse → field mapping → commit 4 asset rows → `status = committed`
 
 ---
 
