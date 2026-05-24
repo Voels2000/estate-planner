@@ -36,19 +36,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    fetch(`https://mywealthmaps.com/api/email/drip`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
-      },
-      body: JSON.stringify({
-        email: email.trim().toLowerCase(),
-        source: source ?? 'unknown',
-        event_slug: source?.replace('event-assess-', '') ?? null,
-        sequence_step: 1,
-      }),
-    }).catch(() => {})
+    if (source !== 'waitlist') {
+      fetch(`https://mywealthmaps.com/api/email/drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          source: source ?? 'unknown',
+          event_slug: source?.replace('event-assess-', '') ?? null,
+          sequence_step: 1,
+        }),
+      }).catch(() => {})
+    }
 
     console.log('[email-capture] returning ok')
     return NextResponse.json({ ok: true })

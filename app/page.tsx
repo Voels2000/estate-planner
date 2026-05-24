@@ -2,12 +2,15 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { getSignupHref } from '@/lib/waitlist-mode'
 
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
+    const signupHref = getSignupHref()
+
     return (
       <main style={{ fontFamily: 'var(--font-body)', background: 'var(--mwm-off-white)', minHeight: '100vh' }}>
 
@@ -58,7 +61,7 @@ export default async function HomePage() {
             Sign In
           </ButtonLink>
           <ButtonLink
-            href="/signup"
+            href={signupHref}
             variant="primary"
             size="sm"
             className="!bg-[#c9a84c] !text-[#0f1f3d] hover:!bg-[#e8c97a] font-semibold"
@@ -224,7 +227,7 @@ export default async function HomePage() {
                 icon: '🗂️',
                 label: 'I want to build my plan',
                 sub: 'Start organizing your estate, retirement, and financial picture',
-                href: '/signup?intent=plan',
+                href: getSignupHref({ intent: 'plan' }),
               },
             ].map((opt) => (
               <a
@@ -283,7 +286,7 @@ export default async function HomePage() {
               ],
               checkColor: '#0f1f3d',
               cta: 'Go to My Plan →',
-              href: '/signup?intent=plan',
+              href: getSignupHref({ intent: 'plan' }),
               btnClass: '!bg-[#0f1f3d] !text-white hover:!bg-[#1a3460] w-full justify-center text-xs',
               locked: true,
             },

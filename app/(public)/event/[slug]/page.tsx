@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getEventContent, EVENT_SLUGS } from '@/lib/events/content'
+import { getSignupHref } from '@/lib/waitlist-mode'
 import type { EventContent, EventAction } from '@/lib/events/types'
 import type { Metadata } from 'next'
 import { ReferralTracker } from './_referral-tracker'
@@ -168,7 +169,7 @@ function ActionCard({ action, index }: { action: EventAction; index: number }) {
           {action.description}
         </p>
         {action.linkedFeature && (
-          <a href={`/signup?redirectTo=${action.linkedFeature}`} style={{
+          <a href={getSignupHref({ redirectTo: action.linkedFeature })} style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
             fontSize: 12, fontWeight: 600,
             color: '#0f1f3d',
@@ -209,6 +210,7 @@ export default async function EventPage({
   const immediateActions = event.actions.filter(a => a.priority === 1)
   const soonActions = event.actions.filter(a => a.priority === 2)
   const laterActions = event.actions.filter(a => a.priority === 3)
+  const signupHref = getSignupHref()
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -309,7 +311,7 @@ export default async function EventPage({
 
           {/* Quick CTAs */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a href="/signup" style={{
+            <a href={signupHref} style={{
               padding: '11px 22px',
               background: '#c9a84c', color: '#0f1f3d',
               borderRadius: 8, fontSize: 14, fontWeight: 600,

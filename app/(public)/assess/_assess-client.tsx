@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { getSignupHref } from '@/lib/waitlist-mode'
 
 const QUESTIONS = [
   {
@@ -970,7 +971,7 @@ export default function AssessClient() {
               ))}
             </ul>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a href={`/signup?redirectTo=/assess&restored=1`} style={{
+              <a href={getSignupHref({ redirectTo: '/assess', restored: '1' })} style={{
                 padding: '11px 22px', borderRadius: 8,
                 background: '#c9a84c', color: '#0f1f3d',
                 fontSize: 14, fontWeight: 700, textDecoration: 'none',

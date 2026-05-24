@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { getEventContent } from '@/lib/events/content'
+import { getSignupHref } from '@/lib/waitlist-mode'
 import type { EventContent, EventAssessmentQuestion } from '@/lib/events/types'
 import { createClient } from '@/lib/supabase/client'
 
@@ -373,7 +374,7 @@ function ResultsScreen({
             </button>
           </div>
           <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <a href={`/signup?redirectTo=/event/${event.slug}`} style={{
+            <a href={getSignupHref({ redirectTo: `/event/${event.slug}` })} style={{
               fontSize: 12, color: '#c9a84c', textDecoration: 'none',
             }}>
               Create a free account to save your score →
@@ -454,7 +455,7 @@ function ResultsScreen({
           </div>
         </a>
 
-        <a href="/signup" style={{
+        <a href={getSignupHref()} style={{
           display: 'block',
           background: '#0f1f3d',
           borderRadius: 10,

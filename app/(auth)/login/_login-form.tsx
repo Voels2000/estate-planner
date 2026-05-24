@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getSignupHref } from '@/lib/waitlist-mode'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -11,6 +12,7 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+  const signupHref = getSignupHref()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -144,7 +146,7 @@ export function LoginForm() {
         <p className="mt-6 text-center text-sm text-neutral-600 dark:text-zinc-400">
           Don&apos;t have an account?{' '}
           <a
-            href="/signup"
+            href={signupHref}
             className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
           >
             Create one

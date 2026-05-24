@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   '/share/',
   '/beneficiary/',
   '/assess',
+  '/waitlist',
   '/advisor-directory',
   '/pricing',
   '/find-advisor',

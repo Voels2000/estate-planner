@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
+import { isWaitlistMode } from '@/lib/waitlist-mode'
 import { SignupForm } from './_signup-form'
 
 function SignupFallback() {
@@ -19,6 +21,10 @@ function SignupFallback() {
 }
 
 export default function SignupPage() {
+  if (isWaitlistMode()) {
+    redirect('/waitlist')
+  }
+
   return (
     <Suspense fallback={<SignupFallback />}>
       <SignupForm />

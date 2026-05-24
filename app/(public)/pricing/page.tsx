@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSignupHref } from '@/lib/waitlist-mode'
 import { TIER_FEATURES } from '@/lib/tiers'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -48,6 +49,7 @@ const ADVISOR_PLANS = [
 export default async function PricingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const signupHref = getSignupHref()
 
   return (
     <div style={{
@@ -246,7 +248,7 @@ export default async function PricingPage() {
                     </button>
                   </form>
                 ) : (
-                  <a href="/signup"
+                  <a href={signupHref}
                     style={{
                       display: 'block',
                       width: '100%',
@@ -418,7 +420,7 @@ export default async function PricingPage() {
                     </button>
                   </form>
                 ) : (
-                  <a href="/signup"
+                  <a href={signupHref}
                     style={{
                       display: 'block', textAlign: 'center',
                       padding: '10px', borderRadius: 8,

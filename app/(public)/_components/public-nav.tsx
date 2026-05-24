@@ -1,5 +1,7 @@
 'use client'
 
+import { getSignupHref } from '@/lib/waitlist-mode'
+
 const NAV_LINKS = [
   { href: '/education', label: 'Education' },
   { href: '/assess', label: 'Assessment' },
@@ -9,6 +11,8 @@ const NAV_LINKS = [
 ] as const
 
 export function PublicNav() {
+  const signupHref = getSignupHref()
+
   return (
     <nav
       style={{
@@ -115,7 +119,7 @@ export function PublicNav() {
           Log in
         </a>
         <a
-          href="/signup"
+          href={signupHref}
           style={{
             padding: '7px 16px',
             fontSize: 13,
