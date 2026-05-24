@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (Sprint P-2 closed; Sprint 17 go-live prep)
+# Updated: 2026-06-02 (education nav fix)
 
 ---
 
@@ -53,6 +53,21 @@
 **Commit:** `47a38f3` · **Migration:** `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy if not already applied · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
 
 **Remaining post-launch perf:** Materialize `calculate_estate_composition` at recompute (recommendations done; composition still on-demand on some surfaces).
+
+---
+
+## Education nav fix ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **Double sticky nav** | Skip marketing `PublicNav`/footer on `/education/*`; education header only |
+| **Unpublished modules** | `getEducationModule()` returns null → 404 (was reachable by direct URL) |
+| **Decision tree** | Suggested learning paths link to real module URLs |
+| **Link validation** | `scripts/validate-education-links.mjs` — run after content changes |
+
+**Commits:** `a138608` (public access), `b41719f` (sidebar link), education nav fix (this session)
+
+**Post-deploy:** `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs`
 
 ---
 

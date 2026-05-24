@@ -86,8 +86,10 @@ export async function getEducationModule(slug: string): Promise<EducationModule 
   try {
     const raw = await fs.readFile(fullPath, 'utf8')
     const { frontmatter, body } = parseFrontmatter(raw)
+    const meta = toModuleMeta(slug, frontmatter)
+    if (!meta.published) return null
     return {
-      ...toModuleMeta(slug, frontmatter),
+      ...meta,
       body,
     }
   } catch {

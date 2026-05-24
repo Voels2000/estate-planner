@@ -156,6 +156,7 @@ Use this for **all** merges. For **tax/engine** changes, also run the extra spot
 - [ ] Spot-check affected surfaces (projection/roth/strategy/domicile as applicable)
 - [ ] Confirm staleness or backfill guidance is still accurate
 - [ ] After deploy: optional [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core)
+- [ ] Education links: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (run against production after any education content changes)
 
 ## Commit hygiene
 

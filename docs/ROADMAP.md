@@ -472,8 +472,7 @@ The following items are explicitly deferred to post-launch. Each has a DECISION_
   namespace cleanup deferred (MASTER_ARCHITECTURE.md Open Backlog #1, #4)
 - **"Ask your advisor →" in-app action for connected advisors** — currently links to
   `/find-advisor` for all users including those with a connected advisor; see DECISION_LOG
-- **Add `/education` to `proxy.ts` `PUBLIC_PATHS`** — only if education should be reachable
-  without proxy login redirect; page layout still auth-gates
+- ~~**Add `/education` to `middleware.ts` `PUBLIC_PATHS`**~~ — ✅ done (`a138608`); education fully public; nav fix skips double sticky header on `/education/*`
 
 **Resolved in Sprint 10 (see DECISION_LOG):** business succession Path A minimal intake;
 invite-your-advisor Path A onboarding; A/B exit criteria.

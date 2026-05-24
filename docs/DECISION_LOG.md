@@ -357,6 +357,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Education fully public; double sticky nav fix
+
+**Decision:** `/education/*` is fully public (no login redirect). Marketing `PublicNav` and footer are skipped on education routes; education layout provides its own sticky header. Unpublished modules (`published: false`) return 404 via `getEducationModule()`. Decision-tree suggested paths link to real module URLs.
+
+**Reasoning:** Auth gate blocked anonymous catalog browse and broke sidebar → education flow for logged-out visitors. Stacking marketing nav + education header (both `position: sticky; top: 0; z-index: 100`) pushed education chrome below the fold on scroll, made back navigation unreachable on mobile, and intercepted clicks on module cards.
+
+**Implication:** Run `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` after education content changes. See [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) P.4, P.10.
+
+---
+
 ### May 2026 — Sprint 1: public routes in `(public)` route group, not dashboard sidebar
 
 **Decision:** Move `/education`, `/assess`, `/find-advisor`, and `/find-attorney` to `app/(public)/` with a passthrough layout (no dashboard sidebar). Remove those links from the app sidebar Overview group. Keep education auth-gated in its nested layout.
@@ -365,7 +375,7 @@ Pass = at least one row with referral code matching a test signup.
 
 **Alternatives considered:** Leaving routes at `app/` root and `app/(education)/` (rejected — inconsistent route groups). Deleting page components (rejected — breaks bookmarks and SEO).
 
-**Implication:** `CONSUMER_NAV_MAP.md` and `proxy.ts` `PUBLIC_PATHS` must stay aligned. `/education` is not in `PUBLIC_PATHS` today — unauthenticated users hit proxy login redirect before the education layout; consider adding if marketing should allow anonymous catalog browse.
+**Implication:** `CONSUMER_NAV_MAP.md` and `middleware.ts` `PUBLIC_PATHS` must stay aligned. `/education` is in `PUBLIC_PATHS` (anonymous catalog browse allowed). Education auth gate removed 2026-06 — see entry above.
 
 ---
 

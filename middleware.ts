@@ -53,6 +53,14 @@ const ATTORNEY_ONLY_PATHS = [
   '/attorney/',
 ]
 
+function nextWithPathname(request: NextRequest, pathname: string) {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+  const res = NextResponse.next({ request: { headers: requestHeaders } })
+  res.headers.set('x-pathname', pathname)
+  return res
+}
+
 function redirectPreservingCookies(
   request: NextRequest,
   path: string,
@@ -79,18 +87,10 @@ export async function middleware(request: NextRequest) {
 
   // Infra + public paths — no auth or role checks
   if (isPublicPath(pathname)) {
-    return NextResponse.next()
+    return nextWithPathname(request, pathname)
   }
 
-  const nextWithPathname = () => {
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-pathname', pathname)
-    const res = NextResponse.next({ request: { headers: requestHeaders } })
-    res.headers.set('x-pathname', pathname)
-    return res
-  }
-
-  let supabaseResponse = nextWithPathname()
+  let supabaseResponse = nextWithPathname(request, pathname)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -102,7 +102,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = nextWithPathname()
+          supabaseResponse = nextWithPathname(request, pathname)
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )

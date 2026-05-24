@@ -16,8 +16,8 @@ const PILLAR_LABEL: Record<string, string> = {
 }
 
 export async function generateStaticParams() {
-  const modules = await listEducationModules()
-  return modules.map((m) => ({ slug: m.slug }))
+  const educationModules = await listEducationModules()
+  return educationModules.map((m) => ({ slug: m.slug }))
 }
 
 export default async function EducationModulePage({
@@ -30,9 +30,9 @@ export default async function EducationModulePage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const module = await getEducationModule(slug)
-  const modules = await listEducationModules()
-  if (!module) notFound()
+  const educationModule = await getEducationModule(slug)
+  const educationModules = await listEducationModules()
+  if (!educationModule) notFound()
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -45,24 +45,24 @@ export default async function EducationModulePage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
               <EducationMetaBadges
-                pillarLabel={PILLAR_LABEL[module.pillar]}
-                complexity={module.complexity}
-                estimatedTime={module.estimatedTime}
+                pillarLabel={PILLAR_LABEL[educationModule.pillar]}
+                complexity={educationModule.complexity}
+                estimatedTime={educationModule.estimatedTime}
               />
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight">{module.title}</h1>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight">{educationModule.title}</h1>
             </div>
             <div className="shrink-0">
-              {user ? <ModuleProgressToggle slug={module.slug} /> : null}
+              {user ? <ModuleProgressToggle slug={educationModule.slug} /> : null}
             </div>
           </div>
         </div>
         <div className="px-6 py-6">
           <EducationProse>
-            <ReactMarkdown>{module.body}</ReactMarkdown>
+            <ReactMarkdown>{educationModule.body}</ReactMarkdown>
           </EducationProse>
         </div>
       </Card>
-      <ModuleResumeBanner currentSlug={module.slug} modules={modules} />
+      <ModuleResumeBanner currentSlug={educationModule.slug} modules={educationModules} />
 
     </div>
   )

@@ -31,9 +31,9 @@ Use this path to identify which educational topics to prioritize first.
 
 ## Suggested Learning Paths
 
-- **Foundations first:** Financial Foundations -> Retirement Foundations -> Estate Foundations
-- **Estate-forward:** Estate Foundations -> Beneficiary & Titling topics -> Tax deep-dive
-- **Retirement-forward:** Retirement Foundations -> RMD/Tax sequencing -> Estate coordination
+- **Foundations first:** [Financial Planning Foundations](/education/modules/financial-foundations) → [Retirement Planning Foundations](/education/modules/retirement-foundations) → [Estate Planning Foundations](/education/modules/estate-foundations)
+- **Estate-forward:** [Estate Planning Foundations](/education/modules/estate-foundations) → [Beneficiary Designations](/education/modules/beneficiary-designations) → [Estate and Gift Tax Basics](/education/modules/estate-gift-tax-basics)
+- **Retirement-forward:** [Retirement Planning Foundations](/education/modules/retirement-foundations) → [Social Security and Medicare Overview](/education/modules/social-security-medicare-overview) → [Estate Planning Foundations](/education/modules/estate-foundations)
 
 > Educational note: this path is a learning framework, not personalized advice.
 

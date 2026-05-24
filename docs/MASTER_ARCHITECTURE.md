@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (Sprint P-2 closed; Sprint 17 go-live prep)
+# Last updated: 2026-06-02 (education nav fix; Sprint P-2 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -434,12 +434,14 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 **Current (as built):**
 
 - Education route family is implemented under `app/(public)/education/*` (Sprint 1 route-group move from `app/(education)/education/*`).
-- Education pages are auth-gated (`app/(public)/education/layout.tsx`); users must be logged in before viewing. The `(public)` layout is passthrough only — no dashboard sidebar.
+- Education is **fully public** — no login required. `app/(public)/education/layout.tsx` shows optional “← My Dashboard” when signed in or “Log in” when signed out; module progress toggle renders only when authenticated.
+- **Layout chrome:** `app/(public)/layout.tsx` skips marketing `PublicNav` and footer on `/education/*` (via `x-pathname` from `middleware.ts`) so education uses its own sticky header only — avoids double sticky nav that previously stacked marketing nav + education header at `position: sticky; top: 0; z-index: 100` and blocked module card clicks.
 - Content is markdown-first:
   - Module files live under `content/education/modules/*.md`
   - Additional long-form pages use `content/education/decision-tree.md` and `content/education/glossary.md`
 - Markdown ingestion is handled by `lib/education/loaders.ts` (frontmatter + body parsing).
-- **Published catalog filter:** `listEducationModules()` returns only modules where frontmatter `published` is not `false` (default published when key omitted). Three meta/prep modules are explicitly unpublished: `compliance-and-disclaimers`, `advisor-question-sets`, `planning-readiness-checklists` (22 modules visible in catalog of 25 files).
+- **Published catalog filter:** `listEducationModules()` returns only modules where frontmatter `published` is not `false` (default published when key omitted). `getEducationModule()` also returns `null` for unpublished slugs → 404 (direct URL cannot bypass catalog). Three meta/prep modules are explicitly unpublished: `compliance-and-disclaimers`, `advisor-question-sets`, `planning-readiness-checklists` (22 modules visible in catalog of 25 files).
+- **Link validation:** `scripts/validate-education-links.mjs` — bundle slug alignment, decision-tree module links, HTTP status for all published/unpublished modules and static education routes. Run after content changes: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs`.
 
 **Progress and learning UX:**
 
@@ -465,7 +467,8 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Navigation + landing integration:**
 
-- **Sprint 1:** Education, Assessment, Find Advisor, and Find Attorney are **not** in the app sidebar. They live under `app/(public)/` with URLs unchanged (`/education`, `/assess`, `/find-advisor`, `/find-attorney`). Overview sidebar = Profile + Estate Summary only.
+- **Sprint 1:** Education, Assessment, Find Advisor, and Find Attorney are **not** in the app sidebar Overview group. They live under `app/(public)/` with URLs unchanged (`/education`, `/assess`, `/find-advisor`, `/find-attorney`). Overview sidebar = Profile + Estate Summary only.
+- **Dashboard footer (2026-06):** `📖 Education Guide` link in sidebar footer for consumers and superusers → `/education` (public; not tier-gated).
 - Root route behavior (`app/page.tsx`) is now:
   - Signed-out users: public education-first marketing landing page
   - Signed-in users with profile: redirect to `/dashboard`
@@ -491,9 +494,9 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 **Public layout + marketing (Sprint 2 Track A):**
 
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
-- Routes under `(public)/` inherit this nav: education, assess, find-advisor, find-attorney, **pricing**, event pages.
+- Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, event pages. **`/education/*` is excluded** — education layout provides its own header.
 - Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start. Homepage copy targets **$2M–$30M** segment.
-- `proxy.ts` `PUBLIC_PATHS` includes `/event`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. When waitlist mode is on, `/signup` is redirected to `/waitlist` in `proxy.ts` before the public-path pass-through (invite/token query params bypass).
+- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
 
 **Life event landing pages (Sprint 2):**
 
@@ -729,6 +732,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core).
 
+**After education content changes:** `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (also in [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) verification pass).
+
 ---
 
 ## Scheduled jobs (cron)
@@ -864,7 +869,7 @@ Two concepts must stay separate until product designs unified intake:
 
 ### Confirmed post-launch (no Sprint assignment)
 
-- `/education` to `middleware.ts` `PUBLIC_PATHS` — only if education reachable without middleware redirect
+- ~~`/education` in `middleware.ts` `PUBLIC_PATHS`~~ — ✅ done (`a138608`); education fully public; double sticky nav fixed on `/education/*`
 - Blended family as separate slug (optional; `remarriage-blended-family` covers today)
 - Admin funnel: attorney click breakdown by `listing_type` (can ship Sprint 10 if time permits)
 

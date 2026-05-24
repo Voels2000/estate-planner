@@ -248,12 +248,13 @@ Open while logged out or in a private window unless noted:
 | P.1 | `/assess` | Assessment loads; shared public top nav; no app sidebar | ☐ |
 | P.2 | `/find-advisor` | Directory loads; public top nav | ☐ |
 | P.3 | `/find-attorney` | Directory loads; public top nav | ☐ |
-| P.4 | `/education` (logged in) | Public top nav + education header; no app sidebar | ☐ |
+| P.4 | `/education` (logged in or out) | Education header only — **no** marketing `PublicNav`; no app sidebar | ☐ |
 | P.5 | `/advisor-directory` | Redirects to `/find-advisor` | ☐ |
 | P.6 | `/` (signed out) | $2M–$30M hero copy; life event quick-start card | ☐ |
 | P.7 | `/pricing` | Professional-fees positioning copy | ☐ |
 | P.8 | `/event/selling-a-business` | Event page: hero, action plan, assessment teaser, no 404 | ☐ |
 | P.9 | `/event/death-of-spouse` | Same pattern; attorney/advisor CTAs if applicable | ☐ |
+| P.10 | Education link contract | `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` — 22 published modules → 200, 3 unpublished → 404, hub/decision-tree/glossary/prep-sheet → 200 | ☐ |
 
 **Tier-gate spot-check (tier 1 account):** `/social-security`, `/roth`, `/my-family` show `UpgradeBanner` with personalized copy when `state_primary` is set on household (fallback to generic copy otherwise).
 

@@ -1,11 +1,19 @@
+import { headers } from 'next/headers'
 import { PublicNav } from './_components/public-nav'
 import { LegalFooterLinks } from '@/components/layout/LegalFooterLinks'
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = (await headers()).get('x-pathname') ?? ''
+  const isEducationRoute = pathname.startsWith('/education')
+
+  if (isEducationRoute) {
+    return <>{children}</>
+  }
+
   return (
     <>
       <PublicNav />

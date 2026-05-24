@@ -23,7 +23,7 @@ Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main pla
 
 | Link | Visible when | Target | Notes |
 |------|----------------|--------|--------|
-| 📖 Education Guide | `role === 'consumer'` **or** `isSuperuser` | `/education` | Platform resource; public (no login required); sidebar link when signed in |
+| 📖 Education Guide | `role === 'consumer'` **or** `isSuperuser` | `/education` | Platform resource; public (no login required); sidebar link when signed in. Education pages use **education header only** (marketing `PublicNav` skipped on `/education/*`). |
 | 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; lock when `isLockedUser` |
 | ⚖️ My Attorney | `role === 'consumer'` **or** `isSuperuser`, **tier ≥ 2** | `/my-attorney` | Lock when `isLockedUser` or tier &lt; 2 |
 | 💳 Manage Subscription | All signed-in users | `/billing` | Lock when `isLockedUser` |
