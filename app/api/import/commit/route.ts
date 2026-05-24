@@ -10,6 +10,14 @@ type CommitPayload = {
   rows: Record<string, string>[]
 }
 
+/** Columns that exist on each financial table — strips UI-only fields like `notes`. */
+const INSERT_COLUMNS: Record<string, readonly string[]> = {
+  assets: ['owner_id', 'owner', 'type', 'name', 'value', 'details'],
+  liabilities: ['owner_id', 'owner', 'type', 'name', 'balance', 'monthly_payment', 'interest_rate'],
+  income: ['owner_id', 'source', 'amount', 'start_year', 'end_year', 'inflation_adjust'],
+  expenses: ['owner_id', 'owner', 'category', 'amount', 'start_year', 'end_year', 'inflation_adjust'],
+}
+
 function transformRow(
   raw: Record<string, string>,
   fieldMap: Record<string, string>,
@@ -43,11 +51,28 @@ function transformRow(
   }
   const missing = (required[table] ?? []).filter(f => mapped[f] === undefined || mapped[f] === '')
   if (missing.length > 0) return null
-  // Defaults
-  if (!mapped.owner) mapped.owner = 'person1'
+  // Defaults — income has no `owner` column (uses ss_person in manual entry API)
+  if (table !== 'income' && !mapped.owner) mapped.owner = 'person1'
   if (table === 'income' && mapped.inflation_adjust === undefined) mapped.inflation_adjust = true
   if (table === 'expenses' && mapped.inflation_adjust === undefined) mapped.inflation_adjust = true
   return mapped
+}
+
+function toInsertRow(table: string, mapped: Record<string, unknown>): Record<string, unknown> {
+  const allowed = new Set(INSERT_COLUMNS[table] ?? [])
+  const row: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(mapped)) {
+    if (allowed.has(key)) row[key] = value
+  }
+  // `notes` is a mapping target only — store in assets.details jsonb
+  if (table === 'assets' && mapped.notes && typeof mapped.notes === 'string') {
+    const existing =
+      row.details && typeof row.details === 'object' && !Array.isArray(row.details)
+        ? (row.details as Record<string, unknown>)
+        : {}
+    row.details = { ...existing, notes: mapped.notes }
+  }
+  return row
 }
 
 export async function POST(req: NextRequest) {
@@ -66,6 +91,7 @@ export async function POST(req: NextRequest) {
     const transformed = rows
       .map(row => transformRow(row, field_map, target_table, user.id))
       .filter((r): r is Record<string, unknown> => r !== null)
+      .map(row => toInsertRow(target_table, row))
 
     if (transformed.length === 0) {
       return NextResponse.json({ error: 'No valid rows to import after field mapping. Check required fields.' }, { status: 400 })
@@ -74,12 +100,17 @@ export async function POST(req: NextRequest) {
     const { error: insertError } = await supabase.from(target_table).insert(transformed)
     if (insertError) throw insertError
 
-    // Mark job as committed
-    await supabase.from('ingestion_jobs').update({
-      status: 'committed',
-      committed_at: new Date().toISOString(),
-      field_map,
-    }).eq('id', job_id).eq('owner_id', user.id)
+    // Mark job committed — status only; legacy ingestion_jobs may lack committed_at / field_map
+    const { error: jobUpdateError } = await supabase
+      .from('ingestion_jobs')
+      .update({ status: 'committed' })
+      .eq('id', job_id)
+      .eq('owner_id', user.id)
+
+    if (jobUpdateError) {
+      console.error('ingestion_jobs update error:', jobUpdateError)
+      // Rows already inserted — don't fail the import for job bookkeeping
+    }
 
     return NextResponse.json({ committed: transformed.length, skipped: rows.length - transformed.length })
   } catch (err) {
