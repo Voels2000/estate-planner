@@ -42,7 +42,7 @@ export const EVENT_CONTENT: Record<string, EventContent> = {
       {
         priority: 2,
         title: 'Update titling and beneficiary designations',
-        description: 'Proceeds will flow into accounts that may have outdated designations or sub-optimal titling for your post-sale estate.',
+        description: 'Proceeds will flow into accounts that may have outdated designations or titling that may warrant review after a sale.',
         linkedFeature: '/titling',
         urgencyDays: 60,
       },
@@ -108,7 +108,7 @@ export const EVENT_CONTENT: Record<string, EventContent> = {
     advisorCTA: true,
     attorneyCTA: true,
     seoTitle: 'Selling a Business: Estate Planning Guide for $2M–$30M Owners',
-    seoDescription: 'What changes for your estate when you sell a business. GRAT windows, estate tax exposure, beneficiary updates, and what to do before closing.',
+    seoDescription: 'What may change in estate planning when you sell a business. GRAT windows, estate tax exposure, beneficiary updates, and common areas to review before closing.',
     relatedSlugs: ['large-rsu-vest', 'approaching-retirement'],
   },
 

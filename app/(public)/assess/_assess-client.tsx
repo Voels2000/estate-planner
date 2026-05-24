@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getSignupHref } from '@/lib/waitlist-mode'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 const QUESTIONS = [
   {
@@ -212,7 +213,7 @@ const QUESTIONS = [
       { label: 'Yes — named in a current, valid will', hint: 'Guardian designation is legally documented', score: 3 },
       { label: 'Named in an old or potentially invalid document', hint: 'Should be reviewed for validity', score: 2 },
       { label: 'No guardian named — haven\'t gotten around to it', hint: 'High-priority gap for parents of minors', score: 0 },
-      { label: 'No minor children — not applicable', hint: 'Not required for your situation', score: 3 },
+      { label: 'No minor children — not applicable', hint: 'Not applicable when no minor children', score: 3 },
     ],
   },
   {
@@ -234,7 +235,7 @@ function getLevel(pct: number) {
   if (pct >= 80) return { label: 'Strong', color: '#4a7c6f', bg: '#eef6f4' }
   if (pct >= 60) return { label: 'Developing', color: '#ba7517', bg: '#faeeda' }
   if (pct >= 40) return { label: 'Needs Attention', color: '#c9a84c', bg: '#fdf6e3' }
-  return { label: 'Action Required', color: '#d85a30', bg: '#fef3ee' }
+  return { label: 'Areas to review', color: '#d85a30', bg: '#fef3ee' }
 }
 
 type Answers = Record<string, number>
@@ -869,6 +870,10 @@ export default function AssessClient() {
               fontSize: 11, fontWeight: 500,
               background: level.bg, color: level.color,
             }}>{level.label}</div>
+            <p style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.5)',
+              marginTop: 12, maxWidth: 420, lineHeight: 1.5,
+            }}>{DISCLAIMER_STRINGS.assessment}</p>
           </div>
         </div>
 

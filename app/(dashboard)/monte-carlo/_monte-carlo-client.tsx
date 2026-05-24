@@ -10,6 +10,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts'
 import { formatCurrency } from '@/lib/insurance'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { MonteCarloInputs, YearlyDataPoint } from '@/lib/monte-carlo'
 
@@ -109,7 +110,6 @@ function confidenceDot(c: Confidence | undefined) {
 
 function SuccessGauge({ rate }: { rate: number }) {
   const color = rate >= 90 ? '#22c55e' : rate >= 75 ? '#f59e0b' : rate >= 60 ? '#f97316' : '#ef4444'
-  const label = rate >= 90 ? 'Excellent' : rate >= 75 ? 'Good' : rate >= 60 ? 'Moderate' : 'High Risk'
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-36 h-36">
@@ -119,10 +119,10 @@ function SuccessGauge({ rate }: { rate: number }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold">{rate}%</span>
-          <span className="text-xs text-gray-500">success</span>
+          <span className="text-xs text-gray-500 text-center leading-tight">scenarios reached goal</span>
         </div>
       </div>
-      <span className="text-sm font-medium" style={{ color }}>{label}</span>
+      <span className="text-xs text-gray-500 text-center max-w-[9rem]">of simulated scenarios reached your stated goal</span>
     </div>
   )
 }
@@ -260,7 +260,7 @@ function AssumptionsDiff({ runA, runB }: { runA: SavedRun; runB: SavedRun }) {
   const labelB = runB.label || 'Run B'
   type Row = { label: string; a: string; b: string; diff: boolean; delta?: string; deltaPos?: boolean }
   const rows: Row[] = [
-    { label: 'Success Rate', a: `${runA.success_rate}%`, b: `${runB.success_rate}%`, diff: runA.success_rate !== runB.success_rate, delta: `${runB.success_rate - runA.success_rate >= 0 ? '+' : ''}${runB.success_rate - runA.success_rate}%`, deltaPos: runB.success_rate >= runA.success_rate },
+    { label: 'Scenarios Reached Goal', a: `${runA.success_rate}%`, b: `${runB.success_rate}%`, diff: runA.success_rate !== runB.success_rate, delta: `${runB.success_rate - runA.success_rate >= 0 ? '+' : ''}${runB.success_rate - runA.success_rate}%`, deltaPos: runB.success_rate >= runA.success_rate },
     { label: 'Median End Balance', a: formatCurrency(runA.median_balance), b: formatCurrency(runB.median_balance), diff: runA.median_balance !== runB.median_balance, delta: `${runB.median_balance >= runA.median_balance ? '+' : ''}${formatCurrency(runB.median_balance - runA.median_balance)}`, deltaPos: runB.median_balance >= runA.median_balance },
     { label: 'Worst Case', a: formatCurrency(runA.worst_case_balance), b: formatCurrency(runB.worst_case_balance), diff: runA.worst_case_balance !== runB.worst_case_balance, delta: `${runB.worst_case_balance >= runA.worst_case_balance ? '+' : ''}${formatCurrency(runB.worst_case_balance - runA.worst_case_balance)}`, deltaPos: runB.worst_case_balance >= runA.worst_case_balance },
     { label: 'Withdrawal Rate', a: `${runA.safe_withdrawal_rate}%`, b: `${runB.safe_withdrawal_rate}%`, diff: runA.safe_withdrawal_rate !== runB.safe_withdrawal_rate },
@@ -349,7 +349,7 @@ function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: 
       </div>
       {runA.id !== runB.id && (
         <div className={`rounded-xl border p-4 text-sm ${successDiff > 0 ? 'bg-green-50 border-green-200 text-green-800' : successDiff < 0 ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-          <span className="font-semibold">{labelB}</span> has a <span className="font-bold">{Math.abs(successDiff)}% {successDiff >= 0 ? 'higher' : 'lower'} success rate</span> and a <span className="font-bold">{balanceDiff >= 0 ? '+' : ''}{formatCurrency(balanceDiff)} median end balance</span> compared to <span className="font-semibold">{labelA}</span>.
+          <span className="font-semibold">{labelB}</span> had <span className="font-bold">{Math.abs(successDiff)}% {successDiff >= 0 ? 'more' : 'fewer'} scenarios reach your stated goal</span> and a <span className="font-bold">{balanceDiff >= 0 ? '+' : ''}{formatCurrency(balanceDiff)} median end balance</span> compared to <span className="font-semibold">{labelA}</span>.
         </div>
       )}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -938,7 +938,8 @@ export function MonteCarloClient() {
                     <StatCard label="Best Case" value={formatCurrency(result.best_case_balance ?? 0)} sub="90th percentile" />
                     <StatCard label="Worst Case" value={formatCurrency(result.worst_case_balance ?? 0)} sub="10th percentile" />
                   </div>
-              </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-4">{DISCLAIMER_STRINGS.monteCarlo}</p>
               </div>
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-1">
                 <p className="text-sm font-semibold text-indigo-900">Analysis</p>
@@ -973,7 +974,7 @@ export function MonteCarloClient() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className={`text-sm font-semibold ${run.success_rate >= 90 ? 'text-green-600' : run.success_rate >= 75 ? 'text-amber-600' : 'texted-500'}`}>
-                    {run.success_rate}% success
+                    {run.success_rate}% reached goal
                   </span>
                   <button onClick={e => { e.stopPropagation(); setCompareA(run); setActiveTab('compare') }} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium px-2 py-0.5 border border-indigo-200 rounded">Compare</button>
                   <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-400 hover:text-red-500 text-sm px-1 font-medium">✕</button>

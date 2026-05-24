@@ -17,7 +17,7 @@ function getLevel(pct: number) {
   if (pct >= 80) return { label: 'Strong', color: '#4a7c6f' }
   if (pct >= 60) return { label: 'Developing', color: '#ba7517' }
   if (pct >= 40) return { label: 'Needs Attention', color: '#c9a84c' }
-  return { label: 'Action Required', color: '#d85a30' }
+  return { label: 'Areas to review', color: '#d85a30' }
 }
 
 export function AssessmentHistoryWidget() {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 export type AllocationTargets = {
   target_stocks_pct: number
@@ -236,6 +237,7 @@ export default function AllocationClient({
           {data?.age ? `, age ${data.age}` : ''}
           {data?.years_to_retirement != null ? ` · ${data.years_to_retirement} years to retirement` : ''}
         </p>
+        <p className="text-xs text-gray-400 mt-2 max-w-2xl">{DISCLAIMER_STRINGS.allocation}</p>
       </div>
 
       {/* Summary cards */}

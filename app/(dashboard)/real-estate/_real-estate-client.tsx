@@ -300,7 +300,7 @@ export default function RealEstateClient({
               Based on your <strong>{isMfj ? 'Married Filing Jointly' : 'Single / Other'}</strong> filing status,
               your primary residence exclusion is{' '}
               <strong>{formatDollars(exclusionAmount)}</strong>.
-              {' '}You must have lived in the home 2 of the last 5 years to qualify.
+              {' '}IRS rules generally require living in the home 2 of the last 5 years to qualify.
             </p>
           </div>
         </div>

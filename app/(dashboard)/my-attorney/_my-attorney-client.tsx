@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 type Connection = {
   connection_id: string
@@ -96,6 +97,7 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
         <p className="mt-1 text-sm text-neutral-500">
           Manage your estate planning attorney connections
         </p>
+        <p className="mt-2 text-xs text-neutral-400">{DISCLAIMER_STRINGS.attorneyRelationship}</p>
       </div>
 
       {error && (

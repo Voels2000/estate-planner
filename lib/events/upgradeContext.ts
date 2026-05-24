@@ -97,7 +97,7 @@ const EVENT_UPGRADE_COPY: Record<string, Record<2 | 3, string>> = {
     3: 'Medicare eligibility at 65 often coincides with early retirement — an important window for Roth conversions and estate freeze strategies before income changes. Upgrade to see your full picture.',
   },
   'social-security-timing': {
-    2: 'Social Security timing is one of the highest-leverage retirement decisions you have. Upgrade to model the break-even analysis and optimal filing strategy for your household.',
+    2: 'Social Security timing is one of the highest-leverage retirement decisions you have. Upgrade to model the break-even analysis and filing scenarios for your household.',
     3: 'Social Security timing affects your retirement income, survivor benefits, and the assets that remain in your estate. Upgrade to model the full picture including estate implications.',
   },
 }

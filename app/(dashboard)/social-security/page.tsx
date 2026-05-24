@@ -23,7 +23,7 @@ export default async function SocialSecurityPage() {
       supabase,
       user.id,
       2,
-      'Model optimal claiming ages and spousal coordination strategy.',
+      'Model break-even claiming ages and spousal coordination scenarios.',
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -50,7 +50,7 @@ export default async function SocialSecurityPage() {
       <div className='mb-6'>
         <h1 className="text-2xl font-bold text-neutral-900">Social Security</h1>
         <p className='text-sm text-neutral-500 mt-1'>
-          Optimal claiming analysis and spousal coordination strategy
+          Break-even claiming analysis and spousal coordination scenarios
         </p>
       </div>
       <SSClient data={null} />

@@ -94,6 +94,7 @@ For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./
 | 1.4 | Sidebar footer | **My Advisor**, **My Attorney** (tier 2+), and **Manage Subscription** in footer (not main Overview list) | ☐ |
 | 1.4b | Sidebar Overview | Only **Profile** and **Estate Summary** — no Education / Assessment / Find Advisor / Find Attorney | ☐ |
 | 1.4c | Active planning group | **Your plan** badge on Financial, Retirement, or Estate header when that group is unlocked | ☐ |
+| 1.5 | Inline disclaimers visible | ⚠️ Manual | — | Confirm disclaimer text visible on: dashboard (below readiness score), /projections, /monte-carlo, /estate-tax, /my-estate-strategy, strategies tab | ☐ |
 
 ### 2. Financial save (consumer API + recompute)
 

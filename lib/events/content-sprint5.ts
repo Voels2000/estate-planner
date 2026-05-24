@@ -262,7 +262,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
       {
         priority: 2,
         title: 'Update your own estate plan to account for a potential inheritance',
-        description: 'An inheritance from a parent may push your estate into new tax territory. Model the impact now.',
+        description: 'An inheritance from a parent may push your estate into new tax territory. Model the estimated impact with your advisor.',
         linkedFeature: '/estate-tax',
         urgencyDays: 90,
       },
@@ -1086,7 +1086,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
         question: 'Is your estate plan written to work under the lower post-sunset exemption?',
         options: [
           { label: 'Yes — reviewed and updated', score: 3 },
-          { label: 'Written under current higher exemption — not reviewed for sunset', score: 0, hint: 'Many plans become suboptimal after the exemption drops' },
+          { label: 'Written under current higher exemption — not reviewed for sunset', score: 0, hint: 'Many plans may need review after the exemption drops' },
           { label: 'Estate below post-sunset threshold', score: 3 },
           { label: 'Scheduled for review', score: 2 },
         ],
@@ -1594,7 +1594,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
       {
         priority: 3,
         title: 'Coordinate Medicare with Social Security claiming strategy',
-        description: 'If you delay Social Security past 65, you must enroll in Medicare separately. The coordination between these two decisions matters.',
+        description: 'If you delay Social Security past 65, Medicare enrollment is generally required separately. The coordination between these two decisions matters.',
         linkedFeature: '/social-security',
       },
     ],
@@ -1664,7 +1664,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
     category: 'retirement',
     urgency: 'high',
     heroLine: 'The Social Security claiming decision affects lifetime income by $100K–$300K for most households — and most people make it without analysis.',
-    subhead: 'Claiming at 62 vs waiting until 70 is not a simple calculation. Spousal coordination, survivor benefits, taxation of benefits, and interaction with Medicare and RMDs all affect the optimal claiming age. At the $2M–$30M level, this is a strategy decision, not a default.',
+    subhead: 'Claiming at 62 vs waiting until 70 is not a simple calculation. Spousal coordination, survivor benefits, taxation of benefits, and interaction with Medicare and RMDs all affect break-even claiming ages. At the $2M–$30M level, this is a strategy decision, not a default.',
     whatChanges: [
       'Each year of delay between 62 and 70 increases your benefit by 6–8% — permanently',
       'Spousal benefits are up to 50% of the higher earner\'s benefit — claiming strategy affects both spouses',
@@ -1683,7 +1683,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
       {
         priority: 1,
         title: 'Coordinate claiming strategy between spouses',
-        description: 'The optimal strategy for a couple is almost never for both spouses to claim at the same age. Model the combined household outcome.',
+        description: 'For many couples, both spouses claiming at the same age is uncommon. Model the combined household outcome with your advisor.',
         linkedFeature: '/social-security',
         professionalType: 'advisor',
         urgencyDays: 60,
@@ -1714,7 +1714,7 @@ export const EVENT_CONTENT_SPRINT5: Record<string, EventContent> = {
         options: [
           { label: 'Yes — modeled with spousal coordination', score: 3 },
           { label: 'Yes — modeled for myself only', score: 2 },
-          { label: 'No — plan to take it at 62 or FRA without analysis', score: 0, hint: 'The optimal age varies widely by household — analysis is essential' },
+          { label: 'No — plan to take it at 62 or FRA without analysis', score: 0, hint: 'Break-even claiming age varies widely by household — analysis is essential' },
           { label: 'No — too early to think about this', score: 2 },
         ],
       },

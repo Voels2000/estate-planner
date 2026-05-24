@@ -16,6 +16,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
+| [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | Compliance language policy — education vs. advice framing |
 
 ## When to update docs
 
@@ -30,6 +31,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Source-of-truth changes (e.g., table swaps, fallback removals)
 - Workflow changes (advisor/consumer acceptance, recommendation writes, Monte Carlo sharing)
 - Consumer route, profile gate, tab/sub-tab, CTA label, or save/refresh behavior → `docs/CONSUMER_FLOWS.md`
+- Consumer-facing copy, disclaimers, or compliance language → `docs/UX_LANGUAGE_AUDIT_SPRINT.md` + run `bash scripts/audit-ux-language.sh`
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
@@ -79,6 +81,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Post-cutover smoke §1–3 on production
 - [x] Completion log entry in LAUNCH_CHECKLIST
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
+- [x] **UX Language Audit** — Sprint C-2b complete. Going forward: run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
 ## Sprint 16 focus (current)
 

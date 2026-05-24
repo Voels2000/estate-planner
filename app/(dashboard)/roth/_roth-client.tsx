@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { RothAnalysisResult } from "@/lib/calculations/roth-analysis";
+import { DISCLAIMER_STRINGS } from "@/lib/compliance/language-policy";
 
 interface Props {
   result: RothAnalysisResult;
@@ -208,11 +209,12 @@ export function RothClient({ result }: Props) {
       <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
         <p className="font-medium text-foreground">How this works</p>
         <p>The model compares your current marginal tax rate to the rate projected when RMDs begin. It illustrates conversion amounts up to the top of your current bracket when that rate is lower than your projected RMD rate—one approach many families discuss with a tax advisor.</p>
-        <p>Tax calculations use federal and state income tax bracket tables from admin-managed rules. Income, Social Security, and RMDs are sourced from your full household projection — the same data used in your Lifetime Snapshot. Your advisor can model the tax impact of specific conversion amounts for your situation.</p>
+        <p>Tax calculations use federal and state income tax bracket tables from admin-managed rules. Income, Social Security, and RMDs are sourced from your full household projection — the same data used in your Lifetime Snapshot. Your advisor can model the tax impact of specific conversion amounts with you.</p>
         <p className="pt-1 border-t border-border/40 mt-1">
           <span className="font-medium text-foreground">5-year rule & qualified withdrawals: </span>
-          Projections assume Roth withdrawals are qualified — account held 5+ years and owner age 59½ or older. Early or non-qualified withdrawals may be subject to income tax and a 10% penalty. Each conversion starts its own 5-year clock. A small number of states tax Roth conversions as ordinary income in the conversion year regardless of federal treatment — your advisor can model the tax impact of specific conversion amounts for your situation.
+          Projections assume Roth withdrawals are qualified — account held 5+ years and owner age 59½ or older. Early or non-qualified withdrawals may be subject to income tax and a 10% penalty. Each conversion starts its own 5-year clock. A small number of states tax Roth conversions as ordinary income in the conversion year regardless of federal treatment — your advisor can model the tax impact of specific conversion amounts with you.
         </p>
+        <p className="pt-2 mt-2 border-t border-border/40">{DISCLAIMER_STRINGS.rothConversion}</p>
       </div>
     </div>
   );

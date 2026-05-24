@@ -32,7 +32,7 @@ function getLevel(pct: number): {
     message: 'Several important planning steps haven\'t been taken yet. Start with the immediate priority items below.',
   }
   return {
-    label: 'Action required',
+    label: 'Areas to review',
     color: '#d85a30', bg: '#fef3ee', border: '#f9c5a1',
     message: 'Significant gaps exist that carry real risk. The action plan below identifies what to address urgently.',
   }

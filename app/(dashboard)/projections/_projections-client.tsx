@@ -18,6 +18,7 @@ import { ProjectionAssumptions } from '@/app/(dashboard)/projections/_components
 import { formatDollars } from '@/app/(dashboard)/projections/_utils'
 import { buildProjectionSummaryCards } from '@/lib/view-models/projectionSummaryCards'
 import { ScenariosExploreCard } from '@/app/(dashboard)/projections/_components/ScenariosExploreCard'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import {
   PLANNING_MISSING_PROJECTION_ACTIONS_TIER2,
   PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS,
@@ -91,6 +92,8 @@ export function ProjectionsClient({
           />
         ))}
       </div>
+
+      <p className="text-xs text-neutral-400 mb-6">{DISCLAIMER_STRINGS.projections}</p>
 
       <ScenariosExploreCard />
 

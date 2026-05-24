@@ -21,7 +21,7 @@ const CONSUMER_PLANS = [
     priceId: 'price_1TILEXCaljka9gJtrHqnG3bl',
     name: 'Retirement',
     price: 19,
-    description: 'Optimize your retirement with advanced planning tools.',
+    description: 'Explore retirement projections with advanced planning tools.',
     features: TIER_FEATURES[2],
     highlighted: true,
     accent: '#c9a84c',

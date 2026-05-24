@@ -8,6 +8,7 @@ import { fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { PlanningGapsSection } from '@/app/(dashboard)/_components/dashboard/PlanningGapsSection'
 import { hasEstateData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
 import { softenEducationalCopy } from '@/lib/estate/planningTopicPresentation'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 type ConflictReport = {
   conflicts: Array<{
@@ -72,6 +73,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
                   <span className={`mb-1 text-sm font-semibold ${scoreColor(props.estateHealthScore.score)}`}>{scoreLabel(props.estateHealthScore.score)}</span>
                 </div>
                 <p className="text-xs text-neutral-500 mt-1">Based on documents, beneficiaries, titling, domicile, and estate tax awareness</p>
+                <p className="text-xs text-neutral-400 mt-2 max-w-xl">{DISCLAIMER_STRINGS.dashboard}</p>
               </div>
               <Link href="/health-check" className="shrink-0 rounded-lg bg-white border border-neutral-200 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition shadow-sm">
                 Update health check →

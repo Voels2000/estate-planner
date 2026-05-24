@@ -1,0 +1,19 @@
+name: UX Language Audit
+
+on:
+  pull_request:
+    paths:
+      - 'app/(dashboard)/**'
+      - 'app/(public)/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'scripts/audit-ux-language.sh'
+      - 'lib/compliance/**'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run UX language audit
+        run: bash scripts/audit-ux-language.sh
