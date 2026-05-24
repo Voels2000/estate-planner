@@ -92,26 +92,27 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 ### Waitlist mode (pre-launch — disable at go-live)
 
 Public signup is gated behind a waitlist while the site is live but not yet accepting accounts.
-Implementation: `lib/waitlist-mode.ts`, `proxy.ts` (runtime `/signup` → `/waitlist` redirect),
+Implementation: `lib/waitlist-mode.ts`, `middleware.ts` (runtime `/signup` → `/waitlist` redirect),
 `app/(auth)/signup/page.tsx` (backup redirect), `app/(public)/waitlist/`, `getSignupHref()` on public CTAs.
 
 **Enable waitlist (current pre-launch state):**
 
-Set both in **Vercel → Production** (and `.env.local` for local dev), then redeploy:
+Waitlist is **on by default** on Vercel Production (`VERCEL_ENV=production`) — no env vars required.
+Optionally set both for explicit control or local dev:
 
 | Variable | Purpose |
 |----------|---------|
-| `WAITLIST_MODE=true` | Runtime gate in `proxy.ts` and server components — works without rebuild |
-| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client bundle: public CTAs link directly to `/waitlist` |
+| `WAITLIST_MODE=true` | Explicit runtime gate in `middleware.ts` and server components |
+| `NEXT_PUBLIC_WAITLIST_MODE=true` | Client bundle: public CTAs link directly to `/waitlist` (requires redeploy) |
 
 **Invite / token signups bypass the gate** (still reach `/signup`): `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
 
 **Disable waitlist when ready to go live (open public signup):**
 
-1. In **Vercel → Settings → Environment Variables → Production**, **delete or set to `false`**:
-   - `WAITLIST_MODE`
-   - `NEXT_PUBLIC_WAITLIST_MODE`
-2. **Redeploy** — required so client CTAs stop linking to `/waitlist`.
+1. In **Vercel → Settings → Environment Variables → Production**, set:
+   - `PUBLIC_SIGNUP_OPEN=true`
+   - (Optional) remove or set `false` for `WAITLIST_MODE` and `NEXT_PUBLIC_WAITLIST_MODE`
+2. **Redeploy** — required if you changed `NEXT_PUBLIC_*` vars.
 3. **Verify after deploy:**
    - `GET /signup` → signup form (not 307 to `/waitlist`)
    - Landing / nav **Get started** → `/signup`
@@ -141,8 +142,9 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | Confirm set |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | Confirm set (often via Vercel Supabase integration) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Set at launch only** — content from Google HTML tag method |
-| `WAITLIST_MODE` | `proxy.ts` + server signup redirect | **`true` pre-launch** — remove or `false` at go-live (see § Waitlist mode) |
-| `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | **`true` pre-launch** — remove or `false` at go-live; redeploy required |
+| `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
+| `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
+| `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | Set `true` at go-live |
 
 **Checklist (Production environment only):**
 
@@ -154,8 +156,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` → confirm set
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` → confirm set
 - [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → set at launch; meta tag visible in page source
-- [x] `WAITLIST_MODE` + `NEXT_PUBLIC_WAITLIST_MODE` → `true` while pre-launch (Sprint 15)
-- [ ] **At go-live:** unset both waitlist vars → redeploy → confirm `/signup` open
+- [ ] **At go-live:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open
 
 **Not required in Vercel Production:**
 

@@ -44,7 +44,7 @@ function redirectPreservingCookies(
   return redirect
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // Runtime waitlist gate — works even when /signup was statically prerendered without it

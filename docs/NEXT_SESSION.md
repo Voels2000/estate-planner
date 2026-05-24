@@ -44,14 +44,14 @@ Public signup is **off** while waitlist env vars are `true`. Visitors hitting `/
 
 | Env var | Where |
 |---------|--------|
-| `WAITLIST_MODE=true` | `proxy.ts` runtime redirect; server signup page |
+| `WAITLIST_MODE=true` | `middleware.ts` runtime redirect; server signup page |
 | `NEXT_PUBLIC_WAITLIST_MODE=true` | Client `getSignupHref()` — requires redeploy when changed |
 
 **Bypass:** invite/token URLs still reach signup — `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
 
-**Go-live:** delete or set both to `false` in Vercel Production → redeploy → verify `/signup` shows form. Full steps: [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
+**Go-live:** set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → verify `/signup` shows form. Full steps: [LAUNCH_CHECKLIST.md § Waitlist mode](./LAUNCH_CHECKLIST.md#waitlist-mode-pre-launch--disable-at-go-live).
 
-Key files: `lib/waitlist-mode.ts`, `proxy.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx`.
+Key files: `lib/waitlist-mode.ts`, `middleware.ts`, `app/(public)/waitlist/`, `app/(auth)/signup/page.tsx`.
 
 ---
 
