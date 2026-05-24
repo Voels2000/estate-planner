@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { TIER_FEATURES } from '@/lib/tiers'
+import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 
@@ -228,7 +229,20 @@ export default async function PricingPage() {
 
                 {/* CTA */}
                 {user ? (
-                  <form action={`/api/stripe/checkout?plan=${plan.id}`} method="POST">
+                  <>
+                    <p style={{
+                      fontSize: 13,
+                      color: '#4a5568',
+                      lineHeight: 1.6,
+                      marginBottom: 12,
+                    }}>
+                      {BILLING_DISCLOSURES.preCheckout(
+                        plan.name,
+                        `$${plan.price}`,
+                        'month',
+                      )}
+                    </p>
+                    <form action={`/api/stripe/checkout?plan=${plan.id}`} method="POST">
                     <button
                       type="submit"
                       style={{
@@ -247,6 +261,7 @@ export default async function PricingPage() {
                       Get started
                     </button>
                   </form>
+                  </>
                 ) : (
                   <a href={signupHref}
                     style={{
@@ -270,6 +285,19 @@ export default async function PricingPage() {
               </div>
             ))}
           </div>
+
+          <p style={{
+            fontSize: 13,
+            color: '#718096',
+            textAlign: 'center',
+            marginTop: 16,
+            lineHeight: 1.6,
+            maxWidth: 640,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}>
+            {BILLING_DISCLOSURES.pricingPageNotice}
+          </p>
         </div>
 
         {/* Trust signals */}
@@ -403,7 +431,20 @@ export default async function PricingPage() {
                   ))}
                 </ul>
                 {user ? (
-                  <form action="/api/stripe/checkout" method="POST">
+                  <>
+                    <p style={{
+                      fontSize: 12,
+                      color: '#4a5568',
+                      lineHeight: 1.6,
+                      marginBottom: 12,
+                    }}>
+                      {BILLING_DISCLOSURES.preCheckout(
+                        plan.name,
+                        `$${plan.price}`,
+                        'month',
+                      )}
+                    </p>
+                    <form action="/api/stripe/checkout" method="POST">
                     <input type="hidden" name="priceId" value={plan.priceId} />
                     <button
                       type="submit"
@@ -419,6 +460,7 @@ export default async function PricingPage() {
                       Get started
                     </button>
                   </form>
+                  </>
                 ) : (
                   <a href={signupHref}
                     style={{

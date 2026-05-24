@@ -114,7 +114,7 @@ export default async function BillingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, subscription_plan, role')
+    .select('subscription_status, subscription_plan, subscription_period_end, role')
     .eq('id', access.user.id)
     .single()
 
@@ -178,6 +178,7 @@ export default async function BillingPage() {
       plans={plans}
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
+      subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
       isAdvisorClient={isAdvisorClient}
     />
   )

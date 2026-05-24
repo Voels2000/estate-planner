@@ -1,10 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sendRenewalReminderEmail } from '@/lib/email/renewalReminderEmail'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { FIRM_PRICE_ID_TO_TIER, PRICE_ID_TO_TIER } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+function formatUsdCents(amountCents: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amountCents / 100)
+}
+
+function formatRenewalDate(unixSeconds: number) {
+  return new Date(unixSeconds * 1000).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+async function sendConsumerRenewalReminder(
+  supabase: ReturnType<typeof createAdminClient>,
+  customerId: string,
+  subscription: Stripe.Subscription,
+  invoice: Stripe.Invoice,
+) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, email')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle()
+
+  const to = profile?.email
+  if (!to) return
+
+  const reminderKey = String(subscription.current_period_end)
+  if (subscription.metadata?.renewal_reminder_sent_for === reminderKey) return
+
+  const line = invoice.lines.data[0]
+  const planName =
+    (typeof line?.price?.product === 'object' && line.price.product && 'name' in line.price.product
+      ? (line.price.product as Stripe.Product).name
+      : null) ?? 'My Wealth Maps'
+  const price = formatUsdCents(invoice.amount_due ?? line?.amount ?? 0)
+  const renewalDate = formatRenewalDate(subscription.current_period_end)
+
+  await sendRenewalReminderEmail(to, planName, price, renewalDate)
+
+  await stripe.subscriptions.update(subscription.id, {
+    metadata: {
+      ...subscription.metadata,
+      renewal_reminder_sent_for: reminderKey,
+    },
+  })
+}
 
 function mapFirmSubscriptionStatus(status: Stripe.Subscription.Status): string {
   switch (status) {
@@ -111,6 +165,7 @@ export async function POST(req: NextRequest) {
             .update({
               subscription_status: 'active',
               stripe_customer_id: session.customer as string,
+              stripe_subscription_id: subId,
               subscription_plan: priceId,
               ...(consumerTier ? { consumer_tier: consumerTier } : {}),
               ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
@@ -236,6 +291,28 @@ export async function POST(req: NextRequest) {
             .eq('id', firmId)
           console.log('invoice.payment_failed — firm marked past_due')
           break
+        }
+        break
+      }
+      case 'invoice.upcoming': {
+        const invoice = event.data.object as Stripe.Invoice
+        const subscriptionId =
+          typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
+        if (!subscriptionId) break
+
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+        const customerId =
+          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+        if (!customerId || subscription.metadata?.firm_id) break
+
+        try {
+          await sendConsumerRenewalReminder(supabase, customerId, subscription, invoice)
+          console.log('invoice.upcoming — renewal reminder sent')
+        } catch (err) {
+          console.error(
+            'invoice.upcoming — renewal reminder failed:',
+            err instanceof Error ? err.message : err,
+          )
         }
         break
       }

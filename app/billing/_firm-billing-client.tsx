@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 
@@ -138,7 +139,15 @@ export function FirmBillingClient({
             </ButtonLink>
           )}
           {!isActive && (
-            <Button
+            <>
+              <p className="w-full text-sm text-neutral-700 leading-relaxed">
+                {BILLING_DISCLOSURES.preCheckout(
+                  resolvedTierLabel,
+                  `$${totalMonthly.toLocaleString('en-US')}`,
+                  'month',
+                )}
+              </p>
+              <Button
               type="button"
               onClick={handleFirmCheckout}
               disabled={loadingSubscribe}
@@ -146,7 +155,8 @@ export function FirmBillingClient({
               className="rounded-lg px-4 py-2.5 text-sm"
             >
               {loadingSubscribe ? 'Redirecting…' : 'Subscribe Now'}
-            </Button>
+              </Button>
+            </>
           )}
         </div>
       </Card>

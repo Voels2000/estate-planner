@@ -18,7 +18,7 @@ Sprint C-2b (UX language audit) is complete (`788aa08`). The remaining **complia
 | Step | Sprint | Status |
 |------|--------|--------|
 | UX language audit (investment-advice framing) | C-2b | ✅ Complete (`788aa08`) |
-| Billing disclosures (auto-renewal, cancel, receipts) | **C-4** | ☐ Open |
+| Billing disclosures (auto-renewal, cancel, receipts) | **C-4** | ✅ Code complete — Stripe Dashboard + legal ToS review remain |
 | Open public signups | Sprint 17 | ☐ After C-4 |
 
 ---
@@ -89,6 +89,22 @@ Run once on **production** (or production Stripe keys on preview) with this doc 
 | `app/api/stripe/webhook/route.ts` | Subscription lifecycle sync |
 | Stripe Dashboard | Receipts, portal settings, subscription
  policy |
+
+---
+
+## ToS / Privacy Policy gaps (legal review required — do not edit in code)
+
+Terms content is loaded dynamically from `app_config` (`terms_sections`) via `/api/terms/content` and accepted at `/terms` (`app/(auth)/terms/_terms-client.tsx`). **No standalone Privacy Policy page** was found in `app/` or `public/`.
+
+| Required topic | Status | Notes |
+|----------------|--------|-------|
+| Subscription price and billing frequency | ⚠️ **Gap** | Not verified in live `terms_sections` — confirm with legal |
+| Auto-renewal terms | ⚠️ **Gap** | Pre-checkout copy added in app; ToS must mirror for legal completeness |
+| Cancellation procedure (self-serve via account settings) | ⚠️ **Gap** | `/billing` cancel + Stripe portal wired; ToS should document the path |
+| Refund policy (even if “no refunds”) | ⚠️ **Gap** | Must be explicitly stated in ToS |
+| Washington RCW 19.316 compliance statement | ⚠️ **Gap** | Pricing page + pre-checkout copy reference RCW; ToS needs formal statement |
+
+**Action:** Legal review of `app_config.terms_sections` before go-live. Do not edit ToS content in this sprint.
 
 ---
 
