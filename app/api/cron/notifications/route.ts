@@ -3,7 +3,7 @@ import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectio
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { NextResponse } from 'next/server'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = 'https://mywealthmaps.com'
 
 type AuthInfo = {
   email?: string

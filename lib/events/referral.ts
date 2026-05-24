@@ -11,14 +11,14 @@
 export function buildAdvisorReferralUrl(
   eventSlug: string,
   advisorCode: string,
-  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+  baseUrl = 'https://mywealthmaps.com',
 ): string {
   return `${baseUrl}/event/${eventSlug}?ref=${encodeURIComponent(advisorCode)}`
 }
 
 export function buildAllEventReferralUrls(
   advisorCode: string,
-  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+  baseUrl = 'https://mywealthmaps.com',
 ): Record<string, string> {
   const slugs = [
     'selling-a-business',
@@ -54,14 +54,14 @@ export function buildAllEventReferralUrls(
 export function buildAttorneyReferralUrl(
   eventSlug: string,
   attorneyCode: string,
-  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+  baseUrl = 'https://mywealthmaps.com',
 ): string {
   return `${baseUrl}/event/${eventSlug}?aref=${encodeURIComponent(attorneyCode)}`
 }
 
 export function buildAllAttorneyEventReferralUrls(
   attorneyCode: string,
-  baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app',
+  baseUrl = 'https://mywealthmaps.com',
 ): Record<string, string> {
   const slugs = [
     'selling-a-business',

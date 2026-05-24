@@ -10,8 +10,7 @@ import type {
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const APP_URL = 'https://mywealthmaps.com'
 
 // Create a new beneficiary access grant
 export async function createBeneficiaryGrant(

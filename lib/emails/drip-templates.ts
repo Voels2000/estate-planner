@@ -24,7 +24,7 @@ export type DripEventSlug =
   | 'medicare-eligibility'
   | 'social-security-timing'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = 'https://mywealthmaps.com'
 
 export type DripEmail = {
   subject: string

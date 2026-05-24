@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { EVENT_SLUGS } from '@/lib/events/content'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = 'https://mywealthmaps.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()

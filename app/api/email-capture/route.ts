@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'}/api/email/drip`, {
+    fetch(`https://mywealthmaps.com/api/email/drip`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

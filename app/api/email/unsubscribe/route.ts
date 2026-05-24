@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = 'https://mywealthmaps.com'
 
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email')

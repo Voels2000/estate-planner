@@ -25,8 +25,7 @@ const RELATIONSHIP_OPTIONS: BeneficiaryRelationship[] = [
   'other',
 ]
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const APP_URL = 'https://mywealthmaps.com'
 
 interface Props {
   householdId: string

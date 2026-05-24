@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getDripSequence, buildDripEmailHtml } from '@/lib/emails/drip-templates'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-gules.vercel.app'
+const BASE_URL = 'https://mywealthmaps.com'
 
 const DRIP_SENT_COLUMNS = {
   1: 'drip_step_1_sent_at',
