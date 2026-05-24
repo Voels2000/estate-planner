@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { getSignupHref } from '@/lib/waitlist-mode'
 
 type Attorney = {
   id: string
@@ -80,7 +81,7 @@ export function AttorneyDirectoryClient({
 
   async function handleConnect(attorney: Attorney) {
     if (!isLoggedIn) {
-      router.push(`/signup?redirectTo=/find-attorney`)
+      router.push(getSignupHref({ redirectTo: '/find-attorney' }))
       return
     }
     setModalAttorney(attorney)

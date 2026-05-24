@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isWaitlistMode, shouldBypassWaitlistForSignup } from '@/lib/waitlist-mode'
 
 const PUBLIC_PATHS = [
   '/login',
@@ -44,7 +45,16 @@ function redirectPreservingCookies(
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+
+  // Runtime waitlist gate — works even when /signup was statically prerendered without it
+  if (
+    pathname === '/signup' &&
+    isWaitlistMode() &&
+    !shouldBypassWaitlistForSignup(searchParams)
+  ) {
+    return NextResponse.redirect(new URL('/waitlist', request.url))
+  }
 
   // Let public paths through with no checks
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {

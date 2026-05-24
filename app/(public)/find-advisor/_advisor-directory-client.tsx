@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { getSignupHref } from '@/lib/waitlist-mode'
 
 type Advisor = {
   id: string
@@ -83,7 +84,7 @@ export function PublicAdvisorDirectoryClient({
 
   function handleConnect(advisor: Advisor) {
     if (!isLoggedIn) {
-      router.push(`/signup?redirectTo=/find-advisor`)
+      router.push(getSignupHref({ redirectTo: '/find-advisor' }))
       return
     }
     setModalAdvisor(advisor)

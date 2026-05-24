@@ -1,6 +1,19 @@
 /** True when public signup is disabled and visitors are sent to /waitlist instead. */
 export function isWaitlistMode(): boolean {
-  return process.env.NEXT_PUBLIC_WAITLIST_MODE === 'true'
+  return (
+    process.env.WAITLIST_MODE === 'true' ||
+    process.env.NEXT_PUBLIC_WAITLIST_MODE === 'true'
+  )
+}
+
+/** Invite / token signup flows bypass the waitlist gate. */
+export function shouldBypassWaitlistForSignup(
+  searchParams: Pick<URLSearchParams, 'get'>
+): boolean {
+  if (searchParams.get('invite')) return true
+  if (searchParams.get('invite_token') && searchParams.get('firm_id')) return true
+  if (searchParams.get('connectionToken')) return true
+  return false
 }
 
 type SignupHrefOptions = {

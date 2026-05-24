@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
-import { isWaitlistMode } from '@/lib/waitlist-mode'
+import { isWaitlistMode, shouldBypassWaitlistForSignup } from '@/lib/waitlist-mode'
 import { SignupForm } from './_signup-form'
+
+export const dynamic = 'force-dynamic'
 
 function SignupFallback() {
   return (
@@ -20,8 +22,19 @@ function SignupFallback() {
   )
 }
 
-export default function SignupPage() {
-  if (isWaitlistMode()) {
+type SignupPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function SignupPage({ searchParams }: SignupPageProps) {
+  const params = await searchParams
+  const urlSearchParams = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') urlSearchParams.set(key, value)
+    else if (Array.isArray(value) && value[0]) urlSearchParams.set(key, value[0])
+  }
+
+  if (isWaitlistMode() && !shouldBypassWaitlistForSignup(urlSearchParams)) {
     redirect('/waitlist')
   }
 

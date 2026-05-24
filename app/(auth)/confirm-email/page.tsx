@@ -1,5 +1,6 @@
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { getSignupHref } from '@/lib/waitlist-mode'
 
 export default function ConfirmEmailPage() {
   return (
@@ -31,7 +32,7 @@ export default function ConfirmEmailPage() {
 
         <p className="mt-4 text-sm text-neutral-500 dark:text-zinc-500">
           Didn&apos;t receive it? Check your spam folder, or{' '}
-          <ButtonLink href="/signup" variant="link" className="font-semibold">
+          <ButtonLink href={getSignupHref()} variant="link" className="font-semibold">
             try signing up again
           </ButtonLink>
           .
