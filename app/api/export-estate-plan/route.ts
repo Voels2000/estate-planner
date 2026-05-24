@@ -170,6 +170,7 @@ export async function GET(request: NextRequest) {
       role: profile.role,
       consumer_tier: profile.consumer_tier,
       advisor_name: isAdvisor ? (profile.full_name ?? null) : null,
+      prepared_by_name: profile.full_name ?? null,
       variant: variant ?? null,
       household: householdResult.data,
       completeness: completenessResult.data,

@@ -77,6 +77,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Drip step 2 check** | `[ ]` | Verify `consumer21@rolobe.resend.app` receives drip step 2 on **2026-05-26** (day 3) |
 | **Post-launch performance** | `[ ]` | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
 
+**Cross-sprint (closed):** Sprint C-2b UX Language Audit — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` 0 findings (2026-05-24). Manual per-surface checklist QA still open in [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md).
+
 **Section 1 remainder (non-blocking while waitlist active):** drip prod smoke steps 2–3; attorney referral prod test; full E2E path on production.
 
 **Success criteria**

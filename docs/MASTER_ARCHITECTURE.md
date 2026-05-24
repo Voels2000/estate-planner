@@ -529,7 +529,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 | Surface | Route | Purpose |
 |---------|-------|---------|
 | My Advisor | `/my-advisor` | Accepted `advisor_clients` + `advisor_directory` listing (`profile_id`); invite-via-email when no connection; pending requests; access log; revoke |
-| Print / export | `/print` | Tier 3+ consumers; dual export mode; `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` (conflicts, gross estate, tax) |
+| Print / export | `/print` | Tier 3+ consumers; `ExportPDFButton` → `ConsumerEstatePlanPDF` / `AttorneyEstatePlanPDF` (`components/pdf/EstatePlanPDF.tsx`). Document title **Estate Planning Preparation Report**; page-1 `DISCLAIMER_STRINGS.pdfCover`; attorney variant attributes preparer by user name (`prepared_by_name` from `/api/export-estate-plan`) |
 | My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
 | Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
 | Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |
@@ -761,7 +761,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
 - **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
 - **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
-- **Attorney export:** `app/(dashboard)/print/_print-client.tsx` — UI complete; PDF content branch on `variant=attorney` deferred.
+- **Attorney export:** `app/(dashboard)/print/_print-client.tsx` + `AttorneyEstatePlanPDF` — cover disclaimer, user attribution, title **Estate Planning Preparation Report** (Sprint C-2b, 2026-05-24).
 
 **Analytics & A/B (Sprint 5):**
 
@@ -778,6 +778,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 **Current sprint (Sprint 14):** Manual smoke §1–7 **passed** 2026-05-23; §2.4 automated (`93aa6f5`). **Open:** hide Admin Portal for consumers; asset form save in viewport. Optional §8–11 + drip 2–3 remain.
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
+
+**Sprint C-2b (closed 2026-05-24):** Compliance language policy — `lib/compliance/language-policy.ts`, `scripts/audit-ux-language.sh`, CI workflow; all `DISCLAIMER_STRINGS` surfaces wired (PDF cover, estate-tax, my-estate-strategy, footer). See [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business

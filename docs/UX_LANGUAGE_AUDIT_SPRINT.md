@@ -2,7 +2,7 @@
 # My Wealth Maps — Compliance language policy & surface checklist
 # Purpose: Enforce "education & preparation" framing across all consumer surfaces
 # Created: 2026-05-24 | Owner: Product + Engineering
-# Status: Engineering pass complete (grep 0 findings); manual surface QA ongoing
+# Status: Engineering complete — all `DISCLAIMER_STRINGS` surfaces wired (2026-05-24); manual surface QA ongoing
 
 ---
 
@@ -62,9 +62,9 @@ bash scripts/audit-ux-language.sh
 
 **Automated string pass:** 2026-05-24 — 32 initial findings → 0 after fixes.
 
-**Inline disclaimers wired (2026-05-24):** dashboard (readiness score), `/projections`, `/monte-carlo`, `/roth`, `/allocation`, `/assess`, `/my-attorney`.
+**Inline disclaimers wired (2026-05-24):** dashboard (readiness score), `/projections`, `/monte-carlo`, `/roth`, `/allocation`, `/assess`, `/my-attorney`, `/estate-tax` (Federal Estate Tax card), `/my-estate-strategy` (below horizon table), PDF export cover (`EstatePlanPDF.tsx`), global footer (`DisclaimerBanner`, homepage `app/page.tsx`).
 
-**Still open for a follow-up pass:** PDF export cover (`/api/export-estate-plan`), `/estate-tax`, `/my-estate-strategy` inline disclaimers, global footer, full manual walk of every checklist row below.
+**Still open:** full manual walk of every checklist row below (copy review per surface, not automated grep).
 
 ---
 
@@ -266,10 +266,7 @@ bash scripts/audit-ux-language.sh
 | TCJA sunset note | [ ] | "Current exemptions are scheduled to change after 2025 under current law" — factual, PASS |
 | **Do not include** | [ ] | Any copy suggesting specific strategies to reduce the tax ("a SLAT could reduce this by $X") — that belongs in Strategies tab, framed as education |
 
-**Inline disclaimer required:**
-> "Estate tax estimates are based on the asset values and assumptions you've
-> entered. They are not a legal determination of your tax liability. Consult an
-> estate attorney for your actual exposure."
+**Inline disclaimer wired (2026-05-24):** under Federal Estate Tax card in `_estate-tax-client.tsx` — `DISCLAIMER_STRINGS.estateTax`.
 
 ---
 
@@ -283,6 +280,8 @@ bash scripts/audit-ux-language.sh
 | Comparison table | [ ] | Neutral column headers — no value judgments |
 | Amber banner (missing inputs) | [ ] | "Some projections require additional profile data. Complete your profile for full estimates." — PASS |
 | Strategy line impact | [ ] | "With strategies you've entered, estimated exposure changes to $X" — PASS (user-entered) |
+
+**Inline disclaimer wired (2026-05-24):** below horizon table in `_my-estate-strategy-client.tsx` — `DISCLAIMER_STRINGS.estateStrategy`.
 
 ---
 
@@ -406,10 +405,10 @@ Any string that uses:
 
 | Item | Check | Finding / Required change |
 |------|-------|--------------------------|
-| Document title | [ ] | "Estate Planning Preparation Report" — not "Your Estate Plan" |
-| PDF cover page | [ ] | Include prominent disclaimer on page 1 |
-| Attorney summary variant | [ ] | "Prepared by [User] to share with their estate attorney" — not "Prepared by My Wealth Maps as an estate plan" |
-| Section headers in PDF | [ ] | "Your household's current picture" — not "Your estate plan" |
+| Document title | [x] | "Estate Planning Preparation Report" — not "Your Estate Plan" — **wired 2026-05-24** |
+| PDF cover page | [x] | `DISCLAIMER_STRINGS.pdfCover` on page 1 before household data — **wired 2026-05-24** |
+| Attorney summary variant | [x] | "Prepared by [User] to share with their estate attorney" — **wired 2026-05-24** (`prepared_by_name` from API) |
+| Section headers in PDF | [x] | "Your household's current picture" — **wired 2026-05-24** (checklist section) |
 
 **Required PDF disclaimer (page 1, attorney summary variant):**
 > "This document was prepared by the account holder using My Wealth Maps, a
@@ -458,11 +457,11 @@ Any string that uses:
 
 | Item | Check | Finding / Required change |
 |------|-------|--------------------------|
-| Footer disclaimer | [ ] | Current footer — audit for completeness; must cover financial, tax, and legal advice |
-| Inline disclaimers | [ ] | Required at: projection outputs, Monte Carlo, Roth conversion, estate tax exposure, allocation, strategy panels |
-| Dashboard disclaimer | [ ] | Add inline disclaimer to dashboard per §2 above |
-| PDF disclaimer | [ ] | Per `/print` section above |
-| Assessment disclaimer | [ ] | Per `/assess` section above |
+| Footer disclaimer | [x] | `DISCLAIMER_STRINGS.footer` in `DisclaimerBanner` + homepage — **wired 2026-05-24** |
+| Inline disclaimers | [x] | Required surfaces wired — projection, Monte Carlo, Roth, estate tax, allocation, strategy panels, dashboard, assess, PDF cover — **2026-05-24** |
+| Dashboard disclaimer | [x] | Inline on readiness score — **2026-05-24** |
+| PDF disclaimer | [x] | Per `/print` section — **2026-05-24** |
+| Assessment disclaimer | [x] | Per `/assess` section — **2026-05-24** |
 
 **Minimum required footer text:**
 > "My Wealth Maps provides financial planning preparation tools for educational
@@ -614,9 +613,9 @@ This sprint is done when:
 
 - [ ] All items in every surface checklist are marked Pass (manual QA walk)
 - [x] Zero instances of flagged strings remain in the codebase (grep confirms) — **2026-05-24**
-- [ ] All required inline disclaimers are live on production (partial — see Engineering deliverables)
-- [ ] Footer disclaimer updated to final version
-- [ ] PDF export disclaimer added
+- [x] All required inline disclaimers are live in code (`DISCLAIMER_STRINGS` surfaces wired) — **2026-05-24**
+- [x] Footer disclaimer updated to final version — **2026-05-24**
+- [x] PDF export disclaimer added — **2026-05-24**
 - [x] `lib/compliance/language-policy.ts` committed — **2026-05-24**
 - [x] This doc committed to `docs/` — **2026-05-24**
 - [x] Entry added to `LAUNCH_CHECKLIST.md` — **2026-05-24**

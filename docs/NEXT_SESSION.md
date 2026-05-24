@@ -22,7 +22,7 @@
 | **Open signups** | Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy |
 | **Drip step 2 check** | Check `consumer21@rolobe.resend.app` on **2026-05-26** (day 3 after step 1 capture) |
 | **Post-launch performance** | Dashboard initial load slowness — track as perf ticket (not blocking open signups) |
-| **Sprint C-2b UX Language Audit** | ✅ Complete — `audit-ux-language.sh` passes 0 findings (2026-05-24) |
+| **Sprint C-2b UX Language Audit** | ✅ Complete — all `DISCLAIMER_STRINGS` surfaces wired; `audit-ux-language.sh` passes 0 findings (2026-05-24) |
 
 ### Opening signups — go-live flip (after billing ready)
 

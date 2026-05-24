@@ -20,6 +20,7 @@ import {
   LIFETIME_GIFTS_USED_LABEL,
 } from '@/lib/estate/exemptionLabels'
 import { formatDollars } from '@/lib/utils/formatCurrency'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
@@ -427,6 +428,8 @@ export default function MyEstateStrategyClient({
             </tbody>
           </table>
         </div>
+
+        <p className="text-xs text-neutral-400 mt-3 max-w-2xl">{DISCLAIMER_STRINGS.estateStrategy}</p>
 
         {columns.some((col) => col.showGenerateCta) && (
           <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-8 text-center">

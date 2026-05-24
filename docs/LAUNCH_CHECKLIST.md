@@ -115,7 +115,7 @@ Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates and productio
 
 - [x] **`app/robots.ts`** — permissive rules deployed at `https://mywealthmaps.com/robots.txt` (2026-05-24)
 - [x] **`app/layout.tsx`** — no change needed; Search Console verified via Cloudflare (meta tag env not required)
-- [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited for investment-advice trigger language. `scripts/audit-ux-language.sh` passes with 0 findings. `lib/compliance/language-policy.ts` committed. Inline disclaimers live on key output surfaces. Completed: 2026-05-24
+- [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited for investment-advice trigger language. `scripts/audit-ux-language.sh` passes with 0 findings. `lib/compliance/language-policy.ts` committed. All `DISCLAIMER_STRINGS` surfaces wired: dashboard, projections, Monte Carlo, Roth, allocation, assess, my-attorney, estate-tax, my-estate-strategy, PDF export cover, global footer (`DisclaimerBanner` + homepage). Completed: 2026-05-24
 
 ### Vercel Production env vars (Sprint 15 go-live — verified 2026-05-24)
 

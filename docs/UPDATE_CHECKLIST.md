@@ -81,7 +81,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Post-cutover smoke §1–3 on production
 - [x] Completion log entry in LAUNCH_CHECKLIST
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
-- [x] **UX Language Audit** — Sprint C-2b complete. Going forward: run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
+- [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
 ## Sprint 16 focus (current)
 

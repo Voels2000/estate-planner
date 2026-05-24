@@ -263,6 +263,7 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 | **Write APIs** | Read-heavy; trust edits may use consumer trust API from other flows |
 | **Read APIs / RPCs** | `calculate_estate_composition` via `classifyEstateAssets` |
 | **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts` |
+| **Compliance** | Inline `DISCLAIMER_STRINGS.estateTax` under Federal Estate Tax card (`_estate-tax-client.tsx`) |
 | **Empty / blocked** | `UpgradeBanner` if `tier < 3`; optional `householdContext` (`grossEstate`, `statePrimary`) for personalized copy when estate ≥ $100K |
 
 ### Estate Value and Tax Horizons — `/my-estate-strategy`
@@ -277,6 +278,7 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 | **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules` |
 | **Key lib** | `lib/my-estate-strategy/horizonSnapshots.ts` |
 | **UX** | Collapsible **Estate value & tax horizons**: labeled stepper (Actual vs What-if); **hero tax cards** + **comparison table** (not card-per-column); estate conflicts anchor `#estate-conflicts` on embedded completeness section |
+| **Compliance** | Inline `DISCLAIMER_STRINGS.estateStrategy` below horizon table; page footer via `DisclaimerBanner` |
 | **Empty / blocked** | Amber banner if federal horizon inputs missing (needs base-case projection) |
 
 ### Gifting, Strategies & Trusts — `/my-estate-trust-strategy?tab=…`
@@ -385,7 +387,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Access** | `/my-advisor` (sidebar footer) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel` |
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
 | **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanReadinessCard` |
-| **Export for attorney** | `/print` (tier 3+) | `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` via `/api/export-estate-plan?variant=attorney` |
+| **Export for attorney** | `/print` (tier 3+) | `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` via `/api/export-estate-plan?variant=attorney`; title **Estate Planning Preparation Report**; cover disclaimer + user attribution on page 1 |
 | **Advisor event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` (`type: 'advisor'`) → `referral_clicks` |
 | **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |
 | **Advisor newsletter kit** | Advisor portal | `buildAllEventReferralUrls` — 24 `?ref=` links |

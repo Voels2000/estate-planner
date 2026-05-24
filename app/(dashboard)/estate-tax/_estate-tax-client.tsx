@@ -31,6 +31,7 @@ import {
   FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL,
   HEADROOM_BEFORE_FEDERAL_TAX_LABEL,
 } from '@/lib/estate/exemptionLabels'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -461,16 +462,19 @@ export default function EstateTaxClient({
                       : '$15M single (OBBBA 2026)'
                 }
               />
-              <SummaryCard
-                label="Federal Estate Tax"
-                value={formatDollars(federalTaxDisplay)}
-                sub={
-                  federalTaxDisplay > 0
-                    ? 'Estimated federal transfer tax'
-                    : 'No estimated federal tax due'
-                }
-                highlight={federalTaxDisplay > 0 ? 'red' : 'green'}
-              />
+              <div>
+                <SummaryCard
+                  label="Federal Estate Tax"
+                  value={formatDollars(federalTaxDisplay)}
+                  sub={
+                    federalTaxDisplay > 0
+                      ? 'Estimated federal transfer tax'
+                      : 'No estimated federal tax due'
+                  }
+                  highlight={federalTaxDisplay > 0 ? 'red' : 'green'}
+                />
+                <p className="text-xs text-neutral-400 mt-1 max-w-xs">{DISCLAIMER_STRINGS.estateTax}</p>
+              </div>
             </div>
 
             {/* No-tax green state */}

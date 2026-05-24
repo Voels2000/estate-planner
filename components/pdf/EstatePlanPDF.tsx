@@ -8,6 +8,9 @@ import {
   View,
   StyleSheet,
 } from '@react-pdf/renderer'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+
+const PDF_DOCUMENT_TITLE = 'Estate Planning Preparation Report'
 
 // --- Color Palette ---
 const NAVY       = '#1B2A4A'
@@ -78,7 +81,29 @@ const s = StyleSheet.create({
   },
   body: {
     paddingHorizontal: 36,
+    paddingTop: 20,
+  },
+  coverBlock: {
+    paddingHorizontal: 36,
     paddingTop: 24,
+    paddingBottom: 12,
+  },
+  coverDisclaimer: {
+    fontSize: 7,
+    color: GRAY_MID,
+    lineHeight: 1.55,
+    marginBottom: 14,
+  },
+  coverTitle: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    color: NAVY,
+    marginBottom: 6,
+  },
+  coverSubtitle: {
+    fontSize: 9,
+    color: GRAY_MID,
+    marginBottom: 4,
   },
   section: {
     marginBottom: 20,
@@ -484,6 +509,7 @@ type PdfTrust = { trust_type?: string | null }
 type EstatePlanPdfData = {
   household: PdfHousehold
   advisor_name?: string | null
+  prepared_by_name?: string | null
   role?: 'advisor' | 'consumer' | string
   generated_at: string
   completeness?: {
@@ -562,6 +588,28 @@ const clientName = (h: PdfHousehold) => {
   return p2 ? `${p1} & ${p2}` : p1
 }
 
+const preparedByLabel = (data: EstatePlanPdfData) =>
+  data.prepared_by_name?.trim() || clientName(data.household) || 'Account holder'
+
+// --- Cover (disclaimer + title before household data) ---
+const PDFCoverBlock = ({
+  variant,
+  preparedByName,
+}: {
+  variant?: 'attorney'
+  preparedByName?: string | null
+}) => (
+  <View style={s.coverBlock}>
+    <Text style={s.coverDisclaimer}>{DISCLAIMER_STRINGS.pdfCover}</Text>
+    <Text style={s.coverTitle}>{PDF_DOCUMENT_TITLE}</Text>
+    {variant === 'attorney' && preparedByName && (
+      <Text style={s.coverSubtitle}>
+        Prepared by {preparedByName} to share with their estate attorney
+      </Text>
+    )}
+  </View>
+)
+
 // --- Shared Header ---
 const PDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
   <View>
@@ -579,7 +627,7 @@ const PDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
         </View>
         <View>
           <Text style={s.headerMetaLabel}>REPORT TYPE</Text>
-          <Text style={s.headerMetaValue}>{data.role === 'advisor' ? 'Advisor Full Report' : 'Estate Plan Summary'}</Text>
+          <Text style={s.headerMetaValue}>{data.role === 'advisor' ? 'Advisor Full Report' : PDF_DOCUMENT_TITLE}</Text>
         </View>
         <View>
           <Text style={s.headerMetaLabel}>GENERATED</Text>
@@ -774,11 +822,11 @@ const AttorneyPDFHeader = ({ data }: { data: AttorneyPdfData }) => (
       <View style={s.headerMeta}>
         <View>
           <Text style={s.headerMetaLabel}>DOCUMENT TYPE</Text>
-          <Text style={s.headerMetaValue}>Attorney Intake Summary</Text>
+          <Text style={s.headerMetaValue}>{PDF_DOCUMENT_TITLE}</Text>
         </View>
         <View>
           <Text style={s.headerMetaLabel}>PREPARED BY</Text>
-          <Text style={s.headerMetaValue}>Client via My Wealth Maps</Text>
+          <Text style={s.headerMetaValue}>{preparedByLabel(data)}</Text>
         </View>
         <View>
           <Text style={s.headerMetaLabel}>GENERATED</Text>
@@ -983,7 +1031,7 @@ const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
     { label: 'Tax Strategy in Place', complete: c?.breakdown?.has_tax_strategy ?? false },
   ]
   return (
-    <Section title="Your Estate Planning Checklist">
+    <Section title="Your household's current picture">
       <View style={s.table}>
         {items.map((item, i) => (
           <View key={i} style={[s.consumerCheckRow, i % 2 !== 0 ? { backgroundColor: GRAY_LIGHT } : {}]} wrap={false}>
@@ -1008,8 +1056,9 @@ const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
 
 // --- Advisor PDF Export ---
 export const AdvisorEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
-  <Document title={`Estate Plan — ${clientName(data.household)}`} author="Estate Planner">
+  <Document title={`${PDF_DOCUMENT_TITLE} — ${clientName(data.household)}`} author="Estate Planner">
     <Page size="LETTER" style={s.page}>
+      <PDFCoverBlock />
       <PDFHeader data={data} />
       <View style={s.body}>
         <CompletenessSection data={data} />
@@ -1025,8 +1074,9 @@ export const AdvisorEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
 
 // --- Consumer T3 PDF Export ---
 export const ConsumerEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
-  <Document title={`Estate Plan Summary — ${clientName(data.household)}`} author="Estate Planner">
+  <Document title={`${PDF_DOCUMENT_TITLE} — ${clientName(data.household)}`} author="Estate Planner">
     <Page size="LETTER" style={s.page}>
+      <PDFCoverBlock />
       <PDFHeader data={data} />
       <View style={s.body}>
         <CompletenessSection data={data} />
@@ -1040,8 +1090,9 @@ export const ConsumerEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => 
 
 // --- Attorney Intake Summary PDF ---
 export const AttorneyEstatePlanPDF = ({ data }: { data: AttorneyPdfData }) => (
-  <Document title={`Attorney Intake Summary — ${clientName(data.household)}`} author="My Wealth Maps">
+  <Document title={`${PDF_DOCUMENT_TITLE} — ${clientName(data.household)}`} author="My Wealth Maps">
     <Page size="LETTER" style={s.page}>
+      <PDFCoverBlock variant="attorney" preparedByName={preparedByLabel(data)} />
       <AttorneyPDFHeader data={data} />
       <View style={s.body}>
         <View style={s.attorneyBanner}>

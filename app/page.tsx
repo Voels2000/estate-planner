@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { getSignupHref, isWaitlistMode } from '@/lib/waitlist-mode'
+import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -81,10 +82,7 @@ export default async function HomePage() {
         color: 'rgba(255,255,255,0.65)',
         lineHeight: 1.5,
       }}>
-        <span style={{ color: 'var(--mwm-gold)', fontWeight: 500 }}>
-          Educational platform only.
-        </span>
-        {' '}Nothing here constitutes financial, legal, tax, or investment advice.
+        {DISCLAIMER_STRINGS.footer}
       </div>
 
       {/* HERO */}
