@@ -65,6 +65,12 @@ export default async function DashboardLayout({
     .eq('owner_id', user.id)
     .maybeSingle()
 
+  const { count: unreadNotificationCount } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', sessionUser.id)
+    .eq('read', false)
+
   const needsInviteAdvisorOnboarding =
     !isSuperuser &&
     profileFull?.role === 'consumer' &&
@@ -87,6 +93,7 @@ export default async function DashboardLayout({
             isAttorney
             isSuperuser
             hasHousehold={hasHousehold}
+            initialUnreadCount={unreadNotificationCount ?? 0}
           />
         }
       >
@@ -157,6 +164,7 @@ export default async function DashboardLayout({
           isAdmin={isAdminResolved}
           isAttorney={isAttorneyResolved}
           hasHousehold={hasHousehold}
+          initialUnreadCount={unreadNotificationCount ?? 0}
         />
       }
     >

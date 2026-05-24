@@ -6,9 +6,10 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { loadLatestChangeTs } from '@/lib/dashboard/loaders'
 import { getLatestTimestampMs, isProjectionStale } from '@/lib/projections/staleness'
-import { detectConflicts } from '@/lib/conflict-detector'
+import { mapConflictReport } from '@/lib/dashboard/mappers'
 import {
   fetchActiveStrategies,
   fetchActionItems,
@@ -163,6 +164,8 @@ export async function loadAdvisorClientDatasets(
     projectionYears: number[]
   },
 ): Promise<AdvisorClientDatasetsResult> {
+  const admin = createAdminClient()
+
   const [
     assetsResult,
     realEstateResult,
@@ -309,10 +312,24 @@ export async function loadAdvisorClientDatasets(
       .select('*')
       .eq('household_id', params.householdId)
       .order('granted_at', { ascending: false }),
-    detectConflicts(params.householdId, params.clientId).catch((e) => {
-      console.error('[advisor-client-view] conflict detection failed:', e)
-      return null
-    }),
+    params.householdId
+      ? (async () => {
+          try {
+            const { data, error } = await admin
+              .from('beneficiary_conflicts')
+              .select('conflict_type, severity, asset_id, real_estate_id, description, recommended_action')
+              .eq('household_id', params.householdId)
+            if (error) {
+              console.error('[advisor-client-view] conflict cache read failed:', error)
+              return null
+            }
+            return mapConflictReport(data)
+          } catch (e) {
+            console.error('[advisor-client-view] conflict cache read failed:', e)
+            return null
+          }
+        })()
+      : Promise.resolve(null),
   ])
 
   return {

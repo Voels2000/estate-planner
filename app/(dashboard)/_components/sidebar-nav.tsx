@@ -102,6 +102,7 @@ export function SidebarNav({
   isAttorney = false,
   isSuperuser = false,
   hasHousehold = false,
+  initialUnreadCount = 0,
 }: {
   user: User
   role?: string
@@ -111,6 +112,7 @@ export function SidebarNav({
   isAttorney?: boolean
   isSuperuser?: boolean
   hasHousehold?: boolean
+  initialUnreadCount?: number
 }) {
   const isLockedUser = hasHousehold === false
   /** Consumers never see professional portal links, even with is_superuser (smoke / dev accounts). */
@@ -195,7 +197,7 @@ export function SidebarNav({
               </span>
             )}
           </div>
-          <NotificationBell />
+          <NotificationBell initialUnreadCount={initialUnreadCount} />
         </div>
       </div>
 

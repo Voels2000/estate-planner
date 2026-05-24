@@ -38,8 +38,8 @@
     --mwm-border: #e2e8f0;
     --mwm-shadow: 0 4px 20px rgba(15,31,61,0.08);
     --mwm-shadow-lg: 0 8px 40px rgba(15,31,61,0.14);
-    --font-display: 'Playfair Display', Georgia, serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-display: var(--font-playfair), Georgia, serif;
+    --font-body: var(--font-dm-sans), system-ui, sans-serif;
   }
 
   .dark {

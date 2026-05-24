@@ -1,5 +1,8 @@
 const LOG_PREFIX = '[triggerEstateHealthRecompute]'
 
+const recomputeTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const DEBOUNCE_MS = 3000
+
 function isProduction(): boolean {
   return process.env.NODE_ENV === 'production'
 }
@@ -27,14 +30,7 @@ function shouldLogHttpError(status: number): boolean {
   return true
 }
 
-/**
- * Fire-and-forget estate health + conflict recompute for a household.
- * Saves are not blocked if this fails; failures are logged for operations/debugging.
- */
-export async function triggerEstateHealthRecompute(
-  householdId: string,
-  appUrl: string,
-): Promise<void> {
+async function runRecomputeHttp(householdId: string, appUrl: string): Promise<void> {
   const secret = process.env.RECOMPUTE_SECRET ?? ''
   const baseUrl = appUrl?.trim()
 
@@ -73,4 +69,25 @@ export async function triggerEstateHealthRecompute(
       error: err instanceof Error ? err.message : String(err),
     })
   }
+}
+
+/**
+ * Fire-and-forget estate health + conflict recompute for a household.
+ * Debounced per householdId (3s) to avoid recompute storms on rapid saves.
+ * Saves are not blocked if this fails; failures are logged for operations/debugging.
+ */
+export async function triggerEstateHealthRecompute(
+  householdId: string,
+  appUrl: string,
+): Promise<void> {
+  const existing = recomputeTimers.get(householdId)
+  if (existing) clearTimeout(existing)
+
+  recomputeTimers.set(
+    householdId,
+    setTimeout(() => {
+      recomputeTimers.delete(householdId)
+      void runRecomputeHttp(householdId, appUrl)
+    }, DEBOUNCE_MS),
+  )
 }

@@ -4,9 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NotificationPanel from './notification-panel'
 
-export function NotificationBell() {
+type Props = {
+  /** Server-fetched initial count; client refresh after panel actions only. */
+  initialUnreadCount?: number
+}
+
+export function NotificationBell({ initialUnreadCount = 0 }: Props) {
   const [open, setOpen] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount)
   const rootRef = useRef<HTMLDivElement>(null)
 
   const refreshUnread = useCallback(async () => {
@@ -19,20 +24,8 @@ export function NotificationBell() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const supabase = createClient()
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('read', false)
-      if (cancelled) return
-      if (!error && count != null) setUnreadCount(count)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    setUnreadCount(initialUnreadCount)
+  }, [initialUnreadCount])
 
   useEffect(() => {
     if (!open) return

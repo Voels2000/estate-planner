@@ -271,49 +271,62 @@ export default async function DashboardPage() {
   })
   void insuranceValue
 
-  const { data: advisorStrategyItems } = household?.id
-    ? await supabase
-        .from('strategy_line_items')
-        .select('id, strategy_source, amount, sign, scenario_name, consumer_accepted, consumer_rejected')
-        .eq('household_id', household.id)
-        .eq('source_role', 'advisor')
-        .eq('is_active', true)
-    : { data: null }
-
-  const mcScenarioRes = household?.id
-    ? await supabase
-        .from('advisor_projection_assumptions')
-        .select(
-          'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
-        )
-        .eq('client_household_id', household.id)
-        .or('accepted_by_client.eq.true,shared_at.not.is.null')
-        .order('accepted_at', { ascending: false, nullsFirst: false })
-    : { data: null }
+  const [
+    { data: advisorStrategyItems },
+    mcScenarioRes,
+    { data: initialRecsData },
+    { data: healthScoreRow },
+    { data: conflictRows },
+    { taxDeferredAssets, currentYearWithdrawals },
+  ] = await Promise.all([
+    household?.id
+      ? supabase
+          .from('strategy_line_items')
+          .select('id, strategy_source, amount, sign, scenario_name, consumer_accepted, consumer_rejected')
+          .eq('household_id', household.id)
+          .eq('source_role', 'advisor')
+          .eq('is_active', true)
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? supabase
+          .from('advisor_projection_assumptions')
+          .select(
+            'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
+          )
+          .eq('client_household_id', household.id)
+          .or('accepted_by_client.eq.true,shared_at.not.is.null')
+          .order('accepted_at', { ascending: false, nullsFirst: false })
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? supabase.rpc('generate_estate_recommendations', {
+          p_household_id: household.id,
+        })
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? admin
+          .from('estate_health_scores')
+          .select('score, component_scores, computed_at')
+          .eq('household_id', household.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? admin
+          .from('beneficiary_conflicts')
+          .select('conflict_type, severity, asset_id, real_estate_id, description, recommended_action')
+          .eq('household_id', household.id)
+      : Promise.resolve({ data: null }),
+    loadDashboardRmdInputs(supabase, user!.id),
+  ])
 
   const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
     mcScenarioRes.data ?? [],
   )
-
-  const { data: initialRecsData } = household?.id
-    ? await supabase.rpc('generate_estate_recommendations', {
-        p_household_id: household.id,
-      })
-    : { data: null }
 
   const initialRecommendations = initialRecsData?.recommendations ?? null
 
   // ── Estate health score — read from cache, recomputed async on staleness ─
   // computeEstateHealthScore writes to DB — never call it in render path.
   // Dashboard reads the last persisted score; background recompute updates it.
-  const { data: healthScoreRow } = household?.id
-    ? await admin
-        .from('estate_health_scores')
-        .select('score, component_scores, computed_at')
-        .eq('household_id', household.id)
-        .maybeSingle()
-    : { data: null }
-
   const estateHealthScore = mapEstateHealthScore(healthScoreRow)
 
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
@@ -321,21 +334,9 @@ export default async function DashboardPage() {
 
   // ── Conflict detector — read from cache, recomputed async on staleness ───
   // detectConflicts writes to DB — never call it in render path.
-  const { data: conflictRows } = household?.id
-    ? await admin
-        .from('beneficiary_conflicts')
-        .select('conflict_type, severity, asset_id, real_estate_id, description, recommended_action')
-        .eq('household_id', household.id)
-    : { data: null }
-
   const conflictReport = mapConflictReport(conflictRows)
 
   // ── RMD Status for current year ──────────────────────────────────────
-
-  const { taxDeferredAssets, currentYearWithdrawals } = await loadDashboardRmdInputs(
-    supabase,
-    user!.id,
-  )
 
   const rmdStatus = buildRmdStatus({
     currentYear,
