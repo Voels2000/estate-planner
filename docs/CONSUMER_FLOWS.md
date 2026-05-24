@@ -203,6 +203,19 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; uses projection + `getRmdStartAge` for conversion window | Tier 2 |
+| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit` | Tier 2; CSV/XLSX only; three-step upload → map → commit; sample templates in `public/templates/` |
+
+### Bulk import — `/import` (Sprint F-1)
+
+| | |
+|--|--|
+| **User goal** | Import assets, liabilities, income, or expenses from a spreadsheet |
+| **Tier / gate** | Tier 2 (`FEATURE_TIERS.import`); `UpgradeBanner` when below tier |
+| **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` history |
+| **Client** | `_import-client.tsx` — drop zone, field mapping review, commit |
+| **Write APIs** | `POST /api/ingest` (parse + job create); `POST /api/import/commit` (bulk insert) |
+| **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
+| **Migration** | `20260602140000_sprint_f1_ingestion_jobs.sql` — apply before deploy |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 

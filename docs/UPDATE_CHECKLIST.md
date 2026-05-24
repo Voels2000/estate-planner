@@ -103,6 +103,14 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
 - [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
 
+## Sprint F-1 focus — closed ✅ 2026-06-02
+
+- [x] `POST /api/ingest` — CSV/XLSX parse, auto-detect table, field mapping, `ingestion_jobs` store (`d3400b1`)
+- [x] Client commit URL fix — `/api/import/commit`
+- [x] Tier gate aligned to tier 2 on `/import`
+- [x] Sample CSV templates in `public/templates/`
+- [ ] Migration `20260602140000_sprint_f1_ingestion_jobs.sql` — apply in prod before import smoke test
+
 ## Sprint 17 focus (current — go-live prep, non-code)
 
 | Item | Notes |
@@ -157,6 +165,7 @@ Use this for **all** merges. For **tax/engine** changes, also run the extra spot
 - [ ] Confirm staleness or backfill guidance is still accurate
 - [ ] After deploy: optional [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core)
 - [ ] Education links: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (run against production after any education content changes)
+- [ ] After import deploy: apply `20260602140000_sprint_f1_ingestion_jobs.sql`; tier 2+ smoke on `/import` with sample CSV (see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.4)
 
 ## Commit hygiene
 

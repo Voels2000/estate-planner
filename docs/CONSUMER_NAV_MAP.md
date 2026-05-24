@@ -152,7 +152,7 @@ Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts` (24 slugs). A
 |-------|------------|------|--------|
 | `/trust-will` | — | 3 | Redirects to `/my-estate-trust-strategy?tab=trusts` (trust list, recommendations, checklist) |
 | `/health-check` | Estate Health Check | — | Linked from dashboard / onboarding |
-| `/import` | Import Data | 2 | |
+| `/import` | Import Data | 2 | CSV/XLSX bulk import; sidebar link under Financial Planning; `POST /api/ingest` → review → `POST /api/import/commit`; templates in `public/templates/` |
 | `/print` | Export Estate Plan (full + attorney summary modes, tier 3+) | — | |
 | `/my-advisor` | My Advisor | — | Connection UI; not tier-gated (sidebar link for `role === 'consumer'`) |
 | `/my-advisor-directory` | Find a Financial Advisor | — | |

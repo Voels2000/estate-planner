@@ -260,6 +260,19 @@ Open while logged out or in a private window unless noted:
 
 ---
 
+## Import data — Sprint F-1 (tier 2+)
+
+Requires migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied. Use tier 2+ test account.
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| I.1 | `/import` (tier 1 account) | Upgrade banner; tier 2 required | ☐ |
+| I.2 | `/import` (tier 2+ account) | Drop zone; CSV/XLSX only; four template download links | ☐ |
+| I.3 | Upload `public/templates/import-sample.csv` | Parse succeeds; review step shows headers + auto field map; target table `assets` | ☐ |
+| I.4 | Commit import | Success message; rows appear in `assets`; job history shows `committed` | ☐ |
+
+---
+
 ## Acquisition & attribution — Sprint 13+ ✅ passed staging (May 2026)
 
 **Status:** Sections **A–G passed** on https://estate-planner-gules.vercel.app (Sprint 13).

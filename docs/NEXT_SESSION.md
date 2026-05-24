@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (education nav fix)
+# Updated: 2026-06-02 (Sprint F-1 import)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5 and **Sprint P-1 + P-2 perf** closed on `main` (`5c24160`, `47a38f3`). Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5, **Sprint P-1 + P-2 perf**, **Sprint F-1 import**, and education nav fixes on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -68,6 +68,22 @@
 **Commits:** `a138608` (public access), `b41719f` (sidebar link), education nav fix (this session)
 
 **Post-deploy:** `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs`
+
+---
+
+## Sprint F-1 closed ✅ (2026-06-02)
+
+| Area | Outcome |
+|------|---------|
+| **Parse API** | `POST /api/ingest` — CSV/XLSX only; auto-detect table + field mapping |
+| **Commit** | `POST /api/import/commit` (existing); client URL mismatch fixed |
+| **Schema** | `ingestion_jobs` table + RLS — migration `20260602140000_sprint_f1_ingestion_jobs.sql` |
+| **Tier gate** | `/import` aligned to tier 2 (`hasFeatureAccess('import', …)`) |
+| **Templates** | `public/templates/import-sample*.csv` |
+
+**Commit:** `d3400b1` · **Apply migration manually** before testing import in production.
+
+**Smoke:** Tier 2+ → `/import` → upload assets template → review mapping → commit → verify rows in `assets`.
 
 ---
 

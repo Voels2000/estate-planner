@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (education nav fix; Sprint P-2 closed; Sprint 17 go-live prep)
+# Last updated: 2026-06-02 (Sprint F-1 import; education nav fix; Sprint P-2 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -706,6 +706,24 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Charitable consumer form: `components/consumer/CharitableStrategyForm.tsx` (DAF panel; `daf` or `charitable` source).
 - Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
 - Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
+- **Financial data import (Sprint F-1):** `app/(dashboard)/import/page.tsx`, `_import-client.tsx`; `POST /api/ingest` (parse); `POST /api/import/commit` (insert rows); `lib/import/ingestConfig.ts`, `lib/import/parseFile.ts`; sample CSVs in `public/templates/`.
+
+---
+
+## Financial Data Import (Sprint F-1)
+
+**Current (as built):**
+
+- Route: `/import` — tier **2+** (`FEATURE_TIERS.import`; `hasFeatureAccess('import', …)` on page and parse API).
+- **Supported formats:** CSV (`.csv`), Excel (`.xlsx`, `.xls`) only. PDF/DOCX deferred post-launch (unreliable structured extraction).
+- **Three-step UX:** upload → review field mapping → commit confirmation. Import history from `ingestion_jobs`.
+- **Parse API:** `POST /api/ingest` — multipart `file` field; papaparse (CSV) + SheetJS `xlsx` (Excel); auto-detect target table from headers; alias-based `field_map` suggestion; persists full parse in `ingestion_jobs`; returns `job_id`, `headers`, `rows`, `field_map`, `detected_table`, `table_fields`.
+- **Commit API:** `POST /api/import/commit` — unchanged Sprint F-1; maps rows via user-adjusted `field_map`, coerces types, validates required fields, bulk `insert` into `assets` | `liabilities` | `income` | `expenses`; marks job `committed`.
+- **Target tables + required fields:** assets (`name`, `type`, `value`); liabilities (`name`, `type`, `balance`); income (`source`, `amount`, `start_year`); expenses (`category`, `amount`, `start_year`).
+- **Templates:** `public/templates/import-sample*.csv` — downloadable from import UI.
+- **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — apply before deploy (`ingestion_jobs` + owner-scoped RLS).
+
+**Post-launch backlog:** PDF/DOCX text extraction; automated purge of `ingestion_jobs` rows older than 24h; optional commit-from-`job_id` without re-posting rows for large files.
 
 ---
 

@@ -10,7 +10,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ## Sprint F-1 — Import feature (2026-06-02)
 
-**Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql`
+**Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — **commit `d3400b1`**
 
 - **`ingestion_jobs` table:** parse result store for file import (`owner_id`, `household_id`, `status`, `source_format`, `headers`, `rows`, `field_map`)
 - **RLS:** owner-scoped ALL policy

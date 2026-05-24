@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: May 2026
+# Last updated: June 2026 (Sprint F-1)
 
 ---
 
@@ -354,6 +354,16 @@ Pass = at least one row with referral code matching a test signup.
 **Reasoning:** The four columns currently repeat 8–9 identical labels four times. A user comparing across columns has to read the same label four times to find the values they want. The Scenarios page already uses the correct pattern (labels once on left, values in columns, best value highlighted) — this is a proven pattern in the product. The total tax liability number is the single most important number on the page and should not be the last item the user reads.
 
 **Alternatives considered:** Keeping the card layout with summary numbers at the top of each card (partially implemented in revised design — hero cards show only the tax liability number, table handles the detail). Removing the column breakdown entirely in favor of a single timeline chart (rejected — the specific year breakdowns are important for planning decisions).
+
+---
+
+### June 2026 — Financial data import: CSV/XLSX only (Sprint F-1)
+
+**Decision:** Ship bulk financial import at `/import` for **CSV and Excel only** (`.csv`, `.xlsx`, `.xls`). Defer PDF/DOCX parsing post-launch.
+
+**Reasoning:** Tabular formats produce reliable header detection and field mapping. PDF/DOCX require best-effort text extraction with unreliable column structure — bad UX for a data-entry accelerator aimed at retirement-tier users getting data in quickly.
+
+**Implication:** Tier 2 gate (`FEATURE_TIERS.import`). Parse → review mapping → commit flow. Apply `20260602140000_sprint_f1_ingestion_jobs.sql` before deploy. Sample templates in `public/templates/`.
 
 ---
 

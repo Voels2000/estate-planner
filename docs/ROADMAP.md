@@ -458,6 +458,18 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ---
 
+## Sprint F-1 — Financial data import ✅ closed 2026-06-02
+
+- `[x]` `POST /api/ingest` — CSV/XLSX parse, table detection, field mapping (`d3400b1`)
+- `[x]` `ingestion_jobs` migration + RLS
+- `[x]` `/import` tier 2 gate aligned; client commit URL fix
+- `[x]` Sample CSV templates + doc sync
+- `[ ]` Apply migration in production; smoke I.1–I.4
+
+**Post-launch:** PDF/DOCX import parsing.
+
+---
+
 ## Backlog (not yet scheduled — confirmed post-launch)
 
 The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
@@ -473,6 +485,7 @@ The following items are explicitly deferred to post-launch. Each has a DECISION_
 - **"Ask your advisor →" in-app action for connected advisors** — currently links to
   `/find-advisor` for all users including those with a connected advisor; see DECISION_LOG
 - ~~**Add `/education` to `middleware.ts` `PUBLIC_PATHS`**~~ — ✅ done (`a138608`); education fully public; nav fix skips double sticky header on `/education/*`
+- **PDF/DOCX financial import** — deferred post-launch; CSV/XLSX shipped Sprint F-1 (`d3400b1`)
 
 **Resolved in Sprint 10 (see DECISION_LOG):** business succession Path A minimal intake;
 invite-your-advisor Path A onboarding; A/B exit criteria.
