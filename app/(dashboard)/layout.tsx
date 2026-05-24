@@ -4,7 +4,7 @@ import { SidebarNav } from './_components/sidebar-nav'
 import { DashboardShell } from './_components/dashboard-shell'
 import { TrialBanner } from './_components/trial-banner'
 import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
-import { getAccessContext } from '@/lib/access/getAccessContext'
+import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
 import { isMinimumViableProfile } from '@/lib/estate/profileGate'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
@@ -43,33 +43,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, isSuperuser, profile } = await getAccessContext()
+  const layoutContext = await getDashboardLayoutContext()
 
-  if (!user) redirect('/login')
+  if (!layoutContext) redirect('/login')
 
-  const supabase = await createClient()
-  const { data: { user: sessionUser } } = await supabase.auth.getUser()
-  if (!sessionUser) redirect('/login')
-
-  const { data: profileFull } = await supabase
-    .from('profiles')
-    .select(
-      'role, subscription_status, trial_started_at, consumer_tier, is_admin, is_attorney, is_superuser, onboarding_invite_advisor_completed_at',
-    )
-    .eq('id', sessionUser.id)
-    .single()
-
-  const { data: householdRow } = await supabase
-    .from('households')
-    .select('id, state_primary, filing_status, person1_birth_year')
-    .eq('owner_id', user.id)
-    .maybeSingle()
-
-  const { count: unreadNotificationCount } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', sessionUser.id)
-    .eq('read', false)
+  const { sessionUser, user, profile, householdRow, unreadNotificationCount, isSuperuser } =
+    layoutContext
+  const profileFull = profile
 
   const needsInviteAdvisorOnboarding =
     !isSuperuser &&
@@ -93,7 +73,7 @@ export default async function DashboardLayout({
             isAttorney
             isSuperuser
             hasHousehold={hasHousehold}
-            initialUnreadCount={unreadNotificationCount ?? 0}
+            initialUnreadCount={unreadNotificationCount}
           />
         }
       >
@@ -121,6 +101,7 @@ export default async function DashboardLayout({
   // Check if user is an advisor client
   let isAdvisorClient = false
   if (!isAdvisorResolved) {
+    const supabase = await createClient()
     const { data: clientRow } = await supabase
       .from('advisor_clients')
       .select('id')

@@ -38,13 +38,32 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 ## Post-launch refactors (not in this sprint)
 
-- Dashboard read model / materialized summaries
+- Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*
 - Background job queue for base-case regen (Inngest)
-- Projections cache-first (serve `outputs_s1_first` when fresh)
 - Single staleness version field (replace 10 staleness queries)
 - Streaming dashboard with Suspense boundaries
 - Batch advisor estate composition RPC
-- Middleware/layout auth dedup via React `cache()`
+
+---
+
+## Sprint P-2 — Pre-launch refactors
+
+| Change | File | Impact |
+|--------|------|--------|
+| Recommendations cached on recompute | `app/api/recompute-estate-health/route.ts`, `app/(dashboard)/dashboard/page.tsx` | Removes `generate_estate_recommendations` from hot path |
+| Projections cache-first | `lib/projections/loadProjectionData.ts` | Skip full recompute when projection is fresh |
+| Auth dedup via React cache() | `lib/access/getDashboardLayoutContext.ts`, `app/(dashboard)/layout.tsx` | One profile+household query per request vs two |
+
+### Migration applied
+
+`20260602130000_sprint_p2_recommendations_cache.sql`
+- `estate_health_scores.recommendations` jsonb column added
+
+### Validation
+
+- `npm run build`: passed
+- `audit-ux-language.sh`: 0 findings
+- `security-audit.sh`: 0 findings
 
 ---
 

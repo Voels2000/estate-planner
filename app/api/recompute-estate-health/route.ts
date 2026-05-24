@@ -31,6 +31,18 @@ export async function POST(request: Request) {
       detectConflicts(householdId, household.owner_id),
     ])
 
+    // Persist recommendations so dashboard reads cache instead of calling RPC
+    const { data: recsData } = await supabase.rpc('generate_estate_recommendations', {
+      p_household_id: householdId,
+    })
+
+    if (recsData) {
+      await supabase
+        .from('estate_health_scores')
+        .update({ recommendations: recsData })
+        .eq('household_id', householdId)
+    }
+
     return NextResponse.json({ success: true })
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Unknown error'

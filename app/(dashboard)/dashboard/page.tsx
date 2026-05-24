@@ -274,7 +274,6 @@ export default async function DashboardPage() {
   const [
     { data: advisorStrategyItems },
     mcScenarioRes,
-    { data: initialRecsData },
     { data: healthScoreRow },
     { data: conflictRows },
     { taxDeferredAssets, currentYearWithdrawals },
@@ -298,14 +297,9 @@ export default async function DashboardPage() {
           .order('accepted_at', { ascending: false, nullsFirst: false })
       : Promise.resolve({ data: null }),
     household?.id
-      ? supabase.rpc('generate_estate_recommendations', {
-          p_household_id: household.id,
-        })
-      : Promise.resolve({ data: null }),
-    household?.id
       ? admin
           .from('estate_health_scores')
-          .select('score, component_scores, computed_at')
+          .select('score, component_scores, computed_at, recommendations')
           .eq('household_id', household.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -322,7 +316,19 @@ export default async function DashboardPage() {
     mcScenarioRes.data ?? [],
   )
 
-  const initialRecommendations = initialRecsData?.recommendations ?? null
+  // Recommendations are populated by recompute (triggerEstateHealthRecompute).
+  // Empty on first load before first household write — shows empty state, not an error.
+  // Sprint P-2: removed generate_estate_recommendations from dashboard hot path.
+  const cachedRecsPayload = healthScoreRow?.recommendations as
+    | { recommendations?: unknown }
+    | null
+    | undefined
+  const initialRecommendations =
+    cachedRecsPayload &&
+    typeof cachedRecsPayload === 'object' &&
+    Array.isArray(cachedRecsPayload.recommendations)
+      ? cachedRecsPayload.recommendations
+      : null
 
   // ── Estate health score — read from cache, recomputed async on staleness ─
   // computeEstateHealthScore writes to DB — never call it in render path.

@@ -1,5 +1,12 @@
 import type { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { computeCompleteProjection } from '@/lib/calculations/projection-complete'
+import {
+  loadBaseCaseScenario,
+  loadLatestInputChangeMs,
+  loadProjectionCalculatedAt,
+} from '@/lib/dashboard/loaders'
+import { isProjectionStale } from '@/lib/projections/staleness'
 import type {
   AssetRowSelect,
   LiabilityRowSelect,
@@ -43,7 +50,18 @@ type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 export type LoadProjectionDataResult = {
   household: Record<string, unknown> | null
   rows: YearRow[]
+  isFromCache?: boolean
 }
+
+const HOUSEHOLD_SELECT = `
+        id, owner_id, person1_name, person1_birth_year, person1_retirement_age,
+        person1_ss_claiming_age, person1_longevity_age, person1_ss_pia,
+        has_spouse, person2_name, person2_birth_year, person2_retirement_age,
+        person2_ss_claiming_age, person2_longevity_age, person2_ss_pia,
+        filing_status, state_primary, state_secondary, inflation_rate,
+        growth_rate_accumulation, growth_rate_retirement,
+        deduction_mode, custom_deduction_amount
+      `
 
 /** Server-side projection load (shared by `/api/projection` and `/projections` page). */
 export async function loadProjectionData(
@@ -51,6 +69,45 @@ export async function loadProjectionData(
   userId: string,
   overrides: ProjectionOverrides = {},
 ): Promise<LoadProjectionDataResult> {
+  if (Object.keys(overrides).length === 0) {
+    const { data: cacheHousehold } = await supabase
+      .from('households')
+      .select(`${HOUSEHOLD_SELECT}, base_case_scenario_id, updated_at`)
+      .eq('owner_id', userId)
+      .maybeSingle()
+
+    if (!cacheHousehold) {
+      return { household: null, rows: [] }
+    }
+
+    if (cacheHousehold.base_case_scenario_id) {
+      const admin = createAdminClient()
+      const [projectionCalculatedAt, latestInputChangeMs] = await Promise.all([
+        loadProjectionCalculatedAt(admin, cacheHousehold.base_case_scenario_id),
+        loadLatestInputChangeMs(supabase, userId, cacheHousehold.updated_at),
+      ])
+      const stale = isProjectionStale({
+        baseCaseScenarioId: cacheHousehold.base_case_scenario_id,
+        projectionCalculatedAt,
+        latestInputChangeMs,
+      })
+
+      if (!stale) {
+        const baseCase = await loadBaseCaseScenario(admin, cacheHousehold.base_case_scenario_id)
+        const cachedOutputs = baseCase?.outputs_s1_first
+        if (Array.isArray(cachedOutputs) && cachedOutputs.length > 0) {
+          const { base_case_scenario_id: _scenarioId, updated_at: _updatedAt, ...household } =
+            cacheHousehold
+          return {
+            household,
+            rows: cachedOutputs as YearRow[],
+            isFromCache: true,
+          }
+        }
+      }
+    }
+  }
+
   const [
     { data: household },
     { data: assets },
@@ -66,15 +123,7 @@ export async function loadProjectionData(
   ] = await Promise.all([
     supabase
       .from('households')
-      .select(`
-        id, owner_id, person1_name, person1_birth_year, person1_retirement_age,
-        person1_ss_claiming_age, person1_longevity_age, person1_ss_pia,
-        has_spouse, person2_name, person2_birth_year, person2_retirement_age,
-        person2_ss_claiming_age, person2_longevity_age, person2_ss_pia,
-        filing_status, state_primary, state_secondary, inflation_rate,
-        growth_rate_accumulation, growth_rate_retirement,
-        deduction_mode, custom_deduction_amount
-      `)
+      .select(HOUSEHOLD_SELECT)
       .eq('owner_id', userId)
       .single(),
     supabase
