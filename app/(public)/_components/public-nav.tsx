@@ -1,6 +1,6 @@
 'use client'
 
-import { getSignupHref } from '@/lib/waitlist-mode'
+import { getSignupHref, isWaitlistMode } from '@/lib/waitlist-mode'
 
 const NAV_LINKS = [
   { href: '/education', label: 'Education' },
@@ -12,6 +12,7 @@ const NAV_LINKS = [
 
 export function PublicNav() {
   const signupHref = getSignupHref()
+  const label = isWaitlistMode() ? 'Join waitlist' : 'Get started'
 
   return (
     <nav
@@ -131,7 +132,7 @@ export function PublicNav() {
             transition: 'all 0.15s',
           }}
         >
-          Get started
+          {label}
         </a>
       </div>
     </nav>

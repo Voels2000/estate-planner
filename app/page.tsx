@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { getSignupHref } from '@/lib/waitlist-mode'
+import { getSignupHref, isWaitlistMode } from '@/lib/waitlist-mode'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -10,6 +10,7 @@ export default async function HomePage() {
 
   if (!user) {
     const signupHref = getSignupHref()
+    const label = isWaitlistMode() ? 'Join waitlist' : 'Get started'
 
     return (
       <main style={{ fontFamily: 'var(--font-body)', background: 'var(--mwm-off-white)', minHeight: '100vh' }}>
@@ -66,7 +67,7 @@ export default async function HomePage() {
             size="sm"
             className="!bg-[#c9a84c] !text-[#0f1f3d] hover:!bg-[#e8c97a] font-semibold"
           >
-            Get Started
+            {label}
           </ButtonLink>
         </div>
       </nav>
