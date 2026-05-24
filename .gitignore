@@ -52,3 +52,6 @@ node_modules/
 .auth/
 tsc.log
 supabase/.temp/
+audit-results.txt
+audit-summary.txt
+security-audit-results.txt
