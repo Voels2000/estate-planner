@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-24 (Sprint 17 current; Sprint 16 closed)
+# Last updated: 2026-05-23 (Sprint 17 current; Sprint 16 closed)
 
 ---
 
@@ -91,25 +91,59 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 
 ### Opening signups — go-live flip
 
-The site is in waitlist mode by default on `VERCEL_ENV=production`. To open signups:
+The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **Sprint C-4 billing disclosures** ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)), and production drip smoke are signed off.
 
-1. In **Vercel → Settings → Environment Variables → Production**, add:
-   - `PUBLIC_SIGNUP_OPEN` = `true`
-2. **Redeploy** (recommended after any Production env change; required if you also changed `NEXT_PUBLIC_*` vars — those are baked into the client bundle at build time)
-3. **Verify on production:**
-   - `https://mywealthmaps.com/signup` → shows signup form (not `/waitlist` redirect)
-   - `https://mywealthmaps.com` → **Get Started** goes to `/signup`
-   - `https://mywealthmaps.com/login` → still works
-   - `/signup?invite=…` still works for advisor/attorney/firm invites
-4. Run post-cutover smoke — **Core §1–3** on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+#### Pre-go-live — keep Supabase Auth settings OFF
 
-**To re-enable waitlist mode:** remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy.
+These are **runtime switches** in the Supabase Dashboard (Authentication → Settings). They take effect immediately for all **new** signups once enabled:
+
+- Email confirmations → **OFF** until go-live
+- Secure email change → **OFF** until go-live
+- Minimum password length → leave at current value (not 12) until go-live
+
+**Why:** Test accounts and seed scripts bypass email verification intentionally. Turning these on now would break local dev, preview smoke, and seeded users. Code through **`cda2ccc`** (Sprint C-3 Phase 1 + Monte Carlo UX) is safe to leave as-is until go-live.
+
+**Sprint C-3 pause point:** Phase 1 (RLS) is closed at `236890c` / `cda2ccc`. Phase 1b (`/auth/callback` route + signup form fix for enforced email confirmation) can stay on a ready branch — that code is useless until email confirmation is enforced, so there is no rush to merge it before go-live.
+
+#### Go-live sequence (exact order — do not reorder)
+
+Run on launch day after all Section 1 gates are checked.
+
+**1. Supabase Dashboard first**
+
+In **Authentication → Settings**:
+
+- [ ] Email confirmations → **ON**
+- [ ] Secure email change → **ON**
+- [ ] Minimum password length → **12**
+
+**2. Deploy auth callback + signup fix (Phase 1b)**
+
+- [ ] Merge and deploy the `/auth/callback` route and signup form fix from Sprint C-3 Phase 1b
+- [ ] Confirm production build includes the callback route before opening signups
+
+**3. Flip `PUBLIC_SIGNUP_OPEN` in Vercel Production**
+
+- [ ] Vercel → Settings → Environment Variables → Production → `PUBLIC_SIGNUP_OPEN` = `true`
+- [ ] **Redeploy** (required after Production env change)
+
+**4. Verify signup surfaces**
+
+- [ ] `https://mywealthmaps.com/signup` → signup form (not `/waitlist` redirect)
+- [ ] `https://mywealthmaps.com` → **Get Started** → `/signup`
+- [ ] `https://mywealthmaps.com/login` → still works
+- [ ] `/signup?invite=…` still works for advisor/attorney/firm invites
+
+**5. End-to-end smoke with a fresh email**
+
+- [ ] Run **Core §1–3** on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+- [ ] Use a **fresh email address** and confirm the full flow: signup → confirm email → login
+
+**To re-enable waitlist mode:** remove `PUBLIC_SIGNUP_OPEN` from Vercel Production and redeploy. (Supabase auth settings can stay ON — new signups will still require verification if the env var is removed and waitlist redirect is active.)
 
 **Implementation:** `lib/waitlist-mode.ts`, `middleware.ts` (runtime `/signup` → `/waitlist` redirect; renamed from `proxy.ts` in `3ceb125` to fix Next.js Turbopack empty middleware manifest), `app/(auth)/signup/page.tsx` (backup redirect), `app/(public)/waitlist/`, `getSignupHref()` on public CTAs.
 
 **Pre-launch (current):** waitlist is on by default on Vercel Production — no env vars required. Optionally set `WAITLIST_MODE=true` / `NEXT_PUBLIC_WAITLIST_MODE=true` for explicit control or local dev. Invite/token signups bypass the gate: `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
-
-Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **Sprint C-4 billing disclosures** ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)), and production drip smoke are signed off.
 
 ### Code
 

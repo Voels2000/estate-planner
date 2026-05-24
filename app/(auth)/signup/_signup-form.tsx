@@ -29,7 +29,6 @@ export function SignupForm() {
     hasFirmInvite && !hasAdvisorInvite ? 'advisor' : 'consumer',
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit() {
@@ -66,9 +65,8 @@ export function SignupForm() {
         },
       })
 
-      console.log('signUp response:', JSON.stringify({ data, error: signUpError }))
-
       if (signUpError) {
+        console.error('signUp error:', signUpError.message)
         setError(signUpError.message)
         setIsSubmitting(false)
         return
@@ -80,7 +78,9 @@ export function SignupForm() {
         return
       }
 
-      if (effectiveRole === 'advisor' && data.user && !hasFirmInvite) {
+      const sessionFromSignUp = data.session
+
+      if (sessionFromSignUp && effectiveRole === 'advisor' && data.user && !hasFirmInvite) {
         try {
           const { data: profile } = await supabase
             .from('profiles')
@@ -130,7 +130,7 @@ export function SignupForm() {
         }
       }
 
-      if (hasFirmInvite) {
+      if (sessionFromSignUp && hasFirmInvite) {
         void fetch('/api/firm/join', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -149,29 +149,7 @@ export function SignupForm() {
           })
       }
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      console.log('signIn response:', JSON.stringify({ error: signInError }))
-
-      if (signInError) {
-        setError('Account created but sign-in failed: ' + signInError.message)
-        setIsSubmitting(false)
-        return
-      }
-
-      // Fire welcome email
-      await fetch('/api/email/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, firstName: fullName.split(' ')[0] || 'there' }),
-      })
-
       // ── Referral attribution ─────────────────────────────────────────────
-      // Read both advisor (?ref=) and attorney (?aref=) codes from sessionStorage.
-      // These were written by ReferralTracker when the user landed on an event page.
       const referralCode =
         typeof window !== 'undefined'
           ? sessionStorage.getItem('mwm_referral_code') ?? undefined
@@ -189,7 +167,7 @@ export function SignupForm() {
           ? sessionStorage.getItem('mwm_attorney_referral_slug') ?? undefined
           : undefined
 
-      // Fire account_created funnel event with full referral context
+      // Fire account_created funnel event with full referral context (no session required)
       fetch('/api/analytics/funnel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -205,9 +183,8 @@ export function SignupForm() {
         }),
       }).catch(() => {})
 
-      // Persist referral codes to profiles for durable attribution.
-      // Written once at signup — never overwritten after this point.
-      if (data.user && (referralCode || attorneyReferralCode)) {
+      // Persist referral codes when signup returned a session (email confirm off in dev/test).
+      if (sessionFromSignUp && data.user && (referralCode || attorneyReferralCode)) {
         supabase
           .from('profiles')
           .update({
@@ -228,48 +205,13 @@ export function SignupForm() {
         sessionStorage.removeItem('mwm_attorney_referral_slug')
       }
 
-      // Route: advisor invite → invite accept (linking/billing); otherwise by role.
-      setIsDone(true)
-      if (advisorInviteToken) {
-        router.push(`/invite/${advisorInviteToken}`)
-      } else if (effectiveRole === 'advisor' && hasFirmInvite) {
-        router.push('/advisor')
-      } else if (effectiveRole === 'advisor') {
-        router.push('/billing')
-      } else if (effectiveRole === 'attorney') {
-        router.push('/attorney')
-      } else {
-        if (redirectTo) {
-          const fromMap: Record<string, string> = {
-            '/find-advisor': 'find-advisor',
-            '/find-attorney': 'find-attorney',
-            '/assess': 'assessment',
-          }
-          const fromKey = fromMap[redirectTo.split('?')[0]]
-          const profileUrl = fromKey ? `/profile?from=${fromKey}` : redirectTo
-          router.push(profileUrl)
-        } else {
-          router.push('/profile')
-        }
-      }
+      router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}`)
       router.refresh()
+      setIsSubmitting(false)
     } catch {
       setError('Something went wrong. Please try again.')
       setIsSubmitting(false)
     }
-  }
-
-  // Full-screen loading overlay while navigating
-  if (isDone) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 gap-4">
-        <svg className="h-8 w-8 animate-spin text-zinc-900 dark:text-zinc-50" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
-        <p className="text-sm font-medium text-neutral-600 dark:text-zinc-400">Setting up your account…</p>
-      </div>
-    )
   }
 
   return (

@@ -37,14 +37,13 @@ export async function POST(req: NextRequest) {
   }
   try {
     const supabase = createAdminClient()
+    console.log('Webhook received:', event.type)
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         const firmId = session.metadata?.firm_id
         if (firmId) {
           const subscriptionId = session.subscription as string | null
-          console.log('checkout.session.completed — firm_id:', firmId)
-          console.log('checkout.session.completed — subscription:', subscriptionId)
           if (subscriptionId) {
             const sub = await stripe.subscriptions.retrieve(subscriptionId)
             const priceId = sub.items.data[0]?.price.id
@@ -67,9 +66,9 @@ export async function POST(req: NextRequest) {
               .update(update)
               .eq('id', firmId)
               .select()
-            console.log('Firm Supabase update data:', JSON.stringify(data))
-            console.log('Firm Supabase update error:', JSON.stringify(error))
-            console.log('Firm subscription activated:', firmId)
+            if (error) {
+              console.error('Firm Supabase update error:', error.message)
+            }
             const ownerId = data?.[0]?.owner_id as string | undefined
             if (ownerId) {
               const { error: profileError } = await supabase
@@ -84,14 +83,11 @@ export async function POST(req: NextRequest) {
               }
             }
           } else {
-            console.log('Firm checkout without subscription id — skipping firm update')
+            console.log('checkout.session.completed — firm checkout without subscription id')
           }
           break
         }
         const userId = session.metadata?.userId
-        console.log('checkout.session.completed — userId:', userId)
-        console.log('checkout.session.completed — customer:', session.customer)
-        console.log('checkout.session.completed — subscription:', session.subscription)
         if (userId) {
           const { data: priorProfile } = await supabase
             .from('profiles')
@@ -110,7 +106,7 @@ export async function POST(req: NextRequest) {
             priceId = sub.items.data[0]?.price.id ?? null
             consumerTier = priceId ? (PRICE_ID_TO_TIER[priceId] ?? null) : null
           }
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('profiles')
             .update({
               subscription_status: 'active',
@@ -120,10 +116,9 @@ export async function POST(req: NextRequest) {
               ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
             })
             .eq('id', userId)
-            .select()
-          console.log('Supabase update data:', JSON.stringify(data))
-          console.log('Supabase update error:', JSON.stringify(error))
-          console.log('Subscription activated for user:', userId)
+          if (error) {
+            console.error('Supabase update error:', error.message)
+          }
 
           if (consumerTier && consumerTier > previousTier) {
             void trackTierUpgrade({
@@ -133,7 +128,7 @@ export async function POST(req: NextRequest) {
             })
           }
         } else {
-          console.log('No userId in metadata — skipping update')
+          console.log('checkout.session.completed — no userId in metadata, skipping profile update')
         }
         break
       }
@@ -146,7 +141,7 @@ export async function POST(req: NextRequest) {
             .update({ subscription_status: 'canceled' })
             .eq('id', firmId)
             .select('owner_id')
-          console.log('Firm subscription canceled:', firmId)
+          console.log('customer.subscription.deleted — firm subscription canceled')
           const ownerId = firmRows?.[0]?.owner_id as string | undefined
           if (ownerId) {
             const { error: profileError } = await supabase
@@ -167,7 +162,7 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .update({ subscription_status: 'canceled' })
           .eq('stripe_customer_id', customerId)
-        console.log('Subscription canceled for customer:', customerId)
+        console.log('customer.subscription.deleted — consumer subscription canceled')
         break
       }
       case 'customer.subscription.updated': {
@@ -180,7 +175,7 @@ export async function POST(req: NextRequest) {
             .update({ subscription_status: mappedStatus })
             .eq('id', firmId)
             .select('owner_id')
-          console.log('Firm subscription updated:', firmId, mappedStatus)
+          console.log('customer.subscription.updated — firm subscription updated:', mappedStatus)
           const ownerId = firmRows?.[0]?.owner_id as string | undefined
           if (ownerId) {
             const { error: profileError } = await supabase
@@ -204,10 +199,7 @@ export async function POST(req: NextRequest) {
           .eq('subscription_status', 'advisor_managed')
           .limit(1)
         if (managedRows?.length) {
-          console.log(
-            'Skipping consumer subscription update — advisor_managed:',
-            customerId,
-          )
+          console.log('customer.subscription.updated — skipping advisor_managed profile')
           break
         }
         const renewalIso = new Date(
@@ -220,7 +212,7 @@ export async function POST(req: NextRequest) {
             subscription_period_end: renewalIso,
           })
           .eq('stripe_customer_id', customerId)
-        console.log('Subscription updated for customer:', customerId)
+        console.log('customer.subscription.updated — consumer subscription updated')
         break
       }
       case 'invoice.payment_failed': {
@@ -242,14 +234,14 @@ export async function POST(req: NextRequest) {
             .from('firms')
             .update({ subscription_status: 'past_due' })
             .eq('id', firmId)
-          console.log('Firm invoice payment failed, past_due:', firmId)
+          console.log('invoice.payment_failed — firm marked past_due')
           break
         }
         break
       }
     }
   } catch (err) {
-    console.error('Webhook handler error:', err)
+    console.error('Webhook error:', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
   return NextResponse.json({ received: true })

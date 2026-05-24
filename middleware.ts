@@ -127,6 +127,22 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
+  // MFA enforcement — if user has enrolled a factor, require AAL2 on every request
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  const isMfaFlowPath =
+    pathname === '/mfa-challenge' ||
+    pathname === '/mfa-enroll' ||
+    pathname.startsWith('/auth/')
+  if (
+    aal?.nextLevel === 'aal2' &&
+    aal?.currentLevel !== 'aal2' &&
+    !isMfaFlowPath
+  ) {
+    const mfaUrl = new URL('/mfa-challenge', request.url)
+    mfaUrl.searchParams.set('redirectTo', pathname)
+    return redirectPreservingCookies(request, mfaUrl.pathname + mfaUrl.search, supabaseResponse)
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, subscription_status, firm_role')

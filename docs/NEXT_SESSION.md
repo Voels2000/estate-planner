@@ -27,12 +27,14 @@
 
 ### Go-live gate (do not skip)
 
-1. Complete C-4 checklist — manual signup → `/billing` → Stripe Checkout → receipt → self-serve cancel
-2. Vercel Production → add `PUBLIC_SIGNUP_OPEN=true` → redeploy
-3. Verify: `/signup` shows form · homepage **Get Started** → `/signup` · `/login` works
-4. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
+Follow the **exact order** in [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip):
 
-Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+Note: Supabase Auth settings (email confirmation, secure email change, min password 12) stay **OFF** until go-live; Phase 1b auth callback can stay on a branch until then.
+
+1. Complete C-4 checklist — manual signup → `/billing` → Stripe Checkout → receipt → self-serve cancel
+2. **Launch day:** Supabase Auth ON → deploy Phase 1b (`/auth/callback` + signup fix) → `PUBLIC_SIGNUP_OPEN=true` → redeploy
+3. Verify signup surfaces + **fresh-email** flow: signup → confirm email → login
+4. Run Core §1–3 smoke on production ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md))
 
 ---
 
@@ -55,7 +57,9 @@ Full runbook: [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH
 |------|---------|
 | **RLS security fixes** | ✅ `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`) — businesses, assets, `monte_carlo_runs`, reference tables, `advisor_clients`, profiles |
 
-**Commits:** `236890c`
+**Commits:** `236890c`, `cda2ccc` (docs + Monte Carlo UX)
+
+**Paused — Phase 1b (go-live):** `/auth/callback` route + signup form fix for enforced email confirmation. Keep on a ready branch; merge/deploy as **step 2** of [LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip). Supabase Auth dashboard switches (email confirm, secure email change, min password 12) stay **OFF** until that sequence.
 
 ---
 
