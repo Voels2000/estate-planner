@@ -23,12 +23,13 @@ Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main pla
 
 | Link | Visible when | Target | Notes |
 |------|----------------|--------|--------|
+| 📖 Education Guide | `role === 'consumer'` **or** `isSuperuser` | `/education` | Platform resource; no tier gate; not disabled for locked users |
 | 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; lock when `isLockedUser` |
 | ⚖️ My Attorney | `role === 'consumer'` **or** `isSuperuser`, **tier ≥ 2** | `/my-attorney` | Lock when `isLockedUser` or tier &lt; 2 |
 | 💳 Manage Subscription | All signed-in users | `/billing` | Lock when `isLockedUser` |
 | 🚪 Sign out | All signed-in users | (auth sign-out) | Second footer block, separated by border |
 
-Locked accounts (`isLockedUser`): footer links render disabled with 🔒.
+Locked accounts (`isLockedUser`): My Advisor, My Attorney, and Manage Subscription render disabled with 🔒. Education Guide stays enabled.
 
 ## Sidebar portal links (consumer layout)
 
@@ -59,7 +60,6 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 |-------|-------|--------|--------|
 | Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
-| Education Guide | `/education` | `(public)/education/layout.tsx` | Shared `(public)` nav + education header; auth-gated |
 | Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |

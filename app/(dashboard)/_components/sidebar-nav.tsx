@@ -621,6 +621,19 @@ export function SidebarNav({
 
       <div className="border-t border-neutral-200">
         <div className="px-3 pt-3 pb-1 space-y-0.5">
+          {(role === 'consumer' || isSuperuser) && (
+            <Link
+              href="/education"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activePath === '/education' || activePath.startsWith('/education/')
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+              }`}
+            >
+              📖 Education Guide
+            </Link>
+          )}
+
           {(role === 'consumer' || isSuperuser) &&
             (isLockedUser ? (
               <Link
