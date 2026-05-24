@@ -63,7 +63,8 @@ set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
 set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
 ```
 
-- **Attorney:** `test-attorney@mywealthmaps.test` — script prints `referral_code` for `?aref=` in sections B and D.
+- **Attorney listing:** `test-attorney@mywealthmaps.test` — script prints `referral_code` for `?aref=` in sections B and D (known code: **6fd027d3**).
+- **Attorney portal:** `test-attorney-portal@rolobe.resend.app` / `TestAttorney123!` — after seed, sign in at `/login` → `/attorney`; **Newsletter Kit** block should render (requires `profile_id` on listing).
 - **Consumer:** uses `PLAYWRIGHT_CONSUMER_EMAIL` from `.env.test` — no new user created.
 - **Advisor `?ref=`:** use a real `referral_code` from `advisor_directory` (no dedicated seed script).
 

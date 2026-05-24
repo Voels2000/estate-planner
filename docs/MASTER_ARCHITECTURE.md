@@ -371,7 +371,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/seed-test-attorney.ts` | Idempotent `test-attorney@mywealthmaps.test`; prints `referral_code` for smoke `?aref=` |
+| `scripts/seed-test-attorney.ts` | Idempotent listing `test-attorney@mywealthmaps.test` + portal user `test-attorney-portal@rolobe.resend.app` (`TestAttorney123!`); links `attorney_listings.profile_id` for `/attorney` newsletter kit; prints `referral_code` for smoke `?aref=` |
 | `scripts/seed-test-advisor.ts` | Idempotent `test-advisor@mywealthmaps.test`; prints `referral_code` for smoke `?ref=` |
 | `scripts/seed-test-consumer-estate.ts` | Ensures `PLAYWRIGHT_CONSUMER_EMAIL` is estate tier (3) |
 
