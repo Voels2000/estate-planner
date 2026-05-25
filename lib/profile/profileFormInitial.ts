@@ -27,8 +27,6 @@ export type ProfileFormInitial = {
   growthRateRetirement: string
   deductionMode: 'standard' | 'custom' | 'none'
   customDeductionAmount: string
-  person1FirstName: string
-  person2FirstName: string
   grossEstateEstimate: string
   hasMinorChildren: boolean | null
   hasBusinessInterests: boolean | null
@@ -111,8 +109,6 @@ export function buildProfileFormInitial(
     growthRateRetirement: household?.growth_rate_retirement?.toString() ?? '5',
     deductionMode: validDeduction,
     customDeductionAmount: household?.custom_deduction_amount?.toString() ?? '',
-    person1FirstName: household?.person1_first_name ?? '',
-    person2FirstName: household?.person2_first_name ?? '',
     grossEstateEstimate: household?.gross_estate_estimate ?? '',
     hasMinorChildren: household?.has_minor_children ?? null,
     hasBusinessInterests: household?.has_business_interests ?? null,

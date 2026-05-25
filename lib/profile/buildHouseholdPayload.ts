@@ -27,8 +27,6 @@ export type ProfileSavePayload = {
   growthRateRetirement: string
   deductionMode: 'standard' | 'custom' | 'none'
   customDeductionAmount: string
-  person1FirstName?: string
-  person2FirstName?: string
   grossEstateEstimate?: string
   hasMinorChildren?: boolean | null
   hasBusinessInterests?: boolean | null
@@ -70,10 +68,7 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     owner_id: ownerId,
     name: payload.householdName || `${payload.fullName}'s Household`,
     person1_name: payload.person1Name,
-    person1_first_name:
-      payload.person1FirstName?.trim() ||
-      payload.person1Name.trim().split(' ')[0] ||
-      null,
+    person1_first_name: payload.person1Name.trim().split(' ')[0] || null,
     person1_last_name: payload.person1Name.trim().split(' ').slice(1).join(' ') || null,
     person1_birth_year: parseInt(payload.person1BirthYear, 10) || null,
     person1_retirement_age: parseInt(payload.person1RetirementAge, 10) || null,
@@ -83,9 +78,7 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     has_spouse: payload.hasSpouse,
     person2_name: payload.hasSpouse ? payload.person2Name : null,
     person2_first_name: payload.hasSpouse
-      ? payload.person2FirstName?.trim() ||
-        payload.person2Name.trim().split(' ')[0] ||
-        null
+      ? payload.person2Name.trim().split(' ')[0] || null
       : null,
     person2_last_name: payload.hasSpouse
       ? payload.person2Name.trim().split(' ').slice(1).join(' ') || null

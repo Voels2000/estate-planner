@@ -80,8 +80,6 @@ export function ProfileClient({
   const [growthRateRetirement, setGrowthRateRetirement] = useState(initial.growthRateRetirement)
   const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>(initial.deductionMode)
   const [customDeductionAmount, setCustomDeductionAmount] = useState(initial.customDeductionAmount)
-  const [person1FirstName, setPerson1FirstName] = useState(initial.person1FirstName)
-  const [person2FirstName, setPerson2FirstName] = useState(initial.person2FirstName)
   const [grossEstateEstimate, setGrossEstateEstimate] = useState(initial.grossEstateEstimate)
   const [hasMinorChildren, setHasMinorChildren] = useState<boolean | null>(initial.hasMinorChildren)
   const [hasBusinessInterests, setHasBusinessInterests] = useState<boolean | null>(
@@ -166,8 +164,6 @@ export function ProfileClient({
         growthRateRetirement,
         deductionMode,
         customDeductionAmount,
-        person1FirstName,
-        person2FirstName,
         grossEstateEstimate,
         hasMinorChildren,
         hasBusinessInterests,
@@ -526,41 +522,20 @@ export function ProfileClient({
             <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
               A little more about your household
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Your first name">
-                <input
-                  type="text"
-                  value={person1FirstName}
-                  onChange={(e) => setPerson1FirstName(e.target.value)}
-                  className={inputClass}
-                  placeholder="Jane"
-                />
-              </Field>
-              <Field label="Spouse / partner first name (optional)">
-                <input
-                  type="text"
-                  value={person2FirstName}
-                  onChange={(e) => setPerson2FirstName(e.target.value)}
-                  className={inputClass}
-                  placeholder="John"
-                  disabled={!hasSpouse}
-                />
-              </Field>
-              <Field label="Estimated household net worth">
-                <select
-                  value={grossEstateEstimate}
-                  onChange={(e) => setGrossEstateEstimate(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Select a range</option>
-                  <option value="under_2m">Under $2M</option>
-                  <option value="2m_5m">$2M – $5M</option>
-                  <option value="5m_10m">$5M – $10M</option>
-                  <option value="10m_20m">$10M – $20M</option>
-                  <option value="over_20m">Over $20M</option>
-                </select>
-              </Field>
-            </div>
+            <Field label="Estimated household net worth">
+              <select
+                value={grossEstateEstimate}
+                onChange={(e) => setGrossEstateEstimate(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select a range</option>
+                <option value="under_2m">Under $2M</option>
+                <option value="2m_5m">$2M – $5M</option>
+                <option value="5m_10m">$5M – $10M</option>
+                <option value="10m_20m">$10M – $20M</option>
+                <option value="over_20m">Over $20M</option>
+              </select>
+            </Field>
             <div className="mt-4 space-y-4">
               <BooleanToggle
                 label="Do you have children under 18?"
