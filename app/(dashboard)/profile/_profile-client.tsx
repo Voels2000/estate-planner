@@ -80,6 +80,14 @@ export function ProfileClient({
   const [growthRateRetirement, setGrowthRateRetirement] = useState(initial.growthRateRetirement)
   const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>(initial.deductionMode)
   const [customDeductionAmount, setCustomDeductionAmount] = useState(initial.customDeductionAmount)
+  const [person1FirstName, setPerson1FirstName] = useState(initial.person1FirstName)
+  const [person2FirstName, setPerson2FirstName] = useState(initial.person2FirstName)
+  const [grossEstateEstimate, setGrossEstateEstimate] = useState(initial.grossEstateEstimate)
+  const [hasMinorChildren, setHasMinorChildren] = useState<boolean | null>(initial.hasMinorChildren)
+  const [hasBusinessInterests, setHasBusinessInterests] = useState<boolean | null>(
+    initial.hasBusinessInterests,
+  )
+  const showWizardFields = initial.showWizardFields
 
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false)
   const [welcomeContext, setWelcomeContext] = useState<
@@ -158,6 +166,11 @@ export function ProfileClient({
         growthRateRetirement,
         deductionMode,
         customDeductionAmount,
+        person1FirstName,
+        person2FirstName,
+        grossEstateEstimate,
+        hasMinorChildren,
+        hasBusinessInterests,
       }
 
       const res = await fetch('/api/consumer/profile', {
@@ -192,7 +205,9 @@ export function ProfileClient({
         requiredParam && profileComplete && fromParam?.startsWith('/')
           ? fromParam
           : profileComplete && (householdId || created)
-            ? '/onboarding/invite-advisor'
+            ? showWizardFields
+              ? '/onboarding/wizard'
+              : '/onboarding/invite-advisor'
             : householdId || created
               ? '/dashboard'
               : '/health-check'
@@ -506,6 +521,61 @@ export function ProfileClient({
           </div>
         </Card>
 
+        {showWizardFields && (
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
+              A little more about your household
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Your first name">
+                <input
+                  type="text"
+                  value={person1FirstName}
+                  onChange={(e) => setPerson1FirstName(e.target.value)}
+                  className={inputClass}
+                  placeholder="Jane"
+                />
+              </Field>
+              <Field label="Spouse / partner first name (optional)">
+                <input
+                  type="text"
+                  value={person2FirstName}
+                  onChange={(e) => setPerson2FirstName(e.target.value)}
+                  className={inputClass}
+                  placeholder="John"
+                  disabled={!hasSpouse}
+                />
+              </Field>
+              <Field label="Estimated household net worth">
+                <select
+                  value={grossEstateEstimate}
+                  onChange={(e) => setGrossEstateEstimate(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select a range</option>
+                  <option value="under_2m">Under $2M</option>
+                  <option value="2m_5m">$2M – $5M</option>
+                  <option value="5m_10m">$5M – $10M</option>
+                  <option value="10m_20m">$10M – $20M</option>
+                  <option value="over_20m">Over $20M</option>
+                </select>
+              </Field>
+            </div>
+            <div className="mt-4 space-y-4">
+              <BooleanToggle
+                label="Do you have children under 18?"
+                value={hasMinorChildren}
+                onChange={setHasMinorChildren}
+              />
+              <BooleanToggle
+                label="Do you own a business interest?"
+                value={hasBusinessInterests}
+                onChange={setHasBusinessInterests}
+              />
+            </div>
+          </Card>
+        )}
+
         {validationErrors.length > 0 && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 space-y-1">
             <p className="font-medium">Please complete the following before saving:</p>
@@ -538,6 +608,41 @@ export function ProfileClient({
 }
 
 const inputClass = formControlClass
+
+function BooleanToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean | null
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div>
+      <p className={`${formLabelClass} mb-2`}>{label}</p>
+      <div className="flex gap-2">
+        {(['yes', 'no'] as const).map((choice) => {
+          const selected = choice === 'yes' ? value === true : value === false
+          return (
+            <button
+              key={choice}
+              type="button"
+              onClick={() => onChange(choice === 'yes')}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition capitalize ${
+                selected
+                  ? 'bg-[var(--mwm-navy)] text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              {choice}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function Field({ label, children, required }: { label: string, children: React.ReactNode, required?: boolean }) {
   return (

@@ -8,6 +8,9 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
@@ -134,6 +137,7 @@ type Props = {
     multiStateRealEstate: boolean
     distinctPropertyStates: string[]
   } | null
+  showSetupPrompt?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -181,8 +185,10 @@ export function DashboardClient(props: Props) {
     hasAdvisorConnection = false,
     successionGap = false,
     personaAlerts = null,
+    showSetupPrompt = false,
   } = props
 
+  const router = useRouter()
   void consumerTier
   void hasBaseCase
   void scenarioId
@@ -215,6 +221,27 @@ export function DashboardClient(props: Props) {
         relevanceHousehold={lifeEventRelevance}
         hasAdvisorConnection={hasAdvisorConnection}
       />
+
+      {showSetupPrompt && (
+        <Card accent hoverable className="mt-4">
+          <Card.Body>
+            <h3 className="font-[family-name:var(--font-display)] text-lg text-[color:var(--mwm-navy)]">
+              Complete your financial picture
+            </h3>
+            <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+              Add your first asset and income source to see your net worth, retirement trajectory,
+              and any planning gaps we&apos;ve identified.
+            </p>
+            <Button
+              variant="gold"
+              className="mt-4"
+              onClick={() => router.push('/onboarding/wizard')}
+            >
+              Continue setup →
+            </Button>
+          </Card.Body>
+        </Card>
+      )}
 
       {successionGap && (
         <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

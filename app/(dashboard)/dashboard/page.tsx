@@ -46,6 +46,7 @@ import { DashboardEmptyState } from './_components/DashboardEmptyState'
 import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
+import { isWizardComplete } from '@/lib/estate/profileGate'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -418,8 +419,15 @@ export default async function DashboardPage() {
     household,
   })
 
+  const wizardComplete = isWizardComplete(profile)
+  const hasAssets = (assets?.length ?? 0) > 0
+  const hasIncomeRows = (income?.length ?? 0) > 0
+  const showSetupPrompt =
+    !wizardComplete && !(hasAssets && hasIncomeRows)
+
   return (
     <DashboardClient
+      showSetupPrompt={showSetupPrompt}
       composition={composition}
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}

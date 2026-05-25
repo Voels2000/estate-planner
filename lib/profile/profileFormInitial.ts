@@ -27,6 +27,12 @@ export type ProfileFormInitial = {
   growthRateRetirement: string
   deductionMode: 'standard' | 'custom' | 'none'
   customDeductionAmount: string
+  person1FirstName: string
+  person2FirstName: string
+  grossEstateEstimate: string
+  hasMinorChildren: boolean | null
+  hasBusinessInterests: boolean | null
+  showWizardFields: boolean
 }
 
 type HouseholdRow = {
@@ -54,10 +60,19 @@ type HouseholdRow = {
   growth_rate_retirement?: number | null
   deduction_mode?: string | null
   custom_deduction_amount?: number | null
+  person1_first_name?: string | null
+  person2_first_name?: string | null
+  gross_estate_estimate?: string | null
+  has_minor_children?: boolean | null
+  has_business_interests?: boolean | null
 }
 
 export function buildProfileFormInitial(
-  profile: { full_name?: string | null; email?: string | null } | null,
+  profile: {
+    full_name?: string | null
+    email?: string | null
+    onboarding_wizard_completed_at?: string | null
+  } | null,
   household: HouseholdRow | null,
   userEmail: string,
 ): ProfileFormInitial {
@@ -96,5 +111,11 @@ export function buildProfileFormInitial(
     growthRateRetirement: household?.growth_rate_retirement?.toString() ?? '5',
     deductionMode: validDeduction,
     customDeductionAmount: household?.custom_deduction_amount?.toString() ?? '',
+    person1FirstName: household?.person1_first_name ?? '',
+    person2FirstName: household?.person2_first_name ?? '',
+    grossEstateEstimate: household?.gross_estate_estimate ?? '',
+    hasMinorChildren: household?.has_minor_children ?? null,
+    hasBusinessInterests: household?.has_business_interests ?? null,
+    showWizardFields: !profile?.onboarding_wizard_completed_at,
   }
 }

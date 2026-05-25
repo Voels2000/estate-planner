@@ -4,8 +4,14 @@ import { SidebarNav } from './_components/sidebar-nav'
 import { DashboardShell } from './_components/dashboard-shell'
 import { TrialBanner } from './_components/trial-banner'
 import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
+import { WizardOnboardingGate } from './_components/wizard-onboarding-gate'
 import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
-import { isMinimumViableProfile } from '@/lib/estate/profileGate'
+import {
+  isMinimumViableProfile,
+  isWizardComplete,
+  isWizardReadyProfile,
+} from '@/lib/estate/profileGate'
+import { ensureWizardBackfill } from '@/lib/onboarding/ensureWizardBackfill'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 function DashboardMain({
@@ -14,6 +20,7 @@ function DashboardMain({
   trialSecondsLeft,
   trialMinutesLeft,
   trialExpiry,
+  needsWizardOnboarding,
   needsInviteAdvisorOnboarding,
 }: {
   children: React.ReactNode
@@ -21,6 +28,7 @@ function DashboardMain({
   trialSecondsLeft?: number
   trialMinutesLeft?: number
   trialExpiry?: Date
+  needsWizardOnboarding: boolean
   needsInviteAdvisorOnboarding: boolean
 }) {
   return (
@@ -32,6 +40,7 @@ function DashboardMain({
           expiryTimestamp={trialExpiry.getTime()}
         />
       )}
+      <WizardOnboardingGate needsWizard={needsWizardOnboarding} />
       <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
       <main className="flex-1">{children}</main>
     </>
@@ -51,9 +60,28 @@ export default async function DashboardLayout({
     layoutContext
   const profileFull = profile
 
+  let wizardComplete = isWizardComplete(profileFull)
+  if (
+    !isSuperuser &&
+    profileFull?.role === 'consumer' &&
+    !wizardComplete &&
+    isWizardReadyProfile(householdRow)
+  ) {
+    const supabase = await createClient()
+    const backfilled = await ensureWizardBackfill(supabase, sessionUser.id)
+    if (backfilled) wizardComplete = true
+  }
+
+  const needsWizardOnboarding =
+    !isSuperuser &&
+    profileFull?.role === 'consumer' &&
+    !wizardComplete &&
+    isWizardReadyProfile(householdRow)
+
   const needsInviteAdvisorOnboarding =
     !isSuperuser &&
     profileFull?.role === 'consumer' &&
+    wizardComplete &&
     !profileFull?.onboarding_invite_advisor_completed_at &&
     isMinimumViableProfile(householdRow ?? {}).complete
 
@@ -77,7 +105,10 @@ export default async function DashboardLayout({
           />
         }
       >
-        <DashboardMain needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}>
+        <DashboardMain
+          needsWizardOnboarding={needsWizardOnboarding}
+          needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+        >
           {children}
         </DashboardMain>
       </DashboardShell>
@@ -154,6 +185,7 @@ export default async function DashboardLayout({
         trialSecondsLeft={trialSecondsLeft}
         trialMinutesLeft={trialMinutesLeft}
         trialExpiry={trialExpiry ?? undefined}
+        needsWizardOnboarding={needsWizardOnboarding}
         needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
       >
         {children}

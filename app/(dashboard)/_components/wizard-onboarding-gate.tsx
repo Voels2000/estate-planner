@@ -12,15 +12,15 @@ const EXEMPT_PREFIXES = [
   '/login',
 ]
 
-export function InviteAdvisorOnboardingGate({ needsOnboarding }: { needsOnboarding: boolean }) {
+export function WizardOnboardingGate({ needsWizard }: { needsWizard: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
-    if (!needsOnboarding) return
+    if (!needsWizard) return
     if (EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) return
-    router.replace('/onboarding/invite-advisor')
-  }, [needsOnboarding, pathname, router])
+    router.replace('/onboarding/wizard')
+  }, [needsWizard, pathname, router])
 
   return null
 }

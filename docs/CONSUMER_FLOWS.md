@@ -107,7 +107,8 @@ Each feature section below uses this shape:
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
 | **Write APIs** | `PATCH /api/consumer/profile` |
-| **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete (new household or existing) → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
+| **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete and wizard not done → `/onboarding/wizard`; if MVP complete and wizard done → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
+| **Extended fields (OB-1)** | When `onboarding_wizard_completed_at` is null: `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests` |
 | **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` |
 | **E2E** | Implicit via gated-page tests; manual smoke §3 |
 
@@ -120,6 +121,18 @@ Each feature section below uses this shape:
 | Primary DOB | `person1_birth_year` **or** legacy `date_of_birth_1` |
 
 Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?required=true&missing=state_primary,filing_status,…&from=/estate-tax` (`lib/estate/requireMinimumProfile.ts`).
+
+### Onboarding Wizard — `/onboarding/wizard`
+
+| | |
+|--|--|
+| **User goal** | Add first asset + first income + optionally invite advisor |
+| **Tier / gate** | Tier 1; requires MVP profile; blocked when `onboarding_wizard_completed_at` is set |
+| **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
+| **Client** | `_wizard-client.tsx` — 3-step guided flow |
+| **Write APIs** | `POST /api/consumer/assets` (step 1); `POST /api/consumer/income` (step 2); `POST /api/consumer/onboarding-wizard-complete` (step 3) |
+| **Layout gate** | `WizardOnboardingGate` in `layout.tsx` — redirects until `onboarding_wizard_completed_at` set; existing users with assets/income auto-backfilled |
+| **Migration** | `20260526000000_onboarding_wizard_fields.sql` |
 
 ### Invite your advisor — `/onboarding/invite-advisor`
 

@@ -27,7 +27,20 @@ export type ProfileSavePayload = {
   growthRateRetirement: string
   deductionMode: 'standard' | 'custom' | 'none'
   customDeductionAmount: string
+  person1FirstName?: string
+  person2FirstName?: string
+  grossEstateEstimate?: string
+  hasMinorChildren?: boolean | null
+  hasBusinessInterests?: boolean | null
 }
+
+const GROSS_ESTATE_ESTIMATE_VALUES = [
+  'under_2m',
+  '2m_5m',
+  '5m_10m',
+  '10m_20m',
+  'over_20m',
+] as const
 
 export function validateProfileSavePayload(payload: ProfileSavePayload): string[] {
   const errors: string[] = []
@@ -57,7 +70,10 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     owner_id: ownerId,
     name: payload.householdName || `${payload.fullName}'s Household`,
     person1_name: payload.person1Name,
-    person1_first_name: payload.person1Name.trim().split(' ')[0] || null,
+    person1_first_name:
+      payload.person1FirstName?.trim() ||
+      payload.person1Name.trim().split(' ')[0] ||
+      null,
     person1_last_name: payload.person1Name.trim().split(' ').slice(1).join(' ') || null,
     person1_birth_year: parseInt(payload.person1BirthYear, 10) || null,
     person1_retirement_age: parseInt(payload.person1RetirementAge, 10) || null,
@@ -66,7 +82,11 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     person1_ss_pia: payload.person1SSPia.trim() !== '' ? Number(payload.person1SSPia) : null,
     has_spouse: payload.hasSpouse,
     person2_name: payload.hasSpouse ? payload.person2Name : null,
-    person2_first_name: payload.hasSpouse ? payload.person2Name.trim().split(' ')[0] || null : null,
+    person2_first_name: payload.hasSpouse
+      ? payload.person2FirstName?.trim() ||
+        payload.person2Name.trim().split(' ')[0] ||
+        null
+      : null,
     person2_last_name: payload.hasSpouse
       ? payload.person2Name.trim().split(' ').slice(1).join(' ') || null
       : null,
@@ -85,6 +105,15 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     growth_rate_retirement: Number(payload.growthRateRetirement) || 5,
     deduction_mode: payload.deductionMode,
     custom_deduction_amount: parseFloat(payload.customDeductionAmount) || 0,
+    gross_estate_estimate:
+      payload.grossEstateEstimate &&
+      GROSS_ESTATE_ESTIMATE_VALUES.includes(
+        payload.grossEstateEstimate as (typeof GROSS_ESTATE_ESTIMATE_VALUES)[number],
+      )
+        ? payload.grossEstateEstimate
+        : null,
+    has_minor_children: payload.hasMinorChildren ?? null,
+    has_business_interests: payload.hasBusinessInterests ?? null,
     updated_at: new Date().toISOString(),
   }
 }

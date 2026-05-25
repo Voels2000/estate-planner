@@ -8,6 +8,10 @@ export type ProfileGateHousehold = {
   date_of_birth_1?: string | null
 }
 
+export type ProfileGateProfile = {
+  onboarding_wizard_completed_at?: string | null
+}
+
 export interface ProfileGateResult {
   complete: boolean
   missing: ProfileGateMissingField[]
@@ -30,4 +34,22 @@ export function isMinimumViableProfile(household: ProfileGateHousehold): Profile
     complete: missing.length === 0,
     missing,
   }
+}
+
+/**
+ * Extended check used by the onboarding wizard gate.
+ * Does not gate existing estate planning pages.
+ */
+export function isWizardReadyProfile(household: ProfileGateHousehold | null): boolean {
+  if (!household) return false
+  return !!(
+    household.state_primary?.trim() &&
+    household.filing_status?.trim() &&
+    (household.person1_birth_year || household.date_of_birth_1)
+  )
+}
+
+/** Wizard finished when onboarding_wizard_completed_at is set. */
+export function isWizardComplete(profile: ProfileGateProfile | null): boolean {
+  return !!profile?.onboarding_wizard_completed_at
 }

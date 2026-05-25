@@ -26,7 +26,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   if (!user) redirect('/login')
 
   const [{ data: profile }, { data: household }] = await Promise.all([
-    supabase.from('profiles').select('full_name, email').eq('id', user.id).single(),
+    supabase
+      .from('profiles')
+      .select('full_name, email, onboarding_wizard_completed_at')
+      .eq('id', user.id)
+      .single(),
     supabase.from('households').select('*').eq('owner_id', user.id).single(),
   ])
 

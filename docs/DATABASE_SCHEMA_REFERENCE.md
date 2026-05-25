@@ -43,15 +43,16 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `profiles`
 
-- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`, `onboarding_invite_advisor_completed_at`
+- **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`, `onboarding_invite_advisor_completed_at`, `onboarding_wizard_completed_at`
 - **Purpose:** user identity attributes and subscription/role flags.
 - **Referral attribution (Sprint 9):** set once at signup from event-page sessionStorage; join `referral_code` → `advisor_directory.referral_code`, `attorney_referral_code` → `attorney_listings.referral_code`.
 - **Invite-advisor gate (Sprint 10):** `onboarding_invite_advisor_completed_at` — set when consumer completes or skips `/onboarding/invite-advisor` (same timestamp for both; no separate skipped flag).
+- **Onboarding wizard (Sprint OB-1):** `onboarding_wizard_completed_at` — set when consumer finishes `/onboarding/wizard` (also sets invite-advisor timestamp via `POST /api/consumer/onboarding-wizard-complete`).
 - **Migrations:** `20260529000000_profiles_referral_attribution.sql`, `20260530000000_sprint9_10_gates.sql`
 
 ### `households`
 
-- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
+- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
 - **Purpose:** central planning record for person/spouse demographics and modeling defaults.
 - **Succession intake (Sprint 10):** minimal business succession booleans; `PATCH /api/consumer/succession-intake`.
 
@@ -376,6 +377,7 @@ After each schema-affecting session:
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 - `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
 - `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code`
+- `20260526000000_onboarding_wizard_fields.sql` — `households.person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`; `profiles.onboarding_wizard_completed_at`
 - `20260530000000_sprint9_10_gates.sql` — `profiles.onboarding_invite_advisor_completed_at`; `advisor_clients.connection_life_event_*`; `households.succession_*`
 - `20260531000000_remove_ab_test_app_config.sql` — removes pre-launch A/B rows from `app_config` (Sprint 12)
 - `20260523000000_funnel_events.sql` — `funnel_events`
