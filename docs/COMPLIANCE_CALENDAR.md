@@ -27,7 +27,7 @@ Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy 
 
 Washington **WCPA** (RCW 19.255.010): respond to authenticated deletion requests within **45 days**. Privacy Policy commits to deletion within **30 days** after account close / subscription cancellation.
 
-### Right-to-delete request received
+### Right-to-delete SOP (updated)
 
 1. Verify requestor identity (confirm email matches account)
 2. Look up user ID in Supabase Admin or admin portal
@@ -36,8 +36,10 @@ Washington **WCPA** (RCW 19.255.010): respond to authenticated deletion requests
 4. Review output — confirm correct household and row counts
 5. Execute: `npx tsx scripts/gdpr-delete-user.ts --email user@example.com`
    OR: Admin Portal → Data & Compliance → Execute Deletion → uncheck Dry Run
-6. Confirm deletion in Admin Portal → Data & Compliance → Audit Log
-7. Respond to requestor within 45 days (WCPA requirement)
+6. **Verify deletion**: `npm run verify:deletion -- --email user@example.com`
+   Must show PASS before responding to the user
+7. Confirm deletion in Admin Portal → Data & Compliance → Audit Log
+8. Respond to requestor within 45 days (WCPA requirement)
    Response template: "Your request to delete personal data has been processed.
    All personal data associated with your account has been permanently deleted."
 

@@ -83,7 +83,127 @@ async function deleteEmailCaptures(email: string): Promise<void> {
   }
 }
 
-async function deleteAccountWithAudit(email: string): Promise<boolean> {
+async function logDeletionAudit(
+  userId: string,
+  email: string,
+  initiatedBy: string,
+): Promise<void> {
+  await supabase.from('deletion_audit_log').insert({
+    user_id: userId,
+    email,
+    reason: 'admin_initiated',
+    initiated_by: initiatedBy,
+    dry_run: false,
+    auth_deleted: true,
+    success: true,
+    completed_at: new Date().toISOString(),
+  })
+}
+
+/** Hard-delete auth user; fall back to soft-delete when FK constraints block removal. */
+async function deleteAuthUserById(userId: string, email: string): Promise<boolean> {
+  const { error } = await supabase.auth.admin.deleteUser(userId)
+  if (!error) return true
+
+  if (error.message.includes('Database error')) {
+    const { error: softErr } = await supabase.auth.admin.deleteUser(userId, true)
+    if (!softErr) {
+      console.log(`auth user ${email}: soft-deleted (hard delete blocked by FK)`)
+      return true
+    }
+    console.error(`auth user ${email}: ${softErr.message}`)
+    return false
+  }
+
+  console.error(`auth user ${email}: ${error.message}`)
+  return false
+}
+
+/** Auth user exists but no profile — delete Auth user directly by email lookup. */
+async function deleteAuthUserDirectly(email: string): Promise<boolean> {
+  const {
+    data: { users },
+  } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  const authUser = users.find((u) => u.email?.toLowerCase() === email.toLowerCase())
+  if (!authUser) {
+    console.log(`auth user ${email}: not found in auth`)
+    return false
+  }
+
+  const deleted = await deleteAuthUserById(authUser.id, email)
+  if (!deleted) return false
+
+  console.log(`auth user ${email}: deleted directly (no profile)`)
+  await logDeletionAudit(authUser.id, email, 'cli-rolobe-cleanup')
+  return true
+}
+
+async function deleteRoblobeAccountFallback(email: string, userId: string): Promise<boolean> {
+  console.log(`fallback cleanup ${email} (deleteUserData schema mismatch)`)
+
+  const { data: households } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', userId)
+  const householdIds = (households ?? []).map((h) => h.id)
+
+  const safeDelete = async (table: string, column: string, value: string) => {
+    const { error, count } = await supabase
+      .from(table)
+      .delete({ count: 'exact' })
+      .eq(column, value)
+    if (error) console.log(`  ${table}: ${error.message}`)
+    else if ((count ?? 0) > 0) console.log(`  ${table}: deleted ${count}`)
+  }
+
+  for (const householdId of householdIds) {
+    await safeDelete('estate_recommendations', 'household_id', householdId)
+    await safeDelete('estate_health_scores', 'household_id', householdId)
+    await safeDelete('estate_health_check', 'household_id', householdId)
+    await safeDelete('gift_history', 'household_id', householdId)
+    await safeDelete('strategy_line_items', 'household_id', householdId)
+    await safeDelete('beneficiary_conflicts', 'household_id', householdId)
+    await safeDelete('household_people', 'household_id', householdId)
+  }
+
+  await safeDelete('estate_recommendations', 'owner_id', userId)
+  await safeDelete('households', 'owner_id', userId)
+  for (const table of [
+    'assets',
+    'income',
+    'expenses',
+    'liabilities',
+    'real_estate',
+    'businesses',
+    'trusts',
+    'digital_assets',
+    'ingestion_jobs',
+  ]) {
+    await safeDelete(table, 'owner_id', userId)
+  }
+  for (const table of ['insurance_policies', 'life_events', 'funnel_events', 'assessment_results']) {
+    await safeDelete(table, 'user_id', userId)
+  }
+  await safeDelete('notifications', 'user_id', userId)
+  await supabase.from('advisor_clients').delete().or(`advisor_id.eq.${userId},client_id.eq.${userId}`)
+  await supabase.from('connection_requests').delete().eq('consumer_id', userId)
+  await supabase
+    .from('referral_clicks')
+    .delete()
+    .or(`advisor_id.eq.${userId},attorney_profile_id.eq.${userId}`)
+
+  const { error: profileErr } = await supabase.from('profiles').delete().eq('id', userId)
+  if (profileErr) console.log(`  profiles: ${profileErr.message}`)
+
+  const deleted = await deleteAuthUserById(userId, email)
+  if (!deleted) return false
+
+  console.log(`auth user ${email}: deleted via fallback cleanup`)
+  await logDeletionAudit(userId, email, 'cli-rolobe-cleanup-fallback')
+  return true
+}
+
+async function deleteAccountWithAudit(email: string, useFallback = false): Promise<boolean> {
   if (CANONICAL_PROTECTED.includes(email)) {
     console.error(`SAFETY: refusing to delete canonical account ${email}`)
     return false
@@ -107,6 +227,12 @@ async function deleteAccountWithAudit(email: string): Promise<boolean> {
   })
 
   if (!result.success) {
+    if (result.error?.includes('Profile not found')) {
+      return deleteAuthUserDirectly(email)
+    }
+    if (useFallback) {
+      return deleteRoblobeAccountFallback(email, userId)
+    }
     console.error(`deleteUserData ${email}: ${result.error ?? 'failed'}`)
     return false
   }
@@ -128,7 +254,16 @@ async function runLegacyCleanup(emails: string[]) {
 }
 
 async function runRoblobeCleanup() {
-  const emails = [...ROLOBE_ACCOUNTS]
+  const emails: string[] = []
+  for (const email of ROLOBE_ACCOUNTS) {
+    if (await findUserIdByEmail(email)) emails.push(email)
+  }
+
+  if (emails.length === 0) {
+    console.log('\nNo remaining @rolobe.resend.app auth users found.')
+    return
+  }
+
   console.log('\nThe following @rolobe.resend.app accounts will be permanently deleted:\n')
   for (const email of emails) {
     console.log(`  - ${email}`)
@@ -146,7 +281,7 @@ async function runRoblobeCleanup() {
   let failed = 0
 
   for (const email of emails) {
-    const success = await deleteAccountWithAudit(email)
+    const success = await deleteAccountWithAudit(email, true)
     if (success) deleted++
     else failed++
   }

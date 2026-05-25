@@ -22,7 +22,8 @@
     "seed:e2e:fast": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-johnson",
     "prune:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts",
     "verify:drip": "dotenv -e .env.local -- npx tsx scripts/verify-drip-sequence.ts",
-    "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe"
+    "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
+    "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
