@@ -80,6 +80,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
 | **Drip step 2 check** | `[ ]` | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
+| **Auth cleanup + deleteUser hardening** | `[x]` | FK scan, verify-deletion, rolobe retirement — `aea4bf6`, `3cdd9b5` |
+| **Sprint UX-1 Life Events Hub** | `[ ]` | Public `/events` hub — not yet built |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -101,6 +103,9 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `01b997a` | C-6 | Admin Data & Compliance tab, admin APIs, gdpr-delete-user CLI |
 | `ddbf079` | C-7 | Compliance reminders cron, privacy_requests, consumer + admin intake |
 | `1ce9110` | C-7 | Migration fix — `due_at` DEFAULT not GENERATED |
+| `84388ad` | Cleanup | Rolobe cleanup tooling, verify-drip-sequence, canonical E2E migration |
+| `aea4bf6` | C-6+ | deleteUser WCPA hardening — FK scan, orphan Auth, verify-deletion script |
+| `3cdd9b5` | C-6+ | FK scan — firms, firm_members, change_log before Auth delete |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
@@ -182,7 +187,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 **Goal:** Washington WCPA right-to-delete + Privacy Policy 30-day post-cancellation automation.
 
-- `[x]` `lib/compliance/deleteUser.ts` — audited deletion; `deletion_audit_log` append-only
+- `[x]` `lib/compliance/deleteUser.ts` — audited deletion; `deletion_audit_log` append-only; FK scan (`firms`, `firm_members`, `change_log`, …); orphan Auth handling; hard/soft delete fallback; post-deletion verification (`aea4bf6`, `3cdd9b5`)
+- `[x]` `scripts/verify-deletion.ts` — standalone WCPA compliance check; `npm run verify:deletion`
 - `[x]` `deletion_schedule` + migration `20260625120000_sprint_c6_deletion_compliance.sql`
 - `[x]` Stripe webhook — schedule +30 days on cancel; skip on plan change / advisor role upgrade
 - `[x]` Cron `process-deletions` — role + active-sub re-check before execute (`4d9571e`)

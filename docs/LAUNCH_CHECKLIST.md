@@ -86,6 +86,11 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion
 - [x] **Plan-change guard** — `lib/compliance/deletionGuards.ts` in webhook + cron
 - [x] **CLI script** — `scripts/gdpr-delete-user.ts` → `deleteUser`
+- [x] **`deleteUser.ts` production hardening** — FK scan (`firms`, `firm_members`, `change_log` + full list), orphan Auth handling, hard/soft delete fallback, post-deletion verification (`aea4bf6`, `3cdd9b5`)
+- [x] **`verify:deletion` script** — `npm run verify:deletion -- --email user@example.com` — must PASS before WCPA response
+- [x] **Auth table clean** — 9 accounts (4 founder + 5 `@mywealthmaps.test`); all `@rolobe.resend.app` retired
+- [ ] **`verify:deletion` tested** — dry-run account deleted and verified PASS on staging/production
+- [ ] **No soft-deleted Auth rows** — `SELECT … FROM auth.users WHERE deleted_at IS NOT NULL` returns 0 rows
 
 ### Compliance reminders (Sprint C-7) ✅ verified 2026-05-25
 
@@ -312,5 +317,5 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | 2026-06-02 | Sprint C-3 | **Closed** — RLS (`236890c`); auth callback, MFA, security headers (`56a4407`); docs (`cda2ccc`, `d854c05`). |
 | 2026-06-02 | Sprint C-4 | **Code complete** — billing disclosures (`462bda9`); manual Stripe walkthrough remains. |
 | 2026-06-02 | Sprint C-5 | **Code complete** — Privacy Policy, Terms of Service, footer, sitemap (`2e1dff3`, `695a860`); [LEGAL_TODO.md](./LEGAL_TODO.md) remains. |
-| 2026-05-24 | Sprint 16 | **Closed** — C-2b UX language audit complete (`788aa08`). Go-live prep carried to Sprint 17. |
+| 2026-05-25 | Auth cleanup | Auth table clean (9 accounts); rolobe retired; deleteUser FK hardening (`aea4bf6`, `3cdd9b5`); verify-deletion script |
 | 2026-05-24 | Sprint 15 cont. | Preview waitlist mode enabled; sitemap XML fixed (`73648e5`); middleware infra bypass added; test accounts cleaned up (`3f732e3`); dev workflow established (local → preview → production) |

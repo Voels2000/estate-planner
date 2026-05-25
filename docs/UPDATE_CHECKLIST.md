@@ -117,6 +117,15 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] `scripts/gdpr-delete-user.ts` → `deleteUser`
 - [x] [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
 
+## deleteUser WCPA hardening — closed ✅ 2026-05-25
+
+- [x] FK scan — `firms`, `firm_members`, `change_log` + full `FK_TABLES_TO_USER` list — `3cdd9b5`
+- [x] Orphan Auth handling, hard/soft delete fallback, post-deletion verification — `aea4bf6`
+- [x] `scripts/verify-deletion.ts` — `npm run verify:deletion`
+- [x] `scripts/cleanup-test-accounts.ts --rolobe`, `scripts/verify-drip-sequence.ts` — `84388ad`
+- [x] Auth table clean — 9 accounts; all `@rolobe.resend.app` retired
+- [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md), [NEXT_SESSION.md](./NEXT_SESSION.md), [ROADMAP.md](./ROADMAP.md)
+
 ## Sprint C-7 focus — closed ✅ 2026-05-25 (prod)
 
 - [x] `privacy_requests` + compliance-reminders cron — `ddbf079`, `1ce9110`

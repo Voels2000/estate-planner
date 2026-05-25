@@ -8,6 +8,31 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Session cleanup (2026-05-25) — FK dependency fixes for deleteUser
+
+Fixed `lib/compliance/deleteUser.ts` — three tables were missing from
+`FK_TABLES_TO_USER`, causing Auth hard-delete failures during staging cleanup:
+
+- **`firms`** (`owner_id`) — `firms_owner_id_fkey` blocked deletion
+- **`firm_members`** (`user_id`, `invited_by`) — `firm_members_user_id_fkey` blocked deletion
+- **`change_log`** (`changed_by`) — `change_log_changed_by_fkey` blocked deletion
+
+All added to `FK_TABLES_TO_USER` and `DELETION_ORDER` (via FK map).
+
+**Also hardened in same session** (`aea4bf6`, `3cdd9b5`):
+
+- Orphaned Auth users (no `profiles` row) → Auth delete + audit log (no early return)
+- `deleteAuthUserWithFallback()` — hard delete, soft delete fallback, post-delete verify
+- `verifyDeletion()` — post-deletion row-count check on high-value tables
+- `scripts/verify-deletion.ts` — `npm run verify:deletion -- --email …`
+- `scripts/cleanup-test-accounts.ts --rolobe` — legacy `@rolobe.resend.app` retirement
+- `scripts/verify-drip-sequence.ts` — `npm run verify:drip` (replaces manual rolobe inbox check)
+
+**Auth table clean:** 9 accounts remain (4 founder + 5 `@mywealthmaps.test`).
+All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-deleted.
+
+---
+
 ## E2E test identity reset v2 (2026-05-25) — scripts only (no schema)
 
 - **`scripts/e2e-test-identities.ts`** — canonical `@mywealthmaps.test` emails, `E2eTest!2026Mwm`, referral codes `e2eadv01` / `e2eatt01`

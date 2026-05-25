@@ -802,8 +802,12 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Data deletion (Sprint C-6 — Washington WCPA):**
 
-- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron.
+- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, `--rolobe` cleanup script.
 - **Tables:** `deletion_schedule` (pending automated deletions); `deletion_audit_log` (append-only compliance record).
+- **FK scan before Auth delete:** `notifications`, `assessment_results`, `funnel_events`, `privacy_requests`, `deletion_schedule`, `ingestion_jobs`, `change_log`, `firms`, `firm_members`, `profiles`, `email_captures` (by email). `referral_clicks` via advisor_id / attorney_profile_id OR delete.
+- **Orphan Auth users:** no `profiles` row → FK sweep + Auth delete + audit log (no early return).
+- **Auth delete:** hard delete with soft-delete fallback; warn when soft delete used (`deleted_at` set — monthly ops check).
+- **Verification:** `verifyDeletion()` in-process; standalone `npm run verify:deletion -- --email …` — **PASS required** before WCPA response.
 - **Webhook:** `customer.subscription.deleted` → schedule deletion +30 days via `scheduleDeletionOnCancel.ts` — **skipped** if customer has another active/trialing subscription (plan change) or profile role is advisor/attorney/admin (`deletionGuards.ts`).
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
 - **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded.

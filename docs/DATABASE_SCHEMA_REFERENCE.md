@@ -101,6 +101,27 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** attorney access to household estate plan; distinct from `connection_requests` pending/claim flow.
 - **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; revoke via `/api/attorney/revoke-access`.
 
+### `firms`
+
+- **Key columns:** `id`, `name`, `owner_id`, `tier`, `seat_count`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
+- **Purpose:** advisor firm billing and seat management; denormalized `profiles.firm_id` / `firm_role`.
+- **Migration:** `20260404000000_create_firms_and_firm_members.sql`
+- **Deletion:** references `auth.users(id)` via `owner_id` — cleared by `lib/compliance/deleteUser.ts` FK scan before Auth delete (cascades `firm_members` for owned firms).
+
+### `firm_members`
+
+- **Key columns:** `id`, `firm_id`, `user_id`, `firm_role`, `invited_by`, `invited_email`, `invite_token`, `status`, `joined_at`
+- **Purpose:** firm membership and pending invites; advisor firm checkout and invite flows.
+- **Migration:** `20260404000000_create_firms_and_firm_members.sql`, `20260404120000_firm_member_pending_invites.sql`
+- **Deletion:** references `auth.users(id)` via `user_id` and `invited_by` — both columns cleared by `deleteUser.ts` FK scan.
+
+### `change_log`
+
+- **Purpose:** field-level audit trail for data changes (service-role writes only).
+- **Key columns:** includes `changed_by` referencing `auth.users(id)`
+- **RLS:** service role only — no authenticated read (`20260602000000_sprint_c3_rls_fixes.sql`)
+- **Deletion:** `changed_by` cleared by `deleteUser.ts` FK scan before Auth delete.
+
 ### `privacy_requests` (Sprint C-7)
 
 - **Purpose:** WCPA consumer rights intake (deletion, access, correction, portability, opt_out); 45-day SLA.
@@ -115,6 +136,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **RLS:** service role only — no consumer access
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql`
 - **Note:** never UPDATE or DELETE rows from this table
+- **Verification:** after real deletions, run `npm run verify:deletion -- --email user@example.com` — must PASS before responding to the user ([COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md))
 
 ### `deletion_schedule` (Sprint C-6)
 

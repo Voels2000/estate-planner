@@ -92,6 +92,13 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
 - [ ] Admin Portal → Data & Compliance → confirm no overdue scheduled deletions
 - [ ] Admin Portal → Data & Compliance → Audit Log — last 30 days success=true
 - [ ] Run: `bash scripts/security-audit.sh` — 0 findings
+- [ ] Check for soft-deleted Auth users still in system:
+  ```sql
+  SELECT id, email, deleted_at FROM auth.users
+  WHERE deleted_at IS NOT NULL;
+  ```
+  If rows found: confirm FK constraints resolved, then hard-delete.
+  Soft-deleted users have scrambled emails but records still exist.
 
 ---
 

@@ -53,7 +53,10 @@ const OWNER_TABLES = [
 /**
  * Tables with direct auth.users FK references — cleared before Auth delete.
  * email_captures uses email (no user_id column); referral_clicks uses advisor_id /
- * attorney_profile_id and is handled separately.
+ * attorney_profile_id and is handled separately in deleteUserData().
+ *
+ * Order matters for firms: owner_id delete cascades firm_members; user_id and
+ * invited_by sweeps catch remaining membership / invite rows.
  */
 const FK_TABLES_TO_USER = [
   { table: 'notifications', column: 'user_id' },

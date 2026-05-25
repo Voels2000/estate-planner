@@ -1,16 +1,48 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Sprint C-6/C-7 compliance infrastructure — fully closed in prod)
+# Updated: 2026-05-25 (Auth cleanup + deleteUser WCPA hardening complete)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-7** fully live in production (deletion automation, daily compliance cron, WCPA privacy intake, verified email senders). **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import**, education nav on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-7** fully live in production. **Auth table clean:** 9 accounts (4 founder + 5 `@mywealthmaps.test`); all `@rolobe.resend.app` retired. **`deleteUser.ts` hardened** for production WCPA — FK scan, orphan Auth handling, hard/soft delete fallback, `npm run verify:deletion`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
+>
+> **WCPA deletion principle:** Deletion is not done when `deleteUserData` returns `success: true`. Run `npm run verify:deletion -- --email …` — must show **PASS** before responding to the user.
+
+---
+
+## Auth cleanup + deleteUser hardening ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Auth table** | 9 accounts remain — 4 founder + 5 `@mywealthmaps.test` (see test account table below) |
+| **Rolobe retirement** | All `@rolobe.resend.app` deleted via `npm run cleanup:rolobe` |
+| **FK scan** | `firms`, `firm_members`, `change_log` added to `FK_TABLES_TO_USER` — blocked Auth hard-delete during cleanup |
+| **Orphan Auth** | No profile → Auth delete + audit log (no early "Profile not found" return) |
+| **Auth delete fallback** | Hard delete → soft delete with warning; monthly check for `deleted_at IS NOT NULL` |
+| **Verification** | `npm run verify:deletion -- --email …` — PASS required before WCPA response |
+| **Drip verify** | `npm run verify:drip` replaces manual `consumer21@rolobe` inbox check |
+
+**Commits:** `84388ad` (rolobe tooling), `aea4bf6` (deleteUser hardening + verify-deletion), `3cdd9b5` (firms/firm_members/change_log FK scan)
+
+### Auth accounts (production — 2026-05-25)
+
+| Email | Purpose |
+|-------|---------|
+| avoels@comcast.net | Primary founder |
+| avoels@outlook.com | Secondary founder |
+| stephen.a.voels@sbcglobal.net | Personal |
+| david@gmail.com | Personal |
+| e2e-consumer@mywealthmaps.test | E2E consumer tier 3 |
+| e2e-consumer-tier1@mywealthmaps.test | E2E consumer tier 1 |
+| e2e-advisor@mywealthmaps.test | E2E advisor |
+| e2e-attorney@mywealthmaps.test | E2E attorney |
+| e2e-client.johnson@mywealthmaps.test | E2E advisor client |
 
 ---
 
@@ -33,7 +65,8 @@
 
 | Area | Outcome |
 |------|---------|
-| **Deletion core** | `lib/compliance/deleteUser.ts` — single path for CLI, admin, cron |
+| **Deletion core** | `lib/compliance/deleteUser.ts` — single path for CLI, admin, cron; FK scan; orphan Auth; hard/soft delete fallback; post-deletion verification |
+| **Verification CLI** | `npm run verify:deletion -- --email …` — PASS required before WCPA response |
 | **Guards** | `deletionGuards.ts` — no schedule on plan change (active Stripe sub) or upgraded role; cron re-check |
 | **Webhook** | `customer.subscription.deleted` → 30-day schedule; `subscription.updated` active → cancel pending |
 | **Cron** | `GET /api/cron/process-deletions` — 2am UTC (`vercel.json`) |
