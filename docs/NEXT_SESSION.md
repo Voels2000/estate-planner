@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (Sprint F-2 import UX shipped)
+# Updated: 2026-05-25 (Sprint F-2 import UX + automated test suite)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5, **Sprint P-1 + P-2 perf**, **Sprint F-1 import**, and education nav fixes on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5, **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import** (UX + automated tests), and education nav fixes on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -77,7 +77,22 @@
 
 **Features:** header row detection, Excel sheet picker, inline row editor, duplicate warnings, post-import deep link, richer aliases, pending job delete.
 
-**Smoke:** See Sprint F-2 checklist in `cursor-import-sprint-f2.md` Phase 9 (preamble CSV, multi-sheet XLSX, inline edit, duplicates, traceability SQL, alias headers).
+**Commits:** `9b524aa` (UX), `a344032` (tests + skip-all-duplicates success)
+
+---
+
+## Sprint F-2 tests ✅ (2026-05-25)
+
+| Command | Coverage |
+|---------|----------|
+| `npm run test:import:unit` | Header detection, sheet list, alias matching (7 passed) |
+| `npm run test:import:api` | Preamble parse, broker aliases, inline edit, duplicates, traceability (8 passed; `.env.test`, tier 2+) |
+
+**Fix:** `POST /api/import/commit` returns success when `skip_duplicates` filters every row.
+
+**Fixtures:** `tests/fixtures/import/` (`preamble.csv`, `broker-aliases.csv`, `import-sample.csv`, `two-sheets.xlsx`). Regenerate XLSX: `npx tsx scripts/generate-import-fixtures.ts`.
+
+**Manual (optional):** [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.5–I.9 if not running API tests against prod.
 
 ---
 

@@ -203,19 +203,20 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; uses projection + `getRmdStartAge` for conversion window | Tier 2 |
-| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit` | Tier 2; CSV/XLSX only; three-step upload → map → commit; sample templates in `public/templates/` |
+| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 2; CSV/XLSX; upload → map/edit → commit; F-2: preamble headers, sheet picker, duplicates, traceability |
 
-### Bulk import — `/import` (Sprint F-1)
+### Bulk import — `/import` (Sprint F-1 + F-2)
 
 | | |
 |--|--|
 | **User goal** | Import assets, liabilities, income, or expenses from a spreadsheet |
 | **Tier / gate** | Tier 2 (`FEATURE_TIERS.import`); `UpgradeBanner` when below tier |
 | **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` history |
-| **Client** | `_import-client.tsx` — drop zone, field mapping review, commit |
-| **Write APIs** | `POST /api/ingest` (parse + job create); `POST /api/import/commit` (bulk insert) |
+| **Client** | `_import-client.tsx` — drop zone; field mapping review; inline cell edit + per-row delete; duplicate dialog (skip non-duplicates / import all); post-commit deep link to target table |
+| **Write APIs** | `POST /api/ingest` (parse; optional `sheet_name`); `POST /api/import/commit` (`skip_duplicates`, `force_all`); `DELETE /api/import/jobs/[id]` (cancel pending) |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
-| **Migration** | `20260602140000_sprint_f1_ingestion_jobs.sql` — 14 columns (`file_name`, `file_type`); verified in production |
+| **Migrations** | F-1: `20260602140000_sprint_f1_ingestion_jobs.sql` — verified in production. F-2: `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on financial rows; `header_row_index`, `sheet_name` on jobs |
+| **Tests** | `npm run test:import:unit`; `npm run test:import:api` — see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 
@@ -464,6 +465,8 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-trust-crud.spec.ts` | `/api/consumer/trusts` |
 | `tests/e2e/consumer/consumer-gift-history.spec.ts` | Gift history API |
 | `tests/e2e/consumer/consumer-titling.spec.ts` | Titling / beneficiaries |
+| `tests/unit/import-parse.spec.ts` | Import header detection, sheets, aliases (`npm run test:import:unit`) |
+| `tests/e2e/consumer/consumer-import.spec.ts` | Import ingest/commit, duplicates, traceability (`npm run test:import:api`) |
 
 Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment.
 

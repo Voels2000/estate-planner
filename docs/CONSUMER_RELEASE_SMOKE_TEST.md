@@ -282,6 +282,18 @@ Migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied; schema cleanup 
 | I.3 | Upload `public/templates/import-sample.csv` | Parse succeeds; review step shows headers + auto field map; target table `assets` | ☐ |
 | I.4 | Commit import | Success message; rows appear in `assets`; job history shows `committed` | ☐ |
 
+### Import F-2 — manual (optional if automated tests pass)
+
+Requires F-2 migration `20260602150000_sprint_f2_import_traceability.sql`. Automated coverage: `npm run test:import:unit` + `npm run test:import:api`.
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| I.5 | Upload broker/preamble CSV (`tests/fixtures/import/preamble.csv`) | Header detected below preamble; mapping correct | ☐ |
+| I.6 | Upload multi-sheet `.xlsx` | Sheet picker; switching sheet re-parses without re-upload | ☐ |
+| I.7 | Edit a cell at review step, then commit | Committed row reflects edit | ☐ |
+| I.8 | Re-import row matching existing asset | 409 duplicate warning → skip non-duplicates or import all | ☐ |
+| I.9 | SQL after commit | `ingestion_job_id` set on new rows for that job | ☐ |
+
 ---
 
 ## Acquisition & attribution — Sprint 13+ ✅ passed staging (May 2026)

@@ -105,9 +105,10 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 ## Sprint F-2 focus — shipped 2026-06-02
 
-- [x] Header detection, sheet picker, inline editor, duplicates, traceability, delete pending
-- [ ] Apply `20260602150000_sprint_f2_import_traceability.sql` in prod before deploy
-- [ ] Smoke Phase 9 (preamble CSV, multi-sheet, inline edit, duplicates, `ingestion_job_id` SQL)
+- [x] Header detection, sheet picker, inline editor, duplicates, traceability, delete pending — `9b524aa`
+- [x] Automated tests — `a344032` (`npm run test:import:unit`, `npm run test:import:api`)
+- [ ] Apply `20260602150000_sprint_f2_import_traceability.sql` in prod before deploy (if not applied)
+- [ ] Optional manual smoke I.5–I.9 — automated suite covers Phase 9 API scenarios; SQL traceability in API tests with `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Sprint F-1 focus — closed ✅ 2026-06-02 (verified production)
 
@@ -172,7 +173,8 @@ Use this for **all** merges. For **tax/engine** changes, also run the extra spot
 - [ ] Confirm staleness or backfill guidance is still accurate
 - [ ] After deploy: optional [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) (~10 min core)
 - [ ] Education links: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (run against production after any education content changes)
-- [ ] After import deploy: tier 2+ smoke on `/import` with sample CSV (see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.4) — **passed production 2026-06-02**
+- [ ] After import deploy: tier 2+ smoke on `/import` (see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.4) — **passed production 2026-06-02**
+- [ ] After F-2 deploy: `npm run test:import:unit` and `npm run test:import:api` (F-2 migration on test DB)
 
 ## Commit hygiene
 

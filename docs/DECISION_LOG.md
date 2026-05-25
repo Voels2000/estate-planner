@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: June 2026 (Sprint F-1)
+# Last updated: May 2026 (Sprint F-2 import tests)
 
 ---
 
@@ -365,11 +365,23 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Financial data import: CSV/XLSX only (Sprint F-1)
+
 **Decision:** Ship bulk financial import at `/import` for **CSV and Excel only** (`.csv`, `.xlsx`, `.xls`). Defer PDF/DOCX parsing post-launch.
 
 **Reasoning:** Tabular formats produce reliable header detection and field mapping. PDF/DOCX require best-effort text extraction with unreliable column structure — bad UX for a data-entry accelerator aimed at retirement-tier users getting data in quickly.
 
 **Implication:** Tier 2 gate. Final schema uses `file_name` + `file_type` (NOT NULL). Smoke verified: 4 asset rows committed.
+
+---
+
+### May 2026 — Import commit succeeds when all rows are duplicates (Sprint F-2)
+
+**Decision:** When `skip_duplicates` is true and every row matches an existing record, `POST /api/import/commit` returns **200** with `success: true`, `committed: 0`, and `skipped` count — not 400.
+
+**Reasoning:** User explicitly chose to skip duplicates; an empty insert is a valid outcome, not a mapping failure.
+
+**Implication:** Covered by `consumer-import.spec.ts` (`a344032`).
 
 ---
 

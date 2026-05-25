@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-02 (Sprint F-1 import complete; education nav fix; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (Sprint F-2 import UX + test suite; Sprint 17 go-live prep)
 
 ---
 
@@ -706,22 +706,24 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Charitable consumer form: `components/consumer/CharitableStrategyForm.tsx` (DAF panel; `daf` or `charitable` source).
 - Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
 - Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
-- **Financial data import (Sprint F-1):** `app/(dashboard)/import/page.tsx`, `_import-client.tsx`; `POST /api/ingest` (parse); `POST /api/import/commit` (insert rows); `lib/import/ingestConfig.ts`, `lib/import/parseFile.ts`; sample CSVs in `public/templates/`.
+- **Financial data import (Sprint F-1 + F-2):** `app/(dashboard)/import/page.tsx`, `_import-client.tsx`; `POST /api/ingest`; `POST /api/import/commit`; `DELETE /api/import/jobs/[id]`; `lib/import/ingestConfig.ts`, `lib/import/parseFile.ts`; `public/templates/`; tests: `tests/unit/import-parse.spec.ts`, `tests/e2e/consumer/consumer-import.spec.ts`, `tests/fixtures/import/`.
 
 ---
 
-## Financial Data Import (Sprint F-1)
+## Financial Data Import (Sprint F-1 + F-2)
 
 **Current (as built):**
 
 - Route: `/import` — tier **2+** (`FEATURE_TIERS.import`; `hasFeatureAccess('import', …)` on page and parse API).
 - **Supported formats:** CSV (`.csv`), Excel (`.xlsx`, `.xls`) only. PDF/DOCX deferred post-launch (unreliable structured extraction).
-- **Three-step UX:** upload → review field mapping → commit confirmation. Import history from `ingestion_jobs`.
-- **Parse API:** `POST /api/ingest` — multipart `file` field; papaparse (CSV) + SheetJS `xlsx` (Excel); auto-detect target table from headers; alias-based `field_map` suggestion; persists full parse in `ingestion_jobs`; returns `job_id`, `headers`, `rows`, `field_map`, `detected_table`, `table_fields`.
-- **Commit API:** `POST /api/import/commit` — unchanged Sprint F-1; maps rows via user-adjusted `field_map`, coerces types, validates required fields, bulk `insert` into `assets` | `liabilities` | `income` | `expenses`; marks job `committed`.
+- **Three-step UX:** upload → review (field mapping + inline row edit) → commit confirmation. Import history from `ingestion_jobs`.
+- **Parse API:** `POST /api/ingest` — multipart `file`; optional `sheet_name` for Excel; papaparse (CSV) + SheetJS `xlsx`; scans first 20 rows for header row (`header_row_index`); auto-detect target table; alias/substring `field_map` suggestion; persists parse in `ingestion_jobs` (`header_row_index`, `sheet_name`); returns `job_id`, `headers`, `rows`, `field_map`, `detected_table`, `table_fields`, `header_row_index`, `sheet_names`.
+- **Commit API:** `POST /api/import/commit` — maps rows via user-adjusted `field_map`; pre-commit duplicate check on key fields → **409** `duplicates_found` unless `skip_duplicates` or `force_all`; sets `ingestion_job_id` on inserted rows; bulk `insert` into `assets` | `liabilities` | `income` | `expenses`; marks job `committed`. Returns **200** with `committed: 0` when `skip_duplicates` filters all rows (`a344032`).
+- **Cancel pending:** `DELETE /api/import/jobs/[id]` — owner-scoped; removes job during review.
 - **Target tables + required fields:** assets (`name`, `type`, `value`); liabilities (`name`, `type`, `balance`); income (`source`, `amount`, `start_year`); expenses (`category`, `amount`, `start_year`).
 - **Templates:** `public/templates/import-sample*.csv` — downloadable from import UI.
-- **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — 14-column schema (`file_name`, `file_type` NOT NULL; no legacy `original_filename` / `source_format`). **Verified in production** (parse → commit → history).
+- **Migrations:** `20260602140000_sprint_f1_ingestion_jobs.sql` — 16-column final shape on `ingestion_jobs` (`file_name`, `file_type` NOT NULL). **Verified in production** (F-1 smoke). `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on four financial tables; apply before F-2 deploy if not applied.
+- **Automated verification:** `npm run test:import:unit` (7 tests, no auth); `npm run test:import:api` (8 tests, `.env.test`, tier 2+, F-2 migration on test DB). Fixtures in `tests/fixtures/import/`; regenerate XLSX via `scripts/generate-import-fixtures.ts`.
 
 **Post-launch backlog:** PDF/DOCX text extraction; automated purge of `ingestion_jobs` rows older than 24h; optional commit-from-`job_id` without re-posting rows for large files.
 

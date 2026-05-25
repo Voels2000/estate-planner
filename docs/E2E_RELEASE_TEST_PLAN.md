@@ -7,13 +7,15 @@ Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playw
 **Staging URL:** https://estate-planner-gules.vercel.app  
 **Consumer account:** `david@rolobe.resend.app` (estate tier) · **Advisor:** `advisor2@rolobe.resend.app`
 
-**Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed; legal + go-live ops remain. **Sprint P-1 (2026-06-02):** Perf quick wins `5c24160`; indexes applied in prod.
+**Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed; legal + go-live ops remain. **Sprint P-1 (2026-06-02):** Perf quick wins `5c24160`; indexes applied in prod. **Sprint F-2 (2026-05-25):** Import UX `9b524aa`; automated import tests `a344032`.
 
 **Run automated:**
 ```bash
 dotenv -e .env.test -- npx playwright test --project=consumer
 dotenv -e .env.test -- npx playwright test --project=advisor
 dotenv -e .env.test -- npx playwright test --project=public
+npm run test:import:unit
+npm run test:import:api   # localhost:3001 + tier 2+ user in .env.test; F-2 migration on test DB
 ```
 
 **Staging recompute:** Verified May 2026 — `consumer-core-recompute` passing (~15.5s). If tests time out after deploy, see [NEXT_SESSION.md](./NEXT_SESSION.md).
@@ -86,6 +88,18 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 
 ---
 
+## Consumer — Import (Sprint F-1 + F-2)
+
+| Layer | Command / doc | Coverage |
+|-------|----------------|----------|
+| **Unit** | `npm run test:import:unit` | Header row detection, Excel `sheet_names`, alias matching (`tests/unit/import-parse.spec.ts`) |
+| **API** | `npm run test:import:api` | Preamble parse, broker aliases, inline edit commit, duplicate 409/skip, `ingestion_job_id` traceability (`tests/e2e/consumer/consumer-import.spec.ts`) |
+| **Manual** | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.9 | Tier gate, templates, full UI path; I.5–I.9 optional when API suite green |
+
+**Prereqs:** F-2 migration on test DB; `.env.test` with tier 2+ consumer; optional `SUPABASE_SERVICE_ROLE_KEY` for API cleanup.
+
+---
+
 ## Consumer — Acquisition A–G
 
 **Status:** Passed manual staging (Sprint 13).
@@ -131,6 +145,8 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | `consumer-setup` + `consumer` | Consumer APIs + dashboard | Required on PR |
 | `advisor-setup` + `advisor` | Advisor client views | Required on PR |
 | `public` | Public/event routes | Required on PR |
+| `import-unit` | Import parse/header/alias logic | Recommended on import changes |
+| `test:import:api` | Import commit/duplicate/traceability | Recommended before F-2 deploy |
 | Manual Core 1–3 + Estate 4–7 | Release sign-off | Sprint 14 checklist |
 
 ---

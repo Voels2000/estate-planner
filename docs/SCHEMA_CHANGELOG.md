@@ -29,6 +29,8 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **Apply migration before deploy** — commit route writes `ingestion_job_id`.
 
+**Tests (`a344032`):** `npm run test:import:unit` (7); `npm run test:import:api` (8). Fixtures in `tests/fixtures/import/`.
+
 ---
 
 ## Sprint F-1 — Import feature (2026-06-02)
