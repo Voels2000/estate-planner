@@ -130,7 +130,7 @@ export function LifeEventBanner({
 
     return (
       <div>
-        <div className="mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold-pale)] px-4 py-3">
+        <div className="mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border border-[color:var(--mwm-gold)]/40 bg-[var(--mwm-gold-pale)] px-4 py-3">
           <div className="flex items-start gap-3 min-w-0">
             <span className="mt-0.5 shrink-0 text-base">📅</span>
             <div className="min-w-0">
@@ -203,7 +203,7 @@ export function LifeEventBanner({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search life events…"
-              className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[color:var(--mwm-off-white)] px-3 py-2 text-sm text-[color:var(--mwm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/20"
+              className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-off-white)] px-3 py-2 text-sm text-[color:var(--mwm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/20"
               autoFocus
             />
           </div>
@@ -224,7 +224,7 @@ export function LifeEventBanner({
                           type="button"
                           disabled={submitting}
                           onClick={() => void handleSelectEvent(event.slug)}
-                          className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[color:var(--mwm-off-white)] px-3 py-3 text-left transition-colors hover:border-[color:var(--mwm-gold)] hover:bg-[color:var(--mwm-gold-pale)] disabled:opacity-50"
+                          className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-off-white)] px-3 py-3 text-left transition-colors hover:border-[color:var(--mwm-gold)] hover:bg-[var(--mwm-gold-pale)] disabled:opacity-50"
                         >
                           <span className="block text-sm font-medium text-neutral-900">
                             {event.title}

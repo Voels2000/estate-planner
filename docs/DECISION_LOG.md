@@ -28,7 +28,7 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Pricing is positioned against professional fees**, not against consumer tools. Never price-compare to LegalZoom or Trust & Will in copy or positioning.
 - **The assessment is the primary public conversion mechanism.** Score is visible without an account. Full breakdown requires account creation.
 - **Advisor connection queries** must use `CONNECTED_ADVISOR_CLIENT_STATUSES` from `lib/advisor/clientConnectionStatus.ts` (`active` | `accepted`) — never hardcode a single status in new code.
-- **Tailwind v4 arbitrary colors** require the `color:` prefix (`text-[color:var(--mwm-gold)]`, not `text-[var(--mwm-gold)]`). Applies to all new UI and Phase 3 indigo replacements.
+- **Tailwind v4 arbitrary colors:** `text-` / `border-` / `ring-` use `color:` prefix (`text-[color:var(--mwm-gold)]`); `bg-` uses `bg-[var(--mwm-navy)]` without `color:`. Wrong prefix fails silently.
 - **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 
 ---

@@ -6,29 +6,31 @@
 
 ## Tailwind v4 — required `color:` prefix (read first)
 
-This project uses **Tailwind v4** (Next.js 16). Arbitrary **color** values in bracket
-classes fail **silently** without the `color:` prefix — no build error, styles simply
-do not apply.
+This project uses **Tailwind v4** (Next.js 16). Arbitrary CSS variable colors use
+different bracket syntax per utility — wrong syntax fails **silently** (no build error).
 
 ```tsx
-// WRONG — ignored in Tailwind v4
-'border-l-[var(--mwm-gold)]'
-'text-[var(--mwm-gold)]'
-'bg-[var(--mwm-navy)]'
+// bg — NO color: prefix
+'bg-[var(--mwm-navy)]'              ✅
+'bg-[color:var(--mwm-navy)]'        ❌ transparent / no fill
 
-// CORRECT
-'border-l-[3px] border-l-[color:var(--mwm-gold)]'
-'text-[color:var(--mwm-gold)]'
-'bg-[color:var(--mwm-navy)]'
+// text, border, border-l, ring — REQUIRE color: prefix
+'text-[color:var(--mwm-gold)]'      ✅
+'text-[var(--mwm-gold)]'            ❌
+
+'border-l-[3px] border-l-[color:var(--mwm-gold)]'  ✅
+
+// shadow — NOT a color utility; no color: prefix
+'shadow-[var(--mwm-shadow)]'        ✅
 ```
 
-**Phase 3 indigo sweep:** every replacement must use `color:` or colors will look
-broken in the browser despite passing code review.
+**Phase 3 indigo sweep:** use `bg-[var(--mwm-*)]` for backgrounds; use `color:` only
+on `text-`, `border-`, and `ring-` utilities.
 
 **Active sidebar nav (authenticated shell):**
 
 ```tsx
-'bg-[color:var(--mwm-navy)] text-white border-solid border-l-[3px] border-l-[color:var(--mwm-gold)] pl-[9px] pr-3'
+'bg-[var(--mwm-navy)] text-white border-solid border-l-[3px] border-l-[color:var(--mwm-gold)] pl-[9px] pr-3'
 ```
 
 ---
@@ -146,8 +148,8 @@ Hardcoded hex to replace:
   #1a3460  → var(--mwm-navy-light)
   #c9a84c  → var(--mwm-gold)
 
-Tailwind class examples (v4 — use color: prefix):
-  bg-indigo-600        → bg-[color:var(--mwm-navy)]
+Tailwind class examples (v4):
+  bg-indigo-600        → bg-[var(--mwm-navy)]
   text-indigo-600      → text-[color:var(--mwm-navy)]
   border-indigo-500    → border-[color:var(--mwm-navy)]
 

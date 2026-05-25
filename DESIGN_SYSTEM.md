@@ -660,12 +660,12 @@ Prefer `var(--mwm-navy)`, `var(--mwm-gold)`, `var(--mwm-sage)`, `var(--mwm-off-w
 
 ### Tailwind v4 arbitrary colors
 
-Next.js 16 ships with Tailwind v4. Bracket color utilities require a `color:` prefix:
+Next.js 16 ships with Tailwind v4. Arbitrary CSS variables differ by utility:
 
 ```tsx
-bg-[color:var(--mwm-navy)]
-text-[color:var(--mwm-gold)]
-border-l-[3px] border-l-[color:var(--mwm-gold)]
+bg-[var(--mwm-navy)]                          /* bg: no color: prefix */
+text-[color:var(--mwm-gold)]                  /* text: requires color: */
+border-l-[3px] border-l-[color:var(--mwm-gold)]  /* border: requires color: */
 ```
 
-Without `color:`, classes compile but do not render (silent failure). See `CURSOR_PROMPT_TEMPLATE.md` for the full Phase 3 replacement table.
+Using `color:` on `bg-` breaks backgrounds (silent failure). See `CURSOR_PROMPT_TEMPLATE.md` for the full Phase 3 replacement table.
