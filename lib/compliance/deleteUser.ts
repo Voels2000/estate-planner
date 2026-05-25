@@ -62,6 +62,10 @@ const FK_TABLES_TO_USER = [
   { table: 'privacy_requests', column: 'user_id' },
   { table: 'deletion_schedule', column: 'user_id' },
   { table: 'ingestion_jobs', column: 'owner_id' },
+  { table: 'change_log', column: 'changed_by' },
+  { table: 'firms', column: 'owner_id' },
+  { table: 'firm_members', column: 'user_id' },
+  { table: 'firm_members', column: 'invited_by' },
   { table: 'profiles', column: 'id' },
 ] as const
 
