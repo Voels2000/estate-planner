@@ -7,6 +7,7 @@ import DebugTab from './debug-tab'
 import TaxRulesTab from './tax-rules-tab'
 import TermsTab from './terms-tab'
 import { FunnelTab } from './funnel-tab'
+import { DeletionCompliance } from './_components/DeletionCompliance'
 
 type Profile = {
   id: string
@@ -106,7 +107,7 @@ type Props = {
   tierConversion: { tier: string; counts: Record<string, number> }[]
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
+type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'compliance' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -324,6 +325,7 @@ export function AdminClient({
     { key: 'usage',      label: 'Usage',           icon: '📈' },
     { key: 'feedback',   label: 'Feedback',        icon: '💬' },
     { key: 'funnel',     label: 'Funnel',          icon: '📉' },
+    { key: 'compliance', label: 'Data & Compliance', icon: '🔒' },
     { key: 'settings',   label: 'Settings',        icon: '⚙️' },
     { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
     { key: 'categories', label: 'Categories',      icon: '🗂️' },
@@ -674,6 +676,8 @@ export function AdminClient({
           tierConversion={tierConversion}
         />
       )}
+
+      {activeTab === 'compliance' && <DeletionCompliance />}
 
       {activeTab === 'tax_rules' && <TaxRulesTab />}
 
