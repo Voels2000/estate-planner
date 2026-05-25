@@ -4,6 +4,10 @@ import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { FIRM_PRICE_ID_TO_TIER, PRICE_ID_TO_TIER } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
+import {
+  cancelPendingDeletionOnReactivation,
+  scheduleDeletionOnSubscriptionCancelled,
+} from '@/lib/compliance/scheduleDeletionOnCancel'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -218,10 +222,29 @@ export async function POST(req: NextRequest) {
           .update({ subscription_status: 'canceled' })
           .eq('stripe_customer_id', customerId)
         console.log('customer.subscription.deleted — consumer subscription canceled')
+
+        // Schedule 30-day deletion only for genuine churn (not plan change / role upgrade).
+        await scheduleDeletionOnSubscriptionCancelled({
+          stripe,
+          admin: supabase,
+          subscription,
+        })
         break
       }
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
+        const customerIdForReactivation =
+          typeof subscription.customer === 'string'
+            ? subscription.customer
+            : subscription.customer?.id
+
+        if (subscription.status === 'active' && customerIdForReactivation) {
+          await cancelPendingDeletionOnReactivation({
+            admin: supabase,
+            stripeCustomerId: customerIdForReactivation,
+          })
+        }
+
         const firmId = subscription.metadata?.firm_id
         if (firmId) {
           const mappedStatus = mapFirmSubscriptionStatus(subscription.status)

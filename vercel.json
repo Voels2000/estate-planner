@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/age-triggers",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/process-deletions",
+      "schedule": "0 2 * * *"
     }
   ]
 }
