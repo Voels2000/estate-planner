@@ -5,17 +5,22 @@ Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playw
 
 **Production URL:** https://mywealthmaps.com  
 **Staging URL:** https://estate-planner-gules.vercel.app  
-**Consumer account:** `david@rolobe.resend.app` (estate tier) · **Advisor:** `advisor2@rolobe.resend.app`
+**Consumer account:** `e2e-consumer@mywealthmaps.test` (estate tier) · **Advisor:** `e2e-advisor@mywealthmaps.test` — see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · `npm run seed:e2e`
 
 **Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed; legal + go-live ops remain. **Sprint P-1 (2026-06-02):** Perf quick wins `5c24160`; indexes applied in prod. **Sprint F-2 (2026-05-25):** Import UX `9b524aa`; automated import tests `a344032`.
 
+**Complete suite (May 2026):** **253 tests** — [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). Staging verification **2026-05-25** (`estate-planner-gules.vercel.app`, `--workers=1`): consumer **127 passed / 5 skipped**; advisor **45 passed**; public **57 passed / 2 skipped**; attorney requires `seed-test-attorney.ts` on target env.
+
 **Run automated:**
 ```bash
-dotenv -e .env.test -- npx playwright test --project=consumer
-dotenv -e .env.test -- npx playwright test --project=advisor
-dotenv -e .env.test -- npx playwright test --project=public
+npm run test:e2e:complete -- --workers=1
+# Or per project:
+npm run test:e2e:consumer -- --workers=1
+npm run test:e2e:advisor -- --workers=1
+npm run test:e2e:public
+npm run test:e2e:attorney    # after seed-test-attorney.ts
 npm run test:import:unit
-npm run test:import:api   # localhost:3001 + tier 2+ user in .env.test; F-2 migration on test DB
+npm run test:import:api      # localhost:3001 + tier 2+ user; F-2 migration on test DB
 ```
 
 **Staging recompute:** Verified May 2026 — `consumer-core-recompute` passing (~15.5s). If tests time out after deploy, see [NEXT_SESSION.md](./NEXT_SESSION.md).
@@ -30,7 +35,7 @@ npm run test:import:api   # localhost:3001 + tier 2+ user in .env.test; F-2 migr
 |-------|------|------|
 | **Living contracts** | Playwright API + UI smoke | Every deploy / CI — fast, deterministic |
 | **Release smoke** | Manual checklist | Sprint 14 sign-off, post-major planning changes |
-| **Regression** | Full E2E suite (51+ tests) | Staging before launch; re-run after fixes |
+| **Regression** | Full E2E suite (**253 tests**) | Staging before launch; `--workers=1` on shared DB |
 
 Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture tests for CRUD; UI tests for login shell, one end-to-end save path, and tier gates.
 
@@ -46,9 +51,9 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | 1.2 Greeting + readiness 0–100 | ⚠️ Partial | `dashboard.spec.ts` — greeting; estate section OR fallback | Assert numeric score regex when household complete |
 | 1.2b Conflict banner | ❌ Manual | — | Only if test household has conflicts |
 | 1.3 Net worth + estate summary | ⚠️ Partial | Net worth visible | Estate summary dollar amounts — manual |
-| 1.4 Sidebar footer (Advisor, Attorney, Subscription) | ✅ | — | `getByRole('link', { name: /My Advisor/ })` etc. |
-| 1.4b Overview nav (Profile, Estate Summary only) | ✅ | — | Assert Find Advisor **not** in Overview group |
-| 1.4c “Your plan” badge on unlocked group | ⚠️ | — | Assert badge visible for estate-tier household |
+| 1.4 Sidebar footer (Advisor, Attorney, Subscription) | ✅ | `consumer-sidebar-navigation.spec.ts` | — |
+| 1.4b Overview nav (Profile, Estate Summary only) | ✅ | `consumer-sidebar-navigation.spec.ts` | — |
+| 1.4c “Your plan” badge on unlocked group | ⚠️ | — | Optional — estate-tier household |
 
 ### §2 Financial save + recompute
 
@@ -63,9 +68,9 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 
 | Step | Automatable? | Existing coverage | Net-new (recommended) |
 |------|--------------|-------------------|------------------------|
-| 3.1 `/profile` loads | ✅ | `dashboard.spec.ts` | — |
-| 3.2 Save harmless field | ⚠️ | — | PATCH profile API test or UI fill + save |
-| 3.3 Dashboard still loads | ✅ | `page.goto('/dashboard')` not 500 | — |
+| 3.1 `/profile` loads | ✅ | `dashboard.spec.ts`, `consumer-route-regression` | — |
+| 3.2 Save harmless field | ✅ | `consumer-profile-save.spec.ts` | API + UI household name |
+| 3.3 Dashboard still loads | ✅ | `consumer-profile-save.spec.ts` | — |
 
 **Note:** Core §3 is **Profile save**, not “planning surfaces.” Planning routes are in §4–7 and optional §8–11.
 
@@ -76,15 +81,22 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | Section | API tests | UI tests | Manual |
 |---------|-----------|----------|--------|
 | **§4 Health check** | `consumer-api-writes.spec.ts` — PUT estate-health-check | — | Redirect + score **meaning** |
-| **§5 My Family** | — | — | Full CRUD modal flow |
-| **§6 Titling** | `consumer-titling.spec.ts` — API smoke | — | Beneficiary % UI |
+| **§5 My Family** | `consumer-family-crud.spec.ts` — API CRUD | `/my-family` load | Full modal UI optional |
+| **§6 Titling** | `consumer-titling.spec.ts` + `consumer-titling-real-asset.spec.ts` | `/titling` load | Beneficiary % UI |
 | **§7 Allocation** | `consumer-api-writes.spec.ts` — valid/invalid sum | — | Slider UX |
 | **§8–11 Strategy** | `consumer-strategy-writes.spec.ts`, `consumer-trust-crud.spec.ts`, `consumer-gift-history.spec.ts` | Partial | SLAT/ILIT/DAF panels, copy labels |
 
-**High-value automations to add in Sprint 14:**
-1. ~~`consumer-core-recompute.spec.ts`~~ — **Shipped:** POST asset → poll `computed_at` → dashboard assertion.
-2. `consumer-routes-estate-tier.spec.ts` — GET `/my-family`, `/titling`, `/allocation`, `/my-estate-strategy` → 200, no UpgradeBanner for tier-3 storage state.
-3. `consumer-profile-save.spec.ts` — PATCH profile field via API or minimal UI.
+**High-value automations (Sprint 14+ complete suite):**
+1. ~~`consumer-core-recompute.spec.ts`~~ — POST asset → poll `computed_at` → dashboard assertion.
+2. ~~`consumer-routes-estate-tier.spec.ts`~~ — Estate-tier routes without upgrade banner; `/trust-will` redirect.
+3. ~~`consumer-profile-save.spec.ts`~~ — PATCH profile + UI household name save.
+4. ~~`consumer-sidebar-navigation.spec.ts`~~ — Sidebar/footer contract (smoke §1.4).
+5. ~~`consumer-route-regression.spec.ts`~~ — Full nav map route loads.
+6. ~~`consumer-ui-asset-save.spec.ts`~~ — UI add asset on `/assets`.
+7. ~~`public-routes.spec.ts`~~ — Marketing + all event slugs.
+8. ~~`public-referral-track.spec.ts`~~ — Referral track API.
+9. ~~`attorney-portal.spec.ts`~~ — Attorney project + setup.
+10. See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) for full spec index.
 
 ---
 
@@ -106,10 +118,10 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 
 | Section | Automate? | Suggestion |
 |---------|-----------|------------|
-| A–D Referral + signup | ⚠️ Partial | `public.spec.ts` event 200; API tests for `POST /api/referral/track`; signup attribution needs new spec + disposable email |
+| A–D Referral + signup | ⚠️ Partial | `public-referral-track.spec.ts` (API + event load); `auth-signup-attribution.spec.ts` (sessionStorage); full signup→Supabase still manual |
 | E Drip step 1 | ❌ | Resend inbox or Supabase `drip_step_1_sent_at` query script |
 | F Life-event on connect | ❌ | Two-role manual or scripted Supabase + advisor UI |
-| G Event slugs 200 | ✅ | Extend `public.spec.ts` — loop 24 slugs |
+| G Event slugs 200 | ✅ | `public-routes.spec.ts` — all `EVENT_SLUGS` + spot-check assess pages |
 
 ---
 
@@ -140,14 +152,16 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 
 ## Recommended CI matrix
 
-| Project | Purpose | Gate |
-|---------|---------|------|
-| `consumer-setup` + `consumer` | Consumer APIs + dashboard | Required on PR |
-| `advisor-setup` + `advisor` | Advisor client views | Required on PR |
-| `public` | Public/event routes | Required on PR |
-| `import-unit` | Import parse/header/alias logic | Recommended on import changes |
-| `test:import:api` | Import commit/duplicate/traceability | Recommended before F-2 deploy |
-| Manual Core 1–3 + Estate 4–7 | Release sign-off | Sprint 14 checklist |
+| Project | Tests | Purpose | Gate |
+|---------|------:|---------|------|
+| `consumer-setup` + `consumer` | 137 | APIs, routes, sidebar, profile, UI saves | Required on PR (`--workers=1` on staging) |
+| `advisor-setup` + `advisor` | 45 | Client workspace, RMD, newsletter kit | Required on PR |
+| `public` | 59 | Marketing + all event slugs + referral API | Required on PR |
+| `attorney-setup` + `attorney` | 2 | Attorney portal (after seed) | Optional / nightly |
+| `consumer-tier1` | 3 | Upgrade banners (optional env) | Optional |
+| `import-unit` | 7 | Import parse/header/alias | On import changes |
+| `test:import:api` | — | Import commit/duplicate/traceability | Before F-2 deploy |
+| Manual Core 1–3 + Estate 4–7 | — | Release sign-off | Pre-launch checklist |
 
 ---
 

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import type { createClient } from '@/lib/supabase/server'
 import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 
@@ -22,6 +22,13 @@ export function triggerHouseholdRecompute(householdId: string) {
 /** Touch staleness timestamp and fire estate health recompute (non-blocking). */
 export async function afterHouseholdWrite(supabase: ServerSupabase, householdId: string) {
   await touchHousehold(supabase, householdId)
+  const appUrl = getConsumerAppUrl()
+  if (process.env.VERCEL) {
+    after(() => {
+      void triggerEstateHealthRecompute(householdId, appUrl)
+    })
+    return
+  }
   triggerHouseholdRecompute(householdId)
 }
 

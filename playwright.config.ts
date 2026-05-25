@@ -1,7 +1,60 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices, type Project } from '@playwright/test'
 
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ?? 'https://estate-planner-gules.vercel.app'
+
+const hasTier1Consumer =
+  Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL) &&
+  Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD)
+
+const projects: Project[] = [
+  { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/ },
+  { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/ },
+  { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/ },
+  {
+    name: 'advisor',
+    dependencies: ['advisor-setup'],
+    testMatch: /advisor\/.*\.spec\.ts/,
+    use: { storageState: '.auth/advisor.json' },
+  },
+  {
+    name: 'consumer',
+    dependencies: ['consumer-setup'],
+    testMatch: /consumer\/.*\.spec\.ts/,
+    testIgnore: /consumer-tier1-gates\.spec\.ts/,
+    use: { storageState: '.auth/consumer.json' },
+  },
+  {
+    name: 'attorney',
+    dependencies: ['attorney-setup'],
+    testMatch: /attorney\/.*\.spec\.ts/,
+    use: { storageState: '.auth/attorney.json' },
+  },
+  {
+    name: 'public',
+    testMatch: /public\/.*\.spec\.ts/,
+  },
+  {
+    name: 'import-unit',
+    testDir: './tests/unit',
+    testMatch: /import.*\.spec\.ts/,
+    use: {
+      baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    },
+  },
+]
+
+if (hasTier1Consumer) {
+  projects.push(
+    { name: 'consumer-tier1-setup', testMatch: /helpers\/consumer-tier1\.setup\.ts/ },
+    {
+      name: 'consumer-tier1',
+      dependencies: ['consumer-tier1-setup'],
+      testMatch: /consumer-tier1-gates\.spec\.ts/,
+      use: { storageState: '.auth/consumer-tier1.json' },
+    },
+  )
+}
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -17,32 +70,5 @@ export default defineConfig({
     trace: 'on-first-retry',
     ...devices['Desktop Chrome'],
   },
-  projects: [
-    { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/ },
-    { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/ },
-    {
-      name: 'advisor',
-      dependencies: ['advisor-setup'],
-      testMatch: /advisor\/.*\.spec\.ts/,
-      use: { storageState: '.auth/advisor.json' },
-    },
-    {
-      name: 'consumer',
-      dependencies: ['consumer-setup'],
-      testMatch: /consumer\/.*\.spec\.ts/,
-      use: { storageState: '.auth/consumer.json' },
-    },
-    {
-      name: 'public',
-      testMatch: /public\/.*\.spec\.ts/,
-    },
-    {
-      name: 'import-unit',
-      testDir: './tests/unit',
-      testMatch: /import.*\.spec\.ts/,
-      use: {
-        baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-      },
-    },
-  ],
+  projects,
 })

@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
-import { fetchEstateHealthComputedAt, pollComputedAtChanged } from '../helpers/estate-health-poll'
+import {
+  fetchEstateHealthComputedAt,
+  pollComputedAtChanged,
+  RECOMPUTE_DEBOUNCE_MS,
+} from '../helpers/estate-health-poll'
 
 const GIFT_API = '/api/consumer/gift-history'
 const TAX_YEAR = new Date().getFullYear()
@@ -138,7 +142,10 @@ test.describe('Consumer gift-history API', () => {
     expect(createRes.status(), await createRes.text()).toBe(201)
     const created = await createRes.json()
 
+    await new Promise((r) => setTimeout(r, RECOMPUTE_DEBOUNCE_MS))
     const after = await pollComputedAtChanged(request, householdId!, before, {
+      timeoutMs: 60_000,
+      intervalMs: 2000,
       errorMessage: 'estate_health_scores.computed_at did not change after gift write',
     })
     expect(after).toBeTruthy()

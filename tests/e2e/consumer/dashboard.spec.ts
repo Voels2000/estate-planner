@@ -23,9 +23,9 @@ test.describe('Consumer dashboard', () => {
   test('shows disclaimer', async ({ page }) => {
     await expect(page.getByText(/Disclaimer:/)).toBeVisible()
     await expect(
-      page.getByText(/based on data you have entered and is designed to help you plan/i),
+      page.getByText(/educational purposes only|financial planning preparation/i),
     ).toBeVisible()
-    await expect(page.getByText(/Numbers update automatically as your data changes/i)).toBeVisible()
+    await expect(page.getByText(/not a registered investment adviser/i)).toBeVisible()
   })
 
   test('shows estate or planning section', async ({ page }) => {

@@ -3,13 +3,15 @@
  * and an active link to household 90cc8759 for strategy-recommendation API tests.
  *
  * Usage:
- *   SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app npx tsx scripts/seed-michael-johnson-advisor-demo.ts
+ *   SEED_ADVISOR_EMAIL=e2e-advisor@mywealthmaps.test npx tsx scripts/seed-michael-johnson-advisor-demo.ts
  *   npx tsx scripts/seed-advisor2-playwright-fixture.ts
  */
 
 import { createAdminClient } from '../lib/supabase/admin'
 
-const ADVISOR2_EMAIL = process.env.SEED_ADVISOR_EMAIL?.trim() ?? 'advisor2@rolobe.resend.app'
+import { E2E_IDENTITIES } from './e2e-test-identities'
+
+const ADVISOR2_EMAIL = process.env.SEED_ADVISOR_EMAIL?.trim() ?? E2E_IDENTITIES.advisor.email
 const STRATEGY_TEST_HOUSEHOLD_ID = '90cc8759-5465-4671-8894-e17eca783a42'
 
 async function main() {

@@ -80,6 +80,12 @@ export async function triggerEstateHealthRecompute(
   householdId: string,
   appUrl: string,
 ): Promise<void> {
+  // Vercel serverless often freezes before a post-response setTimeout fires on fast routes (e.g. assets POST).
+  if (process.env.VERCEL) {
+    void runRecomputeHttp(householdId, appUrl)
+    return
+  }
+
   const existing = recomputeTimers.get(householdId)
   if (existing) clearTimeout(existing)
 

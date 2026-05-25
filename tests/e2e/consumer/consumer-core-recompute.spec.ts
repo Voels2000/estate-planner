@@ -1,5 +1,9 @@
 import { test, expect, type Page } from '@playwright/test'
-import { fetchEstateHealthComputedAt, pollComputedAtChanged } from '../helpers/estate-health-poll'
+import {
+  fetchEstateHealthComputedAt,
+  pollComputedAtChanged,
+  RECOMPUTE_DEBOUNCE_MS,
+} from '../helpers/estate-health-poll'
 
 const ASSETS_API = '/api/consumer/assets'
 const ASSET_NAME = 'Smoke Test CD'
@@ -80,9 +84,10 @@ test.describe('Consumer core recompute (smoke §2)', () => {
     const created = (await createRes.json()) as { id: string }
 
     try {
+      await new Promise((r) => setTimeout(r, RECOMPUTE_DEBOUNCE_MS))
       const computedAfter = await pollComputedAtChanged(request, householdId!, computedBefore, {
-        timeoutMs: 15_000,
-        intervalMs: 1000,
+        timeoutMs: 40_000,
+        intervalMs: 1500,
         errorMessage:
           'estate_health_scores.computed_at did not change after POST /api/consumer/assets',
       })

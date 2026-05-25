@@ -59,7 +59,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - §2.4 recompute automated (`93aa6f5`)
 - Admin Portal hidden from consumers (`f4e9160`)
 - Asset modal scrollable (`f4e9160`)
-- E2E 41 passed; staging flakiness confirmed with `--workers=1`
+- E2E complete suite (**253 tests**); staging 2026-05-25: consumer/advisor/public green with `--workers=1` ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md))
 - All Sprint 14 launch bugs resolved
 
 **Commits:** `93aa6f5`, `1e092d7`, `f4e9160`
@@ -285,7 +285,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 **Shipped**
 - `[x]` **75 migrations** in repo (`supabase/migrations/[0-9]*.sql`); local + remote in sync through `20260625170000`
-- `[x]` E2E staging — **51 passed, 0 failed, 1 skipped**
+- `[x]` E2E complete suite — **253 tests** (137 consumer / 45 advisor / 59 public / 2 attorney / 7 import-unit); staging verified 2026-05-25
 - `[x]` Seed scripts — `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`
 - `[x]` Acquisition & attribution smoke **A–G passed** on staging
 - `[x]` `INTERNAL_API_KEY` on Vercel Production

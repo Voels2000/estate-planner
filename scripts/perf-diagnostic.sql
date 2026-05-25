@@ -58,18 +58,18 @@ LIMIT 15;
 SELECT h.id AS household_id, p.email
 FROM households h
 JOIN profiles p ON p.id = h.owner_id
-WHERE p.email = 'david@rolobe.resend.app'
+WHERE p.email = 'e2e-consumer@mywealthmaps.test'
 LIMIT 1;
 
 -- QUERY D: EXPLAIN ANALYZE on calculate_estate_composition RPC
--- Uses david@rolobe.resend.app household automatically — no UUID paste required.
+-- Uses e2e-consumer@mywealthmaps.test household automatically — no UUID paste required.
 EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
 SELECT * FROM calculate_estate_composition(
   p_household_id := (
     SELECT h.id
     FROM households h
     JOIN profiles p ON p.id = h.owner_id
-    WHERE p.email = 'david@rolobe.resend.app'
+    WHERE p.email = 'e2e-consumer@mywealthmaps.test'
     LIMIT 1
   ),
   p_lifetime_gifts_used := 0
@@ -82,7 +82,7 @@ SELECT * FROM generate_estate_recommendations(
     SELECT h.id
     FROM households h
     JOIN profiles p ON p.id = h.owner_id
-    WHERE p.email = 'david@rolobe.resend.app'
+    WHERE p.email = 'e2e-consumer@mywealthmaps.test'
     LIMIT 1
   )
 );

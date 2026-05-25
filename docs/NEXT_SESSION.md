@@ -273,7 +273,7 @@
 | **§2.4 recompute automated** | consumer-core-recompute.spec.ts (`93aa6f5`) |
 | **Admin Portal bug** | Fixed `f4e9160` |
 | **Asset modal bug** | Fixed `f4e9160` |
-| **E2E** | 41 passed; 12 staging-flaky (19/19 with `--workers=1`) |
+| **E2E complete suite** | **253 tests** — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md); staging 2026-05-25: consumer 127 pass / 5 skip, advisor 45 pass, public 57 pass / 2 skip (`--workers=1`) |
 | **Commits** | `93aa6f5`, `1e092d7`, `f4e9160` |
 
 ### Known staging E2E behaviour (do not lose)
@@ -286,11 +286,12 @@
 
 | Role | Email | Notes |
 |------|-------|-------|
-| **Consumer** | `david@rolobe.resend.app` | Estate tier, active subscription, is_superuser: false |
-| **Advisor (Playwright)** | `advisor2@rolobe.resend.app` | `seed-michael-johnson-advisor-demo.ts` |
-| **Attorney (portal login)** | `test-attorney-portal@rolobe.resend.app` | Password: `TestAttorney123!` · `seed-test-attorney.ts` links `profile_id` for `/attorney` newsletter kit |
-| **Attorney (test listing)** | `test-attorney@mywealthmaps.test` | Listing email · `aref`: **6fd027d3** |
-| **Advisor (test listing)** | `test-advisor@mywealthmaps.test` | `ref`: **c91dcd1b** |
+| **Consumer** | `e2e-consumer@mywealthmaps.test` | Estate tier 3 · `npm run seed:e2e` |
+| **Consumer tier 1** | `e2e-consumer-tier1@mywealthmaps.test` | Upgrade-banner project |
+| **Advisor (Playwright)** | `e2e-advisor@mywealthmaps.test` | Johnson client: `e2e-client.johnson@mywealthmaps.test` |
+| **Attorney (portal)** | `e2e-attorney@mywealthmaps.test` | `?aref=e2eatt01` |
+| **Referral codes** | `e2eadv01` / `e2eatt01` | Directory listings (no login) |
+| *Legacy* | `david@rolobe`, `advisor2@rolobe` | Retire after `.env.test` migration — [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) |
 
 ### Resend production test inboxes (`@rolobe.resend.app`)
 
@@ -300,23 +301,35 @@ Disposable addresses for production waitlist / drip captures. Inbound forwards v
 |-------|-------|
 | `consumer21@rolobe.resend.app` | Drip step 2 check (when running drip smoke) |
 
-### Seed scripts (idempotent)
+### E2E fixture reset (go-live v2 — preferred)
 
 ```bash
-set -a && source .env.local && source .env.test && set +a
-npx tsx scripts/seed-test-advisor.ts
-npx tsx scripts/seed-test-attorney.ts
-npx tsx scripts/seed-test-consumer-estate.ts
+npm run seed:e2e
+# Copy printed block into .env.test (see docs/E2E_TEST_RESET.md)
+npm run prune:e2e   # optional before full run
 ```
+
+Canonical accounts: `e2e-consumer@mywealthmaps.test`, `e2e-advisor@mywealthmaps.test`, `e2e-attorney@mywealthmaps.test` — password `E2eTest!2026Mwm` ([scripts/e2e-test-identities.ts](../scripts/e2e-test-identities.ts)).
+
+Legacy seeds (retire after cutover): `seed-test-attorney.ts`, `seed-test-consumer-estate.ts`, `david@rolobe` / `advisor2@rolobe`.
 
 ### Run E2E (always source env first)
 
 ```bash
 set -a && source .env.local && source .env.test && set +a
-npx playwright test tests/e2e/consumer --project=consumer
-# If failures: re-run with --workers=1 before investigating
+npm run test:e2e:complete -- --workers=1
+# Or per project:
+npm run test:e2e:consumer -- --workers=1
+npm run test:e2e:advisor -- --workers=1
+npm run test:e2e:public
+npm run test:e2e:attorney   # after: npx tsx scripts/seed-test-attorney.ts
+npm run test:import:unit
+npm run test:import:api
+# If failures on staging: re-run with --workers=1 before investigating
 npx playwright test [failing spec] --project=consumer --workers=1
 ```
+
+Full spec index: [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts)
 
 ---
 

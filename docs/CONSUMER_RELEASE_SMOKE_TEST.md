@@ -13,7 +13,7 @@ Use this after a production or staging deploy when consumer write paths, estate 
 ## Sprint 14 Manual Smoke Sign-off
 
 Date: 2026-05-23  
-Account: david@rolobe.resend.app (Estate tier)  
+Account: `e2e-consumer@mywealthmaps.test` (Estate tier) — seed via `npm run seed:e2e`  
 Environment: https://estate-planner-gules.vercel.app  
 Tester: Manual
 
@@ -66,17 +66,17 @@ Confirm step 2 email from `hello@mywealthmaps.com` after day-3 cron. Step 3 foll
 Run once per environment before acquisition sections B and D. Idempotent.
 
 ```bash
-# Test attorney listing + referral_code
-set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
-
-# Playwright consumer account → estate tier (tier 3)
-set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+set -a && source .env.local && set +a
+npm run seed:e2e
+# Copy printed block → .env.test
 ```
 
-- **Attorney listing:** `test-attorney@mywealthmaps.test` — script prints `referral_code` for `?aref=` in sections B and D (known code: **6fd027d3**).
-- **Attorney portal:** `test-attorney-portal@rolobe.resend.app` / `TestAttorney123!` — after seed, sign in at `/login` → `/attorney`; **Newsletter Kit** block should render (requires `profile_id` on listing).
-- **Consumer:** uses `PLAYWRIGHT_CONSUMER_EMAIL` from `.env.test` — no new user created.
-- **Advisor `?ref=`:** use a real `referral_code` from `advisor_directory` (no dedicated seed script).
+- **Consumer:** `e2e-consumer@mywealthmaps.test` / `E2eTest!2026Mwm` (estate tier 3).
+- **Advisor portal:** `e2e-advisor@mywealthmaps.test` — linked to Johnson client `e2e-client.johnson@mywealthmaps.test`.
+- **Attorney portal:** `e2e-attorney@mywealthmaps.test` — newsletter kit on `/attorney`.
+- **Referral smoke:** `?ref=e2eadv01` · `?aref=e2eatt01` (from `.env.test`).
+
+Legacy one-off seeds (`seed-test-attorney.ts`, `seed-test-consumer-estate.ts`) superseded by `seed:e2e` — see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md).
 
 For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
@@ -435,7 +435,14 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 
 ## Related automated tests
 
-Engineers can run `npm run test:e2e:consumer` with `.env.test` (see `playwright.config.ts`). That covers login, dashboard UI, and a subset of consumer APIs — **not** a substitute for this manual pass on a real account.
+Engineers can run the **complete Playwright suite** with `.env.test`:
+
+```bash
+npm run test:e2e:complete -- --workers=1   # consumer + advisor + public + attorney
+npm run test:e2e:consumer -- --workers=1   # 137 consumer tests alone
+```
+
+See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) (commands, env, seeds) and [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts) (spec index). **253 automated tests** cover route regression, sidebar contract, profile/asset/health-check UI, estate-tier gates, referral API, all `/event/[slug]` pages, and most consumer write APIs — **not** a substitute for this manual pass on a real account (dollar math, Stripe C-4, drip inbox, full signup→Supabase attribution).
 
 `consumer-strategy-writes.spec.ts` soft-deletes all Playwright-named `strategy_line_items` in `afterEach` on the fixture household (`PLAYWRIGHT_HOUSEHOLD_ID` / David Chen). The charitable composition case waits 2s after DAF POST then polls `POST /api/estate-composition` for up to 20s (`after > beforeTotal`) so async `afterHouseholdWrite` recompute can complete. If manual testing overlaps those scenario names (`Playwright *`, `daf`/`charitable` at `base`), re-run e2e or delete those rows before relying on estate composition totals.
 

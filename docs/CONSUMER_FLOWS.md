@@ -464,11 +464,35 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-strategy-writes.spec.ts` | Strategy line items, charitable, recommendations |
 | `tests/e2e/consumer/consumer-trust-crud.spec.ts` | `/api/consumer/trusts` |
 | `tests/e2e/consumer/consumer-gift-history.spec.ts` | Gift history API |
-| `tests/e2e/consumer/consumer-titling.spec.ts` | Titling / beneficiaries |
+| `tests/e2e/consumer/consumer-titling.spec.ts` | Titling API validation (sentinel UUIDs) |
+| `tests/e2e/consumer/consumer-titling-real-asset.spec.ts` | Titling POST on real asset (smoke §6) |
+| `tests/e2e/consumer/consumer-routes-estate-tier.spec.ts` | Estate-tier routes, no upgrade banner, `/trust-will` redirect |
+| `tests/e2e/consumer/consumer-sidebar-navigation.spec.ts` | Sidebar footer, overview nav, no portal links (smoke §1.4) |
+| `tests/e2e/consumer/consumer-route-regression.spec.ts` | Full CONSUMER_NAV_MAP route loads |
+| `tests/e2e/consumer/consumer-profile-save.spec.ts` | Profile PATCH + UI save (smoke §3) |
+| `tests/e2e/consumer/consumer-ui-asset-save.spec.ts` | UI add asset on `/assets` (smoke §2 UI) |
+| `tests/e2e/consumer/consumer-health-check-ui.spec.ts` | Health check wizard → dashboard (smoke §4) |
+| `tests/e2e/consumer/consumer-family-crud.spec.ts` | My Family API CRUD (smoke §5) |
+| `tests/e2e/consumer/consumer-my-advisor.spec.ts` | `/my-advisor` connection UI |
+| `tests/e2e/consumer/consumer-billing-route.spec.ts` | `/billing` + sidebar link |
+| `tests/e2e/consumer/consumer-digital-assets.spec.ts` | Digital assets route + API |
+| `tests/e2e/consumer/consumer-life-events.spec.ts` | Life events API |
+| `tests/e2e/consumer/consumer-import-access.spec.ts` | Import page for tier 2+ fixture |
+| `tests/e2e/consumer/consumer-strategy-recommendation-ui.spec.ts` | Dashboard advisor recommendation panel (smoke §9) |
+| `tests/e2e/consumer/terms-accept-flow.spec.ts` | `/terms/accept` + `POST /api/terms/accept` |
+| `tests/e2e/consumer/consumer-tier1-gates.spec.ts` | Upgrade banners (optional tier-1 project) |
+| `tests/e2e/public/public.spec.ts` | Auth pages, terms API, beneficiary token |
+| `tests/e2e/public/public-routes.spec.ts` | Marketing routes, all `/event/[slug]`, assess pages |
+| `tests/e2e/public/public-referral-track.spec.ts` | Referral track API (acquisition §A–B) |
+| `tests/e2e/public/auth-signup-attribution.spec.ts` | sessionStorage `?ref=` / `?aref=` contract |
+| `tests/e2e/advisor/*.spec.ts` | Advisor portal (incl. RMD copy, newsletter kit) |
+| `tests/e2e/attorney/attorney-portal.spec.ts` | Attorney dashboard + `?aref=` links |
 | `tests/unit/import-parse.spec.ts` | Import header detection, sheets, aliases (`npm run test:import:unit`) |
 | `tests/e2e/consumer/consumer-import.spec.ts` | Import ingest/commit, duplicates, traceability (`npm run test:import:api`) |
 
-Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment.
+**Run full suite:** `npm run test:e2e:complete` (see [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md)).
+
+Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment. Profile API revert test needs `SUPABASE_SERVICE_ROLE_KEY`. Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
 
 **Automated vs manual:** E2E specs are living contracts for APIs and key UI loads. **Smoke §2.4 (recompute)** is automated in `consumer-core-recompute.spec.ts` (see [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md)). Remaining human checks live in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — do not skip for production releases.
 

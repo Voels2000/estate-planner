@@ -16,13 +16,33 @@ const DELETE_EMAILS = [
   'consumer20@rolobe.resend.app',
 ]
 
+import { E2E_IDENTITIES, LEGACY_E2E_EMAILS } from './e2e-test-identities'
+
+/** Never delete canonical E2E v2 accounts or drip smoke inbox. */
 const PROTECTED = [
+  E2E_IDENTITIES.consumer.email,
+  E2E_IDENTITIES.consumerTier1.email,
+  E2E_IDENTITIES.advisor.email,
+  E2E_IDENTITIES.advisorClient.email,
+  E2E_IDENTITIES.attorneyPortal.email,
+  E2E_IDENTITIES.advisorListing.email,
+  E2E_IDENTITIES.attorneyListing.email,
+  'consumer21@rolobe.resend.app',
+  // Legacy — remove from this list after migrating .env.test and deleting:
   'david@rolobe.resend.app',
   'advisor@rolobe.resend.app',
   'advisor2@rolobe.resend.app',
   'consumer1@rolobe.resend.app',
-  'consumer21@rolobe.resend.app',
   'test-attorney-portal@rolobe.resend.app',
+]
+
+/** Candidates for deletion when cleaning pre-go-live clutter. */
+const LEGACY_DELETE_CANDIDATES = [
+  ...LEGACY_E2E_EMAILS.filter(
+    (e) =>
+      !PROTECTED.includes(e) &&
+      e !== 'consumer21@rolobe.resend.app',
+  ),
 ]
 
 async function deleteUserWithHouseholdData(userId: string, email: string): Promise<boolean> {
@@ -90,7 +110,15 @@ async function deleteUserWithHouseholdData(userId: string, email: string): Promi
 }
 
 async function main() {
-  for (const email of DELETE_EMAILS) {
+  const emails = process.argv.includes('--legacy')
+    ? [...new Set([...DELETE_EMAILS, ...LEGACY_DELETE_CANDIDATES])]
+    : DELETE_EMAILS
+
+  if (process.argv.includes('--legacy')) {
+    console.log('Including legacy E2E emails (--legacy). Protected list still enforced.\n')
+  }
+
+  for (const email of emails) {
     if (PROTECTED.includes(email)) {
       console.error(`SAFETY: refusing to delete protected account ${email}`)
       continue

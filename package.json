@@ -11,10 +11,16 @@
     "test:e2e:advisor": "dotenv -e .env.test -- npx playwright test --project=advisor-setup --project=advisor",
     "test:e2e:consumer": "dotenv -e .env.test -- npx playwright test --project=consumer-setup --project=consumer",
     "test:e2e:public": "dotenv -e .env.test -- npx playwright test --project=public",
+    "test:e2e:attorney": "dotenv -e .env.test -- npx playwright test --project=attorney-setup --project=attorney",
+    "test:e2e:complete": "dotenv -e .env.test -- npx playwright test --project=consumer-setup --project=consumer --project=advisor-setup --project=advisor --project=attorney-setup --project=attorney --project=public",
+    "test:e2e:nightly": "dotenv -e .env.test -- npx playwright test --project=public",
     "test:e2e:regression": "dotenv -e .env.test -- npx playwright test tests/e2e/advisor/regression.spec.ts",
     "test:e2e:report": "npx playwright show-report",
     "test:import:unit": "npx playwright test --project=import-unit",
-    "test:import:api": "dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1"
+    "test:import:api": "dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1",
+    "seed:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts",
+    "seed:e2e:fast": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-johnson",
+    "prune:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

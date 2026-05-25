@@ -20,6 +20,7 @@ export async function fetchEstateHealthComputedAt(
 ): Promise<string | null> {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://fnzvlmrqwcqwiqueevux.supabase.co'
+
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!anonKey) return null
 
@@ -41,6 +42,15 @@ export async function fetchEstateHealthComputedAt(
   return rows[0]?.computed_at ?? null
 }
 
+/** Server debounces recompute 3s after write; allow trigger + HTTP before polling. */
+export const RECOMPUTE_DEBOUNCE_MS = 4_500
+
+function computedAtAdvanced(before: string | null, current: string | null): boolean {
+  if (!current) return false
+  if (!before) return true
+  return new Date(current).getTime() > new Date(before).getTime()
+}
+
 export async function pollComputedAtChanged(
   request: APIRequestContext,
   householdId: string,
@@ -52,7 +62,7 @@ export async function pollComputedAtChanged(
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     const current = await fetchEstateHealthComputedAt(request, householdId)
-    if (current && current !== before) return current
+    if (computedAtAdvanced(before, current)) return current!
     await new Promise((r) => setTimeout(r, intervalMs))
   }
   throw new Error(

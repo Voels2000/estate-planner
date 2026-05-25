@@ -8,6 +8,28 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## E2E test identity reset v2 (2026-05-25) — scripts only (no schema)
+
+- **`scripts/e2e-test-identities.ts`** — canonical `@mywealthmaps.test` emails, `E2eTest!2026Mwm`, referral codes `e2eadv01` / `e2eatt01`
+- **`scripts/seed-e2e-fixtures.ts`** + **`seed-e2e-lib.ts`** — master seed; prints `.env.test`
+- **`scripts/prune-e2e-household-artifacts.ts`** — cleanup Playwright rows
+- **Docs:** [E2E_TEST_RESET.md](./E2E_TEST_RESET.md), `.env.test.example`
+- **npm:** `seed:e2e`, `seed:e2e:fast`, `prune:e2e`
+
+---
+
+## Playwright complete E2E suite (2026-05-25) — docs + tests (no schema)
+
+**Scope:** Expanded Playwright from ~51 core tests to **253** across consumer (137), advisor (45), public (59), attorney (2), import-unit (7). New specs: route regression, sidebar contract, profile/UI saves, health-check wizard, family CRUD, titling on real assets, billing, digital assets, life events, terms accept, all event slugs, referral track API, attorney portal, advisor RMD/newsletter kit.
+
+**Docs:** [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md), [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts), [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md).
+
+**Staging verify (`--workers=1`):** consumer 127 pass / 5 skip; advisor 45 pass; public 57 pass / 2 skip. Attorney project requires `scripts/seed-test-attorney.ts` on target DB.
+
+**Commands:** `npm run test:e2e:complete`, `test:e2e:consumer`, `test:e2e:advisor`, `test:e2e:public`, `test:e2e:attorney`.
+
+---
+
 ## Sprint C-7 (2026-05-25) — Compliance reminders + privacy requests ✅ LIVE
 
 **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` (applied prod)
@@ -501,7 +523,7 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - Schema (Step 7): `20260517120000` — drop `adjusted_taxable_gift` from `strategy_line_items_strategy_source_check` (pre-flight count must be 0). `20260517120100` — remove `v_atg` from `calculate_estate_composition` (no ATG add-back to `taxable_estate`; `lifetime_gifts_used` unchanged). Reference: `supabase/migrations/reference/live_calculate_estate_composition.sql`.
 - Application-layer — Transfer Strategies: `ConsumerStrategyPanel` educational cards (`STRATEGY_INFO`, SLAT/ILIT pills, MFJ gating); liquidity panel `Math.round()` on `estimatedStateTax` / `estimatedFederalTax` for number inputs. Consumer save forms for SLAT/ILIT deferred to Session 124.
 - Application-layer — gift-history: `POST /api/consumer/gift-history` returns **201**; `lib/strategy/*` drops `adjusted_taxable_gift` from allowed sources; `EstateComposition.adjusted_taxable_gifts` optional (RPC no longer returns it after 7B).
-- E2E: `tests/e2e/consumer/consumer-gift-history.spec.ts` (9 cases); consumer project **50** tests. Playwright account: `david@rolobe.resend.app` / household `3967698f-00d2-4746-ab90-6209e90b3d68` in `.env.test`. Recompute case needs `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- E2E: `tests/e2e/consumer/consumer-gift-history.spec.ts` (9 cases); consumer project **50** tests. Playwright account (legacy): `david@rolobe.resend.app`; canonical v2: `e2e-consumer@mywealthmaps.test` via `npm run seed:e2e`. Recompute case needs `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Session 120 Note
 

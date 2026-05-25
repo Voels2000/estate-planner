@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -379,13 +379,17 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/seed-test-attorney.ts` | Idempotent listing `test-attorney@mywealthmaps.test` + portal user `test-attorney-portal@rolobe.resend.app` (`TestAttorney123!`); links `attorney_listings.profile_id` for `/attorney` newsletter kit; prints `referral_code` for smoke `?aref=` |
-| `scripts/seed-test-advisor.ts` | Idempotent `test-advisor@mywealthmaps.test`; prints `referral_code` for smoke `?ref=` |
-| `scripts/seed-test-consumer-estate.ts` | Ensures `PLAYWRIGHT_CONSUMER_EMAIL` is estate tier (3) |
+| **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
+| `scripts/e2e-test-identities.ts` | Single source of truth for E2E emails, passwords, referral codes |
+| `scripts/prune-e2e-household-artifacts.ts` | Removes Playwright-named rows without deleting users |
+| `scripts/seed-michael-johnson-advisor-demo.ts` | Called by master seed for advisor client workspace |
+| `scripts/seed-test-consumer-estate.ts` | Legacy: tier bump only for an existing email |
+| `scripts/seed-test-attorney.ts` | Legacy: use `seed:e2e` instead |
 
 ```bash
-set -a && source .env.local && set +a && npx tsx scripts/seed-test-attorney.ts
-set -a && source .env.local && source .env.test && set +a && npx tsx scripts/seed-test-consumer-estate.ts
+npm run seed:e2e
+# copy printed block → .env.test
+npm run test:e2e:complete -- --workers=1
 ```
 
 See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE_TEST.md#test-data-setup-staging--pre-sprint-14).
@@ -401,9 +405,27 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 7. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
 8. Optional: accept or decline one advisor recommendation on the dashboard.
 
-**Automated smoke (CI / local):** `npm run test:e2e:consumer` (52+ tests). Requires `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID` (strategy, gift-history, `consumer-core-recompute`), and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for `estate-health-poll.ts`. **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4 (asset POST → `computed_at` poll → dashboard).
+**Playwright E2E (complete suite — May 2026):** See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) and [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md). **253 tests** in 41 files: **137 consumer**, **45 advisor**, **59 public**, **2 attorney**, **7 import-unit** (+ 3 setup projects).
 
-**Advisor automated smoke:** `npm run test:e2e:advisor` (44 tests). Requires `PLAYWRIGHT_ADVISOR_EMAIL` / `PLAYWRIGHT_ADVISOR_PASSWORD` (canonical: `advisor2@rolobe.resend.app`). Session 126 preset API/UI tests (`advisor-presets.spec.ts`) require deploy of `/api/advisor/presets` routes; 7 preset cases 404 until then (37/44 pass pre-deploy). Michael Johnson UI paths: `SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app npx tsx scripts/seed-michael-johnson-advisor-demo.ts`; strategy API household link: `scripts/seed-advisor2-playwright-fixture.ts`.
+| Command | Projects |
+|---------|----------|
+| `npm run test:e2e:complete` | consumer + advisor + attorney + public |
+| `npm run test:e2e:consumer` | consumer-setup + consumer (137) |
+| `npm run test:e2e:advisor` | advisor-setup + advisor (45) |
+| `npm run test:e2e:attorney` | attorney-setup + attorney (2) — requires `seed-test-attorney.ts` on target env |
+| `npm run test:e2e:public` | public (59) |
+| `npm run test:import:unit` | import parse unit (7) |
+| `npm run test:import:api` | import commit API (consumer project subset) |
+
+**Staging verification (2026-05-25, `PLAYWRIGHT_BASE_URL` staging, `--workers=1`):** consumer **127 passed / 5 skipped** (strategy tests need `PLAYWRIGHT_HOUSEHOLD_ID`; import API can flake under load); advisor **45 passed**; public **57 passed / 2 skipped**; attorney setup **requires** portal user from `scripts/seed-test-attorney.ts` (default creds fail if not seeded). Re-run failures with `--workers=1` before treating as regressions.
+
+**Consumer coverage highlights:** route regression (full CONSUMER_NAV_MAP), sidebar/footer contract, estate-tier gates, profile save, UI asset save, health-check wizard, family CRUD, titling on real assets, billing, digital assets, life events, terms accept, import access, strategy recommendation panel (when advisor linked). **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4.
+
+**Required env (`.env.test`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
+
+**Advisor client seed:** included in `npm run seed:e2e` (Michael Johnson → `e2e-client.johnson@mywealthmaps.test`). Legacy: `SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app` only if not migrated.
+
+**Manual release smoke** ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)) still required for production sign-off — dollar math, Stripe C-4, drip inbox, full signup attribution to Supabase.
 
 ---
 
