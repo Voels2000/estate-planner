@@ -1,5 +1,9 @@
 -- Sprint C-7: Privacy request intake
 -- Tracks all WCPA consumer rights requests with SLA deadlines.
+--
+-- due_at uses DEFAULT (now() + 45 days), not GENERATED ALWAYS AS STORED:
+-- Postgres requires generated expressions to be immutable; (received_at + interval)
+-- references another column and is not allowed.
 
 CREATE TABLE IF NOT EXISTS public.privacy_requests (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -21,8 +25,7 @@ CREATE TABLE IF NOT EXISTS public.privacy_requests (
                       'denied'
                     )),
   received_at     timestamptz NOT NULL DEFAULT now(),
-  due_at          timestamptz NOT NULL
-                    GENERATED ALWAYS AS (received_at + interval '45 days') STORED,
+  due_at          timestamptz NOT NULL DEFAULT (now() + interval '45 days'),
   completed_at    timestamptz,
   notes           text,
   created_at      timestamptz NOT NULL DEFAULT now()
