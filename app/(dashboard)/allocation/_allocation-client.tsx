@@ -77,18 +77,18 @@ function BenchmarkCard({ title, subtitle, mix, highlight }: {
   title: string; subtitle: string; mix: Benchmark; highlight?: boolean
 }) {
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${highlight ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+    <div className={`rounded-xl border p-4 space-y-3 ${highlight ? 'border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]' : 'border-gray-200 bg-white'}`}>
       <div>
-        <p className={`text-sm font-semibold ${highlight ? 'text-indigo-900' : 'text-gray-800'}`}>{title}</p>
+        <p className={`text-sm font-semibold ${highlight ? 'text-[color:var(--mwm-navy)]' : 'text-gray-800'}`}>{title}</p>
         <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
       </div>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-gray-100">
-        <div className="bg-indigo-500 h-full transition-all" style={{ width: `${mix.stocks}%` }} />
+        <div className="bg-[var(--mwm-navy)] h-full transition-all" style={{ width: `${mix.stocks}%` }} />
         <div className="bg-cyan-400 h-full transition-all"  style={{ width: `${mix.bonds}%`  }} />
-        <div className="bg-emerald-400 h-full transition-all" style={{ width: `${mix.cash}%` }} />
+        <div className="bg-[var(--mwm-sage-light)] h-full transition-all" style={{ width: `${mix.cash}%` }} />
       </div>
       <div className="grid grid-cols-3 gap-1 text-center">
-        {[['Stocks', mix.stocks, 'text-indigo-700'], ['Bonds', mix.bonds, 'text-cyan-700'], ['Cash', mix.cash, 'text-emerald-700']].map(([label, val, color]) => (
+        {[['Stocks', mix.stocks, 'text-[color:var(--mwm-navy)]'], ['Bonds', mix.bonds, 'text-cyan-700'], ['Cash', mix.cash, 'text-[color:var(--mwm-sage)]']].map(([label, val, color]) => (
           <div key={label as string}>
             <p className={`text-sm font-bold ${color}`}>{val}%</p>
             <p className="text-xs text-gray-400">{label}</p>
@@ -293,12 +293,12 @@ export default function AllocationClient({
         {/* Visual bar */}
         <div>
           <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
-            <div className="bg-indigo-500 h-full transition-all" style={{ width: `${clamp(stocks, 0, 100)}%` }} />
+            <div className="bg-[var(--mwm-navy)] h-full transition-all" style={{ width: `${clamp(stocks, 0, 100)}%` }} />
             <div className="bg-cyan-400 h-full transition-all"   style={{ width: `${clamp(bonds,  0, 100)}%` }} />
-            <div className="bg-emerald-400 h-full transition-all" style={{ width: `${clamp(cash, 0, 100)}%` }} />
+            <div className="bg-[var(--mwm-sage-light)] h-full transition-all" style={{ width: `${clamp(cash, 0, 100)}%` }} />
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-600">
-            {[['Stocks', stocks, 'bg-indigo-500'], ['Bonds', bonds, 'bg-cyan-400'], ['Cash', cash, 'bg-emerald-400']].map(([label, pct, color]) => (
+            {[['Stocks', stocks, 'bg-[var(--mwm-navy)]'], ['Bonds', bonds, 'bg-cyan-400'], ['Cash', cash, 'bg-[var(--mwm-sage-light)]']].map(([label, pct, color]) => (
               <span key={label as string} className="inline-flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${color}`} />
                 {label}: <span className="font-medium text-gray-900">{pct}%</span>
@@ -314,7 +314,7 @@ export default function AllocationClient({
               <span className="text-sm font-medium text-neutral-700">{label} %</span>
               <input type="number" min={0} max={100} step={1} value={value}
                 onChange={e => set(clamp(Number(e.target.value) || 0, 0, 100))}
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm tabular-nums focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm tabular-nums focus:border-[color:var(--mwm-navy)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/10"
               />
             </label>
           ))}
@@ -330,7 +330,7 @@ export default function AllocationClient({
             Scale to 100%
           </button>
           <button type="button" onClick={handleSave} disabled={!valid || saving}
-            className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            className="rounded-lg bg-[var(--mwm-navy)] px-4 py-1.5 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 disabled:cursor-not-allowed">
             {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Target Mix'}
           </button>
           {saveError && <p className="text-xs text-red-600">{saveError}</p>}
@@ -410,8 +410,8 @@ export default function AllocationClient({
                 {(['stocks', 'bonds', 'cash'] as const).map(cls => {
                   const amt = displayRebalance[cls]
                   const action = amt > 0 ? 'Buy' : amt < 0 ? 'Sell' : 'Hold'
-                  const bg = amt > 0 ? 'bg-indigo-50 border-indigo-200' : amt < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
-                  const tc = amt > 0 ? 'text-indigo-700' : amt < 0 ? 'text-red-700' : 'text-green-700'
+                  const bg = amt > 0 ? 'bg-[var(--mwm-gold-pale)] border-[color:var(--mwm-border)]' : amt < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+                  const tc = amt > 0 ? 'text-[color:var(--mwm-navy)]' : amt < 0 ? 'text-red-700' : 'text-green-700'
                   return (
                     <div key={cls} className={`rounded-lg border p-4 ${bg}`}>
                       <p className="text-xs text-gray-500 capitalize mb-1">{cls}</p>

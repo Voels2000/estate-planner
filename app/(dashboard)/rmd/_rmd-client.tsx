@@ -163,7 +163,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
         <div className="text-4xl mb-3">📋</div>
         <p className="text-sm font-medium text-neutral-600">Complete your profile first</p>
-        <Link href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</Link>
+        <Link href="/profile" className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline">Go to Profile →</Link>
       </div>
     </div>
   )
@@ -175,7 +175,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
         <div className="text-4xl mb-3">🏦</div>
         <p className="text-sm font-medium text-neutral-600">No RMD-eligible accounts found</p>
         <p className="text-xs text-neutral-400 mt-1">Add a Traditional IRA or Traditional 401(k) to your assets</p>
-        <Link href="/assets" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Assets →</Link>
+        <Link href="/assets" className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline">Go to Assets →</Link>
       </div>
     </div>
   )
@@ -225,7 +225,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
         <div className="space-y-4">
           {[
             { name: p1Name, accts: p1Assets, color: 'border-blue-200 bg-blue-50/30' },
-            ...(household.has_spouse && p2Name ? [{ name: p2Name, accts: p2Assets, color: 'border-violet-200 bg-violet-50/30' }] : []),
+            ...(household.has_spouse && p2Name ? [{ name: p2Name, accts: p2Assets, color: 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]/30' }] : []),
             ...(pooledAssets.length > 0 ? [{ name: 'Joint / Unassigned', accts: pooledAssets, color: 'border-neutral-200 bg-white' }] : []),
           ].map(group => group.accts.length > 0 && (
             <div key={group.name}>
@@ -265,8 +265,8 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-500">{p1Name} Age</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-500">{p1Name} RMD</th>
                 {p2Name && <>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-violet-500">{p2Name} Age</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-violet-500">{p2Name} RMD</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[color:var(--mwm-sage)]">{p2Name} Age</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[color:var(--mwm-sage)]">{p2Name} RMD</th>
                 </>}
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">Total RMD</th>
                 <th className="px-4 py-3"></th>
@@ -280,7 +280,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                       {r.year}
                       {r.year === currentYear && <span className="ml-2 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">Now</span>}
                       {r.is_first_year_p1 && <span className="ml-2 text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">{p1Name} 1st</span>}
-                      {r.is_first_year_p2 && <span className="ml-2 text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">{p2Name} 1st</span>}
+                      {r.is_first_year_p2 && <span className="ml-2 text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] rounded-full px-2 py-0.5">{p2Name} 1st</span>}
                     </td>
                     <td className="px-4 py-3 text-sm text-blue-600">{r.p1_age ?? '—'}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-blue-700">{r.p1_rmd > 0 ? formatDollars(r.p1_rmd) : '—'}</td>
@@ -320,7 +320,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                               <p className="text-xs font-semibold text-violet-600 mb-2">{p2Name}</p>
                               <div className="space-y-2">
                                 {r.p2_accounts.map(a => (
-                                  <div key={a.asset_id} className="rounded-lg border border-violet-100 bg-white p-3">
+                                  <div key={a.asset_id} className="rounded-lg border border-[color:var(--mwm-sage-pale)] bg-white p-3">
                                     <div className="flex items-center justify-between mb-1">
                                       <p className="text-sm font-medium text-neutral-900">{a.asset_name}</p>
                                       <p className="text-sm font-semibold text-violet-700">{formatDollars(a.rmd_amount)}</p>
@@ -390,7 +390,7 @@ function SummaryCard({ label, value, sub, highlight, color }: {
   label: string; value: string; sub: string; highlight?: 'amber'; color?: 'blue' | 'violet'
 }) {
   return (
-    <div className={`rounded-xl border px-4 py-4 shadow-sm ${color === 'blue' ? 'border-blue-200 bg-blue-50/30' : color === 'violet' ? 'border-violet-200 bg-violet-50/30' : 'border-neutral-200 bg-white'}`}>
+    <div className={`rounded-xl border px-4 py-4 shadow-sm ${color === 'blue' ? 'border-blue-200 bg-blue-50/30' : color === 'violet' ? 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]/30' : 'border-neutral-200 bg-white'}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
       <p className={`mt-1 text-xl font-bold ${highlight === 'amber' ? 'text-amber-600' : color === 'blue' ? 'text-blue-700' : color === 'violet' ? 'text-violet-700' : 'text-neutral-900'}`}>{value}</p>
       <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>

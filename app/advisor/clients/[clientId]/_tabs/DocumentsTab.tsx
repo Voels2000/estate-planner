@@ -146,7 +146,7 @@ export default function DocumentsTab({ legalDocuments, household }: ClientViewSh
                         <td className="py-2.5 text-slate-500">{formatDate(doc.created_at)}</td>
                         <td className="py-2.5">
                           {doc.is_current ? (
-                            <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Current</span>
+                            <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1.5 py-0.5 rounded">Current</span>
                           ) : (
                             <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Prior version</span>
                           )}

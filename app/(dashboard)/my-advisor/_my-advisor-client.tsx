@@ -170,24 +170,24 @@ export default function MyAdvisorClient({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+            <div className="rounded-2xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-6">
               <div className="flex items-start gap-3">
                 <span className="text-2xl shrink-0">✉️</span>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-sm font-semibold text-indigo-900">
+                  <h2 className="text-sm font-semibold text-[color:var(--mwm-navy)]">
                     Invite your advisor
                   </h2>
-                  <p className="mt-1 text-sm text-indigo-700 leading-relaxed">
+                  <p className="mt-1 text-sm text-[color:var(--mwm-navy)] leading-relaxed">
                     Already working with a financial advisor? Send them a pre-written email
                     inviting them to join My Wealth Maps and connect to your plan.
                   </p>
                   <a
                     href={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
-                    className="mt-4 inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+                    className="mt-4 inline-flex items-center rounded-lg bg-[var(--mwm-navy)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--mwm-navy-light)] transition-colors"
                   >
                     Invite my advisor via email →
                   </a>
-                  <p className="mt-3 text-xs text-indigo-600">
+                  <p className="mt-3 text-xs text-[color:var(--mwm-navy)]">
                     Opens your email app with a message signed as {consumerName}.
                   </p>
                 </div>
@@ -196,7 +196,7 @@ export default function MyAdvisorClient({
 
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-12 text-center px-8">
               {cancelled && (
-                <div className="mb-6 w-full max-w-sm rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 text-center">
+                <div className="mb-6 w-full max-w-sm rounded-lg bg-[var(--mwm-sage-pale)] border border-[color:var(--mwm-sage-pale)] px-4 py-3 text-sm text-[color:var(--mwm-sage)] text-center">
                   ✓ Request cancelled. You can send a new request any time.
                 </div>
               )}
@@ -238,7 +238,7 @@ export default function MyAdvisorClient({
                 {listing?.firm_name ?? advisor?.full_name ?? 'Your Advisor'}
               </h2>
               {listing?.is_fiduciary && (
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                   Fiduciary
                 </span>
               )}
@@ -252,7 +252,7 @@ export default function MyAdvisorClient({
               </p>
             )}
           </div>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+          <span className="rounded-full bg-[var(--mwm-sage-pale)] px-3 py-1 text-xs font-medium text-[color:var(--mwm-sage)]">
             Connected
           </span>
         </div>
@@ -283,7 +283,7 @@ export default function MyAdvisorClient({
               href={listing.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-indigo-600 hover:underline"
+              className="text-xs text-[color:var(--mwm-navy)] hover:underline"
             >
               Visit website
             </a>

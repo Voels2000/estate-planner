@@ -156,7 +156,7 @@ export function TrustDocumentsPanel({
             <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
               {HEADROOM_BEFORE_FEDERAL_TAX_LABEL}
             </p>
-            <p className="mt-1 text-lg font-semibold text-emerald-700 tabular-nums">
+            <p className="mt-1 text-lg font-semibold text-[color:var(--mwm-sage)] tabular-nums">
               {formatDollars(trustEstateSummary.headroom)}
             </p>
           </div>

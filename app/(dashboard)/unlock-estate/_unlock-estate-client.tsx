@@ -61,7 +61,7 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
             {score.completed} of {score.total} complete
           </span>
           <span
-            className={`text-sm font-semibold ${canUnlock ? 'text-green-600' : 'text-indigo-600'}`}
+            className={`text-sm font-semibold ${canUnlock ? 'text-green-600' : 'text-[color:var(--mwm-navy)]'}`}
           >
             {pct}%
           </span>
@@ -69,7 +69,7 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
         <div className="h-3 w-full overflow-hidden rounded-full bg-neutral-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              canUnlock ? 'bg-green-500' : 'bg-indigo-500'
+              canUnlock ? 'bg-green-500' : 'bg-[var(--mwm-navy)]'
             }`}
             style={{ width: `${pct}%` }}
           />
@@ -114,7 +114,7 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
             {!item.completed && (
               <Link
                 href={item.href}
-                className="shrink-0 rounded-lg bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-100"
+                className="shrink-0 rounded-lg bg-[var(--mwm-gold-pale)] px-3 py-1 text-xs font-medium text-[color:var(--mwm-navy)] transition hover:bg-[var(--mwm-gold-pale)]"
               >
                 Go →
               </Link>

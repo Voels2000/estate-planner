@@ -111,18 +111,18 @@ export default function LifeEventPrompt({
   if (dismissed) return null
 
   return (
-    <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-2xl p-5 shadow-sm">
+    <div className="mb-6 bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-2xl p-5 shadow-sm">
       <div className="flex items-start gap-4">
         <span className="text-2xl shrink-0">{content.icon}</span>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-indigo-900 mb-1">{content.title}</h3>
-          <p className="text-sm text-indigo-700 leading-relaxed mb-3">{content.body}</p>
+          <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-1">{content.title}</h3>
+          <p className="text-sm text-[color:var(--mwm-navy)] leading-relaxed mb-3">{content.body}</p>
           <div className="flex flex-wrap items-center gap-3">
             {content.actions.map(action => (
               <Link
                 key={action.href}
                 href={action.href}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 bg-white px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition"
+                className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] border border-[color:var(--mwm-border)] bg-white px-3 py-1.5 rounded-lg hover:bg-[var(--mwm-gold-pale)] transition"
               >
                 {action.label} →
               </Link>
@@ -130,7 +130,7 @@ export default function LifeEventPrompt({
             <button
               onClick={handleWriteAlert}
               disabled={writing}
-              className="text-xs text-indigo-400 hover:text-indigo-600 disabled:opacity-50"
+              className="text-xs text-[color:var(--mwm-text-muted)] hover:text-[color:var(--mwm-navy)] disabled:opacity-50"
             >
               {writing ? 'Saving…' : 'Add to my alerts'}
             </button>

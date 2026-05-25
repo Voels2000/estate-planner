@@ -215,7 +215,7 @@ export function BillingClient({
               }`}
             >
               {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-3 py-1 text-xs font-medium text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--mwm-navy)] px-3 py-1 text-xs font-medium text-white">
                   Most Popular
                 </span>
               )}
@@ -242,7 +242,7 @@ export function BillingClient({
                 <ul className="mt-6 space-y-3">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2 text-sm">
-                      <span className={`text-lg leading-none ${plan.highlighted ? 'text-indigo-400' : 'text-indigo-600'}`}>✓</span>
+                      <span className={`text-lg leading-none ${plan.highlighted ? 'text-[color:var(--mwm-text-muted)]' : 'text-[color:var(--mwm-navy)]'}`}>✓</span>
                       <span className={plan.highlighted ? 'text-neutral-300' : 'text-neutral-600'}>{feature}</span>
                     </li>
                   ))}

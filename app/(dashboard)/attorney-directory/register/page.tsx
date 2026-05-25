@@ -152,7 +152,7 @@ export default function AttorneyRegisterPage() {
               type="text"
               value={form.firm_name}
               onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
           <div>
@@ -163,7 +163,7 @@ export default function AttorneyRegisterPage() {
               type="text"
               value={form.contact_name}
               onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function AttorneyRegisterPage() {
               type="email"
               value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
           <div>
@@ -187,7 +187,7 @@ export default function AttorneyRegisterPage() {
               type="tel"
               value={form.phone}
               onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function AttorneyRegisterPage() {
               type="text"
               value={form.city}
               onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
           <div>
@@ -213,7 +213,7 @@ export default function AttorneyRegisterPage() {
               placeholder="WA"
               value={form.state}
               onChange={e => setForm(p => ({ ...p, state: e.target.value.toUpperCase() }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
           <div>
@@ -222,7 +222,7 @@ export default function AttorneyRegisterPage() {
               type="text"
               value={form.bar_number}
               onChange={e => setForm(p => ({ ...p, bar_number: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function AttorneyRegisterPage() {
             <select
               value={form.fee_structure}
               onChange={e => setForm(p => ({ ...p, fee_structure: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             >
               <option value="">Select…</option>
               <option value="Flat fee">Flat fee</option>
@@ -250,7 +250,7 @@ export default function AttorneyRegisterPage() {
               placeholder="https://"
               value={form.website}
               onChange={e => setForm(p => ({ ...p, website: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function AttorneyRegisterPage() {
             type="checkbox"
             checked={form.serves_remote}
             onChange={e => setForm(p => ({ ...p, serves_remote: e.target.checked }))}
-            className="h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-300"
+            className="h-4 w-4 rounded border-neutral-300 text-[color:var(--mwm-navy)] focus:ring-[color:var(--mwm-navy)]/30"
           />
           <label htmlFor="serves_remote" className="text-sm font-medium text-neutral-700">
             Available for remote / virtual consultations
@@ -282,7 +282,7 @@ export default function AttorneyRegisterPage() {
                 onClick={() => toggleItem('specializations', s)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   form.specializations.includes(s)
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-[var(--mwm-navy)] text-white'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                 }`}
               >
@@ -305,7 +305,7 @@ export default function AttorneyRegisterPage() {
                 onClick={() => toggleItem('languages', l)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   form.languages.includes(l)
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-[var(--mwm-sage)] text-white'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                 }`}
               >
@@ -324,7 +324,7 @@ export default function AttorneyRegisterPage() {
             <button
               type="button"
               onClick={toggleAllStates}
-              className="text-xs text-indigo-600 hover:underline"
+              className="text-xs text-[color:var(--mwm-navy)] hover:underline"
             >
               {form.states_licensed.length === US_STATES.length ? 'Deselect all' : 'Select all'}
             </button>
@@ -335,7 +335,7 @@ export default function AttorneyRegisterPage() {
                 key={s}
                 className={`flex items-center justify-center rounded-lg border px-1.5 py-1 text-xs font-medium cursor-pointer transition ${
                   form.states_licensed.includes(s)
-                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                    ? 'border-[color:var(--mwm-navy)] bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]'
                     : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50'
                 }`}
               >
@@ -359,7 +359,7 @@ export default function AttorneyRegisterPage() {
             value={form.bio}
             onChange={e => setForm(p => ({ ...p, bio: e.target.value }))}
             placeholder="Brief description of your practice and experience…"
-            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
           />
         </div>
 

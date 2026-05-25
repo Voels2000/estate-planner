@@ -323,7 +323,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {(attorney.specializations ?? []).slice(0, 2).map(s => (
-                      <span key={s} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                      <span key={s} className="rounded-full bg-[var(--mwm-gold-pale)] px-2 py-0.5 text-xs text-[color:var(--mwm-navy)]">
                         {s}
                       </span>
                     ))}
@@ -431,7 +431,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                           setEdits(prev => ({ ...prev, [r.id]: { ...edit, status: e.target.value } }))
                         }
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium border-0 cursor-pointer
-                          focus:ring-2 focus:ring-indigo-300 focus:outline-none
+                          focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30 focus:outline-none
                           ${STATUS_STYLES[edit.status as ReferralStatus] ?? 'bg-neutral-100 text-neutral-500'}`}
                       >
                         {statusOptions.map(s => (
@@ -451,7 +451,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                         placeholder="Optional note…"
                         className="w-full rounded-lg border border-neutral-200 px-2 py-1 text-xs
                           text-neutral-700 placeholder-neutral-300 focus:outline-none
-                          focus:ring-2 focus:ring-indigo-300"
+                          focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -461,7 +461,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                         disabled={!isDirty || loading === `${r.id}-status`}
                         className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
                           isDirty
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            ? 'bg-[var(--mwm-navy)] text-white hover:bg-[var(--mwm-navy-light)]'
                             : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                         }`}
                       >

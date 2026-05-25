@@ -128,8 +128,8 @@ function buildFlowSteps(
 const CONSUMER_NODE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   person:        { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-800' },
   asset:         { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700' },
-  real_estate:   { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800' },
-  digital_asset: { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-800' },
+  real_estate:   { bg: 'bg-[var(--mwm-sage-pale)]', border: 'border-[color:var(--mwm-sage-pale)]', text: 'text-[color:var(--mwm-sage)]' },
+  digital_asset: { bg: 'bg-[var(--mwm-sage-pale)]', border: 'border-[color:var(--mwm-sage-pale)]', text: 'text-[color:var(--mwm-sage)]' },
   business:      { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800' },
   insurance:     { bg: 'bg-teal-50',   border: 'border-teal-200',   text: 'text-teal-800' },
   trust:         { bg: 'bg-teal-50',   border: 'border-teal-300',   text: 'text-teal-900' },

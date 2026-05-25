@@ -56,7 +56,7 @@ export function StatBox({ label, value, sub, highlight }: {
       <p
         className={`text-xl font-bold ${
           highlight === 'green'
-            ? 'text-emerald-600'
+            ? 'text-[color:var(--mwm-sage)]'
             : highlight === 'red'
               ? 'text-red-600'
               : highlight === 'amber'

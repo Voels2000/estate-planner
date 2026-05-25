@@ -128,7 +128,7 @@ export function LoginForm() {
           <div className="text-right">
             <a
               href="/forgot-password"
-              className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="text-xs text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] dark:text-[color:var(--mwm-text-muted)] dark:hover:text-indigo-300"
             >
               Forgot password?
             </a>
@@ -147,7 +147,7 @@ export function LoginForm() {
           Don&apos;t have an account?{' '}
           <a
             href={signupHref}
-            className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+            className="font-medium text-[color:var(--mwm-navy)] underline-offset-4 hover:text-[color:var(--mwm-navy)] hover:underline dark:text-[color:var(--mwm-text-muted)] dark:hover:text-indigo-300"
           >
             Create one
           </a>

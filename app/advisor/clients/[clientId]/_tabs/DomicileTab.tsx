@@ -294,17 +294,17 @@ export default function DomicileTab({
               const isEmpty = !f.value
               return (
                 <div key={f.label} className={`flex items-center justify-between p-2.5 rounded-lg ${
-                  isConflict ? 'bg-red-50' : isEmpty ? 'bg-slate-50' : 'bg-emerald-50'
+                  isConflict ? 'bg-red-50' : isEmpty ? 'bg-slate-50' : 'bg-[var(--mwm-sage-pale)]'
                 }`}>
                   <div className="flex items-center gap-2.5">
                     <span className={`text-sm ${
-                      isConflict ? 'text-red-500' : isEmpty ? 'text-slate-300' : 'text-emerald-600'
+                      isConflict ? 'text-red-500' : isEmpty ? 'text-slate-300' : 'text-[color:var(--mwm-sage)]'
                     }`}>
                       {isConflict ? '✗' : isEmpty ? '○' : '✓'}
                     </span>
                     <div>
                       <p className={`text-sm font-medium ${
-                        isConflict ? 'text-red-800' : isEmpty ? 'text-slate-500' : 'text-emerald-800'
+                        isConflict ? 'text-red-800' : isEmpty ? 'text-slate-500' : 'text-[color:var(--mwm-sage)]'
                       }`}>
                         {f.label}
                       </p>
@@ -331,9 +331,9 @@ export default function DomicileTab({
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Conflict States</h3>
             {conflicts.length === 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
-                <span className="text-emerald-600">✓</span>
-                <p className="text-sm text-emerald-700 font-medium">No conflict states identified</p>
+              <div className="flex items-center gap-2 p-3 bg-[var(--mwm-sage-pale)] rounded-lg">
+                <span className="text-[color:var(--mwm-sage)]">✓</span>
+                <p className="text-sm text-[color:var(--mwm-sage)] font-medium">No conflict states identified</p>
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -356,9 +356,9 @@ export default function DomicileTab({
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Recommendations</h3>
             {recs.length === 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
-                <span className="text-emerald-600">✓</span>
-                <p className="text-sm text-emerald-700 font-medium">No actions required</p>
+              <div className="flex items-center gap-2 p-3 bg-[var(--mwm-sage-pale)] rounded-lg">
+                <span className="text-[color:var(--mwm-sage)]">✓</span>
+                <p className="text-sm text-[color:var(--mwm-sage)] font-medium">No actions required</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -392,7 +392,7 @@ export default function DomicileTab({
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${isRisky ? 'bg-red-400' : s.state === claimed_domicile_state ? 'bg-emerald-400' : 'bg-slate-400'}`}
+                          className={`h-full rounded-full ${isRisky ? 'bg-red-400' : s.state === claimed_domicile_state ? 'bg-[var(--mwm-sage-light)]' : 'bg-slate-400'}`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -591,10 +591,10 @@ function getRiskStyle(level: string) {
   switch (level) {
     case 'low':
       return {
-        scoreColor: 'text-emerald-700',
-        scoreBg:    'bg-emerald-500',
-        levelColor: 'text-emerald-700',
-        levelBg:    'bg-emerald-50',
+        scoreColor: 'text-[color:var(--mwm-sage)]',
+        scoreBg:    'bg-[var(--mwm-sage)]',
+        levelColor: 'text-[color:var(--mwm-sage)]',
+        levelBg:    'bg-[var(--mwm-sage-pale)]',
         levelLabel: 'Low Risk',
       }
     case 'moderate':

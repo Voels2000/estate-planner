@@ -320,7 +320,7 @@ export function SignupForm() {
                         isDisabled ? 'cursor-not-allowed opacity-50' : ''
                       } ${
                         isSelected
-                          ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm dark:border-indigo-500 dark:bg-indigo-500'
+                          ? 'border-[color:var(--mwm-navy)] bg-[var(--mwm-navy)] text-white shadow-sm dark:border-[color:var(--mwm-navy)] dark:bg-[var(--mwm-navy)]'
                           : 'border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
                       }`}
                     >
@@ -360,7 +360,7 @@ export function SignupForm() {
           Already have an account?{' '}
           <a
             href="/login"
-            className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+            className="font-medium text-[color:var(--mwm-navy)] underline-offset-4 hover:text-[color:var(--mwm-navy)] hover:underline dark:text-[color:var(--mwm-text-muted)] dark:hover:text-indigo-300"
           >
             Sign in
           </a>

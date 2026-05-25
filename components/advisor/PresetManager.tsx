@@ -195,7 +195,7 @@ export function PresetManager() {
         <button
           type="button"
           onClick={openNew}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-lg bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)]"
         >
           + New Preset
         </button>
@@ -208,7 +208,7 @@ export function PresetManager() {
       )}
 
       {showForm && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 space-y-4">
+        <div className="rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]/40 p-4 space-y-4">
           <h3 className="text-sm font-semibold text-gray-900">
             {editingId ? 'Edit preset' : 'New preset'}
           </h3>
@@ -264,7 +264,7 @@ export function PresetManager() {
               type="button"
               onClick={() => void handleSave()}
               disabled={saving}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save Preset'}
             </button>
@@ -307,7 +307,7 @@ export function PresetManager() {
                   <button
                     type="button"
                     onClick={() => void handleSetDefault(row.id)}
-                    className="text-xs text-indigo-600 hover:underline mt-1"
+                    className="text-xs text-[color:var(--mwm-navy)] hover:underline mt-1"
                   >
                     Set as default
                   </button>

@@ -27,7 +27,7 @@ export function formatDate(iso: string | null | undefined): string {
 
 export function getComplexityStyle(flag: string | null) {
   switch (flag) {
-    case 'low':      return { complexity: 'Low',      complexityColor: 'text-emerald-700', complexityBg: 'bg-emerald-50' }
+    case 'low':      return { complexity: 'Low',      complexityColor: 'text-[color:var(--mwm-sage)]', complexityBg: 'bg-[var(--mwm-sage-pale)]' }
     case 'moderate': return { complexity: 'Moderate', complexityColor: 'text-amber-700',   complexityBg: 'bg-amber-50' }
     case 'high':     return { complexity: 'High',     complexityColor: 'text-orange-700',  complexityBg: 'bg-orange-50' }
     case 'critical': return { complexity: 'Critical', complexityColor: 'text-red-700',     complexityBg: 'bg-red-50' }

@@ -19,7 +19,7 @@ export function ProjectionEmptyState({ title, description, actions = [] }: Proje
         {actions.length > 0 && (
           <div className="mt-4 flex items-center gap-3">
             {actions.map((action) => (
-              <Link key={action.href} href={action.href} className="text-sm text-indigo-600 hover:underline">
+              <Link key={action.href} href={action.href} className="text-sm text-[color:var(--mwm-navy)] hover:underline">
                 {action.label}
               </Link>
             ))}

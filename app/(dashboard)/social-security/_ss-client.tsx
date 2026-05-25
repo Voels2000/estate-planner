@@ -139,7 +139,7 @@ function BreakevenChart({ person, compareAge }: { person: PersonData; compareAge
           Age {compareAge}
         </span>
         {breakevenAge && (
-          <span className='text-emerald-600'>Breakeven: age {breakevenAge}</span>
+          <span className='text-[color:var(--mwm-sage)]'>Breakeven: age {breakevenAge}</span>
         )}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className='w-full' style={{ maxHeight: 180 }}>
@@ -231,9 +231,9 @@ export function SSClient({ data: initialData }: { data: SSData | null }) {
         )}
       </div>
 
-      <div className='rounded-xl bg-emerald-50 border border-emerald-200 p-4'>
-        <p className='text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1'>Projected summary</p>
-        <p className='text-sm text-emerald-900'>{recommendation}</p>
+      <div className='rounded-xl bg-[var(--mwm-sage-pale)] border border-[color:var(--mwm-sage-pale)] p-4'>
+        <p className='text-xs font-semibold text-[color:var(--mwm-sage)] uppercase tracking-wide mb-1'>Projected summary</p>
+        <p className='text-sm text-[color:var(--mwm-sage)]'>{recommendation}</p>
       </div>
 
       <div className='rounded-xl border border-neutral-200 overflow-hidden'>

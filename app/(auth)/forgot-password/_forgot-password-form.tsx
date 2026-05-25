@@ -105,7 +105,7 @@ export function ForgotPasswordForm() {
           Remember your password?{' '}
           <a
             href="/login"
-            className="font-medium text-indigo-600 underline-offset-4 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+            className="font-medium text-[color:var(--mwm-navy)] underline-offset-4 hover:text-[color:var(--mwm-navy)] hover:underline dark:text-[color:var(--mwm-text-muted)] dark:hover:text-indigo-300"
           >
             Sign in
           </a>

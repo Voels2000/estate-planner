@@ -113,7 +113,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h3 className="text-sm font-semibold text-slate-700 mb-3">Add Note</h3>
         <textarea
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent"
           rows={4}
           placeholder="Meeting notes, follow-up items, strategy observations…"
           value={newNote}
@@ -127,7 +127,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
           <button
             onClick={handleAdd}
             disabled={saving || !newNote.trim()}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-[var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Saving…' : 'Save Note'}
           </button>
@@ -149,7 +149,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
               {editingId === note.id ? (
                 <>
                   <textarea
-                    className="w-full border border-indigo-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-[color:var(--mwm-border)] rounded-lg px-3 py-2.5 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
                     rows={4}
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
@@ -159,7 +159,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
                     <button
                       onClick={() => handleSaveEdit(note.id)}
                       disabled={saving}
-                      className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                      className="px-3 py-1.5 bg-[var(--mwm-navy)] text-white text-xs font-medium rounded-lg hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 transition-colors"
                     >
                       {saving ? 'Saving…' : 'Save'}
                     </button>
@@ -184,7 +184,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
                     <div className="flex gap-3">
                       <button
                         onClick={() => startEdit(note)}
-                        className="text-xs text-slate-500 hover:text-indigo-600 transition-colors"
+                        className="text-xs text-slate-500 hover:text-[color:var(--mwm-navy)] transition-colors"
                       >
                         Edit
                       </button>

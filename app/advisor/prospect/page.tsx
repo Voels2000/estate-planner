@@ -192,7 +192,7 @@ export default function ProspectModePage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="text-xs text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg"
+                className="text-xs text-[color:var(--mwm-navy)] border border-[color:var(--mwm-border)] px-3 py-1.5 rounded-lg"
               >
                 Print / PDF
               </button>
@@ -226,13 +226,13 @@ export default function ProspectModePage() {
               </div>
             )}
 
-            <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-4">
-              <h3 className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-3">What we would look at together</h3>
+            <div className="bg-[var(--mwm-gold-pale)] rounded-xl border border-[color:var(--mwm-border)] p-4">
+              <h3 className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide mb-3">What we would look at together</h3>
               <div className="space-y-2">
                 {result.what_we_would_look_at.map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold text-xs mt-0.5">{i + 1}.</span>
-                    <span className="text-sm text-indigo-800">{item}</span>
+                    <span className="text-[color:var(--mwm-text-muted)] font-bold text-xs mt-0.5">{i + 1}.</span>
+                    <span className="text-sm text-[color:var(--mwm-navy)]">{item}</span>
                   </div>
                 ))}
               </div>

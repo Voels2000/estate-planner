@@ -318,7 +318,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
                 onClick={() => toggleArray('specializations', s)}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition ${
                   form.specializations.includes(s)
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-[var(--mwm-navy)] text-white'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >

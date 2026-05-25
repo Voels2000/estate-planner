@@ -201,7 +201,7 @@ export default function ScenariosClient({
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
           <div className="text-4xl mb-3">📊</div>
           <p className="text-sm font-medium text-neutral-600">Complete your profile first</p>
-          <a href="/profile" className="mt-3 text-sm text-indigo-600 hover:underline">Go to Profile →</a>
+          <a href="/profile" className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline">Go to Profile →</a>
         </div>
       </div>
     )

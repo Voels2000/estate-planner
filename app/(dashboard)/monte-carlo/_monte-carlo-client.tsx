@@ -197,7 +197,7 @@ function NumInput({ value, onChange, prefix, step = 1000, min = 0 }: { value: nu
         step={step}
         placeholder="Enter value..."
         onChange={e => onChange(Number(e.target.value))}
-        className={`w-full border border-gray-300 rounded-lg py-2 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${prefix ? 'pl-7' : 'pl-3'}`}
+        className={`w-full border border-gray-300 rounded-lg py-2 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] ${prefix ? 'pl-7' : 'pl-3'}`}
       />
     </div>
   )
@@ -205,8 +205,8 @@ function NumInput({ value, onChange, prefix, step = 1000, min = 0 }: { value: nu
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="border-l-2 border-indigo-400 pl-2 mb-3">
-      <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">{title}</p>
+    <div className="border-l-2 border-[color:var(--mwm-navy)] pl-2 mb-3">
+      <p className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide">{title}</p>
       {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
     </div>
   )
@@ -224,7 +224,7 @@ function CompareMedianChart({ runA, runB }: { runA: SavedRun; runB: SavedRun }) 
   return (
     <div>
       <div className="flex gap-6 mb-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-indigo-500 inline-block rounded" />{labelA} median</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[var(--mwm-navy)] inline-block rounded" />{labelA} median</span>
         <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-amber-500 inline-block rounded" />{labelB} median</span>
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -275,7 +275,7 @@ function AssumptionsDiff({ runA, runB }: { runA: SavedRun; runB: SavedRun }) {
         <thead>
           <tr className="border-b border-gray-200">
             <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase tracking-wide w-44">Metric</th>
-            <th className="text-right py-2 px-4 text-xs font-medium text-indigo-600 uppercase tracking-wide">{labelA}</th>
+            <th className="text-right py-2 px-4 text-xs font-medium text-[color:var(--mwm-navy)] uppercase tracking-wide">{labelA}</th>
             <th className="text-right py-2 px-4 text-xs font-medium text-amber-600 uppercase tracking-wide">{labelB}</th>
             <th className="text-right py-2 pl-4 text-xs font-medium text-gray-500 uppercase tracking-wide w-24">Change</th>
           </tr>
@@ -284,7 +284,7 @@ function AssumptionsDiff({ runA, runB }: { runA: SavedRun; runB: SavedRun }) {
           {rows.map(row => (
             <tr key={row.label} className={row.diff ? 'bg-amber-50/40' : ''}>
               <td className="py-2.5 pr-4 text-gray-600 font-medium">{row.label}</td>
-              <td className="py-2.5 px-4 text-right font-semibold text-indigo-700">{row.a}</td>
+              <td className="py-2.5 px-4 text-right font-semibold text-[color:var(--mwm-navy)]">{row.a}</td>
               <td className="py-2.5 px-4 text-right font-semibold text-amber-700">{row.b}</td>
               <td className="py-2.5 pl-4 text-right text-xs">
                 {row.delta
@@ -322,8 +322,8 @@ function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: 
         <p className="text-xs font-semiboltext-gray-500 uppercase tracking-wide mb-3">Select runs to compare</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-indigo-600 mb-1.5">Run A (indigo)</label>
-            <select value={runA.id} onChange={e => setCompareA(history.find(r => r.id === e.target.value) ?? null)} className="w-full border border-indigo-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <label className="block text-xs font-medium text-[color:var(--mwm-navy)] mb-1.5">Run A (indigo)</label>
+            <select value={runA.id} onChange={e => setCompareA(history.find(r => r.id === e.target.value) ?? null)} className="w-full border border-[color:var(--mwm-border)] rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]">
               {history.map(r => <option key={r.id} value={r.id}>{r.label || 'Unnamed'} — {r.success_rate}% · {new Date(r.created_at).toLocaleDateString()}</option>)}
             </select>
           </div>
@@ -336,8 +336,8 @@ function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: 
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-indigo-100 p-5 flex flex-col items-center gap-2">
-          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">{labelA}</p>
+        <div className="bg-white rounded-xl border border-[color:var(--mwm-border)] p-5 flex flex-col items-center gap-2">
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide">{labelA}</p>
           <SuccessGauge rate={runA.success_rate} />
           <p className="text-xs text-gray-400 text-center">{runA.is_joint ? 'Joint' : 'Individual'} through age {runA.plan_end_age}</p>
         </div>
@@ -361,10 +361,10 @@ function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: 
         <AssumptionsDiff runA={runA} runB={runB} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-          <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">{labelA} Analysis</p>
-          <p className="text-sm text-indigo-800">{runA.insight}</p>
-          <p className="text-sm text-indigo-700 mt-1">{runA.insight_boost}</p>
+        <div className="bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-xl p-4">
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide mb-2">{labelA} Analysis</p>
+          <p className="text-sm text-[color:var(--mwm-navy)]">{runA.insight}</p>
+          <p className="text-sm text-[color:var(--mwm-navy)] mt-1">{runA.insight_boost}</p>
         </div>
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
           <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">{labelB} Analysis</p>
@@ -553,7 +553,7 @@ export function MonteCarloClient() {
   if (prefilling) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 flex items-center justify-center h-64 text-gray-400 text-sm gap-3">
-        <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[color:var(--mwm-border)] border-t-[color:var(--mwm-navy)] rounded-full animate-spin" />
         <p>Loading your profile data...</p>
       </div>
     )
@@ -567,24 +567,24 @@ export function MonteCarloClient() {
           <p className="text-gray-500 mt-1">Probabilistic retirement modeling across 1,000+ market scenarios</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 shrink-0 mt-1">
-          <button onClick={() => setActiveTab('simulate')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'simulate' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Simulate</button>
-          <button onClick={() => setActiveTab('compare')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'compare' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Compare {history.length >= 2 ? `(${history.length})` : ''}</button>
+          <button onClick={() => setActiveTab('simulate')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'simulate' ? 'bg-white shadow text-[color:var(--mwm-navy)]' : 'text-gray-500 hover:text-gray-700'}`}>Simulate</button>
+          <button onClick={() => setActiveTab('compare')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'compare' ? 'bg-white shadow text-[color:var(--mwm-navy)]' : 'text-gray-500 hover:text-gray-700'}`}>Compare {history.length >= 2 ? `(${history.length})` : ''}</button>
         </div>
       </div>
 
       {latestSharedAdvisorScenario && !acceptedAdvisorScenario && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-          <p className="text-sm font-semibold text-indigo-900">
+        <div className="rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-4">
+          <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">
             Advisor assumptions available: {latestSharedAdvisorScenario.scenarioName}
           </p>
-          <p className="mt-1 text-xs text-indigo-700">
+          <p className="mt-1 text-xs text-[color:var(--mwm-navy)]">
             Accept to apply advisor Monte Carlo assumptions to this page (inflation and simulation count).
           </p>
           <div className="mt-3 flex gap-2">
             <button
               onClick={acceptAdvisorAssumptions}
               disabled={assumptionActionLoading}
-              className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+              className="rounded bg-[var(--mwm-navy)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
             >
               {assumptionActionLoading ? 'Applying…' : 'Accept advisor assumptions'}
             </button>
@@ -619,21 +619,21 @@ export function MonteCarloClient() {
       {activeTab === 'simulate' && (
       <>
       {summary && (
-        <div className="rounded-xl border p-4 space-y-2 bg-indigo-50 border-indigo-100">
-          <p className="text-sm font-semibold text-indigo-900">We pre-filled what we could from your profile</p>
+        <div className="rounded-xl border p-4 space-y-2 bg-[var(--mwm-gold-pale)] border-[color:var(--mwm-border)]">
+          <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">We pre-filled what we could from your profile</p>
           <div className="flex flex-wrap gap-4 text-xs">
             <span className="flex items-center gap-1 text-green-700"><span className="text-green-500">●</span> {summary.profile_count} pulled from profile</span>
             <span className="flex items-center gap-1 text-amber-700"><span className="text-amber-400">●</span> {summary.estimated_count} estimated</span>
             <span className="flex items-center gap-1 text-red-600"><span className="text-red-400">○</span> {summary.missing_count} need your input</span>
           </div>
           {!summary.has_household && (
-            <p className="text-xs text-indigo-700">Tip: Complete your <a href="/profile" className="underline font-medium">Profile</a> to auto-fill age, retirement age, and Social Security estimates.</p>
+            <p className="text-xs text-[color:var(--mwm-navy)]">Tip: Complete your <a href="/profile" className="underline font-medium">Profile</a> to auto-fill age, retirement age, and Social Security estimates.</p>
           )}
           {!summary.has_assets && (
-            <p className="text-xs text-indigo-700">Tip: Add entries in <a href="/assets" className="underline font-medium">Assets</a> to auto-fill your portfolio balance.</p>
+            <p className="text-xs text-[color:var(--mwm-navy)]">Tip: Add entries in <a href="/assets" className="underline font-medium">Assets</a> to auto-fill your portfolio balance.</p>
           )}
           {!summary.has_expenses && (
-            <p className="text-xs text-indigo-700">Tip: Add entries in <a href="/expenses" className="underline font-medium">Expenses</a> to auto-fill your retirement spending estimate.</p>
+            <p className="text-xs text-[color:var(--mwm-navy)]">Tip: Add entries in <a href="/expenses" className="underline font-medium">Expenses</a> to auto-fill your retirement spending estimate.</p>
           )}
         </div>
       )}
@@ -651,9 +651,9 @@ export function MonteCarloClient() {
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                       step === s.key
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-[var(--mwm-navy)] text-white'
                         : stepIdx > i
-                          ? 'bg-indigo-100 text-indigo-600'
+                          ? 'bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]'
                           : 'bg-gray-100 text-gray-400'
                     }`}
                   >
@@ -661,7 +661,7 @@ export function MonteCarloClient() {
                   </div>
                   <span
                     className={`text-[10px] font-medium leading-none ${
-                      step === s.key ? 'text-indigo-600' : 'text-gray-400'
+                      step === s.key ? 'text-[color:var(--mwm-navy)]' : 'text-gray-400'
                     }`}
                   >
                     {s.label}
@@ -670,7 +670,7 @@ export function MonteCarloClient() {
                 {i < STEPS.length - 1 && (
                   <div
                     className={`mx-1 mb-4 h-px flex-1 ${
-                      stepIdx > i ? 'bg-indigo-300' : 'bg-gray-200'
+                      stepIdx > i ? 'bg-[var(--mwm-gold-pale)]' : 'bg-gray-200'
                     }`}
                   />
                 )}
@@ -722,7 +722,7 @@ export function MonteCarloClient() {
               <Field label="Cash %" confidence={confidence.cash_pct}>
                 <NumInput value={inputs.cash_pct} onChange={v => set('cash_pct', v)} step={5} />
               </Field>
-              <button onClick={() => setStep('spending')} className="w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">Next</button>
+              <button onClick={() => setStep('spending')} className="w-full bg-[var(--mwm-navy)] text-white rounded-lg py-2 text-sm font-medium hover:bg-[var(--mwm-navy-light)]">Next</button>
             </div>
           )}
 
@@ -739,7 +739,7 @@ export function MonteCarloClient() {
                       type="range" min={50} max={100} step={5}
                       value={inputs.survivor_spending_pct}
                       onChange={e => set('survivor_spending_pct', Number(e.target.value))}
-                      className="flex-1 accent-indigo-600"
+                      className="flex-1 accent-[var(--mwm-navy)]"
                     />
                     <span className="text-sm font-medium w-10 text-right">{inputs.survivor_spending_pct}%</span>
                   </div>
@@ -749,9 +749,9 @@ export function MonteCarloClient() {
 
               <SectionHeader title="Spending Schedule (optional)" />
               <div className="space-y-3">
-                <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5">
-                  <p className="text-xs font-medium text-indigo-800 mb-1">How spending schedules work</p>
-                  <p className="text-xs text-indigo-700 leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at which the change takes effect and enter your new total annual household spending from that point forward.</p>
+                <div className="rounded-lg bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] px-3 py-2.5">
+                  <p className="text-xs font-medium text-[color:var(--mwm-navy)] mb-1">How spending schedules work</p>
+                  <p className="text-xs text-[color:var(--mwm-navy)] leading-relaxed">Your base spending above applies from retirement onward. Use the schedule below to model years where your run rate changes — for example when a mortgage is paid off, children finish college, or healthcare costs rise. For each entry, select the age at which the change takes effect and enter your new total annual household spending from that point forward.</p>
                 </div>
                 {(inputs.spending_schedule ?? []).length === 0 && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-xs text-gray-400">
@@ -806,7 +806,7 @@ export function MonteCarloClient() {
                     const lastAge = existing.length > 0 ? existing[existing.length - 1].age + 5 : (inputs.retirement_age + 5)
                     setInputs(prev => ({ ...prev, spending_schedule: [...existing, { age: lastAge, amount: inputs.annual_spending }] }))
                   }}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                  className="text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] text-sm font-medium"
                 >+ Add spending change</button>
               </div>
               <SectionHeader title={`${p1Name} — Social Security`} />
@@ -835,7 +835,7 @@ export function MonteCarloClient() {
               </Field>
               <div className="flex gap-2">
                 <button onClick={() => setStep('portfolio')} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm font-medium hover:bg-gray-50">Back</button>
-                <button onClick={() => setStep('assumptions')} className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">Next</button>
+                <button onClick={() => setStep('assumptions')} className="flex-1 bg-[var(--mwm-navy)] text-white rounded-lg py-2 text-sm font-medium hover:bg-[var(--mwm-navy-light)]">Next</button>
               </div>
             </div>
           )}
@@ -849,7 +849,7 @@ export function MonteCarloClient() {
                 <select
                   value={inputs.simulation_count}
                   onChange={e => set('simulation_count', Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
                 >
                   <option value={500}>500 - Fast</option>
                   <option value={1000}>1,000 - Balanced</option>
@@ -859,13 +859,13 @@ export function MonteCarloClient() {
               </Field>
               <Field label="Include RMDs" hint="SECURE 2.0: age 73 if born before 1960, age 75 if born 1960 or later">
                 <div className="flex items-center gap-2 mt-1">
-                  <input type="checkbox" checked={inputs.include_rmd} onChange={e => set('include_rmd', e.target.checked)} className="w-4 h-4 accent-indigo-600" />
+                  <input type="checkbox" checked={inputs.include_rmd} onChange={e => set('include_rmd', e.target.checked)} className="w-4 h-4 accent-[var(--mwm-navy)]" />
                   <span className="text-sm text-gray-600">Factor in RMDs per SECURE 2.0</span>
                 </div>
               </Field>
               <div className="flex gap-2">
                 <button onClick={() => setStep('spending')} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm font-medium hover:bg-gray-50">Back</button>
-                <button onClick={() => setStep('review')} className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">Next</button>
+                <button onClick={() => setStep('review')} className="flex-1 bg-[var(--mwm-navy)] text-white rounded-lg py-2 text-sm font-medium hover:bg-[var(--mwm-navy-light)]">Next</button>
               </div>
             </div>
           )}
@@ -902,12 +902,12 @@ export function MonteCarloClient() {
                 <span className="flex items-center gap-1"><span className="text-red-400">○</span> Manual eneded</span>
               </div>
               <Field label="Label this run (optional)">
-                <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Base case, Early retirement..." className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Base case, Early retirement..." className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </Field>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex gap-2">
                 <button onClick={() => setStep('assumptions')} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm font-medium hover:bg-gray-50">Back</button>
-                <button onClick={runSimulation} disabled={loading || !allocationValid} className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                <button onClick={runSimulation} disabled={loading || !allocationValid} className="flex-1 bg-[var(--mwm-navy)] text-white rounded-lg py-2 text-sm font-medium hover:bg-[var(--mwm-navy-light)] disabled:opacity-50">
                   {loading ? 'Running...' : 'Run Simulation'}
                 </button>
               </div>
@@ -918,7 +918,7 @@ export function MonteCarloClient() {
         <div className="space-y-6">
           {loading && (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-sm gap-3">
-              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+              <div className="w-10 h-10 border-4 border-[color:var(--mwm-border)] border-t-[color:var(--mwm-navy)] rounded-full animate-spin" />
               <p>Running {inputs.simulation_count.toLocaleString()} simulations...</p>
             </div>
           )}
@@ -941,10 +941,10 @@ export function MonteCarloClient() {
                 </div>
                 <p className="text-xs text-gray-500 mt-4">{DISCLAIMER_STRINGS.monteCarlo}</p>
               </div>
-              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-1">
-                <p className="text-sm font-semibold text-indigo-900">Analysis</p>
-                <p className="text-sm text-indigo-800">{result.insight}</p>
-                <p className="text-sm text-indigo-700 mt-1">{result.insight_boost}</p>
+              <div className="bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-xl p-4 space-y-1">
+                <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">Analysis</p>
+                <p className="text-sm text-[color:var(--mwm-navy)]">{result.insight}</p>
+                <p className="text-sm text-[color:var(--mwm-navy)] mt-1">{result.insight_boost}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Portfolio Outcome Range</h3>
@@ -952,7 +952,7 @@ export function MonteCarloClient() {
                 <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
                   {['90th pct', '75th pct', 'Median', '25th pct', '10th pct'].map(l => (
                     <span key={l} className="flex items-center gap-1">
-                      <span className="w-3 h-0.5 bg-indigo-400 inline-block" />{l}
+                      <span className="w-3 h-0.5 bg-[var(--mwm-navy-light)] inline-block" />{l}
                     </span>
                   ))}
                 </div>
@@ -976,7 +976,7 @@ export function MonteCarloClient() {
                   <span className={`text-sm font-semibold ${run.success_rate >= 90 ? 'text-green-600' : run.success_rate >= 75 ? 'text-amber-600' : 'texted-500'}`}>
                     {run.success_rate}% reached goal
                   </span>
-                  <button onClick={e => { e.stopPropagation(); setCompareA(run); setActiveTab('compare') }} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium px-2 py-0.5 border border-indigo-200 rounded">Compare</button>
+                  <button onClick={e => { e.stopPropagation(); setCompareA(run); setActiveTab('compare') }} className="text-xs text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] font-medium px-2 py-0.5 border border-[color:var(--mwm-border)] rounded">Compare</button>
                   <button onClick={e => { e.stopPropagation(); deleteRun(run.id) }} className="text-gray-400 hover:text-red-500 text-sm px-1 font-medium">✕</button>
                 </div>
               </div>

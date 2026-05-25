@@ -21,25 +21,25 @@ export default async function AdvisorLayout({
   if (!ctx.isAdvisor) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-[var(--mwm-off-white)]">
       <nav className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+          <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
             Advisor Portal
           </span>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-emerald-800 hover:text-emerald-950 hover:underline"
+            className="text-sm font-medium text-[color:var(--mwm-sage)] hover:text-[color:var(--mwm-sage)] hover:underline"
           >
             📜 My Estate Plan
           </Link>
           {ctx.firm_role === 'owner' && (
             <a
               href="/advisor/firm"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+              className="text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] hover:underline"
             >
               Firm Settings ⚙️
             </a>

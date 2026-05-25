@@ -63,7 +63,7 @@ function Panel({
           <button
             type="button"
             onClick={onExport}
-            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+            className="text-xs text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] font-medium"
           >
             Export CSV
           </button>
@@ -121,7 +121,7 @@ function TaxBandsPanel({ data }: { data: BookOfBusinessData }) {
             <div className="flex items-center gap-3">
               <div className="w-24 bg-neutral-100 rounded-full h-2">
                 <div
-                  className="h-2 rounded-full bg-indigo-500 transition-all"
+                  className="h-2 rounded-full bg-[var(--mwm-navy)] transition-all"
                   style={{
                     width: data.totalClients > 0
                       ? `${(band.count / data.totalClients) * 100}%`
@@ -235,7 +235,7 @@ function LargeEstateExposurePanel({ data }: { data: BookOfBusinessData }) {
                   <td className="py-2">
                     <Link
                       href={`/advisor/clients/${c.client_id}`}
-                      className="font-medium text-neutral-800 hover:text-indigo-600"
+                      className="font-medium text-neutral-800 hover:text-[color:var(--mwm-navy)]"
                     >
                       {c.full_name}
                     </Link>
@@ -334,7 +334,7 @@ export default function AnalyticsDashboardClient({ advisorId, advisorName }: Pro
     <div className="max-w-7xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="mb-8">
-        <Link href="/advisor" className="text-sm text-indigo-600 hover:underline">
+        <Link href="/advisor" className="text-sm text-[color:var(--mwm-navy)] hover:underline">
           ← Advisor Portal
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-neutral-900">Book-of-Business Analytics</h1>
@@ -346,7 +346,7 @@ export default function AnalyticsDashboardClient({ advisorId, advisorName }: Pro
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+            <div className="w-8 h-8 border-2 border-[color:var(--mwm-border)] border-t-[color:var(--mwm-navy)] rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-neutral-400">Loading your book of business…</p>
           </div>
         </div>

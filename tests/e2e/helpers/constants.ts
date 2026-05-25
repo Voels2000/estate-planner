@@ -16,5 +16,5 @@ export async function gotoMichaelJohnsonClient(page: Page) {
 export async function clickAdvisorClientTab(page: Page, tabLabel: RegExp) {
   const tab = page.locator('div.flex.gap-1.-mb-px').getByRole('button', { name: tabLabel })
   await tab.click()
-  await expect(tab).toHaveClass(/text-indigo-600/, { timeout: 30_000 })
+  await expect(tab).toHaveClass(/text-\[color:var\(--mwm-navy\)\]/, { timeout: 30_000 })
 }

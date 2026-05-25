@@ -283,7 +283,7 @@ export function FunnelTab({
                       <td className="px-4 py-3 text-sm text-green-700 font-medium">
                         {fmt(counts['account_created'] ?? 0)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-indigo-700 font-medium">
+                      <td className="px-4 py-3 text-sm text-[color:var(--mwm-navy)] font-medium">
                         {fmt(counts['tier_upgraded'] ?? 0)}
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-neutral-900">
@@ -326,7 +326,7 @@ export function FunnelTab({
                     </tr>
                   ) : byReferral.map(({ code, counts }) => (
                     <tr key={code} className="hover:bg-neutral-50">
-                      <td className="px-4 py-3 text-xs font-mono font-semibold text-indigo-700">
+                      <td className="px-4 py-3 text-xs font-mono font-semibold text-[color:var(--mwm-navy)]">
                         {code}
                       </td>
                       <td className="px-4 py-3 text-sm text-neutral-900 font-medium">
@@ -335,7 +335,7 @@ export function FunnelTab({
                       <td className="px-4 py-3 text-sm text-green-700 font-medium">
                         {fmt(counts['account_created'] ?? 0)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-indigo-700 font-medium">
+                      <td className="px-4 py-3 text-sm text-[color:var(--mwm-navy)] font-medium">
                         {fmt(counts['tier_upgraded'] ?? 0)}
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-neutral-900">
@@ -452,7 +452,7 @@ export function FunnelTab({
                       </div>
                       <div className="flex justify-between">
                         <p className="text-xs text-neutral-400">Upgrades</p>
-                        <p className="text-xs font-semibold text-indigo-700">{fmt(ups)}</p>
+                        <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">{fmt(ups)}</p>
                       </div>
                       <div className="pt-1 border-t border-neutral-100 flex justify-between">
                         <p className="text-xs text-neutral-400">Acct→Upgrade</p>
@@ -502,7 +502,7 @@ export function FunnelTab({
                         <p className="text-xs text-neutral-400 font-mono truncate">
                           {e.event_slug}
                           {e.referral_code && (
-                            <span className="ml-2 text-indigo-500">ref:{e.referral_code}</span>
+                            <span className="ml-2 text-[color:var(--mwm-navy)]">ref:{e.referral_code}</span>
                           )}
                         </p>
                       )}

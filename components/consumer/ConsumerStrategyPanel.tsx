@@ -394,7 +394,7 @@ function AdvisorHintBanner({
   const confLabel = CONFIDENCE_DISPLAY[item.confidence_level] ?? item.confidence_level
   const amtLabel = item.amount > 0 ? ` — $${Math.round(item.amount).toLocaleString()}` : ''
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-700">
+    <div className="flex items-center gap-2 px-3 py-2 bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-lg text-xs text-[color:var(--mwm-navy)]">
       <span className="font-semibold shrink-0">Advisor modeled:</span>
       <span>{confLabel}{amtLabel}</span>
     </div>
@@ -698,7 +698,7 @@ export default function ConsumerStrategyPanel({
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="grat" />
           {estateContext && (
-            <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+            <div className="text-xs text-[color:var(--mwm-navy)] bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-lg px-3 py-2">
               Pre-populated from your estate: gross estate {fmt(grossEstate)}, funding at 25% = {fmt(Math.round(grossEstate * 0.25))}
             </div>
           )}
@@ -877,7 +877,7 @@ export default function ConsumerStrategyPanel({
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="liquidity" />
           {estateContext && (
-            <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+            <div className="text-xs text-[color:var(--mwm-navy)] bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-lg px-3 py-2">
               Pre-populated from your estate: {fmt(liquidAssets)} liquid, {fmt(illiquidAssets)} illiquid
             </div>
           )}

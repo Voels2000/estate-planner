@@ -191,13 +191,13 @@ export default function MoveBreakevenPanel({
   const verdictColor = !result
     ? 'text-slate-500'
     : result.npvOfMove > 0
-    ? 'text-emerald-700'
+    ? 'text-[color:var(--mwm-sage)]'
     : 'text-red-700'
 
   const verdictBg = !result
     ? 'bg-slate-50 border-slate-200'
     : result.npvOfMove > 0
-    ? 'bg-emerald-50 border-emerald-200'
+    ? 'bg-[var(--mwm-sage-pale)] border-[color:var(--mwm-sage-pale)]'
     : 'bg-red-50 border-red-200'
 
   const sparkData = result?.yearByYear.map((y) => y.netPosition) ?? []
@@ -478,7 +478,7 @@ export default function MoveBreakevenPanel({
                       <p className="text-sm text-slate-700">{row.label}</p>
                       <p className="text-xs text-slate-400">{row.note}</p>
                     </div>
-                    <p className={`text-sm font-semibold tabular-nums ${isNeg ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <p className={`text-sm font-semibold tabular-nums ${isNeg ? 'text-red-600' : 'text-[color:var(--mwm-sage)]'}`}>
                       {isNeg ? '−' : '+'}{fmt$(Math.abs(row.value))}
                     </p>
                   </div>
@@ -487,7 +487,7 @@ export default function MoveBreakevenPanel({
 
               <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-700">Net annual benefit</p>
-                <p className={`text-sm font-bold tabular-nums ${result.netAnnualBenefit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                <p className={`text-sm font-bold tabular-nums ${result.netAnnualBenefit >= 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-600'}`}>
                   {result.netAnnualBenefit >= 0 ? '+' : '−'}{fmt$(Math.abs(result.netAnnualBenefit))}
                 </p>
               </div>
@@ -514,7 +514,7 @@ export default function MoveBreakevenPanel({
             <Sparkline data={sparkData} height={80} />
             <div className="flex justify-between text-xs text-slate-400 mt-1">
               <span>Year 1</span>
-              <span className={result.yearByYear[result.yearByYear.length - 1]?.netPosition >= 0 ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+              <span className={result.yearByYear[result.yearByYear.length - 1]?.netPosition >= 0 ? 'text-[color:var(--mwm-sage)] font-medium' : 'text-red-600 font-medium'}>
                 Year {horizonYears}: {fmt$(result.yearByYear[result.yearByYear.length - 1]?.netPosition ?? 0)}
               </span>
             </div>
@@ -572,7 +572,7 @@ export default function MoveBreakevenPanel({
                       <td className="py-2.5 pr-4 text-slate-600">{fmt$(row.estate)}</td>
                       <td className="py-2.5 pr-4 text-slate-600">{fmtYrs(row.data.breakevenYears)}</td>
                       <td className={`py-2.5 text-right font-semibold tabular-nums ${
-                        row.data.npv >= 0 ? 'text-emerald-700' : 'text-red-600'
+                        row.data.npv >= 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-600'
                       }`}>
                         {row.data.npv >= 0 ? '+' : ''}{fmt$(row.data.npv)}
                       </td>

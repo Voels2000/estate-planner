@@ -71,7 +71,7 @@ function AlertCard({
             {alert.action_href && (
               <Link
                 href={alert.action_href}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+                className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] hover:underline"
               >
                 {alert.action_label ?? 'Take action'} →
               </Link>

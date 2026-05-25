@@ -13,10 +13,10 @@ export default async function AdvisorToolsLayout({
   if (!user) redirect('/login')
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-[var(--mwm-off-white)]">
       <nav className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <a href="/advisor" className="text-sm text-indigo-600 hover:underline">
+          <a href="/advisor" className="text-sm text-[color:var(--mwm-navy)] hover:underline">
             ← Advisor Portal
           </a>
           <span className="text-sm font-semibold text-neutral-900">Prospect Mode</span>

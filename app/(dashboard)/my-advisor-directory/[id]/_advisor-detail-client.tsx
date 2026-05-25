@@ -101,7 +101,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
                 <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">Fiduciary</span>
               )}
               {advisor.serves_remote && (
-                <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">Serves Remote Clients</span>
+                <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2.5 py-1 text-xs font-medium text-[color:var(--mwm-sage)]">Serves Remote Clients</span>
               )}
               {advisor.credentials.map(c => (
                 <span key={c} className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700">{c}</span>
@@ -119,7 +119,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">Specializations</h2>
               <div className="flex flex-wrap gap-2">
                 {advisor.specializations.map(s => (
-                  <span key={s} className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">{s}</span>
+                  <span key={s} className="rounded-full bg-[var(--mwm-gold-pale)] px-3 py-1 text-sm font-medium text-[color:var(--mwm-navy)]">{s}</span>
                 ))}
               </div>
             </div>
@@ -153,7 +153,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
                 <div className="flex justify-between text-sm">
                   <dt className="text-neutral-500">Website</dt>
                   <dd>
-                    <a href={advisor.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
+                    <a href={advisor.website} target="_blank" rel="noopener noreferrer" className="text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)]">
                       {advisor.website.replace(/^https?:\/\//, '')}
                     </a>
                   </dd>
@@ -163,7 +163,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
                 <div className="flex justify-between text-sm">
                   <dt className="text-neutral-500">SEC/FINRA Disclosure</dt>
                   <dd>
-                    <a href={advisor.adv_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
+                    <a href={advisor.adv_link} target="_blank" rel="noopener noreferrer" className="text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)]">
                       View ADV →
                     </a>
                 </dd>

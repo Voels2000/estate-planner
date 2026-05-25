@@ -9,7 +9,7 @@ type TaxScopeBadge = {
 
 const TAX_SCOPE_BADGES: Record<TaxScope, TaxScopeBadge> = {
   federal: { label: 'Federal', className: 'bg-blue-100 text-blue-700' },
-  state: { label: 'State', className: 'bg-emerald-100 text-emerald-700' },
+  state: { label: 'State', className: 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]' },
   both: { label: 'Fed + State', className: 'bg-violet-100 text-violet-700' },
   strategy: { label: 'Strategy', className: 'bg-amber-100 text-amber-700' },
 }

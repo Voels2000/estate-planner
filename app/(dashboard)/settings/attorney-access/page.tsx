@@ -88,7 +88,7 @@ export default async function AttorneyAccessPage() {
         any time.
       </p>
       <p className="text-sm text-gray-500 mb-8">
-        <a href="/my-attorney" className="text-indigo-600 hover:underline">
+        <a href="/my-attorney" className="text-[color:var(--mwm-navy)] hover:underline">
           View pending requests and connection details →
         </a>
       </p>

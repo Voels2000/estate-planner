@@ -425,7 +425,7 @@ export function AdminClient({
               <div className="space-y-3">
                 {rest.feedback.slice(0, 5).map(f => <FeedbackCard key={f.id} feedback={f} profiles={rest.profiles} />)}
                 {rest.feedback.length > 5 && (
-                  <button onClick={() => setActiveTab('feedback')} className="text-sm text-indigo-600 hover:underline">
+                  <button onClick={() => setActiveTab('feedback')} className="text-sm text-[color:var(--mwm-navy)] hover:underline">
                     View all {rest.feedback.length} feedback items →
                   </button>
                 )}
@@ -452,7 +452,7 @@ export function AdminClient({
                   <td className="px-4 py-3 text-sm text-neutral-500">{profile.email}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      profile.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                      profile.role === 'admin' ? 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]' :
                       profile.role === 'advisor' ? 'bg-blue-100 text-blue-700' :
                       'bg-neutral-100 text-neutral-600'
                     }`}>{profile.role}</span>
@@ -581,8 +581,8 @@ export function AdminClient({
               </div>
               <p className="text-sm text-neutral-500 mb-5">{description}</p>
               {addingTo === table && (
-                <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                  <p className="text-xs font-semibold text-indigo-700 mb-3">New Category</p>
+                <div className="mb-4 rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-4">
+                  <p className="text-xs font-semibold text-[color:var(--mwm-navy)] mb-3">New Category</p>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <label className="block text-xs font-medium text-neutral-600 mb-1">Display Label</label>
@@ -598,7 +598,7 @@ export function AdminClient({
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleAddCategory(table)}
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
+                      className="rounded-lg bg-[var(--mwm-navy)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--mwm-navy-light)] transition">
                       Add Category
                     </button>
                     <button onClick={() => setAddingTo(null)}
@@ -827,8 +827,8 @@ function TitlingCategoriesSection({
       </p>
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
       {adding && (
-        <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-          <p className="text-xs font-semibold text-indigo-700 mb-3">New Category</p>
+        <div className="mb-4 rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-4">
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)] mb-3">New Category</p>
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Display Label</label>
@@ -857,7 +857,7 @@ function TitlingCategoriesSection({
                 setNewValue('')
                 setNewIcon('📄')
               }}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition">
+              className="rounded-lg bg-[var(--mwm-navy)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--mwm-navy-light)] transition">
               Add Category
             </button>
             <button

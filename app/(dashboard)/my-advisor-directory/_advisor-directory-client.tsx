@@ -210,7 +210,7 @@ export function AdvisorDirectoryClient({
       {filtered.length === 0 ? (
         <div className="rounded-2xl bg-white border border-neutral-200 p-12 text-center">
           <p className="text-neutral-500">No advisors match your filters.</p>
-          <button onClick={clearFilters} className="mt-3 text-sm text-indigo-600 hover:text-indigo-800">
+          <button onClick={clearFilters} className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)]">
             Clear filters
           </button>
         </div>
@@ -238,7 +238,7 @@ export function AdvisorDirectoryClient({
                         </span>
                       )}
                       {advisor.serves_remote && (
-                        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                           Remote
                         </span>
                       )}
@@ -257,7 +257,7 @@ export function AdvisorDirectoryClient({
                         </span>
                       ))}
                       {advisor.specializations.map(s => (
-                        <span key={s} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                        <span key={s} className="rounded-full bg-[var(--mwm-gold-pale)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-navy)]">
                           {s}
                         </span>
                       ))}
@@ -276,7 +276,7 @@ export function AdvisorDirectoryClient({
                     )}
                     <Link
                       href={`/advisor-directory/${advisor.id}`}
-                      className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                      className="text-sm text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
                     >
                       View profile →
                     </Link>
@@ -290,7 +290,7 @@ export function AdvisorDirectoryClient({
                     {btnState === 'request' && (
                       <button
                         onClick={() => openModal(advisor)}
-                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+                        className="rounded-lg bg-[var(--mwm-navy)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--mwm-navy-light)] transition-colors"
                       >
                         Request to Connect
                       </button>
@@ -318,7 +318,7 @@ export function AdvisorDirectoryClient({
               onChange={e => setMessage(e.target.value)}
               placeholder="Introduce yourself and describe what you're looking for..."
               rows={4}
-              className="mt-4 w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="mt-4 w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] resize-none"
             />
             {error && (
               <p className="mt-2 text-sm text-red-600">{error}</p>
@@ -334,7 +334,7 @@ export function AdvisorDirectoryClient({
               <button
                 onClick={handleSend}
                 disabled={sending}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 transition-colors"
               >
                 {sending ? 'Sending...' : 'Send Request'}
               </button>

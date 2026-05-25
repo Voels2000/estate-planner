@@ -42,7 +42,7 @@ export default async function AdvisorFirmPage() {
         <p className="text-neutral-700 font-medium">Firm not set up</p>
         <a
           href="/advisor"
-          className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline"
+          className="mt-4 inline-block text-sm font-medium text-[color:var(--mwm-navy)] hover:underline"
         >
           ← Back to Advisor Portal
         </a>

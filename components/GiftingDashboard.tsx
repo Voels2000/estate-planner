@@ -558,7 +558,7 @@ export default function GiftingDashboard({
                 <span className="text-sm text-gray-500">of {fmt$(annualCapacityDynamic)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-                <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${annualPct}%` }} />
+                <div className="h-2 rounded-full bg-[var(--mwm-sage)] transition-all" style={{ width: `${annualPct}%` }} />
               </div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold text-green-600">{fmt$(annualRemainingDynamic)}</span> remaining this year

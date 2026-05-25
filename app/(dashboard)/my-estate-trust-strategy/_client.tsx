@@ -670,32 +670,32 @@ export default function MyEstateTrustStrategyClient({
       {activeTab === 'strategies' && (
         <div className="space-y-4">
           {consumerLineItems.length > 0 && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="mb-3 text-sm font-semibold text-emerald-900">Your Saved Strategies</p>
-              <p className="mb-3 text-xs text-emerald-700">
+            <div className="rounded-xl border border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] p-4">
+              <p className="mb-3 text-sm font-semibold text-[color:var(--mwm-sage)]">Your Saved Strategies</p>
+              <p className="mb-3 text-xs text-[color:var(--mwm-sage)]">
                 These strategies are part of your plan and are reflected in your estate horizons.
               </p>
-              <div className="overflow-x-auto rounded-lg border border-emerald-100 bg-white">
+              <div className="overflow-x-auto rounded-lg border border-[color:var(--mwm-sage-pale)] bg-white">
                 <table className="w-full min-w-[28rem] text-sm">
-                  <thead className="bg-emerald-50">
+                  <thead className="bg-[var(--mwm-sage-pale)]">
                     <tr>
-                      <th className="px-3 py-2 text-left font-semibold text-emerald-900">Strategy</th>
-                      <th className="px-3 py-2 text-right font-semibold text-emerald-900">Amount</th>
-                      <th className="px-3 py-2 text-left font-semibold text-emerald-900">Status</th>
+                      <th className="px-3 py-2 text-left font-semibold text-[color:var(--mwm-sage)]">Strategy</th>
+                      <th className="px-3 py-2 text-right font-semibold text-[color:var(--mwm-sage)]">Amount</th>
+                      <th className="px-3 py-2 text-left font-semibold text-[color:var(--mwm-sage)]">Status</th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
                     {consumerLineItems.map((item, i) => (
-                      <tr key={`${item.strategy_source}-${i}`} className="border-t border-emerald-100">
+                      <tr key={`${item.strategy_source}-${i}`} className="border-t border-[color:var(--mwm-sage-pale)]">
                         <td className="px-3 py-2 text-gray-900 capitalize">
                           {(item.scenario_name ?? item.strategy_source).replace(/_/g, ' ')}
                         </td>
-                        <td className="px-3 py-2 text-right font-medium text-emerald-700">
+                        <td className="px-3 py-2 text-right font-medium text-[color:var(--mwm-sage)]">
                           −{formatDollars(Math.abs(item.amount))}
                         </td>
                         <td className="px-3 py-2">
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                             In your plan
                           </span>
                         </td>
@@ -724,9 +724,9 @@ export default function MyEstateTrustStrategyClient({
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t border-emerald-200 bg-emerald-50">
-                      <td className="px-3 py-2 text-xs font-semibold text-emerald-900">Total reduction</td>
-                      <td className="px-3 py-2 text-right text-xs font-bold text-emerald-700">
+                    <tr className="border-t border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]">
+                      <td className="px-3 py-2 text-xs font-semibold text-[color:var(--mwm-sage)]">Total reduction</td>
+                      <td className="px-3 py-2 text-right text-xs font-bold text-[color:var(--mwm-sage)]">
                         −{formatDollars(consumerLineItems.reduce((s, i) => s + Math.abs(i.amount), 0))}
                       </td>
                       <td />
@@ -769,7 +769,7 @@ export default function MyEstateTrustStrategyClient({
                           {toDisplayStrategyLabel(rec.strategy_type, rec.label)}
                         </td>
                         <td className="px-3 py-2">
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                             Recommended
                           </span>
                         </td>

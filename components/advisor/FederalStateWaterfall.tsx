@@ -106,8 +106,8 @@ export default function FederalStateWaterfall({
     {
       label: 'Net to Heirs',
       value: netToHeirs,
-      color: 'bg-emerald-500',
-      textColor: 'text-emerald-700',
+      color: 'bg-[var(--mwm-sage)]',
+      textColor: 'text-[color:var(--mwm-sage)]',
     },
     {
       label: 'Federal Estate Tax',
@@ -197,8 +197,8 @@ export default function FederalStateWaterfall({
               </td>
             </tr>
             <tr>
-              <td className="py-2 font-semibold text-emerald-800">Net to Heirs</td>
-              <td className="py-2 text-right font-bold text-emerald-700">{fmt(netToHeirs)}</td>
+              <td className="py-2 font-semibold text-[color:var(--mwm-sage)]">Net to Heirs</td>
+              <td className="py-2 text-right font-bold text-[color:var(--mwm-sage)]">{fmt(netToHeirs)}</td>
             </tr>
           </tbody>
         </table>

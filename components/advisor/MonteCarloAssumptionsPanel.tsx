@@ -239,7 +239,7 @@ export default function MonteCarloAssumptionsPanel({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
       {presets.length > 0 && (
-        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2">
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]/50 px-3 py-2">
           <div className="flex-1 min-w-[12rem]">
             <label className="text-xs text-gray-500">Load preset</label>
             <select
@@ -260,7 +260,7 @@ export default function MonteCarloAssumptionsPanel({
             type="button"
             onClick={handleLoadPreset}
             disabled={!selectedPresetId}
-            className="rounded border border-indigo-300 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 disabled:opacity-50"
+            className="rounded border border-[color:var(--mwm-border)] bg-white px-3 py-1.5 text-sm font-medium text-[color:var(--mwm-navy)] disabled:opacity-50"
           >
             Load
           </button>
@@ -326,7 +326,7 @@ export default function MonteCarloAssumptionsPanel({
         <button onClick={handleRun} disabled={isRunning} className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700">
           {isRunning ? 'Running…' : 'Run Comparison'}
         </button>
-        <button onClick={handleShare} disabled={!activeScenarioId} className="rounded border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 disabled:opacity-60">
+        <button onClick={handleShare} disabled={!activeScenarioId} className="rounded border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] px-3 py-1.5 text-sm font-medium text-[color:var(--mwm-navy)] disabled:opacity-60">
           Share with Client
         </button>
         <button onClick={() => setDraftValues({ ...MONTE_CARLO_SYSTEM_DEFAULTS })} className="text-xs text-gray-500 hover:text-gray-700">
@@ -347,7 +347,7 @@ export default function MonteCarloAssumptionsPanel({
               <p className="text-xs text-gray-500">Median end: <span className="font-medium">{fmtM(baseResult.medianEndValue)}</span></p>
             </div>
             <div className="p-3">
-              <p className="text-xs font-semibold text-indigo-700">Advisor scenario</p>
+              <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">Advisor scenario</p>
               <p className="text-xs text-gray-500 mt-1">Success: <span className="font-medium">{fmtPct(advisorResult.successRate)}</span></p>
               <p className="text-xs text-gray-500">Median end: <span className="font-medium">{fmtM(advisorResult.medianEndValue)}</span></p>
             </div>

@@ -788,14 +788,14 @@ export default function TitlingClient({
       )}
 
       {incompleteBeneficiaryItems.length > 0 && (
-        <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-medium text-indigo-950">
+        <div className="mb-6 rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]/80 px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
             {incompleteBeneficiaryItems.length} assets are missing beneficiary assignments
           </p>
           <button
             type="button"
             onClick={() => setGapModalOpen(true)}
-            className="shrink-0 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800 transition"
+            className="shrink-0 rounded-lg bg-[var(--mwm-navy-light)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--mwm-navy)] transition"
           >
             Review &amp; Apply Defaults →
           </button>
@@ -1145,7 +1145,7 @@ function AssetTitlingCard({
             <button
               type="button"
               onClick={onEditTitling}
-              className="text-xs text-indigo-600 font-medium hover:text-indigo-800"
+              className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
             >
               {titling ? 'Edit title' : 'Set title'}
             </button>
@@ -1225,7 +1225,7 @@ function BeneficiarySection({
         <button
           type="button"
           onClick={onAdd}
-          className="text-xs text-indigo-600 font-medium hover:text-indigo-800"
+          className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
         >
           + Add
         </button>
@@ -1241,7 +1241,7 @@ function BeneficiarySection({
                 <p className="text-sm font-medium text-neutral-900">
                   {ben.full_name}
                   {ben.is_gst_skip && (
-                    <span className="text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5 ml-1">GST Skip</span>
+                    <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] rounded-full px-2 py-0.5 ml-1">GST Skip</span>
                   )}
                 </p>
                 <p className="text-xs text-neutral-400 mt-0.5">
@@ -1262,7 +1262,7 @@ function BeneficiarySection({
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-2">
-                    <button type="button" onClick={() => onEdit(ben)} className="text-xs text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                    <button type="button" onClick={() => onEdit(ben)} className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]">Edit</button>
                     <button type="button" onClick={() => onDelete(ben.id)} className="text-xs text-red-500 font-medium hover:text-red-700">Delete</button>
                   </span>
                 )}
@@ -1499,7 +1499,7 @@ function PrerequisiteFamilyBanner({ onDismiss }: { onDismiss: () => void }) {
         <p className="text-sm font-medium text-amber-950">
           For accurate beneficiary assignments, add your family members first.
         </p>
-        <Link href="/my-family" className="mt-1 inline-block text-sm font-medium text-indigo-700 hover:underline">
+        <Link href="/my-family" className="mt-1 inline-block text-sm font-medium text-[color:var(--mwm-navy)] hover:underline">
           Go to My Family →
         </Link>
       </div>
@@ -2296,7 +2296,7 @@ function BeneficiaryModal({
         {householdPeopleEmpty && (
           <div className="rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">
             <p>Add family members on the My Family page first for the best results.</p>
-            <Link href="/my-family" className="mt-1 inline-block font-medium text-indigo-700 hover:underline">
+            <Link href="/my-family" className="mt-1 inline-block font-medium text-[color:var(--mwm-navy)] hover:underline">
               Go to My Family →
             </Link>
           </div>
@@ -2472,7 +2472,7 @@ function EmptyState({ icon, message, sub, href }: { icon: string; message: strin
       <div className="text-4xl mb-3">{icon}</div>
       <p className="text-sm font-medium text-neutral-600">{message}</p>
       <p className="text-xs text-neutral-400 mt-1">{sub}</p>
-      <a href={href} className="mt-3 text-sm text-indigo-600 hover:underline">Go there →</a>
+      <a href={href} className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline">Go there →</a>
     </div>
   )
 }

@@ -77,9 +77,9 @@ export default function StateTaxPanel({
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h3 className="text-sm font-semibold text-slate-700 mb-2">{stateName} Estate Tax</h3>
-        <div className="bg-emerald-50 rounded-lg p-4 text-center">
-          <p className="text-emerald-800 font-semibold">{stateName} has no state estate tax.</p>
-          <p className="text-emerald-600 text-sm mt-1">$0 state estate tax liability in all projection years.</p>
+        <div className="bg-[var(--mwm-sage-pale)] rounded-lg p-4 text-center">
+          <p className="text-[color:var(--mwm-sage)] font-semibold">{stateName} has no state estate tax.</p>
+          <p className="text-[color:var(--mwm-sage)] text-sm mt-1">$0 state estate tax liability in all projection years.</p>
         </div>
       </div>
     )
@@ -176,7 +176,7 @@ export default function StateTaxPanel({
             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Inflation-indexed</span>
           )}
           {specialRules.includes('tracks_federal') && (
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Tracks federal</span>
+            <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-2 py-0.5 rounded">Tracks federal</span>
           )}
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function StateTaxPanel({
                   {row.stateTax > 0 ? (
                     <span className="text-red-700">{fmt(row.stateTax)}</span>
                   ) : (
-                    <span className="text-emerald-700">$0</span>
+                    <span className="text-[color:var(--mwm-sage)]">$0</span>
                   )}
                 </td>
                 <td className="py-2.5 text-right text-slate-500">{pct(row.effectiveRate)}</td>

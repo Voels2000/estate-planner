@@ -33,7 +33,7 @@ export function PlanningProjectionEmptyState({
               <Link
                 key={action.href}
                 href={action.href}
-                className="text-sm font-medium text-indigo-600 hover:underline"
+                className="text-sm font-medium text-[color:var(--mwm-navy)] hover:underline"
               >
                 {action.label}
               </Link>

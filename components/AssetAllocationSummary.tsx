@@ -149,7 +149,7 @@ export function AssetAllocationSummary({ context }: Props) {
       </div>
 
       <div className="w-full bg-neutral-100 rounded-full h-2.5 overflow-hidden flex mb-4">
-        <div className="h-full bg-emerald-500" style={{ width: `${mix.stocks}%` }} title="Stocks" />
+        <div className="h-full bg-[var(--mwm-sage)]" style={{ width: `${mix.stocks}%` }} title="Stocks" />
         <div className="h-full bg-amber-400" style={{ width: `${mix.bonds}%` }} title="Bonds" />
         <div className="h-full bg-slate-300" style={{ width: `${mix.cash}%` }} title="Cash" />
       </div>
@@ -160,7 +160,7 @@ export function AssetAllocationSummary({ context }: Props) {
 
       <Link
         href="/allocation"
-        className="text-xs font-medium text-indigo-600 hover:underline"
+        className="text-xs font-medium text-[color:var(--mwm-navy)] hover:underline"
       >
         Open asset allocation →
       </Link>

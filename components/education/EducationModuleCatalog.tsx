@@ -149,7 +149,7 @@ export default function EducationModuleCatalog({
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200">
           <div
-            className="h-full rounded-full bg-[color:var(--sage-light)] transition-all"
+            className="h-full rounded-full bg-[var(--mwm-sage-light)] transition-all"
             style={{ width: `${completionPct}%` }}
           />
         </div>
@@ -177,7 +177,7 @@ export default function EducationModuleCatalog({
           </p>
         )}
         {selectedBundleMeta && pathStartModule && (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[color:var(--gold-light)] bg-[color:var(--gold-pale)] px-2.5 py-2">
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[color:var(--gold-light)] bg-[var(--mwm-gold-pale)] px-2.5 py-2">
             <p className="text-xs text-[color:var(--navy)]">
               {selectedBundleMeta.label}: start with{' '}
               <span className="font-semibold">{pathStartModule.title}</span>

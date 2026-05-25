@@ -131,11 +131,11 @@ export default function PrivacyRightsClient() {
 
       <p className="mt-4 text-xs text-neutral-500">
         You may also email{' '}
-        <a href="mailto:privacy@mywealthmaps.com" className="text-indigo-600 hover:underline">
+        <a href="mailto:privacy@mywealthmaps.com" className="text-[color:var(--mwm-navy)] hover:underline">
           privacy@mywealthmaps.com
         </a>
         . See our{' '}
-        <a href="/privacy" className="text-indigo-600 hover:underline">
+        <a href="/privacy" className="text-[color:var(--mwm-navy)] hover:underline">
           Privacy Policy
         </a>
         .

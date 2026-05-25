@@ -165,7 +165,7 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
                       <h2 className="text-lg font-semibold text-neutral-900">
                         {conn.firm_name ?? conn.contact_name ?? 'Your Attorney'}
                       </h2>
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                      <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                         Connected
                       </span>
                     </div>
@@ -212,7 +212,7 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
                   )}
                   {conn.website && (
                     <a href={conn.website} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-indigo-600 hover:underline">
+                      className="text-xs text-[color:var(--mwm-navy)] hover:underline">
                       Visit website
                     </a>
                   )}

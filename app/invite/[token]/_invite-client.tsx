@@ -44,8 +44,8 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-zinc-950">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
 
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
-          <svg className="h-6 w-6 text-indigo-600 dark:text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mwm-gold-pale)] dark:bg-[var(--mwm-navy)]">
+          <svg className="h-6 w-6 text-[color:var(--mwm-navy)] dark:text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
           </svg>
         </div>
@@ -63,19 +63,19 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
           <p className="font-medium text-zinc-700 dark:text-zinc-300">By accepting you agree to:</p>
           <ul className="space-y-1.5 text-zinc-600 dark:text-zinc-400">
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-indigo-500">✓</span>
+              <span className="mt-0.5 text-[color:var(--mwm-navy)]">✓</span>
               Share your estate planning data with your advisor
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-indigo-500">✓</span>
+              <span className="mt-0.5 text-[color:var(--mwm-navy)]">✓</span>
               Allow your advisor to view your plan — your advisor has view-only access and cannot make changes to your data
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-indigo-500">✓</span>
+              <span className="mt-0.5 text-[color:var(--mwm-navy)]">✓</span>
               Transfer billing to your advisor — your current subscription will cancel at the end of its billing period
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-indigo-500">✓</span>
+              <span className="mt-0.5 text-[color:var(--mwm-navy)]">✓</span>
               You retain full access to your own dashboard at all times
             </li>
           </ul>
@@ -94,7 +94,7 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
           <button
             onClick={handleAccept}
             disabled={accepting}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition"
+            className="w-full rounded-lg bg-[var(--mwm-navy)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 transition"
           >
             {accepting ? 'Accepting…' : 'Accept Invitation'}
           </button>

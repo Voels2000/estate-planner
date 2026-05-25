@@ -46,7 +46,7 @@ export default function EventsHubPage() {
                 </p>
                 <Link
                   href={`/event/${event.slug}`}
-                  className="mt-4 text-sm font-medium text-indigo-600 underline-offset-2 hover:underline"
+                  className="mt-4 text-sm font-medium text-[color:var(--mwm-navy)] underline-offset-2 hover:underline"
                 >
                   See what this means for your plan →
                 </Link>

@@ -32,10 +32,10 @@ export default async function ListYourPracticePage() {
         <Link
           href="/advisor-directory/register"
           className="group rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm
-                     hover:border-indigo-300 hover:shadow-md transition-all"
+                     hover:border-[color:var(--mwm-navy)] hover:shadow-md transition-all"
         >
           <div className="mb-4 text-4xl">💼</div>
-          <h2 className="text-lg font-semibold text-neutral-900 group-hover:text-indigo-700 transition-colors">
+          <h2 className="text-lg font-semibold text-neutral-900 group-hover:text-[color:var(--mwm-navy)] transition-colors">
             Financial Advisor
           </h2>
           <p className="mt-2 text-sm text-neutral-500">
@@ -43,7 +43,7 @@ export default async function ListYourPracticePage() {
             searching for financial guidance will be able to find and
             connect with you.
           </p>
-          <span className="mt-6 inline-block text-sm font-medium text-indigo-600 group-hover:underline">
+          <span className="mt-6 inline-block text-sm font-medium text-[color:var(--mwm-navy)] group-hover:underline">
             Get listed as an advisor →
           </span>
         </Link>
@@ -52,10 +52,10 @@ export default async function ListYourPracticePage() {
         <Link
           href="/attorney-directory/register"
           className="group rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm
-                     hover:border-indigo-300 hover:shadow-md transition-all"
+                     hover:border-[color:var(--mwm-navy)] hover:shadow-md transition-all"
         >
           <div className="mb-4 text-4xl">⚖️</div>
-          <h2 className="text-lg font-semibold text-neutral-900 group-hover:text-indigo-700 transition-colors">
+          <h2 className="text-lg font-semibold text-neutral-900 group-hover:text-[color:var(--mwm-navy)] transition-colors">
             Attorney
           </h2>
           <p className="mt-2 text-sm text-neutral-500">
@@ -63,7 +63,7 @@ export default async function ListYourPracticePage() {
             needing estate planning legal services will be able to find
             and request referrals to your firm.
           </p>
-          <span className="mt-6 inline-block text-sm font-medium text-indigo-600 group-hover:underline">
+          <span className="mt-6 inline-block text-sm font-medium text-[color:var(--mwm-navy)] group-hover:underline">
             Get listed as an attorney →
           </span>
         </Link>

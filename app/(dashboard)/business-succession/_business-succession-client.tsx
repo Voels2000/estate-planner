@@ -149,7 +149,7 @@ export default function BusinessSuccessionClient({ initial }: Props) {
           </fieldset>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {saved && <p className="text-sm text-emerald-700">Saved.</p>}
+          {saved && <p className="text-sm text-[color:var(--mwm-sage)]">Saved.</p>}
 
           <Button type="submit" disabled={saving}>
             {saving ? 'Saving…' : 'Save answers'}

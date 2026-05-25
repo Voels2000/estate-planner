@@ -50,7 +50,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
         'A concise, attorney-ready summary of your household profile, asset overview, document status, and beneficiary designations. Formatted for intake meetings.',
       sub: 'PDF — formatted for attorney review',
       badge: 'New',
-      badgeColor: 'bg-indigo-100 text-indigo-700',
+      badgeColor: 'bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]',
     },
   ]
 
@@ -72,7 +72,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
             onClick={() => setMode(exp.mode)}
             className={`rounded-xl border bg-white p-6 cursor-pointer transition-all ${
               mode === exp.mode
-                ? 'border-indigo-400 ring-1 ring-indigo-400 shadow-sm'
+                ? 'border-[color:var(--mwm-navy)] ring-1 ring-[color:var(--mwm-navy)] shadow-sm'
                 : 'border-neutral-200 hover:border-neutral-300'
             }`}
           >
@@ -81,7 +81,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
                 <div
                   className={`mt-0.5 h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
                     mode === exp.mode
-                      ? 'border-indigo-600 bg-indigo-600'
+                      ? 'border-[color:var(--mwm-navy)] bg-[var(--mwm-navy)]'
                       : 'border-neutral-300 bg-white'
                   }`}
                 >
@@ -163,7 +163,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
         <div className="mt-4 text-center">
           <Link
             href="/find-attorney"
-            className="text-xs text-indigo-600 hover:underline underline-offset-2"
+            className="text-xs text-[color:var(--mwm-navy)] hover:underline underline-offset-2"
           >
             Don&apos;t have an attorney yet? Find one in our directory →
           </Link>

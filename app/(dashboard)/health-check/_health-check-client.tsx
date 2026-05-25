@@ -93,7 +93,7 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
   const progress = ((current + 1) / QUESTIONS.length) * 100
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--mwm-off-white)] flex items-center justify-center px-4">
       <div className="w-full max-w-lg">
         <div className="mb-8">
           <div className="flex items-center justify-between text-xs text-neutral-500 mb-2">
@@ -120,7 +120,7 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
               onClick={() => answer('yes')}
               className={`rounded-xl border-2 px-6 py-4 text-sm font-semibold transition-all ${
                 answers[q.key] === 'yes'
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  ? 'border-[color:var(--mwm-sage)] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
                   : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
               }`}
             >

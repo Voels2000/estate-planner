@@ -192,7 +192,7 @@ export default function AttorneyClientPage({
                       <button
                         onClick={() => handleAcceptRequest(c.id)}
                         disabled={!!loading}
-                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition"
+                        className="rounded-lg bg-[var(--mwm-navy)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 transition"
                       >
                         {loading === `${c.id}-accept` ? 'Accepting...' : 'Accept'}
                       </button>
@@ -217,7 +217,7 @@ export default function AttorneyClientPage({
               <p className="text-sm font-medium text-neutral-600">No clients yet</p>
               <button
                 onClick={() => setActiveTab('invite')}
-                className="mt-3 text-sm text-indigo-600 hover:underline"
+                className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline"
               >
                 Add your first client →
               </button>
@@ -255,7 +255,7 @@ export default function AttorneyClientPage({
                           <span className={`rounded-full px-3 py-1 text-xs font-medium ${
                             isPending
                               ? 'bg-neutral-100 text-neutral-500'
-                              : 'bg-emerald-100 text-emerald-700'
+                              : 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
                           }`}>
                             {isPending ? 'Pending' : 'Active'}
                           </span>

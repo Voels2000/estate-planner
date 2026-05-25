@@ -180,7 +180,7 @@ export default function CompleteClient({
             label={`${p2}`}
             expanded={expandP2}
             onToggle={() => setExpandP2(v => !v)}
-            color="border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+            color="border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] text-violet-700 hover:bg-violet-100"
           />
         )}
         <GroupToggle
@@ -193,7 +193,7 @@ export default function CompleteClient({
           label="Real Estate"
           expanded={expandRE}
           onToggle={() => setExpandRE(v => !v)}
-          color="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          color="border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] hover:bg-[var(--mwm-sage-pale)]"
         />
         <GroupToggle
           label="Estate"
@@ -249,7 +249,7 @@ export default function CompleteClient({
                     colSpan={expandP2 ? 6 : 3}
                     className="pb-1 pt-3 px-2 text-center"
                   >
-                    <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-[var(--mwm-sage-pale)] text-violet-700 border border-[color:var(--mwm-sage-pale)]">
                       {p2}
                     </span>
                   </th>
@@ -276,7 +276,7 @@ export default function CompleteClient({
                   colSpan={expandRE ? 3 : 1}
                   className="pb-1 pt-3 px-2 text-center"
                 >
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] border border-[color:var(--mwm-sage-pale)]">
                     Real Estate
                   </span>
                 </th>
@@ -315,12 +315,12 @@ export default function CompleteClient({
                 {/* Person 2 */}
                 {p2 && <>
                   <th className="py-2 px-2 whitespace-nowrap text-violet-600">Income</th>
-                  <th className="py-2 px-2 whitespace-nowrap text-violet-500">SS</th>
-                  <th className="py-2 px-2 whitespace-nowrap text-violet-500">RMD</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">SS</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">RMD</th>
                   {expandP2 && <>
-                    <th className="py-2 px-2 whitespace-nowrap text-violet-500">Earned</th>
-                    <th className="py-2 px-2 whitespace-nowrap text-violet-500">Other</th>
-                    <th className="py-2 px-2 whitespace-nowrap text-violet-500">Assets</th>
+                    <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">Earned</th>
+                    <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">Other</th>
+                    <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">Assets</th>
                   </>}
                 </>}
 
@@ -343,10 +343,10 @@ export default function CompleteClient({
                 <th className="py-2 px-2 whitespace-nowrap">Net CF</th>
 
                 {/* Real Estate */}
-                <th className="py-2 px-2 whitespace-nowrap text-emerald-600">RE Total</th>
+                <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">RE Total</th>
                 {expandRE && <>
-                  <th className="py-2 px-2 whitespace-nowrap text-emerald-500">Primary</th>
-                  <th className="py-2 px-2 whitespace-nowrap text-emerald-500">Other RE</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">Primary</th>
+                  <th className="py-2 px-2 whitespace-nowrap text-[color:var(--mwm-sage)]">Other RE</th>
                 </>}
 
                 {/* Estate */}
@@ -431,10 +431,10 @@ export default function CompleteClient({
                     </td>
 
                     {/* Real Estate */}
-                    <td className="py-2 px-2 text-emerald-700 font-medium">{fmt(reTotal)}</td>
+                    <td className="py-2 px-2 text-[color:var(--mwm-sage)] font-medium">{fmt(reTotal)}</td>
                     {expandRE && <>
-                      <td className="py-2 px-2 text-emerald-600">{fmt(r.real_estate_primary ?? 0)}</td>
-                      <td className="py-2 px-2 text-emerald-600">{fmt(r.real_estate_other ?? 0)}</td>
+                      <td className="py-2 px-2 text-[color:var(--mwm-sage)]">{fmt(r.real_estate_primary ?? 0)}</td>
+                      <td className="py-2 px-2 text-[color:var(--mwm-sage)]">{fmt(r.real_estate_other ?? 0)}</td>
                     </>}
 
                     {/* Estate */}

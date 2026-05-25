@@ -280,13 +280,13 @@ export async function computeEstateHealthScore(
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 75) return 'text-emerald-600'
+  if (score >= 75) return 'text-[color:var(--mwm-sage)]'
   if (score >= 50) return 'text-amber-600'
   return 'text-red-600'
 }
 
 export function scoreBg(score: number): string {
-  if (score >= 75) return 'bg-emerald-50 border-emerald-200'
+  if (score >= 75) return 'bg-[var(--mwm-sage-pale)] border-[color:var(--mwm-sage-pale)]'
   if (score >= 50) return 'bg-amber-50 border-amber-200'
   return 'bg-red-50 border-red-200'
 }

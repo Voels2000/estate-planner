@@ -211,7 +211,7 @@ export function ProfileClient({
     <div className="mx-auto max-w-2xl px-4 py-12">
       {showWelcomeBanner && (
         <div style={{
-          background: 'linear-gradient(135deg, #0f1f3d 0%, #1a3460 100%)',
+          background: 'linear-gradient(135deg, #0f1f3d 0%, var(--mwm-navy-light) 100%)',
           borderRadius: 12, padding: '20px 24px', marginBottom: 24,
           border: '1px solid rgba(201,168,76,0.3)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16,
@@ -479,7 +479,7 @@ export function ProfileClient({
                     onClick={() => setDeductionMode(mode)}
                     className={`rounded-lg px-3 py-2 text-sm font-medium transition capitalize ${
                       deductionMode === mode
-                        ? 'bg-indigo-600 text-white shadow-sm'
+                        ? 'bg-[var(--mwm-navy)] text-white shadow-sm'
                         : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                     }`}
                   >

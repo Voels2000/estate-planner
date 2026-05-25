@@ -91,14 +91,14 @@ export default function InheritanceTaxWaterfall({
                 </td>
                 <td className="py-2.5 text-right text-slate-600">
                   {result.taxRate === 0 ? (
-                    <span className="text-emerald-600">Exempt</span>
+                    <span className="text-[color:var(--mwm-sage)]">Exempt</span>
                   ) : (
                     `${(result.taxRate * 100).toFixed(1)}%`
                   )}
                 </td>
                 <td className="py-2.5 text-right font-semibold">
                   {result.taxDue === 0 ? (
-                    <span className="text-emerald-700">$0</span>
+                    <span className="text-[color:var(--mwm-sage)]">$0</span>
                   ) : (
                     <span className="text-red-700">{fmt(result.taxDue)}</span>
                   )}

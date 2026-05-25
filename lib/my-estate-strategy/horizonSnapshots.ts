@@ -428,7 +428,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   }
 
   const tenYear = buildProjectedColumn('In 10 Years', 'bg-blue-600 text-white', currentYear + 10, y10)
-  const twentyYear = buildProjectedColumn('In 20 Years', 'bg-indigo-600 text-white', currentYear + 20, y20)
+  const twentyYear = buildProjectedColumn('In 20 Years', 'bg-[var(--mwm-navy)] text-white', currentYear + 20, y20)
 
   // ── At Death column ────────────────────────────────────────────────────────
   const atDeathCalendarYear = atDeathRow?.year ?? currentYear

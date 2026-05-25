@@ -72,13 +72,13 @@ export default function OverviewTab({
       />
 
       {connectionLifeEventType && (
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4">
-          <p className="text-sm font-semibold text-indigo-900">Life event at connection</p>
-          <p className="text-sm text-indigo-800 mt-1">
+        <div className="rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] px-5 py-4">
+          <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">Life event at connection</p>
+          <p className="text-sm text-[color:var(--mwm-navy)] mt-1">
             Client was planning around{' '}
             <span className="font-medium">{formatLifeEventLabel(connectionLifeEventType)}</span>
             {connectionLifeEventAt && (
-              <span className="text-indigo-700">
+              <span className="text-[color:var(--mwm-navy)]">
                 {' '}
                 (logged{' '}
                 {new Date(connectionLifeEventAt).toLocaleDateString('en-US', {
@@ -136,13 +136,13 @@ export default function OverviewTab({
               </div>
               <div className="h-3 rounded-full bg-slate-100 overflow-hidden flex">
                 <div
-                  className="h-full bg-emerald-500 rounded-l-full transition-all"
+                  className="h-full bg-[var(--mwm-sage)] rounded-l-full transition-all"
                   style={{ width: `${assetPct}%` }}
                 />
                 <div className="h-full bg-red-300 rounded-r-full flex-1" />
               </div>
               <div className="flex justify-between text-xs font-medium mt-1.5">
-                <span className="text-emerald-700">{formatCurrency(totalAssets, true)}</span>
+                <span className="text-[color:var(--mwm-sage)]">{formatCurrency(totalAssets, true)}</span>
                 <span className="text-red-600">{formatCurrency(totalLiabilities, true)}</span>
               </div>
             </div>
@@ -179,12 +179,12 @@ export default function OverviewTab({
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Target Allocation</h3>
             <div className="flex rounded-lg overflow-hidden h-4 mb-3">
-              <div className="bg-indigo-500" style={{ width: `${stocks}%` }} title={`Stocks ${stocks}%`} />
+              <div className="bg-[var(--mwm-navy)]" style={{ width: `${stocks}%` }} title={`Stocks ${stocks}%`} />
               <div className="bg-sky-400" style={{ width: `${bonds}%` }} title={`Bonds ${bonds}%`} />
               <div className="bg-slate-300" style={{ width: `${cash}%` }} title={`Cash ${cash}%`} />
             </div>
             <div className="flex gap-4 text-xs text-slate-500">
-              <span><span className="inline-block w-2 h-2 rounded-full bg-indigo-500 mr-1" />{stocks}% Stocks</span>
+              <span><span className="inline-block w-2 h-2 rounded-full bg-[var(--mwm-navy)] mr-1" />{stocks}% Stocks</span>
               <span><span className="inline-block w-2 h-2 rounded-full bg-sky-400 mr-1" />{bonds}% Bonds</span>
               <span><span className="inline-block w-2 h-2 rounded-full bg-slate-300 mr-1" />{cash}% Cash</span>
             </div>
@@ -203,12 +203,12 @@ export default function OverviewTab({
                       </p>
                       <div className="flex gap-2 mt-1.5">
                         {b.has_buy_sell_agreement ? (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">✓ Buy-sell</span>
+                          <span className="text-[10px] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1.5 py-0.5 rounded">✓ Buy-sell</span>
                         ) : (
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">⚠ No buy-sell</span>
                         )}
                         {b.has_key_person_insurance && (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">✓ Key person ins.</span>
+                          <span className="text-[10px] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1.5 py-0.5 rounded">✓ Key person ins.</span>
                         )}
                       </div>
                     </div>
@@ -237,7 +237,7 @@ export default function OverviewTab({
                       <p className="text-xs text-slate-400 mt-0.5">{p.insurance_type ?? 'Policy'}</p>
                       <div className="flex gap-2 mt-1.5">
                         {p.is_ilit ? (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">✓ ILIT</span>
+                          <span className="text-[10px] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1.5 py-0.5 rounded">✓ ILIT</span>
                         ) : p.death_benefit ? (
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">⚠ Not in ILIT</span>
                         ) : null}
@@ -389,7 +389,7 @@ function groupAssetsFromComposition(composition: EstateComposition) {
     groups.push({ label: 'Life Insurance (Estate)', value: composition.inside_insurance, color: 'bg-rose-400' })
   }
   if (composition.inside_financial > 0) {
-    groups.push({ label: 'Financial Assets', value: composition.inside_financial, color: 'bg-indigo-500' })
+    groups.push({ label: 'Financial Assets', value: composition.inside_financial, color: 'bg-[var(--mwm-navy)]' })
   }
 
   return groups.sort((a, b) => b.value - a.value)

@@ -37,7 +37,7 @@ export function RefSelect({
         defaultValue={defaultValue ?? ''}
         required={required}
         onChange={onChange}
-        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] bg-white"
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (
@@ -84,7 +84,7 @@ export function CurrencyInput({
           placeholder={placeholder}
           min="0"
           step="1"
-          className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
         />
       </div>
       {helpText && <p className="text-xs text-neutral-400 mt-1">{helpText}</p>}
@@ -120,7 +120,7 @@ export function PctInput({
           min={min}
           max={max}
           step="0.1"
-          className="pr-8 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="pr-8 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
         />
         <span className="absolute right-3 top-2.5 text-neutral-400 text-sm">%</span>
       </div>
@@ -150,7 +150,7 @@ export function ToggleField({
         id={name}
         defaultChecked={defaultChecked}
         value="true"
-        className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
+        className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[color:var(--mwm-navy)] focus:ring-[color:var(--mwm-navy)]"
       />
       <div>
         <label htmlFor={name} className="text-sm font-medium text-neutral-700 cursor-pointer">

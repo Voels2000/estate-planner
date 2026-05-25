@@ -190,7 +190,7 @@ function AlertRow({
         <button
           onClick={handleReview}
           disabled={marking}
-          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+          className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] disabled:opacity-50"
         >
           {marking ? 'Marking…' : '✓ Mark as reviewed'}
         </button>

@@ -81,7 +81,7 @@ export default function SecurityClient({ isEnrolled, factorId }: Props) {
           <h2 className="text-base font-medium text-neutral-900">
             Two-factor authentication
           </h2>
-          <p className="mt-1 text-sm text-emerald-700">Enabled</p>
+          <p className="mt-1 text-sm text-[color:var(--mwm-sage)]">Enabled</p>
           <p className="mt-2 text-sm text-neutral-600">
             Your account is protected with an authenticator app. To turn it off,
             enter a current code from your app.

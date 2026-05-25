@@ -228,7 +228,7 @@ export default function MyFamilyClient({
       )}
 
       {hasAnyGstSkipPerson && (
-        <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-900">
+        <div className="mb-6 rounded-lg border border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] px-4 py-3 text-sm text-[color:var(--mwm-sage)]">
           <p>{GST_SKIP_EXPLANATION}</p>
         </div>
       )}
@@ -357,7 +357,7 @@ export default function MyFamilyClient({
                 Include as beneficiary in estate flow
               </label>
               {showGstPanel && (
-                <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-900">
+                <div className="rounded-lg border border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] px-3 py-2 text-sm text-[color:var(--mwm-sage)]">
                   <p>{GST_SKIP_EXPLANATION}</p>
                 </div>
               )}

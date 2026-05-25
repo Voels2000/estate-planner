@@ -15,7 +15,7 @@ export function EmptyStateCard({ message, href, linkLabel, icon }: EmptyStateCar
       <p className="text-sm text-neutral-600">{message}</p>
       <Link
         href={href}
-        className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+        className="mt-3 inline-block text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] hover:underline"
       >
         {linkLabel} →
       </Link>

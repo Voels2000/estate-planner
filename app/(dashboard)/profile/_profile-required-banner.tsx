@@ -47,7 +47,7 @@ export function ProfileRequiredBanner({
           const meta = FIELD_META[field]
           return (
             <li key={field} className="flex flex-wrap items-center gap-2">
-              <span className={isMissing ? 'text-amber-800' : 'text-emerald-700'}>
+              <span className={isMissing ? 'text-amber-800' : 'text-[color:var(--mwm-sage)]'}>
                 {isMissing ? '✗' : '✓'} {meta.label}
               </span>
               {isMissing ? (
@@ -59,7 +59,7 @@ export function ProfileRequiredBanner({
                   update below ↓
                 </button>
               ) : (
-                <span className="text-emerald-600 text-xs">— already set</span>
+                <span className="text-[color:var(--mwm-sage)] text-xs">— already set</span>
               )}
             </li>
           )

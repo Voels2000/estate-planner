@@ -330,7 +330,7 @@ export default function MeetingPrep({
       <button
         type="button"
         onClick={handleGenerate}
-        className="px-3 py-1.5 text-sm border border-indigo-200 rounded-lg text-indigo-600 hover:bg-indigo-50 font-medium transition"
+        className="px-3 py-1.5 text-sm border border-[color:var(--mwm-border)] rounded-lg text-[color:var(--mwm-navy)] hover:bg-[var(--mwm-gold-pale)] font-medium transition"
       >
         📋 Prepare for Meeting
       </button>
@@ -364,7 +364,7 @@ export default function MeetingPrep({
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+                  <div className="w-8 h-8 border-2 border-[color:var(--mwm-border)] border-t-[color:var(--mwm-navy)] rounded-full animate-spin mx-auto mb-3" />
                   <p className="text-sm text-neutral-400">Assembling meeting brief…</p>
                 </div>
               </div>
@@ -438,42 +438,42 @@ export default function MeetingPrep({
                       </div>
 
                       {brief.cst_benefit !== null && brief.cst_benefit > 0 && (
-                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
+                        <div className="rounded-lg bg-[var(--mwm-sage-pale)] border border-[color:var(--mwm-sage-pale)] px-4 py-3">
                           <div className="flex items-start gap-3 mb-3">
-                            <span className="text-emerald-500 text-base mt-0.5">💡</span>
+                            <span className="text-[color:var(--mwm-sage)] text-base mt-0.5">💡</span>
                             <div>
-                              <p className="text-sm font-semibold text-emerald-800">
+                              <p className="text-sm font-semibold text-[color:var(--mwm-sage)]">
                                 Credit Shelter Trust Opportunity
                               </p>
-                              <p className="text-xs text-emerald-700 mt-0.5">
+                              <p className="text-xs text-[color:var(--mwm-sage)] mt-0.5">
                                 A Credit Shelter Trust could save{' '}
                                 <strong>{fmt(brief.cst_benefit)}</strong> in state estate tax
                                 for this household.
                               </p>
                               {brief.cst_benefit_at_death !== null && brief.cst_benefit_at_death > 0 && (
-                                <p className="text-xs text-emerald-700 mt-0.5">
+                                <p className="text-xs text-[color:var(--mwm-sage)] mt-0.5">
                                   At projected death year: <strong>{fmt(brief.cst_benefit_at_death)}</strong>
                                 </p>
                               )}
                             </div>
                           </div>
                           {brief.estimated_tax_state !== null && brief.estimated_tax_state_with_cst !== null && (
-                            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-emerald-200">
+                            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[color:var(--mwm-sage-pale)]">
                               <div className="text-center">
-                                <p className="text-xs text-emerald-600 mb-1">Without CST</p>
+                                <p className="text-xs text-[color:var(--mwm-sage)] mb-1">Without CST</p>
                                 <p className="text-sm font-bold text-red-600">
                                   {fmt(brief.estimated_tax_state)}
                                 </p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs text-emerald-600 mb-1">With CST</p>
-                                <p className="text-sm font-bold text-emerald-700">
+                                <p className="text-xs text-[color:var(--mwm-sage)] mb-1">With CST</p>
+                                <p className="text-sm font-bold text-[color:var(--mwm-sage)]">
                                   {fmt(brief.estimated_tax_state_with_cst)}
                                 </p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs text-emerald-600 mb-1">Savings</p>
-                                <p className="text-sm font-bold text-emerald-800">
+                                <p className="text-xs text-[color:var(--mwm-sage)] mb-1">Savings</p>
+                                <p className="text-sm font-bold text-[color:var(--mwm-sage)]">
                                   {fmt(brief.cst_benefit)}
                                 </p>
                               </div>
@@ -525,7 +525,7 @@ export default function MeetingPrep({
                     <div className="text-center py-2">
                       <p className="text-sm text-neutral-400">No estate data available yet.</p>
                       <Link href={`/advisor/clients/${clientId}`}
-                        className="text-xs text-indigo-600 hover:underline mt-1 inline-block">
+                        className="text-xs text-[color:var(--mwm-navy)] hover:underline mt-1 inline-block">
                         Run a projection in StrategyTab →
                       </Link>
                     </div>
@@ -548,7 +548,7 @@ export default function MeetingPrep({
                     <ul className="space-y-1.5">
                       {brief.recommended_strategies.map((s, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
-                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[var(--mwm-navy-light)] shrink-0" />
                           {s}
                         </li>
                       ))}

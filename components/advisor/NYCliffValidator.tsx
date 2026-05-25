@@ -76,7 +76,7 @@ export default function NYCliffValidator({ year, dbExemptions, stateEstateTaxRul
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700">NY Cliff Edge Case Validation</h3>
         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-          allPassed ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+          allPassed ? 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]' : 'bg-red-100 text-red-700'
         }`}>
           {allPassed ? '✓ All cases pass' : `${results.filter(r => !r.passed).length} failing`}
         </span>
@@ -109,7 +109,7 @@ export default function NYCliffValidator({ year, dbExemptions, stateEstateTaxRul
               </td>
               <td className="py-2.5 text-center">
                 {r.passed
-                  ? <span className="text-emerald-600">✓</span>
+                  ? <span className="text-[color:var(--mwm-sage)]">✓</span>
                   : <span className="text-red-600 font-bold">✗</span>}
               </td>
             </tr>

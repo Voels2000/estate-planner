@@ -61,13 +61,13 @@ export function FinancialSummarySection(props: FinancialSummarySectionProps) {
             label="Real Estate (FMV)"
             value={props.netWorthBySource.realEstateEquity}
             total={totalNetWorthSources}
-            color="bg-emerald-500"
+            color="bg-[var(--mwm-sage)]"
           />
           <NetWorthBar
             label="Business Interests"
             value={props.netWorthBySource.business}
             total={totalNetWorthSources}
-            color="bg-violet-500"
+            color="bg-[var(--mwm-sage-pale)]0"
           />
           <div className="flex items-center gap-3 pt-1 border-t border-neutral-100 mt-2">
             <span className="w-36 text-xs text-neutral-400 shrink-0">Mortgage Balance</span>

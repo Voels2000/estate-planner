@@ -655,7 +655,7 @@ export default function EstateFlowDiagram({
       </div>
 
       {domicileTransition && (
-        <p className="text-sm text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+        <p className="text-sm text-[color:var(--mwm-navy)] bg-[var(--mwm-gold-pale)] border border-[color:var(--mwm-border)] rounded-lg px-4 py-3">
           Planned domicile change: {domicileTransition.fromState} → {domicileTransition.toState} in{' '}
           {domicileTransition.year}. Tax treatment will shift at transition.
         </p>

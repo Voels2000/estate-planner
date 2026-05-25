@@ -420,13 +420,13 @@ export default function EstateTab({
                 const confirmed = doc?.exists === true
                 return (
                   <div key={type} className={`flex items-center justify-between p-3 rounded-lg ${
-                    confirmed ? 'bg-emerald-50' : critical ? 'bg-red-50' : 'bg-slate-50'
+                    confirmed ? 'bg-[var(--mwm-sage-pale)]' : critical ? 'bg-red-50' : 'bg-slate-50'
                   }`}>
                     <div className="flex items-center gap-2.5">
-                      <span className={`text-base ${confirmed ? 'text-emerald-600' : critical ? 'text-red-400' : 'text-slate-300'}`}>
+                      <span className={`text-base ${confirmed ? 'text-[color:var(--mwm-sage)]' : critical ? 'text-red-400' : 'text-slate-300'}`}>
                         {confirmed ? '✓' : critical ? '✗' : '○'}
                       </span>
-                      <span className={`text-sm font-medium ${confirmed ? 'text-emerald-800' : critical ? 'text-red-700' : 'text-slate-500'}`}>
+                      <span className={`text-sm font-medium ${confirmed ? 'text-[color:var(--mwm-sage)]' : critical ? 'text-red-700' : 'text-slate-500'}`}>
                         {label}
                       </span>
                       {critical && !confirmed && (
@@ -749,7 +749,7 @@ export default function EstateTab({
                           <td className="py-2.5 text-slate-500 capitalize">{formatPropertyType(r.property_type)}</td>
                           <td className="py-2.5 text-right text-slate-800">{formatCurrency(r.current_value)}</td>
                           <td className="py-2.5 text-right text-slate-500">{r.mortgage_balance ? formatCurrency(r.mortgage_balance) : '—'}</td>
-                          <td className="py-2.5 text-right font-medium text-emerald-700">{formatCurrency(equity)}</td>
+                          <td className="py-2.5 text-right font-medium text-[color:var(--mwm-sage)]">{formatCurrency(equity)}</td>
                           <td className="py-2.5 pl-4 text-slate-500">{formatOwner(r.owner, household)}</td>
                           <td className="py-2.5 pl-4 text-slate-500">{r.situs_state ?? '—'}</td>
                           <td className="py-2.5 pl-4">
@@ -800,7 +800,7 @@ export default function EstateTab({
                       <td className="py-2.5 font-medium text-slate-800">
                         {p.policy_name ?? p.provider ?? 'Policy'}
                         {p.is_ilit && (
-                          <span className="ml-2 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">ILIT</span>
+                          <span className="ml-2 text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1.5 py-0.5 rounded">ILIT</span>
                         )}
                       </td>
                       <td className="py-2.5 text-slate-500 capitalize text-xs">

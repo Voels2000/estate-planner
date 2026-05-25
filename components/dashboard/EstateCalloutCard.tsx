@@ -37,10 +37,10 @@ export function EstateCalloutCard({
 
   const exemptionClass = exemptionMarginTight
     ? 'text-amber-700 font-medium'
-    : 'text-emerald-700 font-medium'
+    : 'text-[color:var(--mwm-sage)] font-medium'
 
   return (
-    <section className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-5 shadow-sm">
+    <section className="rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]/60 p-5 shadow-sm">
       <h2 className="text-base font-semibold text-neutral-900">Your Estate Summary</h2>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">

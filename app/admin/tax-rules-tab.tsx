@@ -404,7 +404,7 @@ export default function TaxRulesTab() {
         loadingFederalIncomeCoverage
           ? 'border-neutral-200 bg-neutral-50 text-neutral-600'
           : hasFederalCoverageForYear
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            ? 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
             : 'border-amber-200 bg-amber-50 text-amber-800'
       }`}>
         {loadingFederalIncomeCoverage ? (
@@ -425,7 +425,7 @@ export default function TaxRulesTab() {
         loadingStateIncomeCoverage
           ? 'border-neutral-200 bg-neutral-50 text-neutral-600'
           : hasStateIncomeCoverageForYear
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            ? 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
             : 'border-amber-200 bg-amber-50 text-amber-800'
       }`}>
         {loadingStateIncomeCoverage ? (

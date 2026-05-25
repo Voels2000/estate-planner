@@ -96,16 +96,16 @@ export function RetirementSummarySection(props: RetirementSummarySectionProps) {
     >
       {retirementSnapshot && (
         <div className="space-y-5">
-          <div className={`rounded-xl border px-5 py-4 ${currentYearNet >= 0 ? 'border-emerald-100 bg-emerald-50' : 'border-red-100 bg-red-50'}`}>
+          <div className={`rounded-xl border px-5 py-4 ${currentYearNet >= 0 ? 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]' : 'border-red-100 bg-red-50'}`}>
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">Current Year — Income vs Expenses</p>
                 <div className="flex items-end gap-2">
-                  <p className={`text-3xl font-bold ${currentYearNet >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  <p className={`text-3xl font-bold ${currentYearNet >= 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-700'}`}>
                     {currentYearNet >= 0 ? '+' : ''}
                     {fmt(currentYearNet)}
                   </p>
-                  <p className={`text-sm mb-1 ${currentYearNet >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <p className={`text-sm mb-1 ${currentYearNet >= 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-600'}`}>
                     {currentYearNet >= 0 ? 'annual surplus' : 'annual shortfall'}
                   </p>
                 </div>
@@ -177,13 +177,13 @@ export function RetirementSummarySection(props: RetirementSummarySectionProps) {
                   </div>
                 )}
                 {retirementSnapshot.hasSpouse && retirementSnapshot.p2MonthlyBenefit && (
-                  <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-3">
-                    <p className="text-xs text-violet-500 mb-1">{firstName(retirementSnapshot.p2Name) || 'Spouse'}</p>
-                    <p className="text-lg font-bold text-violet-800">
+                  <div className="rounded-xl border border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] px-4 py-3">
+                    <p className="text-xs text-[color:var(--mwm-sage)] mb-1">{firstName(retirementSnapshot.p2Name) || 'Spouse'}</p>
+                    <p className="text-lg font-bold text-[color:var(--mwm-sage)]">
                       {fmt(retirementSnapshot.p2MonthlyBenefit)}
-                      <span className="text-xs font-normal text-violet-500">/mo</span>
+                      <span className="text-xs font-normal text-[color:var(--mwm-sage)]">/mo</span>
                     </p>
-                    {retirementSnapshot.p2SSClaimingAge && <p className="text-[10px] text-violet-400 mt-0.5">claiming at {retirementSnapshot.p2SSClaimingAge}</p>}
+                    {retirementSnapshot.p2SSClaimingAge && <p className="text-[10px] text-[color:var(--mwm-sage-light)] mt-0.5">claiming at {retirementSnapshot.p2SSClaimingAge}</p>}
                   </div>
                 )}
               </div>

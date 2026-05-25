@@ -39,14 +39,14 @@ export default function ModuleResumeBanner({
   if (!nextIncomplete || nextIncomplete.slug === currentSlug) return null
 
   return (
-    <Card className="mt-4 border-indigo-200 bg-indigo-50 px-4 py-3">
+    <Card className="mt-4 border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] px-4 py-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <p className="text-sm text-indigo-900">
+        <p className="text-sm text-[color:var(--mwm-navy)]">
           Resume where you left off:{' '}
           <ButtonLink
             href={`/education/modules/${nextIncomplete.slug}`}
             variant="link"
-            className="font-semibold text-indigo-900 hover:text-indigo-950"
+            className="font-semibold text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)]"
           >
             {nextIncomplete.title}
           </ButtonLink>

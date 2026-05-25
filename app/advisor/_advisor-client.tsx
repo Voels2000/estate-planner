@@ -96,7 +96,7 @@ const STATUS_LABELS: Record<string, string> = {
   inactive: 'Inactive',
 }
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-700',
+  active: 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]',
   needs_review: 'bg-amber-100 text-amber-700',
   at_risk: 'bg-red-100 text-red-700',
   inactive: 'bg-neutral-100 text-neutral-500',
@@ -440,7 +440,7 @@ Ref: ${referralCode}`
                                       window.prompt('Copy this link:', url)
                                     }
                                   }}
-                                  className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                                  className="shrink-0 text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] whitespace-nowrap"
                                 >
                                   {copiedSlug === slug ? '✓ Copied' : 'Copy'}
                                 </button>
@@ -472,7 +472,7 @@ Ref: ${referralCode}`
                         window.prompt('Copy this text:', emailCopy)
                       }
                     }}
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] whitespace-nowrap"
                   >
                     {copiedNewsletter ? '✓ Copied' : 'Copy all'}
                   </button>
@@ -500,7 +500,7 @@ Ref: ${referralCode}`
                         window.prompt('Copy this text:', textCopy)
                       }
                     }}
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] whitespace-nowrap"
                   >
                     {copiedNewsletter ? '✓ Copied' : 'Copy all'}
                   </button>
@@ -516,9 +516,9 @@ Ref: ${referralCode}`
       })()}
 
       {showFirmBanner && isFirmOwner === true && (
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+        <div className="rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] px-4 py-3 text-sm text-[color:var(--mwm-navy)]">
           🏢 {firm_name ?? 'Firm'} · Firm Owner · Manage your firm in{' '}
-          <a href="/advisor/firm" className="font-medium text-indigo-700 underline hover:text-indigo-900">
+          <a href="/advisor/firm" className="font-medium text-[color:var(--mwm-navy)] underline hover:text-[color:var(--mwm-navy)]">
             Firm Settings ⚙️
           </a>
         </div>
@@ -580,7 +580,7 @@ Ref: ${referralCode}`
                       <button
                         onClick={() => handleAcceptRequest(c.id)}
                         disabled={!!loading}
-                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition"
+                        className="rounded-lg bg-[var(--mwm-navy)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50 transition"
                       >
                         {loading === `${c.id}-accept` ? 'Accepting...' : 'Accept'}
                       </button>
@@ -603,7 +603,7 @@ Ref: ${referralCode}`
               <p className="text-sm font-medium text-neutral-600">No clients yet</p>
               <button
                 onClick={() => setActiveTab('invite')}
-                className="mt-3 text-sm text-indigo-600 hover:underline"
+                className="mt-3 text-sm text-[color:var(--mwm-navy)] hover:underline"
               >
                 Add your first client →
               </button>
@@ -648,8 +648,8 @@ Ref: ${referralCode}`
                           ) : (() => {
                             const score = healthScoreMap[c.client_id ?? '']
                             if (score == null) return <span className="text-xs text-neutral-400">Not computed</span>
-                            const color = score >= 75 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-red-600'
-                            const bg = score >= 75 ? 'bg-emerald-50' : score >= 50 ? 'bg-amber-50' : 'bg-red-50'
+                            const color = score >= 75 ? 'text-[color:var(--mwm-sage)]' : score >= 50 ? 'text-amber-600' : 'text-red-600'
+                            const bg = score >= 75 ? 'bg-[var(--mwm-sage-pale)]' : score >= 50 ? 'bg-amber-50' : 'bg-red-50'
                             return (
                               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${color} ${bg}`}>
                                 {score}/100
@@ -703,7 +703,7 @@ Ref: ${referralCode}`
                             <div className="flex items-center gap-3">
                               <a
                                 href={`/advisor/clients/${c.client_id}`}
-                                className="text-sm font-medium text-indigo-600 hover:underline"
+                                className="text-sm font-medium text-[color:var(--mwm-navy)] hover:underline"
                               >
                                 View →
                               </a>

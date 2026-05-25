@@ -84,13 +84,13 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
                 <Link key={component.key} href={component.actionHref} className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-neutral-600 truncate">{component.label}</span>
-                    <span className={`text-xs font-bold ml-2 shrink-0 ${component.status === 'good' ? 'text-emerald-600' : component.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
+                    <span className={`text-xs font-bold ml-2 shrink-0 ${component.status === 'good' ? 'text-[color:var(--mwm-sage)]' : component.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
                       {component.score}/{component.maxScore}
                     </span>
                   </div>
                   <div className="w-full bg-neutral-100 rounded-full h-1.5">
                     <div
-                      className={`h-1.5 rounded-full ${component.status === 'good' ? 'bg-emerald-500' : component.status === 'warning' ? 'bg-amber-400' : 'bg-red-400'}`}
+                      className={`h-1.5 rounded-full ${component.status === 'good' ? 'bg-[var(--mwm-sage)]' : component.status === 'warning' ? 'bg-amber-400' : 'bg-red-400'}`}
                       style={{ width: `${Math.round((component.score / component.maxScore) * 100)}%` }}
                     />
                   </div>
@@ -164,7 +164,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
               </div>
               {props.conflictReport.conflicts.length > 4 && (
                 <div className="px-4 py-3 border-t border-neutral-100 text-center">
-                  <Link href="/titling" className="text-xs text-indigo-600 hover:underline">
+                  <Link href="/titling" className="text-xs text-[color:var(--mwm-navy)] hover:underline">
                     View all {props.conflictReport.conflicts.length} items →
                   </Link>
                 </div>

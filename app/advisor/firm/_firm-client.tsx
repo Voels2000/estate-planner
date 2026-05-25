@@ -205,7 +205,7 @@ export default function FirmClient({
       <div>
         <a
           href="/advisor"
-          className="text-sm font-medium text-indigo-600 hover:underline"
+          className="text-sm font-medium text-[color:var(--mwm-navy)] hover:underline"
         >
           ← Advisor Portal
         </a>
@@ -232,7 +232,7 @@ export default function FirmClient({
                   <button
                     type="button"
                     onClick={startEditFirmName}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 shrink-0"
+                    className="text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] shrink-0"
                   >
                     Edit ✏️
                   </button>
@@ -336,7 +336,7 @@ export default function FirmClient({
                 {members.map((m) => {
                   const isOwner = m.firm_role === 'owner'
                   const roleBadge = isOwner ? (
-                    <span className="inline-flex rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-800">
+                    <span className="inline-flex rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                       Owner
                     </span>
                   ) : (
@@ -347,7 +347,7 @@ export default function FirmClient({
                   const statusLower = m.status.toLowerCase()
                   const statusBadge =
                     statusLower === 'active' ? (
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                      <span className="inline-flex rounded-full bg-[var(--mwm-sage-pale)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
                         Active
                       </span>
                     ) : statusLower === 'pending' ? (

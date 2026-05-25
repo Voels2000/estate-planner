@@ -34,7 +34,7 @@ export default function MoveBreakevenLegacyPanel({ result, isLoading }: Props) {
           Move Breakeven Analysis — {from_state} → {to_state}
         </h3>
         {!never_breaks_even && crossover_year && (
-          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">
+          <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-2 py-1 rounded-full font-medium">
             Breaks even {crossover_year}
           </span>
         )}
@@ -53,9 +53,9 @@ export default function MoveBreakevenLegacyPanel({ result, isLoading }: Props) {
             {crossover_year ?? '—'}
           </p>
         </div>
-        <div className={`rounded-lg p-3 text-center ${total_savings_at_death > 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+        <div className={`rounded-lg p-3 text-center ${total_savings_at_death > 0 ? 'bg-[var(--mwm-sage-pale)]' : 'bg-red-50'}`}>
           <p className="text-xs text-slate-500 uppercase tracking-wide">Lifetime Savings</p>
-          <p className={`text-xl font-bold mt-1 ${total_savings_at_death > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+          <p className={`text-xl font-bold mt-1 ${total_savings_at_death > 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-700'}`}>
             {fmt(total_savings_at_death)}
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function MoveBreakevenLegacyPanel({ result, isLoading }: Props) {
                 <tr
                   key={row.year}
                   className={`hover:bg-slate-50 ${
-                    isCrossover ? 'bg-emerald-50' : isTransitionYear ? 'bg-blue-50' : ''
+                    isCrossover ? 'bg-[var(--mwm-sage-pale)]' : isTransitionYear ? 'bg-blue-50' : ''
                   }`}
                 >
                   <td className="py-2 font-medium text-slate-800">
@@ -103,14 +103,14 @@ export default function MoveBreakevenLegacyPanel({ result, isLoading }: Props) {
                       <span className="ml-1.5 text-xs bg-blue-100 text-blue-700 px-1 rounded">Move</span>
                     )}
                     {isCrossover && (
-                      <span className="ml-1.5 text-xs bg-emerald-100 text-emerald-700 px-1 rounded">✓ Breakeven</span>
+                      <span className="ml-1.5 text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-1 rounded">✓ Breakeven</span>
                     )}
                   </td>
                   <td className="py-2 text-slate-600">{row.domicile}</td>
                   <td className="py-2 text-right text-slate-600">{fmt(row.gross_estate)}</td>
                   <td className="py-2 text-right text-slate-700">{fmt(row.state_tax)}</td>
                   <td className={`py-2 text-right font-medium ${
-                    row.cumulative_tax_savings > 0 ? 'text-emerald-700' : 'text-red-600'
+                    row.cumulative_tax_savings > 0 ? 'text-[color:var(--mwm-sage)]' : 'text-red-600'
                   }`}>
                     {fmt(row.cumulative_tax_savings)}
                   </td>

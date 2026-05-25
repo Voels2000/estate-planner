@@ -252,7 +252,7 @@ export function AdminAdvisorDirectoryClient({ advisors: initial }: Props) {
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {advisor.specializations.slice(0, 2).map(s => (
-                      <span key={s} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                      <span key={s} className="rounded-full bg-[var(--mwm-gold-pale)] px-2 py-0.5 text-xs text-[color:var(--mwm-navy)]">
                         {s}
                       </span>
                     ))}

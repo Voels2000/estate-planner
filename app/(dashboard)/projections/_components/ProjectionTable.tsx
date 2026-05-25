@@ -36,7 +36,7 @@ export function ProjectionTable({ projections }: ProjectionTableProps) {
               <td className={`py-1.5 pr-4 font-semibold ${p.portfolio < 1000 ? 'text-red-600' : 'text-neutral-900'}`}>
                 {formatDollars(p.portfolio)}
               </td>
-              <td className={`py-1.5 font-semibold ${p.net_worth < 1000 ? 'text-red-600' : 'text-indigo-700'}`}>
+              <td className={`py-1.5 font-semibold ${p.net_worth < 1000 ? 'text-red-600' : 'text-[color:var(--mwm-navy)]'}`}>
                 {formatDollars(p.net_worth)}
               </td>
             </tr>

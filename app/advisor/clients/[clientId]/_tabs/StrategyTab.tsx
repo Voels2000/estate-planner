@@ -289,7 +289,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
                   onClick={() => setCombinedMode('actual')}
                   className={`rounded-md px-3 py-1 text-xs font-medium ${
                     combinedMode === 'actual'
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-[var(--mwm-navy)] text-white'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -300,7 +300,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
                   onClick={() => setCombinedMode('projected')}
                   className={`rounded-md px-3 py-1 text-xs font-medium ${
                     combinedMode === 'projected'
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-[var(--mwm-navy)] text-white'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -421,7 +421,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
               Monte Carlo — Assumption Overrides
             </h2>
             {activeAssumptions && (
-              <p className="text-xs text-indigo-600 mt-0.5">
+              <p className="text-xs text-[color:var(--mwm-navy)] mt-0.5">
                 Active scenario: custom assumptions applied
               </p>
             )}

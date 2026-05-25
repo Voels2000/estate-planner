@@ -234,7 +234,7 @@ export default function DomicileScheduleEditor({
             {tab.label}
             {tab.id === 'checklist' && checklist.length > 0 && (
               <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                criticalIncomplete > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                criticalIncomplete > 0 ? 'bg-red-100 text-red-700' : 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
               }`}>
                 {completedCount}/{checklist.length}
               </span>
@@ -269,7 +269,7 @@ export default function DomicileScheduleEditor({
                         onClick={() => toggleEstablished(row)}
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           row.is_established
-                            ? 'bg-emerald-100 text-emerald-700'
+                            ? 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]'
                             : 'bg-amber-100 text-amber-700'
                         }`}
                       >
@@ -386,14 +386,14 @@ export default function DomicileScheduleEditor({
                       <div
                         key={String(item.id)}
                         className={`flex items-start gap-3 p-3 rounded-lg border ${
-                          item.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-slate-200'
+                          item.completed ? 'bg-[var(--mwm-sage-pale)] border-[color:var(--mwm-sage-pale)]' : 'bg-white border-slate-200'
                         }`}
                       >
                         <button
                           onClick={() => handleToggleChecklist(item.id, Boolean(item.completed))}
                           className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
                             item.completed
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              ? 'bg-[var(--mwm-sage)] border-[color:var(--mwm-sage)] text-white'
                               : 'border-slate-300'
                           }`}
                         >
@@ -410,7 +410,7 @@ export default function DomicileScheduleEditor({
                           </div>
                           <p className="text-xs text-slate-400 mt-0.5">{String(item.description ?? '')}</p>
                           {item.completed_at && (
-                            <p className="text-xs text-emerald-600 mt-0.5">
+                            <p className="text-xs text-[color:var(--mwm-sage)] mt-0.5">
                               Completed {new Date(String(item.completed_at)).toLocaleDateString()}
                             </p>
                           )}

@@ -222,8 +222,8 @@ export default function MyEstateStrategyClient({
                   : col === tenYear
                     ? 'border-blue-200 bg-blue-50'
                     : col === twentyYear
-                      ? 'border-indigo-200 bg-indigo-50'
-                      : 'border-purple-200 bg-purple-50'
+                      ? 'border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)]'
+                      : 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]'
               }`}
             >
               <p
@@ -233,8 +233,8 @@ export default function MyEstateStrategyClient({
                     : col === tenYear
                       ? 'text-blue-600'
                       : col === twentyYear
-                        ? 'text-indigo-600'
-                        : 'text-purple-700'
+                        ? 'text-[color:var(--mwm-navy)]'
+                        : 'text-[color:var(--mwm-sage)]'
                 }`}
               >
                 {col.headerTitle}
@@ -267,8 +267,8 @@ export default function MyEstateStrategyClient({
                         : col === tenYear
                           ? 'text-blue-600'
                           : col === twentyYear
-                            ? 'text-indigo-600'
-                            : 'text-purple-700'
+                            ? 'text-[color:var(--mwm-navy)]'
+                            : 'text-[color:var(--mwm-sage)]'
                     }`}
                   >
                     {col.headerTitle}

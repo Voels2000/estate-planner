@@ -271,7 +271,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
               if (file) handleFile(file)
             }}
             className={`rounded-2xl border-2 border-dashed p-16 text-center transition-colors ${
-              isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-neutral-300 bg-white'
+              isDragging ? 'border-[color:var(--mwm-navy)] bg-[var(--mwm-gold-pale)]' : 'border-neutral-300 bg-white'
             }`}
           >
             {isUploading ? (
@@ -316,7 +316,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
                   key={template.href}
                   href={template.href}
                   download
-                  className="text-xs font-medium text-indigo-600 hover:text-indigo-700 underline-offset-2 hover:underline"
+                  className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] underline-offset-2 hover:underline"
                 >
                   {template.label}
                 </a>
@@ -473,7 +473,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
                       >
                         {header}
                         {fieldMap[header] && (
-                          <span className="ml-1 text-indigo-500 normal-case font-normal">
+                          <span className="ml-1 text-[color:var(--mwm-navy)] normal-case font-normal">
                             → {fieldMap[header]}
                           </span>
                         )}
@@ -498,7 +498,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
                               }
                               setEditableRows(updated)
                             }}
-                            className="w-full min-w-[6rem] px-1 py-0.5 text-sm border-0 rounded focus:ring-1 focus:ring-indigo-500 bg-transparent hover:bg-white focus:bg-white transition-colors"
+                            className="w-full min-w-[6rem] px-1 py-0.5 text-sm border-0 rounded focus:ring-1 focus:ring-[color:var(--mwm-navy)] bg-transparent hover:bg-white focus:bg-white transition-colors"
                           />
                         </td>
                       ))}
@@ -527,7 +527,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
                   onClick={() =>
                     setEditableRows(parseResult.rows.map((r) => ({ ...r })))
                   }
-                  className="text-indigo-600 hover:underline"
+                  className="text-[color:var(--mwm-navy)] hover:underline"
                 >
                   Restore all
                 </button>
@@ -575,7 +575,7 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
           <div className="flex flex-wrap gap-3 justify-center mt-6">
             <Link
               href={TABLE_PATHS[targetTable] ?? '/assets'}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition"
+              className="rounded-lg bg-[var(--mwm-navy)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)] transition"
             >
               View imported {TABLE_LABELS[targetTable]} →
             </Link>

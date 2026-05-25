@@ -151,9 +151,9 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
           </div>
 
           {rothConversionOpportunity && (
-            <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-              <p className="text-xs font-medium text-indigo-800">Roth Conversion Opportunity</p>
-              <p className="text-xs text-indigo-700 mt-0.5">
+            <div className="mt-4 p-3 bg-[var(--mwm-gold-pale)] rounded-lg border border-[color:var(--mwm-border)]">
+              <p className="text-xs font-medium text-[color:var(--mwm-navy)]">Roth Conversion Opportunity</p>
+              <p className="text-xs text-[color:var(--mwm-navy)] mt-0.5">
                 Only {rothPct.toFixed(0)}% of retirement assets are in Roth accounts.
                 With {formatCurrency(totalTraditional, true)} in pre-tax accounts, a systematic Roth conversion
                 strategy before RMD onset may reduce lifetime tax burden.
@@ -222,11 +222,11 @@ function SsPiaCard({
         </div>
         <div>
           <p className="text-xs text-slate-400 mb-1">Projected Monthly at Claim Age</p>
-          <p className="text-lg font-bold text-indigo-700">
+          <p className="text-lg font-bold text-[color:var(--mwm-navy)]">
             {formatCurrency(computedMonthly)}/mo
           </p>
           {ssAdjustment !== 0 && (
-            <p className={`text-xs mt-0.5 ${ssAdjustment < 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+            <p className={`text-xs mt-0.5 ${ssAdjustment < 0 ? 'text-amber-600' : 'text-[color:var(--mwm-sage)]'}`}>
               {ssAdjustment < 0 ? '▼' : '▲'} {Math.abs(Math.round(ssAdjustment * 100))}% vs FRA
             </p>
           )}

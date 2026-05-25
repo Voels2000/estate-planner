@@ -121,29 +121,29 @@ export default function MonteCarloScenarioBanner({
 
   if (hasPending && sharedScenario) {
     return (
-      <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-3">
+      <div className="rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-indigo-900">
+            <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">
               New Monte Carlo scenario from your advisor
             </p>
-            <p className="text-xs text-indigo-700 mt-0.5">
+            <p className="text-xs text-[color:var(--mwm-navy)] mt-0.5">
               Your advisor has shared &ldquo;{sharedScenario.scenarioName}&rdquo; for you to review.
               Accept to apply these assumptions to your projections.
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-indigo-600 text-white text-xs font-semibold px-2.5 py-1">
+          <span className="shrink-0 rounded-full bg-[var(--mwm-navy)] text-white text-xs font-semibold px-2.5 py-1">
             Review
           </span>
         </div>
 
-        {message && <p className="text-sm text-indigo-800 font-medium">{message}</p>}
+        {message && <p className="text-sm text-[color:var(--mwm-navy)] font-medium">{message}</p>}
 
         {!showReview ? (
           <button
             type="button"
             onClick={() => setShowReview(true)}
-            className="text-sm font-medium text-indigo-700 underline underline-offset-2 hover:text-indigo-900"
+            className="text-sm font-medium text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy)]"
           >
             See what changes →
           </button>
@@ -165,8 +165,8 @@ export default function MonteCarloScenarioBanner({
                   ))}
                 </div>
               </div>
-              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">
+              <div className="rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-3">
+                <p className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide mb-2">
                   {sharedScenario.scenarioName}
                 </p>
                 <div className="space-y-1.5">
@@ -177,10 +177,10 @@ export default function MonteCarloScenarioBanner({
                       <div key={key} className="flex justify-between text-sm">
                         <span className="text-gray-600">{label}</span>
                         <span
-                          className={`font-medium ${differs ? 'text-indigo-800 font-semibold' : 'text-gray-800'}`}
+                          className={`font-medium ${differs ? 'text-[color:var(--mwm-navy)] font-semibold' : 'text-gray-800'}`}
                         >
                           {fmt(val, unit)}
-                          {differs && <span className="ml-1 text-indigo-500 text-xs">↑</span>}
+                          {differs && <span className="ml-1 text-[color:var(--mwm-navy)] text-xs">↑</span>}
                         </span>
                       </div>
                     )
@@ -194,7 +194,7 @@ export default function MonteCarloScenarioBanner({
                 type="button"
                 onClick={() => void handleAccept(sharedScenario.id)}
                 disabled={saving}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="rounded-md bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--mwm-navy-light)] disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Accept & Apply'}
               </button>
@@ -214,14 +214,14 @@ export default function MonteCarloScenarioBanner({
 
   if (hasAccepted && acceptedScenario) {
     return (
-      <div className="rounded-xl border border-indigo-200 bg-white px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="rounded-xl border border-[color:var(--mwm-border)] bg-white px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gray-800">
             <span className="inline-flex items-center gap-1.5 mr-2">
-              <span className="h-2 w-2 rounded-full bg-indigo-500" />
+              <span className="h-2 w-2 rounded-full bg-[var(--mwm-navy)]" />
               Advisor scenario active:
             </span>
-            <span className="font-semibold text-indigo-800">{acceptedScenario.scenarioName}</span>
+            <span className="font-semibold text-[color:var(--mwm-navy)]">{acceptedScenario.scenarioName}</span>
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
             Your Monte Carlo projections are using advisor-recommended assumptions.
@@ -233,7 +233,7 @@ export default function MonteCarloScenarioBanner({
             <button
               type="button"
               onClick={() => setShowReview(true)}
-              className="text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
+              className="text-xs text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy)]"
             >
               View details
             </button>
@@ -259,7 +259,7 @@ export default function MonteCarloScenarioBanner({
                 return (
                   <div key={key} className="flex justify-between text-xs">
                     <span className="text-gray-500">{label}</span>
-                    <span className={differs ? 'font-semibold text-indigo-700' : 'text-gray-700'}>
+                    <span className={differs ? 'font-semibold text-[color:var(--mwm-navy)]' : 'text-gray-700'}>
                       {fmt(val, unit)}
                       {differs ? ' ↑' : ''}
                     </span>

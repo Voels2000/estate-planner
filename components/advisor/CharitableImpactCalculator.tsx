@@ -79,7 +79,7 @@ export default function CharitableImpactCalculator({
               type="text"
               value={giftAmount}
               onChange={e => setGiftAmount(e.target.value)}
-              className="w-full pl-7 pr-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
+              className="w-full pl-7 pr-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-[color:var(--mwm-navy)]"
               placeholder="100,000"
             />
           </div>
@@ -98,7 +98,7 @@ export default function CharitableImpactCalculator({
                 onChange={e => setIncomeTaxRate(e.target.value)}
                 min="0"
                 max="60"
-                className="w-full pr-8 pl-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-indigo-400"
+                className="w-full pr-8 pl-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:outline-none focus:border-[color:var(--mwm-navy)]"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">%</span>
             </div>
@@ -117,7 +117,7 @@ export default function CharitableImpactCalculator({
               onClick={() => setGiftType(type)}
               className={`px-3 py-2.5 rounded-xl border text-left transition ${
                 giftType === type
-                  ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
+                  ? 'border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]'
                   : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
               }`}
             >
@@ -163,8 +163,8 @@ export default function CharitableImpactCalculator({
                 label: 'Charitable impact',
                 value: fmt(result.charitable_impact_20yr),
                 sub: 'vs. waiting 20 yrs',
-                color: 'text-indigo-700',
-                bg: 'bg-indigo-50 border-indigo-200',
+                color: 'text-[color:var(--mwm-navy)]',
+                bg: 'bg-[var(--mwm-gold-pale)] border-[color:var(--mwm-border)]',
               },
             ].map(item => (
               <div key={item.label} className={`px-3 py-3 rounded-xl border ${item.bg} text-center`}>
