@@ -190,6 +190,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (rowsToInsert.length === 0) {
+      if (body.skip_duplicates) {
+        return NextResponse.json({
+          success: true,
+          committed: 0,
+          inserted_count: 0,
+          skipped: transformed.length,
+          job_id,
+          message: 'All rows were duplicates of existing records.',
+        })
+      }
       return NextResponse.json(
         { error: 'All rows are duplicates of existing records.' },
         { status: 400 },

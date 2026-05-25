@@ -36,5 +36,13 @@ export default defineConfig({
       name: 'public',
       testMatch: /public\/.*\.spec\.ts/,
     },
+    {
+      name: 'import-unit',
+      testDir: './tests/unit',
+      testMatch: /import.*\.spec\.ts/,
+      use: {
+        baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      },
+    },
   ],
 })

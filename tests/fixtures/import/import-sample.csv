@@ -1,0 +1,3 @@
+name,type,value,owner,notes
+Playwright Import Asset A,taxable_brokerage,100000,person1,F2 test
+Playwright Import Asset B,roth_ira,50000,person1,F2 test

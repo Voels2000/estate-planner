@@ -260,6 +260,17 @@ Open while logged out or in a private window unless noted:
 
 ---
 
+## Import automated tests (Sprint F-2)
+
+```bash
+npm run test:import:unit          # header detection, sheets, aliases (no auth)
+PLAYWRIGHT_BASE_URL=http://localhost:3001 npm run test:import:api  # API tests (tier 2+ user in .env.test)
+```
+
+Requires F-2 migration on test DB. API tests use `tests/fixtures/import/` and optional `SUPABASE_SERVICE_ROLE_KEY` for cleanup/traceability.
+
+---
+
 ## Import data — Sprint F-1 (tier 2+) ✅ passed production 2026-06-02
 
 Migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied; schema cleanup consolidated to `file_name` / `file_type`. Use tier 2+ test account.

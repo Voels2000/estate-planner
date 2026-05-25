@@ -12,7 +12,9 @@
     "test:e2e:consumer": "dotenv -e .env.test -- npx playwright test --project=consumer-setup --project=consumer",
     "test:e2e:public": "dotenv -e .env.test -- npx playwright test --project=public",
     "test:e2e:regression": "dotenv -e .env.test -- npx playwright test tests/e2e/advisor/regression.spec.ts",
-    "test:e2e:report": "npx playwright show-report"
+    "test:e2e:report": "npx playwright show-report",
+    "test:import:unit": "npx playwright test --project=import-unit",
+    "test:import:api": "dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
