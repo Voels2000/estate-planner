@@ -253,7 +253,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Supabase prod migrations (confirm applied)
 
-**Sprint 13–C-7:** 69 migrations applied — local and remote in sync (incl. C-6 `20260625120000`, C-7 `20260625170000`).
+**Current (2026-05-25):** **75** timestamped migration files in `supabase/migrations/` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Local and remote in sync through `20260625170000` (C-7).
 
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
 - [x] Final prod spot-check before Sprint 15 go-live (2026-05-24)

@@ -341,6 +341,8 @@ After each schema-affecting session:
 
 ## Migration Reference (Recent)
 
+**Total in repo:** **75** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
+
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
 - `20260428000002_strategy_line_items_acceptance_fields.sql`

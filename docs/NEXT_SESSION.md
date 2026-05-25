@@ -58,7 +58,7 @@
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues (`COMPLIANCE_EMAIL`) | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA (`privacy_requests`) | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast inbox (Resend verified) | ✅ Live |
-| Migration history | Through `20260625170000`; local + remote in sync | ✅ Clean |
+| Migration history | **75** timestamped files in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
 **Cron manual test:** `curl -sS https://www.mywealthmaps.com/api/cron/compliance-reminders -H "Authorization: Bearer $CRON_SECRET"` → `{"sent":false,"message":"All clear — no email sent"}` when healthy.
 

@@ -808,6 +808,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
 | Email senders | `hello@`, `noreply@`, `privacy@` (Resend → Comcast) | ✅ Live |
+| Migrations | **75** timestamped files in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
 **Commits:** C-6 `4d9571e`, `01b997a` · C-7 `ddbf079`, `1ce9110`
 

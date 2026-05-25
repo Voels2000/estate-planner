@@ -73,7 +73,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 ## Pre-Sprint-14 gate checklist — Sprint 13 closed ✅
 
 - [x] Acquisition & attribution smoke A–G passed (staging)
-- [x] 69 migrations applied and verified (incl. C-6, C-7)
+- [x] **75** migrations in repo — applied and verified (local + remote in sync through C-7)
 - [x] E2E 51/0/1 on staging
 - [x] Test seed scripts committed and run
 - [x] Supabase verification queries documented in smoke test
@@ -133,7 +133,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` verified | ✅ Live |
-| Migrations | Through `20260625170000`; in sync | ✅ Clean |
+| Migrations | **75** in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
 **Monthly (ongoing):** Admin Portal → Data & Compliance — overdue deletions + audit log; rely on daily `COMPLIANCE_EMAIL` alerts when issues exist.
 

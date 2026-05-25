@@ -162,7 +162,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` verified via Resend | ✅ Live |
-| Migrations | `20260625120000`, `20260625170000` applied; schema in sync | ✅ Clean |
+| Migrations | **75** files in `supabase/migrations/`; applied through `20260625170000` | ✅ Clean |
 
 ---
 
@@ -284,7 +284,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 **Goal:** Stable staging, migrations verified, smoke test extended. Feature freeze begins.
 
 **Shipped**
-- `[x]` **69 migrations** applied (local + remote in sync; incl. C-6 `20260625120000`, C-7 `20260625170000`)
+- `[x]` **75 migrations** in repo (`supabase/migrations/[0-9]*.sql`); local + remote in sync through `20260625170000`
 - `[x]` E2E staging — **51 passed, 0 failed, 1 skipped**
 - `[x]` Seed scripts — `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`
 - `[x]` Acquisition & attribution smoke **A–G passed** on staging

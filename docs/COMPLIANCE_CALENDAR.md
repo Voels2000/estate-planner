@@ -17,7 +17,7 @@ Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy 
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast (Resend verified) | ✅ Live |
-| Migrations | Through `20260625170000`; local + remote in sync | ✅ Clean |
+| Migrations | **75** in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
 **Cron manual test:** Always `https://www.mywealthmaps.com/api/cron/...` — apex redirect strips `Authorization`.
 
