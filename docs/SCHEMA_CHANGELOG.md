@@ -8,6 +8,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint C-6 (2026-05-25) — Data deletion & WCPA compliance
+
+**Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — **commits `4d9571e`, `01b997a`**
+
+- **`deletion_audit_log`:** append-only audit trail for all deletions (reason, initiated_by, row counts, success)
+- **`deletion_schedule`:** pending/executed/cancelled automated deletions; indexed on `scheduled_for` where `status=pending`
+- **Code:** `deleteUser.ts`, webhook schedule + plan-change guards, `process-deletions` cron, admin Data & Compliance tab, `gdpr-delete-user.ts` CLI
+- **Apply in production** before automated post-cancellation deletion runs
+
+---
+
 ## Sprint F-2 (2026-06-02) — Import UX & Intelligence
 
 **Migration:** `20260602150000_sprint_f2_import_traceability.sql`

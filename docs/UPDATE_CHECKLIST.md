@@ -21,6 +21,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 + P-2 — performance quick wins and pre-launch refactors |
+| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, automated 30-day cancellation, monthly compliance checks (Sprint C-6) |
 
 ## When to update docs
 
@@ -40,6 +41,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (attorney listing, Playwright consumer tier) → `scripts/seed-test-attorney.ts`, `scripts/seed-test-consumer-estate.ts`; document in CONSUMER_RELEASE_SMOKE_TEST.md
 
 ## Required updates before merge
@@ -102,6 +104,17 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Layout auth dedup via `getDashboardLayoutContext` (React `cache()`)
 - [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
 - [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
+
+## Sprint C-6 focus — closed ✅ 2026-05-25 (code)
+
+- [x] `lib/compliance/deleteUser.ts`, `deletionGuards.ts`, `scheduleDeletionOnCancel.ts` — `4d9571e`
+- [x] Migration `20260625120000_sprint_c6_deletion_compliance.sql` — apply in prod before deploy
+- [x] Webhook plan-change guards + cron re-verification
+- [x] Admin `/admin` → Data & Compliance tab + APIs — `01b997a`
+- [x] `scripts/gdpr-delete-user.ts` → `deleteUser`
+- [x] [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
+
+**Monthly (ongoing):** Admin Portal → Data & Compliance → confirm no overdue scheduled deletions (`scheduled_for` in past, `status=pending`); review audit log last 30 days.
 
 ## Sprint F-2 focus — shipped 2026-06-02
 

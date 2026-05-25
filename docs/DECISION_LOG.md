@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: May 2026 (Sprint F-2 import tests)
+# Last updated: May 2026 (Sprint C-6 WCPA deletion)
 
 ---
 
@@ -372,6 +372,16 @@ Pass = at least one row with referral code matching a test signup.
 **Reasoning:** Tabular formats produce reliable header detection and field mapping. PDF/DOCX require best-effort text extraction with unreliable column structure — bad UX for a data-entry accelerator aimed at retirement-tier users getting data in quickly.
 
 **Implication:** Tier 2 gate. Final schema uses `file_name` + `file_type` (NOT NULL). Smoke verified: 4 asset rows committed.
+
+---
+
+### May 2026 — Do not delete data on consumer→advisor plan change (Sprint C-6)
+
+**Decision:** When Stripe fires `customer.subscription.deleted` on a cancelled consumer subscription, do **not** schedule WCPA deletion if (1) the same Stripe customer has another active or trialing subscription, or (2) the profile role is `advisor`, `financial_advisor`, `attorney`, or `admin`. The daily `process-deletions` cron re-checks both conditions and cancels pending schedules instead of executing.
+
+**Reasoning:** Plan upgrades cancel the old subscription while a new one is created on the same customer. Scheduling deletion would destroy a paying advisor’s household data.
+
+**Implication:** `lib/compliance/deletionGuards.ts`, `scheduleDeletionOnCancel.ts`, webhook + cron. Documented in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 ---
 

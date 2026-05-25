@@ -101,6 +101,22 @@ This is a developer reference, not a full SQL DDL dump.
 - **Purpose:** attorney access to household estate plan; distinct from `connection_requests` pending/claim flow.
 - **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; revoke via `/api/attorney/revoke-access`.
 
+### `deletion_audit_log` (Sprint C-6)
+
+- **Purpose:** immutable append-only record of every user data deletion (WCPA compliance).
+- **Key columns:** `user_id`, `email`, `reason` (`user_request` \| `subscription_cancelled` \| `admin_initiated` \| `account_closed`), `initiated_by`, `dry_run`, `tables_cleared`, `rows_deleted`, `auth_deleted`, `success`, `error_message`, `completed_at`
+- **RLS:** service role only — no consumer access
+- **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql`
+- **Note:** never UPDATE or DELETE rows from this table
+
+### `deletion_schedule` (Sprint C-6)
+
+- **Purpose:** queue of future automated deletions (30 days post-cancellation by default).
+- **Key columns:** `user_id`, `email`, `reason`, `scheduled_for`, `stripe_customer_id`, `scheduled_by`, `status` (`pending` \| `executed` \| `cancelled`), `executed_at`, `cancelled_at`, `cancel_reason`
+- **RLS:** service role only
+- **Cron:** `GET /api/cron/process-deletions` selects `pending` where `scheduled_for <= now()`
+- **Webhook:** inserts on consumer churn; skips plan-change / role-upgrade cases
+
 ### `ingestion_jobs` (Sprint F-1)
 
 - **Purpose:** transient store for file-import parse results between upload and commit.
@@ -337,6 +353,7 @@ After each schema-affecting session:
 - `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
 - `20260602120000_sprint_p1_indexes.sql` — Sprint P-1 — `idx_assets_owner_id`, `idx_liabilities_owner_id` (`5c24160`)
 - `20260602130000_sprint_p2_recommendations_cache.sql` — Sprint P-2 — `estate_health_scores.recommendations` jsonb (`47a38f3`)
+- `20260625120000_sprint_c6_deletion_compliance.sql` — Sprint C-6 — `deletion_audit_log`, `deletion_schedule` (`4d9571e`, `01b997a`)
 - `20260602150000_sprint_f2_import_traceability.sql` — Sprint F-2 — `ingestion_job_id` on financial tables; `header_row_index`, `sheet_name` on `ingestion_jobs`
 - `20260602140000_sprint_f1_ingestion_jobs.sql` — Sprint F-1 — `ingestion_jobs` 14-column schema + RLS (verified prod)
 

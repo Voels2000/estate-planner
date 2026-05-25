@@ -45,5 +45,5 @@ When you send the Terms of Service to counsel:
 ## Can complete post-launch (within 30 days)
 
 - [ ] WCPA consumer rights request flow — email handler at privacy@mywealthmaps.com
-- [ ] Data retention automation — 30-day deletion after account close
+- [x] Data retention automation — 30-day post-cancellation schedule + cron (Sprint C-6 code); apply migration in prod; monthly check in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
 - [ ] Cookie consent banner (low priority — no advertising cookies used)

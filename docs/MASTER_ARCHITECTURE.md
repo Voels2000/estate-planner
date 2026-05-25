@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-25 (Sprint F-2 import UX + test suite; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (Sprint C-6 WCPA deletion; Sprint 17 go-live prep)
 
 ---
 
@@ -762,6 +762,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 |-----|-------|----------|---------|
 | Daily notifications | `GET /api/cron/notifications` | `0 14 * * *` (14:00 UTC daily) | **Vercel cron** (`vercel.json`) |
 | Age-based life events | `GET /api/cron/age-triggers` | `0 15 * * *` (15:00 UTC daily) | **Vercel cron** (`vercel.json`) |
+| Scheduled deletions | `GET /api/cron/process-deletions` | `0 2 * * *` (02:00 UTC daily) | **Vercel cron** (Sprint C-6) |
 
 **Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
 
@@ -772,6 +773,17 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 
 **Age triggers (Sprint 3 + Sprint 7):** `GET /api/cron/age-triggers` — daily 15:00 UTC (`vercel.json`); inserts `life_events` with `source='calendar_trigger'` when birth year hits ages 62, 65, 70, or 73 (deduped per user/event/year). **Sprint 7 slugs:** 62 → `social-security-timing`, 65 → `medicare-eligibility`, 70/73 → `rmd-start-age`.
+
+**Data deletion (Sprint C-6 — Washington WCPA):**
+
+- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron.
+- **Tables:** `deletion_schedule` (pending automated deletions); `deletion_audit_log` (append-only compliance record).
+- **Webhook:** `customer.subscription.deleted` → schedule deletion +30 days via `scheduleDeletionOnCancel.ts` — **skipped** if customer has another active/trialing subscription (plan change) or profile role is advisor/attorney/admin (`deletionGuards.ts`).
+- **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
+- **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded.
+- **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions`, `POST /api/admin/deletions/execute`.
+- **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — apply before deploy.
+- **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
 
 **In-app life events (Sprint 3):**
 

@@ -97,6 +97,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `695a860` | C-5 | Legal pages follow-up |
 | `5c24160` | P-1 | Performance quick wins — dashboard Promise.all, indexes, debounce, next/font |
 | `47a38f3` | P-2 | Pre-launch perf — recommendations cache, projections cache-first, auth dedup |
+| `4d9571e` | C-6 | Deletion infra, Stripe plan-change guards, process-deletions cron |
+| `01b997a` | C-6 | Admin Data & Compliance tab, admin APIs, gdpr-delete-user CLI |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
@@ -142,6 +144,24 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | C-3 RLS + auth/security | ✅ | `236890c`, `56a4407`, `cda2ccc`, `d854c05` |
 | C-4 Billing disclosures | ✅ code | `462bda9` |
 | C-5 Privacy + Terms | ✅ code | `2e1dff3`, `695a860` |
+| C-6 Data deletion (WCPA) | ✅ code | `4d9571e`, `01b997a` |
+
+---
+
+### Sprint C-6 — Data deletion & WCPA compliance ✅ CLOSED 2026-05-25 (code)
+
+**Goal:** Washington WCPA right-to-delete + Privacy Policy 30-day post-cancellation automation.
+
+- `[x]` `lib/compliance/deleteUser.ts` — audited deletion; `deletion_audit_log` append-only
+- `[x]` `deletion_schedule` + migration `20260625120000_sprint_c6_deletion_compliance.sql`
+- `[x]` Stripe webhook — schedule +30 days on cancel; skip on plan change / advisor role upgrade
+- `[x]` Cron `process-deletions` — role + active-sub re-check before execute (`4d9571e`)
+- `[x]` Admin `/admin` → Data & Compliance tab — schedule, audit, execute dry-run (`01b997a`)
+- `[x]` `scripts/gdpr-delete-user.ts` — CLI uses same `deleteUser` path
+- `[x]` [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) — SOP + monthly checks
+- `[ ]` Apply C-6 migration in production before relying on automated deletion
+
+**Commits:** `4d9571e`, `01b997a`
 
 ---
 

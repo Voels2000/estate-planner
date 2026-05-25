@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-06-02 (Sprint P-2 closed; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (Sprint C-6 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -78,6 +78,15 @@ These must be complete before launch. Update status as sprints close them.
 
 - [x] **App URL in emails** — `lib/app-url.ts` `getAppUrl()` on email routes (Sprint 9)
 - [x] **Digital Assets tier gate** — `FEATURE_TIERS['digital-assets'] = 2` + `UpgradeBanner` on page (Sprint 9)
+
+### Data deletion & WCPA (Sprint C-6)
+
+- [ ] **`deletion_audit_log` and `deletion_schedule` tables live** — migration `20260625120000_sprint_c6_deletion_compliance.sql` applied in production (verify with SQL in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md))
+- [ ] **30-day post-cancellation deletion automated** — Stripe `customer.subscription.deleted` webhook schedules; `GET /api/cron/process-deletions` at 2am UTC (`vercel.json`); reactivation cancels pending schedule
+- [ ] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion (dry-run default)
+- [ ] **Plan-change guard verified** — consumer → advisor upgrade does **not** schedule deletion (active Stripe sub + role checks in webhook and cron; see `lib/compliance/deletionGuards.ts`)
+- [ ] **CLI script** — `scripts/gdpr-delete-user.ts` delegates to `lib/compliance/deleteUser.ts` (same path as admin + cron)
+
 - [ ] **Attorney referral production test** — run `npx tsx scripts/seed-test-attorney.ts` (or register manually); confirm `referral_code` on listing; sign in as `test-attorney-portal@rolobe.resend.app` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 

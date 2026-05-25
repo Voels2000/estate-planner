@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Sprint F-2 import UX + automated test suite)
+# Updated: 2026-05-25 (Sprint C-6 data deletion complete)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance C-2b → C-5, **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import** (UX + automated tests), and education nav fixes on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-6** (incl. WCPA deletion + admin **Data & Compliance** tab at `/admin`), **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import**, education nav on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, C-6 migration in prod, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -22,8 +22,27 @@
 | **C-3** | RLS fixes (`236890c`); auth callback, MFA, security headers, PII logging (`56a4407`); Monte Carlo UX + docs (`cda2ccc`); audit artifacts gitignored (`d854c05`) | `236890c`, `56a4407`, `cda2ccc`, `d854c05` | ✅ |
 | **C-4** | Billing disclosures — RCW 19.316, FTC Negative Option, renewal reminders | `462bda9` | ✅ code — manual Stripe walkthrough remains |
 | **C-5** | Privacy Policy (`/privacy`), Terms of Service (`/terms`), footer links, sitemap | `2e1dff3`, `695a860` | ✅ — legal review + TODO placeholders remain |
+| **C-6** | WCPA deletion — `deleteUser`, webhook schedule + plan-change guards, cron, admin UI, CLI | `4d9571e`, `01b997a` | ✅ code — apply `20260625120000_sprint_c6_deletion_compliance.sql` in prod |
 
 **Audit scripts (must stay 0):** `bash scripts/audit-ux-language.sh` · `bash scripts/security-audit.sh`
+
+---
+
+## Sprint C-6 closed ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Deletion core** | `lib/compliance/deleteUser.ts` — single path for CLI, admin, cron |
+| **Guards** | `deletionGuards.ts` — no schedule on plan change (active Stripe sub) or upgraded role; cron re-check |
+| **Webhook** | `customer.subscription.deleted` → 30-day schedule; `subscription.updated` active → cancel pending |
+| **Cron** | `GET /api/cron/process-deletions` — 2am UTC (`vercel.json`) |
+| **Admin UI** | `/admin` → **Data & Compliance** — schedule, audit log, execute (dry-run default) |
+| **CLI** | `npx tsx scripts/gdpr-delete-user.ts --email … [--dry-run]` |
+| **Docs** | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) — right-to-delete SOP + monthly checks |
+
+**Commits:** `4d9571e` (infra + guards), `01b997a` (admin UI + CLI)
+
+**Before deploy:** Apply migration `20260625120000_sprint_c6_deletion_compliance.sql` in production.
 
 ---
 
