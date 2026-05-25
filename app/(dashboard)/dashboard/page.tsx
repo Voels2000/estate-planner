@@ -43,7 +43,7 @@ import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { DashboardClient } from '../_dashboard-client'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
-import type { LifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
+import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 
@@ -111,6 +111,7 @@ export default async function DashboardPage() {
       insurance,
     },
     { data: lifeEventsData },
+    { data: loggedLifeEventsData },
     { data: advisorConnection },
   ] = await Promise.all([
     loadDashboardCoreInputs(supabase, user!.id),
@@ -122,6 +123,13 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     supabase
+      .from('life_events')
+      .select('id, event_type, created_at')
+      .eq('user_id', user!.id)
+      .eq('source', 'user')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
       .from('advisor_clients')
       .select('id')
       .eq('client_id', user!.id)
@@ -130,9 +138,15 @@ export default async function DashboardPage() {
   ])
 
   const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
+  const loggedLifeEvents = (loggedLifeEventsData ?? []) as LoggedLifeEvent[]
   const hasAdvisorConnection = !!advisorConnection
   const hasBusinessInterests =
     (businesses?.length ?? 0) > 0 || (businessInterests?.length ?? 0) > 0
+  const hasRealEstate = (realEstate?.length ?? 0) > 0
+  const primaryAge =
+    household.person1_birth_year != null
+      ? new Date().getFullYear() - household.person1_birth_year
+      : null
   const successionGap =
     hasBusinessInterests && household.succession_plan_in_place !== true
 
@@ -454,6 +468,12 @@ export default async function DashboardPage() {
       latestSharedMCScenario={latestSharedMCScenario}
       estateCallout={estateCallout}
       pendingLifeEvents={pendingLifeEvents}
+      loggedLifeEvents={loggedLifeEvents}
+      lifeEventRelevance={{
+        hasBusinessInterests,
+        hasRealEstate,
+        primaryAge,
+      }}
       hasAdvisorConnection={hasAdvisorConnection}
       successionGap={successionGap}
       personaAlerts={personaAlerts}

@@ -13,7 +13,8 @@ import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
-import { LifeEventBanner, type LifeEvent } from './_components/LifeEventBanner'
+import { LifeEventBanner, type LifeEvent, type LoggedLifeEvent } from './_components/LifeEventBanner'
+import type { RelevanceHousehold } from '@/lib/events/catalog'
 import type { EstateComposition } from '@/lib/estate/types'
 import { firstName, fmt } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard/FinancialSummarySection'
@@ -123,6 +124,8 @@ type Props = {
   latestSharedMCScenario?: ConsumerMCScenario | null
   estateCallout?: EstateCalloutCardProps | null
   pendingLifeEvents?: LifeEvent[]
+  loggedLifeEvents?: LoggedLifeEvent[]
+  lifeEventRelevance?: RelevanceHousehold
   hasAdvisorConnection?: boolean
   successionGap?: boolean
   personaAlerts?: {
@@ -173,6 +176,8 @@ export function DashboardClient(props: Props) {
     latestSharedMCScenario,
     estateCallout,
     pendingLifeEvents = [],
+    loggedLifeEvents = [],
+    lifeEventRelevance,
     hasAdvisorConnection = false,
     successionGap = false,
     personaAlerts = null,
@@ -206,6 +211,8 @@ export function DashboardClient(props: Props) {
 
       <LifeEventBanner
         pendingEvents={pendingLifeEvents}
+        loggedEvents={loggedLifeEvents}
+        relevanceHousehold={lifeEventRelevance}
         hasAdvisorConnection={hasAdvisorConnection}
       />
 

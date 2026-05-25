@@ -215,7 +215,7 @@ export default async function HomePage() {
                 icon: '⚡',
                 label: 'Something just happened in my life',
                 sub: 'Business sale, inheritance, divorce, health event — see what changes',
-                href: '/event/selling-a-business',
+                href: '/events',
               },
               {
                 icon: '🔍',
@@ -259,6 +259,19 @@ export default async function HomePage() {
                 </div>
               </a>
             ))}
+          </div>
+          <div style={{ marginTop: 14, textAlign: 'center' }}>
+            <a
+              href="/events"
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: 'var(--mwm-navy)',
+                textDecoration: 'none',
+              }}
+            >
+              See all life events →
+            </a>
           </div>
         </div>
 
