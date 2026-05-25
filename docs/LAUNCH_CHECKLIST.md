@@ -317,5 +317,6 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | 2026-06-02 | Sprint C-3 | **Closed** — RLS (`236890c`); auth callback, MFA, security headers (`56a4407`); docs (`cda2ccc`, `d854c05`). |
 | 2026-06-02 | Sprint C-4 | **Code complete** — billing disclosures (`462bda9`); manual Stripe walkthrough remains. |
 | 2026-06-02 | Sprint C-5 | **Code complete** — Privacy Policy, Terms of Service, footer, sitemap (`2e1dff3`, `695a860`); [LEGAL_TODO.md](./LEGAL_TODO.md) remains. |
-| 2026-05-25 | Auth cleanup | Auth table clean (9 accounts); rolobe retired; deleteUser FK hardening (`aea4bf6`, `3cdd9b5`); verify-deletion script |
+| 2026-05-25 | Sprint UX-1 | **Closed** — Life events hub `/events` + in-app picker (`6fb73e6`) |
+| 2026-05-25 | Auth cleanup | Auth table clean (9 accounts); deleteUser FK hardening (`aea4bf6`, `3cdd9b5`); verify-deletion script |
 | 2026-05-24 | Sprint 15 cont. | Preview waitlist mode enabled; sitemap XML fixed (`73648e5`); middleware infra bypass added; test accounts cleaned up (`3f732e3`); dev workflow established (local → preview → production) |

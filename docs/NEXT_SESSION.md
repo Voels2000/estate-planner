@@ -1,18 +1,32 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Auth cleanup + deleteUser WCPA hardening complete)
+# Updated: 2026-05-25 (Sprint UX-1 life events hub complete; deleteUser WCPA hardening complete)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-7** fully live in production. **Auth table clean:** 9 accounts (4 founder + 5 `@mywealthmaps.test`); all `@rolobe.resend.app` retired. **`deleteUser.ts` hardened** for production WCPA — FK scan, orphan Auth handling, hard/soft delete fallback, `npm run verify:deletion`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe Dashboard config, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** All **code sprints complete** including **Sprint UX-1** (`/events` hub + in-app event picker, `6fb73e6`). Compliance **C-2b → C-7** live. **Auth table clean:** 9 accounts. **`deleteUser.ts` hardened** — FK scan, `npm run verify:deletion`. Waitlist active. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
 > **WCPA deletion principle:** Deletion is not done when `deleteUserData` returns `success: true`. Run `npm run verify:deletion -- --email …` — must show **PASS** before responding to the user.
+
+---
+
+## Sprint UX-1 closed ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Public hub** | `/events` — all 24 life events by category; links to `/event/[slug]` |
+| **Public nav** | Life Events link; homepage “See all life events →” |
+| **Dashboard picker** | `LifeEventBanner` modal — search, relevance ordering, logs `life_events`, → `/event/[slug]/assess` |
+| **Logged events list** | “Events you've logged” with Review links below banner |
+| **Shared catalog** | `lib/events/catalog.ts` — grouping, filter, relevance sort |
+
+**Commit:** `6fb73e6`
 
 ---
 

@@ -516,10 +516,15 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Public layout + marketing (Sprint 2 Track A):**
 
-- `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
-- Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, event pages. **`/education/*` is excluded** — education layout provides its own header.
-- Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start. Homepage copy targets **$2M–$30M** segment.
-- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
+- `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · **Life Events** · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
+- Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, **`/events`**, event pages. **`/education/*` is excluded** — education layout provides its own header.
+- Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start (links to `/events`). Homepage copy targets **$2M–$30M** segment.
+- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
+
+**Life event hub (Sprint UX-1):**
+
+- `app/(public)/events/page.tsx` — public catalog of all **24** slugs grouped by category (Business & Wealth, Family & Relationships, Health & Retirement); links to `/event/[slug]`; footer CTA → `/assess`.
+- `lib/events/catalog.ts` — `getEventsGroupedForHub()`, `filterEventsByQuery()`, `sortEventsByRelevance()` for hub + dashboard picker.
 
 **Life event landing pages (Sprint 2):**
 
@@ -538,6 +543,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Used by event assessment results (`source=event-assess-{slug}`). **Drip (Sprint 6):** step 1 fired non-blocking to `POST /api/email/drip`; steps 2–3 in `GET /api/cron/notifications` job 7; templates in `lib/emails/drip-templates.ts`; unsubscribe via `GET /api/email/unsubscribe`.
 - Tracking columns: `drip_step_1/2/3_sent_at`, `unsubscribed_at` (migration `20260524000000_email_captures_drip.sql`).
 - Event assessment saves for logged-in users write to `assessment_results` with `_event_slug` / `_type: 'event'` in `answers` JSONB (no dedicated `event_slug` column).
+- **Dashboard picker (Sprint UX-1):** `LifeEventBanner` on `/dashboard` — searchable modal over all 24 events; logs `life_events` (`source: user`); navigates to `/event/[slug]/assess`; shows logged events with Review links.
 
 **SEO (Sprint 6):**
 

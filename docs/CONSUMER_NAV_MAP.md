@@ -60,7 +60,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 |-------|-------|--------|--------|
 | Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
-| Events Hub | `/events` | `(public)/events` | Public; SSG; catalog of all 24 life event pages |
+| Events Hub | `/events` | `(public)/events` | Public; SSG; all 24 life events by category; no auth required |
 | Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
@@ -69,11 +69,10 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 **Life event pages (`app/(public)/event/[slug]/`):**
 
-All **24** event slugs — full catalog at [`/events`](/events). Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts`. Assessment teaser → `/event/[slug]/assess`. Funnel: `_referral-tracker.tsx` + `useFunnelEvent`.
+**24 slugs** — full catalog at [`/events`](/events) (grouped by category; no auth required). Individual pages remain at `/event/[slug]`. Content: `lib/events/content.ts` + `lib/events/content-sprint5.ts`. Assessment teaser → `/event/[slug]/assess`. Funnel: `_referral-tracker.tsx` + `useFunnelEvent`. In-app: dashboard `LifeEventBanner` picker → `/event/[slug]/assess` when logged in.
 
 | Route | Page title (hero) | Tier | Notes |
 |-------|-------------------|------|--------|
-| `/events` | Life events hub | — | Public; SSG; grouped catalog linking to all event pages |
 | `/event/selling-a-business` | Business sale | — | Public; SSG |
 | `/event/death-of-spouse` | Death of a spouse | — | Public; SSG |
 | `/event/serious-diagnosis` | Serious health diagnosis | — | Public; SSG |

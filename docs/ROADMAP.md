@@ -81,7 +81,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
 | **Drip step 2 check** | `[ ]` | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
 | **Auth cleanup + deleteUser hardening** | `[x]` | FK scan, verify-deletion, rolobe retirement — `aea4bf6`, `3cdd9b5` |
-| **Sprint UX-1 Life Events Hub** | `[ ]` | Public `/events` hub — not yet built |
+| **Sprint UX-1 Life Events Hub** | `[x]` | Public `/events` hub + in-app picker — `6fb73e6` |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -106,12 +106,29 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `84388ad` | Cleanup | Rolobe cleanup tooling, verify-drip-sequence, canonical E2E migration |
 | `aea4bf6` | C-6+ | deleteUser WCPA hardening — FK scan, orphan Auth, verify-deletion script |
 | `3cdd9b5` | C-6+ | FK scan — firms, firm_members, change_log before Auth delete |
+| `8569c7c` | Docs | deleteUser WCPA hardening — master doc sync |
+| `6fb73e6` | UX-1 | Life events hub `/events` + in-app event picker modal |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
 - C-4 manual walkthrough signed off (signup → paid → receipt → self-serve cancel)
 - Go-live sequence executed per LAUNCH_CHECKLIST
 - `/signup` open after env flip; Core §1–3 smoke passes with fresh email
+
+---
+
+### Sprint UX-1 — Life events hub + in-app browser ✅ CLOSED 2026-05-25
+
+**Goal:** Public catalog of all 24 life events + searchable in-app picker on dashboard.
+
+- `[x]` `app/(public)/events/page.tsx` — hub grouped by category (Business & Wealth, Family, Health & Retirement)
+- `[x]` Public nav **Life Events** link; homepage “See all life events →”
+- `[x]` `LifeEventBanner` — modal picker with search, relevance ordering, logged-events list
+- `[x]` Select event → log `life_events` → `/event/[slug]/assess`
+- `[x]` `lib/events/catalog.ts` — shared grouping, filter, `sortEventsByRelevance`
+- `[x]` Sitemap `/events` at priority 0.7; [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) updated
+
+**Commit:** `6fb73e6`
 
 ---
 

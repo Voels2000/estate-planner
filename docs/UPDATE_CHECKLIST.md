@@ -126,6 +126,13 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Auth table clean — 9 accounts; all `@rolobe.resend.app` retired
 - [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md), [NEXT_SESSION.md](./NEXT_SESSION.md), [ROADMAP.md](./ROADMAP.md)
 
+## Sprint UX-1 — Life events hub ✅ closed 2026-05-25
+
+- [x] Public `/events` hub — all 24 slugs by category — `6fb73e6`
+- [x] In-app `LifeEventBanner` picker — search, relevance, logged-events list
+- [x] Public nav + homepage links; sitemap `/events`
+- [x] [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md), [NEXT_SESSION.md](./NEXT_SESSION.md), [ROADMAP.md](./ROADMAP.md)
+
 ## Sprint C-7 focus — closed ✅ 2026-05-25 (prod)
 
 - [x] `privacy_requests` + compliance-reminders cron — `ddbf079`, `1ce9110`
