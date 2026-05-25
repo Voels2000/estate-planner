@@ -185,7 +185,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                 </div>
                 {/* Edit/Delete - top right */}
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => openEdit(p)} className="text-xs text-indigo-600 hover:underline font-medium">Edit</button>
+                  <button onClick={() => openEdit(p)} className="text-xs text-[color:var(--mwm-navy)] hover:underline font-medium">Edit</button>
                   <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id}
                     className="text-xs text-red-500 hover:underline font-medium disabled:opacity-50">
                     {deletingId === p.id ? '...' : 'Delete'}
@@ -214,7 +214,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Type <span className="text-red-500">*</span></label>
                 <select value={form.insurance_type ?? ''}
                   onChange={e => setForm(f => ({ ...f, insurance_type: e.target.value || null }))}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] bg-white">
                   <option value="">Select type...</option>
                   {pcInsuranceTypes.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -226,19 +226,19 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
                   <input type="text" value={form.policy_name ?? ''} onChange={e => setForm(f => ({ ...f, policy_name: e.target.value || null }))}
-                    placeholder="e.g. Home Policy" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. Home Policy" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Provider</label>
                   <input type="text" value={form.provider ?? ''} onChange={e => setForm(f => ({ ...f, provider: e.target.value || null }))}
-                    placeholder="e.g. State Farm" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. State Farm" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Number</label>
                 <input type="text" value={form.policy_number ?? ''} onChange={e => setForm(f => ({ ...f, policy_number: e.target.value || null }))}
-                  placeholder="Optional" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  placeholder="Optional" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -247,7 +247,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.coverage_amount ?? ''} onChange={e => setForm(f => ({ ...f, coverage_amount: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
                 <div>
@@ -255,7 +255,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.deductible ?? ''} onChange={e => setForm(f => ({ ...f, deductible: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.annual_premium ?? ''} onChange={e => setForm(f => ({ ...f, annual_premium: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
                 <div>
@@ -274,7 +274,7 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.monthly_premium ?? ''} onChange={e => setForm(f => ({ ...f, monthly_premium: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
               </div>
@@ -282,14 +282,14 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Renewal / Expiration Date</label>
                 <input type="date" value={form.expiration_date ?? ''} onChange={e => setForm(f => ({ ...f, expiration_date: e.target.value || null }))}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
                 <textarea value={form.notes ?? ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value || null }))}
                   rows={2} placeholder="Any additional details..."
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
             </div>
 

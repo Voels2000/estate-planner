@@ -246,7 +246,7 @@ export function IncomeClient({
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => openEdit(row)} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                                  <button onClick={() => openEdit(row)} className="text-sm text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]">Edit</button>
                                   <button onClick={() => setConfirmDeleteId(row.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
                                 </span>
                               )}

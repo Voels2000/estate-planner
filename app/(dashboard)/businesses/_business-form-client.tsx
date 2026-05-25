@@ -178,12 +178,12 @@ export default function BusinessFormClient({
                 </div>
                 <div className="flex gap-4 mt-3 flex-wrap">
                   {b.has_buy_sell_agreement ? (
-                    <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ Buy-sell agreement</span>
+                    <span className="text-xs text-[color:var(--mwm-sage)] bg-[var(--mwm-sage-pale)] px-2 py-0.5 rounded-full">✓ Buy-sell agreement</span>
                   ) : (
                     <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">⚠ No buy-sell agreement</span>
                   )}
                   {b.has_key_person_insurance && (
-                    <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ Key person insurance</span>
+                    <span className="text-xs text-[color:var(--mwm-sage)] bg-[var(--mwm-sage-pale)] px-2 py-0.5 rounded-full">✓ Key person insurance</span>
                   )}
                   {b.estate_inclusion_status && b.estate_inclusion_status !== 'included' ? (
                     <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✓ Outside taxable estate</span>
@@ -198,7 +198,7 @@ export default function BusinessFormClient({
                     setEditing(b)
                     setShowForm(true)
                   }}
-                  className="text-xs text-indigo-600 hover:underline font-medium"
+                  className="text-xs text-[color:var(--mwm-navy)] hover:underline font-medium"
                 >
                   Edit
                 </button>
@@ -226,7 +226,7 @@ export default function BusinessFormClient({
                 required
                 defaultValue={editing?.name ?? ''}
                 placeholder="e.g. Acme Holdings LLC"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
               />
             </div>
 
@@ -245,7 +245,7 @@ export default function BusinessFormClient({
                   name="industry"
                   defaultValue={editing?.industry ?? ''}
                   placeholder="e.g. Technology, Real Estate, Healthcare"
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
                 />
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function BusinessFormClient({
                   defaultValue={editing?.state_of_formation ?? ''}
                   placeholder="e.g. WA, DE, NY"
                   maxLength={2}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
                 />
               </div>
               <PctInput
@@ -305,7 +305,7 @@ export default function BusinessFormClient({
                     min="0"
                     step="0.1"
                     placeholder="e.g. 5.0"
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
                   />
                 </div>
               </div>
@@ -367,7 +367,7 @@ export default function BusinessFormClient({
                 <select
                   name="estate_inclusion_status"
                   defaultValue={editing?.estate_inclusion_status ?? 'included'}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] bg-white"
                 >
                   <option value="included">Included in taxable estate</option>
                   <option value="excluded_irrevocable">Irrevocable transfer — legally complete</option>
@@ -384,7 +384,7 @@ export default function BusinessFormClient({
                 defaultValue={editing?.notes ?? ''}
                 rows={3}
                 placeholder="Any additional context about this business interest..."
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
               />
             </div>
 

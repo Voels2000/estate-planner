@@ -208,7 +208,7 @@ export default function InsuranceFormClient({
                     </h3>
                     <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
                     {p.is_ilit && (
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✓ ILIT</span>
+                      <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] px-2 py-0.5 rounded-full">✓ ILIT</span>
                     )}
                     {!p.is_ilit && (p.insurance_type?.includes('life') || p.insurance_type === 'survivorship_life') && (
                       <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⚠ Not in ILIT</span>
@@ -248,7 +248,7 @@ export default function InsuranceFormClient({
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => openEdit(p)}
-                    className="text-xs text-indigo-600 hover:underline font-medium"
+                    className="text-xs text-[color:var(--mwm-navy)] hover:underline font-medium"
                   >
                     Edit
                   </button>
@@ -284,7 +284,7 @@ export default function InsuranceFormClient({
                 <select
                   value={form.insurance_type ?? ''}
                   onChange={e => setForm(f => ({ ...f, insurance_type: e.target.value || null }))}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] bg-white"
                 >
                   <option value="">Select type...</option>
                   {insuranceTypes.map(t => (
@@ -298,14 +298,14 @@ export default function InsuranceFormClient({
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Name</label>
                     <input type="text" value={form.policy_name ?? ''} onChange={e => setForm(f => ({ ...f, policy_name: e.target.value || null }))}
-                      placeholder="e.g. 20-Year Term" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="e.g. 20-Year Term" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Owner</label>
                     <select
                       value={form.owner ?? ''}
                       onChange={e => setForm(f => ({ ...f, owner: e.target.value || null }))}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] bg-white"
                     >
                       <option value="">Select owner...</option>
                       <option value="person1">{person1Name}</option>
@@ -323,21 +323,21 @@ export default function InsuranceFormClient({
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Provider</label>
                   <input type="text" value={form.provider ?? ''} onChange={e => setForm(f => ({ ...f, provider: e.target.value || null }))}
-                    placeholder="e.g. Northwestern Mutual" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. Northwestern Mutual" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Policy Number</label>
                 <input type="text" value={form.policy_number ?? ''} onChange={e => setForm(f => ({ ...f, policy_number: e.target.value || null }))}
-                  placeholder="Optional" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  placeholder="Optional" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
 
               {showTermYears && (
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Term Length (years)</label>
                   <input type="number" value={form.term_years ?? ''} onChange={e => setForm(f => ({ ...f, term_years: e.target.value ? Number(e.target.value) : null }))}
-                    placeholder="e.g. 20" min="1" max="40" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    placeholder="e.g. 20" min="1" max="40" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                 </div>
               )}
 
@@ -347,7 +347,7 @@ export default function InsuranceFormClient({
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.death_benefit ?? ''} onChange={e => setForm(f => ({ ...f, death_benefit: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                   <p className="text-xs text-neutral-400 mt-1">Total amount paid to beneficiaries upon death.</p>
                 </div>
@@ -359,7 +359,7 @@ export default function InsuranceFormClient({
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.cash_value ?? ''} onChange={e => setForm(f => ({ ...f, cash_value: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
               )}
@@ -370,7 +370,7 @@ export default function InsuranceFormClient({
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.coverage_amount ?? ''} onChange={e => setForm(f => ({ ...f, coverage_amount: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
               )}
@@ -381,7 +381,7 @@ export default function InsuranceFormClient({
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.annual_premium ?? ''} onChange={e => setForm(f => ({ ...f, annual_premium: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
                 <div>
@@ -389,7 +389,7 @@ export default function InsuranceFormClient({
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
                     <input type="number" value={form.monthly_premium ?? ''} onChange={e => setForm(f => ({ ...f, monthly_premium: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
                   </div>
                 </div>
               </div>
@@ -397,21 +397,21 @@ export default function InsuranceFormClient({
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Expiration / Maturity Date</label>
                 <input type="date" value={form.expiration_date ?? ''} onChange={e => setForm(f => ({ ...f, expiration_date: e.target.value || null }))}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
 
               <div className="border-t border-neutral-100 pt-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <input type="checkbox" id="is_employer_provided" checked={form.is_employer_provided ?? false}
                     onChange={e => setForm(f => ({ ...f, is_employer_provided: e.target.checked }))}
-                    className="h-4 w-4 rounded border-neutral-300 text-indigo-600" />
+                    className="h-4 w-4 rounded border-neutral-300 text-[color:var(--mwm-navy)]" />
                   <label htmlFor="is_employer_provided" className="text-sm text-neutral-700 cursor-pointer">Employer-provided policy</label>
                 </div>
                 {showIlit && (
                   <div className="flex items-start gap-3">
                     <input type="checkbox" id="is_ilit" checked={form.is_ilit ?? false}
                       onChange={e => setForm(f => ({ ...f, is_ilit: e.target.checked }))}
-                      className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-indigo-600" />
+                      className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[color:var(--mwm-navy)]" />
                     <div>
                       <label htmlFor="is_ilit" className="text-sm font-medium text-neutral-700 cursor-pointer">Held in an ILIT</label>
                       <p className="text-xs text-neutral-400 mt-0.5">If held in an Irrevocable Life Insurance Trust, the death benefit is excluded from your taxable estate.</p>
@@ -447,7 +447,7 @@ export default function InsuranceFormClient({
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
                 <textarea value={form.notes ?? ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value || null }))}
                   rows={2} placeholder="Any additional details..."
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
               </div>
             </div>
 

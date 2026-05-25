@@ -407,7 +407,7 @@ export default function RealEstateClient({
                           setEditRow(row)
                           setShowModal(true)
                         }}
-                        className="text-xs text-indigo-600 hover:underline font-medium"
+                        className="text-xs text-[color:var(--mwm-navy)] hover:underline font-medium"
                       >
                         Edit
                       </button>

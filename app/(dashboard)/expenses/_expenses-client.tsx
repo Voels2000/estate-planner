@@ -258,7 +258,7 @@ export default function ExpensesClient({
                                   <button
                                     type="button"
                                     onClick={() => { setEditExpense(expense); setShowModal(true) }}
-                                    className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                                    className="text-sm text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
                                   >
                                     Edit
                                   </button>

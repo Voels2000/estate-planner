@@ -213,7 +213,7 @@ export function LiabilitiesClient({
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => { setEditLiability(liability); setShowModal(true) }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800">Edit</button>
+                                  <button onClick={() => { setEditLiability(liability); setShowModal(true) }} className="text-sm text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]">Edit</button>
                                   <button onClick={() => setConfirmDeleteId(liability.id)} className="text-sm text-red-500 font-medium hover:text-red-700">Delete</button>
                                 </span>
                               )}
