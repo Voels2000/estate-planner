@@ -31,6 +31,22 @@ const DEFAULT_CLOSED_GROUPS = new Set([
   'Estate Planning',
 ])
 
+/** My Wealth Maps sidebar nav tokens (see CURSOR_PROMPT_TEMPLATE.md) */
+const NAV_LINK_BASE =
+  'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors duration-150'
+const NAV_ACTIVE =
+  'bg-[var(--mwm-navy)] text-white border-l-[3px] border-l-[var(--mwm-gold)] pl-[calc(0.75rem-3px)] pr-3'
+const NAV_INACTIVE =
+  'px-3 text-[var(--mwm-text-secondary)] hover:bg-[var(--mwm-off-white)] hover:text-[var(--mwm-navy)]'
+
+function navLinkClass(active: boolean, extra = '') {
+  return `${NAV_LINK_BASE} ${active ? NAV_ACTIVE : NAV_INACTIVE} ${extra}`.trim()
+}
+const SECTION_HEADER =
+  'text-xs font-semibold tracking-widest text-[var(--mwm-text-muted)] uppercase'
+const YOUR_PLAN_BADGE =
+  'text-[10px] font-semibold tracking-wider uppercase bg-[var(--mwm-gold)] text-[var(--mwm-navy)] px-2 py-0.5 rounded-full'
+
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
@@ -170,29 +186,25 @@ export function SidebarNav({
   }
 
   return (
-    <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white lg:my-2 lg:ml-2 lg:w-64">
+    <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--mwm-border)] bg-white lg:my-2 lg:ml-2 lg:w-64">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-neutral-200">
+      <div className="px-6 py-5 border-b border-[var(--mwm-border)]">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <div style={{
-                width: 28, height: 28,
-                background: '#c9a84c',
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 600, fontSize: 13,
-                color: '#0f1f3d',
-                flexShrink: 0,
-              }}>M</div>
-              <h1 className="text-base font-bold text-neutral-900">
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--mwm-gold)] font-[family-name:var(--font-display)] text-base font-semibold text-[var(--mwm-navy)]"
+                aria-hidden
+              >
+                M
+              </div>
+              <span className="font-[family-name:var(--font-display)] text-sm font-medium leading-tight text-[var(--mwm-navy)]">
                 My Wealth Maps
-              </h1>
+              </span>
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5 truncate">{user.email}</p>
+            <p className="text-xs text-[var(--mwm-text-muted)] mt-0.5 truncate">{user.email}</p>
             {!isAdvisor && (
-              <span className="mt-1.5 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+              <span className="mt-1.5 inline-block rounded-full bg-[var(--mwm-off-white)] px-2 py-0.5 text-xs font-medium text-[var(--mwm-text-secondary)]">
                 {TIER_NAMES[tier as 1 | 2 | 3] ?? 'Starter'} Plan
               </span>
             )}
@@ -205,7 +217,6 @@ export function SidebarNav({
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
           const isOpen = resolvedOpenGroups[group.label] ?? false
-          const hasActive = group.items.some(item => item.href === activePath)
           const groupIsLocked =
             !isSuperuser &&
             group.locked === true &&
@@ -219,32 +230,22 @@ export function SidebarNav({
                 type="button"
                 disabled={groupIsLocked}
                 onClick={() => toggleGroup(group.label)}
-                className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                  hasActive
-                    ? 'bg-indigo-50 text-indigo-900'
-                    : 'text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600'
-                } ${groupIsLocked ? 'cursor-not-allowed' : ''} disabled:cursor-not-allowed disabled:opacity-100`}
+                className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--mwm-off-white)] ${
+                  groupIsLocked ? 'cursor-not-allowed' : ''
+                } disabled:cursor-not-allowed disabled:opacity-100`}
               >
-                <span className="flex-1 text-left text-neutral-900">{group.label}</span>
+                <span className={`flex-1 text-left ${SECTION_HEADER}`}>{group.label}</span>
                 {!groupIsLocked && group.label !== 'Overview' && (
                   ((group.label === 'Financial Planning' && tier === 1) ||
                    (group.label === 'Retirement Planning' && tier === 2) ||
                    (group.label === 'Estate Planning' && tier >= 3)) && (
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full mr-1 ${
-                      group.label === 'Financial Planning'
-                        ? 'bg-blue-100 text-blue-700'
-                        : group.label === 'Retirement Planning'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      Your plan
-                    </span>
+                    <span className={`mr-1 ${YOUR_PLAN_BADGE}`}>Your plan</span>
                   )
                 )}
                 {groupIsLocked && (
                   <span className="text-amber-400 text-sm mr-1">🔒</span>
                 )}
-                <span className="text-neutral-400">{isOpen ? '▾' : '▸'}</span>
+                <span className="text-[var(--mwm-text-muted)]">{isOpen ? '▾' : '▸'}</span>
               </button>
 
               {isOpen && (
@@ -336,13 +337,12 @@ export function SidebarNav({
                     const isActive = activePath === item.href && !attorneyTierGate
                     const locked = isLocked(item.feature)
                     const greyedLeaf = locked || attorneyTierGate
-                    const leafClasses = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : locked || attorneyTierGate
-                          ? 'text-neutral-400 hover:bg-neutral-50'
-                          : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                    }`
+                    const leafClasses = navLinkClass(
+                      isActive,
+                      locked || attorneyTierGate
+                        ? 'px-3 text-[var(--mwm-text-muted)] cursor-not-allowed'
+                        : '',
+                    )
                     return (
                       <div key={item.href}>
                         {greyedLeaf ? (
@@ -393,11 +393,9 @@ export function SidebarNav({
           ) : (
             <Link
               href="/advisor"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/advisor' || activePath.startsWith('/advisor/')
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
+              className={navLinkClass(
+                activePath === '/advisor' || activePath.startsWith('/advisor/'),
+              )}
             >
               💼 Advisor Portal
             </Link>
@@ -420,11 +418,9 @@ export function SidebarNav({
           ) : (
             <Link
               href="/attorney"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/attorney' || activePath.startsWith('/attorney/')
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
+              className={navLinkClass(
+                activePath === '/attorney' || activePath.startsWith('/attorney/'),
+              )}
             >
               ⚖️ Attorney Portal
             </Link>
@@ -445,14 +441,7 @@ export function SidebarNav({
               </span>
             </Link>
           ) : (
-            <Link
-              href="/admin"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/admin'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
-            >
+            <Link href="/admin" className={navLinkClass(activePath === '/admin')}>
               ⚙️ Admin Portal
             </Link>
           ))}
@@ -477,8 +466,8 @@ export function SidebarNav({
               href="/admin/advisor-directory"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activePath === '/admin/advisor-directory'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                  ? NAV_ACTIVE
+                  : NAV_INACTIVE
               }`}
             >
               📋 Advisor Directory
@@ -528,14 +517,7 @@ export function SidebarNav({
             </span>
           </Link>
         ) : (
-          <Link
-            href="/print"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/print'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-          >
+          <Link href="/print" className={navLinkClass(activePath === '/print')}>
             📄 Export Estate Plan
           </Link>
         )}
@@ -567,14 +549,7 @@ export function SidebarNav({
               </span>
             </div>
           ) : (
-            <Link
-              href="/import"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/import'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
-            >
+            <Link href="/import" className={navLinkClass(activePath === '/import')}>
               📥 Import Data
             </Link>
           ))}
@@ -607,11 +582,7 @@ export function SidebarNav({
         ) : (
           <Link
             href="/settings/security"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activePath === '/settings/security'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
+            className={navLinkClass(activePath === '/settings/security')}
           >
             🔐 Security
           </Link>
@@ -619,16 +590,14 @@ export function SidebarNav({
 
       </nav>
 
-      <div className="border-t border-neutral-200">
+      <div className="border-t border-[var(--mwm-border)]">
         <div className="px-3 pt-3 pb-1 space-y-0.5">
           {(role === 'consumer' || isSuperuser) && (
             <Link
               href="/education"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/education' || activePath.startsWith('/education/')
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
+              className={navLinkClass(
+                activePath === '/education' || activePath.startsWith('/education/'),
+              )}
             >
               📖 Education Guide
             </Link>
@@ -648,14 +617,7 @@ export function SidebarNav({
                 </span>
               </Link>
             ) : (
-              <Link
-                href="/my-advisor"
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  activePath === '/my-advisor'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                }`}
-              >
+              <Link href="/my-advisor" className={navLinkClass(activePath === '/my-advisor')}>
                 👤 My Advisor
               </Link>
             ))}
@@ -673,14 +635,7 @@ export function SidebarNav({
                 <span className="shrink-0 text-sm" aria-hidden>🔒</span>
               </Link>
             ) : (
-              <Link
-                href="/my-attorney"
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  activePath === '/my-attorney'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                }`}
-              >
+              <Link href="/my-attorney" className={navLinkClass(activePath === '/my-attorney')}>
                 ⚖️ My Attorney
               </Link>
             ))}
@@ -698,14 +653,7 @@ export function SidebarNav({
               </span>
             </Link>
           ) : (
-            <Link
-              href="/billing"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activePath === '/billing'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
-            >
+            <Link href="/billing" className={navLinkClass(activePath === '/billing')}>
               💳 Manage Subscription
             </Link>
           )}
@@ -716,10 +664,10 @@ export function SidebarNav({
           review summaries here on your phone.
         </p>
 
-        <div className="px-3 pb-4 pt-1 border-t border-neutral-100">
+        <div className="px-3 pb-4 pt-1 border-t border-[var(--mwm-border)]">
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+            className={navLinkClass(false)}
           >
             🚪 Sign out
           </button>
