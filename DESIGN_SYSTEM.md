@@ -1,9 +1,12 @@
-# PlanWise Guide — Design System Specification
+# My Wealth Maps — Design System Specification
 ## For Use with Cursor AI to Match the Reference UI
 
 This document is the single source of truth for all visual and UI decisions
-in the PlanWise Guide platform. Every component, color, spacing rule, and
+in the My Wealth Maps platform. Every component, color, spacing rule, and
 typography choice must follow this specification exactly.
+
+**Canonical tokens:** use `--mwm-*` CSS variables (defined in `app/globals.css`).
+Short aliases (`--navy`, `--gold`, etc.) delegate to `--mwm-*` and remain valid in legacy examples.
 
 ---
 
@@ -40,6 +43,9 @@ typography choice must follow this specification exactly.
 ## 2. COLOR SYSTEM
 
 ### CSS Custom Properties (declare in `:root`)
+
+In the Next.js app, brand colors are declared as `--mwm-navy`, `--mwm-gold`, etc. in `app/globals.css`, with short aliases (`--navy` = `var(--mwm-navy)`) for backward compatibility.
+
 ```css
 :root {
   /* Brand Colors */
@@ -138,7 +144,7 @@ Life stage grid remains `repeat(2, 1fr)` at mobile.
 
 ### Structure
 ```
-[Logo circle "P"] [PlanWise Guide title] [nav-subtitle]    [tab] [tab] [tab] ...
+[Logo] [My Wealth Maps title] [nav-subtitle]    [tab] [tab] [tab] ...
 ```
 
 ### Nav Styles
@@ -624,21 +630,30 @@ Text: `⚠️ **Educational purposes only.** Nothing on this platform constitute
 
 ## 22. CURSOR PROMPT TEMPLATE
 
-When asking Cursor to build or fix a component, use this template:
+**Do not duplicate prompts here.** Use [`CURSOR_PROMPT_TEMPLATE.md`](./CURSOR_PROMPT_TEMPLATE.md) as the canonical Cursor prompt pack for My Wealth Maps.
 
-```
-Build a [component name] following the PlanWise Guide design system (DESIGN_SYSTEM.md).
+That file includes:
 
-Rules:
-- Font: Playfair Display for headings, DM Sans for body/UI
-- Colors: use only CSS custom properties from :root (--navy, --gold, --sage, etc.)
-- Cards: white bg, 1px solid var(--border), border-radius: var(--radius), box-shadow: var(--shadow)
-- Hover: border-color: var(--gold) + shadow-lg + translateY(-2px)
-- Active states: background: var(--navy); color: white
-- Complexity badges: .c-foundation (green), .c-intermediate (amber), .c-advanced (red)
-- All callout boxes have a 4px left border and matching pale background
-- Dark sections use linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%)
-- No inline styles, no hardcoded hex values
+- **Standard component prompt** — typography (`var(--font-display)` / `var(--font-body)`), colors via `--mwm-*` only (no indigo, no hardcoded hex on brand surfaces)
+- **Dashboard shell prompt** — sidebar, top bar, tier badges
+- **Token quick-reference** — full `--mwm-*` list
+- **Phase 3 find-and-replace** — `bg-indigo-*` → `bg-[var(--mwm-navy)]`, etc.
 
-The component should match this spec: [describe your component here]
-```
+### Shared primitives (implement before sweeping)
+
+| Primitive | Path |
+|-----------|------|
+| Button | `@/components/ui/Button` — variants: `primary`, `gold`, `outline`, `ghost`, `sage`, `danger`, `link` |
+| Card | `@/components/ui/Card` |
+| SectionHeader | `@/components/ui/SectionHeader` |
+| Form classes | `@/lib/ui/form` or `@/components/ui/form` — `formControlClass`, `formLabelClass`, `formErrorClass` |
+
+### Quick usage
+
+Drop the **Standard component prompt** from `CURSOR_PROMPT_TEMPLATE.md` into any Cursor session and fill in `[COMPONENT NAME]` and `[DESCRIBE YOUR COMPONENT]`.
+
+For authenticated dashboard chrome, use the **Dashboard shell / chrome prompt** in the same file.
+
+### Token reminder (canonical)
+
+Prefer `var(--mwm-navy)`, `var(--mwm-gold)`, `var(--mwm-sage)`, `var(--mwm-off-white)`, `var(--mwm-border)`, `var(--mwm-shadow)`, `var(--mwm-radius)` in new Tailwind classes (e.g. `bg-[var(--mwm-navy)]`), not `bg-indigo-600` or hardcoded hex.

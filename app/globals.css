@@ -3,6 +3,7 @@
 
 @layer base {
   :root {
+    /* ─── shadcn/ui semantic tokens (keep for compatibility) ─── */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -23,25 +24,59 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --mwm-navy: #0f1f3d;
-    --mwm-navy-light: #1a3460;
-    --mwm-navy-mid: #2a4a7f;
-    --mwm-gold: #c9a84c;
-    --mwm-gold-light: #e8c97a;
-    --mwm-gold-pale: #fdf6e3;
-    --mwm-sage: #4a7c6f;
-    --mwm-sage-light: #6aab9a;
-    --mwm-sage-pale: #eef6f4;
-    --mwm-off-white: #fafaf8;
+
+    /* ─── My Wealth Maps brand tokens ─── */
+    --mwm-navy:           #0f1f3d;
+    --mwm-navy-light:     #1a3460;
+    --mwm-navy-mid:       #2a4a7f;
+    --mwm-gold:           #c9a84c;
+    --mwm-gold-light:     #e8c97a;
+    --mwm-gold-pale:      #fdf6e3;
+    --mwm-sage:           #4a7c6f;
+    --mwm-sage-light:     #6aab9a;
+    --mwm-sage-pale:      #eef6f4;
+    --mwm-off-white:      #fafaf8;
+    --mwm-text-primary:   #1a202c;
     --mwm-text-secondary: #4a5568;
-    --mwm-text-muted: #718096;
-    --mwm-border: #e2e8f0;
-    --mwm-shadow: 0 4px 20px rgba(15,31,61,0.08);
-    --mwm-shadow-lg: 0 8px 40px rgba(15,31,61,0.14);
-    --font-display: var(--font-playfair), Georgia, serif;
-    --font-body: var(--font-dm-sans), system-ui, sans-serif;
+    --mwm-text-muted:     #718096;
+    --mwm-border:         #e2e8f0;
+    --mwm-border-dark:    #cbd5e0;
+    --mwm-danger:         #c53030;
+    --mwm-danger-pale:    #fff5f5;
+    --mwm-shadow:         0 4px 20px rgba(15, 31, 61, 0.08);
+    --mwm-shadow-lg:      0 8px 40px rgba(15, 31, 61, 0.14);
+    --mwm-radius:         12px;
+    --mwm-radius-sm:      8px;
+    --mwm-radius-lg:      20px;
+
+    /* ─── Font stacks ─── */
+    --font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+    --font-body:    var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+
+    /*
+     * ─── Tailwind / inline-style aliases ───────────────────────────────────
+     * These short names match the DESIGN_SYSTEM.md spec so Cursor prompts
+     * and new components can reference --navy, --gold, --sage, etc. directly.
+     * They delegate to the --mwm-* tokens — one source of truth.
+     */
+    --navy:           var(--mwm-navy);
+    --navy-light:     var(--mwm-navy-light);
+    --navy-mid:       var(--mwm-navy-mid);
+    --gold:           var(--mwm-gold);
+    --gold-light:     var(--mwm-gold-light);
+    --gold-pale:      var(--mwm-gold-pale);
+    --sage:           var(--mwm-sage);
+    --sage-light:     var(--mwm-sage-light);
+    --sage-pale:      var(--mwm-sage-pale);
+    --off-white:      var(--mwm-off-white);
+    --text-primary:   var(--mwm-text-primary);
+    --text-secondary: var(--mwm-text-secondary);
+    --text-muted:     var(--mwm-text-muted);
+    --shadow:         var(--mwm-shadow);
+    --shadow-lg:      var(--mwm-shadow-lg);
   }
 
+  /* Dark mode — scoped only to auth pages that opt in via class="dark" */
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -69,17 +104,36 @@
   * {
     border-color: hsl(var(--border));
   }
+
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--mwm-off-white);
+    color: var(--mwm-text-primary);
+    font-family: var(--font-body);
   }
 }
 
+/* ─── Typography utilities ───────────────────────────────────────────────── */
 @layer utilities {
   .mwm-display {
     font-family: var(--font-display);
   }
   .mwm-body {
     font-family: var(--font-body);
+  }
+
+  /* Page and section titles — Playfair Display, navy */
+  .mwm-title {
+    font-family: var(--font-display);
+    color: var(--mwm-navy);
+  }
+
+  /* Hover card effect — apply to any card that should lift on hover */
+  .mwm-card-hover {
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+  .mwm-card-hover:hover {
+    border-color: var(--mwm-gold) !important;
+    box-shadow: var(--mwm-shadow-lg);
+    transform: translateY(-2px);
   }
 }
