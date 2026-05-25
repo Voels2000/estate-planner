@@ -1,14 +1,16 @@
 /**
  * Canonical E2E / Playwright test identities (go-live v2).
  *
- * All automation and seed scripts should import from here — not hardcode
- * david@rolobe / advisor2@ in new work. Legacy accounts can be retired via
- * scripts/cleanup-test-accounts.ts after migrating .env.test.
+ * All automation and seed scripts should import from here — not hardcode legacy
+ * @rolobe.resend.app addresses. Retire rolobe via `npm run cleanup:rolobe`.
  *
  * Domain: @mywealthmaps.test — does not receive real mail; safe for staging/prod smoke.
  */
 
 export const E2E_TEST_PASSWORD = 'E2eTest!2026Mwm'
+
+/** Drip smoke — capture via /assess or homepage; verify with verify-drip-sequence.ts */
+export const DRIP_SMOKE_EMAIL = 'e2e-drip@mywealthmaps.test'
 
 export const E2E_IDENTITIES = {
   consumer: {
@@ -58,14 +60,26 @@ export const E2E_REFERRAL_CODES = {
   attorney: 'e2eatt01',
 } as const
 
-/** Legacy accounts — safe to delete after migrating .env.test (see cleanup-test-accounts). */
-export const LEGACY_E2E_EMAILS = [
-  'david@rolobe.resend.app',
-  'advisor2@rolobe.resend.app',
-  'advisor@rolobe.resend.app',
-  'consumer1@rolobe.resend.app',
+/** All @rolobe.resend.app accounts — delete only via cleanup-test-accounts.ts --rolobe */
+export const ROLOBE_ACCOUNTS = [
+  'consumer3@rolobe.resend.app',
+  'consumer5@rolobe.resend.app',
+  'consumer11@rolobe.resend.app',
+  'consumer15@rolobe.resend.app',
+  'consumer17@rolobe.resend.app',
+  'consumer18@rolobe.resend.app',
+  'consumer19@rolobe.resend.app',
+  'consumer20@rolobe.resend.app',
   'consumer21@rolobe.resend.app',
+  'david@rolobe.resend.app',
+  'advisor@rolobe.resend.app',
+  'advisor2@rolobe.resend.app',
+  'consumer1@rolobe.resend.app',
   'test-attorney-portal@rolobe.resend.app',
+] as const
+
+/** Retired pre-v2 identities (non-rolobe) — safe to delete with --legacy */
+export const LEGACY_E2E_EMAILS = [
   'test-attorney@mywealthmaps.test',
   'test-advisor@mywealthmaps.test',
   'michael.johnson.demo@local.estate',

@@ -20,7 +20,9 @@
     "test:import:api": "dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1",
     "seed:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts",
     "seed:e2e:fast": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-johnson",
-    "prune:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts"
+    "prune:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts",
+    "verify:drip": "dotenv -e .env.local -- npx tsx scripts/verify-drip-sequence.ts",
+    "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -79,7 +79,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
-| **Drip step 2 check** | `[ ]` | `consumer21@rolobe.resend.app` when running drip smoke |
+| **Drip step 2 check** | `[ ]` | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 

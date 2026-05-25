@@ -20,6 +20,8 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run seed:e2e` | Seed all E2E users + print `.env.test` |
 | `npm run seed:e2e:fast` | Seed without Michael Johnson client |
 | `npm run prune:e2e` | Remove Playwright-named rows on consumer household |
+| `npm run verify:drip` | Check `email_captures` drip_step_1/2/3 schedule |
+| `npm run cleanup:rolobe` | Retire all `@rolobe.resend.app` auth accounts (prompts) |
 | `npm run test:e2e:consumer` | consumer-setup + consumer |
 | `npm run test:e2e:advisor` | advisor-setup + advisor |
 | `npm run test:e2e:attorney` | attorney-setup + attorney |
@@ -61,7 +63,7 @@ Prefer `npm run seed:e2e`. Old scripts remain for reference:
 
 | Date | Target | Command | Result |
 |------|--------|---------|--------|
-| 2026-05-25 | Staging | `test:e2e:consumer --workers=1` (legacy `david@rolobe`) | **127 passed**, 5 skipped |
+| 2026-05-25 | Staging | `test:e2e:consumer --workers=1` (pre-v2 identities) | **127 passed**, 5 skipped |
 | 2026-05-25 | Staging | `test:e2e:advisor --workers=1` | **45 passed** |
 | 2026-05-25 | Staging | `test:e2e:public` | **57 passed**, 2 skipped |
 | 2026-05-25 | Staging | `seed:e2e` + `e2e-consumer@` + `--workers=1` | **136 passed**, 1 skipped (gift recompute flaky under load; re-run green) |

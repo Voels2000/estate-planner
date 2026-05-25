@@ -9,16 +9,13 @@
  *   dotenv -e .env.test -- npx tsx scripts/seed-test-attorney.ts
  */
 
-// Test attorney portal account
-// Email: test-attorney-portal@rolobe.resend.app
-// Password: TestAttorney123!
-// profile_id is set on attorney_listings so the newsletter kit renders in /attorney
-
 import { createAdminClient } from '../lib/supabase/admin'
+import { E2E_IDENTITIES, E2E_REFERRAL_CODES, E2E_TEST_PASSWORD } from './e2e-test-identities'
 
-const TEST_ATTORNEY_LISTING_EMAIL = 'test-attorney@mywealthmaps.test'
-const TEST_ATTORNEY_PORTAL_EMAIL = 'test-attorney-portal@rolobe.resend.app'
-const TEST_ATTORNEY_PORTAL_PASSWORD = 'TestAttorney123!'
+/** @deprecated Prefer `npm run seed:e2e` — uses canonical e2e-attorney@mywealthmaps.test */
+const TEST_ATTORNEY_LISTING_EMAIL = E2E_IDENTITIES.attorneyListing.email
+const TEST_ATTORNEY_PORTAL_EMAIL = E2E_IDENTITIES.attorneyPortal.email
+const TEST_ATTORNEY_PORTAL_PASSWORD = E2E_TEST_PASSWORD
 const KNOWN_REFERRAL_CODE = '6fd027d3'
 
 type ListingRow = {

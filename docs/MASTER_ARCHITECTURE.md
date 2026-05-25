@@ -423,7 +423,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Required env (`.env.test`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
 
-**Advisor client seed:** included in `npm run seed:e2e` (Michael Johnson → `e2e-client.johnson@mywealthmaps.test`). Legacy: `SEED_ADVISOR_EMAIL=advisor2@rolobe.resend.app` only if not migrated.
+**Advisor client seed:** included in `npm run seed:e2e` (Michael Johnson → `e2e-client.johnson@mywealthmaps.test`).
 
 **Manual release smoke** ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)) still required for production sign-off — dollar math, Stripe C-4, drip inbox, full signup attribution to Supabase.
 
@@ -928,7 +928,7 @@ Two concepts must stay separate until product designs unified intake:
 2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
-5. **Drip step 2 production verify** — `consumer21@rolobe.resend.app`.
+5. **Drip step 2 production verify** — `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+).
 6. **Estate composition read model (post-launch)** — materialize `calculate_estate_composition` at recompute; recommendations done in P-2; highest remaining ceiling per Query A / [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
 
 ### High priority — confirmed post-launch

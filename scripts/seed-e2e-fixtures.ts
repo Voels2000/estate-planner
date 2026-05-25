@@ -155,8 +155,8 @@ async function main() {
   console.log('  npx tsx scripts/prune-e2e-household-artifacts.ts   # optional: clear Playwright test rows')
   console.log('  npm run test:e2e:complete -- --workers=1')
   console.log('')
-  console.log('Legacy accounts (david@rolobe, advisor2@, etc.) can be removed after cutover:')
-  console.log('  Review scripts/cleanup-test-accounts.ts PROTECTED list first.')
+  console.log('Retire @rolobe accounts after green CI:')
+  console.log('  npm run cleanup:rolobe')
 
   if (writeExample) {
     const examplePath = join(process.cwd(), '.env.test.example')

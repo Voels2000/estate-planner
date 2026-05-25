@@ -1,10 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
+import * as readline from 'readline/promises'
+import { stdin as input, stdout as output } from 'process'
+import { deleteUserData } from '../lib/compliance/deleteUser'
+import {
+  E2E_IDENTITIES,
+  LEGACY_E2E_EMAILS,
+  ROLOBE_ACCOUNTS,
+} from './e2e-test-identities'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+if (!supabaseUrl || !serviceKey) {
+  console.error('Need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+
+/** Pre-go-live clutter — early rolobe captures without full accounts */
 const DELETE_EMAILS = [
   'consumer3@rolobe.resend.app',
   'consumer5@rolobe.resend.app',
@@ -16,10 +30,8 @@ const DELETE_EMAILS = [
   'consumer20@rolobe.resend.app',
 ]
 
-import { E2E_IDENTITIES, LEGACY_E2E_EMAILS } from './e2e-test-identities'
-
-/** Never delete canonical E2E v2 accounts or drip smoke inbox. */
-const PROTECTED = [
+/** Canonical @mywealthmaps.test — never delete */
+const CANONICAL_PROTECTED = [
   E2E_IDENTITIES.consumer.email,
   E2E_IDENTITIES.consumerTier1.email,
   E2E_IDENTITIES.advisor.email,
@@ -27,89 +39,128 @@ const PROTECTED = [
   E2E_IDENTITIES.attorneyPortal.email,
   E2E_IDENTITIES.advisorListing.email,
   E2E_IDENTITIES.attorneyListing.email,
-  'consumer21@rolobe.resend.app',
-  // Legacy — remove from this list after migrating .env.test and deleting:
-  'david@rolobe.resend.app',
-  'advisor@rolobe.resend.app',
-  'advisor2@rolobe.resend.app',
-  'consumer1@rolobe.resend.app',
-  'test-attorney-portal@rolobe.resend.app',
+  'e2e-drip@mywealthmaps.test',
 ]
 
-/** Candidates for deletion when cleaning pre-go-live clutter. */
-const LEGACY_DELETE_CANDIDATES = [
-  ...LEGACY_E2E_EMAILS.filter(
-    (e) =>
-      !PROTECTED.includes(e) &&
-      e !== 'consumer21@rolobe.resend.app',
-  ),
-]
+/**
+ * @rolobe accounts protected from --legacy until explicitly removed via --rolobe.
+ * consumer21 was the drip inbox check — now replaced by verify-drip-sequence.ts.
+ */
+const ROLOBE_PROTECTED_FROM_LEGACY = [...ROLOBE_ACCOUNTS]
 
-async function deleteUserWithHouseholdData(userId: string, email: string): Promise<boolean> {
-  const { data: households, error: householdFindErr } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', userId)
+const PROTECTED = [...CANONICAL_PROTECTED, ...ROLOBE_PROTECTED_FROM_LEGACY]
 
-  if (householdFindErr) {
-    console.log(`households lookup ${email}: ${householdFindErr.message}`)
-    return false
+const LEGACY_DELETE_CANDIDATES = LEGACY_E2E_EMAILS.filter((e) => !PROTECTED.includes(e))
+
+async function confirm(message: string): Promise<boolean> {
+  const rl = readline.createInterface({ input, output })
+  const answer = await rl.question(`${message} [y/N] `)
+  rl.close()
+  return answer.trim().toLowerCase() === 'y'
+}
+
+async function findUserIdByEmail(email: string): Promise<string | null> {
+  const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle()
+  if (profile?.id) return profile.id
+
+  const { data: authData, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (error) {
+    console.error(`listUsers error: ${error.message}`)
+    return null
   }
+  return authData.users.find((u) => u.email?.toLowerCase() === email.toLowerCase())?.id ?? null
+}
 
-  const householdIds = (households ?? []).map((h) => h.id)
-  console.log(
-    `households lookup ${email}: found ${householdIds.length}${
-      householdIds.length ? ` (${householdIds.join(', ')})` : ''
-    }`
-  )
-
-  if (householdIds.length > 0) {
-    const { error: recErr, count: recCount } = await supabase
-      .from('estate_recommendations')
-      .delete({ count: 'exact' })
-      .in('household_id', householdIds)
-
-    if (recErr) {
-      console.log(`estate_recommendations ${email}: ${recErr.message}`)
-      return false
-    }
-    console.log(`estate_recommendations ${email}: deleted ${recCount ?? 0}`)
+async function deleteEmailCaptures(email: string): Promise<void> {
+  const { error, count } = await supabase
+    .from('email_captures')
+    .delete({ count: 'exact' })
+    .eq('email', email)
+  if (error) {
+    console.log(`email_captures ${email}: ${error.message}`)
   } else {
-    console.log(`estate_recommendations ${email}: skipped (no households)`)
+    console.log(`email_captures ${email}: deleted ${count ?? 0}`)
   }
+}
 
-  const { error: hhDelErr, count: hhDelCount } = await supabase
-    .from('households')
-    .delete({ count: 'exact' })
-    .eq('owner_id', userId)
-
-  if (hhDelErr) {
-    console.log(`households delete ${email}: ${hhDelErr.message}`)
+async function deleteAccountWithAudit(email: string): Promise<boolean> {
+  if (CANONICAL_PROTECTED.includes(email)) {
+    console.error(`SAFETY: refusing to delete canonical account ${email}`)
     return false
   }
-  console.log(`households delete ${email}: deleted ${hhDelCount ?? 0}`)
 
-  const { error: profileErr, count: profileCount } = await supabase
-    .from('profiles')
-    .delete({ count: 'exact' })
-    .eq('id', userId)
+  await deleteEmailCaptures(email)
 
-  if (profileErr) {
-    console.log(`profiles ${email}: ${profileErr.message}`)
+  const userId = await findUserIdByEmail(email)
+  if (!userId) {
+    console.log(`auth user ${email}: not found (captures only)`)
+    return true
+  }
+
+  const result = await deleteUserData({
+    userId,
+    email,
+    reason: 'admin_initiated',
+    initiatedBy: 'scripts/cleanup-test-accounts.ts',
+    supabaseUrl,
+    supabaseServiceKey: serviceKey,
+  })
+
+  if (!result.success) {
+    console.error(`deleteUserData ${email}: ${result.error ?? 'failed'}`)
     return false
   }
-  console.log(`profiles ${email}: deleted ${profileCount ?? 0}`)
 
-  const { error: delErr } = await supabase.auth.admin.deleteUser(userId)
-  if (delErr) {
-    console.log(`auth user ${email}: ${delErr.message}`)
-    return false
-  }
-  console.log(`auth user ${email}: deleted`)
+  console.log(
+    `deleted ${email}: auth=${result.authUserDeleted} tables=${result.tablesCleared.length}`,
+  )
   return true
 }
 
+async function runLegacyCleanup(emails: string[]) {
+  for (const email of emails) {
+    if (PROTECTED.includes(email)) {
+      console.error(`SAFETY: refusing to delete protected account ${email}`)
+      continue
+    }
+    await deleteAccountWithAudit(email)
+  }
+}
+
+async function runRoblobeCleanup() {
+  const emails = [...ROLOBE_ACCOUNTS]
+  console.log('\nThe following @rolobe.resend.app accounts will be permanently deleted:\n')
+  for (const email of emails) {
+    console.log(`  - ${email}`)
+  }
+  console.log('\nDeletions are logged to deletion_audit_log via deleteUserData.')
+  console.log('Canonical @mywealthmaps.test accounts are NOT affected.\n')
+
+  const ok = await confirm('Proceed with rolobe account deletion?')
+  if (!ok) {
+    console.log('Aborted.')
+    process.exit(0)
+  }
+
+  let deleted = 0
+  let failed = 0
+
+  for (const email of emails) {
+    const success = await deleteAccountWithAudit(email)
+    if (success) deleted++
+    else failed++
+  }
+
+  console.log(`\nSummary: ${deleted} processed, ${failed} failed`)
+  console.log('Remove ROLOBE_PROTECTED_FROM_LEGACY entries from this script after confirming deletion.')
+}
+
 async function main() {
+  if (process.argv.includes('--rolobe')) {
+    await runRoblobeCleanup()
+    return
+  }
+
   const emails = process.argv.includes('--legacy')
     ? [...new Set([...DELETE_EMAILS, ...LEGACY_DELETE_CANDIDATES])]
     : DELETE_EMAILS
@@ -118,36 +169,11 @@ async function main() {
     console.log('Including legacy E2E emails (--legacy). Protected list still enforced.\n')
   }
 
-  for (const email of emails) {
-    if (PROTECTED.includes(email)) {
-      console.error(`SAFETY: refusing to delete protected account ${email}`)
-      continue
-    }
-
-    // Delete from email_captures
-    const { error: capErr } = await supabase
-      .from('email_captures')
-      .delete()
-      .eq('email', email)
-    if (capErr) {
-      console.log(`email_captures ${email}: ${capErr.message}`)
-    } else {
-      console.log(`email_captures ${email}: deleted`)
-    }
-
-    // Find and delete auth user
-    const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers()
-    if (listErr) { console.error(`listUsers error: ${listErr.message}`); continue }
-
-    const user = users.find(u => u.email === email)
-    if (!user) {
-      console.log(`auth user ${email}: not found`)
-      continue
-    }
-
-    await deleteUserWithHouseholdData(user.id, email)
-  }
+  await runLegacyCleanup(emails)
   console.log('Done.')
 }
 
-main().catch(console.error)
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

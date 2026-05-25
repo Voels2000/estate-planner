@@ -165,7 +165,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | [ ] **C-4 manual walkthrough** | Signup → paid → receipt → self-serve cancel on production |
 | [ ] **Stripe production billing** | Required before opening signups |
 | [ ] **Go-live day** | Supabase Auth ON → verify `/auth/callback` → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email |
-| [ ] **Drip step 2 check** | `consumer21@rolobe.resend.app` |
+| [ ] **Drip step 2 check** | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
 | [x] **Sprint P-1 perf quick wins** | `5c24160` — see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
 | [x] **Sprint P-2 pre-launch refactors** | `47a38f3` — recommendations cache, projections cache-first, auth dedup |
 

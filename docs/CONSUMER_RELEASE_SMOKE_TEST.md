@@ -39,11 +39,17 @@ Tester: Manual
 
 ### Sprint 17 — production drip verify
 
-| Check | Due | Account |
-|-------|-----|---------|
-| Drip step 2 delivery | **2026-05-26** | `consumer21@rolobe.resend.app` |
+Use **`npm run verify:drip`** (DB check) instead of a Resend inbox.
 
-Confirm step 2 email from `hello@mywealthmaps.com` after day-3 cron. Step 3 follows per `lib/emails/drip-templates.ts` schedule.
+| Check | Command |
+|-------|---------|
+| Step 1 (immediate) | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
+| Step 2 (day 3+) | Same — script flags overdue if `drip_step_2_sent_at` missing |
+| All recent captures | `npm run verify:drip -- --all` |
+
+**Setup:** Capture `e2e-drip@mywealthmaps.test` via `/assess` or homepage email capture. Exit code **0** = on schedule; **1** = missing step 1 or overdue steps.
+
+Schedule reference: `lib/emails/drip-templates.ts` (day 3 step 2, day 7 step 3).
 
 ---
 
@@ -334,13 +340,35 @@ Requires test listings from `seed-test-advisor.ts` / `seed-test-attorney.ts` (se
 | D.2 | Create a new test account | Signup succeeds | ☐ |
 | D.3 | In Supabase: `select attorney_referral_code from profiles where id = {new_user_id};` | `attorney_referral_code` matches the attorney code from D.1 | ☐ |
 
-### E. Drip step 1 delivery
+### E. Drip sequence verification
+
+Instead of checking a Resend inbox manually, verify via DB:
+
+1. Capture a test email via `/assess` or homepage signup form  
+   Use: `e2e-drip@mywealthmaps.test` (or any test address)
+
+2. Check step 1 fired (immediate):
+
+```bash
+set -a && source .env.local && set +a
+npx tsx scripts/verify-drip-sequence.ts --email e2e-drip@mywealthmaps.test
+```
+
+3. Check step 2 fired (day 3+): same command — script shows `✅ sent` or `⚠️ overdue`
+
+4. Check all recent captures:
+
+```bash
+npm run verify:drip -- --all
+```
+
+Exit code **0** = on schedule. Exit code **1** = overdue steps found.
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
-| E.1 | Submit event assess on `/event/selling-a-business/assess` with a fresh email address | Email capture succeeds; no error | ☐ |
-| E.2 | Check inbox (or Resend dashboard) within 2 minutes | Drip step 1 email received from `hello@mywealthmaps.com` | ☐ |
-| E.3 | In Supabase: `select drip_step_1_sent_at from email_captures where email = '{test_email}';` | `drip_step_1_sent_at` is not null | ☐ |
+| E.1 | Submit event assess with a fresh email (e.g. `e2e-drip@mywealthmaps.test`) | Email capture succeeds; no error | ☐ |
+| E.2 | Run `verify:drip -- --email {test_email}` within 2 minutes of capture | Step 1 shows `✅ sent` | ☐ |
+| E.3 | After day 3, re-run same command | Step 2 shows `✅ sent` (not `⚠️ overdue`) | ☐ |
 
 ### F. Life-event context on advisor connect
 

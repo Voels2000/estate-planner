@@ -1,6 +1,8 @@
 # E2E test reset (go-live v2)
 
-One-time migration from legacy Playwright accounts (`david@rolobe`, `advisor2@rolobe`, etc.) to canonical **`@mywealthmaps.test`** identities that do not receive production mail.
+One-time migration from legacy Playwright accounts to canonical **`@mywealthmaps.test`** identities that do not receive production mail.
+
+**Drip verification:** `npm run verify:drip` — replaces manual `consumer21@rolobe` inbox check (historical).
 
 **Source of truth:** [scripts/e2e-test-identities.ts](../scripts/e2e-test-identities.ts)
 
@@ -17,6 +19,7 @@ One-time migration from legacy Playwright accounts (`david@rolobe`, `advisor2@ro
 | Attorney portal | `e2e-attorney@mywealthmaps.test` | same | Newsletter kit on `/attorney` |
 | Advisor listing (no login) | `e2e-advisor-listing@mywealthmaps.test` | — | `?ref=e2eadv01` |
 | Attorney listing (no login) | `e2e-attorney-listing@mywealthmaps.test` | — | `?aref=e2eatt01` |
+| Drip smoke | `e2e-drip@mywealthmaps.test` | — | Verify via `npm run verify:drip` |
 
 **Public tests** need no login — they hit marketing/event routes only.
 
@@ -88,13 +91,19 @@ dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --legacy
 
 3. Remove legacy emails from `PROTECTED` once deleted.
 
-**Keep** `consumer21@rolobe.resend.app` if you still use production drip smoke.
+**Retire all @rolobe accounts:**
+
+```bash
+npm run cleanup:rolobe
+```
+
+Confirms before delete; logs to `deletion_audit_log`.
 
 ---
 
 ## What stays manual
 
-- [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — dollar checks, Stripe C-4, drip inbox
+- [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — dollar checks, Stripe C-4, drip DB verify (`verify:drip`)
 - Full signup → Supabase `profiles.referral_code` attribution (sessionStorage is automated)
 - Import API against **local** `PLAYWRIGHT_BASE_URL=http://localhost:3001` when testing F-2 migrations
 

@@ -96,7 +96,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Admin Privacy Requests tab** — status updates via PATCH `/api/admin/deletions`
 - [x] **Resend senders verified** — `hello@`, `noreply@`, `privacy@` → Comcast inbox
 
-- [ ] **Attorney referral production test** — run `npx tsx scripts/seed-test-attorney.ts` (or register manually); confirm `referral_code` on listing; sign in as `test-attorney-portal@rolobe.resend.app` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
+- [ ] **Attorney referral production test** — run `npm run seed:e2e` (or register manually); confirm `referral_code` on listing; sign in as `e2e-attorney@mywealthmaps.test` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
 **Sprint 14 manual smoke (2026-05-23):** Core §1–3, estate §4–7, §8, §11 **passed** on staging; §9 skipped (needs linked advisor); §10 E2E 19/19; bugs fixed `f4e9160`. See CONSUMER_RELEASE_SMOKE_TEST.md sign-off block.
@@ -289,7 +289,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | **Stripe production billing** | You | Production keys; checkout + webhook |
 | **Go-live day ops** | You | Supabase Auth ON → verify callback → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke |
-| **Drip step 2 check** | Ops | `consumer21@rolobe.resend.app` |
+| **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
 | **Sprint P-2 pre-launch refactors** | ✅ `47a38f3` — recommendations cache, projections cache-first, auth dedup — [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
 
 ---

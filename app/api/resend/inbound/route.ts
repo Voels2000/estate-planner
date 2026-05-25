@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FORWARD_TO = 'avoels@comcast.net';
 
 // Maps the local part of the inbound address to a readable label
-// e.g. consumer1@rolobe.resend.app → [TEST: Consumer T1]
+// e.g. e2e-consumer@mywealthmaps.test → [TEST: Consumer]
 const PERSONA_LABELS: Record<string, string> = {
   consumer1: '[TEST: Consumer T1]',
   consumer3: '[TEST: Consumer T3]',

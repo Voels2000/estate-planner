@@ -119,7 +119,7 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | Section | Automate? | Suggestion |
 |---------|-----------|------------|
 | A–D Referral + signup | ⚠️ Partial | `public-referral-track.spec.ts` (API + event load); `auth-signup-attribution.spec.ts` (sessionStorage); full signup→Supabase still manual |
-| E Drip step 1 | ❌ | Resend inbox or Supabase `drip_step_1_sent_at` query script |
+| E Drip sequence | ✅ | `scripts/verify-drip-sequence.ts` — `drip_step_1/2/3_sent_at` vs schedule; `npm run verify:drip` |
 | F Life-event on connect | ❌ | Two-role manual or scripted Supabase + advisor UI |
 | G Event slugs 200 | ✅ | `public-routes.spec.ts` — all `EVENT_SLUGS` + spot-check assess pages |
 

@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
  * Advisor strategy recommendation end-to-end verification.
  * Covers: SLAT, ILIT, liquidity, roth — the sources added in Session 101.
  *
- * Uses consumer1@rolobe.resend.app household which has an active advisor link
+ * Uses e2e-advisor@mywealthmaps.test client household (Johnson) when linked.
  * to PLAYWRIGHT_ADVISOR_EMAIL (canonical: e2e-advisor@mywealthmaps.test). Cleans up after each test.
  */
 

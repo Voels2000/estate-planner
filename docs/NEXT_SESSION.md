@@ -175,7 +175,7 @@
 | **Supabase Auth** — email confirm ON, secure email change ON, min password 12 | You | Go-live day |
 | **`PUBLIC_SIGNUP_OPEN=true`** + redeploy | You | Go-live day |
 | **Core §1–3 smoke** — fresh email; signup → confirm → login → dashboard | You | Go-live day |
-| **Drip step 2 check** | Ops | No — `consumer21@rolobe.resend.app` |
+| **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
 
 **Counsel handoff:** Send ToS with §10/§11/§13 flagged; ask for **one consolidated redline**. Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live — see [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos).
 
@@ -291,15 +291,15 @@
 | **Advisor (Playwright)** | `e2e-advisor@mywealthmaps.test` | Johnson client: `e2e-client.johnson@mywealthmaps.test` |
 | **Attorney (portal)** | `e2e-attorney@mywealthmaps.test` | `?aref=e2eatt01` |
 | **Referral codes** | `e2eadv01` / `e2eatt01` | Directory listings (no login) |
-| *Legacy* | `david@rolobe`, `advisor2@rolobe` | Retire after `.env.test` migration — [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) |
+| *Legacy* | *(retired)* | All `@rolobe.resend.app` removed via `npm run cleanup:rolobe` — [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) |
 
-### Resend production test inboxes (`@rolobe.resend.app`)
-
-Disposable addresses for production waitlist / drip captures. Inbound forwards via `app/api/resend/inbound/route.ts`. Cleanup stray signup accounts: `scripts/cleanup-test-accounts.ts`.
+### Drip smoke (DB verification)
 
 | Email | Notes |
 |-------|-------|
-| `consumer21@rolobe.resend.app` | Drip step 2 check (when running drip smoke) |
+| `e2e-drip@mywealthmaps.test` | Capture on `/assess` or homepage; verify with `npm run verify:drip` |
+
+*Historical:* drip was verified via `consumer21@rolobe.resend.app` inbox — replaced by `scripts/verify-drip-sequence.ts`.
 
 ### E2E fixture reset (go-live v2 — preferred)
 
@@ -311,7 +311,7 @@ npm run prune:e2e   # optional before full run
 
 Canonical accounts: `e2e-consumer@mywealthmaps.test`, `e2e-advisor@mywealthmaps.test`, `e2e-attorney@mywealthmaps.test` — password `E2eTest!2026Mwm` ([scripts/e2e-test-identities.ts](../scripts/e2e-test-identities.ts)).
 
-Legacy seeds (retire after cutover): `seed-test-attorney.ts`, `seed-test-consumer-estate.ts`, `david@rolobe` / `advisor2@rolobe`.
+Legacy seeds (retire after cutover): `seed-test-attorney.ts`, `seed-test-consumer-estate.ts` — prefer `npm run seed:e2e`.
 
 ### Run E2E (always source env first)
 
