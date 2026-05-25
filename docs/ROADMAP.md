@@ -148,7 +148,17 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint C-6 — Data deletion & WCPA compliance ✅ CLOSED 2026-05-25 (code)
+### Sprint C-7 — Compliance reminders + privacy intake ✅ CLOSED 2026-05-25 (code)
+
+- `[x]` `privacy_requests` table + migration
+- `[x]` Daily compliance cron → `COMPLIANCE_EMAIL` (issues only; monthly summary on 1st)
+- `[x]` Consumer privacy form at `/settings/security`
+- `[x]` Admin Privacy Requests sub-view + PATCH status
+- `[ ]` Apply migration + set `COMPLIANCE_EMAIL` in Vercel Production
+
+---
+
+## Sprint C-6 — Data deletion & WCPA compliance ✅ CLOSED 2026-05-25 (code)
 
 **Goal:** Washington WCPA right-to-delete + Privacy Policy 30-day post-cancellation automation.
 

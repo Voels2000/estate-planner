@@ -114,7 +114,14 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] `scripts/gdpr-delete-user.ts` → `deleteUser`
 - [x] [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
 
-**Monthly (ongoing):** Admin Portal → Data & Compliance → confirm no overdue scheduled deletions (`scheduled_for` in past, `status=pending`); review audit log last 30 days.
+**Monthly (ongoing):** Admin Portal → Data & Compliance → confirm no overdue scheduled deletions (`scheduled_for` in past, `status=pending`); review audit log last 30 days. Daily alerts via `COMPLIANCE_EMAIL` when cron finds issues.
+
+## Sprint C-7 focus — closed ✅ 2026-05-25 (code)
+
+- [x] `privacy_requests` + compliance-reminders cron (`COMPLIANCE_EMAIL`)
+- [x] Consumer `/settings/security` privacy form + confirmation email
+- [x] Admin Privacy Requests tab
+- [ ] Apply `20260625170000_sprint_c7_privacy_requests.sql` + set `COMPLIANCE_EMAIL` in prod
 
 ## Sprint F-2 focus — shipped 2026-06-02
 

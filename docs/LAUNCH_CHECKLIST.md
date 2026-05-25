@@ -87,6 +87,14 @@ These must be complete before launch. Update status as sprints close them.
 - [ ] **Plan-change guard verified** — consumer → advisor upgrade does **not** schedule deletion (active Stripe sub + role checks in webhook and cron; see `lib/compliance/deletionGuards.ts`)
 - [ ] **CLI script** — `scripts/gdpr-delete-user.ts` delegates to `lib/compliance/deleteUser.ts` (same path as admin + cron)
 
+### Compliance reminders (Sprint C-7)
+
+- [ ] **`privacy_requests` table live** — migration `20260625170000_sprint_c7_privacy_requests.sql` applied in production
+- [ ] **`COMPLIANCE_EMAIL` set in Vercel Production** — receives daily compliance report when issues exist; monthly summary on 1st
+- [ ] **Compliance reminders cron** — `GET /api/cron/compliance-reminders` at 8am UTC (`vercel.json`)
+- [ ] **In-app privacy intake** — `/settings/security` → Privacy Rights; confirmation email with reference ID
+- [ ] **Admin Privacy Requests tab** — `/admin` → Data & Compliance → status updates
+
 - [ ] **Attorney referral production test** — run `npx tsx scripts/seed-test-attorney.ts` (or register manually); confirm `referral_code` on listing; sign in as `test-attorney-portal@rolobe.resend.app` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
@@ -187,13 +195,14 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `RECOMPUTE_SECRET` | Estate health recompute after consumer/strategy saves (`afterHouseholdWrite`) | ✅ Verified (2026-05-24) |
 | `RESEND_API_KEY` | Email drip delivery (`/api/email/drip`, capture flows) | ✅ Verified (2026-05-24) |
 | `INTERNAL_API_KEY` | Drip + cron internal calls (server-to-server auth) | ✅ Verified (2026-05-24) |
-| `CRON_SECRET` | `/api/cron/notifications` and `/api/cron/age-triggers` (Vercel cron + optional GH manual) | ✅ Verified (2026-05-24) |
+| `CRON_SECRET` | All Vercel crons (`notifications`, `age-triggers`, `process-deletions`, `compliance-reminders`) | ✅ Verified (2026-05-24) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-side Supabase (browser, Playwright) | ✅ Verified (2026-05-24) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin queries (webhooks, drip, signup side effects) | ✅ Verified (2026-05-24) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console meta tag in `app/layout.tsx` | **Not needed** — verified via Cloudflare domain provider (2026-05-24) |
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
+| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | **Set before deploy** — founder/ops inbox |
 
 **Checklist (Production environment only):**
 

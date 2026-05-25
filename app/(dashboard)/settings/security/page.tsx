@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SecurityClient from './_security-client'
+import PrivacyRightsClient from './_privacy-rights-client'
 
 export default async function SecurityPage() {
   const supabase = await createClient()
@@ -22,6 +23,7 @@ export default async function SecurityPage() {
         Manage two-factor authentication for your account.
       </p>
       <SecurityClient isEnrolled={isEnrolled} factorId={totpFactor?.id} />
+      <PrivacyRightsClient />
     </div>
   )
 }

@@ -359,6 +359,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 | `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, recompute `fetch` | Replace preview URL with `https://mywealthmaps.com` |
 | `RECOMPUTE_SECRET` | `afterHouseholdWrite` → `/api/recompute-estate-health` | Must match `.env.local` (quote value if it contains `!` or `#`) |
 | `RESEND_API_KEY` | Drip and transactional email | Confirm set |
+| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops inbox (Sprint C-7) | Set before deploy |
 | `INTERNAL_API_KEY` | Drip + cron internal server calls | Confirm set |
 | `CRON_SECRET` | `/api/cron/notifications`, `/api/cron/age-triggers` | Confirm set |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client | Confirm set |
@@ -763,6 +764,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Daily notifications | `GET /api/cron/notifications` | `0 14 * * *` (14:00 UTC daily) | **Vercel cron** (`vercel.json`) |
 | Age-based life events | `GET /api/cron/age-triggers` | `0 15 * * *` (15:00 UTC daily) | **Vercel cron** (`vercel.json`) |
 | Scheduled deletions | `GET /api/cron/process-deletions` | `0 2 * * *` (02:00 UTC daily) | **Vercel cron** (Sprint C-6) |
+| Compliance reminders | `GET /api/cron/compliance-reminders` | `0 8 * * *` (08:00 UTC daily) | **Vercel cron** (Sprint C-7); emails `COMPLIANCE_EMAIL` |
 
 **Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
 
@@ -784,6 +786,13 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions`, `POST /api/admin/deletions/execute`.
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — apply before deploy.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
+
+**Privacy requests (Sprint C-7 — WCPA):**
+
+- **Table:** `privacy_requests` — five request types; `due_at` generated (+45 days); statuses `pending` / `in_progress` / `completed` / `denied`.
+- **Consumer:** `POST /api/consumer/privacy-request` from `/settings/security`; confirmation email with reference ID + due date.
+- **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`).
+- **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only).
 
 **In-app life events (Sprint 3):**
 

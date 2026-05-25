@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Sprint C-6 data deletion complete)
+# Updated: 2026-05-25 (Sprint C-7 compliance reminders + privacy intake)
 
 ---
 
@@ -22,7 +22,8 @@
 | **C-3** | RLS fixes (`236890c`); auth callback, MFA, security headers, PII logging (`56a4407`); Monte Carlo UX + docs (`cda2ccc`); audit artifacts gitignored (`d854c05`) | `236890c`, `56a4407`, `cda2ccc`, `d854c05` | ✅ |
 | **C-4** | Billing disclosures — RCW 19.316, FTC Negative Option, renewal reminders | `462bda9` | ✅ code — manual Stripe walkthrough remains |
 | **C-5** | Privacy Policy (`/privacy`), Terms of Service (`/terms`), footer links, sitemap | `2e1dff3`, `695a860` | ✅ — legal review + TODO placeholders remain |
-| **C-6** | WCPA deletion — `deleteUser`, webhook schedule + plan-change guards, cron, admin UI, CLI | `4d9571e`, `01b997a` | ✅ code — apply `20260625120000_sprint_c6_deletion_compliance.sql` in prod |
+| **C-6** | WCPA deletion — `deleteUser`, webhook schedule + plan-change guards, cron, admin UI, CLI | `4d9571e`, `01b997a` | ✅ code — apply migration in prod |
+| **C-7** | Compliance cron + `privacy_requests` intake | (this commit) | ✅ code — `COMPLIANCE_EMAIL` + C-7 migration in prod |
 
 **Audit scripts (must stay 0):** `bash scripts/audit-ux-language.sh` · `bash scripts/security-audit.sh`
 

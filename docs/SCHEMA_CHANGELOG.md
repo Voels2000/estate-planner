@@ -8,6 +8,16 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint C-7 (2026-05-25) — Compliance reminders + privacy requests
+
+**Migration:** `20260625170000_sprint_c7_privacy_requests.sql`
+
+- **`privacy_requests`:** five WCPA rights; `due_at` generated (`received_at + 45 days`); consumer INSERT at `/settings/security`
+- **Cron:** `GET /api/cron/compliance-reminders` (8am UTC) → `COMPLIANCE_EMAIL`
+- **APIs:** `POST /api/consumer/privacy-request`; admin `GET view=privacy`, `PATCH` status
+
+---
+
 ## Sprint C-6 (2026-05-25) — Data deletion & WCPA compliance
 
 **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — **commits `4d9571e`, `01b997a`**

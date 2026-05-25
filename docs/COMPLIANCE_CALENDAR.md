@@ -2,7 +2,7 @@
 
 Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy commitments, and security hygiene).
 
-**Related:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6 (`lib/compliance/deleteUser.ts`)
+**Related:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6/C-7 (`deleteUser`, compliance cron)
 
 ---
 
@@ -37,12 +37,41 @@ Handled automatically:
 
 **Plan-change guard (consumer → advisor upgrade):** webhook skips scheduling when another active/trialing Stripe subscription exists on the same customer, or when profile role is `advisor` / `financial_advisor` / `attorney` / `admin`. Cron re-verifies before execution and cancels overdue schedules if role or subscription changed.
 
-### Monthly compliance check
+## Automated (no action needed unless email arrives)
 
-- [ ] Admin Portal → Data & Compliance → Scheduled Deletions
-      Confirm no deletions are overdue (scheduled_for in the past, status=pending)
-- [ ] Admin Portal → Data & Compliance → Audit Log
-      Review last 30 days — confirm all deletions show success=true
+| Check | Frequency | Alert condition |
+|-------|-----------|-----------------|
+| Overdue deletions | Daily 8am UTC | Any pending deletion past due date |
+| Deletion failures | Daily 8am UTC | Any failure in last 7 days |
+| WCPA requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
+| Monthly compliance summary | 1st of month | Always — review and file |
+
+Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` only when action needed (or monthly summary on the 1st). All-clear days send **no email**.
+
+## On alert email received
+
+1. Open Admin Portal → Data & Compliance
+2. Address the specific issue described
+3. Reply to yourself confirming resolution (creates email paper trail)
+
+## Privacy request SOP (WCPA)
+
+1. User submits via `/settings/security` → Privacy Rights OR emails privacy@mywealthmaps.com
+2. If email: admin creates record manually in Supabase (or future admin “Add” flow)
+3. System sends confirmation email to user with reference ID and 45-day deadline
+4. Admin works the request within 45 days:
+   - Deletion: use Execute Deletion flow
+   - Access: export household data from Supabase for that `household_id`
+   - Correction: update via admin client or direct Supabase edit
+   - Portability: JSON export of all user data
+   - Opt-out: confirm no data sale (already true — document in response)
+5. Mark request completed in Admin Portal → Privacy Requests
+6. Send completion confirmation to user
+
+### Monthly compliance check (manual backup)
+
+- [ ] Admin Portal → Data & Compliance → confirm no overdue scheduled deletions
+- [ ] Admin Portal → Data & Compliance → Audit Log — last 30 days success=true
 - [ ] Run: `bash scripts/security-audit.sh` — 0 findings
 
 ---

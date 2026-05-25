@@ -34,15 +34,29 @@ type ExecuteForm = {
   dryRun: boolean
 }
 
+type PrivacyRequest = {
+  id: string
+  email: string
+  request_type: string
+  status: string
+  received_at: string
+  due_at: string
+  notes?: string | null
+}
+
 const inputClass =
   'block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500'
 
 export function DeletionCompliance() {
-  const [view, setView] = useState<'schedule' | 'audit' | 'execute'>('schedule')
+  const [view, setView] = useState<
+    'schedule' | 'audit' | 'execute' | 'privacy'
+  >('schedule')
   const [schedule, setSchedule] = useState<ScheduledDeletion[]>([])
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
+  const [privacyRequests, setPrivacyRequests] = useState<PrivacyRequest[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [savingPrivacyId, setSavingPrivacyId] = useState<string | null>(null)
   const [form, setForm] = useState<ExecuteForm>({
     userId: '',
     email: '',
@@ -57,15 +71,16 @@ export function DeletionCompliance() {
     setLoading(true)
     setFetchError(null)
     try {
-      const res = await fetch(
-        `/api/admin/deletions?view=${view === 'audit' ? 'audit' : 'schedule'}`,
-      )
+      const viewParam =
+        view === 'audit' ? 'audit' : view === 'privacy' ? 'privacy' : 'schedule'
+      const res = await fetch(`/api/admin/deletions?view=${viewParam}`)
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data.error ?? 'Failed to load data')
       }
       if (view === 'schedule') setSchedule(data.data ?? [])
       if (view === 'audit') setAuditLog(data.data ?? [])
+      if (view === 'privacy') setPrivacyRequests(data.data ?? [])
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
@@ -109,13 +124,38 @@ export function DeletionCompliance() {
     }
   }
 
+  async function handlePrivacyStatusUpdate(
+    id: string,
+    status: string,
+    notes: string,
+  ) {
+    setSavingPrivacyId(id)
+    setFetchError(null)
+    try {
+      const res = await fetch('/api/admin/deletions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, notes }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Update failed')
+      }
+      await fetchData()
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setSavingPrivacyId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-base font-semibold text-neutral-900">Data & Compliance</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Washington WCPA deletion compliance — 30-day post-cancellation schedule,
-          audit trail, and admin-triggered deletions. Always dry-run before live delete.
+          Washington WCPA — scheduled deletions, privacy requests (45-day SLA),
+          audit trail, and admin-triggered deletions. Dry-run before live delete.
         </p>
       </div>
 
@@ -126,7 +166,7 @@ export function DeletionCompliance() {
       )}
 
       <div className="flex gap-2 border-b border-neutral-200">
-        {(['schedule', 'audit', 'execute'] as const).map((tab) => (
+        {(['schedule', 'privacy', 'audit', 'execute'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -139,9 +179,11 @@ export function DeletionCompliance() {
           >
             {tab === 'schedule'
               ? 'Scheduled Deletions'
-              : tab === 'audit'
-                ? 'Audit Log'
-                : 'Execute Deletion'}
+              : tab === 'privacy'
+                ? 'Privacy Requests'
+                : tab === 'audit'
+                  ? 'Audit Log'
+                  : 'Execute Deletion'}
           </button>
         ))}
       </div>
@@ -300,6 +342,112 @@ export function DeletionCompliance() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {view === 'privacy' && (
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          {loading ? (
+            <p className="p-6 text-sm text-neutral-500">Loading…</p>
+          ) : privacyRequests.length === 0 ? (
+            <p className="p-6 text-sm text-neutral-500">No privacy requests on record.</p>
+          ) : (
+            <table className="min-w-full divide-y divide-neutral-100">
+              <thead className="bg-neutral-50">
+                <tr>
+                  {[
+                    'Email',
+                    'Type',
+                    'Status',
+                    'Received',
+                    'Due',
+                    'Days left',
+                    'Notes',
+                    '',
+                  ].map((h) => (
+                    <th
+                      key={h || 'actions'}
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {privacyRequests.map((row) => {
+                  const daysLeft = Math.ceil(
+                    (new Date(row.due_at).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24),
+                  )
+                  return (
+                    <tr key={row.id} className="hover:bg-neutral-50 align-top">
+                      <td className="px-4 py-3 text-sm font-mono text-neutral-900">
+                        {row.email}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        {row.request_type.replace(/_/g, ' ')}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={row.status}
+                          onChange={(e) =>
+                            void handlePrivacyStatusUpdate(
+                              row.id,
+                              e.target.value,
+                              row.notes ?? '',
+                            )
+                          }
+                          disabled={savingPrivacyId === row.id}
+                          className={inputClass}
+                        >
+                          <option value="pending">pending</option>
+                          <option value="in_progress">in progress</option>
+                          <option value="completed">completed</option>
+                          <option value="denied">denied</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        {new Date(row.received_at).toLocaleDateString('en-US')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        {new Date(row.due_at).toLocaleDateString('en-US')}
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-sm font-medium ${
+                          daysLeft < 0
+                            ? 'text-red-600'
+                            : daysLeft <= 7
+                              ? 'text-amber-600'
+                              : 'text-neutral-600'
+                        }`}
+                      >
+                        {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d`}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-neutral-500 max-w-[12rem]">
+                        {row.notes ?? '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          disabled={savingPrivacyId === row.id}
+                          onClick={() => {
+                            const notes = prompt('Admin notes:', row.notes ?? '')
+                            if (notes !== null) {
+                              void handlePrivacyStatusUpdate(row.id, row.status, notes)
+                            }
+                          }}
+                          className="text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                        >
+                          Edit notes
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}
