@@ -8,6 +8,29 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint F-2 (2026-06-02) — Import UX & Intelligence
+
+**Migration:** `20260602150000_sprint_f2_import_traceability.sql`
+
+- `assets`, `liabilities`, `income`, `expenses`: `ingestion_job_id` uuid column added (nullable; set when row created via import; enables traceability + undo)
+- `ingestion_jobs`: `header_row_index` integer, `sheet_name` text columns added
+- Indexes: `idx_[table]_ingestion_job_id` on all four financial tables
+
+**Features:**
+
+- Header row auto-detection (scans first 20 rows, scores against aliases)
+- Excel sheet picker (multi-sheet workbooks)
+- Inline row editor at review step (edit/delete rows before commit)
+- Duplicate detection with skip/import-all options
+- Post-import deep link to view imported rows
+- `ingestion_job_id` tagged on all committed rows
+- Richer alias matching (substring + expanded broker/accounting terms)
+- Pending import delete/cancel (`DELETE /api/import/jobs/[id]`)
+
+**Apply migration before deploy** — commit route writes `ingestion_job_id`.
+
+---
+
 ## Sprint F-1 — Import feature (2026-06-02)
 
 **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — **commits `d3400b1` → `b5bb0b1`**

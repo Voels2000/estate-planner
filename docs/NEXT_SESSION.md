@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-06-02 (Sprint F-1 import verified)
+# Updated: 2026-06-02 (Sprint F-2 import UX shipped)
 
 ---
 
@@ -68,6 +68,16 @@
 **Commits:** `a138608` (public access), `b41719f` (sidebar link), education nav fix (this session)
 
 **Post-deploy:** `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs`
+
+---
+
+## Sprint F-2 shipped (2026-06-02) — apply migration before deploy
+
+**Migration:** `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on assets/liabilities/income/expenses; `header_row_index`, `sheet_name` on `ingestion_jobs`.
+
+**Features:** header row detection, Excel sheet picker, inline row editor, duplicate warnings, post-import deep link, richer aliases, pending job delete.
+
+**Smoke:** See Sprint F-2 checklist in `cursor-import-sprint-f2.md` Phase 9 (preamble CSV, multi-sheet XLSX, inline edit, duplicates, traceability SQL, alias headers).
 
 ---
 

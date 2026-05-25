@@ -103,6 +103,12 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
 - [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
 
+## Sprint F-2 focus — shipped 2026-06-02
+
+- [x] Header detection, sheet picker, inline editor, duplicates, traceability, delete pending
+- [ ] Apply `20260602150000_sprint_f2_import_traceability.sql` in prod before deploy
+- [ ] Smoke Phase 9 (preamble CSV, multi-sheet, inline edit, duplicates, `ingestion_job_id` SQL)
+
 ## Sprint F-1 focus — closed ✅ 2026-06-02 (verified production)
 
 - [x] `POST /api/ingest` — CSV/XLSX parse, auto-detect table, field mapping, `ingestion_jobs` store (`d3400b1`)

@@ -56,8 +56,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const requestedSheet = formData.get('sheet_name')
+    const sheetName =
+      typeof requestedSheet === 'string' && requestedSheet.trim()
+        ? requestedSheet.trim()
+        : null
+
     let headers: string[] = []
     let rows: Record<string, string>[] = []
+    let headerRowIndex = 0
+    let sheetNames: string[] | undefined
+    let selectedSheet: string | null = null
 
     try {
       if (ext === 'csv') {
@@ -65,11 +74,15 @@ export async function POST(req: NextRequest) {
         const parsed = parseCsvText(text.replace(/^\uFEFF/, ''))
         headers = parsed.headers
         rows = parsed.rows
+        headerRowIndex = parsed.header_row_index
       } else {
         const buffer = Buffer.from(await file.arrayBuffer())
-        const parsed = parseExcelBuffer(buffer)
+        const parsed = parseExcelBuffer(buffer, { sheetName })
         headers = parsed.headers
         rows = parsed.rows
+        headerRowIndex = parsed.header_row_index
+        sheetNames = parsed.sheet_names
+        selectedSheet = parsed.selected_sheet ?? null
       }
     } catch (parseErr) {
       const message = parseErr instanceof Error ? parseErr.message : 'Unknown parse error'
@@ -101,6 +114,8 @@ export async function POST(req: NextRequest) {
         rows,
         field_map: suggestedMap,
         row_count: rows.length,
+        header_row_index: headerRowIndex,
+        sheet_name: selectedSheet,
       })
       .select('id')
       .single()
@@ -119,6 +134,9 @@ export async function POST(req: NextRequest) {
       detected_table: detectedTable,
       field_map: suggestedMap,
       table_fields: buildTableFieldsResponse(),
+      header_row_index: headerRowIndex,
+      sheet_names: sheetNames,
+      selected_sheet: selectedSheet,
     })
   } catch (err) {
     console.error('Ingest error:', err)

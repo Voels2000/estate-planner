@@ -35,65 +35,119 @@ const TABLE_FIELD_KEYS: Record<ImportTable, string[]> = {
 
 export const FIELD_ALIASES: Record<ImportTable, Record<string, string[]>> = {
   assets: {
-    name: ['name', 'asset', 'assetname', 'description', 'account', 'accountname'],
-    type: ['type', 'assettype', 'category', 'accounttype'],
-    value: ['value', 'amount', 'balance', 'marketvalue', 'currentvalue', 'worth'],
-    owner: ['owner', 'person', 'whose', 'holder'],
-    notes: ['notes', 'note', 'comments'],
+    name: [
+      'name', 'asset', 'assetname', 'description', 'account', 'accountname',
+      'accountdescription', 'securityname', 'holding', 'investment',
+      'positionname', 'fundname',
+    ],
+    type: [
+      'type', 'assettype', 'category', 'accounttype', 'assetcategory',
+      'securitytype', 'investmenttype', 'class', 'assetclass',
+    ],
+    value: [
+      'value', 'amount', 'balance', 'marketvalue', 'currentvalue', 'worth',
+      'totalvalue', 'currentbalance', 'marketprice', 'presentvalue',
+      'accountvalue', 'portfoliovalue', 'endingvalue', 'endingbalance',
+    ],
+    owner: ['owner', 'person', 'whose', 'holder', 'accountholder', 'ownedby'],
+    notes: ['notes', 'note', 'comments', 'memo', 'description', 'details'],
   },
   liabilities: {
-    name: ['name', 'loan', 'loanname', 'description', 'creditor'],
-    type: ['type', 'loantype', 'debttype', 'category'],
-    balance: ['balance', 'amount', 'outstanding', 'remaining', 'owed'],
-    interest_rate: ['rate', 'interestrate', 'apr', 'interest'],
-    monthly_payment: ['payment', 'monthlypayment', 'installment', 'monthly'],
-    notes: ['notes', 'note', 'comments'],
+    name: [
+      'name', 'loan', 'loanname', 'description', 'creditor', 'lender',
+      'accountname', 'debtname', 'liability',
+    ],
+    type: [
+      'type', 'loantype', 'debttype', 'category', 'liabilitytype',
+      'accounttype', 'debtcategory',
+    ],
+    balance: [
+      'balance', 'amount', 'outstanding', 'remaining', 'owed', 'currentbalance',
+      'principalbalance', 'outstandingbalance', 'loanbalance', 'debtbalance',
+    ],
+    interest_rate: [
+      'rate', 'interestrate', 'apr', 'interest', 'annualrate',
+      'interestpercent', 'rate%',
+    ],
+    monthly_payment: [
+      'payment', 'monthlypayment', 'installment', 'monthly',
+      'monthlyinstallment', 'regularpayment', 'paymentamount',
+    ],
+    notes: ['notes', 'note', 'comments', 'memo', 'description'],
   },
   income: {
-    source: ['source', 'type', 'description', 'name', 'incometype'],
-    amount: ['amount', 'annual', 'income', 'salary', 'annualamount'],
-    start_year: ['startyear', 'start', 'year', 'from'],
-    end_year: ['endyear', 'end', 'through', 'until', 'to'],
+    source: [
+      'source', 'type', 'description', 'name', 'incometype', 'incomesource',
+      'paymenttype', 'revenuetype',
+    ],
+    amount: [
+      'amount', 'annual', 'income', 'salary', 'annualamount', 'grossincome',
+      'annualincome', 'yearlyamount', 'annualpay', 'compensation',
+    ],
+    start_year: ['startyear', 'start', 'year', 'from', 'beginningyear', 'effectiveyear'],
+    end_year: ['endyear', 'end', 'through', 'until', 'to', 'stopyear', 'lastyear'],
     owner: ['owner', 'person', 'whose'],
     inflation_adjust: ['inflationadjust', 'inflation', 'cola', 'adjustforinflation'],
   },
   expenses: {
-    category: ['category', 'type', 'description', 'name'],
-    amount: ['amount', 'annual', 'cost', 'expense', 'annualamount'],
-    start_year: ['startyear', 'start', 'year', 'from'],
-    end_year: ['endyear', 'end', 'through', 'until', 'to'],
+    category: [
+      'category', 'type', 'description', 'name', 'expensetype', 'expensecategory',
+      'spendingcategory',
+    ],
+    amount: [
+      'amount', 'annual', 'cost', 'expense', 'annualamount', 'annualcost',
+      'yearlyamount', 'annualexpense', 'spending',
+    ],
+    start_year: ['startyear', 'start', 'year', 'from', 'beginningyear'],
+    end_year: ['endyear', 'end', 'through', 'until', 'to', 'stopyear'],
     inflation_adjust: ['inflationadjust', 'inflation', 'cola', 'adjustforinflation'],
   },
 }
 
-function normalizeHeader(header: string): string {
-  return header.toLowerCase().replace(/[\s_-]/g, '')
+export function normalizeHeader(header: string): string {
+  return header.toLowerCase().replace(/[\s_\-\(\)\$\%\#\/\\,\.]+/g, '')
+}
+
+function headerMatchesAlias(header: string, aliasList: string[]): boolean {
+  const norm = normalizeHeader(header)
+  if (aliasList.includes(norm)) return true
+  if (aliasList.some((alias) => norm.includes(alias))) return true
+  if (aliasList.some((alias) => alias.includes(norm) && norm.length >= 3)) return true
+  return false
+}
+
+function normalizedHeadersMatchAny(headers: string[], candidates: string[]): boolean {
+  return headers.some((h) => {
+    const norm = normalizeHeader(h)
+    return candidates.some(
+      (c) => norm === c || norm.includes(c) || (norm.length >= 3 && c.includes(norm)),
+    )
+  })
 }
 
 export function detectTable(headers: string[]): ImportTable | null {
-  const h = headers.map(normalizeHeader)
   if (
-    h.some((col) => ['value', 'assetvalue', 'marketvalue', 'currentvalue'].includes(col)) &&
-    h.some((col) => ['name', 'assetname', 'description', 'account', 'accountname'].includes(col))
+    normalizedHeadersMatchAny(headers, ['value', 'assetvalue', 'marketvalue', 'currentvalue', 'worth', 'marketprice']) &&
+    normalizedHeadersMatchAny(headers, ['name', 'assetname', 'description', 'account', 'accountname', 'securityname', 'holding'])
   ) {
     return 'assets'
   }
   if (
-    h.some((col) => ['balance', 'amount', 'outstanding', 'remaining', 'owed'].includes(col)) &&
-    h.some((col) => ['type', 'loantype', 'debttype', 'category'].includes(col)) &&
-    h.some((col) => ['name', 'loan', 'loanname', 'creditor', 'description'].includes(col))
+    normalizedHeadersMatchAny(headers, ['balance', 'outstanding', 'remaining', 'owed', 'loanbalance']) &&
+    normalizedHeadersMatchAny(headers, ['type', 'loantype', 'debttype', 'category', 'liabilitytype']) &&
+    normalizedHeadersMatchAny(headers, ['name', 'loan', 'loanname', 'creditor', 'description', 'lender'])
   ) {
     return 'liabilities'
   }
   if (
-    h.some((col) => ['amount', 'income', 'salary', 'annual', 'annualamount'].includes(col)) &&
-    h.some((col) => ['source', 'type', 'description', 'name', 'incometype'].includes(col))
+    normalizedHeadersMatchAny(headers, ['amount', 'income', 'salary', 'annual', 'annualamount', 'grossincome']) &&
+    normalizedHeadersMatchAny(headers, ['source', 'type', 'description', 'name', 'incometype', 'incomesource'])
   ) {
     return 'income'
   }
   if (
-    h.some((col) => ['amount', 'cost', 'expense', 'annualamount'].includes(col)) &&
-    h.some((col) => ['category', 'type', 'description', 'name'].includes(col))
+    normalizedHeadersMatchAny(headers, ['amount', 'cost', 'expense', 'annualamount', 'spending']) &&
+    normalizedHeadersMatchAny(headers, ['category', 'type', 'description', 'name', 'expensetype'])
   ) {
     return 'expenses'
   }
@@ -107,9 +161,7 @@ export function suggestFieldMap(headers: string[], table: ImportTable): Record<s
   const usedDbFields = new Set<string>()
 
   for (const [dbField, aliasList] of Object.entries(aliases)) {
-    const match = headers.find((header) =>
-      aliasList.includes(normalizeHeader(header)),
-    )
+    const match = headers.find((header) => headerMatchesAlias(header, aliasList))
     if (match && !usedDbFields.has(dbField)) {
       map[match] = dbField
       usedDbFields.add(dbField)

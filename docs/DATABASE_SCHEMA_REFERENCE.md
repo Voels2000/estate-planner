@@ -104,7 +104,7 @@ This is a developer reference, not a full SQL DDL dump.
 ### `ingestion_jobs` (Sprint F-1)
 
 - **Purpose:** transient store for file-import parse results between upload and commit.
-- **Key columns (14):** `id`, `owner_id`, `household_id`, `status` (`pending` \| `mapped` \| `committed` \| `failed`), `file_type` (`csv` \| `xlsx`, NOT NULL), `file_name` (NOT NULL), `detected_table`, `headers` (jsonb), `rows` (jsonb), `field_map` (jsonb), `row_count`, `error_message`, `created_at`, `committed_at`
+- **Key columns (16):** `id`, `owner_id`, `household_id`, `status` (`pending` \| `mapped` \| `committed` \| `failed`), `file_type` (`csv` \| `xlsx`, NOT NULL), `file_name` (NOT NULL), `detected_table`, `headers` (jsonb), `rows` (jsonb), `field_map` (jsonb), `row_count`, `error_message`, `created_at`, `committed_at`, `header_row_index` (integer, Sprint F-2), `sheet_name` (text, Sprint F-2, Excel only)
 - **RLS:** owner-scoped ALL policy (`owner_id = auth.uid()`)
 - **Migration:** `20260602140000_sprint_f1_ingestion_jobs.sql` — verified in production
 - **Note:** rows older than 24h safe to purge manually; no automated cleanup yet
@@ -113,6 +113,7 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Purpose:** core projection input tables.
 - **Notes:** timestamp changes in these tables are used for staleness detection.
+- **Sprint F-2:** optional `ingestion_job_id` uuid → `ingestion_jobs(id)` on rows created via `/import` commit (NULL for manual entry).
 
 ### `real_estate`
 
@@ -336,6 +337,7 @@ After each schema-affecting session:
 - `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
 - `20260602120000_sprint_p1_indexes.sql` — Sprint P-1 — `idx_assets_owner_id`, `idx_liabilities_owner_id` (`5c24160`)
 - `20260602130000_sprint_p2_recommendations_cache.sql` — Sprint P-2 — `estate_health_scores.recommendations` jsonb (`47a38f3`)
+- `20260602150000_sprint_f2_import_traceability.sql` — Sprint F-2 — `ingestion_job_id` on financial tables; `header_row_index`, `sheet_name` on `ingestion_jobs`
 - `20260602140000_sprint_f1_ingestion_jobs.sql` — Sprint F-1 — `ingestion_jobs` 14-column schema + RLS (verified prod)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).

@@ -458,6 +458,19 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ---
 
+## Sprint F-2 — Import UX & Intelligence ✅ shipped 2026-06-02
+
+- `[x]` Header row auto-detection (preamble rows / broker exports)
+- `[x]` Excel sheet picker + re-parse without re-upload
+- `[x]` Inline row editor + per-row delete at review
+- `[x]` Duplicate detection (409 → skip or import all)
+- `[x]` `ingestion_job_id` traceability on committed rows + view link
+- `[x]` Richer alias / substring header matching
+- `[x]` Pending import remove + cancel during review
+- `[ ]` Apply `20260602150000_sprint_f2_import_traceability.sql` in production; smoke Phase 9 checklist
+
+---
+
 ## Sprint F-1 — Financial data import ✅ closed & verified 2026-06-02
 
 - `[x]` `POST /api/ingest` — CSV/XLSX parse, table detection, field mapping (`d3400b1`)
