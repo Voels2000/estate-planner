@@ -1,18 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Sprint UX-1 life events hub complete; deleteUser WCPA hardening complete)
+# Updated: 2026-05-25 (Design system sidebar/banner complete; Sprint UX-1; deleteUser WCPA hardening)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** All **code sprints complete** including **Sprint UX-1** (`/events` hub + in-app event picker, `6fb73e6`). Compliance **C-2b → C-7** live. **Auth table clean:** 9 accounts. **`deleteUser.ts` hardened** — FK scan, `npm run verify:deletion`. Waitlist active. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Design system Phases 1–2c** shipped (`d173b00`, `249bf85`, `7a1a121`) — sidebar navy/gold, shared primitives, Tailwind v4 `color:` prefix. **Sprint UX-1** (`6fb73e6`). Compliance **C-2b → C-7** live. **Auth table clean:** 9 accounts. **`deleteUser.ts` hardened**. Waitlist active. **Next UI:** Phase 3 indigo sweep — every arbitrary color needs `color:` ([CURSOR_PROMPT_TEMPLATE.md](../CURSOR_PROMPT_TEMPLATE.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
 > **WCPA deletion principle:** Deletion is not done when `deleteUserData` returns `success: true`. Run `npm run verify:deletion -- --email …` — must show **PASS** before responding to the user.
+
+---
+
+## Design system — authenticated chrome ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Tokens** | `app/globals.css` — `--mwm-*` + aliases; body off-white |
+| **Primitives** | `Button`, `Card`, `SectionHeader`, `form.ts`; `ExportPDFButton` on shared Button |
+| **Sidebar** | Navy active fill, gold left accent, gold “M” + Playfair wordmark, YOUR PLAN badge gold/navy |
+| **Banner** | `LifeEventBanner` — “Log a life event” gold link (`!text-[color:var(--mwm-gold)]`) |
+| **Tailwind v4** | Arbitrary colors require `color:` prefix — silent failure without it |
+
+**Commits:** `d173b00`, `249bf85`, `7a1a121` (+ Phase 2d shell follow-up)
+
+**Before Phase 3:** grep planning pages for `indigo` / `text-[var(--` without `color:` — fix `dashboard-shell.tsx` and any shell files first.
 
 ---
 

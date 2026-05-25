@@ -82,6 +82,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Drip step 2 check** | `[ ]` | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
 | **Auth cleanup + deleteUser hardening** | `[x]` | FK scan, verify-deletion, rolobe retirement — `aea4bf6`, `3cdd9b5` |
 | **Sprint UX-1 Life Events Hub** | `[x]` | Public `/events` hub + in-app picker — `6fb73e6` |
+| **Design system Phase 1–2** | `[x]` | `--mwm-*` tokens, primitives, sidebar/banner chrome — `d173b00`, `249bf85`, `7a1a121` |
+| **Design system Phase 3** | `[ ]` | Indigo sweep ~80 planning pages — use `color:` prefix per `CURSOR_PROMPT_TEMPLATE.md` |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -108,6 +110,9 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `3cdd9b5` | C-6+ | FK scan — firms, firm_members, change_log before Auth delete |
 | `8569c7c` | Docs | deleteUser WCPA hardening — master doc sync |
 | `6fb73e6` | UX-1 | Life events hub `/events` + in-app event picker modal |
+| `d173b00` | Design | My Wealth Maps tokens + Button/Card/form primitives |
+| `249bf85` | Design | Sidebar navy/gold chrome (Phase 2b) |
+| `7a1a121` | Design | Tailwind v4 `color:` prefix on sidebar + banner (Phase 2c) |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

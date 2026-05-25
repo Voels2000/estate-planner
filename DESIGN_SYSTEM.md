@@ -656,4 +656,16 @@ For authenticated dashboard chrome, use the **Dashboard shell / chrome prompt** 
 
 ### Token reminder (canonical)
 
-Prefer `var(--mwm-navy)`, `var(--mwm-gold)`, `var(--mwm-sage)`, `var(--mwm-off-white)`, `var(--mwm-border)`, `var(--mwm-shadow)`, `var(--mwm-radius)` in new Tailwind classes (e.g. `bg-[var(--mwm-navy)]`), not `bg-indigo-600` or hardcoded hex.
+Prefer `var(--mwm-navy)`, `var(--mwm-gold)`, `var(--mwm-sage)`, `var(--mwm-off-white)`, `var(--mwm-border)`, `var(--mwm-shadow)`, `var(--mwm-radius)` in new Tailwind classes, not `bg-indigo-600` or hardcoded hex.
+
+### Tailwind v4 arbitrary colors
+
+Next.js 16 ships with Tailwind v4. Bracket color utilities require a `color:` prefix:
+
+```tsx
+bg-[color:var(--mwm-navy)]
+text-[color:var(--mwm-gold)]
+border-l-[3px] border-l-[color:var(--mwm-gold)]
+```
+
+Without `color:`, classes compile but do not render (silent failure). See `CURSOR_PROMPT_TEMPLATE.md` for the full Phase 3 replacement table.

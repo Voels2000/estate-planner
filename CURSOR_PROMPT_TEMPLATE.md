@@ -1,6 +1,35 @@
 # My Wealth Maps — Cursor Prompt Template
 # Drop this into any Cursor session to get on-brand components immediately.
-# Updated: 2026-06 (replaces PlanWise Guide naming in DESIGN_SYSTEM.md)
+# Updated: 2026-05 (replaces PlanWise Guide naming in DESIGN_SYSTEM.md)
+
+---
+
+## Tailwind v4 — required `color:` prefix (read first)
+
+This project uses **Tailwind v4** (Next.js 16). Arbitrary **color** values in bracket
+classes fail **silently** without the `color:` prefix — no build error, styles simply
+do not apply.
+
+```tsx
+// WRONG — ignored in Tailwind v4
+'border-l-[var(--mwm-gold)]'
+'text-[var(--mwm-gold)]'
+'bg-[var(--mwm-navy)]'
+
+// CORRECT
+'border-l-[3px] border-l-[color:var(--mwm-gold)]'
+'text-[color:var(--mwm-gold)]'
+'bg-[color:var(--mwm-navy)]'
+```
+
+**Phase 3 indigo sweep:** every replacement must use `color:` or colors will look
+broken in the browser despite passing code review.
+
+**Active sidebar nav (authenticated shell):**
+
+```tsx
+'bg-[color:var(--mwm-navy)] text-white border-solid border-l-[3px] border-l-[color:var(--mwm-gold)] pl-[9px] pr-3'
+```
 
 ---
 
@@ -116,6 +145,11 @@ Hardcoded hex to replace:
   #2E4270  → var(--mwm-navy-light)
   #1a3460  → var(--mwm-navy-light)
   #c9a84c  → var(--mwm-gold)
+
+Tailwind class examples (v4 — use color: prefix):
+  bg-indigo-600        → bg-[color:var(--mwm-navy)]
+  text-indigo-600      → text-[color:var(--mwm-navy)]
+  border-indigo-500    → border-[color:var(--mwm-navy)]
 
 Note: neutral-* used for TABLE rows, dividers, and subtle borders inside cards is fine —
 only replace when it's being used as a primary surface or brand color.

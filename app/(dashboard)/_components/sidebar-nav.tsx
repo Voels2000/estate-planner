@@ -33,11 +33,12 @@ const DEFAULT_CLOSED_GROUPS = new Set([
 
 /** My Wealth Maps sidebar nav tokens (see CURSOR_PROMPT_TEMPLATE.md) */
 const NAV_LINK_BASE =
-  'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors duration-150'
+  'flex items-center gap-3 py-2 text-sm font-medium transition-colors duration-150'
 const NAV_ACTIVE =
-  'bg-[color:var(--mwm-navy)] text-white border-l-[3px] border-l-[color:var(--mwm-gold)] pl-[9px] pr-3'
+  'rounded-r-lg rounded-l-none border-solid border-l-[3px] border-l-[color:var(--mwm-gold)] ' +
+  'bg-[color:var(--mwm-navy)] text-white pl-[9px] pr-3 [box-shadow:inset_3px_0_0_var(--mwm-gold)]'
 const NAV_INACTIVE =
-  'px-3 text-[color:var(--mwm-text-secondary)] hover:bg-[color:var(--mwm-off-white)] hover:text-[color:var(--mwm-navy)]'
+  'rounded-lg px-3 text-[color:var(--mwm-text-secondary)] hover:bg-[color:var(--mwm-off-white)] hover:text-[color:var(--mwm-navy)]'
 
 function navLinkClass(active: boolean, extra = '') {
   return `${NAV_LINK_BASE} ${active ? NAV_ACTIVE : NAV_INACTIVE} ${extra}`.trim()

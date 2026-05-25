@@ -28,6 +28,7 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Pricing is positioned against professional fees**, not against consumer tools. Never price-compare to LegalZoom or Trust & Will in copy or positioning.
 - **The assessment is the primary public conversion mechanism.** Score is visible without an account. Full breakdown requires account creation.
 - **Advisor connection queries** must use `CONNECTED_ADVISOR_CLIENT_STATUSES` from `lib/advisor/clientConnectionStatus.ts` (`active` | `accepted`) — never hardcode a single status in new code.
+- **Tailwind v4 arbitrary colors** require the `color:` prefix (`text-[color:var(--mwm-gold)]`, not `text-[var(--mwm-gold)]`). Applies to all new UI and Phase 3 indigo replacements.
 - **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 
 ---
@@ -608,6 +609,18 @@ Pass = at least one row with referral code matching a test signup.
 **Reasoning:** Avoid indexing staging/Vercel URL and incomplete public surfaces before `mywealthmaps.com` cutover. Sitemap and verification (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) are ready to enable in one launch checklist.
 
 **At launch:** See [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) for the full task list.
+
+---
+
+### May 2026 — My Wealth Maps design system + Tailwind v4 color syntax
+
+**Decision:** Brand UI uses `--mwm-*` CSS tokens in `app/globals.css`, shared primitives (`Button`, `Card`, `SectionHeader`, `form`), and authenticated sidebar chrome (navy active + gold left accent). Arbitrary Tailwind color classes must use the v4 `color:` prefix.
+
+**Reasoning:** Replaces PlanWise/indigo leftovers; silent failure in Tailwind v4 without `color:` caused invisible gold borders and plain-text banner links.
+
+**Alternatives considered:** Hardcoded hex in components (rejected); staying on Tailwind v3 syntax (not compatible with Next 16 stack).
+
+**Implication:** Phase 3 page sweep must use `CURSOR_PROMPT_TEMPLATE.md` replacements with `color:` on every arbitrary color utility.
 
 ---
 

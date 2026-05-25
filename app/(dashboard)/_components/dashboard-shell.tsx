@@ -30,12 +30,12 @@ export function DashboardShell({ sidebar, children }: Props) {
   }, [menuOpen])
 
   return (
-    <div className="min-h-screen bg-[var(--mwm-off-white)]">
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--mwm-border)] bg-white px-4 lg:hidden">
+    <div className="min-h-screen bg-[color:var(--mwm-off-white)]">
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--mwm-border)] bg-white px-4 lg:hidden">
         <button
           type="button"
           onClick={() => setMenuOpen(true)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--mwm-border)] text-[var(--mwm-navy)] hover:bg-[var(--mwm-off-white)]"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--mwm-border)] text-[color:var(--mwm-navy)] hover:bg-[color:var(--mwm-off-white)]"
           aria-expanded={menuOpen}
           aria-controls="dashboard-sidebar"
         >
@@ -44,7 +44,7 @@ export function DashboardShell({ sidebar, children }: Props) {
             ☰
           </span>
         </button>
-        <span className="truncate text-sm font-semibold text-[var(--mwm-navy)]">My Wealth Maps</span>
+        <span className="truncate text-sm font-semibold text-[color:var(--mwm-navy)]">My Wealth Maps</span>
       </header>
 
       <div className="flex lg:min-h-screen lg:pt-0">

@@ -585,13 +585,16 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - **"Your plan" badge** on the active unlocked planning group header (Financial / Retirement / Estate).
 - **`UpgradeBanner`** (`app/(dashboard)/_components/UpgradeBanner.tsx`): optional `householdContext` (`state_primary`, optional `grossEstate`, `firstName`) on all tier-gated consumer pages; gate branches use a lightweight `households` query when full household load runs after the gate.
 
-**Design system + education UI refresh:**
+**Design system + education UI refresh (2026-05):**
 
-- Shared visual system artifacts are now documented and versioned in:
-  - `DESIGN_SYSTEM.md`
-  - `assets/design-system.css`
-- The education route family and root landing surface now share the same updated visual language (typography, spacing, cards, badges, and call-to-action treatment) for consistent signed-out and signed-in transitions.
-- Education markdown rendering now has explicit prose styling hooks in `app/(public)/education/education-theme.css` under `.education-prose-content*` selectors (headings, paragraph/list rhythm, links, blockquotes, table chrome, and inline/preformatted code treatment) so module/decision-tree/glossary content remains visually consistent with the design system.
+- **Canonical tokens:** `app/globals.css` — `--mwm-*` brand variables + short aliases (`--navy`, `--gold`, …).
+- **Docs & Cursor prompts:** `DESIGN_SYSTEM.md` (My Wealth Maps), `CURSOR_PROMPT_TEMPLATE.md` (§22 pointer + Phase 3 sweep).
+- **Shared primitives:** `components/ui/Button`, `Card`, `SectionHeader`; `components/ui/form.ts` / `lib/ui/form.ts`; `lib/utils.ts` (`cn`).
+- **Authenticated chrome:** `app/(dashboard)/_components/sidebar-nav.tsx` (navy active fill, gold left accent, gold “M” logo), `dashboard-shell.tsx` (off-white page shell), `LifeEventBanner.tsx` (gold action links).
+- **Tailwind v4 rule:** arbitrary colors in class names need the `color:` prefix (e.g. `text-[color:var(--mwm-gold)]`) or styles fail silently. Required for Phase 3 indigo sweep across planning pages.
+- **Commits:** `d173b00` (tokens + primitives), `249bf85` / `7a1a121` (sidebar + banner), Phase 2d shell audit in follow-up commits.
+- Legacy reference: `assets/design-system.css` (education/static HTML).
+- Education prose: `app/(public)/education/education-theme.css` — `.education-prose-content*` selectors aligned with brand typography and card language.
 
 **Content coverage status:**
 

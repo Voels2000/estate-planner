@@ -268,7 +268,7 @@ export function LifeEventBanner({
             <button
               type="button"
               onClick={() => setShowPicker(true)}
-              className="font-medium text-[color:var(--mwm-gold)] hover:underline underline-offset-2 cursor-pointer"
+              className="inline cursor-pointer border-0 bg-transparent p-0 font-medium !text-[color:var(--mwm-gold)] underline-offset-2 hover:underline"
             >
               Log a life event
             </button>
