@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Docs/markdown are not app source — bracket examples must not be scanned as utilities */
+@source not "../docs";
+@source not "../DESIGN_SYSTEM.md";
+@source not "../CURSOR_PROMPT_TEMPLATE.md";
+@source not "../*.md";
+@source not "../**/*.md";
+
 @layer base {
   :root {
     /* ─── shadcn/ui semantic tokens (keep for compatibility) ─── */

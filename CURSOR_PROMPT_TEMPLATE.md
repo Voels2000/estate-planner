@@ -24,8 +24,7 @@ different bracket syntax per utility — wrong syntax fails **silently** (no bui
 'shadow-[var(--mwm-shadow)]'        ✅
 ```
 
-**Phase 3 indigo sweep:** use `bg-[var(--mwm-*)]` for backgrounds; use `color:` only
-on `text-`, `border-`, and `ring-` utilities.
+**Phase 3 indigo sweep:** use `bg-[var(--mwm-navy)]` (no `color:` prefix on `bg-`); use `color:` prefix only for `text-`, `border-`, and `ring-` utilities.
 
 **Active sidebar nav (authenticated shell):**
 
