@@ -104,7 +104,7 @@ This is a developer reference, not a full SQL DDL dump.
 ### `privacy_requests` (Sprint C-7)
 
 - **Purpose:** WCPA consumer rights intake (deletion, access, correction, portability, opt_out); 45-day SLA.
-- **Key columns:** `user_id` (nullable), `email`, `request_type`, `status`, `received_at`, `due_at` (generated +45 days), `completed_at`, `notes`
+- **Key columns:** `user_id` (nullable), `email`, `request_type`, `status`, `received_at`, `due_at` (DEFAULT `now() + 45 days`), `completed_at`, `notes`
 - **RLS:** authenticated INSERT/SELECT own rows; service role full access
 - **Migration:** `20260625170000_sprint_c7_privacy_requests.sql`
 
@@ -360,8 +360,8 @@ After each schema-affecting session:
 - `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
 - `20260602120000_sprint_p1_indexes.sql` — Sprint P-1 — `idx_assets_owner_id`, `idx_liabilities_owner_id` (`5c24160`)
 - `20260602130000_sprint_p2_recommendations_cache.sql` — Sprint P-2 — `estate_health_scores.recommendations` jsonb (`47a38f3`)
-- `20260625170000_sprint_c7_privacy_requests.sql` — Sprint C-7 — `privacy_requests` WCPA intake
-- `20260625120000_sprint_c6_deletion_compliance.sql` — Sprint C-6 — `deletion_audit_log`, `deletion_schedule` (`4d9571e`, `01b997a`)
+- `20260625170000_sprint_c7_privacy_requests.sql` — Sprint C-7 — `privacy_requests` WCPA intake ✅ prod
+- `20260625120000_sprint_c6_deletion_compliance.sql` — Sprint C-6 — `deletion_audit_log`, `deletion_schedule` ✅ prod (`4d9571e`, `01b997a`)
 - `20260602150000_sprint_f2_import_traceability.sql` — Sprint F-2 — `ingestion_job_id` on financial tables; `header_row_index`, `sheet_name` on `ingestion_jobs`
 - `20260602140000_sprint_f1_ingestion_jobs.sql` — Sprint F-1 — `ingestion_jobs` 14-column schema + RLS (verified prod)
 

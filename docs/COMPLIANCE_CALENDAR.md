@@ -4,6 +4,23 @@ Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy 
 
 **Related:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6/C-7 (`deleteUser`, compliance cron)
 
+**Status:** C-6 + C-7 fully live in production (2026-05-25). Migrations `20260625120000`, `20260625170000` applied.
+
+## Compliance infrastructure (live)
+
+| What | How | Status |
+|------|-----|--------|
+| 30-day post-cancellation deletion | Stripe webhook → `deletion_schedule` → 2am cron | ✅ Live |
+| Plan-change guard | Webhook + cron double-check | ✅ Live |
+| Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
+| Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
+| Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
+| WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast (Resend verified) | ✅ Live |
+| Migrations | Through `20260625170000`; local + remote in sync | ✅ Clean |
+
+**Cron manual test:** Always `https://www.mywealthmaps.com/api/cron/...` — apex redirect strips `Authorization`.
+
 ---
 
 ## Data deletion (Sprint C-6)
@@ -46,7 +63,7 @@ Handled automatically:
 | WCPA requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
 | Monthly compliance summary | 1st of month | Always — review and file |
 
-Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` only when action needed (or monthly summary on the 1st). All-clear days send **no email**.
+Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoels@comcast.net`) only when action needed (or monthly summary on the 1st). All-clear days send **no email**.
 
 ## On alert email received
 

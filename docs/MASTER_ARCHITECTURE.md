@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-25 (Sprint C-6 WCPA deletion; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (Sprint C-6/C-7 compliance infrastructure live; Sprint 17 go-live prep)
 
 ---
 
@@ -359,7 +359,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 | `NEXT_PUBLIC_APP_URL` | Sitemap, drip links, referral URLs, recompute `fetch` | Replace preview URL with `https://mywealthmaps.com` |
 | `RECOMPUTE_SECRET` | `afterHouseholdWrite` → `/api/recompute-estate-health` | Must match `.env.local` (quote value if it contains `!` or `#`) |
 | `RESEND_API_KEY` | Drip and transactional email | Confirm set |
-| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops inbox (Sprint C-7) | Set before deploy |
+| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops inbox (Sprint C-7) | ✅ `avoels@comcast.net` |
 | `INTERNAL_API_KEY` | Drip + cron internal server calls | Confirm set |
 | `CRON_SECRET` | `/api/cron/notifications`, `/api/cron/age-triggers` | Confirm set |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser Supabase client | Confirm set |
@@ -768,6 +768,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
 
+**Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
+
 **Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d).
 
 **GitHub Actions:** `.github/workflows/cron-notifications.yml` — **manual only** (`workflow_dispatch`). Schedule removed to avoid duplicating or racing Vercel cron. Production URL: `https://estate-planner-gules.vercel.app/api/cron/notifications`. Requires `CRON_SECRET` in GitHub repo secrets.
@@ -784,15 +786,30 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
 - **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded.
 - **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions`, `POST /api/admin/deletions/execute`.
-- **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — apply before deploy.
+- **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — ✅ applied in production.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
 
 **Privacy requests (Sprint C-7 — WCPA):**
 
-- **Table:** `privacy_requests` — five request types; `due_at` generated (+45 days); statuses `pending` / `in_progress` / `completed` / `denied`.
+- **Table:** `privacy_requests` — five request types; `due_at` DEFAULT (`now() + 45 days`); statuses `pending` / `in_progress` / `completed` / `denied`.
 - **Consumer:** `POST /api/consumer/privacy-request` from `/settings/security`; confirmation email with reference ID + due date.
 - **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`).
-- **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only).
+- **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only); emails `COMPLIANCE_EMAIL` only when action needed.
+- **Migration:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ applied in production.
+
+**Compliance infrastructure summary (C-6 + C-7 — live 2026-05-25):**
+
+| What | How | Status |
+|------|-----|--------|
+| 30-day post-cancellation deletion | Stripe webhook → `deletion_schedule` → 2am cron | ✅ Live |
+| Plan-change guard | Webhook + cron double-check | ✅ Live |
+| Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
+| Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
+| Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
+| WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Email senders | `hello@`, `noreply@`, `privacy@` (Resend → Comcast) | ✅ Live |
+
+**Commits:** C-6 `4d9571e`, `01b997a` · C-7 `ddbf079`, `1ce9110`
 
 **In-app life events (Sprint 3):**
 

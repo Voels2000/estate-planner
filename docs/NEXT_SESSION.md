@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Sprint C-7 compliance reminders + privacy intake)
+# Updated: 2026-05-25 (Sprint C-6/C-7 compliance infrastructure — fully closed in prod)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-6** (incl. WCPA deletion + admin **Data & Compliance** tab at `/admin`), **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import**, education nav on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe/Supabase Dashboard config, C-6 migration in prod, and go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** Compliance **C-2b → C-7** fully live in production (deletion automation, daily compliance cron, WCPA privacy intake, verified email senders). **Sprint P-1 + P-2 perf**, **Sprint F-1 + F-2 import**, education nav on `main`. Waitlist active. **No code blockers** for open signups — remaining work is legal review, Stripe Dashboard config, and go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -22,8 +22,8 @@
 | **C-3** | RLS fixes (`236890c`); auth callback, MFA, security headers, PII logging (`56a4407`); Monte Carlo UX + docs (`cda2ccc`); audit artifacts gitignored (`d854c05`) | `236890c`, `56a4407`, `cda2ccc`, `d854c05` | ✅ |
 | **C-4** | Billing disclosures — RCW 19.316, FTC Negative Option, renewal reminders | `462bda9` | ✅ code — manual Stripe walkthrough remains |
 | **C-5** | Privacy Policy (`/privacy`), Terms of Service (`/terms`), footer links, sitemap | `2e1dff3`, `695a860` | ✅ — legal review + TODO placeholders remain |
-| **C-6** | WCPA deletion — `deleteUser`, webhook schedule + plan-change guards, cron, admin UI, CLI | `4d9571e`, `01b997a` | ✅ code — apply migration in prod |
-| **C-7** | Compliance cron + `privacy_requests` intake | (this commit) | ✅ code — `COMPLIANCE_EMAIL` + C-7 migration in prod |
+| **C-6** | WCPA deletion — `deleteUser`, webhook schedule + plan-change guards, cron, admin UI, CLI | `4d9571e`, `01b997a` | ✅ live in prod |
+| **C-7** | Compliance cron + `privacy_requests` intake | `ddbf079`, `1ce9110` | ✅ live in prod |
 
 **Audit scripts (must stay 0):** `bash scripts/audit-ux-language.sh` · `bash scripts/security-audit.sh`
 
@@ -43,7 +43,38 @@
 
 **Commits:** `4d9571e` (infra + guards), `01b997a` (admin UI + CLI)
 
-**Before deploy:** Apply migration `20260625120000_sprint_c6_deletion_compliance.sql` in production.
+**Production:** Migrations `20260625120000`, `20260625170000` applied. Crons verified via `https://www.mywealthmaps.com` (apex redirect strips `Authorization`).
+
+---
+
+## Compliance infrastructure — C-6 + C-7 ✅ LIVE (2026-05-25)
+
+| What | How | Status |
+|------|-----|--------|
+| 30-day post-cancellation deletion | Stripe webhook → `deletion_schedule` → 2am cron | ✅ Live |
+| Plan-change guard | Webhook + cron double-check (`deletionGuards.ts`) | ✅ Live |
+| Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
+| Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
+| Daily compliance check | 8am cron → `avoels@comcast.net` if issues (`COMPLIANCE_EMAIL`) | ✅ Live |
+| WCPA privacy requests | In-app form + 45-day SLA (`privacy_requests`) | ✅ Live |
+| Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast inbox (Resend verified) | ✅ Live |
+| Migration history | Through `20260625170000`; local + remote in sync | ✅ Clean |
+
+**Cron manual test:** `curl -sS https://www.mywealthmaps.com/api/cron/compliance-reminders -H "Authorization: Bearer $CRON_SECRET"` → `{"sent":false,"message":"All clear — no email sent"}` when healthy.
+
+---
+
+## Sprint C-7 closed ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Table** | `privacy_requests` — five WCPA rights; `due_at` DEFAULT (+45 days) |
+| **Cron** | `GET /api/cron/compliance-reminders` — 8am UTC; emails only on issues or monthly summary (1st) |
+| **Consumer** | `/settings/security` → Privacy Rights; confirmation email with reference ID |
+| **Admin** | Privacy Requests sub-view; PATCH status via `/api/admin/deletions` |
+| **Ops email** | `COMPLIANCE_EMAIL=avoels@comcast.net` in Vercel Production |
+
+**Commits:** `ddbf079`, `1ce9110` (migration `due_at` fix)
 
 ---
 

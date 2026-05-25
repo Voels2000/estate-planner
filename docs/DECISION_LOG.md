@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: May 2026 (Sprint C-6 WCPA deletion)
+# Last updated: May 2026 (Sprint C-6/C-7 compliance infrastructure live)
 
 ---
 
@@ -382,6 +382,24 @@ Pass = at least one row with referral code matching a test signup.
 **Reasoning:** Plan upgrades cancel the old subscription while a new one is created on the same customer. Scheduling deletion would destroy a paying advisor’s household data.
 
 **Implication:** `lib/compliance/deletionGuards.ts`, `scheduleDeletionOnCancel.ts`, webhook + cron. Documented in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) and [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+
+---
+
+### May 2026 — Compliance cron alerts + privacy intake (Sprint C-7)
+
+**Decision:** Daily `compliance-reminders` cron emails `COMPLIANCE_EMAIL` (`avoels@comcast.net`) only when checks fail (overdue deletions, deletion failures in 7d, privacy requests due within 7d) or on the 1st of the month (monthly summary). All-clear days send no email. WCPA requests tracked in `privacy_requests` with 45-day SLA; consumer intake at `/settings/security`.
+
+**Reasoning:** Alert fatigue undermines compliance culture; a single ops inbox is sufficient pre-scale. `due_at` uses column DEFAULT not GENERATED — Postgres rejects `(received_at + interval)` as non-immutable.
+
+**Implication:** `ddbf079`, `1ce9110`. Manual cron tests must use `https://www.mywealthmaps.com` — apex 307 to www drops `Authorization` on redirect.
+
+---
+
+### May 2026 — Cron tests use www host (ops)
+
+**Decision:** Document and use `https://www.mywealthmaps.com` for manual cron `curl` tests, not the apex domain.
+
+**Reasoning:** Vercel redirects apex → www; curl does not resend `Authorization` on cross-host redirect → spurious 401.
 
 ---
 

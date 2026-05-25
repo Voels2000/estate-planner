@@ -34,7 +34,7 @@ When you send the Terms of Service to counsel:
 - [ ] Legal review of Privacy Policy — particularly:
   - Section 4 (WCPA legal basis) — confirm with WA-licensed counsel
   - Section 10 (Breach notification) — confirm 30-day timeline with counsel
-- [ ] Create privacy@mywealthmaps.com email address (or alias)
+- [x] Create privacy@mywealthmaps.com email address (or alias) — Resend verified 2026-05-25
 - [ ] Create security@mywealthmaps.com email address (or alias)
 - [ ] Create legal@mywealthmaps.com email address (or alias)
 - [ ] Update app_config.terms_sections in Supabase with final ToS content
@@ -44,6 +44,6 @@ When you send the Terms of Service to counsel:
 
 ## Can complete post-launch (within 30 days)
 
-- [ ] WCPA consumer rights request flow — email handler at privacy@mywealthmaps.com
-- [x] Data retention automation — 30-day post-cancellation schedule + cron (Sprint C-6 code); apply migration in prod; monthly check in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
+- [x] WCPA consumer rights request flow — in-app form at `/settings/security` + `privacy_requests` table; email `privacy@mywealthmaps.com` for manual requests (Sprint C-7)
+- [x] Data retention automation — 30-day post-cancellation schedule + cron (Sprint C-6); live in prod; [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
 - [ ] Cookie consent banner (low priority — no advertising cookies used)

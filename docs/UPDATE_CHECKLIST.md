@@ -21,7 +21,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 + P-2 — performance quick wins and pre-launch refactors |
-| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, automated 30-day cancellation, monthly compliance checks (Sprint C-6) |
+| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
 
 ## When to update docs
 
@@ -73,7 +73,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 ## Pre-Sprint-14 gate checklist — Sprint 13 closed ✅
 
 - [x] Acquisition & attribution smoke A–G passed (staging)
-- [x] 67 migrations applied and verified
+- [x] 69 migrations applied and verified (incl. C-6, C-7)
 - [x] E2E 51/0/1 on staging
 - [x] Test seed scripts committed and run
 - [x] Supabase verification queries documented in smoke test
@@ -105,23 +105,37 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
 - [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
 
-## Sprint C-6 focus — closed ✅ 2026-05-25 (code)
+## Sprint C-6 focus — closed ✅ 2026-05-25 (prod)
 
 - [x] `lib/compliance/deleteUser.ts`, `deletionGuards.ts`, `scheduleDeletionOnCancel.ts` — `4d9571e`
-- [x] Migration `20260625120000_sprint_c6_deletion_compliance.sql` — apply in prod before deploy
+- [x] Migration `20260625120000_sprint_c6_deletion_compliance.sql` — applied in prod
 - [x] Webhook plan-change guards + cron re-verification
 - [x] Admin `/admin` → Data & Compliance tab + APIs — `01b997a`
 - [x] `scripts/gdpr-delete-user.ts` → `deleteUser`
 - [x] [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md)
 
-**Monthly (ongoing):** Admin Portal → Data & Compliance → confirm no overdue scheduled deletions (`scheduled_for` in past, `status=pending`); review audit log last 30 days. Daily alerts via `COMPLIANCE_EMAIL` when cron finds issues.
+## Sprint C-7 focus — closed ✅ 2026-05-25 (prod)
 
-## Sprint C-7 focus — closed ✅ 2026-05-25 (code)
-
-- [x] `privacy_requests` + compliance-reminders cron (`COMPLIANCE_EMAIL`)
+- [x] `privacy_requests` + compliance-reminders cron — `ddbf079`, `1ce9110`
+- [x] `COMPLIANCE_EMAIL=avoels@comcast.net` in Vercel Production
 - [x] Consumer `/settings/security` privacy form + confirmation email
 - [x] Admin Privacy Requests tab
-- [ ] Apply `20260625170000_sprint_c7_privacy_requests.sql` + set `COMPLIANCE_EMAIL` in prod
+- [x] Crons verified on `https://www.mywealthmaps.com` (not apex — redirect strips auth)
+
+## Compliance infrastructure (C-6 + C-7) ✅ LIVE
+
+| What | How | Status |
+|------|-----|--------|
+| 30-day post-cancellation deletion | Stripe → `deletion_schedule` → 2am cron | ✅ Live |
+| Plan-change guard | Webhook + cron | ✅ Live |
+| Deletion audit trail | `deletion_audit_log` | ✅ Live |
+| Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
+| Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
+| WCPA privacy requests | In-app form + 45-day SLA | ✅ Live |
+| Email infrastructure | `hello@`, `noreply@`, `privacy@` verified | ✅ Live |
+| Migrations | Through `20260625170000`; in sync | ✅ Clean |
+
+**Monthly (ongoing):** Admin Portal → Data & Compliance — overdue deletions + audit log; rely on daily `COMPLIANCE_EMAIL` alerts when issues exist.
 
 ## Sprint F-2 focus — shipped 2026-06-02
 

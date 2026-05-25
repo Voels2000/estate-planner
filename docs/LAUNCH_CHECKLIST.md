@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-25 (Sprint C-6 closed; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (Sprint C-6/C-7 compliance live in prod; Sprint 17 go-live prep)
 
 ---
 
@@ -79,21 +79,22 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **App URL in emails** — `lib/app-url.ts` `getAppUrl()` on email routes (Sprint 9)
 - [x] **Digital Assets tier gate** — `FEATURE_TIERS['digital-assets'] = 2` + `UpgradeBanner` on page (Sprint 9)
 
-### Data deletion & WCPA (Sprint C-6)
+### Data deletion & WCPA (Sprint C-6) ✅ verified 2026-05-25
 
-- [ ] **`deletion_audit_log` and `deletion_schedule` tables live** — migration `20260625120000_sprint_c6_deletion_compliance.sql` applied in production (verify with SQL in [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md))
-- [ ] **30-day post-cancellation deletion automated** — Stripe `customer.subscription.deleted` webhook schedules; `GET /api/cron/process-deletions` at 2am UTC (`vercel.json`); reactivation cancels pending schedule
-- [ ] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion (dry-run default)
-- [ ] **Plan-change guard verified** — consumer → advisor upgrade does **not** schedule deletion (active Stripe sub + role checks in webhook and cron; see `lib/compliance/deletionGuards.ts`)
-- [ ] **CLI script** — `scripts/gdpr-delete-user.ts` delegates to `lib/compliance/deleteUser.ts` (same path as admin + cron)
+- [x] **`deletion_audit_log` and `deletion_schedule` tables live** — `20260625120000_sprint_c6_deletion_compliance.sql` applied
+- [x] **30-day post-cancellation deletion automated** — webhook schedules; `GET /api/cron/process-deletions` 2am UTC; cron smoke `{"processed":0,"message":"No deletions due"}`
+- [x] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion
+- [x] **Plan-change guard** — `lib/compliance/deletionGuards.ts` in webhook + cron
+- [x] **CLI script** — `scripts/gdpr-delete-user.ts` → `deleteUser`
 
-### Compliance reminders (Sprint C-7)
+### Compliance reminders (Sprint C-7) ✅ verified 2026-05-25
 
-- [ ] **`privacy_requests` table live** — migration `20260625170000_sprint_c7_privacy_requests.sql` applied in production
-- [ ] **`COMPLIANCE_EMAIL` set in Vercel Production** — receives daily compliance report when issues exist; monthly summary on 1st
-- [ ] **Compliance reminders cron** — `GET /api/cron/compliance-reminders` at 8am UTC (`vercel.json`)
-- [ ] **In-app privacy intake** — `/settings/security` → Privacy Rights; confirmation email with reference ID
-- [ ] **Admin Privacy Requests tab** — `/admin` → Data & Compliance → status updates
+- [x] **`privacy_requests` table live** — `20260625170000_sprint_c7_privacy_requests.sql` applied (`due_at` DEFAULT +45 days)
+- [x] **`COMPLIANCE_EMAIL`** — `avoels@comcast.net` in Vercel Production
+- [x] **Compliance reminders cron** — 8am UTC; manual test via **`https://www.mywealthmaps.com`** (apex redirect strips `Authorization`)
+- [x] **In-app privacy intake** — `/settings/security` → Privacy Rights + confirmation email
+- [x] **Admin Privacy Requests tab** — status updates via PATCH `/api/admin/deletions`
+- [x] **Resend senders verified** — `hello@`, `noreply@`, `privacy@` → Comcast inbox
 
 - [ ] **Attorney referral production test** — run `npx tsx scripts/seed-test-attorney.ts` (or register manually); confirm `referral_code` on listing; sign in as `test-attorney-portal@rolobe.resend.app` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
@@ -202,7 +203,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
-| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | **Set before deploy** — founder/ops inbox |
+| `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | ✅ `avoels@comcast.net` (2026-05-25) |
 
 **Checklist (Production environment only):**
 
@@ -252,7 +253,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Supabase prod migrations (confirm applied)
 
-**Sprint 13:** 67 migrations applied — local and remote in sync (incl. `20260601000000`).
+**Sprint 13–C-7:** 69 migrations applied — local and remote in sync (incl. C-6 `20260625120000`, C-7 `20260625170000`).
 
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
 - [x] Final prod spot-check before Sprint 15 go-live (2026-05-24)

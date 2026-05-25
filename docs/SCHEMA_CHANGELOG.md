@@ -8,24 +8,24 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Sprint C-7 (2026-05-25) — Compliance reminders + privacy requests
+## Sprint C-7 (2026-05-25) — Compliance reminders + privacy requests ✅ LIVE
 
-**Migration:** `20260625170000_sprint_c7_privacy_requests.sql`
+**Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` (applied prod)
 
-- **`privacy_requests`:** five WCPA rights; `due_at` generated (`received_at + 45 days`); consumer INSERT at `/settings/security`
-- **Cron:** `GET /api/cron/compliance-reminders` (8am UTC) → `COMPLIANCE_EMAIL`
+- **`privacy_requests`:** five WCPA rights; `due_at` DEFAULT (`now() + 45 days`) — not GENERATED (Postgres immutability); consumer INSERT at `/settings/security`
+- **Cron:** `GET /api/cron/compliance-reminders` (8am UTC) → `COMPLIANCE_EMAIL` (`avoels@comcast.net`); no email when all clear
 - **APIs:** `POST /api/consumer/privacy-request`; admin `GET view=privacy`, `PATCH` status
+- **Commits:** `ddbf079`, `1ce9110` (`due_at` migration fix)
 
 ---
 
-## Sprint C-6 (2026-05-25) — Data deletion & WCPA compliance
+## Sprint C-6 (2026-05-25) — Data deletion & WCPA compliance ✅ LIVE
 
-**Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — **commits `4d9571e`, `01b997a`**
+**Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` (applied prod) — **commits `4d9571e`, `01b997a`**
 
 - **`deletion_audit_log`:** append-only audit trail for all deletions (reason, initiated_by, row counts, success)
 - **`deletion_schedule`:** pending/executed/cancelled automated deletions; indexed on `scheduled_for` where `status=pending`
 - **Code:** `deleteUser.ts`, webhook schedule + plan-change guards, `process-deletions` cron, admin Data & Compliance tab, `gdpr-delete-user.ts` CLI
-- **Apply in production** before automated post-cancellation deletion runs
 
 ---
 

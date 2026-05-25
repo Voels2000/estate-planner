@@ -99,6 +99,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `47a38f3` | P-2 | Pre-launch perf — recommendations cache, projections cache-first, auth dedup |
 | `4d9571e` | C-6 | Deletion infra, Stripe plan-change guards, process-deletions cron |
 | `01b997a` | C-6 | Admin Data & Compliance tab, admin APIs, gdpr-delete-user CLI |
+| `ddbf079` | C-7 | Compliance reminders cron, privacy_requests, consumer + admin intake |
+| `1ce9110` | C-7 | Migration fix — `due_at` DEFAULT not GENERATED |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
@@ -144,21 +146,39 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | C-3 RLS + auth/security | ✅ | `236890c`, `56a4407`, `cda2ccc`, `d854c05` |
 | C-4 Billing disclosures | ✅ code | `462bda9` |
 | C-5 Privacy + Terms | ✅ code | `2e1dff3`, `695a860` |
-| C-6 Data deletion (WCPA) | ✅ code | `4d9571e`, `01b997a` |
+| C-6 Data deletion (WCPA) | ✅ live | `4d9571e`, `01b997a` |
+| C-7 Compliance reminders + privacy intake | ✅ live | `ddbf079`, `1ce9110` |
 
 ---
 
-### Sprint C-7 — Compliance reminders + privacy intake ✅ CLOSED 2026-05-25 (code)
+### Compliance infrastructure (C-6 + C-7) ✅ LIVE 2026-05-25
 
-- `[x]` `privacy_requests` table + migration
-- `[x]` Daily compliance cron → `COMPLIANCE_EMAIL` (issues only; monthly summary on 1st)
+| What | How | Status |
+|------|-----|--------|
+| 30-day post-cancellation deletion | Stripe webhook → `deletion_schedule` → 2am cron | ✅ Live |
+| Plan-change guard | Webhook + cron double-check | ✅ Live |
+| Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
+| Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
+| Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
+| WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Email infrastructure | `hello@`, `noreply@`, `privacy@` verified via Resend | ✅ Live |
+| Migrations | `20260625120000`, `20260625170000` applied; schema in sync | ✅ Clean |
+
+---
+
+### Sprint C-7 — Compliance reminders + privacy intake ✅ CLOSED 2026-05-25 (prod)
+
+- `[x]` `privacy_requests` table + migration applied in production
+- `[x]` Daily compliance cron → `COMPLIANCE_EMAIL` (`avoels@comcast.net`); issues only; monthly summary on 1st
 - `[x]` Consumer privacy form at `/settings/security`
 - `[x]` Admin Privacy Requests sub-view + PATCH status
-- `[ ]` Apply migration + set `COMPLIANCE_EMAIL` in Vercel Production
+- `[x]` Production cron smoke — use `www.mywealthmaps.com` (apex strips auth header)
+
+**Commits:** `ddbf079`, `1ce9110`
 
 ---
 
-## Sprint C-6 — Data deletion & WCPA compliance ✅ CLOSED 2026-05-25 (code)
+## Sprint C-6 — Data deletion & WCPA compliance ✅ CLOSED 2026-05-25 (prod)
 
 **Goal:** Washington WCPA right-to-delete + Privacy Policy 30-day post-cancellation automation.
 
@@ -169,7 +189,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - `[x]` Admin `/admin` → Data & Compliance tab — schedule, audit, execute dry-run (`01b997a`)
 - `[x]` `scripts/gdpr-delete-user.ts` — CLI uses same `deleteUser` path
 - `[x]` [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) — SOP + monthly checks
-- `[ ]` Apply C-6 migration in production before relying on automated deletion
+- `[x]` C-6 migration applied in production; crons verified
 
 **Commits:** `4d9571e`, `01b997a`
 
@@ -264,7 +284,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 **Goal:** Stable staging, migrations verified, smoke test extended. Feature freeze begins.
 
 **Shipped**
-- `[x]` **67 migrations** applied (local + remote in sync, incl. `20260601000000` advisor referral trigger)
+- `[x]` **69 migrations** applied (local + remote in sync; incl. C-6 `20260625120000`, C-7 `20260625170000`)
 - `[x]` E2E staging — **51 passed, 0 failed, 1 skipped**
 - `[x]` Seed scripts — `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`
 - `[x]` Acquisition & attribution smoke **A–G passed** on staging
