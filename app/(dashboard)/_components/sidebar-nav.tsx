@@ -35,17 +35,17 @@ const DEFAULT_CLOSED_GROUPS = new Set([
 const NAV_LINK_BASE =
   'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors duration-150'
 const NAV_ACTIVE =
-  'bg-[var(--mwm-navy)] text-white border-l-[3px] border-l-[var(--mwm-gold)] pl-[calc(0.75rem-3px)] pr-3'
+  'bg-[color:var(--mwm-navy)] text-white border-l-[3px] border-l-[color:var(--mwm-gold)] pl-[9px] pr-3'
 const NAV_INACTIVE =
-  'px-3 text-[var(--mwm-text-secondary)] hover:bg-[var(--mwm-off-white)] hover:text-[var(--mwm-navy)]'
+  'px-3 text-[color:var(--mwm-text-secondary)] hover:bg-[color:var(--mwm-off-white)] hover:text-[color:var(--mwm-navy)]'
 
 function navLinkClass(active: boolean, extra = '') {
   return `${NAV_LINK_BASE} ${active ? NAV_ACTIVE : NAV_INACTIVE} ${extra}`.trim()
 }
 const SECTION_HEADER =
-  'text-xs font-semibold tracking-widest text-[var(--mwm-text-muted)] uppercase'
+  'text-xs font-semibold tracking-widest text-[color:var(--mwm-text-muted)] uppercase'
 const YOUR_PLAN_BADGE =
-  'text-[10px] font-semibold tracking-wider uppercase bg-[var(--mwm-gold)] text-[var(--mwm-navy)] px-2 py-0.5 rounded-full'
+  'text-[10px] font-semibold tracking-wider uppercase bg-[color:var(--mwm-gold)] text-[color:var(--mwm-navy)] px-2 py-0.5 rounded-full'
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -186,25 +186,25 @@ export function SidebarNav({
   }
 
   return (
-    <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--mwm-border)] bg-white lg:my-2 lg:ml-2 lg:w-64">
+    <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-[color:var(--mwm-border)] bg-white lg:my-2 lg:ml-2 lg:w-64">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-[var(--mwm-border)]">
+      <div className="px-6 py-5 border-b border-[color:var(--mwm-border)]">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-2">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--mwm-gold)] font-[family-name:var(--font-display)] text-base font-semibold text-[var(--mwm-navy)]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--mwm-gold)] font-[family-name:var(--font-display)] text-base font-semibold text-[color:var(--mwm-navy)]"
                 aria-hidden
               >
                 M
               </div>
-              <span className="font-[family-name:var(--font-display)] text-sm font-medium leading-tight text-[var(--mwm-navy)]">
+              <span className="font-[family-name:var(--font-display)] text-sm font-medium leading-tight text-[color:var(--mwm-navy)]">
                 My Wealth Maps
               </span>
             </div>
-            <p className="text-xs text-[var(--mwm-text-muted)] mt-0.5 truncate">{user.email}</p>
+            <p className="text-xs text-[color:var(--mwm-text-muted)] mt-0.5 truncate">{user.email}</p>
             {!isAdvisor && (
-              <span className="mt-1.5 inline-block rounded-full bg-[var(--mwm-off-white)] px-2 py-0.5 text-xs font-medium text-[var(--mwm-text-secondary)]">
+              <span className="mt-1.5 inline-block rounded-full bg-[color:var(--mwm-off-white)] px-2 py-0.5 text-xs font-medium text-[color:var(--mwm-text-secondary)]">
                 {TIER_NAMES[tier as 1 | 2 | 3] ?? 'Starter'} Plan
               </span>
             )}
@@ -230,7 +230,7 @@ export function SidebarNav({
                 type="button"
                 disabled={groupIsLocked}
                 onClick={() => toggleGroup(group.label)}
-                className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--mwm-off-white)] ${
+                className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--mwm-off-white)] ${
                   groupIsLocked ? 'cursor-not-allowed' : ''
                 } disabled:cursor-not-allowed disabled:opacity-100`}
               >
@@ -245,7 +245,7 @@ export function SidebarNav({
                 {groupIsLocked && (
                   <span className="text-amber-400 text-sm mr-1">🔒</span>
                 )}
-                <span className="text-[var(--mwm-text-muted)]">{isOpen ? '▾' : '▸'}</span>
+                <span className="text-[color:var(--mwm-text-muted)]">{isOpen ? '▾' : '▸'}</span>
               </button>
 
               {isOpen && (
@@ -340,7 +340,7 @@ export function SidebarNav({
                     const leafClasses = navLinkClass(
                       isActive,
                       locked || attorneyTierGate
-                        ? 'px-3 text-[var(--mwm-text-muted)] cursor-not-allowed'
+                        ? 'px-3 text-[color:var(--mwm-text-muted)] cursor-not-allowed'
                         : '',
                     )
                     return (
@@ -590,7 +590,7 @@ export function SidebarNav({
 
       </nav>
 
-      <div className="border-t border-[var(--mwm-border)]">
+      <div className="border-t border-[color:var(--mwm-border)]">
         <div className="px-3 pt-3 pb-1 space-y-0.5">
           {(role === 'consumer' || isSuperuser) && (
             <Link
@@ -664,7 +664,7 @@ export function SidebarNav({
           review summaries here on your phone.
         </p>
 
-        <div className="px-3 pb-4 pt-1 border-t border-[var(--mwm-border)]">
+        <div className="px-3 pb-4 pt-1 border-t border-[color:var(--mwm-border)]">
           <button
             onClick={handleSignOut}
             className={navLinkClass(false)}

@@ -111,7 +111,7 @@ export function LifeEventBanner({
               <span className="text-sm text-neutral-700">{title}</span>
               <Link
                 href={`/event/${event.event_type}`}
-                className="text-xs font-medium text-[var(--mwm-gold)] hover:underline"
+                className="text-xs font-medium text-[color:var(--mwm-gold)] hover:underline"
               >
                 Review →
               </Link>
@@ -130,20 +130,20 @@ export function LifeEventBanner({
 
     return (
       <div>
-        <div className="mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border border-[var(--mwm-gold)]/40 bg-[var(--mwm-gold-pale)] px-4 py-3">
+        <div className="mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold-pale)] px-4 py-3">
           <div className="flex items-start gap-3 min-w-0">
             <span className="mt-0.5 shrink-0 text-base">📅</span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--mwm-navy)]">
+              <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">
                 A planning milestone is coming up for you
               </p>
-              <p className="mt-0.5 text-xs text-[var(--mwm-text-secondary)]">
+              <p className="mt-0.5 text-xs text-[color:var(--mwm-text-secondary)]">
                 Based on your age, {label.toLowerCase()} planning decisions are now relevant.
                 Review what may change in your picture.
               </p>
               <Link
                 href={`/event/${pendingCalendarEvent.event_type}`}
-                className="mt-1.5 inline-flex text-xs font-medium text-[var(--mwm-gold)] underline-offset-2 hover:underline"
+                className="mt-1.5 inline-flex text-xs font-medium text-[color:var(--mwm-gold)] underline-offset-2 hover:underline"
               >
                 See what this means for your plan →
               </Link>
@@ -155,7 +155,7 @@ export function LifeEventBanner({
               void handleAcknowledge(pendingCalendarEvent.id)
               setDismissed(true)
             }}
-            className="shrink-0 text-xs text-[var(--mwm-text-muted)] hover:text-[var(--mwm-navy)] leading-none"
+            className="shrink-0 text-xs text-[color:var(--mwm-text-muted)] hover:text-[color:var(--mwm-navy)] leading-none"
             aria-label="Dismiss"
           >
             ✕
@@ -203,7 +203,7 @@ export function LifeEventBanner({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search life events…"
-              className="w-full rounded-lg border border-[var(--mwm-border)] bg-[var(--mwm-off-white)] px-3 py-2 text-sm text-[var(--mwm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--mwm-navy)]/20"
+              className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[color:var(--mwm-off-white)] px-3 py-2 text-sm text-[color:var(--mwm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/20"
               autoFocus
             />
           </div>
@@ -224,7 +224,7 @@ export function LifeEventBanner({
                           type="button"
                           disabled={submitting}
                           onClick={() => void handleSelectEvent(event.slug)}
-                          className="w-full rounded-lg border border-[var(--mwm-border)] bg-[var(--mwm-off-white)] px-3 py-3 text-left transition-colors hover:border-[var(--mwm-gold)] hover:bg-[var(--mwm-gold-pale)] disabled:opacity-50"
+                          className="w-full rounded-lg border border-[color:var(--mwm-border)] bg-[color:var(--mwm-off-white)] px-3 py-3 text-left transition-colors hover:border-[color:var(--mwm-gold)] hover:bg-[color:var(--mwm-gold-pale)] disabled:opacity-50"
                         >
                           <span className="block text-sm font-medium text-neutral-900">
                             {event.title}
@@ -268,7 +268,7 @@ export function LifeEventBanner({
             <button
               type="button"
               onClick={() => setShowPicker(true)}
-              className="font-medium text-[var(--mwm-gold)] hover:underline underline-offset-2"
+              className="font-medium text-[color:var(--mwm-gold)] hover:underline underline-offset-2 cursor-pointer"
             >
               Log a life event
             </button>
@@ -288,7 +288,7 @@ export function LifeEventBanner({
       {!hasAdvisorConnection && loggedEvents.length > 0 && (
         <p className="mt-2 text-xs text-neutral-500">
           An advisor can help interpret event-specific planning gaps at your asset level.{' '}
-          <Link href="/find-advisor" className="font-medium text-[var(--mwm-gold)] hover:underline">
+          <Link href="/find-advisor" className="font-medium text-[color:var(--mwm-gold)] hover:underline">
             Find one →
           </Link>
         </p>
