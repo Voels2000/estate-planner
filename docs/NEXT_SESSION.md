@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Design system sidebar/banner complete; Sprint UX-1; deleteUser WCPA hardening)
+# Updated: 2026-05-25 (Design Phase 3, OB-1/OB-2, AF-1 closed; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Design system Phases 1–2c** shipped (`d173b00`, `249bf85`, `7a1a121`) — sidebar navy/gold, shared primitives, Tailwind v4 `color:` prefix. **Sprint UX-1** (`6fb73e6`). Compliance **C-2b → C-7** live. **Auth table clean:** 9 accounts. **`deleteUser.ts` hardened**. Waitlist active. **Next UI:** Phase 3 indigo sweep — every arbitrary color needs `color:` ([CURSOR_PROMPT_TEMPLATE.md](../CURSOR_PROMPT_TEMPLATE.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Design system Phases 1–3** shipped (`d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a`). **OB-1** wizard (`b1c7b49`), **OB-2** tier narrative (`bccef99`), **AF-1** ask-advisor flywheel (`a255616`). Compliance **C-2b → C-7** live. Waitlist active. **Pre-go-live DB:** apply `20260526000001_handle_new_user_trigger.sql` in production before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -16,7 +16,18 @@
 
 ---
 
-## Design system — authenticated chrome ✅ (2026-05-25)
+## Sprint summary — 2026-05-25
+
+| Sprint | Status | Commits |
+|--------|--------|---------|
+| Design system Phase 1–3 | ✅ | `d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a` |
+| Onboarding wizard OB-1 | ✅ | `b1c7b49`, `fd00b69` |
+| Tier-aware narrative OB-2 | ✅ | `bccef99` |
+| Advisor flywheel AF-1 | ✅ | `a255616` |
+
+---
+
+## Design system — Phases 1–3 ✅ (2026-05-25)
 
 | Area | Outcome |
 |------|---------|
@@ -24,11 +35,42 @@
 | **Primitives** | `Button`, `Card`, `SectionHeader`, `form.ts`; `ExportPDFButton` on shared Button |
 | **Sidebar** | Navy active fill, gold left accent, gold “M” + Playfair wordmark, YOUR PLAN badge gold/navy |
 | **Banner** | `LifeEventBanner` — “Log a life event” gold link (`!text-[color:var(--mwm-gold)]`) |
-| **Tailwind v4** | Arbitrary colors require `color:` prefix — silent failure without it |
+| **Phase 3** | Indigo sweep across planning pages, retirement/estate, portals — `color:` prefix per `CURSOR_PROMPT_TEMPLATE.md` |
 
-**Commits:** `d173b00`, `249bf85`, `7a1a121` (+ Phase 2d shell follow-up)
+**Commits:** `d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a` (+ Phase 2d/2e shell fixes `76dc8b9`, `f58affe`)
 
-**Before Phase 3:** grep planning pages for `indigo` / `text-[var(--` without `color:` — fix `dashboard-shell.tsx` and any shell files first.
+---
+
+## Onboarding wizard OB-1 ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Wizard** | `/onboarding/wizard` — extended profile + guided first-data entry |
+| **Migration** | `20260526000000_onboarding_wizard_fields.sql` — `onboarding_wizard_completed_at` |
+| **Gates** | Layout + dashboard `SetupPromptCard` when wizard incomplete |
+
+**Commits:** `b1c7b49`, `fd00b69` (remove duplicate wizard name fields)
+
+---
+
+## Tier-aware narrative OB-2 ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Copy** | Profile intro, wizard step previews, `SetupPromptCard`, `EmptyStateCard`, `UpgradeBanner` tier-aware messaging |
+
+**Commit:** `bccef99`
+
+---
+
+## Advisor flywheel AF-1 ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Consumer** | Transfer Strategies **Ask your advisor about this →** — `POST /api/consumer/ask-advisor` when `advisor_clients` connected; else `/find-advisor` |
+| **Advisor** | Client Overview **Client Strategy Questions** card — unread `consumer_strategy_question` notifications; mark read on client workspace load |
+
+**Commit:** `a255616` · **Flow:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) Transfer Strategies table
 
 ---
 

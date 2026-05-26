@@ -48,13 +48,23 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
-## Onboarding wizard (Sprint OB-1) — pre-merge
+## Onboarding wizard (Sprint OB-1) — shipped `b1c7b49`
 
 - [ ] New migration `20260526000000_onboarding_wizard_fields.sql` applied to production before deploy
-- [ ] `isWizardComplete` and `isWizardReadyProfile` exported from `profileGate.ts`
-- [ ] Layout gate exemptions verified (`/billing`, `/settings`, `/profile`, `/onboarding/*` not double-redirected)
-- [ ] Wizard skips all steps → dashboard shows `SetupPromptCard`
-- [ ] Wizard completes all steps → dashboard shows conflict alerts (not `SetupPromptCard`)
+- [x] `isWizardComplete` and `isWizardReadyProfile` exported from `profileGate.ts`
+- [x] Layout gate exemptions verified (`/billing`, `/settings`, `/profile`, `/onboarding/*` not double-redirected)
+- [x] Wizard skips all steps → dashboard shows `SetupPromptCard`
+- [x] Wizard completes all steps → dashboard shows conflict alerts (not `SetupPromptCard`)
+
+## Advisor flywheel (Sprint AF-1) — shipped `a255616`
+
+- [x] `POST /api/consumer/ask-advisor` + `AskAdvisorAboutStrategyButton` on strategy education cards
+- [x] Advisor client Overview **Client Strategy Questions** card
+- [x] [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) Transfer Strategies row updated
+
+## Signup trigger — pre-go-live
+
+- [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 
 ## Required updates before merge
 

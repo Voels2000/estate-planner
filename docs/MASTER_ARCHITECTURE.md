@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-25 (Sprint C-6/C-7 compliance infrastructure live; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (AF-1 advisor flywheel; OB-1/OB-2; design Phase 3; Sprint 17 go-live prep)
 
 ---
 
@@ -49,11 +49,14 @@ Consumers and advisors share one **household** data model but operate in separat
 - Consumer: `/my-advisor` (connection, revoke, pending `connection_requests`); optional `advisor_pdf_access`.
 - Attorneys: `attorney_clients`, `/my-attorney`, `/settings/attorney-access` (parallel, not advisor portal).
 
-**Consumer CTAs that do not notify the linked advisor**
+**Consumer strategy questions (Sprint AF-1 — shipped):**
 
-- Transfer Strategies **About this strategy** card: **Ask your advisor about this →** → `/find-advisor` (public directory). No in-app message to the connected advisor.
+- Transfer Strategies **About this strategy** card: **Ask your advisor about this →**
+  - Connected advisor (`advisor_clients` + `CONNECTED_ADVISOR_CLIENT_STATUSES`): `POST /api/consumer/ask-advisor` → `create_notification` type `consumer_strategy_question` to advisor
+  - No connected advisor: redirect `/find-advisor`
+  - Advisor: client Overview **Client Strategy Questions** card; notifications marked read on `/advisor/clients/[clientId]` load
 
-**Advisor flywheel — shipped (Sprint 9/10):**
+**Advisor flywheel — shipped (Sprint 9/10 + AF-1):**
 
 | Feature | Implementation |
 |---------|----------------|
@@ -66,7 +69,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Gap | Notes | Sprint |
 |-----|-------|--------|
 | Cross-device event slug attribution | `referral_clicks` has no `user_id`; anonymous click log. Per-user slug from `funnel_events` at signup; cross-device signup may miss `event_slug` on funnel row — see NEXT_SESSION.md | Post-launch if needed |
-| "Ask your advisor →" for connected users | Links to `/find-advisor` for all users | Post-launch (DECISION_LOG) |
+| Session-persistent “asked” state on strategy cards | Confirmation resets on refresh; notification persists in DB | V2 if needed |
 
 Sidebar portal link visibility: [CONSUMER_NAV_MAP.md → Sidebar portal links](./CONSUMER_NAV_MAP.md#sidebar-portal-links-consumer-layout).
 

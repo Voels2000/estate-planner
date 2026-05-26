@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-02 (Sprint P-1 closed; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (OB-1/OB-2/AF-1 + design Phase 3 closed; Sprint 17 go-live prep)
 
 ---
 
@@ -82,8 +82,10 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Drip step 2 check** | `[ ]` | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+) |
 | **Auth cleanup + deleteUser hardening** | `[x]` | FK scan, verify-deletion, rolobe retirement — `aea4bf6`, `3cdd9b5` |
 | **Sprint UX-1 Life Events Hub** | `[x]` | Public `/events` hub + in-app picker — `6fb73e6` |
-| **Design system Phase 1–2** | `[x]` | `--mwm-*` tokens, primitives, sidebar/banner chrome — `d173b00`, `249bf85`, `7a1a121` |
-| **Design system Phase 3** | `[ ]` | Indigo sweep ~80 planning pages — use `color:` prefix per `CURSOR_PROMPT_TEMPLATE.md` |
+| **Design system Phase 1–3** | `[x]` | Tokens, sidebar/banner, indigo sweep — `d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a` |
+| **Onboarding wizard OB-1** | `[x]` | Extended profile + `/onboarding/wizard` — `b1c7b49` (+ `fd00b69` wizard name dedup) |
+| **Tier-aware narrative OB-2** | `[x]` | Profile intro, wizard previews, SetupPromptCard tier copy — `bccef99` |
+| **Advisor flywheel AF-1** | `[x]` | Ask-advisor notification + advisor Strategy Questions card — `a255616` |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -113,6 +115,21 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `d173b00` | Design | My Wealth Maps tokens + Button/Card/form primitives |
 | `249bf85` | Design | Sidebar navy/gold chrome (Phase 2b) |
 | `7a1a121` | Design | Tailwind v4 `color:` prefix on sidebar + banner (Phase 2c) |
+| `a10299b` | Design | Phase 3 indigo sweep — Financial Planning pages |
+| `37f3f0a` | Design | Phase 3 indigo sweep — retirement, estate, portals, shared UI |
+| `b1c7b49` | OB-1 | Onboarding wizard — extended profile + guided first-data entry |
+| `fd00b69` | OB-1 | Remove duplicate wizard name fields from profile section |
+| `bccef99` | OB-2 | Tier-aware onboarding narrative and contextual messaging |
+| `a255616` | AF-1 | Ask-advisor notification + advisor Client Strategy Questions |
+
+### Sprint summary — 2026-05-25
+
+| Sprint | Status | Commits |
+|--------|--------|---------|
+| Design system Phase 1–3 | ✅ | `d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a` |
+| Onboarding wizard OB-1 | ✅ | `b1c7b49`, `fd00b69` |
+| Tier-aware narrative OB-2 | ✅ | `bccef99` |
+| Advisor flywheel AF-1 | ✅ | `a255616` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

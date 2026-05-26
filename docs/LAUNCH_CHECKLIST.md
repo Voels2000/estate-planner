@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-25 (Sprint C-6/C-7 compliance live in prod; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (OB-1/OB-2/AF-1 closed; handle_new_user prod migration gate; Sprint 17 go-live prep)
 
 ---
 
@@ -32,6 +32,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Advisor referral loop proven (staging)** — sections A/C passed Sprint 13; `?ref=` → `referral_clicks` verified
 - [x] **Attorney referral loop proven (staging)** — sections B/D passed Sprint 13; test listing + `?aref=` verified
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
+- [x] **Ask advisor about strategy (AF-1)** — connected consumer notifies advisor from Transfer Strategies education cards; advisor **Client Strategy Questions** on client Overview (`a255616`)
 
 ### Email drip
 
@@ -120,6 +121,7 @@ The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** f
 
 Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 
+- [ ] **`handle_new_user` trigger in production** — Apply `supabase/migrations/20260526000001_handle_new_user_trigger.sql` **before** flipping `PUBLIC_SIGNUP_OPEN`. Without it, new `auth.users` rows may not get a `profiles` row and onboarding breaks. Verify: sign up with a fresh email on staging after migration → `profiles` row exists with `trial_started_at`. Code on `main`: `1133b4f`.
 - [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
@@ -258,8 +260,10 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Supabase prod migrations (confirm applied)
 
-**Current (2026-05-25):** **75** timestamped migration files in `supabase/migrations/` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Local and remote in sync through `20260625170000` (C-7).
+**Current (2026-05-25):** **76+** timestamped migration files in `supabase/migrations/` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Local and remote in sync through `20260625170000` (C-7) **plus** pending prod apply for onboarding/AF-1-era migrations below.
 
+- [ ] **`20260526000000_onboarding_wizard_fields.sql`** — OB-1 wizard columns; apply before OB-1 deploy
+- [ ] **`20260526000001_handle_new_user_trigger.sql`** — **Required before open signups** — `on_auth_user_created` → `handle_new_user()` (`trial_started_at`, not legacy `trial_ends_at`)
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
 - [x] Final prod spot-check before Sprint 15 go-live (2026-05-24)
 - [x] Attorney referral code trigger: `attorney_listings_referral_code_trigger` (Sprint 8; backfill via `seed-test-attorney.ts` if absent) (2026-05-24)
@@ -319,4 +323,9 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | 2026-06-02 | Sprint C-5 | **Code complete** — Privacy Policy, Terms of Service, footer, sitemap (`2e1dff3`, `695a860`); [LEGAL_TODO.md](./LEGAL_TODO.md) remains. |
 | 2026-05-25 | Sprint UX-1 | **Closed** — Life events hub `/events` + in-app picker (`6fb73e6`) |
 | 2026-05-25 | Auth cleanup | Auth table clean (9 accounts); deleteUser FK hardening (`aea4bf6`, `3cdd9b5`); verify-deletion script |
+| 2026-05-25 | Design Phase 1–3 | **Closed** — tokens + sidebar + indigo sweep (`d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a`) |
+| 2026-05-25 | OB-1 | **Closed** — onboarding wizard + extended profile (`b1c7b49`, `fd00b69`) |
+| 2026-05-25 | OB-2 | **Closed** — tier-aware onboarding narrative (`bccef99`) |
+| 2026-05-25 | AF-1 | **Closed** — ask-advisor notification + advisor Strategy Questions (`a255616`) |
+| 2026-05-25 | DB trigger | `handle_new_user` migration on `main` (`1133b4f`) — **apply to production before go-live** |
 | 2026-05-24 | Sprint 15 cont. | Preview waitlist mode enabled; sitemap XML fixed (`73648e5`); middleware infra bypass added; test accounts cleaned up (`3f732e3`); dev workflow established (local → preview → production) |

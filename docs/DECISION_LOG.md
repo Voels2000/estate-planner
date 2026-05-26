@@ -153,6 +153,11 @@ category (not a fix) and would land in Sprint 10 or later, which risks the launc
 **Post-launch:** Add an in-app advisor flag action on strategy education cards for users with
 `advisor_clients` rows in accepted status.
 
+**Superseded (2026-05-25, Sprint AF-1 — `a255616`):** Connected consumers use
+`POST /api/consumer/ask-advisor` → advisor notification `consumer_strategy_question`; advisor
+sees **Client Strategy Questions** on client Overview. No connected advisor → `/find-advisor`.
+Session-only “Your advisor has been notified” confirmation (refresh resets UI; notification persists).
+
 ---
 
 ### June 2026 — Sprint P-2 closed; recommendations cached at recompute

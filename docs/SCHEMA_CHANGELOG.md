@@ -8,6 +8,34 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint AF-1 (2026-05-25) — Consumer strategy questions (no schema migration)
+
+**Code only:** `POST /api/consumer/ask-advisor` inserts advisor notification type `consumer_strategy_question` via `create_notification` RPC (`p_cooldown: '0 seconds'`). Metadata: `strategy_type`, `strategy_name`, `client_id`, `household_id`, `plan_url`.
+
+**Commit:** `a255616`
+
+---
+
+## Sprint OB-1 (2026-05-25) — Onboarding wizard fields
+
+**Migration:** `20260526000000_onboarding_wizard_fields.sql` — `profiles.onboarding_wizard_completed_at` + extended household/profile fields for wizard.
+
+**Commits:** `b1c7b49`, `fd00b69`
+
+**Prod:** Apply migration before deploying OB-1 code ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)).
+
+---
+
+## `handle_new_user` trigger (2026-05-25) — signup profile creation
+
+**Migration:** `20260526000001_handle_new_user_trigger.sql` — canonical `handle_new_user()` + `on_auth_user_created` on `auth.users`. Inserts `profiles` with `trial_started_at` (supersedes older triggers using `trial_ends_at`).
+
+**Commit:** `1133b4f`
+
+**Prod:** **Required before open signups** — without trigger, new users may have no `profiles` row.
+
+---
+
 ## Session cleanup (2026-05-25) — FK dependency fixes for deleteUser
 
 Fixed `lib/compliance/deleteUser.ts` — three tables were missing from
