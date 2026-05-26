@@ -18,11 +18,15 @@ import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
 import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import {
+  advisorDatasetIncludeForTab,
   loadAdvisorClientDatasets,
   loadAdvisorDomicileChecklist,
+  loadAdvisorGapStatuses,
   loadAdvisorProjectionStaleness,
   logAdvisorClientAccess,
 } from '@/lib/advisor/loaders'
+import { getCachedAdvisoryMetrics } from '@/lib/advisor/cachedAdvisoryMetrics'
+import type { AdvisoryMetric } from '@/lib/advisoryMetrics'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { markClientStrategyQuestionsRead } from '@/lib/advisor/markClientStrategyQuestionsRead'
 import ClientViewShell from './_client-view-shell'
@@ -50,6 +54,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
   const scenarioId = household.base_case_scenario_id
 
+  const datasetInclude = advisorDatasetIncludeForTab(tab)
+  const needsStrategyVm = ['strategy', 'tax', 'domicile', 'meeting-prep'].includes(tab)
+
   const stalenessPromise = loadAdvisorProjectionStaleness(supabase, {
     ownerId,
     baseCaseScenarioId: household.base_case_scenario_id,
@@ -65,12 +72,18 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioId,
     statesToFetch,
     projectionYears,
+    include: datasetInclude,
+  })
+  const gapStatusesPromise = loadAdvisorGapStatuses(supabase, {
+    advisorId: userId,
+    clientId,
   })
 
-  const [{ isStale }, estateComposition, datasetsBundle] = await Promise.all([
+  const [{ isStale }, estateComposition, datasetsBundle, gapStatuses] = await Promise.all([
     stalenessPromise,
     compositionPromise,
     datasetsPromise,
+    gapStatusesPromise,
   ])
 
   if (isStale) {
@@ -231,52 +244,106 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     beneficiaryGrantsResult,
   })
 
-  const [domicileChecklist, giftingSummaryRes] = await Promise.all([
-    loadAdvisorDomicileChecklist(
-      supabase,
-      typeof domicileAnalysis?.id === 'string' ? domicileAnalysis.id : null,
-    ),
-    supabase.rpc('calculate_gifting_summary', {
+  const domicileChecklist =
+    tab === 'domicile'
+      ? await loadAdvisorDomicileChecklist(
+          supabase,
+          typeof domicileAnalysis?.id === 'string' ? domicileAnalysis.id : null,
+        )
+      : []
+
+  let advisorHorizons = undefined
+  let advisorHorizonsProjected = undefined
+  let scenarioForStrategy = scenario
+  let projectionRowsDomicile: ReturnType<typeof buildAdvisorStrategyViewModels>['projectionRowsDomicile'] = []
+  let strategySetSummary = undefined
+
+  if (needsStrategyVm) {
+    const giftingSummaryRes = await supabase.rpc('calculate_gifting_summary', {
       p_household_id: household.id,
-    }),
-  ])
-  const giftingSummaryData = giftingSummaryRes.data
-  const lifetimeGiftsUsed = Math.max(
-    0,
-    Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
+    })
+    const giftingSummaryData = giftingSummaryRes.data
+    const lifetimeGiftsUsed = Math.max(
       0,
-  )
+      Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
+        0,
+    )
+    const strategyVm = buildAdvisorStrategyViewModels({
+      currentYear,
+      household,
+      stateBrackets,
+      estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
+      lifetimeGiftsUsed,
+      scenario,
+      scenarioOutputs,
+      scenarioOutputsSecondDeath,
+      latestOutput,
+      assumptionSnapshot,
+      strategyLineItems,
+    })
+    advisorHorizons = strategyVm.advisorHorizons
+    advisorHorizonsProjected = strategyVm.advisorHorizonsProjected
+    scenarioForStrategy = strategyVm.scenarioForStrategy
+    projectionRowsDomicile = strategyVm.projectionRowsDomicile
+    strategySetSummary = strategyVm.strategySetSummary
+  }
 
-  // 3) Strategy and export view models
-  const { advisorHorizons, advisorHorizonsProjected, scenarioForStrategy, projectionRowsDomicile, strategySetSummary } = buildAdvisorStrategyViewModels({
-    currentYear,
-    household,
-    stateBrackets,
-    estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
-    lifetimeGiftsUsed,
-    scenario,
-    scenarioOutputs,
-    scenarioOutputsSecondDeath,
-    latestOutput,
-    assumptionSnapshot,
-    strategyLineItems,
-  })
+  let cachedAdvisoryMetrics: AdvisoryMetric[] | undefined
+  let hasRunStrategyModules = false
+  if (tab === 'strategy' && needsStrategyVm && advisorHorizons) {
+    hasRunStrategyModules = (strategyLineItems ?? []).some(
+      (item) => item.is_active && Math.abs(Number(item.amount ?? 0)) > 0,
+    )
+    const today = advisorHorizons.today
+    cachedAdvisoryMetrics = await getCachedAdvisoryMetrics(
+      household.id,
+      `${household.updated_at ?? 'na'}-${today.grossEstate}-${today.federalTaxEstimate}`,
+      {
+        grossEstate: Number(today.grossEstate ?? 0),
+        federalExemption: Number(today.federalExemption ?? 0),
+        federalTax: Number(today.federalTaxEstimate ?? 0),
+        stateTax: Number(today.stateTax ?? 0),
+        hasSpouse: household.has_spouse ?? false,
+        dsueAvailable: household.has_spouse ? Number(today.federalExemption ?? 0) : 0,
+        liquidAssets,
+        ilitDeathBenefit: (insurancePolicies ?? [])
+          .filter((p) => p.is_ilit)
+          .reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0),
+        section7520Rate: 0.052,
+        cstFundingAmount: hasRunStrategyModules
+          ? Number(
+              strategyLineItems.find((i) => i.strategy_source === 'cst')?.amount ?? 0,
+            ) || undefined
+          : undefined,
+        cstGrowthRate: 0.06,
+        survivorExemption: Number(today.federalExemption ?? 0),
+      },
+    )
+  }
 
-  const { exportPanelProps, exportPdfData, exportExcelData } = buildAdvisorExportPayloads({
-    household,
-    scenarioId,
-    advisorDisplayName,
-    healthScore,
-    liquidAssets,
-    activeStrategies,
-    actionItems,
-    monteCarloResults,
-    scenarioHistoryForExport,
-    scenarioOutputs,
-    latestOutput,
-    assumptionSnapshot,
-    scenarioForStrategy,
-  })
+  let exportPanelProps = undefined
+  let exportPdfData = undefined
+  let exportExcelData = undefined
+  if (datasetInclude.exportWiring) {
+    const exportPayloads = buildAdvisorExportPayloads({
+      household,
+      scenarioId,
+      advisorDisplayName,
+      healthScore,
+      liquidAssets,
+      activeStrategies,
+      actionItems,
+      monteCarloResults,
+      scenarioHistoryForExport,
+      scenarioOutputs,
+      latestOutput,
+      assumptionSnapshot,
+      scenarioForStrategy,
+    })
+    exportPanelProps = exportPayloads.exportPanelProps
+    exportPdfData = exportPayloads.exportPdfData
+    exportExcelData = exportPayloads.exportExcelData
+  }
 
   await logAdvisorClientAccess(supabase, { advisorId: userId, clientId })
 
@@ -344,6 +411,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       connectionLifeEventType={link.connection_life_event_type}
       connectionLifeEventAt={link.connection_life_event_at}
       strategyQuestions={strategyQuestions}
+      gapStatuses={gapStatuses}
+      cachedAdvisoryMetrics={cachedAdvisoryMetrics}
+      hasRunStrategyModules={hasRunStrategyModules}
     />
   )
 }

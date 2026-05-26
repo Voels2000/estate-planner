@@ -20,8 +20,8 @@ const LAW_SCENARIO_OPTIONS: { value: EstateScenario; label: string; description:
   },
   {
     value: 'no_exemption',
-    label: 'No Exemption',
-    description: 'Full estate taxed at marginal rates (planning stress test)',
+    label: 'Sunset / No Exemption Stress Test',
+    description: 'Full estate taxed at marginal rates — models post-sunset or exemption elimination scenario',
   },
 ]
 

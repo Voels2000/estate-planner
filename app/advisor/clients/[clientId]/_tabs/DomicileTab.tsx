@@ -220,6 +220,17 @@ export default function DomicileTab({
   return (
     <div className="space-y-6">
 
+      {projectedTransition && projectedTransition.score >= 71 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4">
+          <p className="text-sm font-semibold text-red-800">Critical Domicile Transition Risk</p>
+          <p className="text-sm text-red-700 mt-0.5">
+            The planned move to {projectedTransition.targetState} in {projectedTransition.transitionYear} carries a risk
+            score of {projectedTransition.score}/100. Advise client to update legal/registration/tax ties and day-counts
+            before the planned transition date.
+          </p>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>

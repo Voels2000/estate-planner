@@ -20,7 +20,15 @@ import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strat
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
-export default function StrategyTab({ household, scenario, advisorHorizons, advisorHorizonsProjected, strategySetSummary }: ClientViewShellProps) {
+export default function StrategyTab({
+  household,
+  scenario,
+  advisorHorizons,
+  advisorHorizonsProjected,
+  strategySetSummary,
+  cachedAdvisoryMetrics,
+  hasRunStrategyModules = false,
+}: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
     Number.isFinite(Number(advisorHorizons?.today.grossEstate ?? NaN)) &&
@@ -45,6 +53,17 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
   const projectedGrossEstate = Number(advisorHorizonsProjected?.today.grossEstate ?? NaN)
   const projectedEstimatedFederalTax = Number(advisorHorizonsProjected?.today.federalTaxEstimate ?? NaN)
   const projectedEstimatedStateTax = Number(advisorHorizonsProjected?.today.stateTax ?? NaN)
+  const exemptionUtilization =
+    federalExemption > 0
+      ? Math.min(100, (Math.min(grossEstate, federalExemption) / federalExemption) * 100)
+      : null
+  const unusedExemptionAmount = Math.max(0, federalExemption - grossEstate)
+
+  function scrollToStrategyModules() {
+    setAdvancedOpen(true)
+    setSlatIlitOpen(true)
+    advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
     rawLawScenario === 'no_exemption' ? 'no_exemption' : 'current_law'
@@ -59,6 +78,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
   const [combinedMode, setCombinedMode] = useState<'actual' | 'projected'>('actual')
   const [monteCarloAssumptionsOpen, setMonteCarloAssumptionsOpen] = useState(false)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
+  const advancedSectionRef = useRef<HTMLElement>(null)
   const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
   const [_advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
@@ -254,6 +274,34 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
           Regenerate the base-case projection to restore consistent values across views.
         </div>
       )}
+      {typeof exemptionUtilization === 'number' && exemptionUtilization < 50 && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+          <svg
+            className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"
+            />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Significant Federal Exemption Unused</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              {(100 - exemptionUtilization).toFixed(0)}% of the federal exemption is unused (
+              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(unusedExemptionAmount)}
+              ). Consider systematic gifting programs or irrevocable trust strategies before
+              estate growth reduces available headroom.
+            </p>
+          </div>
+        </div>
+      )}
+
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics Dashboard</h2>
         <AdvisoryMetricsDashboard
@@ -267,6 +315,9 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
           projectedEstimatedStateTax={Number.isFinite(projectedEstimatedStateTax) ? projectedEstimatedStateTax : undefined}
           hasSpouse={household?.has_spouse ?? false}
           section7520Rate={0.052}
+          cachedCoreMetrics={cachedAdvisoryMetrics}
+          hasRunStrategyModules={hasRunStrategyModules}
+          onRunStrategyModules={scrollToStrategyModules}
         />
       </section>
 
@@ -368,7 +419,7 @@ export default function StrategyTab({ household, scenario, advisorHorizons, advi
         )}
       </section>
 
-      <section>
+      <section ref={advancedSectionRef}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Advanced Strategies</h2>
           <button

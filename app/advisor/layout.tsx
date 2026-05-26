@@ -22,29 +22,29 @@ export default async function AdvisorLayout({
 
   return (
     <div className="min-h-screen bg-[var(--mwm-off-white)]">
-      <nav className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-neutral-900">Estate Planner</h1>
-          <span className="rounded-full bg-[var(--mwm-sage-pale)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-sage)]">
+      <nav className="border-b border-[color:var(--mwm-navy)]/20 bg-[color:var(--mwm-navy)] px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-white font-semibold text-sm tracking-wide">Estate Planner</span>
+          <span className="rounded-full border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold)]/20 px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-gold)]">
             Advisor Portal
           </span>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-[color:var(--mwm-sage)] hover:text-[color:var(--mwm-sage)] hover:underline"
+            className="text-sm font-medium text-white/70 hover:text-white hover:underline"
           >
             📜 My Estate Plan
           </Link>
           {ctx.firm_role === 'owner' && (
             <a
               href="/advisor/firm"
-              className="text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] hover:underline"
+              className="text-sm font-medium text-white/70 hover:text-white hover:underline"
             >
               Firm Settings ⚙️
             </a>
           )}
-          <span className="text-sm text-neutral-500">{ctx.user.email}</span>
+          <span className="text-sm text-white/60">{ctx.user.email}</span>
           <AdvisorSignOut />
         </div>
       </nav>

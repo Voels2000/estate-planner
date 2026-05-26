@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Advisor portal perf** — roster batched net worth + parallel client workspace load (`8c526de`). **NAV-1** sidebar active indicator. **OB-3b** sidebar unlock + layout `hasHousehold` fix. **OB-3** setup progress (`SetupProgressCard`). **SU-1** superuser sidebar. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **UX-2 advisor portal** — brand, tab-scoped load, gap workflow, metrics cache, estate/strategy alerts (apply `20260626120000_advisor_gap_statuses.sql`). **Advisor portal perf** (`8c526de`). **NAV-1**, **OB-3b**, **SU-1**. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` + UX-2 gap migration before deploy. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -29,6 +29,22 @@
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal perf | ✅ | `8c526de` |
+| Advisor portal UX-2 | ✅ | (this commit) |
+
+---
+
+## Advisor portal UX-2 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Brand** | Navy header, gold tab underlines, status/complexity badges |
+| **Load** | `advisorDatasetIncludeForTab()` — tab-scoped datasets on client workspace |
+| **Overview** | `PlanStatusCard`, gap banner, `GapStatusSelector` + `advisor_gap_statuses` |
+| **Estate** | Collapsed outside estate when empty; red tax callout; no-transfer amber banner |
+| **Strategy** | `getCachedAdvisoryMetrics` (120s); 6-card grid + module CTA; ≤2 warning badges; exemption banner |
+| **Migration** | `20260626120000_advisor_gap_statuses.sql` |
+
+**Detail:** [SCHEMA_CHANGELOG.md § UX-2](./SCHEMA_CHANGELOG.md) · [PERF_SPRINT_P1.md § UX-2](./PERF_SPRINT_P1.md#advisor-portal-ux-2--tab-scoped-load--metrics-cache-2026-05-26)
 
 ---
 

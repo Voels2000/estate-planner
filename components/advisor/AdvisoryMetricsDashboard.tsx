@@ -1,11 +1,16 @@
 'use client'
 
 // Sprint 72 — AdvisoryMetricsDashboard
-// 8-metric panel for advisor StrategyTab
-// Consumer shareable readiness score placeholder
+// Advisory metric cards for advisor StrategyTab
 
 import { useMemo, useState } from 'react'
-import { calculateAdvisoryMetrics } from '@/lib/advisoryMetrics'
+import {
+  calculateAdvisoryMetrics,
+  pickActiveWarningMetricIds,
+  STRATEGY_MODULE_METRIC_IDS,
+  type AdvisoryMetric,
+} from '@/lib/advisoryMetrics'
+import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import { getTaxScopeBadge } from '@/lib/view-models/taxScopeBadges'
 
 interface AdvisoryMetricsDashboardProps {
@@ -24,7 +29,12 @@ interface AdvisoryMetricsDashboardProps {
   projectedGrossEstate?: number
   projectedEstimatedFederalTax?: number
   projectedEstimatedStateTax?: number
+  /** Pre-computed core metrics from server cache (Strategy tab). */
+  cachedCoreMetrics?: AdvisoryMetric[]
+  hasRunStrategyModules?: boolean
+  onRunStrategyModules?: () => void
 }
+
 const DEFAULT_7520_RATE = 0.052
 const MONEY = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -46,6 +56,47 @@ const STATUS_BADGE = {
   neutral: 'bg-gray-100 text-gray-600',
 }
 
+function displayStatus(metric: AdvisoryMetric, activeWarnings: Set<string>): AdvisoryMetric['status'] {
+  if (metric.status === 'critical') return 'critical'
+  if (metric.status === 'warning' && activeWarnings.has(metric.id)) return 'warning'
+  if (metric.status === 'warning') return 'neutral'
+  return metric.status
+}
+
+function MetricCard({ metric, activeWarnings }: { metric: AdvisoryMetric; activeWarnings: Set<string> }) {
+  const status = displayStatus(metric, activeWarnings)
+  const scopeBadge = getTaxScopeBadge(metric.scope)
+
+  return (
+    <div
+      className={`border rounded-lg p-4 ${STATUS_COLORS[status]}`}
+      title={metric.detail}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="space-y-1">
+          <span className="block text-xs font-medium text-gray-600 leading-tight">{metric.label}</span>
+          <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scopeBadge.className}`}>
+            {scopeBadge.label}
+          </span>
+        </div>
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded font-medium ml-2 shrink-0 ${STATUS_BADGE[status]}`}
+        >
+          {status === 'good'
+            ? '✓'
+            : status === 'warning'
+              ? '!'
+              : status === 'critical'
+                ? '!!'
+                : '—'}
+        </span>
+      </div>
+      <div className="text-xl font-bold text-gray-900 mb-1">{metric.value}</div>
+      <div className="text-xs text-gray-500 leading-tight">{metric.subtext}</div>
+    </div>
+  )
+}
+
 export default function AdvisoryMetricsDashboard({
   householdId,
   grossEstate,
@@ -62,6 +113,9 @@ export default function AdvisoryMetricsDashboard({
   projectedGrossEstate,
   projectedEstimatedFederalTax,
   projectedEstimatedStateTax,
+  cachedCoreMetrics,
+  hasRunStrategyModules = false,
+  onRunStrategyModules,
 }: AdvisoryMetricsDashboardProps) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     federal: true,
@@ -69,8 +123,9 @@ export default function AdvisoryMetricsDashboard({
     both: false,
     strategy: false,
   })
-  const { metrics } = useMemo(
-    () => calculateAdvisoryMetrics({
+
+  const metricsInput: AdvisoryMetricsInput = useMemo(
+    () => ({
       grossEstate,
       federalExemption,
       federalTax: estimatedFederalTax,
@@ -99,6 +154,41 @@ export default function AdvisoryMetricsDashboard({
       noExemptionStressTax,
     ],
   )
+
+  const metrics = useMemo(() => {
+    if (cachedCoreMetrics && cachedCoreMetrics.length > 0) {
+      if (hasRunStrategyModules) {
+        const { metrics: full } = calculateAdvisoryMetrics(metricsInput, { includeStrategyModules: true })
+        const moduleMetrics = full.filter((m) =>
+          (STRATEGY_MODULE_METRIC_IDS as readonly string[]).includes(m.id),
+        )
+        return [...cachedCoreMetrics, ...moduleMetrics]
+      }
+      return cachedCoreMetrics
+    }
+    const { metrics: computed } = calculateAdvisoryMetrics(metricsInput, {
+      includeStrategyModules: hasRunStrategyModules,
+    })
+    if (!hasRunStrategyModules) {
+      return computed.filter(
+        (m) => !(STRATEGY_MODULE_METRIC_IDS as readonly string[]).includes(m.id),
+      )
+    }
+    return computed
+  }, [cachedCoreMetrics, hasRunStrategyModules, metricsInput])
+
+  const activeWarnings = useMemo(() => pickActiveWarningMetricIds(metrics), [metrics])
+
+  const gridMetrics = useMemo(
+    () =>
+      hasRunStrategyModules
+        ? metrics
+        : metrics.filter(
+            (m) => !(STRATEGY_MODULE_METRIC_IDS as readonly string[]).includes(m.id),
+          ),
+    [metrics, hasRunStrategyModules],
+  )
+
   const groupedMetrics = useMemo(
     () => ({
       federal: metrics.filter((m) => m.scope === 'federal'),
@@ -108,6 +198,7 @@ export default function AdvisoryMetricsDashboard({
     }),
     [metrics],
   )
+
   const projectedRows = useMemo(() => {
     if (
       !Number.isFinite(Number(projectedGrossEstate ?? NaN)) ||
@@ -144,6 +235,7 @@ export default function AdvisoryMetricsDashboard({
     projectedEstimatedFederalTax,
     projectedEstimatedStateTax,
   ])
+
   function getProjectedRow(metricId: string): { actual: number; projected: number } | null {
     if (!projectedRows) return null
     if (metricId === 'gross_estate') return projectedRows.grossEstate
@@ -153,47 +245,34 @@ export default function AdvisoryMetricsDashboard({
     return null
   }
 
+  const gridCols = hasRunStrategyModules ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+
   return (
     <div className="space-y-6" data-household-id={householdId}>
-      {/* 8-Metric Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {metrics.map((metric) => (
-          (() => {
-            const scopeBadge = getTaxScopeBadge(metric.scope)
-            return (
-          <div
-            key={metric.id}
-            className={`border rounded-lg p-4 ${STATUS_COLORS[metric.status]}`}
-            title={metric.detail}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="space-y-1">
-                <span className="block text-xs font-medium text-gray-600 leading-tight">{metric.label}</span>
-                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scopeBadge.className}`}>
-                  {scopeBadge.label}
-                </span>
-              </div>
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded font-medium ml-2 shrink-0 ${STATUS_BADGE[metric.status]}`}
-              >
-                {metric.status === 'good'
-                  ? '✓'
-                  : metric.status === 'warning'
-                    ? '!'
-                    : metric.status === 'critical'
-                      ? '!!'
-                      : '—'}
-              </span>
-            </div>
-            <div className="text-xl font-bold text-gray-900 mb-1">{metric.value}</div>
-            <div className="text-xs text-gray-500 leading-tight">{metric.subtext}</div>
-          </div>
-            )
-          })()
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols} gap-3`}>
+        {gridMetrics.map((metric) => (
+          <MetricCard key={metric.id} metric={metric} activeWarnings={activeWarnings} />
         ))}
       </div>
 
-      {/* Metric Detail Rollups */}
+      {!hasRunStrategyModules && (
+        <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-700">
+              2 strategy metrics unlock when you run strategy modules
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">Best Strategy NPV · CST Crossover Year</p>
+          </div>
+          <button
+            type="button"
+            onClick={onRunStrategyModules}
+            className="text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-gold)] transition-colors whitespace-nowrap"
+          >
+            Run strategy modules →
+          </button>
+        </div>
+      )}
+
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
           <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">

@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 17, 2026 (Session 127 — profile gate, trusts UI; no schema change)
+# Last updated: May 26, 2026 (UX-2 — advisor_gap_statuses table for gap workflow tracking)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -30,7 +30,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Estate composition | `calculate_estate_composition` RPC + related tables | Derived values |
 | Estate tax rules | `federal_tax_config`, `state_estate_tax_rules` | Estate transfer tax calculations |
 | Income tax rules | `state_income_tax_brackets` | Progressive state income rules (canonical target) |
-| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results` | Cached analytics + user assessment history |
+| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results`, `advisor_gap_statuses` | Cached analytics + user assessment history; `advisor_gap_statuses` tracks advisor-private gap workflow state |
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
 | Gifting activity | `gift_history` | Annual/lifetime/529/medical/tuition gifts; feeds `calculate_gifting_summary` |
@@ -64,6 +64,17 @@ This is a developer reference, not a full SQL DDL dump.
 - **Connected statuses:** use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) from `lib/advisor/clientConnectionStatus.ts` in all new queries — not a single hardcoded status.
 - **Consumer UI:** `/my-advisor` reads connected link (`.in('status', ['active', 'accepted'])`); revoke sets `status='revoked'`.
 - **Life event at accept (Sprint 9):** `connection_life_event_*` populated in `accept-request` via `pickConnectionLifeEvent()`.
+
+### `advisor_gap_statuses`
+
+- **Key columns:** `id`, `advisor_id`, `client_id`, `gap_key`, `status`, `note`, `updated_at`
+- **Purpose:** Advisor-private workflow state for each planning gap. Tracks whether a gap has been discussed, deferred, or resolved in client meetings. Not visible to the consumer.
+- **Status values:** `open` | `discussed` | `deferred` | `resolved`
+- **Uniqueness:** `(advisor_id, client_id, gap_key)` — one status per advisor per gap per client.
+- **RLS:** Advisors can read and write only their own rows (`advisor_id = auth.uid()`).
+- **API:** `GET /api/advisor/gap-status?clientId=…` · `PATCH /api/advisor/gap-status` (upsert)
+- **Migration:** `20260626120000_advisor_gap_statuses.sql`
+- **gap_key source:** Stable gap identifiers from `computeGaps()` in `app/advisor/clients/[clientId]/_utils.ts` (UX-2).
 
 ### `advisor_directory`
 

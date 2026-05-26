@@ -8,6 +8,28 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## UX-2 — Advisor portal UX + gap workflow (2026-05-26)
+
+**Migration:** `20260626120000_advisor_gap_statuses.sql`
+
+- Table `advisor_gap_statuses` — advisor-private gap workflow (`open` | `discussed` | `deferred` | `resolved`); unique `(advisor_id, client_id, gap_key)`; RLS `advisor_id = auth.uid()`.
+- API: `GET` / `PATCH` `/api/advisor/gap-status`.
+- `gap_key` from stable keys in `app/advisor/clients/[clientId]/_utils.ts` `computeGaps()`.
+
+**Code (pass 1 + continuation, no further migrations):**
+
+- Brand: navy advisor header, gold tab underlines (`app/advisor/layout.tsx`, client tab shell).
+- Tab-scoped datasets: `advisorDatasetIncludeForTab()` in `lib/advisor/loaders.ts`.
+- Overview: `PlanStatusCard`, critical-gap banner, `GapStatusSelector`.
+- Estate: `EstateCompositionCard` advisor variant — collapsed outside estate when empty; prominent tax callout; amber no-transfer banner.
+- Strategy: `getCachedAdvisoryMetrics` (`unstable_cache`, 120s, tag `household-metrics-{householdId}`); 6-card grid + CTA when modules not run; warning `!` cap at 2; low-exemption banner.
+- Cache invalidation: `revalidateTag` in `afterHouseholdWrite`.
+- Tax tab: “Sunset / No Exemption Stress Test” label.
+
+**Docs:** [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+
+---
+
 ## Advisor portal performance (2026-05-26) — Roster + client load (no schema migration)
 
 **Code only:**

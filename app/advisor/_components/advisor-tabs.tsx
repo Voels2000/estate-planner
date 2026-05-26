@@ -29,8 +29,8 @@ export function AdvisorTabs({ showFirmSettingsTab }: AdvisorTabsProps) {
     [
       'inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-sm font-medium -mb-px transition-colors',
       active
-        ? 'border-[color:var(--mwm-navy)] text-[color:var(--mwm-navy)]'
-        : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900',
+        ? 'border-[color:var(--mwm-gold)] text-[color:var(--mwm-navy)]'
+        : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:text-[color:var(--mwm-navy)]',
     ].join(' ')
 
   return (

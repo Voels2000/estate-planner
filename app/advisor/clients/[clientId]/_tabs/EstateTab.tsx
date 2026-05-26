@@ -318,14 +318,52 @@ export default function EstateTab({
     setExpandedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }))
   }
 
+  const outsideTaxableEstateTotal =
+    (composition?.outside_structure_total ?? 0) + (composition?.outside_strategy_total ?? 0)
+  const transfers = [
+    ...(composition?.outside_structure_items ?? []),
+    ...(composition?.outside_strategy_items ?? []),
+  ]
+  const hasTransferStrategies = outsideTaxableEstateTotal > 0 || transfers.length > 0
+  const estimatedTax = composition?.estimated_tax ?? 0
+  const grossEstate = composition?.gross_estate ?? 0
+
   return (
     <div className="space-y-6">
+      {estimatedTax > 0 && !hasTransferStrategies && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+          <svg
+            className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"
+            />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">No Transfer Strategies in Place</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              The full {formatCurrency(grossEstate)} estate is currently inside the taxable estate,
+              generating an estimated {formatCurrency(estimatedTax)} tax liability.
+              Consider discussing trust, gifting, or other transfer strategies with your client.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Estate Composition — Inside / Outside view ── */}
       {composition && (
         <EstateCompositionCard
           composition={composition}
           label={`${household.person1_first_name ?? 'Client'}'s Estate`}
           snapshotLabel="Current snapshot"
+          variant="advisor"
         />
       )}
 

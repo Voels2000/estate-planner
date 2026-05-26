@@ -23,8 +23,8 @@ test('tax tab: current law shows federal estate tax row', async ({ page }) => {
 
 test('tax tab: no exemption scenario shows $0 federal exemption label path', async ({ page }) => {
   await page.getByRole('button', { name: /Tax/ }).click()
-  await page.getByRole('button', { name: /No Exemption/i }).click()
-  await expect(page.getByText(/No Exemption/i).first()).toBeVisible()
+  await page.getByRole('button', { name: /Sunset \/ No Exemption Stress Test/i }).click()
+  await expect(page.getByText(/Sunset \/ No Exemption Stress Test/i).first()).toBeVisible()
 })
 
 test('estate tab: spouse death order toggles', async ({ page }) => {

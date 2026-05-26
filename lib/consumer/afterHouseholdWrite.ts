@@ -1,4 +1,5 @@
 import { after, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import type { createClient } from '@/lib/supabase/server'
 import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 
@@ -22,6 +23,7 @@ export function triggerHouseholdRecompute(householdId: string) {
 /** Touch staleness timestamp and fire estate health recompute (non-blocking). */
 export async function afterHouseholdWrite(supabase: ServerSupabase, householdId: string) {
   await touchHousehold(supabase, householdId)
+  revalidateTag(`household-metrics-${householdId}`, 'max')
   const appUrl = getConsumerAppUrl()
   if (process.env.VERCEL) {
     after(() => {

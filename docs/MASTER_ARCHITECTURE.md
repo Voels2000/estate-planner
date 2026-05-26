@@ -68,6 +68,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
 | Sidebar active route (NAV-1) | `isNavItemActive()` + `groupContainsActiveItem()` in `sidebar-nav.tsx`; groups auto-expand when a child is active; `NAV_ACTIVE` navy + gold left accent |
 | Advisor portal perf | Roster: `loadRosterNetWorthByOwner` (batched reads). Client workspace: parallel staleness/composition/datasets; scoped tax tables — [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26) |
+| Advisor portal UX-2 | Navy/gold brand; `advisorDatasetIncludeForTab()`; `PlanStatusCard` + `advisor_gap_statuses`; `getCachedAdvisoryMetrics` (120s cache); estate composition advisor variant; strategy 6-card grid + alert banners — SCHEMA_CHANGELOG UX-2 |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -857,7 +858,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
 | WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
 | Email senders | `hello@`, `noreply@`, `privacy@` (Resend → Comcast) | ✅ Live |
-| Migrations | **75** timestamped files in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
+| Migrations | **76** timestamped files in `supabase/migrations/`; through `20260626120000` | ✅ Clean |
 
 **Commits:** C-6 `4d9571e`, `01b997a` · C-7 `ddbf079`, `1ce9110`
 
@@ -875,7 +876,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Referral:** `lib/events/referral.ts` — advisor `?ref=` (`buildAllEventReferralUrls`) and attorney `?aref=` (`buildAllAttorneyEventReferralUrls`) for all **24** slugs; `_referral-tracker.tsx` → `POST /api/referral/track` with `type: 'advisor' | 'attorney'`; `referral_clicks` with `listing_type`.
 - **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
 - **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
-- **Plan readiness:** `PlanReadinessCard` on advisor client Overview (`estate_health_scores.score` + `computed_at` via `fetchHealthScore`).
+- **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
+- **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
+- **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab; `pickActiveWarningMetricIds` caps warning badges at 2.
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` + `AttorneyEstatePlanPDF` — cover disclaimer, user attribution, title **Estate Planning Preparation Report** (Sprint C-2b, 2026-05-24).
 
 **Analytics & A/B (Sprint 5):**

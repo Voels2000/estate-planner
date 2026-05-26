@@ -54,10 +54,10 @@ const TABS: { id: string; label: string; icon: string; advisorOnly?: boolean; co
 ]
 
 const CLIENT_STATUS_BADGE: Record<string, string> = {
-  active: 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]',
-  needs_review: 'bg-amber-100 text-amber-700',
-  at_risk: 'bg-red-100 text-red-700',
-  inactive: 'bg-neutral-100 text-neutral-500',
+  active: 'bg-green-50 text-green-700 border border-green-200',
+  needs_review: 'bg-amber-100 text-amber-700 border border-amber-200',
+  at_risk: 'bg-red-100 text-red-700 border border-red-200',
+  inactive: 'bg-neutral-100 text-neutral-500 border border-neutral-200',
 }
 
 function formatClientStatusLabel(status: string) {
@@ -148,8 +148,8 @@ export default function ClientViewShell(props: ClientViewShellProps) {
             </div>
 
             <div className="text-right">
-              <div className="text-3xl font-bold text-slate-800">{household.estate_complexity_score ?? '—'}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Complexity Score</div>
+              <div className="text-3xl font-bold text-[color:var(--mwm-navy)]">{household.estate_complexity_score ?? '—'}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-widest">Complexity Score</div>
             </div>
           </div>
 
@@ -163,12 +163,12 @@ export default function ClientViewShell(props: ClientViewShellProps) {
                 className={`
                   flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150
                   ${tab === t.id
-                    ? 'border-[color:var(--mwm-navy)] text-[color:var(--mwm-navy)]'
+                    ? 'border-[color:var(--mwm-gold)] text-[color:var(--mwm-navy)] font-medium'
                     : t.comingSoon
                       ? 'border-transparent text-slate-300 cursor-not-allowed'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                      : 'border-transparent text-gray-500 hover:text-[color:var(--mwm-navy)] hover:border-slate-300'
                   }
-                  ${pendingTab === t.id ? 'opacity-70 ring-2 ring-[color:var(--mwm-navy)]/30 ring-offset-1 rounded-sm' : ''}
+                  ${pendingTab === t.id ? 'opacity-70 ring-2 ring-[color:var(--mwm-gold)]/30 ring-offset-1 rounded-sm' : ''}
                   ${t.advisorOnly ? 'ml-auto' : ''}
                 `}
               >
@@ -369,4 +369,7 @@ export interface ClientViewShellProps {
   connectionLifeEventType?: string | null
   connectionLifeEventAt?: string | null
   strategyQuestions?: StrategyQuestionNotification[]
+  gapStatuses?: Record<string, { status: string; note?: string | null }>
+  cachedAdvisoryMetrics?: import('@/lib/advisoryMetrics').AdvisoryMetric[]
+  hasRunStrategyModules?: boolean
 }

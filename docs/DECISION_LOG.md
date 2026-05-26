@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; layout household query fix)
+# Last updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — UX-2: Advisor portal UX + cached advisory metrics
+
+**Decision:** (1) Ship advisor-only UX in two passes: brand/tab load/gap workflow (pass 1) then metrics cache, estate composition UX, strategy grid (continuation). (2) Cache six core advisory metrics server-side via `unstable_cache` + `household-metrics-{householdId}` tag; invalidate on `afterHouseholdWrite`. (3) Omit Best Strategy NPV and CST Crossover from the grid until `strategy_line_items` has active amounts — show a single CTA instead. (4) Persist gap discussion state in `advisor_gap_statuses` (advisor-private, not consumer-visible).
+
+**Reasoning:** Strategy tab re-computed eight metrics on every client render; tab-scoped loading and cache cut repeat visits. Empty outside-estate panel and small tax chip wasted advisor attention on high-liability households. Warning badges on four cards diluted urgency — cap at two by priority.
+
+**Alternatives considered:** Persist advisory metrics in DB on recompute (deferred — matches P-2 recommendations pattern but heavier than cache for advisor-only reads). Keep eight-card grid with “Not run” placeholders (rejected — noise).
 
 ---
 

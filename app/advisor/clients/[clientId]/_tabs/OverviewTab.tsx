@@ -7,7 +7,8 @@
 
 import { ClientViewShellProps } from '../_client-view-shell'
 import { ClientStrategyQuestionsCard } from '@/components/advisor/ClientStrategyQuestionsCard'
-import { PlanReadinessCard } from '../_components/PlanReadinessCard'
+import { GapStatusSelector, type GapStatus } from '@/components/advisor/GapStatusSelector'
+import { PlanStatusCard, scoreToStatus } from '@/components/advisor/PlanStatusCard'
 import type { EstateComposition } from '@/lib/estate/types'
 import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
 import {
@@ -37,6 +38,8 @@ export default function OverviewTab({
   connectionLifeEventType,
   connectionLifeEventAt,
   strategyQuestions = [],
+  gapStatuses = {},
+  clientId,
 }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
@@ -63,14 +66,35 @@ export default function OverviewTab({
   const p2Age = household.has_spouse ? getAge(household.person2_birth_year, currentYear) : null
 
   const clientName = getClientDisplayName(household)
+  const planStatus = scoreToStatus(planReadinessScore ?? null, criticalCount)
+  const lastUpdated = planReadinessComputedAt
+    ? new Date(planReadinessComputedAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null
 
   return (
     <div className="space-y-6">
 
-      <PlanReadinessCard
+      {criticalCount > 0 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4">
+          <p className="text-sm font-semibold text-red-800">Action required before next client meeting</p>
+          <p className="text-sm text-red-700 mt-0.5">
+            {criticalCount} critical gap{criticalCount > 1 ? 's' : ''} identified that require immediate attention.
+            Review the Planning Gap Analysis below and log discussion status.
+          </p>
+        </div>
+      )}
+
+      <PlanStatusCard
         score={planReadinessScore ?? null}
-        computedAt={planReadinessComputedAt ?? null}
+        status={planStatus}
+        criticalGaps={criticalCount}
+        highGaps={highCount}
         clientName={clientName}
+        lastUpdated={lastUpdated}
       />
 
       <ClientStrategyQuestionsCard questions={strategyQuestions} />
@@ -98,31 +122,11 @@ export default function OverviewTab({
         </div>
       )}
 
-      {/* ── Gap alert banner ── */}
-      {(criticalCount > 0 || highCount > 0) && (
-        <div className={`rounded-lg border px-5 py-4 flex items-start gap-3 ${
-          criticalCount > 0 ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
-        }`}>
-          <span className="text-xl mt-0.5">{criticalCount > 0 ? '⚠' : '!'}</span>
-          <div>
-            <p className={`font-semibold text-sm ${criticalCount > 0 ? 'text-red-800' : 'text-orange-800'}`}>
-              {criticalCount > 0
-                ? `${criticalCount} critical gap${criticalCount > 1 ? 's' : ''} require immediate attention`
-                : `${highCount} high-priority gap${highCount > 1 ? 's' : ''} identified`}
-            </p>
-            <p className={`text-sm mt-0.5 ${criticalCount > 0 ? 'text-red-700' : 'text-orange-700'}`}>
-              Review the gap analysis panel below and discuss with client at next meeting.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Top stats row ── */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <StatCard label="Net Worth" value={formatCurrency(netWorth, true)} sub={`${formatCurrency(totalAssets, true)} assets`} />
         <StatCard label="Estate Score" value={String(household.estate_complexity_score ?? '—')} sub={household.estate_complexity_flag ?? '—'} scoreFlag={household.estate_complexity_flag} />
         <StatCard label="Risk Tolerance" value={formatRisk(household.risk_tolerance ?? null)} sub={`${stocks}/${bonds}/${cash} target`} />
-        <StatCard label="Planning Gaps" value={String(gaps.length)} sub={`${criticalCount} critical · ${highCount} high`} alert={criticalCount > 0} />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -280,8 +284,13 @@ export default function OverviewTab({
               </div>
             ) : (
               <div className="space-y-2">
-                {gaps.map((gap, i) => (
-                  <GapRow key={i} gap={gap} />
+                {gaps.map((gap) => (
+                  <GapRow
+                    key={gap.key}
+                    gap={gap}
+                    clientId={clientId}
+                    initialStatus={(gapStatuses[gap.key]?.status as GapStatus | undefined) ?? 'open'}
+                  />
                 ))}
               </div>
             )}
@@ -331,12 +340,20 @@ function StatCard({ label, value, sub, scoreFlag, alert }: {
   )
 }
 
-function GapRow({ gap }: { gap: Gap }) {
+function GapRow({
+  gap,
+  clientId,
+  initialStatus,
+}: {
+  gap: Gap
+  clientId: string
+  initialStatus: GapStatus
+}) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
       <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${severityDot(gap.severity)}`} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
           <span className="text-sm font-medium text-slate-800">{gap.title}</span>
           <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${severityBadge(gap.severity)}`}>
             {gap.severity}
@@ -344,7 +361,8 @@ function GapRow({ gap }: { gap: Gap }) {
         </div>
         <p className="text-xs text-slate-500">{gap.detail}</p>
       </div>
-      <span className="text-xs text-slate-400 flex-shrink-0 mt-0.5">{gap.category}</span>
+      <GapStatusSelector clientId={clientId} gapKey={gap.key} initialStatus={initialStatus} />
+      <span className="text-xs text-slate-400 flex-shrink-0 mt-0.5 hidden sm:inline">{gap.category}</span>
     </div>
   )
 }

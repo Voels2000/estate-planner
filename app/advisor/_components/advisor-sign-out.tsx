@@ -29,7 +29,7 @@ export function AdvisorSignOut() {
       type="button"
       onClick={() => void handleSignOut()}
       disabled={isLoading}
-      className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      className="text-sm font-medium text-white/70 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? 'Signing out…' : '🚪 Sign out'}
     </button>

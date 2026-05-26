@@ -414,7 +414,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
 | **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel`; gold onboarding note when `!connection && !wizardComplete && !pendingRequest` (OB-3b) |
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
-| **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanReadinessCard` |
+| **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanStatusCard` + gap workflow (`advisor_gap_statuses`, `GapStatusSelector`) |
 | **Export for attorney** | `/print` (tier 3+) | `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` via `/api/export-estate-plan?variant=attorney`; title **Estate Planning Preparation Report**; cover disclaimer + user attribution on page 1 |
 | **Advisor event referral** | `/event/[slug]?ref=` | `_referral-tracker.tsx` → `POST /api/referral/track` (`type: 'advisor'`) → `referral_clicks` |
 | **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |

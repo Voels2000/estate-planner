@@ -53,7 +53,16 @@ export interface AdvisoryMetricsResult {
   metrics: AdvisoryMetric[]
 }
 
-export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryMetricsResult {
+export type CalculateAdvisoryMetricsOptions = {
+  /** When false, omits Best Strategy NPV and CST Crossover (cached server-side path). */
+  includeStrategyModules?: boolean
+}
+
+export function calculateAdvisoryMetrics(
+  input: AdvisoryMetricsInput,
+  options: CalculateAdvisoryMetricsOptions = {},
+): AdvisoryMetricsResult {
+  const includeStrategyModules = options.includeStrategyModules !== false
   const {
     grossEstate,
     federalExemption,
@@ -182,21 +191,7 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
           : `Liquidity shortfall of $${Math.round(totalTax - totalLiquidity).toLocaleString()}. Consider an ILIT to provide tax-free death benefit liquidity.`,
   })
 
-  // 6. Strategy NPV
-  metrics.push({
-    id: 'strategy_npv',
-    label: 'Best Strategy NPV',
-    scope: 'strategy',
-    value: bestStrategyNPV !== undefined ? `$${Math.round(bestStrategyNPV).toLocaleString()}` : 'Not run',
-    subtext: bestStrategyName ?? 'Run strategy modules to calculate',
-    status: bestStrategyNPV !== undefined ? (bestStrategyNPV > 0 ? 'good' : 'warning') : 'neutral',
-    detail:
-      bestStrategyNPV !== undefined
-        ? `${bestStrategyName} produces a net present value benefit of $${Math.round(bestStrategyNPV).toLocaleString()} to beneficiaries.`
-        : 'Run the Gifting, CST, SLAT, GRAT, or Roth Conversion modules to calculate strategy NPV.',
-  })
-
-  // 7. GRAT Breakeven Rate
+  // 7. GRAT Breakeven Rate (always shown — uses §7520, not module runs)
   const gratBreakeven = section7520Rate
   metrics.push({
     id: 'grat_breakeven',
@@ -208,30 +203,66 @@ export function calculateAdvisoryMetrics(input: AdvisoryMetricsInput): AdvisoryM
     detail: `A GRAT transfers appreciation above the §7520 hurdle rate of ${(gratBreakeven * 100).toFixed(1)}% to beneficiaries gift-tax free. Assets expected to grow faster than this rate are strong GRAT candidates.`,
   })
 
-  // 8. CST Crossover Year
-  let cstCrossoverYear: number | null = null
-  if (cstFundingAmount && cstGrowthRate && survivorExemption) {
-    for (let y = 1; y <= 30; y++) {
-      const cstVal = cstFundingAmount * Math.pow(1 + cstGrowthRate, y)
-      if (cstVal > survivorExemption) {
-        cstCrossoverYear = currentYear + y
-        break
+  if (includeStrategyModules) {
+    // 6. Strategy NPV
+    metrics.push({
+      id: 'strategy_npv',
+      label: 'Best Strategy NPV',
+      scope: 'strategy',
+      value: bestStrategyNPV !== undefined ? `$${Math.round(bestStrategyNPV).toLocaleString()}` : 'Not run',
+      subtext: bestStrategyName ?? 'Run strategy modules to calculate',
+      status: bestStrategyNPV !== undefined ? (bestStrategyNPV > 0 ? 'good' : 'warning') : 'neutral',
+      detail:
+        bestStrategyNPV !== undefined
+          ? `${bestStrategyName} produces a net present value benefit of $${Math.round(bestStrategyNPV).toLocaleString()} to beneficiaries.`
+          : 'Run the Gifting, CST, SLAT, GRAT, or Roth Conversion modules to calculate strategy NPV.',
+    })
+
+    // 8. CST Crossover Year
+    let cstCrossoverYear: number | null = null
+    if (cstFundingAmount && cstGrowthRate && survivorExemption) {
+      for (let y = 1; y <= 30; y++) {
+        const cstVal = cstFundingAmount * Math.pow(1 + cstGrowthRate, y)
+        if (cstVal > survivorExemption) {
+          cstCrossoverYear = currentYear + y
+          break
+        }
       }
     }
+    metrics.push({
+      id: 'cst_crossover',
+      label: 'CST Crossover Year',
+      scope: 'strategy',
+      value: cstCrossoverYear ? `${cstCrossoverYear}` : 'Not modeled',
+      subtext: cstCrossoverYear
+        ? 'CST assets projected to exceed survivor exemption'
+        : 'Run CST module to calculate',
+      status: cstCrossoverYear ? (cstCrossoverYear - currentYear < 10 ? 'warning' : 'good') : 'neutral',
+      detail: cstCrossoverYear
+        ? `CST assets are projected to exceed the surviving spouse's exemption around ${cstCrossoverYear}. Estate flow planning should account for this crossover.`
+        : 'Model a Credit Shelter Trust in the strategy panels to calculate the crossover year.',
+    })
   }
-  metrics.push({
-    id: 'cst_crossover',
-    label: 'CST Crossover Year',
-    scope: 'strategy',
-    value: cstCrossoverYear ? `${cstCrossoverYear}` : 'Not modeled',
-    subtext: cstCrossoverYear
-      ? "CST assets projected to exceed survivor exemption"
-      : 'Run CST module to calculate',
-    status: cstCrossoverYear ? (cstCrossoverYear - currentYear < 10 ? 'warning' : 'good') : 'neutral',
-    detail: cstCrossoverYear
-      ? `CST assets are projected to exceed the surviving spouse's exemption around ${cstCrossoverYear}. Estate flow planning should account for this crossover.`
-      : 'Model a Credit Shelter Trust in the strategy panels to calculate the crossover year.',
-  })
 
   return { metrics }
+}
+
+export const STRATEGY_MODULE_METRIC_IDS = ['strategy_npv', 'cst_crossover'] as const
+
+/** Priority order for warning `!` badges — only top 2 are shown. */
+export const ADVISORY_WARNING_PRIORITY = [
+  'dsue_at_risk',
+  'cost_of_inaction',
+  'grat_breakeven',
+  'effective_rate',
+  'exemption_utilization',
+  'liquidity_coverage',
+] as const
+
+export function pickActiveWarningMetricIds(metrics: AdvisoryMetric[]): Set<string> {
+  const warningIds = ADVISORY_WARNING_PRIORITY.filter((id) => {
+    const m = metrics.find((x) => x.id === id)
+    return m?.status === 'warning'
+  })
+  return new Set(warningIds.slice(0, 2))
 }

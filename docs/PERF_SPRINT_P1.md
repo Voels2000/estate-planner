@@ -51,6 +51,19 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **Note:** Roster net worth is approximate (batched assets/RE/liabilities/business/insurance). Client Overview still uses `calculate_estate_composition`.
 
+## Advisor portal UX-2 — tab-scoped load + metrics cache (2026-05-26)
+
+**Shipped with UX-2 (same commit as SCHEMA_CHANGELOG UX-2):**
+
+| Change | File | Impact |
+|--------|------|--------|
+| Tab-scoped dataset flags | `advisorDatasetIncludeForTab()`, `loadAdvisorClientDatasets({ include })` | Overview/Notes/Documents/Estate/etc. skip unrelated queries |
+| Conditional strategy VM + export | `app/advisor/clients/[clientId]/page.tsx` | Strategy view models only when tab needs them |
+| Cached advisory metrics | `lib/advisor/cachedAdvisoryMetrics.ts`, Strategy tab | 120s `unstable_cache`; tag `household-metrics-{householdId}` |
+| Cache invalidation | `lib/consumer/afterHouseholdWrite.ts` | `revalidateTag(..., 'max')` on household writes |
+
+**Still deferred:** Per-tab Suspense server components; batch composition RPC for roster.
+
 ## Post-launch refactors (not in this sprint)
 
 - Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*
@@ -58,7 +71,6 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 - Single staleness version field (replace 10 staleness queries)
 - Streaming dashboard with Suspense boundaries
 - Batch advisor estate composition RPC (roster could use cached `net_estate` column)
-- Tab-scoped data loading on advisor client workspace (load Strategy tab data only when `?tab=strategy`)
 
 ---
 

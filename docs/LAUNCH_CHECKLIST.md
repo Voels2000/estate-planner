@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-26 (Advisor portal perf; OB-3b / SU-1 / NAV-1; handle_new_user prod migration gate; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (UX-2 `advisor_gap_statuses`; advisor perf; OB-3b / SU-1 / NAV-1; Sprint 17 go-live prep)
 
 ---
 
@@ -261,8 +261,9 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Supabase prod migrations (confirm applied)
 
-**Current (2026-05-25):** **76+** timestamped migration files in `supabase/migrations/` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Local and remote in sync through `20260625170000` (C-7) **plus** pending prod apply for onboarding/AF-1-era migrations below.
+**Current (2026-05-26):** **76** timestamped migration files in `supabase/migrations/` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Repo through `20260626120000` (UX-2 gap statuses). Remote may lag — confirm applied list below.
 
+- [ ] **`20260626120000_advisor_gap_statuses.sql`** — UX-2 advisor gap workflow; apply before advisor portal UX-2 deploy
 - [ ] **`20260526000000_onboarding_wizard_fields.sql`** — OB-1 wizard columns; apply before OB-1 deploy
 - [ ] **`20260526000001_handle_new_user_trigger.sql`** — **Required before open signups** — `on_auth_user_created` → `handle_new_user()` (`trial_started_at`, not legacy `trial_ends_at`)
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)

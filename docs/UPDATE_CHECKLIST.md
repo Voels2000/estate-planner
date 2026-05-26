@@ -90,22 +90,35 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] State tax/income bracket queries scoped to advisor states + projection years
 - [x] Access log + strategy-question mark-read off critical path
 
+## Advisor portal UX-2 — shipped (pass 1 + continuation)
+
+- [x] Migration `20260626120000_advisor_gap_statuses.sql` — apply before deploy
+- [x] Brand: navy header, gold tab underlines; advisor sign-out on navy bar
+- [x] `advisorDatasetIncludeForTab()` tab-scoped client datasets
+- [x] Overview: `PlanStatusCard`, critical-gap banner, `GapStatusSelector`, stable `gap.key`
+- [x] Estate: collapsed outside estate when $0; prominent tax callout; no-transfer amber banner
+- [x] Strategy: `getCachedAdvisoryMetrics`; 6-card grid + module CTA; warning cap at 2; exemption banner
+- [x] Tax tab: Sunset / No Exemption Stress Test label
+- [x] Domicile: critical transition risk red banner (≥ 71)
+- [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) — `advisor_gap_statuses`
+- [x] [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+
 ## Signup trigger — pre-go-live
 
 - [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 
 ## Required updates before merge
 
-- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 / NAV-1 / advisor perf — 2026-05-26)
+- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 / NAV-1 / advisor perf / UX-2 — 2026-05-26)
   - [x] Current vs Target reflects actual code
   - [x] Invariants still true
   - [x] Key file map is accurate
-  - [ ] Open backlog / migration status table still current
-- [ ] Update `docs/DATABASE_SCHEMA_REFERENCE.md`
-  - [ ] New/changed tables and key columns
-  - [ ] Authoritative vs legacy notes
-  - [ ] Relationship/lineage changes
-  - [ ] Recent migrations list
+  - [x] Open backlog / migration status table still current (76 migrations through `20260626120000`)
+- [x] Update `docs/DATABASE_SCHEMA_REFERENCE.md` (UX-2 — `advisor_gap_statuses`)
+  - [x] New/changed tables and key columns
+  - [x] Authoritative vs legacy notes
+  - [x] Relationship/lineage changes
+  - [x] Recent migrations list
 - [ ] If consumer journey changed: update `docs/CONSUMER_FLOWS.md` and route row in `docs/CONSUMER_NAV_MAP.md` when URL/tier/gate changed
 
 ## Consumer flow changes (detail)

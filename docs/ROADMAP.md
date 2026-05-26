@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b; Sprint 17 go-live prep)
 
 ---
 
@@ -92,6 +92,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Layout household query fix** | `[x]` | Drop invalid `date_of_birth_1` from `getDashboardLayoutContext` (fixes false `hasHousehold`) — `d50a982` |
 | **Sidebar active indicator NAV-1** | `[x]` | Auto-expand group on active child; `isNavItemActive()` path matching — `be92947` |
 | **Advisor portal performance** | `[x]` | Roster batched net worth; parallel client workspace load; scoped tax queries — `8c526de` |
+| **Advisor portal UX-2** | `[x]` | Brand, tab-scoped load, PlanStatusCard, gap statuses, metrics cache, estate/strategy alerts — see SCHEMA_CHANGELOG UX-2 |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -148,6 +149,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal performance | ✅ | `8c526de` |
+| Advisor portal UX-2 | ✅ | (pending commit) |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
@@ -482,7 +484,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 - `[x]` Advisor notification when client logs a life event — `POST /api/consumer/life-events` + cron job 6
 - `[x]` Advisor referral links — `?ref=` on event pages, `referral_clicks`, portal copy UI (`lib/events/referral.ts`)
 - `[x]` Attorney-ready export UI — `/print` dual mode; `ExportPDFButton` `variant=attorney` (PDF template follow-up)
-- `[x]` Plan readiness on advisor client Overview — `PlanReadinessCard` + `estate_health_scores`
+- `[x]` Plan readiness on advisor client Overview — `PlanStatusCard` + `estate_health_scores` (UX-2; was `PlanReadinessCard`)
 - `[x]` Canonical `advisor_directory` for listings/referrals (replaced `advisor_listings` references)
 
 **Deferred**

@@ -30,7 +30,7 @@ export function getComplexityStyle(flag: string | null) {
     case 'low':      return { complexity: 'Low',      complexityColor: 'text-[color:var(--mwm-sage)]', complexityBg: 'bg-[var(--mwm-sage-pale)]' }
     case 'moderate': return { complexity: 'Moderate', complexityColor: 'text-amber-700',   complexityBg: 'bg-amber-50' }
     case 'high':     return { complexity: 'High',     complexityColor: 'text-orange-700',  complexityBg: 'bg-orange-50' }
-    case 'critical': return { complexity: 'Critical', complexityColor: 'text-red-700',     complexityBg: 'bg-red-50' }
+    case 'critical': return { complexity: 'Critical', complexityColor: 'text-red-700',     complexityBg: 'bg-red-50 border border-red-200' }
     default:         return { complexity: 'Unknown',  complexityColor: 'text-slate-600',   complexityBg: 'bg-slate-100' }
   }
 }
@@ -40,6 +40,7 @@ export function getComplexityStyle(flag: string | null) {
 // Returns array of gap objects sorted by severity.
 
 export interface Gap {
+  key: string
   severity: 'critical' | 'high' | 'moderate' | 'low'
   category: string
   title: string
@@ -105,6 +106,7 @@ export function computeGaps(params: {
   // ── Estate document gaps ──────────────────────────────────────────────────
   if (!docMap['will']?.exists) {
     gaps.push({
+      key: 'no-will',
       severity: netWorth > 500_000 ? 'critical' : 'high',
       category: 'Estate Planning',
       title: 'No Will on File',
@@ -114,6 +116,7 @@ export function computeGaps(params: {
 
   if (!docMap['dpoa']?.exists) {
     gaps.push({
+      key: 'no-dpoa',
       severity: 'high',
       category: 'Incapacity Planning',
       title: 'No Durable Power of Attorney',
@@ -123,6 +126,7 @@ export function computeGaps(params: {
 
   if (!docMap['medical_poa']?.exists) {
     gaps.push({
+      key: 'no-medical-poa',
       severity: 'high',
       category: 'Incapacity Planning',
       title: 'No Medical Power of Attorney',
@@ -132,6 +136,7 @@ export function computeGaps(params: {
 
   if (!docMap['advance_directive']?.exists) {
     gaps.push({
+      key: 'no-advance-directive',
       severity: 'moderate',
       category: 'Incapacity Planning',
       title: 'No Advance Directive / Living Will',
@@ -142,6 +147,7 @@ export function computeGaps(params: {
   // ── Trust gap (high complexity) ───────────────────────────────────────────
   if (score >= 46 && !docMap['trust']?.exists) {
     gaps.push({
+      key: 'high-complexity-no-trust',
       severity: 'high',
       category: 'Estate Planning',
       title: 'High Complexity — No Trust',
@@ -163,6 +169,7 @@ export function computeGaps(params: {
 
   if (retirementAssets.length > 0 && (beneficiaries ?? []).length === 0) {
     gaps.push({
+      key: 'retirement-no-beneficiaries',
       severity: 'critical',
       category: 'Beneficiary Designations',
       title: 'Retirement Accounts — No Beneficiaries',
@@ -174,6 +181,7 @@ export function computeGaps(params: {
   const hasContingent = (beneficiaries ?? []).some(b => b.contingent)
   if (hasPrimary && !hasContingent && netWorth > 250_000) {
     gaps.push({
+      key: 'no-contingent-beneficiary',
       severity: 'moderate',
       category: 'Beneficiary Designations',
       title: 'No Contingent Beneficiary',
@@ -185,6 +193,7 @@ export function computeGaps(params: {
   const soloRealEstate = (realEstate ?? []).filter(r => r.owner === 'person1' || r.owner === 'person2')
   if (household.has_spouse && soloRealEstate.length > 0) {
     gaps.push({
+      key: 'sole-ownership-real-estate',
       severity: 'moderate',
       category: 'Asset Titling',
       title: 'Real Estate — Sole Ownership with Spouse',
@@ -198,6 +207,7 @@ export function computeGaps(params: {
 
   if (tolerance === 'conservative' && stocks > 40) {
     gaps.push({
+      key: 'allocation-conservative-mismatch',
       severity: 'moderate',
       category: 'Investment Policy',
       title: 'Allocation Inconsistent with Risk Tolerance',
@@ -206,6 +216,7 @@ export function computeGaps(params: {
   }
   if (tolerance === 'aggressive' && stocks < 60) {
     gaps.push({
+      key: 'allocation-aggressive-mismatch',
       severity: 'low',
       category: 'Investment Policy',
       title: 'Allocation May Be Too Conservative',
@@ -217,6 +228,7 @@ export function computeGaps(params: {
   const p1Age = new Date().getFullYear() - (household.person1_birth_year ?? 0)
   if (p1Age >= 55 && !household.person1_ss_claiming_age) {
     gaps.push({
+      key: 'ss-claiming-age-not-set',
       severity: 'moderate',
       category: 'Retirement Planning',
       title: 'Social Security Claiming Age Not Set',

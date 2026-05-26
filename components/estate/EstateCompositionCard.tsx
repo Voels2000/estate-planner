@@ -144,6 +144,8 @@ interface EstateCompositionCardProps {
   showMetrics?: boolean
   /** Show the expandable breakdown */
   showBreakdown?: boolean
+  /** Advisor portal: prominent tax callout + collapsed empty outside panel */
+  variant?: 'default' | 'advisor'
 }
 
 export default function EstateCompositionCard({
@@ -153,6 +155,7 @@ export default function EstateCompositionCard({
   snapshotLabel = 'Current snapshot',
   showMetrics = true,
   showBreakdown = true,
+  variant = 'default',
 }: EstateCompositionCardProps) {
   const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
   const [loading, setLoading] = useState(!compositionProp)
@@ -228,27 +231,55 @@ export default function EstateCompositionCard({
   } = composition
 
   const outside_total = outside_structure_total + outside_strategy_total
+  const transfers = [...outside_structure_items, ...outside_strategy_items]
+  const hasOutsideEstateContent = outside_total > 0 || transfers.length > 0
   const hasOutside = outside_total > 0
   const hasStrategies = outside_strategy_items.length > 0
   const hasStructural = outside_structure_items.length > 0
   const liquidPct = inside_total > 0 ? Math.round((inside_liquid / inside_total) * 100) : 0
+  const isAdvisor = variant === 'advisor'
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-        <div>
-          <span className="text-sm font-semibold text-gray-800">{label}</span>
-          <span className="ml-2 text-xs text-gray-400">{snapshotLabel}</span>
-        </div>
-        {estimated_tax === 0 ? (
-          <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium">
-            No federal estate tax
-          </span>
+      <div className="px-5 py-3 border-b border-gray-100">
+        {isAdvisor ? (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                {label}
+                <span className="ml-2 text-xs font-normal text-gray-400">{snapshotLabel}</span>
+              </h2>
+            </div>
+            {estimated_tax > 0 ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-right min-w-[180px] shrink-0">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-red-500 mb-0.5">
+                  Estimated Tax Liability
+                </p>
+                <p className="text-xl font-bold text-red-700 tabular-nums">{fmt(estimated_tax)}</p>
+              </div>
+            ) : (
+              <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium shrink-0">
+                No federal estate tax
+              </span>
+            )}
+          </div>
         ) : (
-          <span className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-0.5 font-medium">
-            Est. tax: {fmt(estimated_tax)}
-          </span>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm font-semibold text-gray-800">{label}</span>
+              <span className="ml-2 text-xs text-gray-400">{snapshotLabel}</span>
+            </div>
+            {estimated_tax === 0 ? (
+              <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium">
+                No federal estate tax
+              </span>
+            ) : (
+              <span className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-0.5 font-medium">
+                Est. tax: {fmt(estimated_tax)}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -326,6 +357,19 @@ export default function EstateCompositionCard({
         </div>
 
         {/* ── OUTSIDE panel ────────────────────────────────────────────────── */}
+        {isAdvisor && !hasOutsideEstateContent ? (
+          <div className="p-5">
+            <div className="flex items-center justify-between rounded-lg border border-dashed border-gray-200 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500">Outside Taxable Estate</span>
+                <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">
+                  No transfers
+                </span>
+              </div>
+              <span className="text-sm text-gray-300">$0</span>
+            </div>
+          </div>
+        ) : (
         <div className="p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-green-800 uppercase tracking-wide">
@@ -381,6 +425,7 @@ export default function EstateCompositionCard({
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Three-tier metric row */}
