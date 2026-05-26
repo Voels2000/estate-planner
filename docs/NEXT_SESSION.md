@@ -29,7 +29,7 @@
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal perf | ✅ | `8c526de` |
-| Advisor portal UX-2 | ✅ | (this commit) |
+| Advisor portal UX-2 | ✅ | `1ba93eb` |
 
 ---
 
