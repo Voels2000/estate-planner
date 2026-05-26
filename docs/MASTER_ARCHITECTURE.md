@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-25 (AF-1 advisor flywheel; OB-1/OB-2; design Phase 3; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (OB-3 setup progress; AF-1; OB-1/OB-2; Sprint 17 go-live prep)
 
 ---
 
@@ -62,6 +62,7 @@ Consumers and advisors share one **household** data model but operate in separat
 |---------|----------------|
 | Life-event at connect | `pickConnectionLifeEvent()` on accept — priority: `funnel_events.event_slug` → `referral_clicks.event_slug` (via `profiles.referral_code`) → `life_events`; stored on `advisor_clients.connection_life_event_*`; banner on advisor Overview |
 | Invite-your-advisor | `/onboarding/invite-advisor`; `profiles.onboarding_invite_advisor_completed_at` (skip sets same timestamp); layout gate in `(dashboard)/layout.tsx` |
+| Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; Tier 1 import upload while `!onboarding_wizard_completed_at` (history Tier 2+) |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**

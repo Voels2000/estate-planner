@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-25 (OB-1/OB-2/AF-1 + design Phase 3 closed; Sprint 17 go-live prep)
+# Last updated: 2026-05-25 (OB-3 setup progress + wizard gate; Sprint 17 go-live prep)
 
 ---
 
@@ -86,6 +86,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Onboarding wizard OB-1** | `[x]` | Extended profile + `/onboarding/wizard` — `b1c7b49` (+ `fd00b69` wizard name dedup) |
 | **Tier-aware narrative OB-2** | `[x]` | Profile intro, wizard previews, SetupPromptCard tier copy — `bccef99` |
 | **Advisor flywheel AF-1** | `[x]` | Ask-advisor notification + advisor Strategy Questions card — `a255616` |
+| **Setup progress OB-3** | `[x]` | `SetupProgressCard`, data-inferred wizard, onboarding import bypass — `3376134` |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -121,6 +122,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `fd00b69` | OB-1 | Remove duplicate wizard name fields from profile section |
 | `bccef99` | OB-2 | Tier-aware onboarding narrative and contextual messaging |
 | `a255616` | AF-1 | Ask-advisor notification + advisor Client Strategy Questions |
+| `3376134` | OB-3 | SetupProgressCard, wizard hasAnyData gate, onboarding import for Tier 1 |
 
 ### Sprint summary — 2026-05-25
 
@@ -130,6 +132,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Onboarding wizard OB-1 | ✅ | `b1c7b49`, `fd00b69` |
 | Tier-aware narrative OB-2 | ✅ | `bccef99` |
 | Advisor flywheel AF-1 | ✅ | `a255616` |
+| Setup progress OB-3 | ✅ | `3376134` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

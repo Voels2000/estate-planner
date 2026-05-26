@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint OB-3 (2026-05-25) — Setup progress + wizard gate (no schema migration)
+
+**Code only:** `GET /api/consumer/setup-progress`; `SetupProgressCard`; wizard gate uses `checkHouseholdHasData` + `wizardGateExemptPrefixes`; Tier 1 import upload during onboarding (UI gate only).
+
+**Commit:** `3376134`
+
+---
+
 ## Sprint AF-1 (2026-05-25) — Consumer strategy questions (no schema migration)
 
 **Code only:** `POST /api/consumer/ask-advisor` inserts advisor notification type `consumer_strategy_question` via `create_notification` RPC (`p_cooldown: '0 seconds'`). Metadata: `strategy_type`, `strategy_name`, `client_id`, `household_id`, `plan_url`.

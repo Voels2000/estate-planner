@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-25 (Design Phase 3, OB-1/OB-2, AF-1 closed; Sprint 17 go-live prep)
+# Updated: 2026-05-25 (OB-3 setup progress; OB-1/OB-2/AF-1; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Design system Phases 1–3** shipped (`d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a`). **OB-1** wizard (`b1c7b49`), **OB-2** tier narrative (`bccef99`), **AF-1** ask-advisor flywheel (`a255616`). Compliance **C-2b → C-7** live. Waitlist active. **Pre-go-live DB:** apply `20260526000001_handle_new_user_trigger.sql` in production before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **OB-3** setup progress card + wizard gate fix + onboarding import (`SetupProgressCard`, `shouldRequireWizardOnboarding`). **OB-1/OB-2/AF-1** shipped. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -24,6 +24,21 @@
 | Onboarding wizard OB-1 | ✅ | `b1c7b49`, `fd00b69` |
 | Tier-aware narrative OB-2 | ✅ | `bccef99` |
 | Advisor flywheel AF-1 | ✅ | `a255616` |
+| Setup progress OB-3 | ✅ | `3376134` |
+
+---
+
+## Setup progress OB-3 ✅ (2026-05-25)
+
+| Area | Outcome |
+|------|---------|
+| **Dashboard** | `SetupProgressCard` — 5-section data-inferred progress; collapses to one line when complete (does not disappear) |
+| **API** | `GET /api/consumer/setup-progress` |
+| **Wizard gate** | Redirect only when zero assets/income (`shouldRequireWizardOnboarding`); Financial Planning + `/import` exempt |
+| **Wizard** | Data-inferred steps, free navigation, **← Back to dashboard** |
+| **Import** | Tier 1 upload during onboarding; history/management stays Tier 2+ (UI gate only — no data deletion) |
+
+**Commit:** `3376134` · **Tests:** `tests/unit/wizard-onboarding-gate.spec.ts` (`npx playwright test tests/unit/wizard-onboarding-gate.spec.ts --project=import-unit`)
 
 ---
 
@@ -47,7 +62,7 @@
 |------|---------|
 | **Wizard** | `/onboarding/wizard` — extended profile + guided first-data entry |
 | **Migration** | `20260526000000_onboarding_wizard_fields.sql` — `onboarding_wizard_completed_at` |
-| **Gates** | Layout + dashboard `SetupPromptCard` when wizard incomplete |
+| **Gates** | Layout wizard redirect (superseded by OB-3 `hasAnyData` check) + dashboard setup nudge |
 
 **Commits:** `b1c7b49`, `fd00b69` (remove duplicate wizard name fields)
 
@@ -57,7 +72,7 @@
 
 | Area | Outcome |
 |------|---------|
-| **Copy** | Profile intro, wizard step previews, `SetupPromptCard`, `EmptyStateCard`, `UpgradeBanner` tier-aware messaging |
+| **Copy** | Profile intro, wizard step previews, setup prompt (→ `SetupProgressCard` in OB-3), `EmptyStateCard`, `UpgradeBanner` tier-aware messaging |
 
 **Commit:** `bccef99`
 

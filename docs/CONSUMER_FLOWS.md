@@ -129,9 +129,10 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | **User goal** | Add first asset + first income + optionally invite advisor |
 | **Tier / gate** | Tier 1; requires MVP profile; blocked when `onboarding_wizard_completed_at` is set |
 | **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
-| **Client** | `_wizard-client.tsx` — 3-step guided flow |
+| **Client** | `_wizard-client.tsx` — 3-step guided flow; step completion inferred from `GET /api/consumer/setup-progress` (data counts, not click-through); **← Back to dashboard** exits without completing; steps navigable freely |
 | **Write APIs** | `POST /api/consumer/assets` (step 1); `POST /api/consumer/income` (step 2); `POST /api/consumer/onboarding-wizard-complete` (step 3) |
-| **Layout gate** | `WizardOnboardingGate` in `layout.tsx` — redirects until `onboarding_wizard_completed_at` set; existing users with assets/income auto-backfilled |
+| **Layout gate** | `WizardOnboardingGate` — redirects only when MVP profile ready, wizard not complete, and **no** assets/income yet (`checkHouseholdHasData`); Financial Planning routes exempt (`wizardGateExemptPrefixes`); users with any data navigate freely with `SetupProgressCard` nudge on dashboard |
+| **Dashboard** | `SetupProgressCard` — section-based progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
 | **Migration** | `20260526000000_onboarding_wizard_fields.sql` |
 
 ### Invite your advisor — `/onboarding/invite-advisor`
@@ -196,7 +197,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Write APIs** | None on dashboard (read-only hub) |
 | **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
-| **Key lib** | `lib/dashboard/*`, `components/dashboard/EmptyStateCard.tsx` |
+| **Key lib** | `lib/dashboard/*`, `components/dashboard/SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
 | **Key UI sections** | Greeting + setup progress (`DashboardIntroSection`); **`LifeEventBanner`** (log event → `POST /api/consumer/life-events`, calendar triggers from cron); **conflict severity chips**; dismissible conflict alert banner; `AssessmentHistoryWidget`; Financial Summary / Net Worth; `EstateCalloutCard`; `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
@@ -223,9 +224,9 @@ Consumers build the household balance sheet and cash flows before estate surface
 | | |
 |--|--|
 | **User goal** | Import assets, liabilities, income, or expenses from a spreadsheet |
-| **Tier / gate** | Tier 2 (`FEATURE_TIERS.import`); `UpgradeBanner` when below tier |
-| **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` history |
-| **Client** | `_import-client.tsx` — drop zone; field mapping review; inline cell edit + per-row delete; duplicate dialog (skip non-duplicates / import all); post-commit deep link to target table |
+| **Tier / gate** | Tier 2 for import **history/management**; **upload + commit unlocked for Tier 1 during onboarding** (`!onboarding_wizard_completed_at`) — UI gate only, imported rows are never deleted by tier checks |
+| **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` when Tier 2+; onboarding banner for Tier 1 |
+| **Client** | `_import-client.tsx` — drop zone; field mapping review; inline cell edit + per-row delete; duplicate dialog; history table hidden until Tier 2+; import CTA on `/assets` and `/income` during onboarding |
 | **Write APIs** | `POST /api/ingest` (parse; optional `sheet_name`); `POST /api/import/commit` (`skip_duplicates`, `force_all`); `DELETE /api/import/jobs/[id]` (cancel pending) |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
 | **Migrations** | F-1: `20260602140000_sprint_f1_ingestion_jobs.sql` — verified in production. F-2: `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on financial rows; `header_row_index`, `sheet_name` on jobs |

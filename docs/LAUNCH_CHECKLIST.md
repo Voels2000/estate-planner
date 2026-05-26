@@ -33,6 +33,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Attorney referral loop proven (staging)** — sections B/D passed Sprint 13; test listing + `?aref=` verified
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
 - [x] **Ask advisor about strategy (AF-1)** — connected consumer notifies advisor from Transfer Strategies education cards; advisor **Client Strategy Questions** on client Overview (`a255616`)
+- [x] **Setup progress onboarding (OB-3)** — `SetupProgressCard` on dashboard; wizard gate only when no data; Tier 1 import during onboarding
 
 ### Email drip
 
@@ -327,5 +328,6 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | 2026-05-25 | OB-1 | **Closed** — onboarding wizard + extended profile (`b1c7b49`, `fd00b69`) |
 | 2026-05-25 | OB-2 | **Closed** — tier-aware onboarding narrative (`bccef99`) |
 | 2026-05-25 | AF-1 | **Closed** — ask-advisor notification + advisor Strategy Questions (`a255616`) |
+| 2026-05-25 | OB-3 | **Closed** — SetupProgressCard, data-inferred wizard, wizard gate `hasAnyData`, onboarding import for Tier 1 (`3376134`) |
 | 2026-05-25 | DB trigger | `handle_new_user` migration on `main` (`1133b4f`) — **apply to production before go-live** |
 | 2026-05-24 | Sprint 15 cont. | Preview waitlist mode enabled; sitemap XML fixed (`73648e5`); middleware infra bypass added; test accounts cleaned up (`3f732e3`); dev workflow established (local → preview → production) |

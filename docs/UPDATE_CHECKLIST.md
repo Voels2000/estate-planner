@@ -62,6 +62,12 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Advisor client Overview **Client Strategy Questions** card
 - [x] [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) Transfer Strategies row updated
 
+## Setup progress + wizard refactor (Sprint OB-3) — shipped
+
+- [x] `SetupProgressCard` collapses to single line when all 5 sections started and wizard complete (does not disappear)
+- [x] Wizard gate does not redirect users who have any asset or income data (`shouldRequireWizardOnboarding` + exempt routes)
+- [x] Import upload accessible during onboarding for Tier 1; import history remains Tier 2+ (no data deletion on tier gate)
+
 ## Signup trigger — pre-go-live
 
 - [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
