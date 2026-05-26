@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { getAppUrl } from '@/lib/app-url'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { isWizardComplete } from '@/lib/estate/profileGate'
 import MyAdvisorClient from './_my-advisor-client'
 
 export default async function MyAdvisorPage() {
@@ -83,9 +84,11 @@ export default async function MyAdvisorPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, onboarding_wizard_completed_at')
     .eq('id', user.id)
     .single()
+
+  const wizardComplete = isWizardComplete(profile)
 
   const consumerName = profile?.full_name ?? 'Your client'
   const appUrl = getAppUrl()
@@ -101,6 +104,7 @@ export default async function MyAdvisorPage() {
   return (
     <MyAdvisorClient
       connection={normalizedConnection}
+      wizardComplete={wizardComplete}
       listing={listing ?? null}
       accessLog={accessLog ?? []}
       pendingRequest={pendingRequest ? {

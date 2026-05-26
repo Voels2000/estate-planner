@@ -43,6 +43,7 @@ type PendingRequest = {
 
 type Props = {
   connection: Connection
+  wizardComplete: boolean
   listing: Listing
   accessLog: AccessEntry[]
   pendingRequest: PendingRequest
@@ -53,6 +54,7 @@ type Props = {
 
 export default function MyAdvisorClient({
   connection,
+  wizardComplete,
   listing,
   accessLog,
   pendingRequest,
@@ -115,6 +117,9 @@ export default function MyAdvisorClient({
     }
   }
 
+  const showOnboardingAdvisorNote =
+    !connection && !wizardComplete && !pendingRequest
+
   if (!connection) {
     return (
       <div className="space-y-6">
@@ -122,6 +127,18 @@ export default function MyAdvisorClient({
           <h1 className="text-2xl font-bold text-neutral-900">My Advisor</h1>
           <p className="mt-1 text-sm text-neutral-500">Manage your advisor connection</p>
         </div>
+
+        {showOnboardingAdvisorNote && (
+          <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)] px-5 py-4">
+            <p className="text-sm font-medium text-[color:var(--mwm-navy)] mb-1">
+              Planning works better with your advisor in the loop.
+            </p>
+            <p className="text-sm text-[color:var(--mwm-text-secondary)]">
+              Invite your advisor to review your plan and collaborate on strategies. They can
+              propose recommendations you accept or reject — all without sharing login credentials.
+            </p>
+          </div>
+        )}
 
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
