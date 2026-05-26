@@ -83,13 +83,20 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Active item uses `NAV_ACTIVE` (navy + gold left border) via `isNavItemActive()` + `usePathname()`
 - [x] `/dashboard` exact match only; sub-routes use path prefix match
 
+## Advisor portal performance — shipped `8c526de`
+
+- [x] `/advisor` roster: `loadRosterNetWorthByOwner` (5 batched queries, not N× composition RPC)
+- [x] `/advisor/clients/[clientId]`: parallel staleness + composition + datasets
+- [x] State tax/income bracket queries scoped to advisor states + projection years
+- [x] Access log + strategy-question mark-read off critical path
+
 ## Signup trigger — pre-go-live
 
 - [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 
 ## Required updates before merge
 
-- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 / NAV-1 sidebar — 2026-05-26)
+- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 / NAV-1 / advisor perf — 2026-05-26)
   - [x] Current vs Target reflects actual code
   - [x] Invariants still true
   - [x] Key file map is accurate

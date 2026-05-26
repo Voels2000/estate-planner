@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (NAV-1 active sidebar; OB-3b; SU-1; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **NAV-1** sidebar active indicator (Financial Planning auto-expand + route match). **OB-3b** sidebar unlock + layout `hasHousehold` fix (`date_of_birth_1` select removed). **OB-3** setup progress (`SetupProgressCard`). **SU-1** superuser sidebar. **OB-1/OB-2/AF-1** shipped. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Advisor portal perf** — roster batched net worth + parallel client workspace load (`8c526de`). **NAV-1** sidebar active indicator. **OB-3b** sidebar unlock + layout `hasHousehold` fix. **OB-3** setup progress (`SetupProgressCard`). **SU-1** superuser sidebar. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -28,7 +28,7 @@
 | Superuser sidebar SU-1 | ✅ | `3c0d28b` |
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
-| Advisor portal perf | ✅ | (see PERF_SPRINT_P1 — roster + client parallel load) |
+| Advisor portal perf | ✅ | `8c526de` |
 
 ---
 
@@ -36,10 +36,10 @@
 
 | Area | Outcome |
 |------|---------|
-| **Roster `/advisor`** | Batched net-worth reads instead of N× `calculate_estate_composition` RPC |
+| **Roster `/advisor`** | `loadRosterNetWorthByOwner` — 5 batched queries instead of N× `calculate_estate_composition` RPC |
 | **Client workspace** | Parallel staleness + composition + datasets; scoped tax rules; non-blocking access log |
 
-See [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26).
+**Commit:** `8c526de` · See [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26).
 
 ---
 

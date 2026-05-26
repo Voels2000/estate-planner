@@ -8,6 +8,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Advisor portal performance (2026-05-26) — Roster + client load (no schema migration)
+
+**Code only:**
+
+- `lib/advisor/rosterNetWorth.ts` — batched assets/liabilities/real estate/business/insurance reads for `/advisor` roster (replaces N× `calculate_estate_composition` per client).
+- `app/advisor/clients/[clientId]/page.tsx` — parallel staleness + composition + `loadAdvisorClientDatasets`; parallel link/household; non-blocking access log and strategy-question mark-read.
+- `lib/advisor/loaders.ts` — state estate/income tax queries scoped to advisor states + projection years; `skipGlobalTaxTableStaleness` on advisor client staleness check.
+
+**Commit:** `8c526de` · **Detail:** [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26)
+
+---
+
 ## Sprint NAV-1 (2026-05-26) — Sidebar active route indicator (no schema migration)
 
 **Code only:** `sidebar-nav.tsx` — `isNavItemActive()` / `groupContainsActiveItem()` via `usePathname()`; planning groups with an active child auto-expand (fixes Financial Planning stuck collapsed in `DEFAULT_CLOSED_GROUPS`); `/dashboard` exact match only; query-string hrefs match on path segment.

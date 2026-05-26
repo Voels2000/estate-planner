@@ -38,6 +38,8 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 ## Advisor portal quick wins (2026-05-26)
 
+**Commit:** `8c526de`
+
 | Change | File | Impact |
 |--------|------|--------|
 | Roster net worth: batched reads vs N× composition RPC | `lib/advisor/rosterNetWorth.ts`, `app/advisor/page.tsx` | **Largest win** — 5 queries total instead of one heavy RPC per client |

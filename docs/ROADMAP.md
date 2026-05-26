@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-26 (NAV-1 active sidebar; OB-3b; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; Sprint 17 go-live prep)
 
 ---
 
@@ -91,6 +91,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Superuser sidebar SU-1** | `[x]` | `isSuperuser` prop, staff bypass, Advisor Portal admin check — `3c0d28b` |
 | **Layout household query fix** | `[x]` | Drop invalid `date_of_birth_1` from `getDashboardLayoutContext` (fixes false `hasHousehold`) — `d50a982` |
 | **Sidebar active indicator NAV-1** | `[x]` | Auto-expand group on active child; `isNavItemActive()` path matching — `be92947` |
+| **Advisor portal performance** | `[x]` | Roster batched net worth; parallel client workspace load; scoped tax queries — `8c526de` |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -132,6 +133,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `1660f27` | OB-3b | Unlock Security/My Advisor/Billing; My Advisor onboarding note |
 | `d50a982` | OB-3b | Layout household query fix + master doc sync |
 | `be92947` | NAV-1 | Active nav indicator follows current route; FP group auto-expand |
+| `8c526de` | Perf | Advisor roster batched net worth; parallel client page load |
 
 ### Sprint summary — 2026-05-26
 
@@ -145,6 +147,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Superuser sidebar SU-1 | ✅ | `3c0d28b` |
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
+| Advisor portal performance | ✅ | `8c526de` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

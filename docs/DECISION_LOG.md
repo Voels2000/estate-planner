@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (NAV-1 active sidebar; OB-3b; layout household query fix)
+# Last updated: 2026-05-26 (Advisor portal perf; NAV-1; OB-3b; layout household query fix)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — Advisor portal roster net worth (performance)
+
+**Decision:** Advisor home (`/advisor`) uses `loadRosterNetWorthByOwner` (batched table reads) for roster net-worth columns. Client workspace (`/advisor/clients/[id]`) still uses `calculate_estate_composition` for engine-aligned Overview figures.
+
+**Reasoning:** One composition RPC per client made roster load scale linearly with client count and dominated TTFB. Batched reads are approximate but sufficient for sort/display on the roster; full composition remains on the client detail page.
+
+**Alternatives considered:** Keep N RPCs for accuracy (rejected — unacceptable at 5+ clients). Batch composition RPC via new Postgres function (deferred — post-launch per PERF_SPRINT_P1).
 
 ---
 
@@ -51,6 +61,7 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Financial Planning sidebar is never `isLockedUser`-gated.** Tier 1 data entry must work before a household row exists. `hasHousehold` comes from layout `getDashboardLayoutContext` — do not SELECT `households.date_of_birth_1` (column does not exist; breaks the query).
 - **Security, My Advisor, and Manage Subscription** are never household-gated in the sidebar (OB-3b).
 - **Sidebar groups auto-expand when a child route is active** (NAV-1) — required for collapsed Financial Planning to show `NAV_ACTIVE` on the current page.
+- **Advisor roster net worth** uses batched table reads (`loadRosterNetWorthByOwner`), not per-client composition RPC. Client workspace uses full `calculate_estate_composition`.
 - **Tailwind v4 arbitrary colors:** `text-` / `border-` / `ring-` use `color:` prefix (`text-[color:var(--mwm-gold)]`); `bg-` uses `bg-[var(--mwm-navy)]` without `color:`. Wrong prefix fails silently.
 - **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 
