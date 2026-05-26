@@ -77,13 +77,19 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Superuser sidebar: `isSuperuser` prop, staff `isLockedUser` bypass, Advisor Portal for admin/superuser (`3c0d28b`)
 - [x] Layout household query: removed invalid `date_of_birth_1` select (fixes `hasHousehold` / Financial menu lock for all users with a household row)
 
+## Sidebar active indicator (Sprint NAV-1) — shipped `be92947`
+
+- [x] Financial Planning (and other collapsed groups) auto-expand when a child route is active
+- [x] Active item uses `NAV_ACTIVE` (navy + gold left border) via `isNavItemActive()` + `usePathname()`
+- [x] `/dashboard` exact match only; sub-routes use path prefix match
+
 ## Signup trigger — pre-go-live
 
 - [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
 
 ## Required updates before merge
 
-- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 sidebar + layout household query — 2026-05-26)
+- [x] Update `docs/MASTER_ARCHITECTURE.md` (OB-3b / SU-1 / NAV-1 sidebar — 2026-05-26)
   - [x] Current vs Target reflects actual code
   - [x] Invariants still true
   - [x] Key file map is accurate

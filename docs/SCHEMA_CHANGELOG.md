@@ -8,6 +8,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint NAV-1 (2026-05-26) — Sidebar active route indicator (no schema migration)
+
+**Code only:** `sidebar-nav.tsx` — `isNavItemActive()` / `groupContainsActiveItem()` via `usePathname()`; planning groups with an active child auto-expand (fixes Financial Planning stuck collapsed in `DEFAULT_CLOSED_GROUPS`); `/dashboard` exact match only; query-string hrefs match on path segment.
+
+**Commit:** `be92947`
+
+---
+
 ## Sprint OB-3b (2026-05-26) — Sidebar unlock + layout household query (no schema migration)
 
 **Code only:**
@@ -18,7 +26,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **My Advisor:** onboarding contextual note when `!connection && !wizardComplete && !pendingRequest`.
 - **Bugfix:** `getDashboardLayoutContext` no longer selects non-existent `households.date_of_birth_1` (Postgres `42703` → `hasHousehold` always false → entire Financial menu locked). Primary DOB is `person1_birth_year` only.
 
-**Commits:** `6d2bff3`, `1660f27`, (household query + docs — this push)
+**Commits:** `6d2bff3`, `1660f27`, `d50a982` (household query + master docs)
 
 ---
 

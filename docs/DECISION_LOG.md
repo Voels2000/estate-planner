@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (OB-3b sidebar unlock; layout household query fix)
+# Last updated: 2026-05-26 (NAV-1 active sidebar; OB-3b; layout household query fix)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — NAV-1: Sidebar active route indicator
+
+**Decision:** Active nav uses `isNavItemActive(href, pathname)` with path-prefix matching (except `/dashboard` exact). Planning groups auto-expand when `groupContainsActiveItem` is true, overriding default collapsed state for Financial Planning.
+
+**Reasoning:** Financial Planning was in `DEFAULT_CLOSED_GROUPS` and the open predicate required `!DEFAULT_CLOSED_GROUPS.has(label)`, so the group stayed collapsed on `/income` etc. — children were unmounted and the active stripe never appeared.
+
+**Alternatives considered:** Remove Financial Planning from `DEFAULT_CLOSED_GROUPS` only (rejected — partial fix; other groups need the same active-child rule).
 
 ---
 
@@ -40,6 +50,7 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Advisor connection queries** must use `CONNECTED_ADVISOR_CLIENT_STATUSES` from `lib/advisor/clientConnectionStatus.ts` (`active` | `accepted`) — never hardcode a single status in new code.
 - **Financial Planning sidebar is never `isLockedUser`-gated.** Tier 1 data entry must work before a household row exists. `hasHousehold` comes from layout `getDashboardLayoutContext` — do not SELECT `households.date_of_birth_1` (column does not exist; breaks the query).
 - **Security, My Advisor, and Manage Subscription** are never household-gated in the sidebar (OB-3b).
+- **Sidebar groups auto-expand when a child route is active** (NAV-1) — required for collapsed Financial Planning to show `NAV_ACTIVE` on the current page.
 - **Tailwind v4 arbitrary colors:** `text-` / `border-` / `ring-` use `color:` prefix (`text-[color:var(--mwm-gold)]`); `bg-` uses `bg-[var(--mwm-navy)]` without `color:`. Wrong prefix fails silently.
 - **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 

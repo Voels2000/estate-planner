@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (OB-3b sidebar unlock; SU-1; OB-3; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (NAV-1 active sidebar; OB-3b; SU-1; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **OB-3b** sidebar unlock + layout `hasHousehold` fix (invalid `date_of_birth_1` select removed). **OB-3** setup progress (`SetupProgressCard`). **SU-1** superuser sidebar. **OB-1/OB-2/AF-1** shipped. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **NAV-1** sidebar active indicator (Financial Planning auto-expand + route match). **OB-3b** sidebar unlock + layout `hasHousehold` fix (`date_of_birth_1` select removed). **OB-3** setup progress (`SetupProgressCard`). **SU-1** superuser sidebar. **OB-1/OB-2/AF-1** shipped. Design Phases 1–3 on `main`. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` before open signups ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)). **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -16,7 +16,7 @@
 
 ---
 
-## Sprint summary — 2026-05-25
+## Sprint summary — 2026-05-26
 
 | Sprint | Status | Commits |
 |--------|--------|---------|
@@ -26,7 +26,20 @@
 | Advisor flywheel AF-1 | ✅ | `a255616` |
 | Setup progress OB-3 | ✅ | `3376134` |
 | Superuser sidebar SU-1 | ✅ | `3c0d28b` |
-| Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27` |
+| Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
+| Active nav indicator NAV-1 | ✅ | `be92947` |
+
+---
+
+## Active sidebar NAV-1 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Active match** | `isNavItemActive()` — `usePathname()`; sub-routes via `startsWith`; `/dashboard` exact only |
+| **Group expand** | Financial / Retirement / Estate groups auto-open when any child route is active (was collapsed while active → no visible indicator) |
+| **Chrome** | `NAV_ACTIVE` — navy fill + `border-l-[color:var(--mwm-gold)]` (Tailwind v4 `color:` prefix) |
+
+**Commit:** `be92947`
 
 ---
 
@@ -40,7 +53,7 @@
 | **My Advisor** | Onboarding note when unconnected + wizard incomplete + no pending request |
 | **Bugfix** | `getDashboardLayoutContext` — do not select `households.date_of_birth_1` (column does not exist; broke `hasHousehold` for all users) |
 
-**Commits:** `6d2bff3`, `1660f27` · **Nav map:** [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md)
+**Commits:** `6d2bff3`, `1660f27`, `d50a982` · **Nav map:** [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md)
 
 ---
 

@@ -15,6 +15,8 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 | — (dash) | **Intentionally no `FEATURE_TIERS` key** — route still tier-gated in `page.tsx` (e.g. `access.tier < 3` → `UpgradeBanner`) or not subscription-gated (marketing, connections) |
 | Sub-tabs | Not separate routes — documented under parent in [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (e.g. trust-strategy `?tab=`) |
 
+**Active nav indicator (NAV-1):** `app/(dashboard)/_components/sidebar-nav.tsx` uses `usePathname()` + `isNavItemActive()` to apply `NAV_ACTIVE` (navy background, gold left border). Planning groups auto-expand when any child matches the current path. `/dashboard` matches exactly; other routes match path or subpath; hrefs with `?query` compare on the path segment only.
+
 ---
 
 ## Sidebar footer (consumer layout)

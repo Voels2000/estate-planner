@@ -256,7 +256,7 @@ Three related routes share projection engines but answer different questions. **
 
 ### Dashboard mobile shell (Sprint 12)
 
-Consumer routes under `app/(dashboard)/` use **`DashboardShell`**: sidebar is fixed on `lg+` desktops; below `lg`, a top bar opens an off-canvas drawer (overlay, closes on navigation). Public routes (`(public)/layout`) are unchanged. Complex modeling is desktop-first; a brief note appears in the mobile sidebar footer.
+Consumer routes under `app/(dashboard)/` use **`DashboardShell`**: sidebar is fixed on `lg+` desktops; below `lg`, a top bar opens an off-canvas drawer (overlay, closes on navigation). Active page: navy fill + gold left accent (`NAV_ACTIVE`); Financial Planning group auto-expands when any child route is active (NAV-1). Public routes (`(public)/layout`) are unchanged. Complex modeling is desktop-first; a brief note appears in the mobile sidebar footer.
 
 ### Dashboard persona alerts (Sprint 12)
 

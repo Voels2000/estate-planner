@@ -66,6 +66,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
+| Sidebar active route (NAV-1) | `isNavItemActive()` + `groupContainsActiveItem()` in `sidebar-nav.tsx`; groups auto-expand when a child is active; `NAV_ACTIVE` navy + gold left accent |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -585,9 +586,10 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Signup form honors `redirectTo` query param; maps `/find-advisor`, `/find-attorney`, and `/assess` to `/profile?from=…` after consumer signup.
 - Profile page shows contextual welcome banner when arriving from assessment restore (`mwm_pending_assessment`), find-advisor, or find-attorney flows.
 
-**Sidebar navigation (Sprint 0 + Sprint 1 + OB-3b + SU-1):**
+**Sidebar navigation (Sprint 0 + Sprint 1 + OB-3b + SU-1 + NAV-1):**
 
 - **Overview group:** Profile + Estate Summary only (no public-site links).
+- **Active indicator (NAV-1):** `usePathname()` drives `isNavItemActive()` per leaf (`/dashboard` exact; other routes allow subpaths; `?tab=` hrefs match on path). Groups in `DEFAULT_CLOSED_GROUPS` (Financial, Retirement, Estate) **auto-expand** when any child is active so the navy/gold `NAV_ACTIVE` stripe is visible.
 - **Financial Planning:** all items tier 1 in `FEATURE_TIERS`; group **never** blocked by `isLockedUser` (primary data entry).
 - **`isLockedUser`:** `hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin`. `hasHousehold` from `getDashboardLayoutContext` (`households` row by `owner_id`; must not select non-existent columns).
 - **Security** (`/settings/security`): always enabled in main nav (not tier- or household-gated).
