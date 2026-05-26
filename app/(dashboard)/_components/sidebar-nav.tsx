@@ -67,7 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/real-estate', label: 'Real Estate', icon: '🏠', feature: 'real-estate' },
       { href: '/businesses', label: 'Business Interests', icon: '🏢', feature: 'businesses' },
       { href: '/digital-assets', label: 'Digital Assets', icon: '🔑', feature: 'digital-assets' },
-      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession', minTier: 3 },
+      { href: '/business-succession', label: 'Business Succession', icon: '🏢', feature: 'business-succession' },
       { href: '/liabilities', label: 'Liabilities', icon: '💳', feature: 'liabilities' },
       { href: '/insurance', label: 'Life & Estate Insurance', icon: '🛡️', feature: 'insurance' },
       { href: '/property-casualty', label: 'Property & Casualty', icon: '🏠', feature: 'insurance' },

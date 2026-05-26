@@ -13,7 +13,6 @@ import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
   computeBusinessOwnershipValue,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
-import { buildDashboardSetupProgress } from '@/lib/dashboard/setupProgress'
 import {
   computeYearsToRetirement,
   getRetirementIncomeProjection,
@@ -200,20 +199,6 @@ export default async function DashboardPage() {
     p2SSClaimingAge,
     p2SSPia,
     expensesTotal: baseExpenses,
-  })
-  // Derive from baseCaseScenario already loaded above — no HTTP roundtrip needed
-  const hasLiveProjectionOutput =
-    Array.isArray(baseCaseScenario?.outputs_s1_first) &&
-    (baseCaseScenario.outputs_s1_first as unknown[]).length > 0
-
-  // ── Setup steps — "Compare scenarios" removed (no longer a gate) ─────────
-  const { setupSteps, completedSteps, progressPct } = buildDashboardSetupProgress({
-    hasProfileBasics: !!(household?.person1_name && household?.person1_birth_year),
-    assetsCount: (assets ?? []).length,
-    liabilitiesCount: (liabilities ?? []).length,
-    incomeCount: (income ?? []).length,
-    expensesCount: (expenses ?? []).length,
-    hasLiveProjectionOutput,
   })
 
   // ── Tier / completion + gift-aware estate composition ───────────────────
@@ -445,9 +430,6 @@ export default async function DashboardPage() {
       retirementAccountsTotal={retirementAccountsTotal}
       estateHealthScore={estateHealthScore}
       conflictReport={conflictReport}
-      setupSteps={setupSteps}
-      completedSteps={completedSteps}
-      progressPct={progressPct}
       userId={user!.id}
       householdId={household?.id ?? null}
       hasBaseCase={!!household?.base_case_scenario_id}

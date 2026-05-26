@@ -61,8 +61,9 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   income:                1,
   expenses:              1,
   projections:           1,
-  allocation:            2,
+  allocation:            1,
   'real-estate':         1,
+  businesses:            1,
   scenarios:             1,
   'social-security':     1,
   // Tier 2 — Retirement Planning
@@ -79,8 +80,9 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   incapacity:            3,
   gifting:               3,
   charitable:            3,
-  'business-succession': 3,
-  'digital-assets':      2,
+  'business-succession': 1,
+  'digital-assets':      1,
+  'property-casualty':   1,
   'my-family':           3,
   'trust-will':          3,
 }

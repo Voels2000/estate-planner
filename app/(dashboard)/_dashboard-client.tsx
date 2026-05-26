@@ -42,13 +42,6 @@ import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionSce
 // Types
 // ---------------------------------------------------------------------------
 
-type SetupStep = {
-  key: string
-  label: string
-  href: string
-  done: boolean
-}
-
 type RetirementSnapshot = {
   p1Name: string | null
   p1RetirementAge: number | null
@@ -97,9 +90,6 @@ type Props = {
     critical: number
     warnings: number
   } | null
-  setupSteps: SetupStep[]
-  completedSteps: number
-  progressPct: number
   userId: string
   householdId?: string | null
   hasBaseCase?: boolean
@@ -171,7 +161,6 @@ export function DashboardClient(props: Props) {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
     allocationContext, retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, conflictReport,
-    setupSteps, completedSteps, progressPct,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
@@ -221,7 +210,6 @@ export function DashboardClient(props: Props) {
   void isAdvisor
 
   const fn = firstName(userName)
-  const allDone = completedSteps === setupSteps.length
   const [greeting] = useState(() => {
     const h = new Date().getHours()
     return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
@@ -233,10 +221,6 @@ export function DashboardClient(props: Props) {
       <DashboardIntroSection
         greeting={greeting}
         firstName={fn}
-        allDone={allDone}
-        progressPct={progressPct}
-        completedSteps={completedSteps}
-        setupSteps={setupSteps}
         completionScore={completionScore}
         conflictReport={conflictReport}
       />
