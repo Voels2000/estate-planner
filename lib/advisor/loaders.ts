@@ -71,6 +71,8 @@ export async function loadAdvisorProjectionStaleness(
     ownerId: string
     baseCaseScenarioId: string | null | undefined
     householdUpdatedAt: string | null | undefined
+    /** Skip global tax-table timestamps (saves 2 round trips on advisor client load). */
+    skipGlobalTaxTableStaleness?: boolean
   },
 ): Promise<{
   projectionCalculatedAt: string | null
@@ -107,24 +109,28 @@ export async function loadAdvisorProjectionStaleness(
     loadLatestChangeTs(supabase, 'businesses', 'owner_id', params.ownerId),
     loadLatestChangeTs(supabase, 'business_interests', 'owner_id', params.ownerId),
     loadLatestChangeTs(supabase, 'insurance_policies', 'user_id', params.ownerId),
-    (async () => {
-      const { data } = await supabase
-        .from('state_income_tax_brackets')
-        .select('created_at')
-        .order('created_at', { ascending: false })
-        .limit(1)
-      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
-      return row?.created_at ?? null
-    })(),
-    (async () => {
-      const { data } = await supabase
-        .from('federal_tax_brackets')
-        .select('created_at')
-        .order('created_at', { ascending: false })
-        .limit(1)
-      const row = (data?.[0] ?? null) as { created_at?: string | null } | null
-      return row?.created_at ?? null
-    })(),
+    params.skipGlobalTaxTableStaleness
+      ? Promise.resolve(null)
+      : (async () => {
+          const { data } = await supabase
+            .from('state_income_tax_brackets')
+            .select('created_at')
+            .order('created_at', { ascending: false })
+            .limit(1)
+          const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+          return row?.created_at ?? null
+        })(),
+    params.skipGlobalTaxTableStaleness
+      ? Promise.resolve(null)
+      : (async () => {
+          const { data } = await supabase
+            .from('federal_tax_brackets')
+            .select('created_at')
+            .order('created_at', { ascending: false })
+            .limit(1)
+          const row = (data?.[0] ?? null) as { created_at?: string | null } | null
+          return row?.created_at ?? null
+        })(),
   ])
 
   const latestInputChangeMs = getLatestTimestampMs([
@@ -165,6 +171,15 @@ export async function loadAdvisorClientDatasets(
   },
 ): Promise<AdvisorClientDatasetsResult> {
   const admin = createAdminClient()
+
+  const stateFilter = [
+    ...new Set(
+      [...params.statesToFetch, params.householdStatePrimary].filter(
+        (s): s is string => typeof s === 'string' && s.length > 0,
+      ),
+    ),
+  ]
+  const taxYears = [...new Set(params.projectionYears)]
 
   const [
     assetsResult,
@@ -282,19 +297,27 @@ export async function loadAdvisorClientDatasets(
       .eq('state', params.householdStatePrimary ?? '')
       .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
-    supabase
-      .from('state_estate_tax_rules')
-      .select('state, tax_year, min_amount, max_amount, rate_pct, exemption_amount')
-      .order('tax_year', { ascending: true })
-      .order('state', { ascending: true })
-      .order('min_amount', { ascending: true }),
-    supabase
-      .from('state_income_tax_brackets')
-      .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
-      .order('tax_year', { ascending: false })
-      .order('state', { ascending: true })
-      .order('filing_status', { ascending: true })
-      .order('min_amount', { ascending: true }),
+    stateFilter.length > 0
+      ? supabase
+          .from('state_estate_tax_rules')
+          .select('state, tax_year, min_amount, max_amount, rate_pct, exemption_amount')
+          .in('state', stateFilter)
+          .in('tax_year', taxYears)
+          .order('tax_year', { ascending: true })
+          .order('state', { ascending: true })
+          .order('min_amount', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    stateFilter.length > 0
+      ? supabase
+          .from('state_income_tax_brackets')
+          .select('state, tax_year, filing_status, min_amount, max_amount, rate_pct')
+          .in('state', stateFilter)
+          .in('tax_year', taxYears)
+          .order('tax_year', { ascending: false })
+          .order('state', { ascending: true })
+          .order('filing_status', { ascending: true })
+          .order('min_amount', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from('strategy_line_items')
       .select('id, strategy_source, source_role, amount, sign, confidence_level, effective_year, is_active, consumer_accepted, consumer_rejected')

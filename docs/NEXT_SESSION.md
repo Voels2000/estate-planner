@@ -28,6 +28,18 @@
 | Superuser sidebar SU-1 | ✅ | `3c0d28b` |
 | Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27`, `d50a982` |
 | Active nav indicator NAV-1 | ✅ | `be92947` |
+| Advisor portal perf | ✅ | (see PERF_SPRINT_P1 — roster + client parallel load) |
+
+---
+
+## Advisor portal performance ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Roster `/advisor`** | Batched net-worth reads instead of N× `calculate_estate_composition` RPC |
+| **Client workspace** | Parallel staleness + composition + datasets; scoped tax rules; non-blocking access log |
+
+See [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26).
 
 ---
 

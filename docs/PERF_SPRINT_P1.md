@@ -36,13 +36,27 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 - `audit-ux-language.sh`: 0 findings (run at ship time)
 - `security-audit.sh`: 0 findings (run at ship time)
 
+## Advisor portal quick wins (2026-05-26)
+
+| Change | File | Impact |
+|--------|------|--------|
+| Roster net worth: batched reads vs N× composition RPC | `lib/advisor/rosterNetWorth.ts`, `app/advisor/page.tsx` | **Largest win** — 5 queries total instead of one heavy RPC per client |
+| Client load: parallel staleness + composition + datasets | `app/advisor/clients/[clientId]/page.tsx` | Removes sequential waterfall on client workspace |
+| Scoped state tax / income bracket queries | `lib/advisor/loaders.ts` | No longer loads full national rule tables |
+| Staleness: skip global tax-table timestamps on advisor client | `loadAdvisorProjectionStaleness` | −2 round trips per client view |
+| Non-blocking access log + strategy-question mark-read | client `page.tsx` | Shaves latency off critical path |
+| Parallel link + household fetch | client `page.tsx` | −1 sequential round trip |
+
+**Note:** Roster net worth is approximate (batched assets/RE/liabilities/business/insurance). Client Overview still uses `calculate_estate_composition`.
+
 ## Post-launch refactors (not in this sprint)
 
 - Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*
 - Background job queue for base-case regen (Inngest)
 - Single staleness version field (replace 10 staleness queries)
 - Streaming dashboard with Suspense boundaries
-- Batch advisor estate composition RPC
+- Batch advisor estate composition RPC (roster could use cached `net_estate` column)
+- Tab-scoped data loading on advisor client workspace (load Strategy tab data only when `?tab=strategy`)
 
 ---
 

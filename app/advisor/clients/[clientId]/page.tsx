@@ -39,19 +39,39 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   // 1) Access and relationship guards
   const supabase = await createClient()
   const { userId } = await loadAdvisorContextOrRedirect(supabase)
-  const link = await loadAdvisorClientLinkOrRedirect(supabase, { advisorId: userId, clientId })
-  const household = await loadAdvisorClientHouseholdOrRedirect(supabase, clientId)
+  const [link, household] = await Promise.all([
+    loadAdvisorClientLinkOrRedirect(supabase, { advisorId: userId, clientId }),
+    loadAdvisorClientHouseholdOrRedirect(supabase, clientId),
+  ])
 
   const ownerId = clientId
+  const currentYear = new Date().getFullYear()
+  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
+  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
+  const scenarioId = household.base_case_scenario_id
 
-  // Staleness check (same idea as /my-estate-strategy): regenerate when inputs changed after
-  // last projection. Uses the client as `ownerId` (not the advisor). On failure, continue with
-  // whatever scenario/household data we already have — advisor view should not hard-fail.
-  const { isStale } = await loadAdvisorProjectionStaleness(supabase, {
+  const stalenessPromise = loadAdvisorProjectionStaleness(supabase, {
     ownerId,
     baseCaseScenarioId: household.base_case_scenario_id,
     householdUpdatedAt: household.updated_at ?? null,
+    skipGlobalTaxTableStaleness: true,
   })
+  const compositionPromise = classifyEstateAssets(supabase, household.id)
+  const datasetsPromise = loadAdvisorClientDatasets(supabase, {
+    clientId,
+    userId,
+    householdId: household.id,
+    householdStatePrimary: household.state_primary ?? null,
+    scenarioId,
+    statesToFetch,
+    projectionYears,
+  })
+
+  const [{ isStale }, estateComposition, datasetsBundle] = await Promise.all([
+    stalenessPromise,
+    compositionPromise,
+    datasetsPromise,
+  ])
 
   if (isStale) {
     const [
@@ -131,14 +151,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     }
   }
 
-  const scenarioId = household.base_case_scenario_id
-
-  // 2) Core data loading and normalization
-  const currentYear = new Date().getFullYear()
-  const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
-  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
-  const estateComposition = await classifyEstateAssets(supabase, household.id)
-
   const {
     assetsResult,
     realEstateResult,
@@ -169,15 +181,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioHistoryForExport,
     beneficiaryGrantsResult,
     conflictReport,
-  } = await loadAdvisorClientDatasets(supabase, {
-    clientId,
-    userId,
-    householdId: household.id,
-    householdStatePrimary: household.state_primary ?? null,
-    scenarioId,
-    statesToFetch,
-    projectionYears,
-  })
+  } = datasetsBundle
 
   const {
     assets,
@@ -227,14 +231,16 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     beneficiaryGrantsResult,
   })
 
-  const domicileChecklist = await loadAdvisorDomicileChecklist(
-    supabase,
-    typeof domicileAnalysis?.id === 'string' ? domicileAnalysis.id : null,
-  )
-
-  const { data: giftingSummaryData } = await supabase.rpc('calculate_gifting_summary', {
-    p_household_id: household.id,
-  })
+  const [domicileChecklist, giftingSummaryRes] = await Promise.all([
+    loadAdvisorDomicileChecklist(
+      supabase,
+      typeof domicileAnalysis?.id === 'string' ? domicileAnalysis.id : null,
+    ),
+    supabase.rpc('calculate_gifting_summary', {
+      p_household_id: household.id,
+    }),
+  ])
+  const giftingSummaryData = giftingSummaryRes.data
   const lifetimeGiftsUsed = Math.max(
     0,
     Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
@@ -294,7 +300,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       metadata: (row.metadata ?? {}) as StrategyQuestionNotification['metadata'],
     }))
 
-  await markClientStrategyQuestionsRead(supabase, userId, clientId)
+  void markClientStrategyQuestionsRead(supabase, userId, clientId)
 
   // 4) Route shell composition
   return (

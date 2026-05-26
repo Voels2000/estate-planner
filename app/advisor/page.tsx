@@ -8,17 +8,15 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
-import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
+import { loadRosterNetWorthByOwner } from '@/lib/advisor/rosterNetWorth'
 import AdvisorClient from './_advisor-client-wrapper'
 
 export default async function AdvisorPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
   const access = await getAccessContext()
+  if (!access.user) redirect('/login')
+  const user = { id: access.user.id, email: access.user.email }
+  const supabase = await createClient()
   const isFirmOwner = access.isFirmOwner
   const firm_name = access.firm_name
   const firm_id = access.firm_id
@@ -80,22 +78,8 @@ export default async function AdvisorPage() {
     if (ownerId) healthScoreMap[ownerId] = hs.score
   }
 
-  // Net worth per client — engine-aligned via estate composition (matches client Overview tab
-  // and consumer dashboard). Raw assets/liabilities tables omit real estate, businesses, and
-  // mortgage rollups that live in separate tables / the composition RPC.
-  const netWorthMap: Record<string, number> = {}
-  await Promise.all(
-    clientIds.map(async (clientId) => {
-      const householdId = ownerToHousehold[clientId]
-      if (!householdId) {
-        netWorthMap[clientId] = 0
-        return
-      }
-      const composition = await classifyEstateAssets(supabase, householdId, 'advisor')
-      const { netWorth } = buildNetWorthSummaryFromComposition({ composition })
-      netWorthMap[clientId] = netWorth
-    }),
-  )
+  // Roster net worth: batched reads (not N× composition RPC). Client workspace uses full RPC.
+  const netWorthMap = await loadRosterNetWorthByOwner(supabase, clientIds)
 
   const { data: advisorListing } = await supabase
     .from('advisor_directory')
