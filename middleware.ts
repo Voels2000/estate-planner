@@ -155,11 +155,11 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status, firm_role, is_superuser')
+    .select('role, subscription_status, firm_role, is_superuser, is_admin')
     .eq('id', user.id)
     .single()
 
-  const isSuperuser = profile?.is_superuser === true
+  const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
   const subscription_status = profile?.subscription_status ?? null
   const hasActiveSubscription = ['active', 'trialing', 'canceling'].includes(
     subscription_status

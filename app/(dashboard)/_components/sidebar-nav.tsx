@@ -131,7 +131,7 @@ export function SidebarNav({
   hasHousehold?: boolean
   initialUnreadCount?: number
 }) {
-  const isLockedUser = hasHousehold === false
+  const isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin
   /** Superusers may keep role=consumer for smoke testing but still need portal links. */
   const showProfessionalPortals = role !== 'consumer' || isSuperuser
   const pathname = usePathname()
@@ -378,7 +378,7 @@ export function SidebarNav({
         })}
 
         {/* Advisor Portal */}
-        {showProfessionalPortals && (role === 'advisor' || isSuperuser) &&
+        {showProfessionalPortals && (role === 'advisor' || isAdmin || isSuperuser) &&
           (isLockedUser ? (
             <Link
               href="#"

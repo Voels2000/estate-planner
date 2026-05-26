@@ -190,6 +190,7 @@ export default async function DashboardLayout({
           isAdvisor={isAdvisorResolved || isAdvisorClient}
           isAdmin={isAdminResolved}
           isAttorney={isAttorneyResolved}
+          isSuperuser={isSuperuser}
           hasHousehold={hasHousehold}
           initialUnreadCount={unreadNotificationCount ?? 0}
         />
