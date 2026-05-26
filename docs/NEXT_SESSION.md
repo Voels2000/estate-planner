@@ -30,7 +30,7 @@
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal perf | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
-| Advisor tax parity (Tax/Domicile/Strategy) | ✅ | (this commit) |
+| Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 
 ---
 
