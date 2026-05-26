@@ -9,6 +9,7 @@ import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
+import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
 import type { EstateComposition } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
@@ -367,4 +368,5 @@ export interface ClientViewShellProps {
   }
   connectionLifeEventType?: string | null
   connectionLifeEventAt?: string | null
+  strategyQuestions?: StrategyQuestionNotification[]
 }

@@ -8,4 +8,5 @@ export const NOTIFICATION_META: Record<string, { icon: string }> = {
   referral_status_update: { icon: '📝' },
   security: { icon: '🔐' },
   advisor_strategy_recommended: { icon: '🏛️' },
+  consumer_strategy_question: { icon: '💬' },
 }

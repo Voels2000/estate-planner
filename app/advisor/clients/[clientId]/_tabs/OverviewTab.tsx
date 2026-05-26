@@ -6,6 +6,7 @@
  */
 
 import { ClientViewShellProps } from '../_client-view-shell'
+import { ClientStrategyQuestionsCard } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { PlanReadinessCard } from '../_components/PlanReadinessCard'
 import type { EstateComposition } from '@/lib/estate/types'
 import { buildNetWorthSummaryFromComposition } from '@/lib/view-models/netWorthSummary'
@@ -35,6 +36,7 @@ export default function OverviewTab({
   planReadinessComputedAt,
   connectionLifeEventType,
   connectionLifeEventAt,
+  strategyQuestions = [],
 }: ClientViewShellProps) {
   const currentYear = new Date().getFullYear()
 
@@ -70,6 +72,8 @@ export default function OverviewTab({
         computedAt={planReadinessComputedAt ?? null}
         clientName={clientName}
       />
+
+      <ClientStrategyQuestionsCard questions={strategyQuestions} />
 
       {connectionLifeEventType && (
         <div className="rounded-lg border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] px-5 py-4">

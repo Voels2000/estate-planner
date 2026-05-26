@@ -23,6 +23,8 @@ import {
   loadAdvisorProjectionStaleness,
   logAdvisorClientAccess,
 } from '@/lib/advisor/loaders'
+import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
+import { markClientStrategyQuestionsRead } from '@/lib/advisor/markClientStrategyQuestionsRead'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -272,6 +274,28 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   await logAdvisorClientAccess(supabase, { advisorId: userId, clientId })
 
+  const { data: strategyQuestionRows } = await supabase
+    .from('notifications')
+    .select('id, title, created_at, metadata')
+    .eq('user_id', userId)
+    .eq('type', 'consumer_strategy_question')
+    .eq('read', false)
+    .order('created_at', { ascending: false })
+
+  const strategyQuestions: StrategyQuestionNotification[] = (strategyQuestionRows ?? [])
+    .filter((row) => {
+      const meta = row.metadata as { client_id?: string } | null
+      return meta?.client_id === clientId
+    })
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      created_at: row.created_at,
+      metadata: (row.metadata ?? {}) as StrategyQuestionNotification['metadata'],
+    }))
+
+  await markClientStrategyQuestionsRead(supabase, userId, clientId)
+
   // 4) Route shell composition
   return (
     <ClientViewShell
@@ -313,6 +337,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       planReadinessComputedAt={healthScoreComputedAt}
       connectionLifeEventType={link.connection_life_event_type}
       connectionLifeEventAt={link.connection_life_event_at}
+      strategyQuestions={strategyQuestions}
     />
   )
 }

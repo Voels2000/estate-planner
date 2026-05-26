@@ -426,7 +426,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **SEO** | Public marketing URLs | `app/sitemap.ts` ready; **pre-launch** `app/robots.ts` blocks all crawlers; `proxy.ts` allows `/education`, `/sitemap.xml`, `/robots.txt` without login |
 | **Assess results gate** | `/assess` results (logged out) | Scores always visible; gap report + next steps require account (Sprint 12 — `score_visible` only) |
 | **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
-| **Find advisor (not handoff)** | **Ask your advisor about this →** on strategy education cards | Links to `/find-advisor` only — no message to connected advisor |
+| **Ask advisor about strategy** | **Ask your advisor about this →** on strategy education cards | If connected advisor: POST `/api/consumer/ask-advisor` → `create_notification` (type: `consumer_strategy_question`) → advisor sees in portal "Strategy Questions" section → responds via strategy recommendation. If no connected advisor: redirects to `/find-advisor` directory. |
 
 **Computation parity:** Accepted advisor lines + consumer lines feed `buildStrategyHorizons` and `calculate_estate_composition` so federal/state figures align with advisor client view (same household snapshot).
 

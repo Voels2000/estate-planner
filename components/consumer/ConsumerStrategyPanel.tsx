@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { AskAdvisorAboutStrategyButton } from '@/components/consumer/AskAdvisorAboutStrategyButton'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
@@ -146,11 +147,13 @@ function StrategyEducationCard({
   ctx,
   filingStatus,
   defaultOpen = true,
+  userRole = 'consumer',
 }: {
   panelId: string
   ctx: EstateContext
   filingStatus: FilingStatus
   defaultOpen?: boolean
+  userRole?: 'consumer' | 'advisor'
 }) {
   const info = STRATEGY_INFO[panelId]
   if (!info) return null
@@ -172,12 +175,12 @@ function StrategyEducationCard({
         {contextNote && (
           <p className="text-xs font-medium text-amber-600">{contextNote}</p>
         )}
-        <Link
-          href="/find-advisor"
-          className="mt-1 inline-block text-xs text-blue-600 hover:underline"
-        >
-          Ask your advisor about this →
-        </Link>
+        {userRole === 'consumer' && (
+          <AskAdvisorAboutStrategyButton
+            strategyName={info.fullName}
+            strategyType={panelId}
+          />
+        )}
       </div>
     </details>
   )
@@ -694,7 +697,7 @@ export default function ConsumerStrategyPanel({
       {/* ── GRAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'grat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="grat" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard panelId="grat" ctx={ctx} filingStatus={filingStatus} userRole={userRole} />
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="grat" />
           {estateContext && (
@@ -759,7 +762,7 @@ export default function ConsumerStrategyPanel({
       {/* ── CRT ──────────────────────────────────────────────────────────── */}
       {activePanel === 'crt' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="crt" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard panelId="crt" ctx={ctx} filingStatus={filingStatus} userRole={userRole} />
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="crt" />
           <div className="grid grid-cols-2 gap-4">
@@ -805,7 +808,7 @@ export default function ConsumerStrategyPanel({
       {/* ── CLAT ─────────────────────────────────────────────────────────── */}
       {activePanel === 'clat' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="clat" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard panelId="clat" ctx={ctx} filingStatus={filingStatus} userRole={userRole} />
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="clat" />
           <div className="grid grid-cols-2 gap-4">
@@ -859,6 +862,7 @@ export default function ConsumerStrategyPanel({
             ctx={ctx}
             filingStatus={filingStatus}
             defaultOpen={!charitableSaved}
+            userRole={userRole}
           />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="daf" />
           <CharitableStrategyForm
@@ -873,7 +877,7 @@ export default function ConsumerStrategyPanel({
       {/* ── Liquidity ─────────────────────────────────────────────────────── */}
       {activePanel === 'liquidity' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="liquidity" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard panelId="liquidity" ctx={ctx} filingStatus={filingStatus} userRole={userRole} />
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="liquidity" />
           {estateContext && (
@@ -938,7 +942,7 @@ export default function ConsumerStrategyPanel({
       {/* ── Roth ─────────────────────────────────────────────────────────── */}
       {activePanel === 'roth' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-          <StrategyEducationCard panelId="roth" ctx={ctx} filingStatus={filingStatus} />
+          <StrategyEducationCard panelId="roth" ctx={ctx} filingStatus={filingStatus} userRole={userRole} />
           <h4 className="text-sm font-semibold text-gray-800">Model this strategy</h4>
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="roth" />
           {rothBalance > 0 && (
@@ -1010,6 +1014,7 @@ export default function ConsumerStrategyPanel({
             ctx={ctx}
             filingStatus={filingStatus}
             defaultOpen={!slatSaved}
+            userRole={userRole}
           />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="slat" />
           <SlatStrategyForm
@@ -1030,6 +1035,7 @@ export default function ConsumerStrategyPanel({
             ctx={ctx}
             filingStatus={filingStatus}
             defaultOpen={!ilitSaved}
+            userRole={userRole}
           />
           <AdvisorHintBanner advisorLineItems={advisorLineItems} strategySource="ilit" />
           <IlitStrategyForm
