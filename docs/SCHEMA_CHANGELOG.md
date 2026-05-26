@@ -8,6 +8,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Advisor tax parity — Tax / Domicile / Strategy (2026-05-26, no migration)
+
+**Code only:**
+
+- **Root cause:** `FederalStateWaterfall` recomputed state tax locally while horizons used `calculateStateEstateTax` via `buildStrategyHorizons` — could show $0 WA tax when brackets path failed while State Tax Detail showed correct horizon values. Year table uses `outputs_s2_first` (survivor timeline), so later years can exceed “today” gross estate.
+- **Fix:** Tax + Domicile tabs pass `stateTaxFromHorizon` / `horizonTodayStateTax` into waterfall and `StateTaxPanel`; timeline + Today vs At death labels; `isMFJFilingStatus()` replaces `filing_status === 'mfj'` on advisor Strategy, Tax, Domicile tabs and `GET /api/advisor/strategy-tab`.
+- **Canonical sources:** `lib/my-estate-strategy/horizonSnapshots.ts` + `lib/calculations/stateEstateTax.ts`; UI must not recompute current-law state tax when horizon values exist.
+
+**Remaining audit items (not fixed this pass):** `MeetingPrepTab` mixes `scenario.estimated_*` with `estateComposition`; `estate-tax-projection.ts` death-year rows still call deprecated `computeStateEstateTaxFromBrackets`; PDF/Gifting display checks literal `'mfj'` only.
+
+---
+
 ## UX-2 — Advisor portal UX + gap workflow (2026-05-26)
 
 **Migration:** `20260626120000_advisor_gap_statuses.sql`

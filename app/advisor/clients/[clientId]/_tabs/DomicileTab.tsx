@@ -13,6 +13,7 @@ import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import MoveBreakevenPanel from '@/components/advisor/MoveBreakevenPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 /** Temporary federal exemption input for inheritance waterfall rendering. */
@@ -199,6 +200,14 @@ export default function DomicileTab({
       state: String(s.state).trim().toUpperCase().slice(0, 2),
       days_per_year: Number(s.days_per_year ?? 0),
     }))
+
+  const isMFJ = isMFJFilingStatus(household?.filing_status)
+  const usesSurvivorProjectionTimeline =
+    Array.isArray((scenario as { outputs_s2_first?: unknown[] } | null)?.outputs_s2_first) &&
+    ((scenario as { outputs_s2_first?: unknown[] }).outputs_s2_first?.length ?? 0) > 0
+  const domicileProjectionNote = usesSurvivorProjectionTimeline
+    ? 'Gross estate by year follows the surviving-spouse projection timeline (after first death). Compare Strategy → At Death for the longevity-year tax total.'
+    : undefined
 
   const breakevenCurrentState = (household?.state_primary ?? claimed_domicile_state ?? 'WA')
     .trim()
@@ -433,8 +442,19 @@ export default function DomicileTab({
           dbExemptions={stateExemptions}
           stateAbbrev={household?.state_primary ?? claimed_domicile_state}
           stateEstateTaxRules={stateEstateTaxRules}
-          isMFJ={household?.filing_status === 'mfj'}
+          isMFJ={isMFJ}
           projectedGrossEstateByYear={projectionRowsDomicile}
+          horizonTodayStateTax={
+            typeof advisorHorizons?.today.stateTax === 'number' ? advisorHorizons.today.stateTax : null
+          }
+          horizonAtDeathStateTax={
+            typeof advisorHorizons?.atDeath?.stateTax === 'number' ? advisorHorizons.atDeath.stateTax : null
+          }
+          horizonAtDeathGross={
+            typeof advisorHorizons?.atDeath?.grossEstate === 'number' ? advisorHorizons.atDeath.grossEstate : null
+          }
+          atDeathColumnLabel={advisorHorizons?.atDeath?.headerTitle ?? null}
+          projectionTimelineNote={domicileProjectionNote}
         />
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
@@ -490,7 +510,7 @@ export default function DomicileTab({
               <MoveBreakevenPanel
                 currentState={breakevenCurrentState}
                 grossEstate={grossEstateForStateTax}
-                isMFJ={household?.filing_status === 'mfj'}
+                isMFJ={isMFJ}
                 clientStates={clientStatesForBreakeven}
                 incomeTaxBrackets={stateIncomeTaxBrackets as StateIncomeTaxBracket[]}
                 estateTaxRules={stateEstateTaxRules ?? []}

@@ -14,6 +14,7 @@ import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 import StrategyHorizonTable from '@/components/shared/StrategyHorizonTable'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptionsPanel'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
@@ -36,7 +37,7 @@ export default function StrategyTab({
     Number.isFinite(Number(advisorHorizons?.today.federalTaxEstimate ?? NaN)) &&
     Number.isFinite(Number(advisorHorizons?.today.stateTax ?? NaN))
   const grossEstate = hasHorizonTodayInputs ? Number(advisorHorizons?.today.grossEstate) : 0
-  const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
+  const filingStatus: FilingStatus = isMFJFilingStatus(household?.filing_status) ? 'mfj' : 'single'
   const defaultExemption = filingStatus === 'mfj'
     ? OBBBA_2026.BASIC_EXCLUSION_MFJ
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE

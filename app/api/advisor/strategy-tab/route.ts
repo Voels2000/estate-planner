@@ -7,6 +7,7 @@ import {
   computeEstateTaxProjection,
   buildScenarioComparison,
 } from '@/lib/calculations/estate-tax-projection'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
     const { s1_first, s2_first } = computeEstateTaxProjection(
       savedScenario.outputs,
       config,
-      household.filing_status === 'mfj' ? 'mfj' : 'single',
+      isMFJFilingStatus(household.filing_status) ? 'mfj' : 'single',
       household.has_spouse ?? false,
       household.person1_birth_year ?? 1960,
       household.person1_longevity_age ?? 90,
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
   const { s1_first, s2_first } = computeEstateTaxProjection(
     savedScenario.outputs,
     activeConfig,
-    household.filing_status === 'mfj' ? 'mfj' : 'single',
+    isMFJFilingStatus(household.filing_status) ? 'mfj' : 'single',
     household.has_spouse ?? false,
     household.person1_birth_year ?? 1960,
     household.person1_longevity_age ?? 90,

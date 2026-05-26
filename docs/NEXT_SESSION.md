@@ -30,6 +30,19 @@
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal perf | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
+| Advisor tax parity (Tax/Domicile/Strategy) | ✅ | (this commit) |
+
+---
+
+## Advisor tax parity ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Tax tab** | Waterfall uses horizon state tax; survivor-timeline labels on State Tax Detail |
+| **MFJ** | `isMFJFilingStatus()` on Strategy, Tax, Domicile, `GET /api/advisor/strategy-tab` |
+| **Follow-up** | `MeetingPrepTab` scenario tax totals; deprecated brackets in `estate-tax-projection` death rows |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Advisor tax parity](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md § Calculation consistency audit](./MASTER_ARCHITECTURE.md#calculation-consistency-audit-2026-05-26)
 
 ---
 

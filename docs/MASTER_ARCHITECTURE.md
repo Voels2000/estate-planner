@@ -167,6 +167,28 @@ Important:
 
 - The same label now maps to the same estate basis inside advisor tax surfaces (`FederalStateWaterfall` + `StateTaxPanel`), eliminating current-year basis drift.
 
+### Calculation consistency audit (2026-05-26)
+
+**Fixed in this pass:**
+
+| Issue | Resolution |
+|-------|------------|
+| Tax tab waterfall $0 state tax vs State Tax Detail | `FederalStateWaterfall` uses horizon `stateTax` for current-law; no silent local recompute when horizon present |
+| MFJ detection (`married_filing_jointly` vs `mfj`) | `isMFJFilingStatus()` on advisor Tax, Strategy, Domicile tabs + `GET /api/advisor/strategy-tab` |
+| Survivor timeline vs today | `StateTaxPanel` labels + `projectionTimelineNote`; Domicile tab passes same horizon callouts |
+
+**Known remaining gaps (documented, follow-up):**
+
+| Surface | Risk |
+|---------|------|
+| `MeetingPrepTab` | `estate_tax` / `cost_of_inaction` from `scenario.estimated_federal_tax + estimated_state_tax` may diverge from `estateComposition` / horizons |
+| `lib/calculations/estate-tax-projection.ts` | Death-year rows may use deprecated `computeStateEstateTaxFromBrackets` (no portability / NY cliff) |
+| `lib/actions/generate-base-case.ts` | MFJ check includes `married_filing_jointly` but not full `isMFJFilingStatus` alias set |
+| PDF / Gifting UI | Display-only `filing_status === 'mfj'` — cosmetic, not tax engine |
+| Consumer `/estate-tax` | Uses unified engine + `filingForTax` helper — reference implementation |
+
+**Rule:** Current-law advisor state tax display must come from `advisorHorizons.today` (or explicit missing-input warning). Projection year tables must label `outputs_s2_first` survivor timeline when present.
+
 ### Strategy Set Contract (Actual vs Projected)
 
 **Current (as built):**

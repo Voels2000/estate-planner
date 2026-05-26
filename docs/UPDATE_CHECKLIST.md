@@ -99,6 +99,9 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Estate: collapsed outside estate when $0; prominent tax callout; no-transfer amber banner
 - [x] Strategy: `getCachedAdvisoryMetrics`; 6-card grid + module CTA; warning cap at 2; exemption banner
 - [x] Tax tab: Sunset / No Exemption Stress Test label
+- [x] Tax tab: horizon-aligned state tax waterfall + State Tax Detail labels (2026-05-26)
+- [x] MFJ: `isMFJFilingStatus()` on advisor Strategy / Tax / Domicile + strategy-tab API
+- [x] Domicile: `StateTaxPanel` horizon callouts + survivor-timeline note (parity with Tax tab)
 - [x] Domicile: critical transition risk red banner (≥ 71)
 - [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) — `advisor_gap_statuses`
 - [x] [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [DECISION_LOG.md](./DECISION_LOG.md)

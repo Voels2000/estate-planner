@@ -10,6 +10,8 @@ import NYCliffValidator from '@/components/advisor/NYCliffValidator'
 import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
+import { formatCurrency } from '../_utils'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 
 const LAW_SCENARIO_OPTIONS: { value: EstateScenario; label: string; description: string }[] = [
@@ -52,7 +54,8 @@ export default function TaxTab({
   projectionRowsDomicile,
 }: ClientViewShellProps) {
   const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
-  const filingStatus: FilingStatus = household?.filing_status === 'mfj' ? 'mfj' : 'single'
+  const filingStatus: FilingStatus = isMFJFilingStatus(household?.filing_status) ? 'mfj' : 'single'
+  const isMFJ = filingStatus === 'mfj'
 
   // Canonical basis: today row from shared horizons.
   const grossEstate = isFiniteNumber(advisorHorizons?.today.grossEstate)
@@ -73,6 +76,30 @@ export default function TaxTab({
   const stateCode = parseStateTaxCode((household?.state_primary ?? 'WA').toUpperCase())
   const currentYear = new Date().getFullYear()
   const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
+
+  const scenarioRecord = scenario as { outputs_s2_first?: unknown[] } | null | undefined
+  const usesSurvivorProjectionTimeline =
+    Array.isArray(scenarioRecord?.outputs_s2_first) && scenarioRecord.outputs_s2_first.length > 0
+
+  const horizonTodayStateTax = isFiniteNumber(advisorHorizons?.today.stateTax)
+    ? Number(advisorHorizons?.today.stateTax)
+    : null
+  const horizonTodayStateTaxWithCST = isFiniteNumber(advisorHorizons?.today.stateTaxWithCST)
+    ? Number(advisorHorizons?.today.stateTaxWithCST)
+    : null
+  const atDeathHorizon = advisorHorizons?.atDeath
+  const horizonAtDeathStateTax =
+    atDeathHorizon && isFiniteNumber(atDeathHorizon.stateTax) ? Number(atDeathHorizon.stateTax) : null
+  const horizonAtDeathGross =
+    atDeathHorizon && isFiniteNumber(atDeathHorizon.grossEstate) ? Number(atDeathHorizon.grossEstate) : null
+
+  const taxBasisNote = isMFJ
+    ? `Today’s snapshot only (${formatCurrency(grossEstate)} gross estate). State tax uses one exemption at second death (WA has no portability) unless a Credit Shelter Trust is in place — matches Strategy → Today.`
+    : `Today’s snapshot only (${formatCurrency(grossEstate)} gross estate). Matches Strategy → Today column.`
+
+  const projectionTimelineNote = usesSurvivorProjectionTimeline
+    ? `The waterfall above is a single-year “today” view. This table follows the surviving spouse projection timeline (after first death), so later years and the at-death row can show a larger estate and higher Washington tax than today. Compare the violet “At death” callout to Strategy → At Death.`
+    : `The waterfall above is today’s snapshot only. This table projects gross estate forward by calendar year from the base-case scenario; later years may show higher tax as the estate grows.`
 
   useEffect(() => {
     if (lawScenario !== 'current_law') return
@@ -143,7 +170,10 @@ export default function TaxTab({
           scenarioLabel={LAW_SCENARIO_OPTIONS.find((o) => o.value === lawScenario)?.label}
           stateAbbrev={household?.state_primary}
           stateEstateTaxRules={stateEstateTaxRules}
-          isMFJ={filingStatus === 'mfj'}
+          isMFJ={isMFJ}
+          stateTaxFromHorizon={lawScenario === 'current_law' ? horizonTodayStateTax : null}
+          stateTaxWithCSTFromHorizon={lawScenario === 'current_law' ? horizonTodayStateTaxWithCST : null}
+          taxBasisNote={taxBasisNote}
         />
       </section>
 
@@ -158,8 +188,18 @@ export default function TaxTab({
           dbExemptions={stateExemptions}
           stateAbbrev={household?.state_primary}
           stateEstateTaxRules={stateEstateTaxRules}
-          isMFJ={filingStatus === 'mfj'}
+          isMFJ={isMFJ}
           projectedGrossEstateByYear={projectionRowsDomicile ?? []}
+          horizonTodayStateTax={horizonTodayStateTax}
+          horizonAtDeathStateTax={horizonAtDeathStateTax}
+          horizonAtDeathGross={horizonAtDeathGross}
+          horizonAtDeathYear={
+            projectionRowsDomicile?.find((r) =>
+              horizonAtDeathGross != null && Math.abs((r.gross_estate ?? r.estate_incl_home ?? 0) - horizonAtDeathGross) < 50_000,
+            )?.year ?? null
+          }
+          atDeathColumnLabel={atDeathHorizon?.headerTitle ?? null}
+          projectionTimelineNote={projectionTimelineNote}
         />
       </section>
 

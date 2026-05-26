@@ -673,6 +673,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### May 2026 — Advisor Tax tab: horizon state tax is source of truth (not local recompute)
+
+**Decision:** On the advisor Tax and Domicile tabs, current-law state estate tax in `FederalStateWaterfall` and the current-year row in `StateTaxPanel` must use `advisorHorizons.today.stateTax` when available. Year-by-year projection rows may use `outputs_s2_first` gross estate but must be labeled as the surviving-spouse timeline, with Today vs At death horizon callouts when horizons exist.
+
+**Reasoning:** A local bracket recompute in the waterfall could return $0 while `buildStrategyHorizons` already computed correct WA tax via `calculateStateEstateTax`. MFJ was also mis-detected when DB stored `married_filing_jointly`. Users reported federal/state waterfall showing $0 state tax while State Tax Detail showed higher estimates.
+
+**Alternatives considered:** Recompute everywhere in UI (rejected — duplicates engine, drifts from Strategy tab). Hide projection table (rejected — advisors need year context with clear labels).
+
+**Implication:** New advisor tax UI must not add a third state-tax code path; extend horizons or `StateTaxPanel` props. See calculation audit table in [MASTER_ARCHITECTURE.md § Calculation consistency audit](./MASTER_ARCHITECTURE.md#calculation-consistency-audit-2026-05-26).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

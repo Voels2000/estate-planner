@@ -32,6 +32,11 @@ interface Props {
     exemption_amount: number
   }>
   isMFJ?: boolean
+  /** Strategy horizon engine (Today column) — preferred for current-law state tax. */
+  stateTaxFromHorizon?: number | null
+  stateTaxWithCSTFromHorizon?: number | null
+  /** Short basis line shown under the section title. */
+  taxBasisNote?: string
 }
 
 function fmt(n: number) {
@@ -55,6 +60,9 @@ export default function FederalStateWaterfall({
   stateAbbrev,
   stateEstateTaxRules,
   isMFJ = false,
+  stateTaxFromHorizon,
+  stateTaxWithCSTFromHorizon,
+  taxBasisNote,
 }: Props) {
   const stateDisplayName = getEstateTaxDisplayStateName(stateCode, profileStateAbbrev)
   const unifiedStateCode = (stateAbbrev ?? '').toUpperCase()
@@ -90,8 +98,10 @@ export default function FederalStateWaterfall({
   const unifiedStateResult = hasUnifiedRules && unifiedBrackets.length > 0
     ? calculateUnifiedStateEstateTax(grossEstate, unifiedStateCode, unifiedBrackets, isMFJ)
     : null
+  const useHorizonStateTax =
+    typeof stateTaxFromHorizon === 'number' && Number.isFinite(stateTaxFromHorizon)
   const stateResult = {
-    stateTax: unifiedStateResult?.stateTax ?? 0,
+    stateTax: useHorizonStateTax ? stateTaxFromHorizon : (unifiedStateResult?.stateTax ?? 0),
     nyCliffTriggered: unifiedStateResult?.nyCliffTriggered ?? false,
   }
   const stateExemption = unifiedStateResult
@@ -125,12 +135,24 @@ export default function FederalStateWaterfall({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-700">
           Combined Federal + State Waterfall
         </h3>
-        <span className="text-xs text-slate-400">{scenarioLabel} · {year}</span>
+        <span className="text-xs text-slate-400 shrink-0">{scenarioLabel} · {year}</span>
       </div>
+
+      {taxBasisNote && (
+        <p className="text-xs text-slate-600 leading-relaxed rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+          {taxBasisNote}
+        </p>
+      )}
+
+      {useHorizonStateTax && !unifiedStateResult && (
+        <p className="text-xs text-amber-800 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          State tax uses the Strategy horizon engine (Today column). Bracket detail for this year was not loaded — see State Tax Detail below for year-by-year brackets.
+        </p>
+      )}
 
       {stateResult.nyCliffTriggered && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-800">
@@ -140,6 +162,14 @@ export default function FederalStateWaterfall({
       {unifiedStateResult && getPortabilityGapLabel(unifiedStateCode) && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-xs text-amber-800">
           {getPortabilityGapLabel(unifiedStateCode)}
+          {isMFJ &&
+            typeof stateTaxWithCSTFromHorizon === 'number' &&
+            Number.isFinite(stateTaxWithCSTFromHorizon) &&
+            stateTaxWithCSTFromHorizon < stateResult.stateTax && (
+              <span className="block mt-1">
+                With a Credit Shelter Trust, estimated state tax at second death: {fmt(stateTaxWithCSTFromHorizon)} (saves {fmt(stateResult.stateTax - stateTaxWithCSTFromHorizon)} vs status quo).
+              </span>
+            )}
         </div>
       )}
 
@@ -205,10 +235,14 @@ export default function FederalStateWaterfall({
       </div>
 
       <p className="text-xs text-slate-400">
-        {unifiedStateResult
-          ? `${stateDisplayName} state tax uses the unified live bracket engine.`
-          : `${stateDisplayName} state tax unavailable for selected year/rules.`
-        } Consult a qualified estate attorney for precise calculations.
+        {useHorizonStateTax
+          ? `${stateDisplayName} state tax matches the Strategy tab Today column (unified bracket engine).`
+          : unifiedStateResult
+            ? `${stateDisplayName} state tax uses the unified live bracket engine for ${year} only.`
+            : `${stateDisplayName} state tax unavailable for ${year} — $0 shown until brackets load.`
+        }{' '}
+        The State Tax Detail section below may show higher tax in future projection years or at the surviving spouse&apos;s death.
+        Consult a qualified estate attorney for precise calculations.
       </p>
     </div>
   )

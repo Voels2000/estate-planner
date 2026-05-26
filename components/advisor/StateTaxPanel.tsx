@@ -43,6 +43,13 @@ interface Props {
     gross_estate: number
     estate_incl_home?: number
   }>
+  /** Strategy Today column — for current-year row comparison. */
+  horizonTodayStateTax?: number | null
+  horizonAtDeathStateTax?: number | null
+  horizonAtDeathGross?: number | null
+  horizonAtDeathYear?: number | null
+  atDeathColumnLabel?: string | null
+  projectionTimelineNote?: string
 }
 
 const DEFAULT_YEARS = [2025, 2026, 2027, 2028, 2029, 2030]
@@ -65,6 +72,12 @@ export default function StateTaxPanel({
   stateEstateTaxRules,
   isMFJ = false,
   projectedGrossEstateByYear = [],
+  horizonTodayStateTax,
+  horizonAtDeathStateTax,
+  horizonAtDeathGross,
+  horizonAtDeathYear,
+  atDeathColumnLabel,
+  projectionTimelineNote,
 }: Props) {
   const unifiedStateCode = (stateAbbrev ?? '').toUpperCase()
   const hasUnifiedRules =
@@ -158,9 +171,32 @@ export default function StateTaxPanel({
 
   const specialRules = STATE_SPECIAL_RULES[stateCode] ?? []
   const hasNyCliff   = rows.some(r => r.nyCliffTriggered)
+  const currentYearRow = rows.find((r) => r.year === currentYear)
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+      {projectionTimelineNote && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <p className="font-semibold text-blue-950 mb-1">How this differs from the waterfall above</p>
+          <p className="text-blue-800 text-xs leading-relaxed">{projectionTimelineNote}</p>
+        </div>
+      )}
+
+      {typeof horizonAtDeathStateTax === 'number' &&
+        Number.isFinite(horizonAtDeathStateTax) &&
+        horizonAtDeathStateTax > 0 && (
+          <div className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+            <p className="font-semibold">
+              {atDeathColumnLabel ?? 'At surviving spouse death'} (Strategy horizon)
+            </p>
+            <p className="text-xs text-violet-800 mt-1">
+              Gross estate {horizonAtDeathGross != null ? fmt(horizonAtDeathGross) : '—'} · Estimated state tax{' '}
+              <span className="font-semibold">{fmt(horizonAtDeathStateTax)}</span>
+              {horizonAtDeathYear != null ? ` (calendar year ${horizonAtDeathYear} in projection table when available)` : ''}
+            </p>
+          </div>
+        )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700">
           {stateName} Estate Tax
@@ -211,9 +247,27 @@ export default function StateTaxPanel({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {rows.map(row => (
-              <tr key={row.year} className={`hover:bg-slate-50 ${row.nyCliffTriggered ? 'bg-red-50' : ''}`}>
-                <td className="py-2.5 font-medium text-slate-800">{row.year}</td>
+            {rows.map(row => {
+              const isTodayRow = row.year === currentYear
+              const isAtDeathRow = horizonAtDeathYear != null && row.year === horizonAtDeathYear
+              return (
+              <tr
+                key={row.year}
+                className={`hover:bg-slate-50 ${row.nyCliffTriggered ? 'bg-red-50' : ''} ${isTodayRow ? 'bg-slate-50/80' : ''} ${isAtDeathRow ? 'bg-violet-50/60' : ''}`}
+              >
+                <td className="py-2.5 font-medium text-slate-800">
+                  <span>{row.year}</span>
+                  {isTodayRow && (
+                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Today
+                    </span>
+                  )}
+                  {isAtDeathRow && (
+                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                      At death
+                    </span>
+                  )}
+                </td>
                 <td className="py-2.5 text-right text-slate-600">
                   {row.grossEstate === null ? '—' : fmt(row.grossEstate)}
                 </td>
@@ -237,13 +291,25 @@ export default function StateTaxPanel({
                   </td>
                 )}
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
 
       <p className="text-xs text-slate-400">
-        Current-year row uses today&apos;s actual gross estate ({fmt(grossEstate)}). Future years use projected gross estate by year; missing projection years remain unavailable.
+        Current-year row uses today&apos;s actual gross estate ({fmt(grossEstate)}).
+        {typeof horizonTodayStateTax === 'number' && Number.isFinite(horizonTodayStateTax) && currentYearRow && (
+          <>
+            {' '}
+            Strategy Today column state tax: {fmt(horizonTodayStateTax)}
+            {currentYearRow.stateTax !== horizonTodayStateTax && (
+              <span className="text-amber-700"> (table: {fmt(currentYearRow.stateTax)} — should match after bracket load)</span>
+            )}
+            .
+          </>
+        )}{' '}
+        Future years use projected gross estate from the base-case scenario
+        {projectionTimelineNote ? ' (see note above for first vs second death timeline)' : ''}.
         {hasUnifiedRules
           ? ` ${stateName} estate tax uses unified live state brackets.`
           : ` ${stateName} estate tax unavailable for selected year/rules.`
