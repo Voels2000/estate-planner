@@ -71,7 +71,7 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
   }
 
   const role = profile?.role ?? ''
-  const isSuperuser = profile?.is_superuser === true
+  const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
 
   // isSuperuser grants admin, advisor, and attorney portal access regardless of role.
   return {

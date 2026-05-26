@@ -66,7 +66,7 @@ export const getDashboardLayoutContext = cache(async (): Promise<DashboardLayout
         .eq('read', false),
     ])
 
-  const isSuperuser = profile?.is_superuser === true
+  const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
 
   return {
     sessionUser,
