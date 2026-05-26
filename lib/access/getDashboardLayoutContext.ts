@@ -27,7 +27,6 @@ export type DashboardLayoutContext = {
     state_primary: string | null
     filing_status: string | null
     person1_birth_year: number | null
-    date_of_birth_1: string | null
   } | null
   unreadNotificationCount: number
   isSuperuser: boolean
@@ -56,7 +55,7 @@ export const getDashboardLayoutContext = cache(async (): Promise<DashboardLayout
         .single(),
       supabase
         .from('households')
-        .select('id, state_primary, filing_status, person1_birth_year, date_of_birth_1')
+        .select('id, state_primary, filing_status, person1_birth_year')
         .eq('owner_id', sessionUser.id)
         .maybeSingle(),
       supabase

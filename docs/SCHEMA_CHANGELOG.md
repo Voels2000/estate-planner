@@ -8,6 +8,28 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Sprint OB-3b (2026-05-26) — Sidebar unlock + layout household query (no schema migration)
+
+**Code only:**
+
+- Removed legacy `DashboardIntroSection` setup checklist; `SetupProgressCard` is the only dashboard setup UI.
+- **Financial Planning** sidebar items: all `FEATURE_TIERS` keys at tier 1; group exempt from `isLockedUser` (data entry must work before/without household row).
+- **Security**, **My Advisor**, **Manage Subscription**: never gated by `isLockedUser`.
+- **My Advisor:** onboarding contextual note when `!connection && !wizardComplete && !pendingRequest`.
+- **Bugfix:** `getDashboardLayoutContext` no longer selects non-existent `households.date_of_birth_1` (Postgres `42703` → `hasHousehold` always false → entire Financial menu locked). Primary DOB is `person1_birth_year` only.
+
+**Commits:** `6d2bff3`, `1660f27`, (household query + docs — this push)
+
+---
+
+## Sprint SU-1 (2026-05-25) — Superuser sidebar (no schema migration)
+
+**Code only:** `isSuperuser` prop on consumer `SidebarNav`; `isLockedUser` staff bypass (`!isSuperuser && !isAdvisor && !isAdmin`); Advisor Portal visible for `role === 'advisor' || isAdmin || isSuperuser`; middleware `is_admin` → superuser alignment.
+
+**Commit:** `3c0d28b`
+
+---
+
 ## Sprint OB-3 (2026-05-25) — Setup progress + wizard gate (no schema migration)
 
 **Code only:** `GET /api/consumer/setup-progress`; `SetupProgressCard`; wizard gate uses `checkHouseholdHasData` + `wizardGateExemptPrefixes`; Tier 1 import upload during onboarding (UI gate only).

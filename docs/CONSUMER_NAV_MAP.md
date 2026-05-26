@@ -24,12 +24,14 @@ Rendered in `app/(dashboard)/_components/sidebar-nav.tsx` **below** the main pla
 | Link | Visible when | Target | Notes |
 |------|----------------|--------|--------|
 | 📖 Education Guide | `role === 'consumer'` **or** `isSuperuser` | `/education` | Platform resource; public (no login required); sidebar link when signed in. Education pages use **education header only** (marketing `PublicNav` skipped on `/education/*`). |
-| 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; lock when `isLockedUser` |
+| 👤 My Advisor | `role === 'consumer'` **or** `isSuperuser` | `/my-advisor` | Connection management; **never** `isLockedUser`-gated (OB-3b) |
 | ⚖️ My Attorney | `role === 'consumer'` **or** `isSuperuser`, **tier ≥ 2** | `/my-attorney` | Lock when `isLockedUser` or tier &lt; 2 |
-| 💳 Manage Subscription | All signed-in users | `/billing` | Lock when `isLockedUser` |
+| 💳 Manage Subscription | All signed-in users | `/billing` | **Never** `isLockedUser`-gated (OB-3b) |
 | 🚪 Sign out | All signed-in users | (auth sign-out) | Second footer block, separated by border |
 
-Locked accounts (`isLockedUser`): My Advisor, My Attorney, and Manage Subscription render disabled with 🔒. Education Guide stays enabled.
+**Main nav (above footer):** 🔐 **Security** (`/settings/security`) — always enabled for signed-in users (OB-3b).
+
+`isLockedUser` = `hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin`. **Financial Planning** group items are **exempt** (always navigable for authenticated consumers). Other groups: Overview keeps Profile + Estate Summary; Retirement/Estate use tier locks on group + `FEATURE_TIERS`. Footer: only **My Attorney** (tier 2+) still respects `isLockedUser`.
 
 ## Sidebar portal links (consumer layout)
 
@@ -105,12 +107,12 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Assets | `/assets` | Assets | 1 | `assets` |
 | Real Estate | `/real-estate` | Real Estate | 1 | `real-estate` |
 | Business Interests | `/businesses` | Business Interests | 1 | `businesses` |
-| Digital Assets | `/digital-assets` | Digital Assets | 2 | `digital-assets` |
-| Business Succession | `/business-succession` | Business Succession | 3 | `business-succession` |
+| Digital Assets | `/digital-assets` | Digital Assets | 1 | `digital-assets` |
+| Business Succession | `/business-succession` | Business Succession | 1 | `business-succession` |
 | Liabilities | `/liabilities` | Liabilities | 1 | `liabilities` |
 | Life & Estate Insurance | `/insurance` | Life & Estate Insurance | 1 | `insurance` |
 | Property & Casualty | `/property-casualty` | Property & Casualty Insurance | 1 | `insurance` |
-| Asset Allocation | `/allocation` | Asset Allocation | 2 | `allocation` |
+| Asset Allocation | `/allocation` | Asset Allocation | 1 | `allocation` |
 | Projections | `/projections` | Projections | 1 | `projections` |
 | Scenarios | `/scenarios` | Scenarios | 1 | `scenarios` |
 

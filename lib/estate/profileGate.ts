@@ -5,6 +5,7 @@ export type ProfileGateHousehold = {
   filing_status?: string | null
   /** Primary person birth year (profile “Birth Year” field). */
   person1_birth_year?: number | null
+  /** Legacy gate field name only — not a `households` column; do not SELECT from DB. */
   date_of_birth_1?: string | null
 }
 

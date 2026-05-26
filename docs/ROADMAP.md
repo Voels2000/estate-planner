@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-25 (OB-3 setup progress + wizard gate; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (OB-3b sidebar unlock + layout household fix; Sprint 17 go-live prep)
 
 ---
 
@@ -87,6 +87,9 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Tier-aware narrative OB-2** | `[x]` | Profile intro, wizard previews, SetupPromptCard tier copy — `bccef99` |
 | **Advisor flywheel AF-1** | `[x]` | Ask-advisor notification + advisor Strategy Questions card — `a255616` |
 | **Setup progress OB-3** | `[x]` | `SetupProgressCard`, data-inferred wizard, onboarding import bypass — `3376134` |
+| **Sidebar unlock OB-3b** | `[x]` | Remove old setup checklist; FP tier 1 + `isLockedUser` exempt; Security/My Advisor/Billing always on; My Advisor onboarding note — `6d2bff3`, `1660f27` |
+| **Superuser sidebar SU-1** | `[x]` | `isSuperuser` prop, staff bypass, Advisor Portal admin check — `3c0d28b` |
+| **Layout household query fix** | `[x]` | Drop invalid `date_of_birth_1` from `getDashboardLayoutContext` (fixes false `hasHousehold`) |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -123,8 +126,11 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | `bccef99` | OB-2 | Tier-aware onboarding narrative and contextual messaging |
 | `a255616` | AF-1 | Ask-advisor notification + advisor Client Strategy Questions |
 | `3376134` | OB-3 | SetupProgressCard, wizard hasAnyData gate, onboarding import for Tier 1 |
+| `3c0d28b` | SU-1 | Superuser sidebar locks — `isSuperuser` prop, `isLockedUser` staff bypass |
+| `6d2bff3` | OB-3b | Financial Planning tier 1; remove old dashboard setup checklist |
+| `1660f27` | OB-3b | Unlock Security/My Advisor/Billing; My Advisor onboarding note |
 
-### Sprint summary — 2026-05-25
+### Sprint summary — 2026-05-26
 
 | Sprint | Status | Commits |
 |--------|--------|---------|
@@ -133,6 +139,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Tier-aware narrative OB-2 | ✅ | `bccef99` |
 | Advisor flywheel AF-1 | ✅ | `a255616` |
 | Setup progress OB-3 | ✅ | `3376134` |
+| Superuser sidebar SU-1 | ✅ | `3c0d28b` |
+| Sidebar + onboarding OB-3b | ✅ | `6d2bff3`, `1660f27` (+ layout household query fix) |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

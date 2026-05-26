@@ -118,7 +118,7 @@ Each feature section below uses this shape:
 |-------|--------|
 | `state_primary` | Household domicile |
 | `filing_status` | Tax filing status |
-| Primary DOB | `person1_birth_year` **or** legacy `date_of_birth_1` |
+| Primary DOB | `person1_birth_year` (canonical on `households`; `date_of_birth_1` is legacy type/gate name only — **no DB column**) |
 
 Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?required=true&missing=state_primary,filing_status,…&from=/estate-tax` (`lib/estate/requireMinimumProfile.ts`).
 
@@ -412,7 +412,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 |---------|------------------|------------|
 | **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** (“Advisor Recommended Strategies”) | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Reject: `DELETE` same. Rows: `strategy_line_items` `source_role='advisor'` |
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
-| **Access** | `/my-advisor` (sidebar footer) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel` |
+| **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel`; gold onboarding note when `!connection && !wizardComplete && !pendingRequest` (OB-3b) |
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
 | **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanReadinessCard` |
 | **Export for attorney** | `/print` (tier 3+) | `ExportPDFButton` `variant=attorney` → `AttorneyEstatePlanPDF` via `/api/export-estate-plan?variant=attorney`; title **Estate Planning Preparation Report**; cover disclaimer + user attribution on page 1 |

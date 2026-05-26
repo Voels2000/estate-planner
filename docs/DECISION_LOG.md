@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: May 2026 (Sprint C-6/C-7 compliance infrastructure live)
+# Last updated: 2026-05-26 (OB-3b sidebar unlock; layout household query fix)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — OB-3b: Financial Planning sidebar + layout household query
+
+**Decision:** (1) Remove the legacy green dashboard setup checklist (`DashboardIntroSection`); `SetupProgressCard` is the only setup UI. (2) Set all Financial Planning `FEATURE_TIERS` keys to tier 1 and exempt that group from `isLockedUser`. (3) Never gate Security, My Advisor, or Manage Subscription on `isLockedUser`. (4) Stop selecting `households.date_of_birth_1` in `getDashboardLayoutContext` — use `person1_birth_year` only (profile gate still accepts legacy `date_of_birth_1` on in-memory types if ever populated elsewhere).
+
+**Reasoning:** Tier 1 users (e.g. `test1@rolobe.resend.app`) saw the entire Financial menu locked because the layout household query failed on a non-existent column, so `hasHousehold` was always false. Separately, onboarding users must reach Income/Assets without a household row. Upgrade paths (Retirement/Estate) stay tier-gated.
+
+**Alternatives considered:** Require household before any Financial nav (rejected — blocks data entry). Add `date_of_birth_1` migration (rejected — `person1_birth_year` is canonical).
 
 ---
 
@@ -28,6 +38,8 @@ Skim the last 5 entries and the "Active constraints" section before starting any
 - **Pricing is positioned against professional fees**, not against consumer tools. Never price-compare to LegalZoom or Trust & Will in copy or positioning.
 - **The assessment is the primary public conversion mechanism.** Score is visible without an account. Full breakdown requires account creation.
 - **Advisor connection queries** must use `CONNECTED_ADVISOR_CLIENT_STATUSES` from `lib/advisor/clientConnectionStatus.ts` (`active` | `accepted`) — never hardcode a single status in new code.
+- **Financial Planning sidebar is never `isLockedUser`-gated.** Tier 1 data entry must work before a household row exists. `hasHousehold` comes from layout `getDashboardLayoutContext` — do not SELECT `households.date_of_birth_1` (column does not exist; breaks the query).
+- **Security, My Advisor, and Manage Subscription** are never household-gated in the sidebar (OB-3b).
 - **Tailwind v4 arbitrary colors:** `text-` / `border-` / `ring-` use `color:` prefix (`text-[color:var(--mwm-gold)]`); `bg-` uses `bg-[var(--mwm-navy)]` without `color:`. Wrong prefix fails silently.
 - **Referral event attribution** is per-user via `funnel_events.event_slug` at signup; `referral_clicks` is anonymous (no `user_id`). Cross-device signup may not have funnel `event_slug` — see NEXT_SESSION.md known limitations.
 

@@ -25,8 +25,10 @@ type NavGroup = {
   locked?: boolean
 }
 
+const FINANCIAL_PLANNING_GROUP = 'Financial Planning'
+
 const DEFAULT_CLOSED_GROUPS = new Set([
-  'Financial Planning',
+  FINANCIAL_PLANNING_GROUP,
   'Retirement Planning',
   'Estate Planning',
 ])
@@ -307,6 +309,7 @@ export function SidebarNav({
                     }
                     if (
                       isLockedUser &&
+                      group.label !== FINANCIAL_PLANNING_GROUP &&
                       item.href !== '/profile' &&
                       item.href !== '/dashboard' &&
                       item.href !== '/education'

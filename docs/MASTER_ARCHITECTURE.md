@@ -63,6 +63,9 @@ Consumers and advisors share one **household** data model but operate in separat
 | Life-event at connect | `pickConnectionLifeEvent()` on accept — priority: `funnel_events.event_slug` → `referral_clicks.event_slug` (via `profiles.referral_code`) → `life_events`; stored on `advisor_clients.connection_life_event_*`; banner on advisor Overview |
 | Invite-your-advisor | `/onboarding/invite-advisor`; `profiles.onboarding_invite_advisor_completed_at` (skip sets same timestamp); layout gate in `(dashboard)/layout.tsx` |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; Tier 1 import upload while `!onboarding_wizard_completed_at` (history Tier 2+) |
+| Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
+| Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
+| Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -582,10 +585,13 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Signup form honors `redirectTo` query param; maps `/find-advisor`, `/find-attorney`, and `/assess` to `/profile?from=…` after consumer signup.
 - Profile page shows contextual welcome banner when arriving from assessment restore (`mwm_pending_assessment`), find-advisor, or find-attorney flows.
 
-**Sidebar navigation (Sprint 0 + Sprint 1):**
+**Sidebar navigation (Sprint 0 + Sprint 1 + OB-3b + SU-1):**
 
 - **Overview group:** Profile + Estate Summary only (no public-site links).
-- **Footer block:** **My Advisor**, **My Attorney** (consumer, tier 2+), **Manage Subscription**, then **Sign out**. Attorney access settings removed from sidebar (still at `/settings/attorney-access`).
+- **Financial Planning:** all items tier 1 in `FEATURE_TIERS`; group **never** blocked by `isLockedUser` (primary data entry).
+- **`isLockedUser`:** `hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin`. `hasHousehold` from `getDashboardLayoutContext` (`households` row by `owner_id`; must not select non-existent columns).
+- **Security** (`/settings/security`): always enabled in main nav (not tier- or household-gated).
+- **Footer block:** **My Advisor** and **Manage Subscription** always enabled; **My Attorney** (consumer, tier 2+) still respects `isLockedUser`; then **Sign out**. Attorney access settings removed from sidebar (still at `/settings/attorney-access`).
 - **"Your plan" badge** on the active unlocked planning group header (Financial / Retirement / Estate).
 - **`UpgradeBanner`** (`app/(dashboard)/_components/UpgradeBanner.tsx`): optional `householdContext` (`state_primary`, optional `grossEstate`, `firstName`) on all tier-gated consumer pages; gate branches use a lightweight `households` query when full household load runs after the gate.
 
@@ -668,7 +674,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/my-estate-strategy/horizonSnapshots.ts`
 - `lib/projections/loadProjectionData.ts` (shared projection fetch for `/api/projection`, `/projections`, `/scenarios`, `/complete` pages; **Sprint P-2:** cache-first via `outputs_s1_first` when not stale)
 - `lib/projections/staleness.ts` (`isProjectionStale`, `getLatestTimestampMs`)
-- `lib/access/getDashboardLayoutContext.ts` (React `cache()` — layout auth/profile/household/notifications dedup; Sprint P-2)
+- `lib/access/getDashboardLayoutContext.ts` (React `cache()` — layout auth/profile/household/notifications dedup; Sprint P-2; household select: `person1_birth_year` not `date_of_birth_1`)
 - `lib/projections/mappers/mapProjectionRows.ts` (consumer projections API row mapping)
 - `lib/projections/selectors/getProjectionSummary.ts` (consumer projections derived metrics)
 - `lib/calculations/rmdStartAge.ts` (canonical SECURE Act RMD start age by birth year: 72 / 73 / 75)
