@@ -68,6 +68,7 @@ export function RetirementSummarySection(props: RetirementSummarySectionProps) {
           href="/assets"
           linkLabel="Add retirement accounts"
           icon="◷"
+          showAdvisorNote
         />
       </CollapsibleSection>
     )

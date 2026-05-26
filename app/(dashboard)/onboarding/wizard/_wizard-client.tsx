@@ -17,10 +17,43 @@ type Props = {
   inviteMailto: string
 }
 
-const PREVIEW_BY_STEP: Record<1 | 2 | 3, string> = {
-  1: 'After adding this asset, your dashboard will show: Net Worth · Titling status · Estate composition',
-  2: 'After adding income, your dashboard will show: Retirement trajectory · Income tax estimate',
-  3: 'Your advisor will be able to see your estate summary and flag strategies',
+type WizardStepPreview = {
+  title: string
+  items: string[]
+  footer: string
+}
+
+const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
+  1: {
+    title: 'What adding your first asset unlocks',
+    items: [
+      'Your net worth — calculated from assets minus liabilities',
+      'Account titling gaps — we\'ll flag assets that may cause probate issues',
+      'Estate composition — how your assets are classified for tax purposes',
+    ],
+    footer:
+      'A financial advisor can help you interpret your net worth picture and identify early planning opportunities.',
+  },
+  2: {
+    title: 'What adding income unlocks',
+    items: [
+      'Retirement trajectory — projection of your income through retirement',
+      'Cash flow picture — income vs expenses over time',
+      'Tax estimate — basic federal and state income tax modeling',
+    ],
+    footer:
+      'A financial advisor or CPA can validate your assumptions and help you act on what you\'re seeing.',
+  },
+  3: {
+    title: 'Why connecting your advisor matters',
+    items: [
+      'Live plan access — your advisor sees your current estate health score',
+      'Strategy recommendations — they can propose actions you accept or reject',
+      'Better conversations — arrive at every meeting with your data organized',
+    ],
+    footer:
+      'At the $2M–$30M level, a coordinated advisor relationship is one of the highest-value planning decisions you can make.',
+  },
 }
 
 export function OnboardingWizardClient({
@@ -368,19 +401,39 @@ export function OnboardingWizardClient({
         </div>
 
         <aside className="mt-8 hidden w-full max-w-xs lg:mt-14 lg:block">
-          <Card className="border-[color:var(--mwm-gold)] bg-white/80">
-            <Card.Body>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--mwm-gold)]">
-                What you&apos;ll see
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
-                {PREVIEW_BY_STEP[step]}
-              </p>
-            </Card.Body>
-          </Card>
+          <WizardStepPreviewPanel preview={PREVIEW_BY_STEP[step]} />
         </aside>
       </div>
     </div>
+  )
+}
+
+function WizardStepPreviewPanel({ preview }: { preview: WizardStepPreview }) {
+  return (
+    <Card className="border-[color:var(--mwm-gold)] bg-white/80">
+      <Card.Body>
+        <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--mwm-gold)]">
+          What you&apos;ll see
+        </p>
+        <h3 className="mt-3 font-[family-name:var(--font-display)] text-base font-medium text-[color:var(--mwm-navy)]">
+          {preview.title}
+        </h3>
+        <ul className="mt-3 space-y-2">
+          {preview.items.map((item) => (
+            <li
+              key={item}
+              className="flex gap-2 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]"
+            >
+              <span className="text-[color:var(--mwm-gold)]">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 border-t border-[color:var(--mwm-border)] pt-4 text-xs leading-relaxed text-[color:var(--mwm-text-muted)]">
+          {preview.footer}
+        </p>
+      </Card.Body>
+    </Card>
   )
 }
 

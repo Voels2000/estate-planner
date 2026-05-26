@@ -91,10 +91,51 @@ export default function UpgradeBanner({
 
   const personalizedCopy = buildPersonalizedCopy()
 
+  const tierContext =
+    requiredTier === 2 ? (
+      <div className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
+        <p className="mb-1 font-medium text-[color:var(--mwm-navy)]">
+          Retirement planning at your asset level
+        </p>
+        <p>
+          Retirement planning for $2M–$30M households isn&apos;t just about saving enough — it&apos;s
+          about sequencing withdrawals, timing Social Security, and managing tax exposure across
+          decades. These tools model your specific situation, not rules of thumb.
+        </p>
+        <p className="mt-2 text-[color:var(--mwm-text-muted)]">
+          A financial advisor or CPA can validate your assumptions and help you act on what you&apos;re
+          seeing here.
+        </p>
+      </div>
+    ) : (
+      <div className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
+        <p className="mb-1 font-medium text-[color:var(--mwm-navy)]">
+          Estate planning is where the largest transfers happen
+        </p>
+        <p>
+          At $2M–$30M in assets, estate planning isn&apos;t optional — it&apos;s where the most costly
+          mistakes occur and where proactive planning has the greatest impact. These tools show you
+          your tax exposure, beneficiary gaps, and available strategies.
+        </p>
+        <p className="mt-2 text-[color:var(--mwm-text-muted)]">
+          Estate planning at this level requires an attorney. My Wealth Maps prepares you for that
+          conversation — showing you exactly what needs to be addressed, in language your attorney
+          will recognize.{' '}
+          <Link
+            href="/find-attorney"
+            className="text-[color:var(--mwm-navy)] underline underline-offset-2"
+          >
+            Find an estate attorney →
+          </Link>
+        </p>
+      </div>
+    )
+
   return (
     <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 sm:flex-row sm:items-start sm:gap-4">
       <LockIcon className="mt-0.5 h-6 w-6 shrink-0 text-amber-700" />
       <div className="min-w-0 flex-1">
+        {tierContext}
         <p className="font-semibold text-amber-950">{moduleName}</p>
         <p className="mt-1 text-sm text-amber-900">{personalizedCopy ?? valueProposition}</p>
         <p className="mt-2 text-xs text-amber-800/90">

@@ -28,6 +28,7 @@ export function EstateCalloutCard({
         href="/assets"
         linkLabel="Add assets"
         icon="🏛️"
+        showAdvisorNote
       />
     )
   }

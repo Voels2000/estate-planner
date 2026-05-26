@@ -278,6 +278,48 @@ export function ProfileClient({
 
       <form onSubmit={handleSubmit} className="space-y-8">
 
+        {showWizardFields && (
+          <div className="mb-8 rounded-[var(--mwm-radius)] border border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)] p-6">
+            <h2 className="mb-2 font-[family-name:var(--font-display)] text-xl font-medium text-[color:var(--mwm-navy)]">
+              Your profile is the foundation
+            </h2>
+            <p className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
+              Your state, filing status, and household details power every calculation on this
+              platform — estate tax exposure, retirement projections, and planning gap detection.
+              This takes about 2 minutes.
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 font-semibold text-[color:var(--mwm-gold)]">1</span>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">Financial picture</p>
+                  <p className="text-xs text-[color:var(--mwm-text-muted)]">
+                    Net worth, income, projections
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 font-semibold text-[color:var(--mwm-gold)]">2</span>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">Retirement planning</p>
+                  <p className="text-xs text-[color:var(--mwm-text-muted)]">
+                    Social Security, RMDs, Monte Carlo
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 font-semibold text-[color:var(--mwm-gold)]">3</span>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">Estate planning</p>
+                  <p className="text-xs text-[color:var(--mwm-text-muted)]">
+                    Tax exposure, conflict detection, strategies
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Card className="rounded-2xl p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
             Personal Information

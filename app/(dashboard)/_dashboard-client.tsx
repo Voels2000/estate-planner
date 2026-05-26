@@ -223,20 +223,44 @@ export function DashboardClient(props: Props) {
       />
 
       {showSetupPrompt && (
-        <Card accent hoverable className="mt-4">
+        <Card accent className="mt-4">
           <Card.Body>
-            <h3 className="font-[family-name:var(--font-display)] text-lg text-[color:var(--mwm-navy)]">
+            <h3 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[color:var(--mwm-navy)]">
               Complete your financial picture
             </h3>
-            <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
-              Add your first asset and income source to see your net worth, retirement trajectory,
-              and any planning gaps we&apos;ve identified.
+            <p className="mb-4 text-sm text-[color:var(--mwm-text-secondary)]">
+              Add your assets and income to unlock your net worth, retirement trajectory, and
+              planning gap detection. Most users see their first conflict alert within 5 minutes of
+              entering data.
             </p>
-            <Button
-              variant="gold"
-              className="mt-4"
-              onClick={() => router.push('/onboarding/wizard')}
-            >
+            <div className="mb-5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-navy)] text-xs text-white">
+                  1
+                </span>
+                <span>
+                  <strong className="text-[color:var(--mwm-navy)]">Financial</strong> — net worth,
+                  income, basic projections
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-border)] text-xs text-[color:var(--mwm-text-muted)]">
+                  2
+                </span>
+                <span className="text-[color:var(--mwm-text-muted)]">
+                  <strong>Retirement</strong> — Social Security, RMDs, Monte Carlo simulations
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-border)] text-xs text-[color:var(--mwm-text-muted)]">
+                  3
+                </span>
+                <span className="text-[color:var(--mwm-text-muted)]">
+                  <strong>Estate</strong> — tax exposure, beneficiary conflicts, gifting strategies
+                </span>
+              </div>
+            </div>
+            <Button variant="gold" onClick={() => router.push('/onboarding/wizard')}>
               Continue setup →
             </Button>
           </Card.Body>
