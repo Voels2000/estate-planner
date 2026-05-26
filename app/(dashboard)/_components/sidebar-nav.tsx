@@ -45,6 +45,28 @@ const NAV_INACTIVE =
 function navLinkClass(active: boolean, extra = '') {
   return `${NAV_LINK_BASE} ${active ? NAV_ACTIVE : NAV_INACTIVE} ${extra}`.trim()
 }
+
+/** Nav href may include `?query`; `usePathname()` returns the path only. */
+function navHrefPath(href: string): string {
+  return href.split('?')[0] ?? href
+}
+
+function isNavItemActive(itemHref: string, pathname: string): boolean {
+  const hrefPath = navHrefPath(itemHref)
+  if (hrefPath === '/dashboard') return pathname === '/dashboard'
+  return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`)
+}
+
+function groupContainsActiveItem(group: NavGroup, pathname: string): boolean {
+  return group.items.some((item) => isNavItemActive(item.href, pathname))
+}
+
+function findActiveGroupLabel(pathname: string): string {
+  for (const group of NAV_GROUPS) {
+    if (groupContainsActiveItem(group, pathname)) return group.label
+  }
+  return 'Overview'
+}
 const SECTION_HEADER =
   'text-xs font-semibold tracking-widest text-[color:var(--mwm-text-muted)] uppercase'
 const YOUR_PLAN_BADGE =
@@ -139,23 +161,20 @@ export function SidebarNav({
   const pathname = usePathname()
   const router = useRouter()
 
-  function getActiveGroup(): string {
-    for (const group of NAV_GROUPS) {
-      if (group.items.some(item => item.href === pathname)) return group.label
-    }
-    return 'Overview'
-  }
-
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   const activePath = pathname
-  const activeGroup = getActiveGroup()
+  const activeGroup = findActiveGroupLabel(pathname)
   const resolvedOpenGroups: Record<string, boolean> = Object.fromEntries(
-    NAV_GROUPS.map((group) => [
-      group.label,
-      openGroups[group.label] ??
-        (group.label === 'Overview' || (!DEFAULT_CLOSED_GROUPS.has(group.label) && group.label === activeGroup)),
-    ]),
+    NAV_GROUPS.map((group) => {
+      const hasActiveChild = groupContainsActiveItem(group, pathname)
+      const defaultOpen =
+        group.label === 'Overview' ||
+        hasActiveChild ||
+        (!DEFAULT_CLOSED_GROUPS.has(group.label) && group.label === activeGroup)
+      const toggled = openGroups[group.label]
+      return [group.label, hasActiveChild ? true : (toggled ?? defaultOpen)]
+    }),
   )
 
   function toggleGroup(label: string) {
@@ -338,7 +357,7 @@ export function SidebarNav({
                     const attorneyTierGate =
                       (item.href === '/settings/attorney-access' || item.href === '/my-attorney') && tierBelowMin
                     const linkHref = attorneyTierGate ? '/billing' : item.href
-                    const isActive = activePath === item.href && !attorneyTierGate
+                    const isActive = isNavItemActive(item.href, activePath) && !attorneyTierGate
                     const locked = isLocked(item.feature)
                     const greyedLeaf = locked || attorneyTierGate
                     const leafClasses = navLinkClass(
