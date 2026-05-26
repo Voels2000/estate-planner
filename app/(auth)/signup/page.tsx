@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { Suspense } from 'react'
-import { isWaitlistMode, shouldBypassWaitlistForSignup } from '@/lib/waitlist-mode'
+import {
+  isLocalDevHost,
+  isWaitlistMode,
+  shouldBypassWaitlistForSignup,
+} from '@/lib/waitlist-mode'
 import { SignupForm } from './_signup-form'
 
 export const dynamic = 'force-dynamic'
@@ -34,7 +39,14 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
     else if (Array.isArray(value) && value[0]) urlSearchParams.set(key, value[0])
   }
 
-  if (isWaitlistMode() && !shouldBypassWaitlistForSignup(urlSearchParams)) {
+  const hostHeader = (await headers()).get('host') ?? ''
+  const isLocalhost = isLocalDevHost(hostHeader)
+
+  if (
+    !isLocalhost &&
+    isWaitlistMode({ hostname: hostHeader }) &&
+    !shouldBypassWaitlistForSignup(urlSearchParams)
+  ) {
     redirect('/waitlist')
   }
 

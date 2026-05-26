@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isWaitlistMode, shouldBypassWaitlistForSignup } from '@/lib/waitlist-mode'
+import {
+  isLocalDevHost,
+  isWaitlistMode,
+  shouldBypassWaitlistForSignup,
+} from '@/lib/waitlist-mode'
 
 /** Crawlable SEO + static infra — never auth-gated or redirected. */
 const INFRA_BYPASS_PATHS = [
@@ -76,10 +80,14 @@ function redirectPreservingCookies(
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
-  // Runtime waitlist gate — works even when /signup was statically prerendered without it
+  // Runtime waitlist gate — local dev hosts never redirect (env inlining in Edge is unreliable)
+  const hostname = request.nextUrl.hostname
+  const isLocalhost = isLocalDevHost(hostname)
+
   if (
     pathname === '/signup' &&
-    isWaitlistMode() &&
+    !isLocalhost &&
+    isWaitlistMode({ hostname }) &&
     !shouldBypassWaitlistForSignup(searchParams)
   ) {
     return NextResponse.redirect(new URL('/waitlist', request.url))
