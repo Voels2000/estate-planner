@@ -420,14 +420,10 @@ export default async function DashboardPage() {
   })
 
   const wizardComplete = isWizardComplete(profile)
-  const hasAssets = (assets?.length ?? 0) > 0
-  const hasIncomeRows = (income?.length ?? 0) > 0
-  const showSetupPrompt =
-    !wizardComplete && !(hasAssets && hasIncomeRows)
 
   return (
     <DashboardClient
-      showSetupPrompt={showSetupPrompt}
+      wizardComplete={wizardComplete}
       composition={composition}
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}

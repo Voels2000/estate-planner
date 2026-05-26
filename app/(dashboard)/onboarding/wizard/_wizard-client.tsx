@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
+import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
+import { cn } from '@/lib/utils'
 
 type RefOption = { value: string; label: string }
 
@@ -28,7 +30,7 @@ const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
     title: 'What adding your first asset unlocks',
     items: [
       'Your net worth — calculated from assets minus liabilities',
-      'Account titling gaps — we\'ll flag assets that may cause probate issues',
+      "Account titling gaps — we'll flag assets that may cause probate issues",
       'Estate composition — how your assets are classified for tax purposes',
     ],
     footer:
@@ -42,7 +44,7 @@ const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
       'Tax estimate — basic federal and state income tax modeling',
     ],
     footer:
-      'A financial advisor or CPA can validate your assumptions and help you act on what you\'re seeing.',
+      "A financial advisor or CPA can validate your assumptions and help you act on what you're seeing.",
   },
   3: {
     title: 'Why connecting your advisor matters',
@@ -56,6 +58,12 @@ const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
   },
 }
 
+function firstIncompleteStep(progress: SetupProgressCounts): 1 | 2 | 3 {
+  if (progress.assets <= 0) return 1
+  if (progress.income <= 0) return 2
+  return 3
+}
+
 export function OnboardingWizardClient({
   person1Label,
   person2Label,
@@ -66,8 +74,28 @@ export function OnboardingWizardClient({
 }: Props) {
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [progress, setProgress] = useState<SetupProgressCounts | null>(null)
+  const [progressLoaded, setProgressLoaded] = useState(false)
+  const [advisorStepDone, setAdvisorStepDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const refreshProgress = useCallback(async () => {
+    const res = await fetch('/api/consumer/setup-progress')
+    if (!res.ok) return null
+    const data = (await res.json()) as SetupProgressCounts
+    setProgress(data)
+    return data
+  }, [])
+
+  useEffect(() => {
+    void (async () => {
+      const data = await refreshProgress()
+      setProgressLoaded(true)
+      if (!data) return
+      setStep(firstIncompleteStep(data))
+    })()
+  }, [refreshProgress, router])
 
   const sortedAssetTypes = [...assetTypes].sort((a, b) => a.label.localeCompare(b.label))
   const sortedIncomeTypes = [...incomeTypes].sort((a, b) => a.label.localeCompare(b.label))
@@ -88,6 +116,13 @@ export function OnboardingWizardClient({
 
   const currentYear = new Date().getFullYear()
 
+  const stepComplete = (n: 1 | 2 | 3) => {
+    if (!progress) return false
+    if (n === 1) return progress.assets > 0
+    if (n === 2) return progress.income > 0
+    return advisorStepDone
+  }
+
   async function completeWizard() {
     setSubmitting(true)
     setError(null)
@@ -97,6 +132,7 @@ export function OnboardingWizardClient({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to complete setup')
       }
+      setAdvisorStepDone(true)
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
@@ -127,6 +163,7 @@ export function OnboardingWizardClient({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save asset')
       }
+      await refreshProgress()
       setStep(2)
       setSubmitting(false)
     } catch (err) {
@@ -158,6 +195,7 @@ export function OnboardingWizardClient({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save income')
       }
+      await refreshProgress()
       setStep(3)
       setSubmitting(false)
     } catch (err) {
@@ -177,25 +215,55 @@ export function OnboardingWizardClient({
     ...(step === 1 && hasSpouse ? [{ value: 'joint', label: 'Joint' }] : []),
   ]
 
+  if (!progressLoaded) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--mwm-off-white)]">
+        <p className="text-sm text-[color:var(--mwm-text-muted)]">Loading your progress…</p>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-[var(--mwm-off-white)]">
       <div className="mx-auto flex min-h-full max-w-5xl flex-col px-4 py-10 lg:flex-row lg:items-start lg:gap-10 lg:py-16">
         <div className="w-full max-w-[560px] flex-1">
-          <p className="text-center text-sm text-[color:var(--mwm-text-secondary)]">
-            Step {step} of 3
-          </p>
-          <div className="mt-2 flex justify-center gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              className="text-xs text-[color:var(--mwm-text-muted)] underline-offset-2 hover:text-[color:var(--mwm-navy)] hover:underline"
+            >
+              ← Back to dashboard
+            </button>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-2">
             {([1, 2, 3] as const).map((n) => (
-              <span
-                key={n}
-                className={`h-2 w-2 rounded-full ${
-                  n === step
-                    ? 'bg-[var(--mwm-navy)]'
-                    : n < step
-                      ? 'bg-[color:var(--mwm-gold)]'
-                      : 'bg-[color:var(--mwm-border)]'
-                }`}
-              />
+              <div key={n} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(n)}
+                  className={cn(
+                    'flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors',
+                    stepComplete(n)
+                      ? 'bg-[var(--mwm-sage)] text-white'
+                      : step === n
+                        ? 'bg-[var(--mwm-navy)] text-white'
+                        : 'bg-[var(--mwm-border)] text-[color:var(--mwm-text-muted)]',
+                  )}
+                  aria-label={`Step ${n}`}
+                >
+                  {stepComplete(n) ? '✓' : n}
+                </button>
+                {n < 3 && (
+                  <div
+                    className={cn(
+                      'h-px w-8',
+                      stepComplete(n) ? 'bg-[var(--mwm-sage)]' : 'bg-[var(--mwm-border)]',
+                    )}
+                  />
+                )}
+              </div>
             ))}
           </div>
 
@@ -370,16 +438,14 @@ export function OnboardingWizardClient({
               </>
             )}
 
-            {error && (
-              <p className="px-6 pb-4 text-sm text-red-600">{error}</p>
-            )}
+            {error && <p className="px-6 pb-4 text-sm text-red-600">{error}</p>}
 
             {step < 3 && (
               <div className="flex items-center justify-between border-t border-[color:var(--mwm-border)] px-6 py-4">
                 <Button
                   type="button"
                   variant="ghost"
-                  disabled={step === 1 || submitting}
+                  disabled={submitting}
                   onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
                 >
                   Back
@@ -393,7 +459,7 @@ export function OnboardingWizardClient({
                     else if (step === 2) void saveIncome()
                   }}
                 >
-                  {submitting ? 'Saving…' : step === 1 ? 'Save & continue' : 'Save & continue'}
+                  {submitting ? 'Saving…' : 'Save & continue'}
                 </Button>
               </div>
             )}

@@ -12,6 +12,8 @@ import {
   isWizardReadyProfile,
 } from '@/lib/estate/profileGate'
 import { ensureWizardBackfill } from '@/lib/onboarding/ensureWizardBackfill'
+import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
+import { shouldRequireWizardOnboarding } from '@/lib/onboarding/shouldRequireWizardOnboarding'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 function DashboardMain({
@@ -72,11 +74,24 @@ export default async function DashboardLayout({
     if (backfilled) wizardComplete = true
   }
 
-  const needsWizardOnboarding =
+  let hasAnyHouseholdData = false
+  if (
     !isSuperuser &&
     profileFull?.role === 'consumer' &&
     !wizardComplete &&
     isWizardReadyProfile(householdRow)
+  ) {
+    const supabaseForGate = await createClient()
+    hasAnyHouseholdData = await checkHouseholdHasData(supabaseForGate, sessionUser.id)
+  }
+
+  const needsWizardOnboarding = shouldRequireWizardOnboarding({
+    isSuperuser,
+    role: profileFull?.role,
+    wizardComplete,
+    wizardReady: isWizardReadyProfile(householdRow),
+    hasAnyData: hasAnyHouseholdData,
+  })
 
   const needsInviteAdvisorOnboarding =
     !isSuperuser &&

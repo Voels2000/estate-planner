@@ -76,6 +76,7 @@ type AssetsClientProps = {
   titlingTypes: RefOption[]
   person1Name: string
   person2Name: string
+  showImportCta?: boolean
 }
 
 export function AssetsClient({
@@ -85,6 +86,7 @@ export function AssetsClient({
   titlingTypes,
   person1Name,
   person2Name,
+  showImportCta = false,
 }: AssetsClientProps) {
   const router = useRouter()
   const [assets, setAssets] = useState<Asset[]>(initialAssets)
@@ -177,19 +179,32 @@ export function AssetsClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Assets</h1>
           <p className="mt-1 text-sm text-neutral-600">
             Total value: <span className="font-semibold text-neutral-900">{formatDollars(totalValue)}</span>
           </p>
         </div>
-        <button
-          onClick={() => { setEditAsset(null); setShowModal(true) }}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-        >
-          + Add Asset
-        </button>
+        <div className="flex flex-wrap items-center gap-4">
+          {showImportCta && (
+            <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
+              <span>Have a spreadsheet?</span>
+              <a
+                href="/import"
+                className="text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
+              >
+                Import your data →
+              </a>
+            </div>
+          )}
+          <button
+            onClick={() => { setEditAsset(null); setShowModal(true) }}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+          >
+            + Add Asset
+          </button>
+        </div>
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}

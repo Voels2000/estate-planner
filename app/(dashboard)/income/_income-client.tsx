@@ -31,6 +31,7 @@ type Props = {
   person2Name: string
   hasSpouse: boolean
   incomeTypes: IncomeType[]
+  showImportCta?: boolean
 }
 
 const STORAGE_KEY = 'ep_income_groups'
@@ -60,6 +61,7 @@ export function IncomeClient({
   person2Name,
   hasSpouse,
   incomeTypes,
+  showImportCta = false,
 }: Props) {
   const router = useRouter()
   const [income, setIncome] = useState<IncomeRow[]>(initialIncome)
@@ -170,7 +172,7 @@ export function IncomeClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Income</h1>
           <p className="mt-1 text-sm text-neutral-600">
@@ -178,13 +180,26 @@ export function IncomeClient({
             <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
-        >
-          + Add Income
-        </button>
+        <div className="flex flex-wrap items-center gap-4">
+          {showImportCta && (
+            <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
+              <span>Have a spreadsheet?</span>
+              <a
+                href="/import"
+                className="text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
+              >
+                Import your data →
+              </a>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={openAdd}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+          >
+            + Add Income
+          </button>
+        </div>
       </div>
 
       {error && (

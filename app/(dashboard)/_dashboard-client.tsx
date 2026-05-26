@@ -7,9 +7,13 @@
  * Route: `/dashboard`
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/Button'
+import {
+  SetupProgressCard,
+  SetupProgressCardSkeleton,
+} from '@/components/dashboard/SetupProgressCard'
+import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
 import { Card } from '@/components/ui/Card'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -137,7 +141,7 @@ type Props = {
     multiStateRealEstate: boolean
     distinctPropertyStates: string[]
   } | null
-  showSetupPrompt?: boolean
+  wizardComplete?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -185,11 +189,33 @@ export function DashboardClient(props: Props) {
     hasAdvisorConnection = false,
     successionGap = false,
     personaAlerts = null,
-    showSetupPrompt = false,
+    wizardComplete = false,
   } = props
 
   const router = useRouter()
-  void consumerTier
+  const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(null)
+  const [setupProgressLoading, setSetupProgressLoading] = useState(true)
+
+  useEffect(() => {
+    if (isAdvisor) {
+      setSetupProgressLoading(false)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/consumer/setup-progress')
+        if (!res.ok) return
+        const data = (await res.json()) as SetupProgressCounts
+        if (!cancelled) setSetupProgress(data)
+      } finally {
+        if (!cancelled) setSetupProgressLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isAdvisor])
   void hasBaseCase
   void scenarioId
   void isAdvisor
@@ -222,49 +248,20 @@ export function DashboardClient(props: Props) {
         hasAdvisorConnection={hasAdvisorConnection}
       />
 
-      {showSetupPrompt && (
-        <Card accent className="mt-4">
-          <Card.Body>
-            <h3 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[color:var(--mwm-navy)]">
-              Complete your financial picture
-            </h3>
-            <p className="mb-4 text-sm text-[color:var(--mwm-text-secondary)]">
-              Add your assets and income to unlock your net worth, retirement trajectory, and
-              planning gap detection. Most users see their first conflict alert within 5 minutes of
-              entering data.
-            </p>
-            <div className="mb-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-navy)] text-xs text-white">
-                  1
-                </span>
-                <span>
-                  <strong className="text-[color:var(--mwm-navy)]">Financial</strong> — net worth,
-                  income, basic projections
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-border)] text-xs text-[color:var(--mwm-text-muted)]">
-                  2
-                </span>
-                <span className="text-[color:var(--mwm-text-muted)]">
-                  <strong>Retirement</strong> — Social Security, RMDs, Monte Carlo simulations
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[color:var(--mwm-text-secondary)]">
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--mwm-border)] text-xs text-[color:var(--mwm-text-muted)]">
-                  3
-                </span>
-                <span className="text-[color:var(--mwm-text-muted)]">
-                  <strong>Estate</strong> — tax exposure, beneficiary conflicts, gifting strategies
-                </span>
-              </div>
-            </div>
-            <Button variant="gold" onClick={() => router.push('/onboarding/wizard')}>
-              Continue setup →
-            </Button>
-          </Card.Body>
-        </Card>
+      {!isAdvisor && (
+        <div className="mt-4">
+          {setupProgressLoading || !setupProgress ? (
+            <SetupProgressCardSkeleton />
+          ) : (
+            <SetupProgressCard
+              progress={setupProgress}
+              wizardComplete={wizardComplete}
+              consumerTier={consumerTier ?? 1}
+              onContinueWizard={() => router.push('/onboarding/wizard')}
+              onImport={() => router.push('/import')}
+            />
+          )}
+        </div>
       )}
 
       {successionGap && (

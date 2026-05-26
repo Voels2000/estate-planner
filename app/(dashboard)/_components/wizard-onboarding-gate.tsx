@@ -2,15 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-
-const EXEMPT_PREFIXES = [
-  '/onboarding/wizard',
-  '/onboarding/invite-advisor',
-  '/profile',
-  '/billing',
-  '/settings',
-  '/login',
-]
+import { isWizardGateExemptPath } from '@/lib/onboarding/wizardGateExemptPrefixes'
 
 export function WizardOnboardingGate({ needsWizard }: { needsWizard: boolean }) {
   const pathname = usePathname()
@@ -18,7 +10,7 @@ export function WizardOnboardingGate({ needsWizard }: { needsWizard: boolean }) 
 
   useEffect(() => {
     if (!needsWizard) return
-    if (EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) return
+    if (isWizardGateExemptPath(pathname)) return
     router.replace('/onboarding/wizard')
   }, [needsWizard, pathname, router])
 

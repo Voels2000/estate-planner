@@ -64,7 +64,18 @@ const IMPORT_TEMPLATES = [
 
 const DELETABLE_STATUSES = new Set(['pending', 'mapped', 'failed'])
 
-export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
+export function ImportClient({
+  jobs: initialJobs,
+  showImportHistory = true,
+  showOnboardingBanner = false,
+  consumerTier = 2,
+}: {
+  jobs: IngestionJob[]
+  showImportHistory?: boolean
+  showOnboardingBanner?: boolean
+  consumerTier?: number
+}) {
+  void consumerTier
   const [jobs, setJobs] = useState<IngestionJob[]>(initialJobs)
   const [step, setStep] = useState<'upload' | 'review' | 'done'>('upload')
   const [isDragging, setIsDragging] = useState(false)
@@ -590,7 +601,21 @@ export function ImportClient({ jobs: initialJobs }: { jobs: IngestionJob[] }) {
         </div>
       )}
 
-      {jobs.length > 0 && (
+      {showOnboardingBanner && (
+        <div className="mb-6 rounded-[var(--mwm-radius)] border border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)] px-5 py-4 text-sm text-[color:var(--mwm-text-secondary)]">
+          <strong className="text-[color:var(--mwm-navy)]">Import is available during setup.</strong>{' '}
+          After your financial picture is complete, import history and management requires the
+          Retirement plan.{' '}
+          <Link
+            href="/pricing"
+            className="text-[color:var(--mwm-navy)] underline underline-offset-2"
+          >
+            See plans →
+          </Link>
+        </div>
+      )}
+
+      {showImportHistory && jobs.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-4">
             Import History
