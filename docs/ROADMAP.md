@@ -165,7 +165,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 | Brand consistency pass | ✅ | `fbaa709` |
 | Client Summary PDF upgrade | ✅ | `0816f37` |
-| Nav consistency (homepage, billing, utility) | ✅ | `TBD` |
+| Nav consistency (homepage, billing, utility) | ✅ | `b51eedd` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

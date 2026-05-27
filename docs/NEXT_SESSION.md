@@ -38,7 +38,7 @@
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 | Brand consistency pass | ✅ | `fbaa709` |
 | Client Summary PDF upgrade | ✅ | `0816f37` |
-| Nav consistency (homepage, billing, utility) | ✅ | `TBD` |
+| Nav consistency (homepage, billing, utility) | ✅ | `b51eedd` |
 
 ---
 
