@@ -26,6 +26,14 @@ npx supabase db query --linked --agent=no -o csv -f scripts/audit-rls-policies-r
 
 Answers: “Which rows can each role see?” Separate from grants; review household-scoped policies and avoid `USING (true)` on PII tables.
 
+**Pre-launch fix (migration `20260527150000_prelaunch_rls_household_scope.sql`):** household-scoped policies on `gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis` (advisor SELECT), `strategy_configs` (drop loose advisor policies). Verify: `scripts/verify-loose-rls-policies.sql` returns zero rows.
+
+After applying on prod, export post-fix baseline:
+
+```bash
+npx supabase db query --linked --agent=no -o csv -f scripts/audit-rls-high-risk-policies.sql > docs/audits/rls-policies-post-fix-$(date +%Y-%m-%d).csv
+```
+
 ## New migrations
 
 Use [supabase/MIGRATION_TEMPLATE.sql](../../supabase/MIGRATION_TEMPLATE.sql) — explicit `GRANT` + RLS block in every new table migration.

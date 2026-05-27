@@ -8,6 +8,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pre-launch RLS household scope (2026-05-27)
+
+**Migration:** `20260527150000_prelaunch_rls_household_scope.sql`
+
+- Replaces `auth.uid() IS NOT NULL` policies on `gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis` (advisor SELECT), `strategy_configs` (4 loose advisor policies + tighten manage policy).
+- Advisor scope: `advisor_clients` → `households.owner_id` with `status = 'active'` AND `accepted_at IS NOT NULL`.
+- App: `POST/DELETE /api/advisor/gst-entry` (advisor_clients validation + `createAdminClient` insert); `SLATILITPanel` no longer writes `gst_ledger` from browser.
+
+**Verify on prod:** `scripts/verify-loose-rls-policies.sql` → zero rows.
+
+---
+
 ## Security — migration template + grant/RLS audits (2026-05-27, no migration)
 
 **Code/docs only:**

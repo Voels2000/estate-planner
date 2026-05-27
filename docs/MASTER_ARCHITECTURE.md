@@ -520,7 +520,7 @@ Two layers — do not conflate them:
 
 **Prod baseline (2026-05-27):** [docs/audits/table-grants-rls-2026-05-27.csv](./audits/table-grants-rls-2026-05-27.csv) — 119 public tables; all three API roles granted; RLS enabled on all. **No grant backfill migration needed.**
 
-**Policy audit (pre-launch security):** [docs/audits/rls-policies-2026-05-27.csv](./audits/rls-policies-2026-05-27.csv) + [rls-policies-risk-2026-05-27.csv](./audits/rls-policies-risk-2026-05-27.csv). `USING (true)` is expected on reference/tax/config tables (`ref_*`, brackets, `app_config`). Review `signed_in_only` flags (`auth.uid() IS NOT NULL` without household/advisor join) before launch — e.g. `domicile_schedule`, `strategy_configs` advisor policies. Household PII tables must scope via `households.owner_id = auth.uid()` or `advisor_clients` with `active`/`accepted`.
+**Policy audit (pre-launch security):** Baselines in [docs/audits/](./audits/README.md). **Fixed** in `20260527150000_prelaunch_rls_household_scope.sql` (`gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis`, `strategy_configs`). Advisor RLS join: `advisor_clients.client_id = households.owner_id` (not a `client_household_id` column). GST advisor insert: `POST /api/advisor/gst-entry`. Post-deploy: `scripts/verify-loose-rls-policies.sql` must return zero rows.
 
 **New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
 

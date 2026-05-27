@@ -1,0 +1,56 @@
+tablename,policyname,roles,cmd,qual,with_check
+domicile_analysis,Advisors can view client domicile analysis,{authenticated},SELECT,"(user_id IN ( SELECT h.owner_id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))",NULL
+domicile_analysis,advisors insert client domicile_analysis,{public},INSERT,NULL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = domicile_analysis.user_id) AND (advisor_clients.status = 'active'::text))))"
+domicile_analysis,advisors update client domicile_analysis,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = domicile_analysis.user_id) AND (advisor_clients.status = 'active'::text))))",NULL
+domicile_analysis,consumers delete own domicile_analysis,{public},DELETE,(auth.uid() = user_id),NULL
+domicile_analysis,consumers insert own domicile_analysis,{public},INSERT,NULL,(auth.uid() = user_id)
+domicile_analysis,consumers select own domicile_analysis,{public},SELECT,(auth.uid() = user_id),NULL
+domicile_analysis,consumers update own domicile_analysis,{public},UPDATE,(auth.uid() = user_id),NULL
+gst_ledger,Advisors can manage client gst ledger,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = gst_ledger.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))","(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = gst_ledger.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))"
+gst_ledger,Users can manage own gst ledger,{authenticated},ALL,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))","(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+liquidity_analysis,Advisors can manage client liquidity analysis,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = liquidity_analysis.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))","(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = liquidity_analysis.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))"
+liquidity_analysis,Users can manage own liquidity analysis,{authenticated},ALL,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))","(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+monte_carlo_results,Advisors can read client monte carlo results,{authenticated},SELECT,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = monte_carlo_results.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))",NULL
+monte_carlo_results,Users can read own monte carlo results,{authenticated},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))",NULL
+strategy_configs,Advisors can manage client strategy configs,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = strategy_configs.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))","(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = strategy_configs.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (ac.accepted_at IS NOT NULL))))"
+strategy_configs,Consumers read own strategy configs,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM households h
+  WHERE ((h.id = strategy_configs.household_id) AND (h.owner_id = auth.uid()))))",NULL

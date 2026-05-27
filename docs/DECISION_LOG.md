@@ -2,6 +2,14 @@
 # My Wealth Maps — Key Decisions and Reasoning
 # Last updated: 2026-05-27 (security audits; PROF-1/2; ENG-2)
 
+## Pre-launch RLS household scope — six tables (2026-05-27)
+
+**Decision:** Migration `20260527150000` drops permissive `auth.uid() IS NOT NULL` policies and replaces with household owner + `advisor_clients` (via `households.owner_id = client_id`, `status = 'active'`, `accepted_at IS NOT NULL`). GST advisor writes use `/api/advisor/gst-entry` with server-side link validation and `createAdminClient` (same pattern as other advisor writes that bypass client RLS edge cases).
+
+**Reasoning:** Permissive policies OR'd with scoped policies, exposing cross-household reads/writes before public signup.
+
+---
+
 ## Security — explicit GRANTs in migrations; grant vs RLS audits (2026-05-27)
 
 **Decision:** Add `supabase/MIGRATION_TEMPLATE.sql` requiring explicit `GRANT` + RLS in every new table migration. Prod grant audit (119 tables) shows all API roles already granted and RLS enabled — **no backfill migration**. Policy audit CSV exported for pre-launch review (`signed_in_only` advisor/consumer policies flagged separately from reference-table `USING (true)`).

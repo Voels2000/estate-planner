@@ -150,7 +150,8 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `scripts/audit-rls-policies.sql` + risk helper + baseline CSVs
 - [x] `supabase/MIGRATION_TEMPLATE.sql` — GRANT + RLS pattern for future tables
 - [x] Master docs: MASTER_ARCHITECTURE · UPDATE_CHECKLIST · SCHEMA_CHANGELOG · DECISION_LOG · LAUNCH_CHECKLIST · docs/audits/README.md
-- [ ] Pre-launch: review `rls-policies-risk-2026-05-27.csv` `signed_in_only` rows (separate from grant audit)
+- [x] Pre-launch RLS fix migration `20260527150000` + `/api/advisor/gst-entry` + verify script
+- [ ] After prod `db push`: run `scripts/verify-loose-rls-policies.sql` (zero rows) + save post-fix CSV
 
 ## PROF-1/2 — Profile cleanup (2026-05-27)
 

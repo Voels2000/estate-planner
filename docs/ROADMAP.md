@@ -24,7 +24,8 @@
 ### Security — migration template + audits (2026-05-27) ✅
 
 - `[x]` `supabase/MIGRATION_TEMPLATE.sql` + grant/RLS audit scripts + prod baselines
-- `[ ]` Pre-launch: review RLS `signed_in_only` flags ([docs/audits/README.md](./audits/README.md))
+- `[x]` Pre-launch RLS household scope — `20260527150000` + `/api/advisor/gst-entry`
+- `[ ]` Post-deploy: `verify-loose-rls-policies.sql` on prod + isolation smoke
 
 ### Profile cleanup PROF-1/2 (2026-05-27) ✅
 
