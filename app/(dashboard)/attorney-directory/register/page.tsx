@@ -106,7 +106,7 @@ export default function AttorneyRegisterPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <div className="text-5xl mb-4">✅</div>
-        <h1 className="text-2xl font-bold text-neutral-900">Listing Submitted</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Listing Submitted</h1>
         <p className="mt-3 text-neutral-500">
           Your listing is pending admin review. You&apos;ll receive an email
           at <strong>{form.email}</strong> once it&apos;s approved.
@@ -114,7 +114,7 @@ export default function AttorneyRegisterPage() {
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="mt-8 rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 transition"
+          className="mt-8 rounded-xl bg-[color:var(--mwm-navy)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           Back to Dashboard
         </button>
@@ -125,7 +125,7 @@ export default function AttorneyRegisterPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-3xl font-bold tracking-tight text-[color:var(--mwm-navy)]">
           List Your Attorney Practice
         </h1>
         <p className="mt-2 text-neutral-500">
@@ -369,7 +369,7 @@ export default function AttorneyRegisterPage() {
             type="button"
             onClick={() => void handleSubmit()}
             disabled={loading}
-            className="w-full rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-700 transition disabled:opacity-50"
+            className="w-full rounded-xl bg-[color:var(--mwm-navy)] px-6 py-3 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition disabled:opacity-50"
           >
             {loading ? 'Submitting…' : 'Submit for Review'}
           </button>

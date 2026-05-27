@@ -28,7 +28,7 @@ export default async function ImportPage() {
   if (!hasImportFeature && !allowOnboardingImport) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Import Data</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Import Data</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Import Data"

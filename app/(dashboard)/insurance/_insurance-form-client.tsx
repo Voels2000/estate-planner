@@ -160,14 +160,14 @@ export default function InsuranceFormClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Life & Estate Insurance</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Life & Estate Insurance</h1>
           <p className="text-sm text-neutral-500 mt-1">
             Life insurance, annuities, long-term care, and disability coverage.
           </p>
         </div>
         <button
           onClick={openAdd}
-          className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
+          className="px-4 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           + Add Policy
         </button>
@@ -181,7 +181,7 @@ export default function InsuranceFormClient({
           <p className="text-xs text-neutral-400 mt-1">Add life insurance, annuities, LTC, or disability coverage</p>
           <button
             onClick={openAdd}
-            className="mt-4 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
+            className="mt-4 px-4 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] transition"
           >
             Add your first policy
           </button>
@@ -460,7 +460,7 @@ export default function InsuranceFormClient({
                   Cancel
                 </button>
                 <button onClick={handleSave} disabled={saving}
-                  className="px-5 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition">
+                  className="px-5 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition">
                   {saving ? 'Saving...' : editing ? 'Save Changes' : 'Add Policy'}
                 </button>
               </div>

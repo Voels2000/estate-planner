@@ -209,7 +209,7 @@ export default function FirmClient({
         >
           ← Advisor Portal
         </a>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">Firm</h1>
+        <h1 className="mt-2 text-2xl font-bold text-[color:var(--mwm-navy)]">Firm</h1>
         <p className="mt-1 text-sm text-neutral-500">
           Manage your firm subscription and advisor roster.
         </p>
@@ -299,7 +299,7 @@ export default function FirmClient({
         <div className="mt-6">
           <a
             href="/billing"
-            className="inline-flex rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            className="inline-flex rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
           >
             Manage Billing 💳
           </a>

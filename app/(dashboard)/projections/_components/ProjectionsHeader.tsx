@@ -8,7 +8,7 @@ export function ProjectionsHeader() {
     <div className="mb-8 space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Projections</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Projections</h1>
           <p className="mt-1 text-sm text-neutral-600 max-w-xl">
             {projectionsSurface.description} Based on your profile, income, expenses, and assets.
           </p>

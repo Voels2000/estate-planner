@@ -27,7 +27,7 @@ export function PlanningSurfaceNav({ className = '' }: Props) {
             aria-current={isCurrent ? 'page' : undefined}
             className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
               isCurrent
-                ? 'border-neutral-900 bg-neutral-900 text-white'
+                ? 'border-[color:var(--mwm-navy)] bg-[color:var(--mwm-navy)] text-white'
                 : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
             }`}
           >

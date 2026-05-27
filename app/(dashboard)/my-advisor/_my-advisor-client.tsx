@@ -124,7 +124,7 @@ export default function MyAdvisorClient({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">My Advisor</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">My Advisor</h1>
           <p className="mt-1 text-sm text-neutral-500">Manage your advisor connection</p>
         </div>
 
@@ -224,7 +224,7 @@ export default function MyAdvisorClient({
               </p>
               <Link
                 href="/find-advisor"
-                className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+                className="mt-4 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
               >
                 Find an Advisor
               </Link>
@@ -243,7 +243,7 @@ export default function MyAdvisorClient({
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">My Advisor</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">My Advisor</h1>
         <p className="mt-1 text-sm text-neutral-500">Manage your advisor connection</p>
       </div>
 

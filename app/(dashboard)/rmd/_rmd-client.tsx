@@ -170,7 +170,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
 
   if (assets.length === 0) return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="mb-8"><h1 className="text-2xl font-bold text-neutral-900">RMD Calculator</h1></div>
+      <div className="mb-8"><h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">RMD Calculator</h1></div>
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white py-16 text-center">
         <div className="text-4xl mb-3">🏦</div>
         <p className="text-sm font-medium text-neutral-600">No RMD-eligible accounts found</p>
@@ -202,7 +202,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">RMD Calculator</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">RMD Calculator</h1>
         <p className="mt-1 text-sm text-neutral-600">Required Minimum Distributions using IRS Uniform Lifetime Table (2022 regulations, SECURE Act 2.0).</p>
       </div>
 

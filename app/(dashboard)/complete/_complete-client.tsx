@@ -123,7 +123,7 @@ export default function CompleteClient({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 mb-1">Lifetime Snapshot</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-1">Lifetime Snapshot</h1>
           <p className="text-sm text-neutral-600 max-w-xl">
             {PLANNING_SURFACES.find((s) => s.id === 'complete')!.description}
           </p>

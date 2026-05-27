@@ -94,7 +94,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <div className="text-5xl mb-4">✅</div>
-        <h1 className="text-2xl font-bold text-neutral-900">Listing Submitted</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Listing Submitted</h1>
         <p className="mt-3 text-neutral-500">
           Your listing is pending admin review. You&apos;ll receive an email
           at <strong>{form.email}</strong> once it&apos;s approved and live
@@ -103,7 +103,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="mt-8 rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 transition"
+          className="mt-8 rounded-xl bg-[color:var(--mwm-navy)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           Back to Dashboard
         </button>
@@ -120,7 +120,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
       </div>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-3xl font-bold tracking-tight text-[color:var(--mwm-navy)]">
           {existingId ? 'Update Your Listing' : 'List Your Firm'}
         </h1>
         <p className="mt-2 text-neutral-600">
@@ -331,7 +331,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-[color:var(--mwm-navy)] px-4 py-3 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving...' : existingId ? 'Update Listing' : 'Submit Listing for Review'}
         </button>

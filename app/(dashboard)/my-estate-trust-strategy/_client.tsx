@@ -380,7 +380,7 @@ export default function MyEstateTrustStrategyClient({
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Gifting, Strategies & Trusts</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Gifting, Strategies & Trusts</h1>
         <p className="mt-1 text-sm text-gray-500">
           Manage your gifting program, estate transfer strategies, and trusts in one place.
         </p>

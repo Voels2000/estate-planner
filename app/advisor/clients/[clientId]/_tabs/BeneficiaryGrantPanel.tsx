@@ -127,7 +127,7 @@ export default function BeneficiaryGrantPanel({ householdId, initialGrants }: Pr
   return (
     <div className="bg-white rounded-xl border shadow-sm p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Beneficiary Access Grants</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">Beneficiary Access Grants</h2>
         <button
           onClick={() => setShowForm((v) => !v)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"

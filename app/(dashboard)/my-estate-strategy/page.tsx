@@ -45,7 +45,7 @@ export default async function MyEstateStrategyPage() {
 
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Estate Value &amp; Tax Horizons</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Estate Value &amp; Tax Horizons</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Estate Value & Tax Horizons"

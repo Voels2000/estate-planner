@@ -498,7 +498,7 @@ export default function StrategyTab({
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Client&apos;s Confirmed Plan</h2>
+          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">Client&apos;s Confirmed Plan</h2>
           <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
             Read-only — client owns this
           </span>
@@ -513,7 +513,7 @@ export default function StrategyTab({
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">
               Monte Carlo — Assumption Overrides
             </h2>
             {activeAssumptions && (
@@ -540,7 +540,7 @@ export default function StrategyTab({
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">
             Monte Carlo — Probabilistic Estate Tax Range
           </h2>
           <button

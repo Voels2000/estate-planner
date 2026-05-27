@@ -111,7 +111,7 @@ export default function ProspectModePage() {
 
   return (
     <div style={{ minHeight: '150vh' }}>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-6">Prospect Mode</h1>
+      <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-6">Prospect Mode</h1>
       <p className="text-sm text-neutral-500 mb-6">Generate an Estate Planning Opportunity Summary. No data is stored.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

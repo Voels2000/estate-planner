@@ -27,7 +27,7 @@ export default async function SocialSecurityPage() {
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Social Security</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Social Security</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Social Security"
@@ -48,7 +48,7 @@ export default async function SocialSecurityPage() {
   return (
     <div className='max-w-7xl mx-auto px-4 py-8'>
       <div className='mb-6'>
-        <h1 className="text-2xl font-bold text-neutral-900">Social Security</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Social Security</h1>
         <p className='text-sm text-neutral-500 mt-1'>
           Break-even claiming analysis and spousal coordination scenarios
         </p>

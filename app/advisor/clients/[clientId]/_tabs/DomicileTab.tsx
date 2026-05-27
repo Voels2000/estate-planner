@@ -243,7 +243,7 @@ export default function DomicileTab({
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-800">Domicile Risk Analysis</h2>
+          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">Domicile Risk Analysis</h2>
           <p className="text-sm text-slate-500 mt-0.5">
             Claimed domicile: <span className="font-medium text-slate-700">{claimed_domicile_state ?? '—'}</span>
             {updated_at && (
@@ -252,7 +252,7 @@ export default function DomicileTab({
           </p>
         </div>
         <div className="text-right">
-          <div className={`text-4xl font-bold ${scoreColor}`}>{score}</div>
+          <div className="text-4xl font-bold text-[color:var(--mwm-navy)]">{score}</div>
           <div className="text-xs text-slate-400 uppercase tracking-wide">Risk Score</div>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${levelBg} ${levelColor}`}>
             {levelLabel}
@@ -284,7 +284,7 @@ export default function DomicileTab({
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h3 className="text-sm font-semibold text-slate-700">Projected transition risk</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Projected transition risk</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Scenario: move to <span className="font-medium text-slate-700">{projectedTransition.targetState}</span> in{' '}
                 <span className="font-medium text-slate-700">{projectedTransition.transitionYear}</span>.
@@ -307,7 +307,7 @@ export default function DomicileTab({
 
         {/* ── Factor breakdown ── */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Factor Breakdown</h3>
+          <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-4">Factor Breakdown</h3>
           <div className="space-y-3">
             {factors.map(f => {
               const isConflict = f.value && f.value !== claimed_domicile_state
@@ -349,7 +349,7 @@ export default function DomicileTab({
 
           {/* ── Conflict states ── */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Conflict States</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Conflict States</h3>
             {conflicts.length === 0 ? (
               <div className="flex items-center gap-2 p-3 bg-[var(--mwm-sage-pale)] rounded-lg">
                 <span className="text-[color:var(--mwm-sage)]">✓</span>
@@ -357,11 +357,27 @@ export default function DomicileTab({
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {conflicts.map((state: string) => (
-                  <span key={state} className="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-sm font-semibold text-red-700">
-                    {state}
-                  </span>
-                ))}
+                {conflicts.map((state: string) => {
+                  const code = state.trim().toUpperCase()
+                  const isMn = code === 'MN'
+                  return (
+                    <span
+                      key={state}
+                      title={
+                        isMn
+                          ? 'Minnesota: outstanding domicile ties that conflict with claimed WA domicile. Resolve legal, registration, or tax connections to reduce challenge risk.'
+                          : `${code}: documented ties that conflict with the claimed domicile.`
+                      }
+                      className={`inline-flex cursor-help items-center rounded px-2 py-1 text-xs font-medium ${
+                        isMn
+                          ? 'rounded-lg border border-amber-200 bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800'
+                          : 'rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700'
+                      }`}
+                    >
+                      {code}
+                    </span>
+                  )
+                })}
               </div>
             )}
             {conflicts.length > 0 && (
@@ -374,7 +390,7 @@ export default function DomicileTab({
 
           {/* ── Recommendations ── */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Recommendations</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Recommendations</h3>
             {recs.length === 0 ? (
               <div className="flex items-center gap-2 p-3 bg-[var(--mwm-sage-pale)] rounded-lg">
                 <span className="text-[color:var(--mwm-sage)]">✓</span>
@@ -395,7 +411,7 @@ export default function DomicileTab({
           {/* ── Days present ── */}
           {states && Array.isArray(states) && states.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Days Present by State</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Days Present by State</h3>
               <div className="space-y-2">
                 {states.map((s: { state?: string | null; days_per_year?: number | null }, i: number) => {
                   const days = Number(s.days_per_year ?? 0)
@@ -458,7 +474,7 @@ export default function DomicileTab({
         />
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">Domicile Schedule</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Domicile Schedule</h3>
             <button
               type="button"
               onClick={() => setIsScheduleOpen((v) => !v)}
@@ -496,7 +512,7 @@ export default function DomicileTab({
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">Move Breakeven Analysis</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Move Breakeven Analysis</h3>
             <button
               type="button"
               onClick={() => setIsBreakevenOpen((v) => !v)}
@@ -522,7 +538,7 @@ export default function DomicileTab({
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">Inheritance Tax by State</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Inheritance Tax by State</h3>
             <button
               type="button"
               onClick={() => setIsInheritanceOpen((v) => !v)}

@@ -29,7 +29,7 @@ export default async function IncapacityPage() {
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Incapacity Planning</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Incapacity Planning</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Incapacity Planning"

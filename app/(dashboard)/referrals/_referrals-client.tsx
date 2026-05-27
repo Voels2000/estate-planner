@@ -65,7 +65,7 @@ export function ReferralsClient({ attorney, userName, userEmail }: Props) {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Attorney referral</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-[color:var(--mwm-navy)]">Attorney referral</h1>
       <p className="mt-2 text-neutral-600">
         We will email the attorney with your contact information so they can follow up with you directly.
       </p>
@@ -77,7 +77,7 @@ export function ReferralsClient({ attorney, userName, userEmail }: Props) {
           </p>
           <Link
             href="/attorney-directory"
-            className="mt-6 inline-flex rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800"
+            className="mt-6 inline-flex rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)]"
           >
             Browse attorneys
           </Link>
@@ -119,7 +119,7 @@ export function ReferralsClient({ attorney, userName, userEmail }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={sending}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-[color:var(--mwm-navy)] px-4 py-3 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {sending ? 'Sending…' : 'Send referral request'}
           </button>

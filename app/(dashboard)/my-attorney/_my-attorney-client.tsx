@@ -93,7 +93,7 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">My Attorney</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">My Attorney</h1>
         <p className="mt-1 text-sm text-neutral-500">
           Manage your estate planning attorney connections
         </p>
@@ -232,7 +232,7 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
             Find a verified estate planning attorney to help draft your wills, trusts, and legal documents.
           </p>
           <Link href="/find-attorney"
-            className="mt-4 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition">
+            className="mt-4 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition">
             Find an Attorney
           </Link>
         </div>

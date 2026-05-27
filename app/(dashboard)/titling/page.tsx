@@ -30,7 +30,7 @@ export default async function TitlingPage() {
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Titling & Beneficiaries</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Titling & Beneficiaries</h1>
         <UpgradeBanner
           requiredTier={3}
           moduleName="Titling & Beneficiaries"

@@ -337,7 +337,7 @@ export default function AnalyticsDashboardClient({ advisorId, advisorName }: Pro
         <Link href="/advisor" className="text-sm text-[color:var(--mwm-navy)] hover:underline">
           ← Advisor Portal
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">Book-of-Business Analytics</h1>
+        <h1 className="mt-2 text-2xl font-bold text-[color:var(--mwm-navy)]">Book-of-Business Analytics</h1>
         <p className="text-sm text-neutral-500 mt-1">
           {advisorName} · {data?.totalClients ?? '—'} active clients
         </p>
@@ -366,7 +366,7 @@ export default function AnalyticsDashboardClient({ advisorId, advisorName }: Pro
             ].map(item => (
               <div key={item.label} className="bg-white rounded-xl border border-neutral-200 px-4 py-4 shadow-sm">
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{item.label}</p>
-                <p className="text-2xl font-bold text-neutral-900 mt-1">{item.value}</p>
+                <p className="text-2xl font-bold text-[color:var(--mwm-navy)] mt-1">{item.value}</p>
               </div>
             ))}
           </div>

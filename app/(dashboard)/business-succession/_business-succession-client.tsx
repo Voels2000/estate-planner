@@ -65,7 +65,7 @@ export default function BusinessSuccessionClient({ initial }: Props) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Business Succession</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Business Succession</h1>
         <p className="mt-1 text-sm text-gray-600">
           A quick check on continuity planning for your business interests. Add detail on{' '}
           <Link href="/businesses" className="font-medium text-blue-700 underline-offset-2 hover:underline">

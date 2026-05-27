@@ -111,7 +111,7 @@ export default function NotesTab({ notes: initialNotes, clientId }: ClientViewSh
 
       {/* ── New note composer ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Add Note</h3>
+        <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Add Note</h3>
         <textarea
           className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent"
           rows={4}

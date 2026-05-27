@@ -99,7 +99,7 @@ export default function DocumentsTab({ legalDocuments, household }: ClientViewSh
             <div key={type} className="bg-white rounded-xl border border-slate-200 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{DOC_ICONS[type] ?? '📄'}</span>
-                <h3 className="text-sm font-semibold text-slate-800">
+                <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">
                   {DOC_TYPE_LABELS[type] ?? type}
                 </h3>
                 <span className="text-xs text-slate-400">

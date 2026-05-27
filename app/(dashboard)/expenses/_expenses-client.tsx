@@ -163,7 +163,7 @@ export default function ExpensesClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Expenses</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Expenses</h1>
           <p className="mt-1 text-sm text-neutral-600">
             Total annual ({currentYear}):{' '}
             <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
@@ -172,7 +172,7 @@ export default function ExpensesClient({
         <button
           type="button"
           onClick={() => { setEditExpense(null); setShowModal(true) }}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+          className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           + Add Expense
         </button>
@@ -545,7 +545,7 @@ function ExpenseModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+              className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
             >
               {isSubmitting ? 'Saving...' : editExpense ? 'Save Changes' : 'Add Expense'}
             </button>

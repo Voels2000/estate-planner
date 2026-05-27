@@ -145,7 +145,7 @@ export function FeedbackButton({ userId }: { userId: string }) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+                    className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
                   >
                     {isSubmitting ? 'Sending...' : 'Send Feedback'}
                   </button>

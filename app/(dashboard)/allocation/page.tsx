@@ -20,7 +20,7 @@ export default async function AssetAllocationPage() {
   if (access.tier < 2) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Asset Allocation</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Asset Allocation</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Asset Allocation"

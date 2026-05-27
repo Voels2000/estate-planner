@@ -270,7 +270,7 @@ export function ProfileClient({
         />
       )}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Your Profile</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Your Profile</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Complete your household information for accurate projections.
         </p>

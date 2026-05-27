@@ -768,7 +768,7 @@ export default function TitlingClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Titling & Beneficiaries</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Titling & Beneficiaries</h1>
         <p className="mt-1 text-sm text-neutral-600">
           How each asset is titled and who inherits it. Affects estate distribution and probate.
         </p>
@@ -831,7 +831,7 @@ export default function TitlingClient({
             {tab.label}
             {tab.count !== null && (
               <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
-                activeTab === tab.key ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500'
+                activeTab === tab.key ? 'bg-[color:var(--mwm-navy)] text-white' : 'bg-neutral-100 text-neutral-500'
               }`}>
                 {tab.count}
               </span>
@@ -2116,7 +2116,7 @@ function BeneficiaryGapModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+            className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
           >
             {isSubmitting ? 'Saving…' : 'Apply These Defaults'}
           </button>
@@ -2456,7 +2456,7 @@ function ModalButtons({ onClose, isSubmitting, isEdit }: { onClose: () => void; 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+        className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
       >
         {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Add'}
       </button>

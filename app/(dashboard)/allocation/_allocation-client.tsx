@@ -231,7 +231,7 @@ export default function AllocationClient({
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Asset Allocation</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Asset Allocation</h1>
         <p className="text-sm text-gray-500 mt-1">
           {name}&apos;s portfolio · {riskLabel} risk
           {data?.age ? `, age ${data.age}` : ''}

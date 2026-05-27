@@ -123,7 +123,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
           <div className="flex items-start justify-between mb-5">
             <div>
               <div className="flex items-center gap-3 mb-1 flex-wrap">
-                <h1 className="text-2xl font-semibold text-slate-900">{clientName}</h1>
+                <h1 className="text-2xl font-semibold text-[color:var(--mwm-navy)]">{clientName}</h1>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     CLIENT_STATUS_BADGE[clientStatus] ?? 'bg-slate-100 text-slate-700'

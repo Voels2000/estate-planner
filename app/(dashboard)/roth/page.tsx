@@ -31,7 +31,7 @@ export default async function RothPage() {
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Roth Conversion</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Roth Conversion</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Roth Conversion"
@@ -187,7 +187,7 @@ export default async function RothPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-2">
-      <h1 className="text-2xl font-bold text-neutral-900">Roth Conversion</h1>
+      <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Roth Conversion</h1>
       <p className="text-sm text-muted-foreground pb-2">
         Year-by-year Roth conversion strategy to minimize lifetime federal
         and state income tax.

@@ -134,7 +134,7 @@ export function LiabilitiesClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Liabilities</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Liabilities</h1>
           <div className="flex items-center gap-4 mt-1">
             <p className="text-sm text-neutral-600">
               Total balance: <span className="font-semibold text-red-600">{formatDollars(totalBalance)}</span>
@@ -148,7 +148,7 @@ export function LiabilitiesClient({
         </div>
         <button
           onClick={() => { setEditLiability(null); setShowModal(true) }}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+          className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           + Add Liability
         </button>
@@ -178,7 +178,7 @@ export function LiabilitiesClient({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                    <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{groupLabel}</span>
                     <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
                       {groupItems.length}
                     </span>
@@ -346,7 +346,7 @@ function LiabilityModal({ editLiability, liabilityTypes, person1Name, person2Nam
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
+              className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition">
               {isSubmitting ? 'Saving...' : editLiability ? 'Save Changes' : 'Add Liability'}
             </button>
           </div>

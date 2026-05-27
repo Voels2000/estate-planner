@@ -39,7 +39,7 @@ export function InviteAdvisorOnboardingClient({
     <div className="mx-auto max-w-lg px-4 py-16">
       <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
         <p className="text-sm font-medium text-blue-700">Step 2 of 2</p>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">Invite your advisor</h1>
+        <h1 className="mt-2 text-2xl font-bold text-[color:var(--mwm-navy)]">Invite your advisor</h1>
         <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
           Hi {consumerName.split(' ')[0] || 'there'} — many clients work with a financial advisor or CPA.
           Invite yours so they can view your plan and collaborate on My Wealth Maps.
@@ -48,7 +48,7 @@ export function InviteAdvisorOnboardingClient({
         <div className="mt-8 space-y-3">
           <a
             href={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
-            className="flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            className="flex w-full items-center justify-center rounded-lg bg-[color:var(--mwm-navy)] px-4 py-3 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
           >
             Email my advisor an invite
           </a>

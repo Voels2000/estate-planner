@@ -378,7 +378,7 @@ export default function EstateTab({
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-700">Admin Expense Estimate</p>
+            <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">Admin Expense Estimate</p>
             <p className="text-xs text-slate-400 mt-0.5">
               IRS Form 706 deduction — executor fees, legal, accounting. Default 2%. Typical range 1–4%.
               Consult estate attorney for precise figure.
@@ -407,7 +407,7 @@ export default function EstateTab({
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Estate Flow</h2>
+          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">Estate Flow</h2>
           <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button
               onClick={() => setDeathView('first_death')}
@@ -453,7 +453,7 @@ export default function EstateTab({
             onClick={() => toggleSection('coreEstateDocuments')}
             className="w-full flex items-center justify-between text-left mb-4"
           >
-            <h3 className="text-sm font-semibold text-slate-700">Core Estate Documents</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Core Estate Documents</h3>
             <span className="text-xs text-slate-500">
               {expandedSections.coreEstateDocuments ? 'Hide' : 'Show'}
             </span>
@@ -496,7 +496,7 @@ export default function EstateTab({
             onClick={() => toggleSection('beneficiaryDesignations')}
             className="w-full flex items-center justify-between text-left mb-4"
           >
-            <h3 className="text-sm font-semibold text-slate-700">Beneficiary Designations</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Beneficiary Designations</h3>
             <span className="text-xs text-slate-500">
               {expandedSections.beneficiaryDesignations ? 'Hide' : 'Show'}
             </span>
@@ -574,7 +574,7 @@ export default function EstateTab({
             className="w-full px-5 py-4 border-b border-slate-100 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
-              <h3 className="text-sm font-semibold text-slate-700">Estate Conflicts</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Estate Conflicts</h3>
               {conflictReport.critical > 0 && (
                 <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                   {conflictReport.critical} critical
@@ -634,7 +634,7 @@ export default function EstateTab({
             className="w-full flex items-center justify-between mb-4 text-left"
           >
             <div>
-              <h3 className="text-sm font-semibold text-slate-700">Business Interests</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Business Interests</h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 DLOC/DLOM discounts apply to taxable estate only, not gross estate.
                 Appraiser-supplied values only — requires qualified appraisal for Form 706.
@@ -751,7 +751,7 @@ export default function EstateTab({
           onClick={() => toggleSection('realEstateTitling')}
           className="w-full flex items-center justify-between mb-4 text-left"
         >
-          <h3 className="text-sm font-semibold text-slate-700">Real Estate & Titling</h3>
+          <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Real Estate & Titling</h3>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <span className="text-sm font-bold text-slate-800">{formatCurrency(totalRE - totalMortgage)}</span>
@@ -818,7 +818,7 @@ export default function EstateTab({
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-700">Insurance Policies</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Insurance Policies</h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 Estate-owned policies are included at death benefit value. Mark as excluded when
                 ILIT transfer is complete and effective.
@@ -892,7 +892,7 @@ export default function EstateTab({
           onClick={() => toggleSection('retirementInvestmentAccounts')}
           className="w-full flex items-center justify-between text-left mb-4"
         >
-          <h3 className="text-sm font-semibold text-slate-700">Retirement & Investment Accounts</h3>
+          <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Retirement & Investment Accounts</h3>
           <span className="text-xs text-slate-500">
             {expandedSections.retirementInvestmentAccounts ? 'Hide' : 'Show'}
           </span>
@@ -986,7 +986,7 @@ function BeneficiaryRow({ b }: { b: BeneficiaryRowType }) {
         )}
       </div>
       <div className="text-right">
-        <span className="text-sm font-semibold text-slate-700">{b.allocation_pct ? `${b.allocation_pct}%` : '—'}</span>
+        <span className="text-sm font-semibold text-[color:var(--mwm-navy)]">{b.allocation_pct ? `${b.allocation_pct}%` : '—'}</span>
         {b.account_type && <span className="text-xs text-slate-400 ml-1.5">{b.account_type}</span>}
       </div>
     </div>

@@ -18,7 +18,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
     <>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-neutral-900" suppressHydrationWarning>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]" suppressHydrationWarning>
             {greeting}, {firstName} 👋
           </h1>
           <p className="mt-1 text-sm text-neutral-600">Your estate planning dashboard.</p>

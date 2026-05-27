@@ -80,7 +80,7 @@ export function AdvisorDetailClient({ advisor, userName, userEmail }: Props) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-neutral-900">{advisor.firm_name}</h1>
+                  <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">{advisor.firm_name}</h1>
                   {advisor.is_verified && (
                     <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
                       ✓ Verified

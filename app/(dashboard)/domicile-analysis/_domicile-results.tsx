@@ -116,7 +116,7 @@ export default function DomicileResults({
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600">Claimed domicile</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900">
+            <p className="mt-1 text-2xl font-semibold text-[color:var(--mwm-navy)]">
               {analysis.claimed_domicile_state}
             </p>
           </div>

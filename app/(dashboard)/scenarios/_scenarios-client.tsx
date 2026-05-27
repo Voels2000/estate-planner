@@ -249,7 +249,7 @@ export default function ScenariosClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Scenarios</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Scenarios</h1>
           <p className="mt-1 text-sm text-neutral-600 max-w-xl">
             {PLANNING_SURFACES.find((s) => s.id === 'scenarios')!.description} Base Case is locked to your profile;
             customize Scenario B and C freely.
@@ -270,7 +270,7 @@ export default function ScenariosClient({
               <p className="mt-2 text-xs text-neutral-400">Locked to your profile</p>
             </div>
             <button onClick={() => handleSave(0)} disabled={isSaving === 0 || !resultA}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
+              className="rounded-lg bg-[color:var(--mwm-navy)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition">
               {isSaving === 0 ? 'Saving…' : savedIdx === 0 ? '✓ Saved' : 'Save'}
             </button>
           </div>

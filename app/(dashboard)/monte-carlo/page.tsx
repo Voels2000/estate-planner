@@ -25,7 +25,7 @@ export default async function MonteCarloPage() {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Monte Carlo</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Monte Carlo</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Monte Carlo"

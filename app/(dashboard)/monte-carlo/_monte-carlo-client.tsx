@@ -563,7 +563,7 @@ export function MonteCarloClient() {
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Monte Carlo Simulations</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Monte Carlo Simulations</h1>
           <p className="text-gray-500 mt-1">Probabilistic retirement modeling across 1,000+ market scenarios</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 shrink-0 mt-1">

@@ -131,7 +131,7 @@ export default function TaxTab({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Law Scenario</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-3">Law Scenario</h2>
         <p className="text-sm text-gray-500 mb-4">
           Select the federal tax law assumption for all calculations on this tab.
         </p>
@@ -143,12 +143,12 @@ export default function TaxTab({
               className={`
                 text-left rounded-lg border p-4 transition-colors
                 ${lawScenario === option.value
-                  ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                  ? 'border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)] ring-1 ring-[color:var(--mwm-gold)]'
                   : 'border-gray-200 bg-white hover:border-gray-300'
                 }
               `}
             >
-              <div className={`font-medium text-sm ${lawScenario === option.value ? 'text-blue-700' : 'text-gray-900'}`}>
+              <div className={`font-medium text-sm ${lawScenario === option.value ? 'text-[color:var(--mwm-navy)]' : 'text-gray-700'}`}>
                 {option.label}
               </div>
               <div className="text-xs text-gray-500 mt-1">{option.description}</div>
@@ -158,7 +158,7 @@ export default function TaxTab({
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Federal & State Tax Waterfall</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">Federal & State Tax Waterfall</h2>
         {lawScenario === 'current_law' && !hasHorizonFederalInputs && (
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Federal current-law estimate is unavailable because required horizon inputs are missing.
@@ -190,7 +190,7 @@ export default function TaxTab({
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">State Tax Detail</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">State Tax Detail</h2>
         <StateTaxPanel
           grossEstate={grossEstate}
           stateCode={stateCode}
@@ -217,7 +217,7 @@ export default function TaxTab({
 
       {household?.state_primary === 'NY' && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">NY Cliff Analysis</h2>
+          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">NY Cliff Analysis</h2>
           <NYCliffValidator
             year={currentYear}
             dbExemptions={stateExemptions}

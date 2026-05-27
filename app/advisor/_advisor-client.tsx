@@ -327,7 +327,7 @@ export default function AdvisorClientPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Advisor Portal</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Advisor Portal</h1>
           <p className="mt-1 text-sm text-neutral-500">
             {acceptedClients.length} active client{acceptedClients.length !== 1 ? 's' : ''}
             {pendingClients.length > 0 ? ` · ${pendingClients.length} pending` : ''}
@@ -337,7 +337,7 @@ export default function AdvisorClientPage({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveTab('invite')}
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+            className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
           >
             + Add Client
           </button>
@@ -781,7 +781,7 @@ Ref: ${referralCode}`
             </div>
             <a
               href="/attorney-directory"
-              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
             >
               ⚖️ Open Attorney Directory →
             </a>
@@ -801,7 +801,7 @@ Ref: ${referralCode}`
             </div>
             <a
               href="/list-your-practice"
-              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 transition"
+              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
             >
               📋 Manage Your Listing →
             </a>

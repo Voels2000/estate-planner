@@ -18,7 +18,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
   if (!isAdvisor && tier < 3) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-2">Export Estate Plan</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">Export Estate Plan</h1>
         <p className="text-neutral-500">
           Export a full estate plan summary — including conflicts, asset titling, and estate
           tax exposure — for your attorney or advisor review. Available with the Estate plan.
@@ -56,7 +56,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+      <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">
         {isAdvisor ? 'Advisor Estate Plan Report' : 'Export Estate Plan'}
       </h1>
       <p className="text-neutral-500 mb-8">

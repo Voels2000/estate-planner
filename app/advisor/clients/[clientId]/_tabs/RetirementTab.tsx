@@ -99,6 +99,9 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
 
         {/* ── Social Security ── */}
         <div className="space-y-4">
+          <h3 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">
+            Social Security
+          </h3>
           <SsPiaCard
             title={household.person1_first_name ?? 'Person 1'}
             pia={pia1}
@@ -121,7 +124,9 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
 
         {/* ── RMD Timeline ── */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">RMD Timeline</h3>
+          <h3 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">
+            RMD Timeline
+          </h3>
 
           <div className="space-y-4">
             <RMDPersonRow
@@ -165,7 +170,7 @@ export default function RetirementTab({ household, assets }: ClientViewShellProp
 
       {/* ── Planning assumptions ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Planning Assumptions</h3>
+        <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-4">Planning Assumptions</h3>
         <div className="grid grid-cols-4 gap-x-8 gap-y-4 text-sm">
           <Assumption label="Inflation Rate"         value={household.inflation_rate ? `${household.inflation_rate}%` : '—'} />
           <Assumption label="Growth (Accumulation)"  value={household.growth_rate_accumulation ? `${household.growth_rate_accumulation}%` : '—'} />
@@ -204,7 +209,7 @@ function SsPiaCard({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">
+      <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-4">
         Social Security — {title}
       </h3>
       <div className="grid grid-cols-3 gap-4">
@@ -269,7 +274,7 @@ function RMDPersonRow({ name, age, yearsToRMD, rmdAge, traditionalBalance }: {
   return (
     <div className="p-3 bg-slate-50 rounded-lg">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-semibold text-slate-800">{name}, age {age}</span>
+        <span className="text-sm font-semibold text-[color:var(--mwm-navy)]">{name}, age {age}</span>
         <span className={`text-xs px-2 py-0.5 rounded font-medium ${
           urgency === 'critical' ? 'bg-red-100 text-red-700'     :
           urgency === 'high'     ? 'bg-orange-100 text-orange-700' :

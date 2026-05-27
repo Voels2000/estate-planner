@@ -199,7 +199,7 @@ export default function MyFamilyClient({
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">My Family</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">My Family</h1>
           <p className="mt-1 text-sm text-neutral-600">
             List people in your household and extended family. Mark anyone more than one generation below
             you when that applies, and include who should appear as a beneficiary in your estate flow.
@@ -217,7 +217,7 @@ export default function MyFamilyClient({
         <button
           type="button"
           onClick={openAdd}
-          className="shrink-0 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          className="shrink-0 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)]"
         >
           Add family member
         </button>
@@ -386,7 +386,7 @@ export default function MyFamilyClient({
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60"
+                  className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-60"
                 >
                   {saving ? 'Saving…' : 'Save'}
                 </button>

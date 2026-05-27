@@ -66,7 +66,7 @@ export default function SecurityClient({ isEnrolled, factorId }: Props) {
         </p>
         <Link
           href="/mfa-enroll"
-          className="mt-5 inline-flex rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="mt-5 inline-flex rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[color:var(--mwm-navy-light)]"
         >
           Set up authenticator
         </Link>

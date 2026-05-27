@@ -157,7 +157,7 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full rounded-xl bg-neutral-900 px-6 py-4 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+            className="w-full rounded-xl bg-[color:var(--mwm-navy)] px-6 py-4 text-sm font-semibold text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
           >
             {saving ? 'Saving...' : 'See My Estate Readiness Score →'}
           </button>

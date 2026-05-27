@@ -44,7 +44,9 @@ export default function DigitalAssetList({ assets, householdId, onDeleted }: Pro
 
   return (
     <div className="bg-white rounded-xl border shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Saved Digital Assets</h2>
+      <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">
+        Saved Digital Assets
+      </h2>
       <div className="space-y-3">
         {assets.map((asset) => (
           <div key={asset.id} className="flex items-start justify-between border rounded-lg p-3">

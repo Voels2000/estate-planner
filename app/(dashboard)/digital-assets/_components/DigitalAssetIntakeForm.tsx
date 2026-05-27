@@ -80,7 +80,9 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border shadow-sm p-6 space-y-5">
-      <h2 className="text-lg font-semibold text-gray-900">Add Digital Asset</h2>
+      <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3">
+        Add Digital Asset
+      </h2>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Asset Type</label>
@@ -205,7 +207,7 @@ export default function DigitalAssetIntakeForm({ householdId, onSaved }: Props) 
       <button
         type="submit"
         disabled={saving}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
+        className="w-full bg-[color:var(--mwm-navy)] hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
       >
         {saving ? 'Saving...' : 'Save Digital Asset'}
       </button>

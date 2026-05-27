@@ -174,7 +174,7 @@ export function IncomeClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Income</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Income</h1>
           <p className="mt-1 text-sm text-neutral-600">
             Total annual ({currentCalendarYear}):{' '}
             <span className="font-semibold text-neutral-900">{formatDollars(totalAnnual)}</span>
@@ -195,7 +195,7 @@ export function IncomeClient({
           <button
             type="button"
             onClick={openAdd}
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+            className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[color:var(--mwm-navy-light)]"
           >
             + Add Income
           </button>
@@ -230,7 +230,7 @@ export function IncomeClient({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-neutral-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                    <span className="text-sm font-semibold text-neutral-700">{groupLabel}</span>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{groupLabel}</span>
                     <span className="text-xs text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded-full">
                       {groupItems.length}
                     </span>
@@ -497,7 +497,7 @@ function IncomeModal({
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
+              className="flex-1 rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition">
               {isSubmitting ? 'Saving...' : editRow ? 'Save Changes' : 'Add Income'}
             </button>
           </div>

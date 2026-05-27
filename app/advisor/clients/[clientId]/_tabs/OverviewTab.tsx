@@ -134,7 +134,7 @@ export default function OverviewTab({
         {/* ── Net worth + asset breakdown ── */}
         <div className="col-span-1 space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Balance Sheet</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-4">Balance Sheet</h3>
 
             {/* Assets vs liabilities bar */}
             <div className="mb-4">
@@ -163,7 +163,7 @@ export default function OverviewTab({
 
           {/* Asset breakdown */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Asset Breakdown</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Asset Breakdown</h3>
             <div className="space-y-2">
               {assetGroups.map(g => (
                 <div key={g.label} className="flex items-center justify-between">
@@ -185,7 +185,7 @@ export default function OverviewTab({
 
           {/* Target allocation */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Target Allocation</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Target Allocation</h3>
             <div className="flex rounded-lg overflow-hidden h-4 mb-3">
               <div className="bg-[var(--mwm-navy)]" style={{ width: `${stocks}%` }} title={`Stocks ${stocks}%`} />
               <div className="bg-sky-400" style={{ width: `${bonds}%` }} title={`Bonds ${bonds}%`} />
@@ -200,7 +200,7 @@ export default function OverviewTab({
 
           {businesses && businesses.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Business Interests</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Business Interests</h3>
               <div className="space-y-3">
                 {businesses.map((b) => (
                   <div key={b.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg">
@@ -221,7 +221,7 @@ export default function OverviewTab({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">
                         {formatCurrency(b.owner_estimated_value ?? b.estimated_value ?? 0, true)}
                       </p>
                       <p className="text-xs text-slate-400">Your share</p>
@@ -234,7 +234,7 @@ export default function OverviewTab({
 
           {insurancePolicies && insurancePolicies.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Insurance Policies</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">Insurance Policies</h3>
               <div className="space-y-3">
                 {insurancePolicies.map((p) => (
                   <div key={p.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg">
@@ -257,7 +257,7 @@ export default function OverviewTab({
                     <div className="text-right">
                       {p.death_benefit && (
                         <>
-                          <p className="text-sm font-semibold text-slate-800">{formatCurrency(p.death_benefit, true)}</p>
+                          <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">{formatCurrency(p.death_benefit, true)}</p>
                           <p className="text-xs text-slate-400">Death benefit</p>
                         </>
                       )}
@@ -273,7 +273,7 @@ export default function OverviewTab({
         <div className="col-span-2">
           <div className="bg-white rounded-xl border border-slate-200 p-5 h-full">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-700">Planning Gap Analysis</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Planning Gap Analysis</h3>
               <span className="text-xs text-slate-400">{gaps.length} gap{gaps.length !== 1 ? 's' : ''} identified</span>
             </div>
 
@@ -300,7 +300,7 @@ export default function OverviewTab({
 
       {/* ── Household details ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Household Profile</h3>
+        <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-4">Household Profile</h3>
         <div className="grid grid-cols-4 gap-x-8 gap-y-3 text-sm">
           <Detail label="Primary" value={`${household.person1_first_name} ${household.person1_last_name}`} />
           <Detail label="Age" value={p1Age !== null ? String(p1Age) : '—'} />

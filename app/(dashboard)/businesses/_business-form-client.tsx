@@ -119,7 +119,7 @@ export default function BusinessFormClient({
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Business Interests</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Business Interests</h1>
           <p className="text-sm text-neutral-500 mt-1">
             Closely-held businesses, partnerships, and private equity interests.
           </p>
@@ -129,7 +129,7 @@ export default function BusinessFormClient({
             setEditing(null)
             setShowForm(true)
           }}
-          className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
+          className="px-4 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] transition"
         >
           + Add Business
         </button>
@@ -142,7 +142,7 @@ export default function BusinessFormClient({
           <p className="text-xs text-neutral-400 mt-1">Add closely-held businesses, partnerships, or private equity</p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-4 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition"
+            className="mt-4 px-4 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] transition"
           >
             Add your first business
           </button>
@@ -392,7 +392,7 @@ export default function BusinessFormClient({
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition"
+                className="px-5 py-2 bg-[color:var(--mwm-navy)] text-white text-sm font-medium rounded-lg hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
               >
                 {saving ? 'Saving...' : editing ? 'Save Changes' : 'Add Business'}
               </button>

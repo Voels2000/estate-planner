@@ -32,7 +32,7 @@ export default async function DigitalAssetsPage() {
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">Digital Assets</h1>
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Digital Assets</h1>
         <UpgradeBanner
           requiredTier={2}
           moduleName="Digital Assets"
@@ -62,7 +62,7 @@ export default async function DigitalAssetsPage() {
       <DisclaimerBanner />
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Digital Assets</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Digital Assets</h1>
           <p className="text-gray-600 mt-1 text-sm">
             Catalogue your digital assets so your executor and beneficiaries can locate and manage
             them. Credentials are never required - the key details to act on your behalf.

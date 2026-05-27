@@ -254,7 +254,7 @@ export function ImportClient({
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Import Data</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Import Data</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Upload CSV or Excel files. Headers are detected automatically; edit cells and mapping before
           importing. Committed imports stay in history; pending imports can be removed.
@@ -299,7 +299,7 @@ export function ImportClient({
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition"
+                  className="rounded-lg bg-[color:var(--mwm-navy)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
                 >
                   Choose File
                 </button>
@@ -559,7 +559,7 @@ export function ImportClient({
               type="button"
               onClick={() => handleCommit()}
               disabled={isCommitting || isUploading || editableRows.length === 0}
-              className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+              className="rounded-lg bg-[color:var(--mwm-navy)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 transition"
             >
               {isCommitting ? 'Importing...' : `Import into ${TABLE_LABELS[targetTable]}`}
             </button>

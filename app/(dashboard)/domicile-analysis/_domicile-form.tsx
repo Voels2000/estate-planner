@@ -173,7 +173,9 @@ export default function DomicileForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <h2 className="text-base font-medium text-gray-900 mb-4">Claimed domicile state</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">
+          Claimed domicile state
+        </h2>
         <div className="max-w-xs">
           <label className={labelClass}>State you intend as your permanent home</label>
           <select
@@ -193,7 +195,9 @@ export default function DomicileForm({
       </div>
 
       <div>
-        <h2 className="text-base font-medium text-gray-900 mb-1">States and days spent per year</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-1">
+          States and days spent per year
+        </h2>
         <p className="text-sm text-gray-500 mb-4">
           Include every state where you spend time. Days over 183 in any state can trigger statutory
           residency.
@@ -253,7 +257,9 @@ export default function DomicileForm({
       </div>
 
       <div>
-        <h2 className="text-base font-medium text-gray-900 mb-1">Domicile factors</h2>
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-1">
+          Domicile factors
+        </h2>
         <p className="text-sm text-gray-500 mb-4">
           Courts use these objective factors to determine your true domicile. Leave blank if not
           applicable.
