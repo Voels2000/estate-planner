@@ -6,11 +6,13 @@ import {
 } from '../../../scripts/e2e-test-identities'
 import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 
-const CANONICAL_BY_EMAIL = new Map(
-  Object.values(E2E_IDENTITIES)
-    .filter((id): id is { email: string; password: string } => 'password' in id && !!id.email)
-    .map((id) => [id.email.toLowerCase(), id.password]),
-)
+const CANONICAL_BY_EMAIL = new Map<string, string>([
+  [E2E_IDENTITIES.consumer.email, E2E_IDENTITIES.consumer.password],
+  [E2E_IDENTITIES.consumerTier1.email, E2E_IDENTITIES.consumerTier1.password],
+  [E2E_IDENTITIES.advisor.email, E2E_IDENTITIES.advisor.password],
+  [E2E_IDENTITIES.advisorClient.email, E2E_IDENTITIES.advisorClient.password],
+  [E2E_IDENTITIES.attorneyPortal.email, E2E_IDENTITIES.attorneyPortal.password],
+].map(([email, password]) => [email.toLowerCase(), password] as const))
 
 /** Canonical password for known e2e emails; otherwise env or default. */
 export function resolveE2ePassword(email: string, envPassword?: string): string {
