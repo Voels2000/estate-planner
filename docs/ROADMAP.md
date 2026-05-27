@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS; Sprint 17 go-live prep)
+# Last updated: 2026-05-31 (strategy reversal lifecycle; gifting plan + delete warning)
 
 ---
 
@@ -49,6 +49,14 @@
 - `[x]` Roth optimizer **Use in Transfer Strategies →** + `openPanel=roth`
 - `[x]` Docs — CONSUMER_FLOWS, MASTER_ARCHITECTURE, DATABASE_SCHEMA_REFERENCE, SCHEMA_CHANGELOG, DECISION_LOG, smoke §10c
 - `[ ]` Playwright promote flow (optional)
+
+### Strategy reversal lifecycle (2026-05-31) ✅
+
+- `[x]` Migration `20260531120000` — reversal audit columns on `strategy_line_items`
+- `[x]` `PATCH` actions: promote, return_to_sandbox, withdraw, demote (consumer-owned only)
+- `[x]` In My Plan reversal UI + Strategy history; gifting plan card + gift-delete warning
+- `[x]` Advisor Step 3 **Withdrawn by Client** with reversal reason
+- `[x]` Docs — MASTER_ARCHITECTURE, CONSUMER_FLOWS, DATABASE_SCHEMA, SCHEMA_CHANGELOG
 
 ## ⚠️ Go-live gate
 

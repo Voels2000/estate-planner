@@ -51,6 +51,18 @@ Consumers and advisors share one **household** data model but operate in separat
 - Entry points writing `illustrative` first: modeled chips (GRAT, CRT, CLAT, Roth, Liquidity), SLAT/ILIT/DAF forms, Roth optimizer **Use in Transfer Strategies** (`/roth` → `/my-estate-trust-strategy?tab=strategies&openPanel=roth`).
 - Annual gifting on trust-strategy tab still writes `probable` directly (committed program).
 
+**Strategy reversal lifecycle (2026-05-31):**
+
+| Action | From | To | Reason required | Advisor sees |
+|---|---|---|---|---|
+| Return to sandbox | `probable` | `illustrative` | No | — |
+| Withdraw | `probable` / `certain` | `is_active=false` + `consumer_withdrawn` | Encouraged | Withdrawn + reason in Step 3 |
+| Unwind execution | `certain` | `probable` | Encouraged | Reason when provided |
+
+- Consumer-only: `PATCH /api/strategy-line-items` `{ id, action, reversal_reason? }`; verifies `households.owner_id`.
+- Gifting: delete gift log warns when plan used `synced_from_gift_history`; optional withdraw plan in same step.
+- Audit: `reversed_from`, `withdrawn_at`, `previously_active_at`, `reversal_reason` on row.
+
 **2. Monte Carlo assumptions**
 
 - Rows in `advisor_projection_assumptions`; changes audited in `projection_assumption_audit`.
@@ -89,6 +101,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor portal UX-5 | Strategy tab layout: redundant full-width panels removed; Step 3 **Recommendations & Impact** + `StrategyImpactPanel`; **Strategy Horizon** below Step 3 (`StrategyHorizonTable` + `CompositeOverlay`) — SCHEMA_CHANGELOG UX-5 |
 | Advisor portal UX-5b | `CompositeOverlay` default `recommendations` mode; manual entry removed — SCHEMA_CHANGELOG UX-5b |
 | Consumer strategy sandbox → actuals | Transfer Strategies **Strategy Sandbox** / **In My Plan**; `promoteConfidence` PATCH; Roth optimizer handoff — SCHEMA_CHANGELOG 2026-05-27 |
+| Consumer strategy reversal | Return to sandbox / withdraw / unwind; gifting plan card + delete warning; advisor **Withdrawn by Client** — SCHEMA_CHANGELOG 2026-05-31 |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**

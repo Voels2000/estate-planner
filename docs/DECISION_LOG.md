@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS)
+# Last updated: 2026-05-31 (strategy reversal lifecycle)
+
+## Strategy reversal — logged withdraw, consumer-owned (2026-05-31)
+
+**Decision:** Consumers can reverse confirmed strategies without hard-deleting rows. `PATCH /api/strategy-line-items` actions: `return_to_sandbox` (probable → illustrative), `withdraw` (`is_active=false`, `consumer_withdrawn`, optional `reversal_reason`), `demote` (certain → probable). Only `households.owner_id` may reverse. Gifting: deleting a synced gift log warns before leaving orphan plan rows; optional withdraw in same step.
+
+**Reasoning:** Gift history and plan commitment are separate stores; delete gift alone left stale `outside_strategy_total`. Reversal preserves audit trail for advisors and compliance while restoring estate accuracy immediately via `is_active=false`.
+
+**Docs:** [MASTER_ARCHITECTURE.md § Strategy reversal](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction), [SCHEMA_CHANGELOG.md § Strategy reversal](./SCHEMA_CHANGELOG.md).
+
+---
 
 ## Strategy sandbox → actuals — illustrative first, explicit promote (2026-05-27)
 

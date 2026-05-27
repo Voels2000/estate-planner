@@ -628,9 +628,11 @@ export async function loadAdvisorClientDatasets(
     inc.strategyLineItems
       ? supabase
           .from('strategy_line_items')
-          .select('id, strategy_source, source_role, amount, sign, confidence_level, effective_year, is_active, consumer_accepted, consumer_rejected')
+          .select(
+            'id, strategy_source, source_role, amount, sign, confidence_level, effective_year, is_active, consumer_accepted, consumer_rejected, consumer_withdrawn, withdrawn_at, reversal_reason, reversed_from',
+          )
           .eq('household_id', params.householdId)
-          .eq('is_active', true)
+          .or('is_active.eq.true,and(consumer_withdrawn.eq.true,is_active.eq.false)')
       : Promise.resolve(emptyList),
     inc.healthScore
       ? fetchHealthScore(params.householdId)

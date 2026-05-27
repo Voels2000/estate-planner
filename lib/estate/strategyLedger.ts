@@ -141,7 +141,12 @@ export type AdvisorStrategyLineItemSummary = StrategyLineItemSummary &
     | 'consumer_rejected'
     | 'accepted_at'
     | 'rejected_at'
-  >
+  > & {
+    consumer_withdrawn?: boolean
+    withdrawn_at?: string | null
+    reversal_reason?: string | null
+    reversed_from?: string | null
+  }
 
 export async function fetchStrategyLineItems(
   householdId: string,
@@ -161,12 +166,12 @@ export async function fetchStrategyLineItems(
     const { data, error } = await supabase
       .from('strategy_line_items')
       .select(
-        'id, amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role, consumer_accepted, consumer_rejected, accepted_at, rejected_at',
+        'id, amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role, consumer_accepted, consumer_rejected, accepted_at, rejected_at, consumer_withdrawn, withdrawn_at, reversal_reason, reversed_from',
       )
       .eq('household_id', householdId)
       .eq('source_role', 'advisor')
       .is('projection_year', null)
-      .eq('is_active', true)
+      .or('is_active.eq.true,and(consumer_withdrawn.eq.true,is_active.eq.false)')
 
     if (error) throw new Error(`fetchStrategyLineItems: ${error.message}`)
     return (data ?? []) as AdvisorStrategyLineItemSummary[]

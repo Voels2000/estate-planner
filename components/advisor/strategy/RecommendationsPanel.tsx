@@ -38,6 +38,32 @@ function formatDate(iso: string | null | undefined): string {
   })
 }
 
+function WithdrawnRecommendationRow({ row }: { row: AdvisorStrategyLineItemSummary }) {
+  return (
+    <div className="flex items-start justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 opacity-75">
+      <div>
+        <p className="text-sm font-medium text-gray-600">
+          {formatStrategySource(row.strategy_source)}
+        </p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          {row.amount != null && row.amount > 0 && (
+            <p className="text-xs text-gray-400">{MONEY.format(row.amount)}</p>
+          )}
+          {row.withdrawn_at && (
+            <p className="text-xs text-gray-400">· Withdrawn {formatDate(row.withdrawn_at)}</p>
+          )}
+        </div>
+        {row.reversal_reason && (
+          <p className="mt-1 text-xs italic text-gray-500">&ldquo;{row.reversal_reason}&rdquo;</p>
+        )}
+      </div>
+      <span className="ml-3 shrink-0 rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+        Withdrawn
+      </span>
+    </div>
+  )
+}
+
 function RecommendationRow({
   row,
   status,
@@ -93,9 +119,14 @@ export function RecommendationsPanel({
   impactData,
 }: RecommendationsPanelProps) {
   const advisorRows = strategyLineItems.filter((r) => r.source_role === 'advisor')
-  const pendingRows = advisorRows.filter((r) => !r.consumer_accepted && !r.consumer_rejected)
-  const acceptedRows = advisorRows.filter((r) => r.consumer_accepted)
-  const rejectedRows = advisorRows.filter((r) => r.consumer_rejected)
+  const withdrawnRows = advisorRows.filter((r) => r.consumer_withdrawn)
+  const pendingRows = advisorRows.filter(
+    (r) => !r.consumer_accepted && !r.consumer_rejected && !r.consumer_withdrawn && r.is_active,
+  )
+  const acceptedRows = advisorRows.filter(
+    (r) => r.consumer_accepted && !r.consumer_withdrawn && r.is_active,
+  )
+  const rejectedRows = advisorRows.filter((r) => r.consumer_rejected && !r.consumer_withdrawn)
 
   return (
     <div className="space-y-4">
@@ -174,6 +205,19 @@ export function RecommendationsPanel({
           <div className="space-y-2">
             {rejectedRows.map((row) => (
               <RecommendationRow key={row.id} row={row} status="declined" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {withdrawnRows.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Withdrawn by Client
+          </p>
+          <div className="space-y-2">
+            {withdrawnRows.map((row) => (
+              <WithdrawnRecommendationRow key={row.id} row={row} />
             ))}
           </div>
         </div>

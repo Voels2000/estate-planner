@@ -69,6 +69,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Wizard skips all steps → dashboard shows `SetupPromptCard`
 - [x] Wizard completes all steps → dashboard shows conflict alerts (not `SetupPromptCard`)
 
+## Strategy reversal lifecycle (2026-05-31) — shipped (4 commits)
+
+- [x] Migration `20260531120000_strategy_line_items_reversal.sql`
+- [x] Reversal API + `ReversalModal` + In My Plan actions + Strategy history
+- [x] Gifting plan card, drift warning, `GiftDeleteWarningModal`
+- [x] Advisor **Withdrawn by Client** in RecommendationsPanel
+- [x] [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md), [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), smoke §10c
+
 ## Strategy sandbox → actuals (2026-05-27) — shipped (3 commits)
 
 - [x] SLAT/ILIT/charitable + modeled chips default `illustrative`; annual gifting stays `probable`

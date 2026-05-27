@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS; Sprint 17 go-live prep)
+# Updated: 2026-05-31 (strategy reversal lifecycle; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Security (shipped):** Grant audit clean (119 tables). RLS fix `20260527150000` on prod. **PROF-1/2** + **ENG-2** + **profile layout** + **strategy sandbox → actuals** (Transfer Strategies Sandbox / In My Plan, Roth handoff) shipped. **E2E:** `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api`. **Remaining (manual):** isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) §10c sandbox).
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Strategy reversal (shipped):** return to sandbox / withdraw / unwind + gifting delete warning + advisor withdrawn view. **Strategy sandbox → actuals** shipped. **Remaining (manual):** `supabase db push` for `20260531120000`, isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -44,7 +44,7 @@
 | ENG-2C — insurance cash value growth | ✅ | `604b1b9` |
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
-| Strategy sandbox → actuals | ✅ | 3 commits: SLAT/ILIT illustrative · sandbox UI · Roth handoff |
+| Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
 
 ---
 
@@ -59,6 +59,20 @@
 | **Docs** | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md), [MASTER_ARCHITECTURE.md § sandbox](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction) |
 
 **Detail:** [SCHEMA_CHANGELOG.md § Strategy sandbox](./SCHEMA_CHANGELOG.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+
+---
+
+## Strategy reversal lifecycle ✅ (2026-05-31)
+
+| Area | Outcome |
+|------|---------|
+| **DB** | `consumer_withdrawn`, `withdrawn_at`, `reversal_reason`, `reversed_from`, `previously_active_at` |
+| **API** | `PATCH` `{ id, action: promote \| return_to_sandbox \| withdraw \| demote }` — consumer owner only |
+| **Consumer** | In My Plan: Return to sandbox / Withdraw / Unwind; Strategy history; gifting plan card + delete warning |
+| **Advisor** | Step 3 **Withdrawn by Client** with optional consumer reason |
+| **Deploy** | `supabase db push` for `20260531120000` before app |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Strategy reversal](./SCHEMA_CHANGELOG.md) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
 ---
 
