@@ -10,6 +10,9 @@
 -- isolation layer (household ownership, advisor_client links). GRANT only answers
 -- "can this role attempt access"; policies answer "which rows."
 --
+-- Advisor scope: advisor_clients.client_id = households.owner_id (there is no
+-- client_household_id column). Join households when the row has household_id.
+--
 -- Checklist before merge: docs/UPDATE_CHECKLIST.md → "New table migrations"
 -- Re-run audits: scripts/audit-table-grants-rls.sql, scripts/audit-rls-policies.sql
 -- =============================================================================
@@ -57,8 +60,8 @@ CREATE POLICY "Consumers manage own example rows"
     )
   );
 
--- Advisor: connected clients only (use CONNECTED statuses — active + accepted)
--- CREATE POLICY "Advisors manage client example rows"
+-- Advisor: connected clients only (household_id on row)
+-- CREATE POLICY "Advisors can manage client example rows"
 --   ON public.example_table
 --   FOR ALL
 --   TO authenticated
@@ -66,9 +69,11 @@ CREATE POLICY "Consumers manage own example rows"
 --     EXISTS (
 --       SELECT 1
 --       FROM public.advisor_clients ac
---       WHERE ac.advisor_id = auth.uid()
---         AND ac.client_id = example_table.owner_id
---         AND ac.status = ANY (ARRAY['active', 'accepted'])
+--       INNER JOIN public.households h ON h.owner_id = ac.client_id
+--       WHERE h.id = example_table.household_id
+--         AND ac.advisor_id = auth.uid()
+--         AND ac.status = 'active'
+--         AND ac.accepted_at IS NOT NULL
 --     )
 --   );
 
