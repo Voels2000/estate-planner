@@ -33,7 +33,7 @@
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
-| Advisor portal ENG-1 | ✅ |  |
+| Advisor portal ENG-1 | ✅ | `b5cc8da` |
 
 ---
 
