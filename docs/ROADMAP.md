@@ -151,7 +151,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal performance | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
-| Advisor portal UX-3 | ✅ | (this commit) |
+| Advisor portal UX-3 | ✅ | `06edb1a` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

@@ -31,7 +31,7 @@
 | Advisor portal perf | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
-| Advisor portal UX-3 | ✅ | (this commit) |
+| Advisor portal UX-3 | ✅ | `06edb1a` |
 
 ---
 
