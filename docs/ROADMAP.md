@@ -155,7 +155,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
-| Advisor portal ENG-1 | ✅ | TBD |
+| Advisor portal ENG-1 | ✅ |  |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
