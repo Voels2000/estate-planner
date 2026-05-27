@@ -7,6 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { isGrowableIncomeSource } from '@/lib/income/growableIncomeSources'
 type IncomeRow = {
   id: string
   owner_id: string
@@ -19,6 +20,7 @@ type IncomeRow = {
   start_month?: number | null
   end_month?: number | null
   inflation_adjust: boolean
+  annual_growth_rate?: number | null
   created_at: string
   updated_at: string
 }
@@ -325,6 +327,9 @@ function IncomeModal({
     editRow?.end_month != null ? editRow.end_month.toString() : ''
   )
   const [inflationAdjust, setInflationAdjust] = useState(editRow?.inflation_adjust ?? true)
+  const [annualGrowthRate, setAnnualGrowthRate] = useState(
+    editRow?.annual_growth_rate != null ? String(editRow.annual_growth_rate) : '0',
+  )
   const [isSubmitting,    setIsSubmitting]    = useState(false)
   const [error,           setError]           = useState<string | null>(null)
 
@@ -357,6 +362,7 @@ function IncomeModal({
         start_month: startMonth ? parseInt(startMonth) : null,
         end_month: endMonth ? parseInt(endMonth) : null,
         inflation_adjust: inflationAdjust,
+        annual_growth_rate: parseFloat(annualGrowthRate) || 0,
       }
       const res = await fetch('/api/consumer/income', {
         method: editRow ? 'PATCH' : 'POST',
@@ -481,6 +487,29 @@ function IncomeModal({
               <p className="mt-1 text-xs text-neutral-400">Only if income ends mid-year</p>
             </div>
           </div>
+
+          {isGrowableIncomeSource(source) && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Annual Growth Rate (optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  value={annualGrowthRate}
+                  onChange={(e) => setAnnualGrowthRate(e.target.value)}
+                  className={inputClass}
+                />
+                <span className="text-sm text-gray-500">% per year</span>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">
+                Expected annual increase (e.g. 3% raise). Leave at 0 for flat income.
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <input id="inflationAdjust" type="checkbox" checked={inflationAdjust}

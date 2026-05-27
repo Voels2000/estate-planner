@@ -13,6 +13,10 @@ function buildIncomeRow(body: Record<string, unknown>) {
     start_month: body.start_month != null ? Number(body.start_month) : null,
     end_month: body.end_month != null ? Number(body.end_month) : null,
     inflation_adjust: body.inflation_adjust ?? true,
+    annual_growth_rate:
+      body.annual_growth_rate != null && body.annual_growth_rate !== ''
+        ? Number(body.annual_growth_rate)
+        : 0,
   }
 }
 

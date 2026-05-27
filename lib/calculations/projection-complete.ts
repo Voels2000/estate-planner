@@ -12,6 +12,7 @@ import {
 } from '@/lib/calculations/stateIncomeTax'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import { resolveGrowthAssumptions } from '@/lib/types/growthAssumptions'
+import { isGrowableIncomeSource } from '@/lib/income/growableIncomeSources'
 
 export type YearRow = {
   year: number
@@ -637,6 +638,24 @@ function getYearFraction(
 
 // ─── Main engine ───────────────────────────────────────────────────────────────
 
+function effectiveIncomeBaseAmount(
+  inc: { amount: number; start_year: number | null; inflation_adjust: boolean; source: string; annual_growth_rate?: number | null },
+  year: number,
+  inflationFactor: number,
+): number {
+  const startYear = inc.start_year ?? year
+  const yearsActive = Math.max(0, year - startYear)
+  const growthRate = (inc.annual_growth_rate ?? 0) / 100
+  let amount = inc.amount
+  if (isGrowableIncomeSource(inc.source) && growthRate > 0) {
+    amount = inc.amount * Math.pow(1 + growthRate, yearsActive)
+  }
+  if (inc.inflation_adjust) {
+    amount *= inflationFactor
+  }
+  return amount
+}
+
 export function computeCompleteProjection(input: CompleteProjectionInput): YearRow[] {
   const { household, assets, liabilities, income, expenses, irmaa_brackets } = input
   const realEstateInput    = input.real_estate ?? []
@@ -786,7 +805,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       if (inc.source === 'social_security') continue
       if (['traditional_401k', 'traditional_ira'].includes(inc.source)) continue
 
-      const baseAmount = inc.inflation_adjust ? inc.amount * inflationFactor : inc.amount
+      const baseAmount = effectiveIncomeBaseAmount(inc, year, inflationFactor)
       const fraction = getYearFraction(year, inc.start_year, inc.end_year, inc.start_month, inc.end_month)
       const amount = baseAmount * fraction
       const owner  = inc.ss_person?.trim().toLowerCase() ?? ''

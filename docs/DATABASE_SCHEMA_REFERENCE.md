@@ -172,6 +172,7 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Purpose:** core projection input tables.
 - **Notes:** timestamp changes in these tables are used for staleness detection.
+- **`income.annual_growth_rate`:** optional per-source compound growth from `start_year` (default 0). Migration: `20260527130300_income_growth_rate.sql`.
 - **Sprint F-2:** optional `ingestion_job_id` uuid → `ingestion_jobs(id)` on rows created via `/import` commit (NULL for manual entry).
 
 ### `real_estate`

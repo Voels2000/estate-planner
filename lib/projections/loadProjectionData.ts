@@ -143,7 +143,7 @@ export async function loadProjectionData(
       .eq('owner_id', userId),
     supabase
       .from('income')
-      .select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person')
+      .select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person, annual_growth_rate')
       .eq('owner_id', userId),
     supabase
       .from('expenses')
