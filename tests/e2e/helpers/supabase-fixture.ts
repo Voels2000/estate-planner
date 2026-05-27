@@ -49,8 +49,36 @@ type HouseholdRow = {
   risk_tolerance: string | null
   growth_rate_accumulation: number | null
   growth_rate_retirement: number | null
+  growth_assumptions: { real_estate?: number; business?: number } | null
   deduction_mode: string | null
   custom_deduction_amount: number | null
+}
+
+export type HouseholdPlanningFields = {
+  inflation_rate: number
+  growth_rate_accumulation: number
+  growth_rate_retirement: number
+  growth_assumptions: { real_estate: number; business: number }
+}
+
+export async function fetchHouseholdPlanningFields(
+  householdId: string,
+): Promise<HouseholdPlanningFields | null> {
+  const household = await restGet<HouseholdRow>(
+    'households',
+    `id=eq.${householdId}&select=inflation_rate,growth_rate_accumulation,growth_rate_retirement,growth_assumptions`,
+  )
+  if (!household) return null
+  const ga = household.growth_assumptions ?? {}
+  return {
+    inflation_rate: household.inflation_rate ?? 2.5,
+    growth_rate_accumulation: household.growth_rate_accumulation ?? 6,
+    growth_rate_retirement: household.growth_rate_retirement ?? 5,
+    growth_assumptions: {
+      real_estate: Number(ga.real_estate ?? 4.5),
+      business: Number(ga.business ?? 7.0),
+    },
+  }
 }
 
 type ProfileRow = {

@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (profile layout; pre-launch RLS; PROF-1/2)
+# Last updated: 2026-05-27 (profile spouse-layout E2E; growth-assumptions API E2E; pre-launch RLS; PROF-1/2)
+
+## Profile layout E2E — spouse toggle and live headers (2026-05-27)
+
+**Decision:** Add `consumer-profile-spouse-layout.spec.ts` (UI) and `consumer-growth-assumptions-api.spec.ts` (API) instead of extending `consumer-api-writes`. Person-1 name uses `getByRole('textbox', { name: 'Jane', exact: true })` to avoid matching Full Name placeholder `Jane Doe`.
+
+**Reasoning:** Profile layout refactor (`61a8130`) changed DOM only; prior Playwright suite had no coverage for smoke §3.1b–3.1c or PROF-2 growth PATCH. Split specs keep API contract tests discoverable next to Scenarios save path.
+
+**Skipped by default:** Growth round-trip requires `PLAYWRIGHT_HOUSEHOLD_ID` from `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
+
+---
 
 ## Profile page layout — two-column people, brand section headers (2026-05-27)
 

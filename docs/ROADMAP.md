@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (profile layout; pre-launch RLS on prod; PROF-1/2; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (profile spouse-layout + growth-assumptions E2E; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
@@ -40,6 +40,7 @@
 - `[x]` `refactor(profile)` — `_profile-client.tsx` layout: `max-w-2xl`, `ProfileSectionHeader`, Household / People / Household Planning sections
 - `[x]` Live column headers from `person1Name` / `person2Name`; spouse toggle below grid; merged planning callout
 - `[x]` No field, validation, save path, or API changes
+- `[x]` E2E — `consumer-profile-spouse-layout.spec.ts` (4 tests); `consumer-growth-assumptions-api.spec.ts` (PATCH contract)
 
 ## ⚠️ Go-live gate
 
@@ -79,7 +80,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 - §2.4 recompute automated (`93aa6f5`)
 - Admin Portal hidden from consumers (`f4e9160`)
 - Asset modal scrollable (`f4e9160`)
-- E2E complete suite (**253 tests**); staging 2026-05-25: consumer/advisor/public green with `--workers=1` ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md))
+- E2E complete suite (**259 tests** in 42 files); staging 2026-05-25: consumer/advisor/public green with `--workers=1` ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md)); 2026-05-27 profile spouse-layout + growth-assumptions API specs
 - All Sprint 14 launch bugs resolved
 
 **Commits:** `93aa6f5`, `1e092d7`, `f4e9160`
@@ -387,7 +388,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 **Shipped**
 - `[x]` **75 migrations** in repo (`supabase/migrations/[0-9]*.sql`); local + remote in sync through `20260625170000`
-- `[x]` E2E complete suite — **253 tests** (137 consumer / 45 advisor / 59 public / 2 attorney / 7 import-unit); staging verified 2026-05-25
+- `[x]` E2E complete suite — **259 tests** in 42 files (143 consumer / 45 advisor / 59 public / 2 attorney / 7 import-unit); staging verified 2026-05-25; +6 tests 2026-05-27 (profile layout + growth API)
 - `[x]` Seed scripts — `seed-test-attorney`, `seed-test-advisor`, `seed-test-consumer-estate`
 - `[x]` Acquisition & attribution smoke **A–G passed** on staging
 - `[x]` `INTERNAL_API_KEY` on Vercel Production

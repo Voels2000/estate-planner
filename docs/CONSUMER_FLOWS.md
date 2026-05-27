@@ -112,7 +112,7 @@ Each feature section below uses this shape:
 | **Extended fields (OB-1)** | When `onboarding_wizard_completed_at` is null: `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests` |
 | **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` (pass-through preserves `growth_rate_*`, `inflation_rate`, `risk_tolerance` when not sent) |
 | **Cross-links** | Household Planning callout → `/scenarios` (growth + inflation), `/allocation` (risk + target mix) |
-| **E2E** | Implicit via gated-page tests; manual smoke §3 |
+| **E2E** | `consumer-profile-save`, `consumer-profile-spouse-layout` (live headers, spouse toggle, section labels; automates smoke §3.1b–3.1c); manual smoke §3 remainder |
 
 **Minimum viable profile** (required for estate planning pages):
 
@@ -477,7 +477,9 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/dashboard.spec.ts` | Dashboard load, net worth, disclaimer |
 | `tests/e2e/consumer/consumer-core-recompute.spec.ts` | Asset POST → `computed_at` poll → dashboard net worth/readiness (smoke §2) |
 | `tests/e2e/consumer/consumer-financial-writes.spec.ts` | Consumer CRUD: assets, income, expenses, RE, liabilities |
-| `tests/e2e/consumer/consumer-api-writes.spec.ts` | Additional API smoke |
+| `tests/e2e/consumer/consumer-api-writes.spec.ts` | Allocation targets, health-check, generate-base-case |
+| `tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts` | `PATCH /api/consumer/growth-assumptions` (financial, RE, business, inflation) |
+| `tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts` | Profile layout: live column headers, spouse toggle, planning section labels |
 | `tests/e2e/consumer/consumer-strategy-writes.spec.ts` | Strategy line items, charitable, recommendations |
 | `tests/e2e/consumer/consumer-trust-crud.spec.ts` | `/api/consumer/trusts` |
 | `tests/e2e/consumer/consumer-gift-history.spec.ts` | Gift history API |

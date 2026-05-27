@@ -43,6 +43,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **Household Planning** (was “Tax & Location”) — filing status + primary state in one row; merged Scenarios/Allocation callout
 - Welcome banner, `ProfileRequiredBanner`, wizard intro + wizard household card unchanged
 - Save: `PATCH /api/consumer/profile` unchanged; `ProfileSavePayload` unchanged
+- E2E: `consumer-profile-spouse-layout.spec.ts` (layout smoke §3.1b–3.1c)
 
 **No schema change.**
 

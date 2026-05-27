@@ -9,7 +9,7 @@ Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playw
 
 **Sprint 15 post-cutover (2026-05-24):** Core §1–3 passed on production. **Sprint 17 (2026-06-02):** Compliance code C-2b–C-5 closed; legal + go-live ops remain. **Sprint P-1 (2026-06-02):** Perf quick wins `5c24160`; indexes applied in prod. **Sprint F-2 (2026-05-25):** Import UX `9b524aa`; automated import tests `a344032`.
 
-**Complete suite (May 2026):** **253 tests** — [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). Staging verification **2026-05-25** (`estate-planner-gules.vercel.app`, `--workers=1`): consumer **127 passed / 5 skipped**; advisor **45 passed**; public **57 passed / 2 skipped**; attorney requires `seed-test-attorney.ts` on target env.
+**Complete suite (May 2026):** **259 tests** in 42 files — [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). Staging verification **2026-05-25** (`estate-planner-gules.vercel.app`, `--workers=1`): consumer **127 passed / 5 skipped**; advisor **45 passed**; public **57 passed / 2 skipped**; attorney requires `seed-test-attorney.ts` on target env. **2026-05-27:** profile spouse-layout + growth-assumptions API specs (**5 passed / 1 skipped** without `PLAYWRIGHT_HOUSEHOLD_ID`).
 
 **Run automated:**
 ```bash
@@ -35,7 +35,7 @@ npm run test:import:api      # localhost:3001 + tier 2+ user; F-2 migration on t
 |-------|------|------|
 | **Living contracts** | Playwright API + UI smoke | Every deploy / CI — fast, deterministic |
 | **Release smoke** | Manual checklist | Sprint 14 sign-off, post-major planning changes |
-| **Regression** | Full E2E suite (**253 tests**) | Staging before launch; `--workers=1` on shared DB |
+| **Regression** | Full E2E suite (**259 tests**) | Staging before launch; `--workers=1` on shared DB |
 
 Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture tests for CRUD; UI tests for login shell, one end-to-end save path, and tier gates.
 
@@ -69,10 +69,12 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | Step | Automatable? | Existing coverage | Net-new (recommended) |
 |------|--------------|-------------------|------------------------|
 | 3.1 `/profile` loads | ✅ | `dashboard.spec.ts`, `consumer-route-regression` | — |
+| 3.1b Live person column header | ✅ | `consumer-profile-spouse-layout.spec.ts` | — |
+| 3.1c Spouse toggle / second column | ✅ | `consumer-profile-spouse-layout.spec.ts` | — |
 | 3.2 Save harmless field | ✅ | `consumer-profile-save.spec.ts` | API + UI household name |
 | 3.3 Dashboard still loads | ✅ | `consumer-profile-save.spec.ts` | — |
 
-**Note:** Core §3 is **Profile save**, not “planning surfaces.” Planning routes are in §4–7 and optional §8–11.
+**Note:** Core §3 is **Profile save**, not “planning surfaces.” Planning routes are in §4–7 and optional §8–11. Growth assumptions API: `consumer-growth-assumptions-api.spec.ts` (Scenarios save path; round-trip needs `PLAYWRIGHT_HOUSEHOLD_ID`).
 
 ---
 

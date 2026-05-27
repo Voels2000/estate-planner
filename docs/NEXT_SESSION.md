@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (profile layout; pre-launch RLS shipped; PROF-1/2; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (profile spouse-layout + growth-assumptions E2E; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Security (shipped):** Grant audit clean (119 tables). RLS fix `20260527150000` on prod; `verify-loose-rls-policies.sql` → 0 rows; commits `1f41ce1` (migration), `7cab1be` (GST API), `35b0738` (template). **PROF-1/2** + **ENG-2** + **profile layout** (`_profile-client.tsx` two-column people) shipped. Deploy app when ready. **Remaining (manual):** isolation smoke (2 consumers + advisor/client), legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Security (shipped):** Grant audit clean (119 tables). RLS fix `20260527150000` on prod; `verify-loose-rls-policies.sql` → 0 rows; commits `1f41ce1` (migration), `7cab1be` (GST API), `35b0738` (template). **PROF-1/2** + **ENG-2** + **profile layout** (`_profile-client.tsx` two-column people) shipped. **E2E:** `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api` (see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) pre-launch E2E baseline). Deploy app when ready. **Remaining (manual):** isolation smoke (2 consumers + advisor/client), legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -615,7 +615,7 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 | **§2.4 recompute automated** | consumer-core-recompute.spec.ts (`93aa6f5`) |
 | **Admin Portal bug** | Fixed `f4e9160` |
 | **Asset modal bug** | Fixed `f4e9160` |
-| **E2E complete suite** | **253 tests** — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md); staging 2026-05-25: consumer 127 pass / 5 skip, advisor 45 pass, public 57 pass / 2 skip (`--workers=1`) |
+| **E2E complete suite** | **259 tests** in 42 files — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md); staging 2026-05-25: consumer 127 pass / 5 skip, advisor 45 pass, public 57 pass / 2 skip (`--workers=1`); 2026-05-27: profile spouse-layout + growth-assumptions API (+6 tests) |
 | **Commits** | `93aa6f5`, `1e092d7`, `f4e9160` |
 
 ### Known staging E2E behaviour (do not lose)

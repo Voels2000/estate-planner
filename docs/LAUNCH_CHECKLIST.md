@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-26 (UX-2 `advisor_gap_statuses`; advisor perf; OB-3b / SU-1 / NAV-1; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (profile spouse-layout E2E; growth-assumptions API E2E; Sprint 17 go-live prep)
 
 ---
 
@@ -66,6 +66,7 @@ These must be complete before launch. Update status as sprints close them.
 ### Quality & polish
 
 - [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
+- [x] **Pre-launch E2E baseline (profile + growth API, 2026-05-27)** — `consumer-profile-spouse-layout.spec.ts` (4 tests: section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2`); `consumer-growth-assumptions-api.spec.ts` (empty-body 400 always; round-trip PATCH + revert when `PLAYWRIGHT_HOUSEHOLD_ID` set). Run: `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts --project=consumer --workers=1`. Enable skipped round-trip: `npm run seed:e2e` → copy `PLAYWRIGHT_HOUSEHOLD_ID` to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
 - [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
   attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
   life-event-on-connect)
@@ -317,7 +318,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 10 | Business succession minimal; invite-advisor onboarding; A/B criteria; CONNECTED_ADVISOR_CLIENT_STATUSES |
 | May 2026 | Sprint 12 | A/B collapse; persona alerts; mobile drawer; full copy audit |
 | May 2026 | Sprint 13 | **Closed** — 67 migrations; E2E 51/0/1; A–G passed; seeds; INTERNAL_API_KEY; RMD copy + advisor trigger blockers fixed |
-| May 2026 | Sprint 14 | **Closed** — smoke §1–11 passed; bugs fixed `f4e9160`; E2E expanded to **253 tests** ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md)); staging `--workers=1` |
+| May 2026 | Sprint 14 | **Closed** — smoke §1–11 passed; bugs fixed `f4e9160`; E2E expanded to **259 tests** in 42 files ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md)); staging `--workers=1` |
 | May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`, `3ceb125`); runtime middleware redirect + force-dynamic signup |
 | 2026-05-24 | Sprint 15 | **Closed** — Domain live, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed. Open signups pending billing setup — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy when ready. |
 | 2026-06-02 | Sprint P-2 | **Closed** — Pre-launch perf refactors (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`. |

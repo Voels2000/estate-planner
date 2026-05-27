@@ -171,6 +171,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Welcome banner, `ProfileRequiredBanner`, wizard cards untouched
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · CONSUMER_RELEASE_SMOKE_TEST
 
+## Profile layout E2E (2026-05-27)
+
+- [x] `consumer-profile-spouse-layout.spec.ts` — section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2` (4 tests)
+- [x] `consumer-growth-assumptions-api.spec.ts` — PATCH financial/RE/business/inflation; empty-body 400; round-trip when `PLAYWRIGHT_HOUSEHOLD_ID` set
+- [x] `fetchHouseholdPlanningFields` in `tests/e2e/helpers/supabase-fixture.ts`
+- [x] Selector: `getByRole('textbox', { name: 'Jane', exact: true })` (not `getByPlaceholder('Jane')`)
+- [x] Master docs: PLAYWRIGHT_E2E · CONSUMER_FLOWS · E2E_RELEASE_TEST_PLAN · LAUNCH_CHECKLIST · DECISION_LOG · ROADMAP · NEXT_SESSION · MASTER_ARCHITECTURE
+
 ## ENG-2 — Growth assumptions (2026-05-27)
 
 - [x] Migrations `20260527130000`–`20260527130300` + staleness bump `20260527130400`
@@ -248,7 +256,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 - [x] Acquisition & attribution smoke A–G passed (staging)
 - [x] **75** migrations in repo — applied and verified (local + remote in sync through C-7)
-- [x] E2E complete suite — **253 tests** (137 consumer / 45 advisor / 59 public / 2 attorney / 7 import-unit); staging verify 2026-05-25: consumer 127+ pass with `--workers=1` ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md))
+- [x] E2E complete suite — **259 tests** in 42 files (143 consumer / 45 advisor / 59 public / 2 attorney / 7 import-unit); staging verify 2026-05-25: consumer 127+ pass with `--workers=1` ([PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md))
 - [x] Test seed scripts committed and run
 - [x] Supabase verification queries documented in smoke test
 - [x] `INTERNAL_API_KEY` on Vercel Production
