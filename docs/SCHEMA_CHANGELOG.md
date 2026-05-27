@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## UX-3 — Strategy tab restructure (2026-05-26, no migration)
+
+**Code only (advisor Strategy tab; zero consumer routes):**
+
+- **Section A:** `lib/advisor/advisoryMetricSeverity.ts` — four-state severity (`●` / `!` / `✓` / `—`); `getActiveIndicatorKeys()` max 2; `StrategyAlertBanners` (red liquidity &lt; 1.0x before amber exemption); removed `!!` from metric cards.
+- **Section B:** `components/advisor/strategy/StrategyTabContent.tsx` — three steps: Situation (`SituationMetricsGrid`) → Opportunities (`OpportunitiesPanel` + catalog) → Recommendations (`RecommendationsPanel` pending/accepted/declined). Combined Strategy / SLAT·ILIT / Advanced / Monte Carlo unchanged below.
+- **Section C:** `lib/featureFlags.ts` (`NEXT_PUBLIC_ADVISOR_BENCHMARKS`); `lib/advisor/benchmarks.ts` + `BenchmarkBadge` (off by default).
+- **Section D:** Client strategy questions in Step 3 (same `strategyQuestions` feed as Overview AF-1).
+- **Data:** `fetchStrategyLineItems('advisor')` extended with `id`, `consumer_accepted` / `consumer_rejected`, timestamps for recommendation rows.
+- **Meeting Prep (same deploy):** `meetingPrepBriefFromHorizons` — tax brief uses `advisorHorizons` + full horizon strip.
+
+**No new migrations or API routes.** `calculateAdvisoryMetrics` / `getCachedAdvisoryMetrics` unchanged — UI reorganization only.
+
+---
+
 ## Advisor tax parity — Tax / Domicile / Strategy (2026-05-26, no migration)
 
 **Code only:**
@@ -16,7 +31,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - **Fix:** Tax + Domicile tabs pass `stateTaxFromHorizon` / `horizonTodayStateTax` into waterfall and `StateTaxPanel`; timeline + Today vs At death labels; `isMFJFilingStatus()` replaces `filing_status === 'mfj'` on advisor Strategy, Tax, Domicile tabs and `GET /api/advisor/strategy-tab`.
 - **Canonical sources:** `lib/my-estate-strategy/horizonSnapshots.ts` + `lib/calculations/stateEstateTax.ts`; UI must not recompute current-law state tax when horizon values exist.
 
-**Remaining audit items (not fixed this pass):** `MeetingPrepTab` mixes `scenario.estimated_*` with `estateComposition`; `estate-tax-projection.ts` death-year rows still call deprecated `computeStateEstateTaxFromBrackets`; PDF/Gifting display checks literal `'mfj'` only.
+**Follow-up:** Meeting Prep horizon alignment shipped in UX-3 commit. **Still open:** `estate-tax-projection.ts` death-year rows / PDF-Gifting display `'mfj'` checks.
 
 ---
 

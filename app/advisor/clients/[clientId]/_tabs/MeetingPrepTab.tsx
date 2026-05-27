@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
+import { meetingPrepBriefFromHorizons } from '@/lib/advisor/meetingPrepHorizons'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 function getClientName(household: ClientViewShellProps['household']) {
@@ -65,6 +66,7 @@ export default function MeetingPrepTab({
     latestNote && typeof latestNote.content === 'string' ? latestNote.content : null
   const latestNoteCreatedAt =
     latestNote && typeof latestNote.created_at === 'string' ? latestNote.created_at : null
+  const horizonBrief = meetingPrepBriefFromHorizons(advisorHorizons)
   const initialBriefSeed = {
     health_score_today: exportPanelProps?.healthScore ?? null,
     top_alerts: (exportPanelProps?.actionItems ?? []).slice(0, 3).map((a) => ({
@@ -72,20 +74,26 @@ export default function MeetingPrepTab({
       severity: a.severity,
       description: a.message,
     })),
-    current_gross_estate: estateComposition?.gross_estate ?? null,
+    current_gross_estate:
+      horizonBrief?.current_gross_estate ?? estateComposition?.gross_estate ?? null,
     current_taxable_estate: estateComposition?.taxable_estate ?? null,
-    current_estimated_tax: estateComposition?.estimated_tax ?? null,
-    cst_benefit_at_death: advisorHorizons?.cstBenefitAtDeath ?? null,
-    gross_estate: scenario?.gross_estate ?? null,
-    estate_tax:
-      (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),
-    net_to_heirs: null,
-    cost_of_inaction:
-      (scenario?.estimated_federal_tax ?? 0) + (scenario?.estimated_state_tax ?? 0),
+    current_estimated_tax:
+      horizonBrief?.current_estimated_tax ?? estateComposition?.estimated_tax ?? null,
+    estimated_tax_state: horizonBrief?.estimated_tax_state ?? null,
+    estimated_tax_state_with_cst: horizonBrief?.estimated_tax_state_with_cst ?? null,
+    cst_benefit: horizonBrief?.cst_benefit ?? null,
+    has_portability_gap: horizonBrief?.has_portability_gap ?? null,
+    cst_benefit_at_death: horizonBrief?.cst_benefit_at_death ?? null,
+    gross_estate: horizonBrief?.gross_estate ?? null,
+    estate_tax: horizonBrief?.estate_tax ?? null,
+    net_to_heirs: horizonBrief?.net_to_heirs ?? null,
+    cost_of_inaction: horizonBrief?.cost_of_inaction ?? null,
+    horizon_columns: horizonBrief?.horizon_columns ?? [],
+    at_death_label: horizonBrief?.at_death_label ?? null,
     recommended_strategies: exportPanelProps?.activeStrategies ?? [],
     last_note: latestNoteContent,
     last_note_date: latestNoteCreatedAt,
-    has_projection: Boolean(scenario?.id),
+    has_projection: horizonBrief?.has_projection ?? Boolean(scenario?.id),
   }
 
   return (
@@ -99,6 +107,7 @@ export default function MeetingPrepTab({
           clientId={clientId}
           householdId={household.id}
           clientName={clientName}
+          advisorHorizons={advisorHorizons}
           initialHealthScore={exportPanelProps?.healthScore ?? null}
           initialBriefSeed={initialBriefSeed}
         />

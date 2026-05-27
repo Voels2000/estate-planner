@@ -6,12 +6,16 @@
 import { useMemo, useState } from 'react'
 import {
   calculateAdvisoryMetrics,
-  pickActiveWarningMetricIds,
   STRATEGY_MODULE_METRIC_IDS,
   type AdvisoryMetric,
 } from '@/lib/advisoryMetrics'
 import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import { getTaxScopeBadge } from '@/lib/view-models/taxScopeBadges'
+import { AdvisoryMetricCard } from '@/components/advisor/AdvisoryMetricCard'
+import {
+  getActiveIndicatorMetricIds,
+  getMetricSeverityForAdvisoryMetric,
+} from '@/lib/advisor/advisoryMetricSeverity'
 
 interface AdvisoryMetricsDashboardProps {
   householdId: string
@@ -41,61 +45,6 @@ const MONEY = new Intl.NumberFormat('en-US', {
   currency: 'USD',
   maximumFractionDigits: 0,
 })
-
-const STATUS_COLORS = {
-  good: 'bg-green-50 border-green-200 text-green-800',
-  warning: 'bg-amber-50 border-amber-200 text-amber-800',
-  critical: 'bg-red-50 border-red-200 text-red-800',
-  neutral: 'bg-gray-50 border-gray-200 text-gray-700',
-}
-
-const STATUS_BADGE = {
-  good: 'bg-green-100 text-green-700',
-  warning: 'bg-amber-100 text-amber-700',
-  critical: 'bg-red-100 text-red-700',
-  neutral: 'bg-gray-100 text-gray-600',
-}
-
-function displayStatus(metric: AdvisoryMetric, activeWarnings: Set<string>): AdvisoryMetric['status'] {
-  if (metric.status === 'critical') return 'critical'
-  if (metric.status === 'warning' && activeWarnings.has(metric.id)) return 'warning'
-  if (metric.status === 'warning') return 'neutral'
-  return metric.status
-}
-
-function MetricCard({ metric, activeWarnings }: { metric: AdvisoryMetric; activeWarnings: Set<string> }) {
-  const status = displayStatus(metric, activeWarnings)
-  const scopeBadge = getTaxScopeBadge(metric.scope)
-
-  return (
-    <div
-      className={`border rounded-lg p-4 ${STATUS_COLORS[status]}`}
-      title={metric.detail}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="space-y-1">
-          <span className="block text-xs font-medium text-gray-600 leading-tight">{metric.label}</span>
-          <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scopeBadge.className}`}>
-            {scopeBadge.label}
-          </span>
-        </div>
-        <span
-          className={`text-xs px-1.5 py-0.5 rounded font-medium ml-2 shrink-0 ${STATUS_BADGE[status]}`}
-        >
-          {status === 'good'
-            ? '✓'
-            : status === 'warning'
-              ? '!'
-              : status === 'critical'
-                ? '!!'
-                : '—'}
-        </span>
-      </div>
-      <div className="text-xl font-bold text-gray-900 mb-1">{metric.value}</div>
-      <div className="text-xs text-gray-500 leading-tight">{metric.subtext}</div>
-    </div>
-  )
-}
 
 export default function AdvisoryMetricsDashboard({
   householdId,
@@ -177,7 +126,10 @@ export default function AdvisoryMetricsDashboard({
     return computed
   }, [cachedCoreMetrics, hasRunStrategyModules, metricsInput])
 
-  const activeWarnings = useMemo(() => pickActiveWarningMetricIds(metrics), [metrics])
+  const activeWarnings = useMemo(
+    () => getActiveIndicatorMetricIds(metrics, { section7520Rate }),
+    [metrics, section7520Rate],
+  )
 
   const gridMetrics = useMemo(
     () =>
@@ -251,7 +203,12 @@ export default function AdvisoryMetricsDashboard({
     <div className="space-y-6" data-household-id={householdId}>
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols} gap-3`}>
         {gridMetrics.map((metric) => (
-          <MetricCard key={metric.id} metric={metric} activeWarnings={activeWarnings} />
+          <AdvisoryMetricCard
+            key={metric.id}
+            metric={metric}
+            severity={getMetricSeverityForAdvisoryMetric(metric, { section7520Rate })}
+            showIndicator={activeWarnings.has(metric.id)}
+          />
         ))}
       </div>
 

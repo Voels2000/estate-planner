@@ -122,24 +122,68 @@ export async function getActiveLineItems(
   return { data: (data ?? []) as StrategyLineItem[], error: null }
 }
 
+export type StrategyLineItemSummary = Pick<
+  StrategyLineItem,
+  | 'amount'
+  | 'confidence_level'
+  | 'effective_year'
+  | 'is_active'
+  | 'sign'
+  | 'strategy_source'
+  | 'source_role'
+>
+
+export type AdvisorStrategyLineItemSummary = StrategyLineItemSummary &
+  Pick<
+    StrategyLineItem,
+    | 'id'
+    | 'consumer_accepted'
+    | 'consumer_rejected'
+    | 'accepted_at'
+    | 'rejected_at'
+  >
+
 export async function fetchStrategyLineItems(
   householdId: string,
-  sourceRole: StrategySourceRole
-): Promise<Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>[]> {
+  sourceRole: 'consumer',
+): Promise<StrategyLineItemSummary[]>
+export async function fetchStrategyLineItems(
+  householdId: string,
+  sourceRole: 'advisor',
+): Promise<AdvisorStrategyLineItemSummary[]>
+export async function fetchStrategyLineItems(
+  householdId: string,
+  sourceRole: StrategySourceRole,
+): Promise<StrategyLineItemSummary[] | AdvisorStrategyLineItemSummary[]> {
   const supabase = createClient()
+
+  if (sourceRole === 'advisor') {
+    const { data, error } = await supabase
+      .from('strategy_line_items')
+      .select(
+        'id, amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role, consumer_accepted, consumer_rejected, accepted_at, rejected_at',
+      )
+      .eq('household_id', householdId)
+      .eq('source_role', 'advisor')
+      .is('projection_year', null)
+      .eq('is_active', true)
+
+    if (error) throw new Error(`fetchStrategyLineItems: ${error.message}`)
+    return (data ?? []) as AdvisorStrategyLineItemSummary[]
+  }
 
   const { data, error } = await supabase
     .from('strategy_line_items')
     .select(
-      'amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role'
+      'amount, confidence_level, effective_year, is_active, sign, strategy_source, source_role',
     )
     .eq('household_id', householdId)
-    .eq('source_role', sourceRole)
+    .eq('source_role', 'consumer')
     .is('projection_year', null)
     .eq('is_active', true)
 
   if (error) throw new Error(`fetchStrategyLineItems: ${error.message}`)
-  return (data ?? []) as Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>[]
+  return (data ?? []) as StrategyLineItemSummary[]
 }
 
 export async function fetchStrategyConfigs(householdId: string) {

@@ -68,7 +68,8 @@ Consumers and advisors share one **household** data model but operate in separat
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
 | Sidebar active route (NAV-1) | `isNavItemActive()` + `groupContainsActiveItem()` in `sidebar-nav.tsx`; groups auto-expand when a child is active; `NAV_ACTIVE` navy + gold left accent |
 | Advisor portal perf | Roster: `loadRosterNetWorthByOwner` (batched reads). Client workspace: parallel staleness/composition/datasets; scoped tax tables — [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26) |
-| Advisor portal UX-2 | Navy/gold brand; `advisorDatasetIncludeForTab()`; `PlanStatusCard` + `advisor_gap_statuses`; `getCachedAdvisoryMetrics` (120s cache); estate composition advisor variant; strategy 6-card grid + alert banners — SCHEMA_CHANGELOG UX-2 |
+| Advisor portal UX-2 | Navy/gold brand; `advisorDatasetIncludeForTab()`; `PlanStatusCard` + `advisor_gap_statuses`; `getCachedAdvisoryMetrics` (120s cache); estate composition advisor variant — SCHEMA_CHANGELOG UX-2 |
+| Advisor portal UX-3 | Strategy tab three-step workflow (`StrategyTabContent`): Situation / Opportunities / Recommendations; `advisoryMetricSeverity` + `StrategyAlertBanners`; `OpportunitiesPanel` catalog; `RecommendationsPanel` + client questions; benchmarks behind `ADVISOR_BENCHMARKS` — SCHEMA_CHANGELOG UX-3 |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -181,7 +182,7 @@ Important:
 
 | Surface | Risk |
 |---------|------|
-| `MeetingPrepTab` | `estate_tax` / `cost_of_inaction` from `scenario.estimated_federal_tax + estimated_state_tax` may diverge from `estateComposition` / horizons |
+| `MeetingPrepTab` | **Fixed** — `meetingPrepBriefFromHorizons(advisorHorizons)`; full Today / 10 / 20 / At Death tax strip |
 | `lib/calculations/estate-tax-projection.ts` | Death-year rows may use deprecated `computeStateEstateTaxFromBrackets` (no portability / NY cliff) |
 | `lib/actions/generate-base-case.ts` | MFJ check includes `married_filing_jointly` but not full `isMFJFilingStatus` alias set |
 | PDF / Gifting UI | Display-only `filing_status === 'mfj'` — cosmetic, not tax engine |
@@ -900,7 +901,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
-- **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab; `pickActiveWarningMetricIds` caps warning badges at 2.
+- **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab (six core metrics cached server-side).
+- **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x. Modeling sections (Combined Strategy, SLAT/ILIT, Advanced, Monte Carlo) remain below the three-step workflow.
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` + `AttorneyEstatePlanPDF` — cover disclaimer, user attribution, title **Estate Planning Preparation Report** (Sprint C-2b, 2026-05-24).
 
 **Analytics & A/B (Sprint 5):**

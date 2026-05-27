@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import AdvisoryMetricsDashboard from '@/components/advisor/AdvisoryMetricsDashboard'
+import { StrategyTabContent } from '@/components/advisor/strategy/StrategyTabContent'
+import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import { ClientViewShellProps } from '../_client-view-shell'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
 import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
@@ -17,7 +18,11 @@ import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptio
 import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
-import { fetchStrategyLineItems, fetchStrategyConfigs } from '@/lib/estate/strategyLedger'
+import {
+  fetchStrategyLineItems,
+  fetchStrategyConfigs,
+  type AdvisorStrategyLineItemSummary,
+} from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 
@@ -29,6 +34,7 @@ export default function StrategyTab({
   strategySetSummary,
   cachedAdvisoryMetrics,
   hasRunStrategyModules = false,
+  strategyQuestions = [],
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -82,13 +88,32 @@ export default function StrategyTab({
   const advancedSectionRef = useRef<HTMLElement>(null)
   const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
-  const [_advisorLineItems, setAdvisorLineItems] = useState<StrategyLineItemSummary[]>([])
+  const [advisorLineItems, setAdvisorLineItems] = useState<AdvisorStrategyLineItemSummary[]>([])
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
   type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
   const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
   const missingHorizonTelemetrySent = useRef(false)
-  void _advisorLineItems
+
+  const metricsInput: AdvisoryMetricsInput = {
+    grossEstate,
+    federalExemption,
+    federalTax: estimatedFederalTax,
+    stateTax: estimatedStateTax,
+    hasSpouse: household?.has_spouse ?? false,
+    dsueAvailable: household?.has_spouse ? federalExemption : 0,
+    liquidAssets: grossEstate * 0.3,
+    ilitDeathBenefit: 0,
+    section7520Rate: 0.052,
+    cstGrowthRate: 0.06,
+    survivorExemption: federalExemption,
+  }
+
+  function scrollToAddRecommendation() {
+    setAdvancedOpen(true)
+    setSlatIlitOpen(true)
+    advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   // Gifting actuals from RPC
   const [giftingActuals, setGiftingActuals] = useState<{
@@ -275,52 +300,29 @@ export default function StrategyTab({
           Regenerate the base-case projection to restore consistent values across views.
         </div>
       )}
-      {typeof exemptionUtilization === 'number' && exemptionUtilization < 50 && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
-          <svg
-            className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"
-            />
-          </svg>
-          <div>
-            <p className="text-sm font-semibold text-amber-800">Significant Federal Exemption Unused</p>
-            <p className="text-sm text-amber-700 mt-0.5">
-              {(100 - exemptionUtilization).toFixed(0)}% of the federal exemption is unused (
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(unusedExemptionAmount)}
-              ). Consider systematic gifting programs or irrevocable trust strategies before
-              estate growth reduces available headroom.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Advisory Metrics Dashboard</h2>
-        <AdvisoryMetricsDashboard
-          householdId={household.id}
-          grossEstate={grossEstate}
-          federalExemption={federalExemption}
-          estimatedFederalTax={estimatedFederalTax}
-          estimatedStateTax={estimatedStateTax}
-          projectedGrossEstate={Number.isFinite(projectedGrossEstate) ? projectedGrossEstate : undefined}
-          projectedEstimatedFederalTax={Number.isFinite(projectedEstimatedFederalTax) ? projectedEstimatedFederalTax : undefined}
-          projectedEstimatedStateTax={Number.isFinite(projectedEstimatedStateTax) ? projectedEstimatedStateTax : undefined}
-          hasSpouse={household?.has_spouse ?? false}
-          section7520Rate={0.052}
-          cachedCoreMetrics={cachedAdvisoryMetrics}
-          hasRunStrategyModules={hasRunStrategyModules}
-          onRunStrategyModules={scrollToStrategyModules}
-        />
-      </section>
+      <StrategyTabContent
+        householdId={household.id}
+        metricsInput={metricsInput}
+        cachedCoreMetrics={cachedAdvisoryMetrics}
+        hasRunStrategyModules={hasRunStrategyModules}
+        section7520Rate={0.052}
+        exemptionUtilization={exemptionUtilization}
+        unusedExemptionAmount={unusedExemptionAmount}
+        grossEstate={grossEstate}
+        estimatedFederalTax={estimatedFederalTax}
+        estimatedStateTax={estimatedStateTax}
+        projectedGrossEstate={Number.isFinite(projectedGrossEstate) ? projectedGrossEstate : undefined}
+        projectedEstimatedFederalTax={
+          Number.isFinite(projectedEstimatedFederalTax) ? projectedEstimatedFederalTax : undefined
+        }
+        projectedEstimatedStateTax={
+          Number.isFinite(projectedEstimatedStateTax) ? projectedEstimatedStateTax : undefined
+        }
+        strategyLineItems={advisorLineItems}
+        strategyQuestions={strategyQuestions}
+        onRunStrategyModules={scrollToStrategyModules}
+        onAddRecommendation={scrollToAddRecommendation}
+      />
 
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -420,7 +422,7 @@ export default function StrategyTab({
         )}
       </section>
 
-      <section ref={advancedSectionRef}>
+      <section ref={advancedSectionRef} id="advisor-advanced-strategies">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Advanced Strategies</h2>
           <button

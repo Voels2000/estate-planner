@@ -64,6 +64,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **Still deferred:** Per-tab Suspense server components; batch composition RPC for roster.
 
+## Advisor portal UX-3 — Strategy tab UI (2026-05-26)
+
+**No perf change to cache path** — `getCachedAdvisoryMetrics` unchanged. UX-3 reorganizes cached metrics in `StrategyTabContent` / `SituationMetricsGrid` and adds `advisoryMetricSeverity` for display caps (replaces `!!` badges in `AdvisoryMetricsDashboard`).
+
 ## Post-launch refactors (not in this sprint)
 
 - Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*

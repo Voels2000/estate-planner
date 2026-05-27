@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (UX-3 Strategy tab; UX-2; Sprint 17 go-live prep)
 
 ---
 
@@ -93,6 +93,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Sidebar active indicator NAV-1** | `[x]` | Auto-expand group on active child; `isNavItemActive()` path matching — `be92947` |
 | **Advisor portal performance** | `[x]` | Roster batched net worth; parallel client workspace load; scoped tax queries — `8c526de` |
 | **Advisor portal UX-2** | `[x]` | Brand, tab-scoped load, PlanStatusCard, gap statuses, metrics cache, estate/strategy alerts — see SCHEMA_CHANGELOG UX-2 |
+| **Advisor portal UX-3** | `[x]` | Strategy tab three-step workflow, severity system, opportunities + recommendations panels — SCHEMA_CHANGELOG UX-3 |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -150,6 +151,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Active nav indicator NAV-1 | ✅ | `be92947` |
 | Advisor portal performance | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
+| Advisor portal UX-3 | ✅ | (this commit) |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

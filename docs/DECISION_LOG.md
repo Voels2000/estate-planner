@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b)
+# Last updated: 2026-05-26 (UX-3 Strategy tab; UX-2; advisor tax parity)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — UX-3: Strategy tab three-step workflow + severity system
+
+**Decision:** Reorganize the advisor Strategy tab into three labeled steps — **Situation** (diagnostic metrics), **Opportunities** (strategy catalog + “Model this”), **Recommendations** (advisor `strategy_line_items` by client response + AF-1 questions) — without changing `calculateAdvisoryMetrics` or consumer surfaces. Replace `!!` / ad-hoc badges with `advisoryMetricSeverity` (`●`/`!`/`✓`/`—`, max 2 active). Show a red liquidity shortfall banner when coverage &lt; 1.0x, ordered before amber exemption warnings. Peer benchmarks stay behind `NEXT_PUBLIC_ADVISOR_BENCHMARKS` (default off).
+
+**Reasoning:** One undifferentiated page mixed diagnosis, modeling, and client recommendations. Liquidity 0.0x was critical but visually equal to low-priority warnings. Advisors need a clear path from “what’s wrong” → “what to model” → “what we sent the client.”
+
+**Alternatives considered:** New API for recommendations list (rejected — existing `strategy_line_items` + extended client fetch). Remove Combined Strategy / Advanced panels (rejected — still needed for modeling; moved below workflow).
 
 ---
 

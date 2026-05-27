@@ -8,6 +8,11 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import {
+  meetingPrepBriefFromHorizons,
+  type MeetingPrepHorizonColumn,
+} from '@/lib/advisor/meetingPrepHorizons'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 const STRATEGY_LABELS: Record<string, string> = {
   gifting: 'Annual Gifting Program',
@@ -47,6 +52,8 @@ interface MeetingBrief {
   last_note: string | null
   last_note_date: string | null
   has_projection: boolean
+  horizon_columns: MeetingPrepHorizonColumn[]
+  at_death_label: string | null
   generated_at: string
 }
 
@@ -69,12 +76,15 @@ interface MeetingBriefSeed {
   last_note?: string | null
   last_note_date?: string | null
   has_projection?: boolean
+  horizon_columns?: MeetingPrepHorizonColumn[]
+  at_death_label?: string | null
 }
 
 interface Props {
   clientId: string
   householdId: string
   clientName: string
+  advisorHorizons?: MyEstateStrategyHorizonsResult
   initialHealthScore?: number | null
   initialBriefSeed?: MeetingBriefSeed | null
 }
@@ -115,7 +125,35 @@ function buildBriefFromSeed(clientName: string, seed: MeetingBriefSeed): Meeting
     last_note: seed.last_note ?? null,
     last_note_date: seed.last_note_date ?? null,
     has_projection: seed.has_projection ?? false,
+    horizon_columns: seed.horizon_columns ?? [],
+    at_death_label: seed.at_death_label ?? null,
     generated_at: new Date().toISOString(),
+  }
+}
+
+function mergeHorizonBrief(
+  brief: MeetingBrief,
+  horizons: MyEstateStrategyHorizonsResult | undefined,
+): MeetingBrief {
+  const fromHorizons = meetingPrepBriefFromHorizons(horizons)
+  if (!fromHorizons) return brief
+  return {
+    ...brief,
+    current_gross_estate: fromHorizons.current_gross_estate ?? brief.current_gross_estate,
+    current_estimated_tax: fromHorizons.current_estimated_tax ?? brief.current_estimated_tax,
+    estimated_tax_state: fromHorizons.estimated_tax_state ?? brief.estimated_tax_state,
+    estimated_tax_state_with_cst:
+      fromHorizons.estimated_tax_state_with_cst ?? brief.estimated_tax_state_with_cst,
+    cst_benefit: fromHorizons.cst_benefit ?? brief.cst_benefit,
+    has_portability_gap: fromHorizons.has_portability_gap ?? brief.has_portability_gap,
+    cst_benefit_at_death: fromHorizons.cst_benefit_at_death ?? brief.cst_benefit_at_death,
+    gross_estate: fromHorizons.gross_estate ?? brief.gross_estate,
+    estate_tax: fromHorizons.estate_tax ?? brief.estate_tax,
+    net_to_heirs: fromHorizons.net_to_heirs ?? brief.net_to_heirs,
+    cost_of_inaction: fromHorizons.cost_of_inaction ?? brief.cost_of_inaction,
+    has_projection: fromHorizons.has_projection || brief.has_projection,
+    horizon_columns: fromHorizons.horizon_columns,
+    at_death_label: fromHorizons.at_death_label,
   }
 }
 
@@ -126,6 +164,7 @@ async function generateMeetingBrief(
   householdId: string,
   clientName: string,
   initialHealthScore?: number | null,
+  advisorHorizons?: MyEstateStrategyHorizonsResult,
 ): Promise<MeetingBrief> {
   const supabase = createClient()
 
@@ -236,7 +275,7 @@ async function generateMeetingBrief(
     }
   }
 
-  return {
+  const baseBrief: MeetingBrief = {
     client_name: clientName,
     health_score_today: scoreToday,
     health_score_last_meeting: scoreLast,
@@ -254,6 +293,8 @@ async function generateMeetingBrief(
     estate_tax: estateTax,
     net_to_heirs: netToHeirs,
     cost_of_inaction: costOfInaction,
+    horizon_columns: [],
+    at_death_label: null,
     recommended_strategies: strategyConfigs.map((sc) => {
       const lineItem = advisorLineItems.find((li) => li.strategy_source === sc.strategy_type)
       const label = sc.label ?? STRATEGY_LABELS[sc.strategy_type] ?? sc.strategy_type
@@ -270,6 +311,8 @@ async function generateMeetingBrief(
     has_projection: !!projection,
     generated_at: new Date().toISOString(),
   }
+
+  return mergeHorizonBrief(baseBrief, advisorHorizons)
 }
 
 // ─── Meeting brief display ────────────────────────────────────────────────────
@@ -291,6 +334,7 @@ export default function MeetingPrep({
   clientId,
   householdId,
   clientName,
+  advisorHorizons,
   initialHealthScore = null,
   initialBriefSeed = null,
 }: Props) {
@@ -306,7 +350,13 @@ export default function MeetingPrep({
       setBrief(buildBriefFromSeed(clientName, initialBriefSeed))
     }
     setLoading(true)
-    const b = await generateMeetingBrief(clientId, householdId, clientName, initialHealthScore)
+    const b = await generateMeetingBrief(
+      clientId,
+      householdId,
+      clientName,
+      initialHealthScore,
+      advisorHorizons,
+    )
     setBrief((prev) => ({
       ...b,
       cst_benefit_at_death:
@@ -482,11 +532,42 @@ export default function MeetingPrep({
                         </div>
                       )}
 
+                      {brief.horizon_columns.length > 0 && (
+                        <div className="border-t border-neutral-100 pt-3">
+                          <p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">
+                            Tax Horizons (Strategy engine)
+                          </p>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {brief.horizon_columns.map((col) => (
+                              <div
+                                key={col.label}
+                                className="rounded-lg border border-neutral-100 bg-neutral-50 px-2 py-2 text-center"
+                              >
+                                <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide truncate">
+                                  {col.label}
+                                </p>
+                                <p className="text-sm font-bold text-neutral-900 mt-1">
+                                  {col.grossEstate !== null ? fmt(col.grossEstate) : '—'}
+                                </p>
+                                <p className="text-[10px] text-neutral-400">Gross</p>
+                                <p className="text-sm font-semibold text-red-600 mt-1">
+                                  {col.totalTax !== null ? fmt(col.totalTax) : '—'}
+                                </p>
+                                <p className="text-[10px] text-neutral-400">Est. tax</p>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-neutral-400 mt-2">
+                            Same estimates as Strategy tab horizons (federal + state).
+                          </p>
+                        </div>
+                      )}
+
                       {/* At-death projection */}
                       {brief.has_projection && (
                         <div className="border-t border-neutral-100 pt-3">
                           <p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">
-                            At Death (Projected)
+                            {brief.at_death_label ? `${brief.at_death_label} (summary)` : 'At Death (Projected)'}
                           </p>
                           <div className="grid grid-cols-3 gap-4">
                             {[

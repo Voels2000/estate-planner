@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (UX-2 advisor portal; advisor perf; NAV-1; OB-3b; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (UX-3 Strategy tab; UX-2; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **UX-2 advisor portal** — brand, tab-scoped load, gap workflow, metrics cache, estate/strategy alerts (apply `20260626120000_advisor_gap_statuses.sql`). **Advisor portal perf** (`8c526de`). **NAV-1**, **OB-3b**, **SU-1**. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql` + UX-2 gap migration before deploy. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **UX-3 Strategy tab** — three-step workflow (Situation / Opportunities / Recommendations), severity system, Meeting Prep horizons. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. **Advisor tax parity** (`cb04d64`). Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -31,6 +31,21 @@
 | Advisor portal perf | ✅ | `8c526de` |
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
+| Advisor portal UX-3 | ✅ | (this commit) |
+
+---
+
+## Advisor portal UX-3 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Situation** | Six metric cards (+2 when modules run); `●`/`!`/`✓`/`—`; max 2 indicators |
+| **Opportunities** | Strategy catalog with relevance highlighting; Run modules CTA |
+| **Recommendations** | Pending / accepted / declined; client strategy questions in Step 3 |
+| **Below** | Combined Strategy, SLAT/ILIT, Advanced, Monte Carlo unchanged |
+| **Flags** | `NEXT_PUBLIC_ADVISOR_BENCHMARKS` off by default |
+
+**Detail:** [SCHEMA_CHANGELOG.md § UX-3](./SCHEMA_CHANGELOG.md)
 
 ---
 
@@ -40,7 +55,8 @@
 |------|---------|
 | **Tax tab** | Waterfall uses horizon state tax; survivor-timeline labels on State Tax Detail |
 | **MFJ** | `isMFJFilingStatus()` on Strategy, Tax, Domicile, `GET /api/advisor/strategy-tab` |
-| **Follow-up** | `MeetingPrepTab` scenario tax totals; deprecated brackets in `estate-tax-projection` death rows |
+| **Meeting Prep** | `meetingPrepBriefFromHorizons` (shipped with UX-3) |
+| **Follow-up** | Deprecated brackets in `estate-tax-projection` death rows |
 
 **Detail:** [SCHEMA_CHANGELOG.md § Advisor tax parity](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md § Calculation consistency audit](./MASTER_ARCHITECTURE.md#calculation-consistency-audit-2026-05-26)
 
