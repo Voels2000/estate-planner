@@ -102,14 +102,15 @@ Each feature section below uses this shape:
 
 | | |
 |--|--|
-| **User goal** | Household setup: names, birth years, filing status, domicile, growth assumptions |
+| **User goal** | Household setup: names, birth years, filing status, domicile, SS claiming ages/PIA, tax deduction — **not** planning growth, inflation, or risk (those live on Scenarios and Asset Allocation) |
 | **Tier / gate** | Tier 1; **not** profile-gated (this is where users complete the gate) |
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
 | **Write APIs** | `PATCH /api/consumer/profile` |
 | **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete and wizard not done → `/onboarding/wizard`; if MVP complete and wizard done → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
 | **Extended fields (OB-1)** | When `onboarding_wizard_completed_at` is null: `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests` |
-| **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` |
+| **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` (pass-through preserves `growth_rate_*`, `inflation_rate`, `risk_tolerance` when not sent) |
+| **Cross-links** | Tax & Location → `/scenarios` (growth + inflation), `/allocation` (risk + target mix) |
 | **E2E** | Implicit via gated-page tests; manual smoke §3 |
 
 **Minimum viable profile** (required for estate planning pages):
@@ -244,11 +245,11 @@ Three related routes share projection engines but answer different questions. **
 |-------|------|------|-----------------|
 | `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
 | `/complete` | 2 | Full year-by-year `YearRow` table (expandable column groups) | Nav pills → projections / scenarios |
-| `/scenarios` | 1 | Side-by-side what-if (base + B + C); **growth assumptions** save via `PATCH /api/consumer/growth-assumptions` (triggers recompute); scenario rows via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
+| `/scenarios` | 1 | Side-by-side what-if (base + B + C); **planning assumptions** (financial accum/retire, RE/business growth, inflation) via `PATCH /api/consumer/growth-assumptions` → `afterHouseholdWrite`; scenario rows via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|
-| `/projections` | `loadProjectionData` → `ProjectionsClient` | Cache-first when fresh (`outputs_s1_first`); full compute when stale. `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
+| `/projections` | `loadProjectionData` → `ProjectionsClient` | Cache-first when fresh (`outputs_s1_first`); full compute when stale. Read-only `ProjectionAssumptions` links to `/scenarios`. `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
 | `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale |
 | `/scenarios` | `loadProjectionData` + client variant query strings | (scenario-specific UI) |
 
@@ -445,7 +446,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `trusts` | Trust CRUD |
 | `strategy-recommendation` | Accept advisor strategy line |
 | `asset-beneficiaries`, `entity-titling`, `household-people` | Titling / family |
-| `allocation-targets`, `scenario-snapshots`, `generate-base-case` | Projections / allocation |
+| `allocation-targets` (`target_*_pct`, `risk_tolerance`), `growth-assumptions`, `scenario-snapshots`, `generate-base-case` | `/allocation`, `/scenarios`, projections |
 | `estate-health-check` | Health questionnaire |
 | `life-events` | Log / list / acknowledge in-app life events |
 

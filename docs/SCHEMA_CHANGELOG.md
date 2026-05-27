@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## PROF-1/2 — Profile cleanup: assumption UI homes (2026-05-27, no migration)
+
+**Code only (four commits):**
+
+| Commit | Scope |
+|--------|--------|
+| PROF-1 | Remove growth rate inputs from Profile; pass-through in `buildHouseholdPayload` + profile API |
+| PROF-2 | Inflation → Scenarios (`PATCH /api/consumer/growth-assumptions`); risk → `/allocation` (`PATCH /api/consumer/allocation-targets`) |
+| PROF-3 | Consumer copy: RE/business growth, `ProjectionAssumptions` → Scenarios source links |
+| DOC-1 | `MASTER_ARCHITECTURE.md` assumption reference; `DATABASE_SCHEMA_REFERENCE.md` field ownership |
+
+**No schema change** — `households` columns unchanged; only which UI writes them.
+
+---
+
 ## ENG-2 — Growth assumptions engine + UI (2026-05-27)
 
 **Migrations (apply in order; redeploy `estate-monte-carlo` edge function before app deploy):**

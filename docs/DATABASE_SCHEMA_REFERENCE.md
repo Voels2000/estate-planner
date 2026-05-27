@@ -56,6 +56,15 @@ This is a developer reference, not a full SQL DDL dump.
 - **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `growth_rate_accumulation`, `growth_rate_retirement`, `growth_assumptions`, `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
 - **Purpose:** central planning record for person/spouse demographics and modeling defaults.
 - **`growth_assumptions` (jsonb):** per-asset-class rates. Keys: `real_estate` (default 4.5), `business` (default 7.0). Financial growth uses `growth_rate_accumulation` / `growth_rate_retirement`. Migration: `20260527130000_household_growth_assumptions.sql`. Post-deploy staleness: `20260527130400_bump_staleness_after_growth_assumptions.sql` bumps `updated_at` when `base_case_scenario_id` is set.
+
+#### `households` — field ownership (post PROF-1/2)
+
+**Edited via Profile:** name fields, birth years, retirement ages, longevity ages, SS claiming ages, PIA amounts, `state_primary`, `filing_status`, `tax_deduction_method`, `custom_deduction_amount`, onboarding metadata (`gross_estate_estimate`, `has_minor_children`, `has_business_interests`).
+
+**Edited via Scenarios:** `growth_rate_accumulation`, `growth_rate_retirement`, `growth_assumptions` (jsonb), `inflation_rate` (`PATCH /api/consumer/growth-assumptions`).
+
+**Edited via Asset Allocation:** `risk_tolerance`, `target_stocks_pct`, `target_bonds_pct`, `target_cash_pct` (`PATCH /api/consumer/allocation-targets`).
+
 - **Succession intake (Sprint 10):** minimal business succession booleans; `PATCH /api/consumer/succession-intake`.
 
 ### `advisor_clients`

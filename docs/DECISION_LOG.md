@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (ENG-2 growth assumptions; nav; Client Summary PDF)
+# Last updated: 2026-05-27 (PROF-1/2 profile cleanup; ENG-2 growth assumptions)
+
+## PROF-1/2 — Profile cleanup: canonical homes for planning assumptions (2026-05-27)
+
+**Decision:** Remove financial growth rates, inflation, and risk tolerance from `/profile`. **Scenarios** is the single editor for `growth_rate_accumulation`, `growth_rate_retirement`, `growth_assumptions` (RE/business), and `inflation_rate`. **Asset Allocation** (`/allocation`) edits `risk_tolerance` plus target stocks/bonds/cash. Profile save uses pass-through in `buildHouseholdRow` + fetch of existing household so PATCH profile does not overwrite Scenarios/Allocation values.
+
+**Reasoning:** Profile should hold identity and demographic facts; planning assumptions belong with the surfaces that explain them (what-if scenarios, allocation benchmarks). Duplicating editors caused confusion after ENG-2A/2B (RE/business no longer grow at inflation).
+
+**Alternatives considered:** Keep inflation on Profile (rejected — same “planning assumption” bucket as growth). Partial profile save API omitting household columns (rejected — pass-through is simpler for one save endpoint).
+
+**Docs:** `MASTER_ARCHITECTURE.md` — Projection Engine Assumption Reference; `DATABASE_SCHEMA_REFERENCE.md` — households field ownership table.
+
+---
 
 ## ENG-2 — Per-asset-class growth assumptions and post-deploy staleness bump (2026-05-27)
 

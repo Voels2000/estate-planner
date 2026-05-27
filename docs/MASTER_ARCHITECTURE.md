@@ -243,7 +243,9 @@ Important:
 **Per-asset-class rates (household):**
 
 - `households.growth_assumptions` jsonb — keys `real_estate` (default 4.5%), `business` (default 7.0%).
-- Financial buckets still use `growth_rate_accumulation` / `growth_rate_retirement` (Scenarios + profile).
+- Financial buckets still use `growth_rate_accumulation` / `growth_rate_retirement` (Scenarios only; post PROF-1).
+- `households.inflation_rate` — expenses and inflation-adjusted income (Scenarios only; post PROF-2).
+- `households.risk_tolerance` — Asset Allocation benchmarks and MC prefill (post PROF-2).
 - Parsed in engine via `lib/types/growthAssumptions.ts` (`parseGrowthAssumptions`, `resolveGrowthAssumptions`).
 - Scenario query overrides: `real_estate_growth`, `business_growth` on `/api/projection`.
 - Consumer save: `PATCH /api/consumer/growth-assumptions` → `afterHouseholdWrite` (bumps `households.updated_at`).
@@ -263,9 +265,39 @@ Important:
 
 - `advisor_projection_assumptions.real_estate_growth_pct`, `business_growth_pct` — UI on `MonteCarloAssumptionsPanel`.
 
-**UI:** `components/projections/GrowthAssumptionInputs.tsx` on `/scenarios` (editable + save); read-only on `/projections`. ENG-2E: MC alignment indicator when return mean differs from accumulation by >1.5pp.
+**UI:** `components/projections/GrowthAssumptionInputs.tsx` on `/scenarios` (editable + save); read-only summary on `/projections` (`ProjectionAssumptions` → edit on Scenarios). Post PROF-1/2: Profile does not edit growth/inflation/risk. ENG-2E: MC alignment indicator when return mean differs from accumulation by >1.5pp.
 
 **Post-deploy staleness:** Migration `20260527130400_bump_staleness_after_growth_assumptions.sql` sets `households.updated_at` for rows with `base_case_scenario_id` so existing users regenerate on next visit (backfill alone does not bump `updated_at`).
+
+### Projection Engine Assumption Reference
+
+**Canonical assumption homes (post ENG-2A–2E, PROF-1/2):**
+
+| Assumption | Stored in | UI editor | Engines that consume it |
+|---|---|---|---|
+| Financial growth (accumulation) | `households.growth_rate_accumulation` | Scenarios | `computeCompleteProjection` (financial buckets, working years) |
+| Financial growth (retirement) | `households.growth_rate_retirement` | Scenarios | `computeCompleteProjection` (financial buckets, retired years) |
+| Real estate appreciation | `households.growth_assumptions.real_estate` | Scenarios | `computeCompleteProjection` (RE loop; was inflation — fixed ENG-2A) |
+| Business growth | `households.growth_assumptions.business` | Scenarios | `computeCompleteProjection` (business loop; was inflation — fixed ENG-2A) |
+| Income growth | `income.annual_growth_rate` | Income record form | `computeCompleteProjection` (salary/wages/equity/rental only) |
+| Insurance cash value growth | `insurance_policies.cash_value_growth_rate` | Insurance record form | `computeCompleteProjection` (whole life/UL only) |
+| Inflation | `households.inflation_rate` | Scenarios | `computeCompleteProjection` (expenses, `inflation_adjust` income) |
+| Risk tolerance | `households.risk_tolerance` | Asset Allocation | Allocation benchmarks; MC prefill hint |
+| Retirement MC return | `advisor_projection_assumptions.return_mean_pct` | Advisor MC panel | `monteCarlo.ts` |
+| Retirement MC volatility | `advisor_projection_assumptions.volatility_pct` | Advisor MC panel | `monteCarlo.ts` |
+| Estate MC return | Request → advisor assumptions → `growth_rate_accumulation` → 7.0 | Advisor MC panel | `estate-monte-carlo.ts` |
+| SS claiming ages / PIA | `households` (profiles) | Profile | `computeCompleteProjection` (SS income timing) |
+| Demographics | `households` (profiles) | Profile | `computeCompleteProjection` (age gates) |
+| Filing status / state | `households` | Profile | `computeEstateTaxProjection` |
+| Tax deduction method | `households` | Profile | `computeCompleteProjection` |
+
+**What Profile contains (post PROF-1/2):** identity and demographics — names, birth years, retirement/longevity ages, SS claiming ages and PIA, state of domicile, filing status, tax deduction method, onboarding metadata.
+
+**What Scenarios contains:** all planning growth assumptions — financial accumulation/retirement, RE/business rates, inflation — plus scenario B/C overrides (retirement timing, SS ages, state).
+
+**What Asset Allocation contains:** risk tolerance, target stocks/bonds/cash mix, benchmark comparison.
+
+**Assumption cascade (advisor views):** (1) advisor override (`advisor_projection_assumptions`), (2) household value (consumer Scenarios/Allocation), (3) system default in engine.
 
 ### Federal Income Tax Chain
 

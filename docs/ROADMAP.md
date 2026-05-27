@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (ENG-2 growth assumptions; nav; Client Summary PDF; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (PROF-1/2 profile cleanup; ENG-2 growth assumptions; Sprint 17 go-live prep)
 
 ---
 
@@ -20,6 +20,13 @@
 ---
 
 ## Current sprint
+
+### Profile cleanup PROF-1/2 (2026-05-27) ✅
+
+- `[x]` PROF-1 — Growth rates removed from Profile; Scenarios cross-link; pass-through on profile save
+- `[x]` PROF-2 — Risk tolerance on Asset Allocation; inflation on Scenarios; APIs extended
+- `[x]` PROF-3 — Outdated engine copy (Complete footer, ProjectionAssumptions)
+- `[x]` DOC-1 — Projection Engine Assumption Reference in master docs
 
 ## ⚠️ Go-live gate
 

@@ -131,6 +131,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
+## PROF-1/2 — Profile cleanup (2026-05-27)
+
+- [x] Profile: no growth / inflation / risk inputs; cross-links to Scenarios and Allocation
+- [x] Scenarios: inflation + growth save via `PATCH /api/consumer/growth-assumptions`
+- [x] Allocation: editable `risk_tolerance` via `PATCH /api/consumer/allocation-targets`
+- [x] `ProjectionAssumptions` + Complete footer copy aligned with ENG-2A engine
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE
+
 ## ENG-2 — Growth assumptions (2026-05-27)
 
 - [x] Migrations `20260527130000`–`20260527130300` + staleness bump `20260527130400`
