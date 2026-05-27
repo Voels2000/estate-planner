@@ -68,6 +68,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **No perf change to cache path** — `getCachedAdvisoryMetrics` unchanged. UX-3 reorganizes cached metrics in `StrategyTabContent` / `SituationMetricsGrid` and adds `advisoryMetricSeverity` for display caps (replaces `!!` badges in `AdvisoryMetricsDashboard`).
 
+## Advisor portal UX-4 — Inline Opportunities modeling (2026-05-26)
+
+**No perf change** — reuses existing panel components; inline instances mount on expand only (one row at a time). `router.refresh()` on recommend is intentional for Step 3 parity with server props.
+
 ## Post-launch refactors (not in this sprint)
 
 - Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*

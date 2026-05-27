@@ -116,6 +116,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Meeting Prep: `meetingPrepBriefFromHorizons`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION
 
+## Advisor portal UX-4 — Inline strategy modeling (2026-05-26)
+
+- [x] Catalog: `annual_gifting` id; 11 strategies; `catalogToPanel.ts` (CST chip `credit_shelter_trust`)
+- [x] `InlineStrategyPanel` + row expand; `inlinePanelProps` mirrors full-width SLAT/ILIT + Advanced props
+- [x] `initialActivePanel` / `onRecommend` on panels (additive); `ModelStrategyButton` removed
+- [x] `isSent` from advisor `strategy_line_items`; Combined Strategy / panels below unchanged
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
+
 ## Signup trigger — pre-go-live
 
 - [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))

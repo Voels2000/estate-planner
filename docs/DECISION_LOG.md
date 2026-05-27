@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (UX-3 Strategy tab; UX-2; advisor tax parity)
+# Last updated: 2026-05-26 (UX-4 inline modeling; UX-3 Strategy tab; UX-2; advisor tax parity)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — UX-4: Inline strategy modeling in Opportunities panel
+
+**Decision:** Wire Step 2 catalog rows to existing `SLATILITPanel` and `AdvancedStrategyPanel` inline (expand/collapse per row) without new engines, APIs, or migrations. Centralize catalog id → panel chip mapping in `catalogToPanel.ts`; **CST** uses catalog/API key `cst` but UI chip `credit_shelter_trust` (only asymmetric case). Remove scroll-only `ModelStrategyButton`. Keep full-width panels below the three-step workflow as fallback; `scrollToStrategyModules` unchanged.
+
+**Reasoning:** UX-3 “Model this” scrolled away from the catalog; advisors lost context. Reusing existing panels preserves `strategy_source` contracts and `useRecommendAdvanced` / SLAT·ILIT POST paths. Grep-verified chip strings prevent silent no-op panel opens.
+
+**Alternatives considered:** New inline forms per strategy (rejected — duplicate engines). Rename `credit_shelter_trust` to `cst` in UI state (rejected — breaks `PANEL_TO_STRATEGY_SOURCE` and saved-state mapping).
 
 ---
 

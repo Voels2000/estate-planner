@@ -5,8 +5,10 @@
  * and consumer plan status; reads ledger/config for display alongside advisor tools.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { StrategyTabContent } from '@/components/advisor/strategy/StrategyTabContent'
+import type { InlineStrategyPanelBundle } from '@/components/advisor/strategy/InlineStrategyPanel'
 import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import { ClientViewShellProps } from '../_client-view-shell'
 import SLATILITPanel from '@/components/advisor/SLATILITPanel'
@@ -79,6 +81,8 @@ export default function StrategyTab({
   const annualRMD = Number(scenario?.annual_rmd ?? 0)
   const preIRABalance = Number(scenario?.pre_ira_balance ?? 0)
   const rothBalance = Number(scenario?.roth_balance ?? 0)
+  const router = useRouter()
+  const [inlineStrategyId, setInlineStrategyId] = useState<string | null>(null)
   const [slatIlitOpen, setSlatIlitOpen] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
@@ -194,6 +198,78 @@ export default function StrategyTab({
       }
     }).catch(() => null)
   }, [householdId])
+
+  const handleInlineRecommend = useCallback(async () => {
+    await loadConsumerData()
+    router.refresh()
+    setInlineStrategyId(null)
+  }, [loadConsumerData, router])
+
+  function handleInlineExpand(catalogId: string) {
+    setInlineStrategyId((prev) => (prev === catalogId ? null : catalogId))
+  }
+
+  const inlinePanelProps = useMemo((): InlineStrategyPanelBundle => {
+    if (!household?.id) {
+      return {
+        slatIlit: {
+          householdId: '',
+          grossEstate: 0,
+          federalExemption: 0,
+          person1BirthYear: 1960,
+        },
+        advanced: {
+          householdId: '',
+          grossEstate: 0,
+          federalExemption: 0,
+          estimatedFederalTax: 0,
+          estimatedStateTax: 0,
+          person1BirthYear: 1960,
+        },
+      }
+    }
+    return {
+      slatIlit: {
+        householdId: household.id,
+        grossEstate,
+        federalExemption,
+        person1BirthYear,
+        person2BirthYear,
+        onRecommend: handleInlineRecommend,
+      },
+      advanced: {
+        householdId: household.id,
+        grossEstate,
+        federalExemption,
+        estimatedFederalTax,
+        estimatedStateTax,
+        person1BirthYear,
+        person2BirthYear,
+        filingStatus,
+        giftingActuals,
+        advisorHorizons,
+        annualRMD,
+        preIRABalance,
+        rothBalance,
+        onRecommend: handleInlineRecommend,
+      },
+    }
+  }, [
+    household?.id,
+    grossEstate,
+    federalExemption,
+    estimatedFederalTax,
+    estimatedStateTax,
+    person1BirthYear,
+    person2BirthYear,
+    filingStatus,
+    giftingActuals,
+    advisorHorizons,
+    annualRMD,
+    preIRABalance,
+    rothBalance,
+    handleInlineRecommend,
+  ])
 
   useEffect(() => {
     loadConsumerData()
@@ -322,6 +398,9 @@ export default function StrategyTab({
         strategyQuestions={strategyQuestions}
         onRunStrategyModules={scrollToStrategyModules}
         onAddRecommendation={scrollToAddRecommendation}
+        inlineStrategyId={inlineStrategyId}
+        onInlineExpand={handleInlineExpand}
+        inlinePanelProps={inlinePanelProps}
       />
 
       <section>

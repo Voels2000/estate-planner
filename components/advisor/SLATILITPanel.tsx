@@ -12,6 +12,8 @@ interface SLATILITPanelProps {
   federalExemption: number
   person1BirthYear: number
   person2BirthYear?: number
+  initialActivePanel?: 'slat' | 'ilit'
+  onRecommend?: () => void | Promise<void>
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -22,6 +24,8 @@ export default function SLATILITPanel({
   federalExemption,
   person1BirthYear,
   person2BirthYear,
+  initialActivePanel,
+  onRecommend,
 }: SLATILITPanelProps) {
   const defaultDeathYear = person1BirthYear + 82
   const supabase = useMemo(() => createClient(), [])
@@ -48,7 +52,9 @@ export default function SLATILITPanel({
     isPolicyTransfer: false,
   })
 
-  const [activePanel, setActivePanel] = useState<'slat' | 'ilit' | null>(null)
+  const [activePanel, setActivePanel] = useState<'slat' | 'ilit' | null>(
+    initialActivePanel ?? null,
+  )
   const [isSavingLedger, setIsSavingLedger] = useState(false)
   const [ledgerMessage, setLedgerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [slatRecommendMessage, setSlatRecommendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -134,6 +140,7 @@ export default function SLATILITPanel({
         return
       }
       setSlatRecommendMessage({ type: 'success', text: 'Recommendation saved — client will see this as pending.' })
+      await onRecommend?.()
     } catch {
       setSlatRecommendMessage({ type: 'error', text: 'Unexpected error saving recommendation' })
     } finally {
@@ -176,6 +183,7 @@ export default function SLATILITPanel({
         return
       }
       setIlitRecommendMessage({ type: 'success', text: 'Recommendation saved — client will see this as pending.' })
+      await onRecommend?.()
     } catch {
       setIlitRecommendMessage({ type: 'error', text: 'Unexpected error saving recommendation' })
     } finally {

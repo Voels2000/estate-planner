@@ -12,6 +12,7 @@ import { SituationMetricsGrid } from '@/components/advisor/strategy/SituationMet
 import { OpportunitiesPanel } from '@/components/advisor/strategy/OpportunitiesPanel'
 import { RecommendationsPanel } from '@/components/advisor/strategy/RecommendationsPanel'
 import { MetricExplanationsAccordion } from '@/components/advisor/strategy/MetricExplanationsAccordion'
+import type { InlineStrategyPanelBundle } from '@/components/advisor/strategy/InlineStrategyPanel'
 
 interface StrategyTabContentProps {
   householdId: string
@@ -31,6 +32,9 @@ interface StrategyTabContentProps {
   strategyQuestions?: StrategyQuestionNotification[]
   onRunStrategyModules: () => void
   onAddRecommendation: () => void
+  inlineStrategyId: string | null
+  onInlineExpand: (catalogId: string) => void
+  inlinePanelProps: InlineStrategyPanelBundle
 }
 
 export function StrategyTabContent({
@@ -51,6 +55,9 @@ export function StrategyTabContent({
   strategyQuestions,
   onRunStrategyModules,
   onAddRecommendation,
+  inlineStrategyId,
+  onInlineExpand,
+  inlinePanelProps,
 }: StrategyTabContentProps) {
   const metrics = useMemo(
     () =>
@@ -89,6 +96,10 @@ export function StrategyTabContent({
           metrics={metrics}
           hasRunModules={hasRunStrategyModules}
           onRunStrategyModules={onRunStrategyModules}
+          inlineStrategyId={inlineStrategyId}
+          onInlineExpand={onInlineExpand}
+          inlinePanelProps={inlinePanelProps}
+          strategyLineItems={strategyLineItems}
         />
       </StrategyStep>
 

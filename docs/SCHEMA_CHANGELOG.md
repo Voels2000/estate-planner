@@ -8,6 +8,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## UX-4 — Inline strategy modeling in Opportunities (2026-05-26, no migration)
+
+**Code only (advisor Strategy tab Step 2; zero consumer routes):**
+
+- **Section A:** `strategyCatalog.ts` — `annual-gifting` → `annual_gifting`; catalog extended to 11 strategies (CRT, CLAT, Liquidity, Roth, Revocable Trust); `deriveHighlightedStrategies` uses `annual_gifting` + highlights `liquidity` when coverage &lt; 1.5x.
+- **Section B:** `StrategyTab.tsx` — `inlineStrategyId`, `catalogToPanel.ts` (`cst` catalog id → chip `credit_shelter_trust`), bundled `inlinePanelProps` `{ slatIlit, advanced }`; inline `onRecommend` → `loadConsumerData()` + `router.refresh()` + row collapse.
+- **Section C:** `SLATILITPanel` + `AdvancedStrategyPanel` — additive `initialActivePanel?`, `onRecommend?` (SLAT/ILIT: two POST handlers; Advanced: single `useRecommendAdvanced` / `toggle` path for all chips). Full-width instances below three-step workflow unchanged.
+- **Section D–F:** `InlineStrategyPanel`, `StrategyOpportunityRow` expand toggle (replaces scroll-only `ModelStrategyButton`); `OpportunitiesPanel` `isSent` from advisor `strategy_line_items` (`strategy_source` = catalog id, including `cst`).
+- **Deleted:** `ModelStrategyButton.tsx`.
+
+**No new migrations, engines, or API routes.** `strategy_source` strings and `POST /api/advisor/strategy-recommendation` unchanged.
+
+---
+
 ## UX-3 — Strategy tab restructure (2026-05-26, no migration)
 
 **Code only (advisor Strategy tab; zero consumer routes):**

@@ -51,6 +51,7 @@ interface AdvancedStrategyPanelProps {
   preIRABalance?: number
   rothBalance?: number
   onRecommend?: () => void | Promise<void>
+  initialActivePanel?: string
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -190,12 +191,16 @@ export default function AdvancedStrategyPanel({
   preIRABalance = 0,
   rothBalance = 0,
   onRecommend,
+  initialActivePanel,
 }: AdvancedStrategyPanelProps) {
   void person2BirthYear
   void filingStatus
   void advisorHorizons
   const { saved, saving, toggle } = useRecommendAdvanced(householdId, onRecommend)
-  const [activePanel, setActivePanel] = useState<AdvancedPanel>(null)
+  const [activePanel, setActivePanel] = useState<AdvancedPanel>(() => {
+    if (!initialActivePanel) return null
+    return initialActivePanel as AdvancedPanel
+  })
   const defaultDeathYear = person1BirthYear + 82
 
   const [gratConfig, setGratConfig] = useState<GRATConfig>({

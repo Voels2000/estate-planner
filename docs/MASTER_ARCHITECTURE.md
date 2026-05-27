@@ -70,6 +70,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor portal perf | Roster: `loadRosterNetWorthByOwner` (batched reads). Client workspace: parallel staleness/composition/datasets; scoped tax tables — [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26) |
 | Advisor portal UX-2 | Navy/gold brand; `advisorDatasetIncludeForTab()`; `PlanStatusCard` + `advisor_gap_statuses`; `getCachedAdvisoryMetrics` (120s cache); estate composition advisor variant — SCHEMA_CHANGELOG UX-2 |
 | Advisor portal UX-3 | Strategy tab three-step workflow (`StrategyTabContent`): Situation / Opportunities / Recommendations; `advisoryMetricSeverity` + `StrategyAlertBanners`; `OpportunitiesPanel` catalog; `RecommendationsPanel` + client questions; benchmarks behind `ADVISOR_BENCHMARKS` — SCHEMA_CHANGELOG UX-3 |
+| Advisor portal UX-4 | Step 2 Opportunities rows expand inline to `SLATILITPanel` / `AdvancedStrategyPanel` via `InlineStrategyPanel` + `catalogToPanel.ts` (CST: catalog `cst`, chip `credit_shelter_trust`); full-width modeling sections unchanged below — SCHEMA_CHANGELOG UX-4 |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -902,7 +903,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
 - **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab (six core metrics cached server-side).
-- **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x. Modeling sections (Combined Strategy, SLAT/ILIT, Advanced, Monte Carlo) remain below the three-step workflow.
+- **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x.
+- **Strategy tab UX (UX-4):** Opportunities catalog rows expand inline (`InlineStrategyPanel`, `catalogToPanel.ts`); recommend refreshes Step 3 via `loadConsumerData` + `router.refresh`. Modeling sections (Combined Strategy, SLAT/ILIT, Advanced, Monte Carlo) remain below the three-step workflow as full-width fallback.
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` + `AttorneyEstatePlanPDF` — cover disclaimer, user attribution, title **Estate Planning Preparation Report** (Sprint C-2b, 2026-05-24).
 
 **Analytics & A/B (Sprint 5):**

@@ -20,7 +20,7 @@ export const STRATEGY_CATALOG = [
     category: 'trust',
   },
   {
-    id: 'annual-gifting',
+    id: 'annual_gifting',
     name: 'Annual Gifting',
     fullName: 'Annual Exclusion Gifting Program',
     description:
@@ -41,7 +41,7 @@ export const STRATEGY_CATALOG = [
     name: 'Credit Shelter Trust',
     fullName: 'Credit Shelter Trust (Bypass Trust)',
     description:
-      'Preserve both spouses\' exemptions at first death — critical in states without portability.',
+      "Preserve both spouses' exemptions at first death — critical in states without portability.",
     relevanceKey: 'dsueAtRisk' as const,
     category: 'trust',
   },
@@ -53,6 +53,51 @@ export const STRATEGY_CATALOG = [
     relevanceKey: null,
     category: 'charitable',
   },
+  {
+    id: 'crt',
+    name: 'CRT',
+    fullName: 'Charitable Remainder Trust',
+    description:
+      'Income stream to grantor, remainder to charity — removes assets from estate and generates a charitable deduction.',
+    relevanceKey: null,
+    category: 'charitable',
+  },
+  {
+    id: 'clat',
+    name: 'CLAT',
+    fullName: 'Charitable Lead Annuity Trust',
+    description:
+      'Annuity to charity for a term, remainder to heirs — most effective when §7520 rate is low.',
+    relevanceKey: 'gratBreakevenRate' as const,
+    category: 'charitable',
+  },
+  {
+    id: 'liquidity',
+    name: 'Liquidity Strategy',
+    fullName: 'Estate Liquidity Analysis',
+    description:
+      'Structures liquid assets to cover settlement costs, taxes, and expenses without forced sales.',
+    relevanceKey: 'liquidityCoverage' as const,
+    category: 'liability',
+  },
+  {
+    id: 'roth',
+    name: 'Roth Conversion',
+    fullName: 'Roth Conversion Strategy',
+    description:
+      'Converts pre-tax retirement assets to Roth — reduces future RMDs and taxable estate over time.',
+    relevanceKey: null,
+    category: 'trust_exclusion',
+  },
+  {
+    id: 'revocable_trust',
+    name: 'Revocable Trust',
+    fullName: 'Revocable Living Trust',
+    description:
+      'Avoids probate and provides continuity for asset distribution — foundational document at this estate size.',
+    relevanceKey: null,
+    category: 'trust_exclusion',
+  },
 ] as const
 
 export type StrategyCatalogEntry = (typeof STRATEGY_CATALOG)[number]
@@ -63,12 +108,13 @@ export function deriveHighlightedStrategies(metrics: AdvisoryMetric[]): Set<stri
   const exemptionPct = exemption ? numericValueForMetric(exemption) : null
   if (exemptionPct !== null && exemptionPct < 50) {
     highlighted.add('slat')
-    highlighted.add('annual-gifting')
+    highlighted.add('annual_gifting')
   }
   const liquidity = metrics.find((m) => m.id === 'liquidity_coverage')
   const liquidityRatio = liquidity ? numericValueForMetric(liquidity) : null
   if (liquidityRatio !== null && liquidityRatio < 1.5) {
     highlighted.add('ilit')
+    highlighted.add('liquidity')
   }
   const dsue = metrics.find((m) => m.id === 'dsue_at_risk')
   const dsueVal = dsue ? numericValueForMetric(dsue) : null

@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (UX-3 Strategy tab; UX-2; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (UX-4 inline modeling; UX-3 Strategy tab; Sprint 17 go-live prep)
 
 ---
 
@@ -32,6 +32,20 @@
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
+| Advisor portal UX-4 | ✅ | TBD |
+
+---
+
+## Advisor portal UX-4 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Opportunities** | Per-row expand → `InlineStrategyPanel`; 11-strategy catalog; `isSent` from advisor line items |
+| **Mapping** | `catalogToPanel.ts` — `cst` → chip `credit_shelter_trust`; `annual_gifting` catalog id fixed |
+| **Recommend** | `onRecommend` → `loadConsumerData()` + `router.refresh()` + collapse row |
+| **Below** | Combined Strategy, SLAT/ILIT, Advanced, Monte Carlo unchanged (full-width fallback) |
+
+**Detail:** [SCHEMA_CHANGELOG.md § UX-4](./SCHEMA_CHANGELOG.md)
 
 ---
 

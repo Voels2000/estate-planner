@@ -1,7 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import type { AdvisoryMetric } from '@/lib/advisoryMetrics'
+import type { AdvisorStrategyLineItemSummary } from '@/lib/estate/strategyLedger'
 import { StrategyOpportunityRow } from '@/components/advisor/strategy/StrategyOpportunityRow'
+import type { InlineStrategyPanelBundle } from '@/components/advisor/strategy/InlineStrategyPanel'
 import {
   STRATEGY_CATALOG,
   deriveHighlightedStrategies,
@@ -11,14 +14,37 @@ interface OpportunitiesPanelProps {
   metrics: AdvisoryMetric[]
   hasRunModules: boolean
   onRunStrategyModules: () => void
+  inlineStrategyId: string | null
+  onInlineExpand: (catalogId: string) => void
+  inlinePanelProps: InlineStrategyPanelBundle
+  strategyLineItems: AdvisorStrategyLineItemSummary[]
 }
 
 export function OpportunitiesPanel({
   metrics,
   hasRunModules,
   onRunStrategyModules,
+  inlineStrategyId,
+  onInlineExpand,
+  inlinePanelProps,
+  strategyLineItems,
 }: OpportunitiesPanelProps) {
   const highlightedIds = deriveHighlightedStrategies(metrics)
+
+  const sentStrategyIds = useMemo(
+    () =>
+      new Set(
+        strategyLineItems
+          .filter(
+            (r) =>
+              r.source_role === 'advisor' &&
+              r.is_active &&
+              Math.abs(Number(r.amount ?? 0)) > 0,
+          )
+          .map((r) => r.strategy_source),
+      ),
+    [strategyLineItems],
+  )
 
   return (
     <div className="space-y-3">
@@ -33,9 +59,12 @@ export function OpportunitiesPanel({
             key={strategy.id}
             strategy={strategy}
             isHighlighted={highlightedIds.has(strategy.id)}
+            isExpanded={inlineStrategyId === strategy.id}
+            isSent={sentStrategyIds.has(strategy.id)}
             metrics={metrics}
             hasRunModules={hasRunModules}
-            onRunStrategyModules={onRunStrategyModules}
+            inlinePanelProps={inlinePanelProps}
+            onToggle={() => onInlineExpand(strategy.id)}
           />
         ))}
 
