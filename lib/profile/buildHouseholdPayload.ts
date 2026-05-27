@@ -21,10 +21,11 @@ export type ProfileSavePayload = {
   filingStatus: string
   statePrimary: string
   stateCompare: string
-  inflationRate: string
-  riskTolerance: string
-  growthRateAccumulation: string
-  growthRateRetirement: string
+  /** Omitted from Profile UI — pass-through preserves Scenarios / Allocation values */
+  inflationRate?: string
+  riskTolerance?: string
+  growthRateAccumulation?: string
+  growthRateRetirement?: string
   deductionMode: 'standard' | 'custom' | 'none'
   customDeductionAmount: string
   grossEstateEstimate?: string
@@ -39,6 +40,16 @@ const GROSS_ESTATE_ESTIMATE_VALUES = [
   '10m_20m',
   'over_20m',
 ] as const
+
+const RISK_TOLERANCE_VALUES = ['conservative', 'moderate', 'aggressive'] as const
+
+/** Existing household values used when Profile no longer edits planning assumptions */
+export type ExistingHouseholdDefaults = {
+  inflation_rate?: number | null
+  risk_tolerance?: string | null
+  growth_rate_accumulation?: number | null
+  growth_rate_retirement?: number | null
+}
 
 export function validateProfileSavePayload(payload: ProfileSavePayload): string[] {
   const errors: string[] = []
@@ -57,7 +68,11 @@ export function validateProfileSavePayload(payload: ProfileSavePayload): string[
   return errors
 }
 
-export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) {
+export function buildHouseholdRow(
+  ownerId: string,
+  payload: ProfileSavePayload,
+  existing?: ExistingHouseholdDefaults | null,
+) {
   const filingStatus = FILING_STATUSES.includes(
     payload.filingStatus as (typeof FILING_STATUSES)[number],
   )
@@ -92,10 +107,25 @@ export function buildHouseholdRow(ownerId: string, payload: ProfileSavePayload) 
     filing_status: filingStatus,
     state_primary: payload.statePrimary || null,
     state_compare: payload.stateCompare || null,
-    inflation_rate: parseFloat(payload.inflationRate) || 2.5,
-    risk_tolerance: payload.riskTolerance,
-    growth_rate_accumulation: Number(payload.growthRateAccumulation) || 7,
-    growth_rate_retirement: Number(payload.growthRateRetirement) || 5,
+    inflation_rate:
+      payload.inflationRate != null && payload.inflationRate !== ''
+        ? parseFloat(payload.inflationRate) || 2.5
+        : (existing?.inflation_rate ?? 2.5),
+    risk_tolerance:
+      payload.riskTolerance != null &&
+      RISK_TOLERANCE_VALUES.includes(
+        payload.riskTolerance as (typeof RISK_TOLERANCE_VALUES)[number],
+      )
+        ? payload.riskTolerance
+        : (existing?.risk_tolerance ?? 'moderate'),
+    growth_rate_accumulation:
+      payload.growthRateAccumulation != null && payload.growthRateAccumulation !== ''
+        ? Number(payload.growthRateAccumulation) || 7
+        : (existing?.growth_rate_accumulation ?? 7),
+    growth_rate_retirement:
+      payload.growthRateRetirement != null && payload.growthRateRetirement !== ''
+        ? Number(payload.growthRateRetirement) || 5
+        : (existing?.growth_rate_retirement ?? 5),
     deduction_mode: payload.deductionMode,
     custom_deduction_amount: parseFloat(payload.customDeductionAmount) || 0,
     gross_estate_estimate:

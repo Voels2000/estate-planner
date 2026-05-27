@@ -74,10 +74,6 @@ export function ProfileClient({
   const [filingStatus, setFilingStatus] = useState(initial.filingStatus)
   const [statePrimary, setStatePrimary] = useState(initial.statePrimary)
   const [stateCompare, setStateCompare] = useState(initial.stateCompare)
-  const [inflationRate, setInflationRate] = useState(initial.inflationRate)
-  const [riskTolerance, setRiskTolerance] = useState(initial.riskTolerance)
-  const [growthRateAccumulation, setGrowthRateAccumulation] = useState(initial.growthRateAccumulation)
-  const [growthRateRetirement, setGrowthRateRetirement] = useState(initial.growthRateRetirement)
   const [deductionMode, setDeductionMode] = useState<'standard' | 'custom' | 'none'>(initial.deductionMode)
   const [customDeductionAmount, setCustomDeductionAmount] = useState(initial.customDeductionAmount)
   const [grossEstateEstimate, setGrossEstateEstimate] = useState(initial.grossEstateEstimate)
@@ -158,10 +154,6 @@ export function ProfileClient({
         filingStatus,
         statePrimary,
         stateCompare,
-        inflationRate,
-        riskTolerance,
-        growthRateAccumulation,
-        growthRateRetirement,
         deductionMode,
         customDeductionAmount,
         grossEstateEstimate,
@@ -495,34 +487,29 @@ export function ProfileClient({
               </select>
             </Field>
 
-            <Field label="Inflation Rate (%)">
-              <input type="number" min="0" max="20" step="0.1" value={inflationRate}
-                onChange={(e) => setInflationRate(e.target.value)}
-                className={inputClass} placeholder="2.5" />
-            </Field>
-            <Field label="Risk Tolerance">
-              <select value={riskTolerance} onChange={(e) => setRiskTolerance(e.target.value)} className={inputClass}>
-                <option value="conservative">Conservative</option>
-                <option value="moderate">Moderate</option>
-                <option value="aggressive">Aggressive</option>
-              </select>
-            </Field>
-            <Field label="Growth Rate – Accumulation (%)">
-              <input type="number" min="-10" max="30" step="0.5" value={growthRateAccumulation}
-                onChange={(e) => setGrowthRateAccumulation(e.target.value)}
-                className={inputClass} placeholder="7" />
-              <p className="mt-1 text-xs text-neutral-400">
-                Applied to financial assets before retirement. Reflects a longer time horizon and typically higher equity allocation.
+            <div className="sm:col-span-2 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
+              <p className="text-xs font-semibold text-gray-700">Growth &amp; Return Assumptions</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Portfolio growth rates (financial assets), real estate appreciation, business growth,
+                and inflation are configured in{' '}
+                <a href="/scenarios" className="text-[#0F1B3C] underline hover:text-[#C9A84C]">
+                  Scenarios
+                </a>
+                .
               </p>
-            </Field>
-            <Field label="Growth Rate – Retirement (%)">
-              <input type="number" min="-10" max="30" step="0.5" value={growthRateRetirement}
-                onChange={(e) => setGrowthRateRetirement(e.target.value)}
-                className={inputClass} placeholder="5" />
-              <p className="mt-1 text-xs text-neutral-400">
-                Applied to financial assets after retirement begins. Reflects a more conservative allocation to manage withdrawal risk.
+            </div>
+
+            <div className="sm:col-span-2 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
+              <p className="text-xs font-semibold text-gray-700">Risk Profile</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Your risk tolerance and target asset allocation are configured in{' '}
+                <a href="/allocation" className="text-[#0F1B3C] underline hover:text-[#C9A84C]">
+                  Asset Allocation
+                </a>
+                .
               </p>
-            </Field>
+            </div>
+
             <Field label="Tax Deduction Method">
               <div className="flex gap-2 mt-1">
                 {(['standard', 'custom', 'none'] as const).map((mode) => (

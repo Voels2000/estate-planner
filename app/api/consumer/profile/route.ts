@@ -33,20 +33,36 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
-  const householdRow = buildHouseholdRow(user.id, body)
   let householdId = body.householdId ?? null
   let created = false
+  let existingDefaults = null
 
   if (householdId) {
     const ownedId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
     if (!ownedId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    householdId = ownedId
 
+    const { data: existing } = await supabase
+      .from('households')
+      .select(
+        'inflation_rate, risk_tolerance, growth_rate_accumulation, growth_rate_retirement',
+      )
+      .eq('id', ownedId)
+      .eq('owner_id', user.id)
+      .single()
+
+    existingDefaults = existing
+  }
+
+  const householdRow = buildHouseholdRow(user.id, body, existingDefaults)
+
+  if (householdId && !created) {
     const { error: householdError } = await supabase
       .from('households')
       .update(householdRow)
-      .eq('id', ownedId)
+      .eq('id', householdId)
       .eq('owner_id', user.id)
 
     if (householdError) {
