@@ -187,7 +187,9 @@ export default async function MyEstateTrustStrategyPage({
       .eq('is_active', true),
     supabase
       .from('strategy_line_items')
-      .select('id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name')
+      .select(
+        'id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_withdrawn',
+      )
       .eq('household_id', householdRow.id)
       .eq('source_role', 'consumer')
       .eq('is_active', true),

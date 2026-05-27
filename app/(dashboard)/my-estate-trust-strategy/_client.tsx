@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
@@ -17,6 +17,11 @@ import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type { GiftingSummary } from '@/components/GiftingDashboard'
+import { ReversalModal, type ReversalModalAction } from '@/components/consumer/strategy/ReversalModal'
+import {
+  returnStrategyToSandbox,
+  withdrawStrategy,
+} from '@/lib/consumer/consumerStrategyLineItems'
 
 type AdvisorLineItem = {
   id?: string
@@ -62,6 +67,8 @@ interface Props {
     confidence_level: string
     effective_year: number | null
     scenario_name?: string | null
+    metadata?: Record<string, unknown> | null
+    consumer_withdrawn?: boolean
   }>
   advisorHorizons?: MyEstateStrategyHorizonsResult | null
   strategyImpact: {
@@ -177,6 +184,34 @@ export default function MyEstateTrustStrategyClient({
     type: 'success' | 'error'
     text: string
   } | null>(null)
+  const [giftingReversalModal, setGiftingReversalModal] = useState<{
+    id: string
+    action: ReversalModalAction
+  } | null>(null)
+
+  const activeConsumerPlans = useMemo(
+    () =>
+      consumerLineItems.filter(
+        (item) =>
+          !item.consumer_withdrawn &&
+          ['probable', 'certain'].includes(item.confidence_level),
+      ),
+    [consumerLineItems],
+  )
+
+  const activeGiftingPlan = useMemo(
+    () =>
+      activeConsumerPlans.find(
+        (item) =>
+          item.strategy_source === 'annual_gifting' && item.id != null,
+      ),
+    [activeConsumerPlans],
+  )
+
+  const currentLoggedGiftTotal = giftingScenario.giftingAnnualLoggedTotal ?? 0
+  const giftingPlanDrift =
+    activeGiftingPlan != null &&
+    Math.abs(Math.abs(activeGiftingPlan.amount) - currentLoggedGiftTotal) > 1
 
   function formatDollars(n: number) {
     return n.toLocaleString('en-US', {
@@ -413,6 +448,21 @@ export default function MyEstateTrustStrategyClient({
             userRole={userRole}
             consumerTier={consumerTier}
             initialGiftingSummary={initialGiftingSummary}
+            activeGiftingPlan={
+              activeGiftingPlan?.id
+                ? {
+                    id: activeGiftingPlan.id,
+                    amount: Math.abs(activeGiftingPlan.amount),
+                    metadata: activeGiftingPlan.metadata ?? null,
+                  }
+                : null
+            }
+            currentLoggedGiftTotal={currentLoggedGiftTotal}
+            giftingPlanDrift={giftingPlanDrift}
+            onWithdrawGiftingPlan={async (id, reason) => {
+              await withdrawStrategy(id, reason)
+              router.refresh()
+            }}
           />
           <CollapsibleSection
             title="Gifting scenario"
@@ -497,14 +547,70 @@ export default function MyEstateTrustStrategyClient({
                 <p className="text-2xl font-bold tabular-nums text-green-600">
                   {formatDollars(effectiveAnnualGifting * effectiveGiftingYears)}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => void handleSaveGiftingScenario()}
-                  disabled={giftingSaving || effectiveAnnualGifting * effectiveGiftingYears <= 0}
-                  className="mt-3 inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {giftingSaving ? 'Saving…' : 'Save to my plan →'}
-                </button>
+                {!activeGiftingPlan ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveGiftingScenario()}
+                    disabled={giftingSaving || effectiveAnnualGifting * effectiveGiftingYears <= 0}
+                    className="mt-3 inline-flex items-center rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {giftingSaving ? 'Saving…' : 'Save to my plan →'}
+                  </button>
+                ) : (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50/30 px-3 py-3">
+                    <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">
+                      In your estate plan
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {giftingScenarioLabel.trim() || 'Annual Gifting Program'} —{' '}
+                      {formatDollars(Math.abs(activeGiftingPlan.amount))} outside taxable estate
+                    </p>
+                    {giftingPlanDrift && (
+                      <p className="mt-2 text-xs text-amber-700">
+                        Logged gifts ({formatDollars(currentLoggedGiftTotal)}) no longer match your
+                        saved plan ({formatDollars(Math.abs(activeGiftingPlan.amount))}).
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-3">
+                      {giftingPlanDrift && (
+                        <button
+                          type="button"
+                          onClick={() => void handleSaveGiftingScenario()}
+                          disabled={giftingSaving}
+                          className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-gold)]"
+                        >
+                          {giftingSaving ? 'Updating…' : 'Update plan'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          activeGiftingPlan.id &&
+                          setGiftingReversalModal({
+                            id: activeGiftingPlan.id,
+                            action: 'return_to_sandbox',
+                          })
+                        }
+                        className="text-xs text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-gold)]"
+                      >
+                        Return to sandbox
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          activeGiftingPlan.id &&
+                          setGiftingReversalModal({
+                            id: activeGiftingPlan.id,
+                            action: 'withdraw',
+                          })
+                        }
+                        className="text-xs text-gray-400 hover:text-red-500"
+                      >
+                        Withdraw
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {giftingSaveMessage && (
                   <p
                     className={`mt-2 text-xs ${giftingSaveMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}
@@ -667,9 +773,26 @@ export default function MyEstateTrustStrategyClient({
         />
       )}
 
+      {giftingReversalModal && (
+        <ReversalModal
+          strategyName={giftingScenarioLabel.trim() || 'Annual Gifting Program'}
+          action={giftingReversalModal.action}
+          onCancel={() => setGiftingReversalModal(null)}
+          onConfirm={async (reason) => {
+            if (giftingReversalModal.action === 'return_to_sandbox') {
+              await returnStrategyToSandbox(giftingReversalModal.id)
+            } else {
+              await withdrawStrategy(giftingReversalModal.id, reason)
+            }
+            setGiftingReversalModal(null)
+            router.refresh()
+          }}
+        />
+      )}
+
       {activeTab === 'strategies' && (
         <div className="space-y-4">
-          {consumerLineItems.length > 0 && (
+          {activeConsumerPlans.length > 0 && (
             <div className="rounded-xl border border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)] p-4">
               <p className="mb-3 text-sm font-semibold text-[color:var(--mwm-sage)]">Your Saved Strategies</p>
               <p className="mb-3 text-xs text-[color:var(--mwm-sage)]">
@@ -686,7 +809,7 @@ export default function MyEstateTrustStrategyClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {consumerLineItems.map((item, i) => (
+                    {activeConsumerPlans.map((item, i) => (
                       <tr key={`${item.strategy_source}-${i}`} className="border-t border-[color:var(--mwm-sage-pale)]">
                         <td className="px-3 py-2 text-gray-900 capitalize">
                           {(item.scenario_name ?? item.strategy_source).replace(/_/g, ' ')}
@@ -727,7 +850,7 @@ export default function MyEstateTrustStrategyClient({
                     <tr className="border-t border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]">
                       <td className="px-3 py-2 text-xs font-semibold text-[color:var(--mwm-sage)]">Total reduction</td>
                       <td className="px-3 py-2 text-right text-xs font-bold text-[color:var(--mwm-sage)]">
-                        −{formatDollars(consumerLineItems.reduce((s, i) => s + Math.abs(i.amount), 0))}
+                        −{formatDollars(activeConsumerPlans.reduce((s, i) => s + Math.abs(i.amount), 0))}
                       </td>
                       <td />
                       <td />

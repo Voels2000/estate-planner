@@ -9,12 +9,27 @@ import {
   LIFETIME_EXEMPTION_REMAINING_LABEL,
   LIFETIME_GIFTS_USED_LABEL,
 } from '@/lib/estate/exemptionLabels';
+import {
+  GiftDeleteWarningModal,
+  type GiftDeleteChoice,
+} from '@/components/consumer/strategy/GiftDeleteWarningModal';
+import { withdrawStrategy } from '@/lib/consumer/consumerStrategyLineItems';
+
+interface ActiveGiftingPlanInfo {
+  id: string;
+  amount: number;
+  metadata?: Record<string, unknown> | null;
+}
 
 interface GiftingDashboardProps {
   householdId: string;
   userRole: 'consumer' | 'advisor';
   consumerTier?: number;
   initialGiftingSummary?: GiftingSummary | null;
+  activeGiftingPlan?: ActiveGiftingPlanInfo | null;
+  currentLoggedGiftTotal?: number;
+  giftingPlanDrift?: boolean;
+  onWithdrawGiftingPlan?: (id: string, reason?: string) => Promise<void>;
 }
 
 interface GiftRow {
@@ -81,6 +96,8 @@ async function parseApiError(res: Response): Promise<string> {
 export default function GiftingDashboard({
   householdId,
   initialGiftingSummary,
+  activeGiftingPlan = null,
+  onWithdrawGiftingPlan,
 }: GiftingDashboardProps) {
   const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
@@ -112,6 +129,10 @@ export default function GiftingDashboard({
   const [saving, setSaving] = useState(false);
   const [savingPrior, setSavingPrior] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [giftDeleteModal, setGiftDeleteModal] = useState<{
+    giftId: string;
+    giftAmount: number;
+  } | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview'); // default: overview
   const [donorNames, setDonorNames] = useState<{ person1: string; person2: string; hasSpouse: boolean }>({
@@ -287,17 +308,65 @@ export default function GiftingDashboard({
     }
   };
 
+  const deleteGiftById = async (id: string) => {
+    const res = await fetch('/api/consumer/gift-history', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) throw new Error(await parseApiError(res));
+    refreshAfterGiftWrite();
+  };
+
   const handleDelete = async (id: string) => {
+    setError(null);
+    const giftToDelete = giftRows.find((g) => g.id === id);
+    const syncedPlan =
+      activeGiftingPlan &&
+      activeGiftingPlan.metadata?.synced_from_gift_history === true;
+
+    if (syncedPlan && giftToDelete) {
+      setGiftDeleteModal({ giftId: id, giftAmount: giftToDelete.amount });
+      return;
+    }
+
     setDeleteId(id);
+    try {
+      await deleteGiftById(id);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handleGiftDeleteChoice = async (choice: GiftDeleteChoice) => {
+    if (!giftDeleteModal) return;
+    if (choice === 'cancel') {
+      setGiftDeleteModal(null);
+      return;
+    }
+
+    const { giftId } = giftDeleteModal;
+    setGiftDeleteModal(null);
+    setDeleteId(giftId);
     setError(null);
     try {
-      const res = await fetch('/api/consumer/gift-history', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) throw new Error(await parseApiError(res));
-      refreshAfterGiftWrite();
+      await deleteGiftById(giftId);
+      if (choice === 'delete_and_withdraw' && activeGiftingPlan) {
+        if (onWithdrawGiftingPlan) {
+          await onWithdrawGiftingPlan(
+            activeGiftingPlan.id,
+            'Gift log deleted — annual gifting program withdrawn',
+          );
+        } else {
+          await withdrawStrategy(
+            activeGiftingPlan.id,
+            'Gift log deleted — annual gifting program withdrawn',
+          );
+          router.refresh();
+        }
+      }
     } catch (err: unknown) {
       setError(getErrorMessage(err));
     } finally {
@@ -961,6 +1030,14 @@ export default function GiftingDashboard({
           </CollapsibleSection>
         )}
       </div>
+
+      {giftDeleteModal && activeGiftingPlan && (
+        <GiftDeleteWarningModal
+          giftAmount={giftDeleteModal.giftAmount}
+          planAmount={activeGiftingPlan.amount}
+          onChoice={(choice) => void handleGiftDeleteChoice(choice)}
+        />
+      )}
     </Fragment>
   );
 }

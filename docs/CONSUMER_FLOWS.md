@@ -340,8 +340,9 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | **Client** | `components/GiftingDashboard.tsx` (dynamic import) |
 | **Write APIs** | `POST/PATCH/DELETE /api/consumer/gift-history`; annual program via `POST /api/strategy-line-items` (`strategy_source: annual_gifting`) |
 | **Read APIs / RPCs** | `calculate_gifting_summary`, `gift_history` for current tax year |
-| **UX (not separate routes)** | Lifetime exemption meter; per-recipient annual cap warnings (amber when over limit); **Prior taxable gifts (Form 709)** collapsible (`gift_type='lifetime'`); MFJ donor selector; **Save to my plan →** / **Compare a second scenario** on parent `_client.tsx` |
-| **E2E** | `tests/e2e/consumer/consumer-gift-history.spec.ts`, strategy sections of `consumer-strategy-writes.spec.ts` |
+| **UX (not separate routes)** | Lifetime exemption meter; per-recipient annual cap warnings; **Prior taxable gifts (Form 709)**; MFJ donor selector; **Gifting scenario** collapsible with **Save to my plan →** when no active plan, or **In your estate plan** card (amount, drift warning, Update plan, Return to sandbox, Withdraw) when `annual_gifting` line item is active |
+| **Gift delete + plan** | Deleting a gift when plan has `metadata.synced_from_gift_history` → `GiftDeleteWarningModal`: delete only (drift warning) or delete + withdraw plan (`PATCH` `action: 'withdraw'`) |
+| **E2E** | `consumer-gift-history.spec.ts`, `consumer-strategy-writes.spec.ts`; manual smoke §10c gifting delete + plan |
 
 #### Tab: Charitable Giving (`?tab=charitable`)
 
@@ -365,8 +366,9 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | **Client** | `ConsumerStrategyPanel.tsx`, `StrategySandboxSection`, `StrategyConfirmedSection`, `StrategyHorizonTable`; dashboard `StrategyRecommendationPanel` for advisor rows |
 | **Layout (top → bottom)** | **Strategy Sandbox** (all active `illustrative` rows, consumer + advisor, not rejected) → **In My Plan** (`probable`/`certain` + advisor rows with `consumer_accepted`) → strategy pills + modeled panels |
 | **Sub-nav (client state)** | Strategy **pills**: GRAT, CRT, CLAT, DAF, Liquidity, Roth Conversion, SLAT, ILIT — selects panel; `?openPanel=roth` (etc.) opens a pill on load |
-| **Confidence contract** | New modeled saves default **`illustrative`** (sandbox only — does not reduce `outside_strategy_total` in `calculate_estate_composition`). **Add to plan** → `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }` (`illustrative` → `probable`, consumer-owned only). **Annual gifting** on the Gifting tab still writes **`probable`** directly (committed program). |
-| **Write APIs** | `POST`/`PATCH`/`DELETE /api/strategy-line-items` (upsert, promote by `id`, soft-delete by `id`); `PATCH`/`DELETE /api/consumer/strategy-recommendation` (accept/decline advisor row); SLAT/ILIT/charitable forms via `lib/consumer/consumerStrategyLineItems.ts` |
+| **Confidence contract** | New modeled saves default **`illustrative`**. **Add to plan** → `PATCH /api/strategy-line-items` `{ id, action: 'promote' }` (`illustrative` → `probable`). **Reversal:** `{ action: 'return_to_sandbox' }` (probable → illustrative), `{ action: 'withdraw' }` (removes from estate, logs audit), `{ action: 'demote' }` (certain → probable). **Annual gifting** still writes **`probable`** directly. |
+| **Write APIs** | `POST`/`PATCH`/`DELETE /api/strategy-line-items`; reversal `PATCH` with `action` + optional `reversal_reason`; accept/decline advisor via `/api/consumer/strategy-recommendation` |
+| **In My Plan actions** | Return to sandbox · Withdraw (optional reason, advisor-visible) · Unwind ↩ on `certain`; **Strategy history** collapsible lists withdrawn rows |
 | **Read** | Server-prefetched `estateContext`, `strategyImpact`, `advisorHorizons`; client refetch of all active `strategy_line_items` for sandbox/confirmed lists |
 | **Chip indicators** | Amber dot = illustrative in sandbox; green = in plan; blue ring = advisor-authored sandbox row |
 | **Advisor rows** | Appear in **Strategy Sandbox** until client accepts via dashboard panel or sandbox **Accept**; accept sets `consumer_accepted` (moves to **In My Plan** when accepted; composition still requires `probable`/`certain` for outside-estate reduction) |
@@ -415,7 +417,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 
 | Channel | Consumer surface | API / data |
 |---------|------------------|------------|
-| **Strategy recommendations** | Dashboard `StrategyRecommendationPanel` (accept/decline); trust-strategy **Transfer Strategies** — **Strategy Sandbox** + **In My Plan** (`ConsumerStrategyPanel`) | Advisor: `/api/advisor/strategy-recommendation` (`source_role='advisor'`, confidence from advisor `low`/`medium`/`high` → `illustrative`/`probable`/`certain`). Consumer accept advisor row: `PATCH /api/consumer/strategy-recommendation`. Consumer promote own sandbox row: `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }`. Reject/remove: `DELETE` on recommendation route or `DELETE /api/strategy-line-items` by `id` |
+| **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; Transfer Strategies sandbox + In My Plan; advisor Step 3 **Withdrawn by Client** when consumer withdraws accepted recommendation | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Promote/reverse own rows: `PATCH /api/strategy-line-items` `{ id, action }`. Withdraw sets `consumer_withdrawn` + `is_active=false` (reason visible to advisor) |
 | **Advisor GST ledger (SLAT)** | Advisor client Strategy tab — `SLATILITPanel` “Save to GST ledger” | `POST /api/advisor/gst-entry` (not browser `gst_ledger`); validates `advisor_clients` then service-role insert. RLS: `20260527150000` |
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
 | **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel`; gold onboarding note when `!connection && !wizardComplete && !pendingRequest` (OB-3b) |
@@ -526,4 +528,4 @@ When consumer behavior changes, follow **[UPDATE_CHECKLIST.md](./UPDATE_CHECKLIS
 
 ---
 
-*Last structured pass: 2026-05-27 (strategy sandbox → actuals on Transfer Strategies; Roth → sandbox handoff; advisor accept + consumer promote paths).*
+*Last structured pass: 2026-05-31 (strategy reversal lifecycle; gifting plan card + delete warning; advisor withdrawn recommendations).*

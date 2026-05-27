@@ -217,7 +217,8 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.8 | **SLAT** (MFJ household only) | Pill clickable; save contribution (e.g. $100,000), funding source, optional notes | ☐ |
 | 10.8b | After save | Row in **Strategy Sandbox** (amber dot on pill); green summary “SLAT funded: …”; **About this strategy** collapsed; estate composition **unchanged** until promoted | ☐ |
 | 10.8b2 | **Add to plan** on sandbox row | Row moves to **In My Plan**; composition/horizons reflect outside reduction | ☐ |
-| 10.8c | **Edit** then **Remove** from sandbox or plan | Form returns; pill inactive; row cleared | ☐ |
+| 10.8c | **Edit** then **Remove** / **Return to sandbox** / **Withdraw** | Reversal updates estate; withdrawn row in Strategy history |
+| 10.8d | Delete logged gift after **Save to my plan** | Warning modal: delete only vs delete + withdraw plan | ☐ |
 | 10.9 | **Transfer Strategies** tab → **ILIT** | If policies exist: dropdown + save; else manual coverage amount + amber note linking to Insurance | ☐ |
 | 10.9b | After save | Green summary “ILIT funded: …”; dashboard refresh updates estate/strategy totals | ☐ |
 | 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
