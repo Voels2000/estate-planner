@@ -66,6 +66,7 @@ export default function StrategyTab({
       ? Math.min(100, (Math.min(grossEstate, federalExemption) / federalExemption) * 100)
       : null
   const unusedExemptionAmount = Math.max(0, federalExemption - grossEstate)
+  const householdAccumRate = Number(household?.growth_rate_accumulation ?? 7)
   const householdGrowth = parseGrowthAssumptions(
     (household as { growth_assumptions?: unknown } | undefined)?.growth_assumptions,
   )
@@ -104,6 +105,10 @@ export default function StrategyTab({
   const [monteCarloAssumptionsOpen, setMonteCarloAssumptionsOpen] = useState(false)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
   const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
+  const mcReturnDiff =
+    activeAssumptions != null
+      ? Math.abs(activeAssumptions.returnMeanPct - householdAccumRate)
+      : 0
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
   const [advisorLineItems, setAdvisorLineItems] = useState<AdvisorStrategyLineItemSummary[]>([])
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
@@ -543,6 +548,7 @@ export default function StrategyTab({
           <MonteCarloAssumptionsPanel
             householdId={household.id}
             grossEstate={grossEstate}
+            householdAccumRate={householdAccumRate}
             householdRealEstateGrowth={householdGrowth.real_estate}
             householdBusinessGrowth={householdGrowth.business}
             onAssumptionsChange={setActiveAssumptions}

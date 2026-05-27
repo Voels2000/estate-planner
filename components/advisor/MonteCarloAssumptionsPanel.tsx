@@ -32,6 +32,7 @@ interface ScenarioRow {
 interface MonteCarloAssumptionsPanelProps {
   householdId: string
   grossEstate: number
+  householdAccumRate?: number
   householdRealEstateGrowth?: number
   householdBusinessGrowth?: number
   onAssumptionsChange?: (assumptions: MonteCarloAssumptions | null) => void
@@ -68,6 +69,7 @@ const fmtM = (n: number) => `$${(n / 1_000_000).toFixed(2)}M`
 export default function MonteCarloAssumptionsPanel({
   householdId,
   grossEstate,
+  householdAccumRate = 7,
   householdRealEstateGrowth = 4.5,
   householdBusinessGrowth = 7,
   onAssumptionsChange,
@@ -89,6 +91,7 @@ export default function MonteCarloAssumptionsPanel({
   const [realEstateGrowthPct, setRealEstateGrowthPct] = useState(householdRealEstateGrowth)
   const [businessGrowthPct, setBusinessGrowthPct] = useState(householdBusinessGrowth)
   const isDirty = useMemo(() => JSON.stringify(draftValues) !== JSON.stringify(MONTE_CARLO_SYSTEM_DEFAULTS), [draftValues])
+  const mcAlignmentDiff = Math.abs(draftValues.returnMeanPct - householdAccumRate)
 
   const loadPresets = useCallback(async () => {
     const res = await fetch('/api/advisor/presets')
@@ -327,6 +330,29 @@ export default function MonteCarloAssumptionsPanel({
               {f.suffix && <span className="text-xs text-gray-400">{f.suffix}</span>}
             </div>
             {errors[f.key] && <p className="mt-1 text-xs text-red-600">{errors[f.key]}</p>}
+            {f.key === 'returnMeanPct' && mcAlignmentDiff > 1.5 && (
+              <div className="mt-2 flex items-start gap-2 rounded bg-blue-50 border border-blue-100 px-3 py-2">
+                <span className="text-blue-400 text-xs mt-0.5">ℹ</span>
+                <div>
+                  <p className="text-xs font-medium text-blue-800">MC and projection assumptions differ</p>
+                  <p className="text-[11px] text-blue-700 mt-0.5">
+                    MC return mean ({draftValues.returnMeanPct}%) differs from the household deterministic rate (
+                    {householdAccumRate}%). Horizon and fan chart paths may not match when presenting both.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...draftValues, returnMeanPct: householdAccumRate }
+                      setDraftValues(next)
+                      validate(next)
+                    }}
+                    className="text-xs text-[#0F1B3C] hover:text-[#C9A84C] transition-colors mt-1"
+                  >
+                    Align with projection rate ({householdAccumRate}%) →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
