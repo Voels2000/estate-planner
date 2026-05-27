@@ -198,6 +198,7 @@ export type CompleteProjectionInput = {
   insurance_policies?: Array<{
     death_benefit: number | null
     cash_value: number | null
+    cash_value_growth_rate?: number | null
     is_ilit: boolean
     is_employer_provided: boolean
   }>
@@ -715,6 +716,20 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     sold: boolean
   }
 
+  type InsuranceState = {
+    death_benefit: number
+    cash_value: number
+    cash_value_growth_rate: number
+    is_ilit: boolean
+  }
+
+  const insuranceStates: InsuranceState[] = insurancePoliciesInput.map((p) => ({
+    death_benefit: p.death_benefit ?? 0,
+    cash_value: p.cash_value ?? 0,
+    cash_value_growth_rate: p.cash_value_growth_rate ?? 0,
+    is_ilit: p.is_ilit,
+  }))
+
   const reStates: REState[] = realEstateInput.map(r => ({
     value: r.current_value ?? 0,
     mortgageBalance: r.mortgage_balance ?? 0,
@@ -743,11 +758,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     const yearsFromNow    = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
     const businessValue   = Math.round(baseBusinessValue * Math.pow(1 + bizGrowthRate, yearsFromNow))
-    const insuranceDeathBenefit = insurancePoliciesInput
+    const insuranceDeathBenefit = insuranceStates
       .filter(p => !p.is_ilit && p.death_benefit)
-      .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
-    const insuranceCashValue = insurancePoliciesInput
-      .reduce((s, p) => s + (p.cash_value ?? 0), 0)
+      .reduce((s, p) => s + p.death_benefit, 0)
+    const insuranceCashValue = insuranceStates
+      .reduce((s, p) => s + p.cash_value, 0)
 
     const age1 = year - p1Birth
     const age2 = household.has_spouse && household.person2_birth_year
@@ -1128,6 +1143,13 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
       }
     }
 
+    for (const policy of insuranceStates) {
+      if (policy.cash_value_growth_rate > 0 && policy.cash_value > 0) {
+        policy.cash_value = Math.round(
+          policy.cash_value * (1 + policy.cash_value_growth_rate / 100),
+        )
+      }
+    }
   }
 
   return rows

@@ -19,6 +19,7 @@ interface InsurancePolicy {
   coverage_amount: number | null
   death_benefit: number | null
   cash_value: number | null
+  cash_value_growth_rate?: number | null
   monthly_premium: number | null
   annual_premium: number | null
   term_years: number | null
@@ -52,6 +53,7 @@ const EMPTY: Partial<InsurancePolicy> = {
   coverage_amount: null,
   death_benefit: null,
   cash_value: null,
+  cash_value_growth_rate: 0,
   monthly_premium: null,
   annual_premium: null,
   term_years: null,
@@ -354,14 +356,39 @@ export default function InsuranceFormClient({
               )}
 
               {showCashValue && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Current Cash Value</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
-                    <input type="number" value={form.cash_value ?? ''} onChange={e => setForm(f => ({ ...f, cash_value: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Current Cash Value</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-neutral-400 text-sm">$</span>
+                      <input type="number" value={form.cash_value ?? ''} onChange={e => setForm(f => ({ ...f, cash_value: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="0" min="0" className="pl-7 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]" />
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Cash Value Growth Rate</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={12}
+                        step={0.25}
+                        value={form.cash_value_growth_rate ?? 0}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            cash_value_growth_rate: e.target.value ? Number(e.target.value) : 0,
+                          }))
+                        }
+                        className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
+                      />
+                      <span className="text-sm text-gray-500">% per year</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Typical whole life guaranteed rate: 3–4%. Leave at 0 for term or if unknown.
+                    </p>
+                  </div>
+                </>
               )}
 
               {!showDeathBenefit && (

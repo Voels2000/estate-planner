@@ -186,7 +186,8 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `insurance_policies`
 
-- **Key columns:** `user_id`, `death_benefit`, `cash_value`, `is_ilit`, `description`, `policy_type`
+- **Key columns:** `user_id`, `death_benefit`, `cash_value`, `cash_value_growth_rate`, `is_ilit`, `description`, `policy_type`
+- **`cash_value_growth_rate`:** annual cash value compounding in projections (default 0). Migration: `20260527130200_insurance_cash_value_growth.sql`.
 - **Important:** uses `user_id` (not `owner_id`) — architectural decision #8; ILIT consumer form (`IlitStrategyForm`) queries by `user_id` (`ownerUserId` from `my-estate-trust-strategy/page.tsx`).
 
 ### `projection_scenarios`

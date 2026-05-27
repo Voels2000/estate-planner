@@ -176,7 +176,7 @@ export async function loadProjectionData(
     supabase.from('businesses').select('id, name, estimated_value, ownership_pct, owner').eq('owner_id', userId),
     supabase
       .from('insurance_policies')
-      .select('death_benefit, cash_value, is_ilit, is_employer_provided')
+      .select('death_benefit, cash_value, cash_value_growth_rate, is_ilit, is_employer_provided')
       .eq('user_id', userId),
   ])
 
@@ -230,6 +230,7 @@ export async function loadProjectionData(
     insurance_policies: (insurance_policies ?? []).map((p) => ({
       death_benefit: Number((p as { death_benefit?: number | null }).death_benefit ?? 0) || null,
       cash_value: Number((p as { cash_value?: number | null }).cash_value ?? 0) || null,
+      cash_value_growth_rate: Number((p as { cash_value_growth_rate?: number | null }).cash_value_growth_rate ?? 0) || 0,
       is_ilit: Boolean((p as { is_ilit?: boolean }).is_ilit),
       is_employer_provided: Boolean((p as { is_employer_provided?: boolean }).is_employer_provided),
     })),

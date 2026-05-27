@@ -22,6 +22,7 @@ export function insurancePolicyRowForSave(input: Record<string, unknown>) {
     coverage_amount: num(input.coverage_amount),
     death_benefit: num(input.death_benefit),
     cash_value: num(input.cash_value),
+    cash_value_growth_rate: num(input.cash_value_growth_rate) ?? 0,
     monthly_premium: num(input.monthly_premium),
     annual_premium: num(input.annual_premium),
     term_years: num(input.term_years),

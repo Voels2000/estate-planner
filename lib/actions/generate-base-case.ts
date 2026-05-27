@@ -63,7 +63,7 @@ export async function generateBaseCase(householdId: string): Promise<{
         .eq('owner_id', clientOwnerId),
       admin
         .from('income')
-        .select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person')
+        .select('id, source, amount, start_year, end_year, start_month, end_month, inflation_adjust, ss_person, annual_growth_rate')
         .eq('owner_id', clientOwnerId),
       admin
         .from('expenses')
@@ -175,6 +175,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       insurance_policies: (insurance_policies ?? []).map((p) => ({
         death_benefit: Number((p as { death_benefit?: number | null }).death_benefit ?? 0) || null,
         cash_value: Number((p as { cash_value?: number | null }).cash_value ?? 0) || null,
+        cash_value_growth_rate: Number((p as { cash_value_growth_rate?: number | null }).cash_value_growth_rate ?? 0) || 0,
         is_ilit: Boolean((p as { is_ilit?: boolean }).is_ilit),
         is_employer_provided: Boolean((p as { is_employer_provided?: boolean }).is_employer_provided),
       })),
