@@ -1,11 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { applySLAT, SLATConfig } from '@/lib/strategy/applySLAT'
 import { applyILIT, ILITConfig } from '@/lib/strategy/applyILIT'
 import { applyIncomeTaxDrag } from '@/lib/strategy/applyGSTandIncomeTaxDrag'
-import { createClient } from '@/lib/supabase/client'
-
 interface SLATILITPanelProps {
   householdId: string
   grossEstate: number
@@ -28,7 +26,6 @@ export default function SLATILITPanel({
   onRecommend,
 }: SLATILITPanelProps) {
   const defaultDeathYear = person1BirthYear + 82
-  const supabase = useMemo(() => createClient(), [])
 
   const [slatConfig, setSlatConfig] = useState<SLATConfig>({
     fundingAmount: Math.min(federalExemption / 2, grossEstate * 0.3),
@@ -81,18 +78,28 @@ export default function SLATILITPanel({
       setIsSavingLedger(true)
       setLedgerMessage(null)
 
-      const { error } = await supabase.from('gst_ledger').insert({
-        household_id: householdId,
-        transfer_year: CURRENT_YEAR,
-        transfer_amount: slatConfig.fundingAmount,
-        gst_exemption_allocated: Math.min(slatConfig.fundingAmount, federalExemption),
-        is_skip_person: false,
-        beneficiary_label: 'SLAT — Spouse',
-        notes: 'Created via Strategy tab Sprint 68',
+      const res = await fetch('/api/advisor/gst-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          gstEntry: {
+            transfer_year: CURRENT_YEAR,
+            transfer_amount: slatConfig.fundingAmount,
+            gst_exemption_allocated: Math.min(slatConfig.fundingAmount, federalExemption),
+            is_skip_person: false,
+            beneficiary_label: 'SLAT — Spouse',
+            notes: 'Created via Strategy tab Sprint 68',
+          },
+        }),
       })
 
-      if (error) {
-        setLedgerMessage({ type: 'error', text: error.message || 'Unable to save to GST ledger.' })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string }
+        setLedgerMessage({
+          type: 'error',
+          text: err.error ?? 'Unable to save to GST ledger.',
+        })
         return
       }
 
