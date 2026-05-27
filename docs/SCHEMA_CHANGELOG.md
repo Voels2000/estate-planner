@@ -27,6 +27,16 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Strategy reversal lifecycle (2026-05-31)
+
+**Migration:** `20260531120000_strategy_line_items_reversal.sql` — `consumer_withdrawn`, `withdrawn_at`, `reversal_reason`, `reversed_from`, `previously_active_at`.
+
+**API:** `PATCH /api/strategy-line-items` with `action`: `promote` | `return_to_sandbox` | `demote` | `withdraw` (consumer household owner only).
+
+**UI:** `ReversalModal`, `StrategyConfirmedSection` reversal actions, gifting plan card + `GiftDeleteWarningModal`, advisor Step 3 **Withdrawn by Client**, consumer Strategy History collapsible.
+
+---
+
 ## Pre-launch RLS household scope (2026-05-27)
 
 **Migration:** `20260527150000_prelaunch_rls_household_scope.sql`

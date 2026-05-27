@@ -1,7 +1,7 @@
 // app/api/strategy-line-items/route.ts
 // POST   — upsert a strategy line item
 // DELETE — deactivate by household + strategy_source + source_role
-// PATCH  — promote confidence by id, or update consumer_status by household + strategy_source
+// PATCH  — promote / reversal actions by id, or update consumer_status by household + strategy_source
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
@@ -10,7 +10,7 @@ import {
   resolveOwnedHouseholdId,
 } from '@/lib/consumer/afterHouseholdWrite'
 import { resolveStrategyLineItemCategory } from '@/lib/strategy/resolveStrategyLineItemCategory'
-import { upsertStrategyLineItem, type DbConfidenceLevel } from '@/lib/strategy/upsertStrategyLineItem'
+import { upsertStrategyLineItem } from '@/lib/strategy/upsertStrategyLineItem'
 
 type SourceRole = 'consumer' | 'advisor'
 
@@ -164,11 +164,6 @@ export async function DELETE(request: Request) {
   }
 }
 
-const CONFIDENCE_PROMOTE: Partial<Record<DbConfidenceLevel, DbConfidenceLevel>> = {
-  illustrative: 'probable',
-  probable: 'certain',
-}
-
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient()
@@ -176,49 +171,152 @@ export async function PATCH(request: Request) {
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { id, promoteConfidence, householdId, strategySource, consumer_status } = body as {
+    const {
+      id,
+      action: actionRaw,
+      promoteConfidence,
+      reversal_reason,
+      householdId,
+      strategySource,
+      consumer_status,
+    } = body as {
       id?: string
+      action?: string
       promoteConfidence?: boolean
+      reversal_reason?: string | null
       householdId?: string
       strategySource?: string
       consumer_status?: string
     }
 
+    const action =
+      actionRaw ??
+      (promoteConfidence === true ? 'promote' : undefined)
+
     if (id) {
       const { data: existing, error: fetchError } = await supabase
         .from('strategy_line_items')
-        .select('id, confidence_level, household_id, source_role')
+        .select(
+          'id, confidence_level, household_id, source_role, is_active, consumer_accepted, consumer_withdrawn',
+        )
         .eq('id', id)
-        .eq('is_active', true)
         .single()
 
       if (fetchError || !existing) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
 
-      const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, existing.household_id)
-      if (!ownedHouseholdId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (!existing.is_active && action !== 'withdraw') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
 
-      if (promoteConfidence) {
+      const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, existing.household_id)
+      if (!ownedHouseholdId) {
+        return NextResponse.json(
+          { error: 'Not authorized — only the consumer can modify this strategy' },
+          { status: 403 },
+        )
+      }
+
+      const now = new Date().toISOString()
+
+      if (action === 'promote' || promoteConfidence) {
         if (existing.source_role !== 'consumer') {
           return NextResponse.json(
             { error: 'Use /api/consumer/strategy-recommendation to accept advisor rows' },
             { status: 400 },
           )
         }
-        const current = existing.confidence_level as DbConfidenceLevel
-        const nextLevel = CONFIDENCE_PROMOTE[current]
-        if (!nextLevel) {
+        if (existing.confidence_level !== 'illustrative') {
           return NextResponse.json(
-            { error: `Cannot promote from ${current}` },
+            { error: 'Can only promote from illustrative' },
             { status: 400 },
           )
         }
         const { data, error } = await supabase
           .from('strategy_line_items')
-          .update({ confidence_level: nextLevel })
+          .update({
+            confidence_level: 'probable',
+            previously_active_at: now,
+            is_active: true,
+            consumer_withdrawn: false,
+            withdrawn_at: null,
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        await afterHouseholdWrite(supabase, ownedHouseholdId)
+        return NextResponse.json(data)
+      }
+
+      if (action === 'return_to_sandbox') {
+        if (existing.confidence_level !== 'probable') {
+          return NextResponse.json(
+            { error: 'Can only return probable strategies to sandbox' },
+            { status: 400 },
+          )
+        }
+        const { data, error } = await supabase
+          .from('strategy_line_items')
+          .update({
+            confidence_level: 'illustrative',
+            consumer_accepted: false,
+            is_active: true,
+            consumer_withdrawn: false,
+            withdrawn_at: null,
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        await afterHouseholdWrite(supabase, ownedHouseholdId)
+        return NextResponse.json(data)
+      }
+
+      if (action === 'demote') {
+        if (existing.confidence_level !== 'certain') {
+          return NextResponse.json(
+            { error: 'Can only demote certain strategies' },
+            { status: 400 },
+          )
+        }
+        const { data, error } = await supabase
+          .from('strategy_line_items')
+          .update({
+            confidence_level: 'probable',
+            reversed_from: 'certain',
+            reversal_reason: reversal_reason ?? null,
+            is_active: true,
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        await afterHouseholdWrite(supabase, ownedHouseholdId)
+        return NextResponse.json(data)
+      }
+
+      if (action === 'withdraw') {
+        if (!['probable', 'certain'].includes(existing.confidence_level)) {
+          return NextResponse.json(
+            { error: 'Can only withdraw probable or certain strategies' },
+            { status: 400 },
+          )
+        }
+        const { data, error } = await supabase
+          .from('strategy_line_items')
+          .update({
+            is_active: false,
+            consumer_withdrawn: true,
+            withdrawn_at: now,
+            reversed_from: existing.confidence_level,
+            reversal_reason: reversal_reason ?? null,
+            consumer_accepted: false,
+          })
           .eq('id', id)
           .select()
           .single()
@@ -245,7 +343,10 @@ export async function PATCH(request: Request) {
         return NextResponse.json(data)
       }
 
-      return NextResponse.json({ error: 'promoteConfidence or consumer_status required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'action, promoteConfidence, or consumer_status required' },
+        { status: 400 },
+      )
     }
 
     if (!householdId || !strategySource || !consumer_status) {

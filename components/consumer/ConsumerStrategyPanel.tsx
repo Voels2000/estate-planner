@@ -9,7 +9,8 @@ import Link from 'next/link'
 import { AskAdvisorAboutStrategyButton } from '@/components/consumer/AskAdvisorAboutStrategyButton'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
+import { formatDollars, formatDollarsCompact } from '@/lib/utils/formatCurrency'
+import { strategyLabel } from '@/lib/strategy/strategyLabels'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT } from '@/lib/strategy/applyCharitableStrategies'
 import { analyzeLiquidity, LiquidityConfig } from '@/lib/strategy/analyzeLiquidity'
@@ -505,26 +506,49 @@ export default function ConsumerStrategyPanel({
     useRecommendAdvanced(householdId)
 
   const [strategyRows, setStrategyRows] = useState<StrategyLineItemRow[]>([])
+  const [withdrawnRows, setWithdrawnRows] = useState<
+    Array<{
+      id: string
+      strategy_source: string
+      amount: number | null
+      scenario_name: string | null
+      reversed_from: string | null
+      reversal_reason: string | null
+      withdrawn_at: string | null
+    }>
+  >([])
   const [loadingStrategies, setLoadingStrategies] = useState(true)
 
   const loadAllStrategyItems = useCallback(async () => {
     if (!householdId) {
       setStrategyRows([])
+      setWithdrawnRows([])
       setLoadingStrategies(false)
       return
     }
     const supabase = createClient()
-    const { data } = await supabase
-      .from('strategy_line_items')
-      .select(
-        'id, strategy_source, source_role, confidence_level, amount, scenario_name, consumer_accepted, consumer_rejected, effective_year',
-      )
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+    const [activeRes, withdrawnRes] = await Promise.all([
+      supabase
+        .from('strategy_line_items')
+        .select(
+          'id, strategy_source, source_role, confidence_level, amount, scenario_name, consumer_accepted, consumer_rejected, effective_year',
+        )
+        .eq('household_id', householdId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('strategy_line_items')
+        .select(
+          'id, strategy_source, amount, scenario_name, reversed_from, reversal_reason, withdrawn_at',
+        )
+        .eq('household_id', householdId)
+        .eq('consumer_withdrawn', true)
+        .eq('is_active', false)
+        .order('withdrawn_at', { ascending: false }),
+    ])
 
     setStrategyRows(
-      (data ?? []).map((row) => ({
+      (activeRes.data ?? []).map((row) => ({
         id: row.id as string,
         strategy_source: row.strategy_source as string,
         source_role: row.source_role as 'consumer' | 'advisor',
@@ -534,6 +558,17 @@ export default function ConsumerStrategyPanel({
         consumer_accepted: Boolean(row.consumer_accepted),
         consumer_rejected: Boolean(row.consumer_rejected),
         effective_year: row.effective_year as number | null,
+      })),
+    )
+    setWithdrawnRows(
+      (withdrawnRes.data ?? []).map((row) => ({
+        id: row.id as string,
+        strategy_source: row.strategy_source as string,
+        amount: row.amount != null ? Number(row.amount) : null,
+        scenario_name: (row.scenario_name as string | null) ?? null,
+        reversed_from: (row.reversed_from as string | null) ?? null,
+        reversal_reason: (row.reversal_reason as string | null) ?? null,
+        withdrawn_at: (row.withdrawn_at as string | null) ?? null,
       })),
     )
     setLoadingStrategies(false)
@@ -769,9 +804,48 @@ export default function ConsumerStrategyPanel({
         </div>
         <StrategyConfirmedSection
           items={confirmedStrategies}
-          onRemove={refreshAfterStrategyWrite}
+          onRefresh={refreshAfterStrategyWrite}
         />
       </div>
+
+      {withdrawnRows.length > 0 && (
+        <details className="rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-widest text-gray-400 transition-colors hover:text-gray-600">
+            Strategy history ({withdrawnRows.length})
+          </summary>
+          <div className="mt-3 space-y-2">
+            {withdrawnRows.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-start justify-between rounded-lg border border-gray-100 bg-white/80 px-4 py-3 opacity-80"
+              >
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {strategyLabel(item.strategy_source, item.scenario_name)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {item.amount != null && item.amount > 0 ? formatDollars(item.amount) : null}
+                    {item.reversed_from ? ` · Was ${item.reversed_from}` : ''}
+                    {item.withdrawn_at
+                      ? ` · Withdrawn ${new Date(item.withdrawn_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}`
+                      : ''}
+                  </p>
+                  {item.reversal_reason && (
+                    <p className="mt-0.5 text-xs italic text-gray-400">
+                      &ldquo;{item.reversal_reason}&rdquo;
+                    </p>
+                  )}
+                </div>
+                <span className="ml-3 shrink-0 text-[10px] text-gray-400">Withdrawn</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
       <div className="border-t border-gray-100 pt-6">
         <p className="mb-4 text-xs text-gray-400">

@@ -39,13 +39,19 @@ export async function promoteStrategyToProbable(id: string): Promise<void> {
   const res = await fetch('/api/strategy-line-items', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, promoteConfidence: true }),
+    body: JSON.stringify({ id, action: 'promote' }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error ?? 'Failed to promote strategy')
   }
 }
+
+export {
+  returnStrategyToSandbox,
+  demoteStrategyFromCertain,
+  withdrawStrategy,
+} from '@/lib/consumer/strategyReversal'
 
 export async function deactivateStrategyLineItemById(id: string): Promise<void> {
   const res = await fetch('/api/strategy-line-items', {
