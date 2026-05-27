@@ -8,6 +8,36 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## ENG-2 — Growth assumptions engine + UI (2026-05-27)
+
+**Migrations (apply in order; redeploy `estate-monte-carlo` edge function before app deploy):**
+
+| Migration | Purpose |
+|-----------|---------|
+| `20260527130000_household_growth_assumptions.sql` | `households.growth_assumptions` jsonb; backfill `real_estate` 4.5, `business` 7.0 |
+| `20260527130100_advisor_growth_assumption_overrides.sql` | `advisor_projection_assumptions.real_estate_growth_pct`, `business_growth_pct` |
+| `20260527130200_insurance_cash_value_growth.sql` | `insurance_policies.cash_value_growth_rate` default 0 |
+| `20260527130300_income_growth_rate.sql` | `income.annual_growth_rate` default 0 |
+| `20260527130400_bump_staleness_after_growth_assumptions.sql` | `UPDATE households SET updated_at = NOW()` where `base_case_scenario_id` IS NOT NULL — forces regen on next visit |
+
+**Commits (bisect-friendly, one per ENG item):**
+
+| Commit | Scope |
+|--------|--------|
+| `5589b89` | ENG-2A — RE/business growth fix; estate MC dynamic return/vol |
+| `51fff01` | ENG-2B — `growth_assumptions` jsonb, Scenarios/Projections UI, advisor overrides |
+| `604b1b9` | ENG-2C — insurance cash value growth |
+| `9101ac5` | ENG-2D — income `annual_growth_rate` |
+| `8e90fa4` | ENG-2E — MC alignment surfacing |
+
+**Deploy order:** `supabase db push` → `supabase functions deploy estate-monte-carlo` → push app → migration `20260527130400` (or include in same `db push`).
+
+**Staleness note:** Backfill does not invalidate cached `projection_scenarios` rows. After deploy, users see new rates on Scenarios save (touches `updated_at`) or on next dashboard/strategy/advisor visit once staleness bump migration runs.
+
+**Code (summary):** `lib/types/growthAssumptions.ts`, `components/projections/GrowthAssumptionInputs.tsx`, `app/api/consumer/growth-assumptions/route.ts`, engine changes in `projection-complete.ts`.
+
+---
+
 ## Nav consistency — homepage, billing, utility pages (2026-05-27, no migration)
 
 **Code only:**

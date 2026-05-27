@@ -238,6 +238,35 @@ Important:
 - Includes: federal income tax, state income tax, capital gains tax, NIIT, payroll tax, IRMAA.
 - Uses progressive state brackets by filing status and year.
 
+### Growth assumptions (ENG-2A–2E, commits `5589b89`–`8e90fa4`)
+
+**Per-asset-class rates (household):**
+
+- `households.growth_assumptions` jsonb — keys `real_estate` (default 4.5%), `business` (default 7.0%).
+- Financial buckets still use `growth_rate_accumulation` / `growth_rate_retirement` (Scenarios + profile).
+- Parsed in engine via `lib/types/growthAssumptions.ts` (`parseGrowthAssumptions`, `resolveGrowthAssumptions`).
+- Scenario query overrides: `real_estate_growth`, `business_growth` on `/api/projection`.
+- Consumer save: `PATCH /api/consumer/growth-assumptions` → `afterHouseholdWrite` (bumps `households.updated_at`).
+
+**Engine fixes (ENG-2A):**
+
+- Real estate year-end growth uses `reGrowthRate`, not `inflation_rate`.
+- Business value compounds at `bizGrowthRate`, not inflation.
+- Estate Monte Carlo (`lib/calculations/estate-monte-carlo.ts` + edge `estate-monte-carlo`) reads `returnMeanPct` / `volatilityPct` from request (defaults 7% / 12%).
+
+**Per-record growth (ENG-2C / 2D):**
+
+- `insurance_policies.cash_value_growth_rate` — compounds cash value in projection loop when > 0; death benefit flat.
+- `income.annual_growth_rate` — growable sources only (`lib/income/growableIncomeSources.ts`).
+
+**Advisor overrides:**
+
+- `advisor_projection_assumptions.real_estate_growth_pct`, `business_growth_pct` — UI on `MonteCarloAssumptionsPanel`.
+
+**UI:** `components/projections/GrowthAssumptionInputs.tsx` on `/scenarios` (editable + save); read-only on `/projections`. ENG-2E: MC alignment indicator when return mean differs from accumulation by >1.5pp.
+
+**Post-deploy staleness:** Migration `20260527130400_bump_staleness_after_growth_assumptions.sql` sets `households.updated_at` for rows with `base_case_scenario_id` so existing users regenerate on next visit (backfill alone does not bump `updated_at`).
+
 ### Federal Income Tax Chain
 
 **Canonical path (production backbone):**
@@ -811,6 +840,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/view-models/taxScopeBadges.ts` now centralizes advisory metric scope badge mapping (`federal`, `state`, `both`, `strategy`) to keep label/class semantics consistent where scope chips are rendered.
 - `lib/view-models/projectionSummaryCards.ts` now centralizes consumer projection summary card composition (labels, values, highlights) while calculation inputs still come from the shared projections selector pipeline.
 - Projection staleness contract logic is now centralized in `lib/projections/staleness.ts` (`getLatestTimestampMs`, `isProjectionStale`) and adopted by consumer dashboard + advisor client page staleness checks.
+- **Automatic base-case regeneration (not save-only):** When `isProjectionStale` is true, `generateBaseCase` runs in the **background** on `/dashboard`, `/my-estate-strategy`, and advisor client workspace load. Saving growth assumptions via `/api/consumer/growth-assumptions` touches `updated_at` and triggers the same path. `/projections` and `/api/projection` without overrides recompute live when stale but persist only after `generateBaseCase` completes.
 - Advisor client staleness fetch orchestration is now extracted into `lib/advisor/loaders.ts` (`loadAdvisorProjectionStaleness`) so `app/advisor/clients/[clientId]/page.tsx` focuses on page composition rather than timestamp query plumbing.
 - Advisor client page bootstrap access/ownership reads are now extracted into `lib/advisor/clientPageLoaders.ts` (`loadAdvisorContextOrRedirect`, `loadAdvisorClientLinkOrRedirect`, `loadAdvisorClientHouseholdOrRedirect`) to keep route guards consistent and reduce page-level query noise.
 - Advisor client bulk tab data fetch orchestration is now extracted into `lib/advisor/loaders.ts` (`loadAdvisorClientDatasets`) so the route can consume a single loader result instead of maintaining a large inline `Promise.all` query block. Client route runs staleness, composition RPC, and datasets **in parallel**; state tax/income rules are scoped to advisor states + projection years (not full national tables).

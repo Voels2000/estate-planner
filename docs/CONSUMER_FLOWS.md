@@ -244,7 +244,7 @@ Three related routes share projection engines but answer different questions. **
 |-------|------|------|-----------------|
 | `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
 | `/complete` | 2 | Full year-by-year `YearRow` table (expandable column groups) | Nav pills → projections / scenarios |
-| `/scenarios` | 1 | Side-by-side what-if (base + B + C); saves via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
+| `/scenarios` | 1 | Side-by-side what-if (base + B + C); **growth assumptions** save via `PATCH /api/consumer/growth-assumptions` (triggers recompute); scenario rows via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|

@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Nav consistency; Client Summary PDF; UX-5b CompositeOverlay)
+# Last updated: 2026-05-27 (ENG-2 growth assumptions; nav; Client Summary PDF)
+
+## ENG-2 — Per-asset-class growth assumptions and post-deploy staleness bump (2026-05-27)
+
+**Decision:** Store real estate and business growth rates in `households.growth_assumptions` jsonb (defaults 4.5% / 7.0%); keep financial accumulation/retirement on existing columns. Fix engine to use dedicated RE/business rates (not inflation). Estate MC reads advisor/consumer return mean from request, not hardcoded 7%/12% in the edge function.
+
+**Staleness:** Migration-only backfill does not bump `households.updated_at`. A follow-up migration (`20260527130400`) sets `updated_at` for households with a saved base case so `isProjectionStale` fires and `generateBaseCase` runs on next dashboard, my-estate-strategy, or advisor client load. Saving on Scenarios (`PATCH /api/consumer/growth-assumptions`) also touches `updated_at` via `afterHouseholdWrite`.
+
+**Alternatives considered:** One-off admin script to call `generateBaseCase` for all households (rejected — same outcome as staleness bump with less ops risk). Leaving stale rows until user edits data (rejected — confusing Projections/horizons after deploy).
+
+**One-off QA script:** `scripts/compare-user-estate-data.ts` was not committed — service-role email comparison against production; delete rather than ship in repo.
 
 ---
 

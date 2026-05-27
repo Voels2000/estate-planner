@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (Nav consistency; Client Summary PDF; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (ENG-2 growth assumptions; nav; Client Summary PDF; Sprint 17 go-live prep)
 
 ---
 
@@ -101,6 +101,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Brand consistency pass** | `[x]` | Consumer + advisor page headings/buttons — navy/gold tokens (`fbaa709`) |
 | **Client Summary PDF upgrade** | `[x]` | ConsumerEstatePlanPDF matches Attorney Summary standard — SCHEMA_CHANGELOG 2026-05-27 |
 | **Nav consistency (homepage, billing, utility)** | `[x]` | Homepage → `(public)/page.tsx` + PublicNav; MinimalAuthNav billing; WordmarkOnly utility layouts — SCHEMA_CHANGELOG 2026-05-27 |
+| **ENG-2 — Growth assumptions (2A–2E)** | `[x]` | RE/business engine fix; `growth_assumptions` jsonb; insurance/income growth; MC alignment UI — commits `5589b89`–`8e90fa4`; SCHEMA_CHANGELOG ENG-2 |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 

@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Nav consistency; Client Summary PDF; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (ENG-2 growth assumptions; nav; Client Summary PDF; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Nav consistency** — homepage uses `PublicNav`; billing `MinimalAuthNav`; utility pages `WordmarkOnly`. **Client Summary PDF** upgraded to Attorney Summary visual standard. **Brand pass** (`fbaa709`) on consumer + advisor pages. **UX-5b** CompositeOverlay; **ENG-1** Estate/Tax parity; **UX-4/UX-5** Strategy tab workflow complete. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **ENG-2 growth assumptions** shipped (`5589b89`–`8e90fa4`): RE/business engine fix, `growth_assumptions` jsonb, insurance/income growth, MC alignment UI. **Deploy:** `db push` → redeploy **`estate-monte-carlo` edge function** → app → apply `20260527130400` staleness bump. **Nav consistency** — PublicNav homepage; billing `MinimalAuthNav`. **Client Summary PDF** brand upgrade. **UX-5b** CompositeOverlay; **ENG-1** Estate/Tax parity. Compliance **C-2b → C-7** live. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -39,6 +39,27 @@
 | Brand consistency pass | ✅ | `fbaa709` |
 | Client Summary PDF upgrade | ✅ | `0816f37` |
 | Nav consistency (homepage, billing, utility) | ✅ | `b51eedd` |
+| ENG-2A — RE/business + estate MC | ✅ | `5589b89` |
+| ENG-2B — growth_assumptions UI | ✅ | `51fff01` |
+| ENG-2C — insurance cash value growth | ✅ | `604b1b9` |
+| ENG-2D — income growth rate | ✅ | `9101ac5` |
+| ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
+
+---
+
+## ENG-2 growth assumptions ✅ (2026-05-27)
+
+| Area | Outcome |
+|------|---------|
+| **Engine** | RE at `reGrowthRate` (4.5% default); business at `bizGrowthRate` (7%); estate MC uses request `returnMeanPct`/`volatilityPct` |
+| **Storage** | `households.growth_assumptions`; `income.annual_growth_rate`; `insurance_policies.cash_value_growth_rate` |
+| **Consumer UI** | `/scenarios` edit + save; `/projections` read-only |
+| **Advisor UI** | RE/business overrides + MC alignment note on Strategy tab |
+| **Staleness** | Not save-only — dashboard/strategy/advisor auto-regen when stale; migration `20260527130400` bumps `updated_at` post-deploy |
+
+**Deploy order:** migrations → `supabase functions deploy estate-monte-carlo` → app → verify test household on Scenarios save or dashboard visit.
+
+**Detail:** [SCHEMA_CHANGELOG.md § ENG-2](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md § Growth assumptions](./MASTER_ARCHITECTURE.md)
 
 ---
 

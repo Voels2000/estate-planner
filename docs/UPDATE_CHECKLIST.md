@@ -131,6 +131,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
+## ENG-2 — Growth assumptions (2026-05-27)
+
+- [x] Migrations `20260527130000`–`20260527130300` + staleness bump `20260527130400`
+- [x] Redeploy `estate-monte-carlo` edge function before app (hardcoded 7%/12% removed)
+- [x] Five commits `5589b89`–`8e90fa4` (bisect per ENG item)
+- [x] `scripts/compare-user-estate-data.ts` **not** committed (one-off production QA; deleted)
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · DATABASE_SCHEMA_REFERENCE
+
 ## Nav consistency — homepage, billing, utility (2026-05-27)
 
 - [x] Homepage `app/(public)/page.tsx` inherits `PublicNav` + footer; inline nav removed
