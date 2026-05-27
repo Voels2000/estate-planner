@@ -37,7 +37,7 @@
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 | Brand consistency pass | ✅ | `fbaa709` |
-| Client Summary PDF upgrade | ✅ | `TBD` |
+| Client Summary PDF upgrade | ✅ | `0816f37` |
 
 ---
 
