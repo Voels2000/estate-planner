@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (profile spouse-layout + growth-assumptions E2E; pre-launch RLS; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
@@ -41,6 +41,14 @@
 - `[x]` Live column headers from `person1Name` / `person2Name`; spouse toggle below grid; merged planning callout
 - `[x]` No field, validation, save path, or API changes
 - `[x]` E2E — `consumer-profile-spouse-layout.spec.ts` (4 tests); `consumer-growth-assumptions-api.spec.ts` (PATCH contract)
+
+### Strategy sandbox → actuals (2026-05-27) ✅
+
+- `[x]` SLAT/ILIT (and charitable/modeled chips) write `illustrative` first — explicit **Add to plan** promotes to `probable`
+- `[x]` Transfer Strategies **Strategy Sandbox** / **In My Plan** UI + `promoteConfidence` PATCH
+- `[x]` Roth optimizer **Use in Transfer Strategies →** + `openPanel=roth`
+- `[x]` Docs — CONSUMER_FLOWS, MASTER_ARCHITECTURE, DATABASE_SCHEMA_REFERENCE, SCHEMA_CHANGELOG, DECISION_LOG, smoke §10c
+- `[ ]` Playwright promote flow (optional)
 
 ## ⚠️ Go-live gate
 

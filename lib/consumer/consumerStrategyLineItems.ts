@@ -24,7 +24,7 @@ export async function saveConsumerStrategyLineItem(
       source_role: 'consumer',
       scenario_name: input.scenario_name ?? CONSUMER_BASE_SCENARIO_NAME,
       sign: input.sign ?? -1,
-      confidence_level: input.confidence_level ?? 'probable',
+      confidence_level: input.confidence_level ?? 'illustrative',
       metric_target: input.metric_target ?? 'taxable_estate',
       scenario_id: input.scenario_id ?? 'current_law',
     }),
@@ -32,6 +32,30 @@ export async function saveConsumerStrategyLineItem(
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || 'Failed to save strategy')
+  }
+}
+
+export async function promoteStrategyToProbable(id: string): Promise<void> {
+  const res = await fetch('/api/strategy-line-items', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, promoteConfidence: true }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error ?? 'Failed to promote strategy')
+  }
+}
+
+export async function deactivateStrategyLineItemById(id: string): Promise<void> {
+  const res = await fetch('/api/strategy-line-items', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to remove strategy')
   }
 }
 

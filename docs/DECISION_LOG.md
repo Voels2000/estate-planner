@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (profile spouse-layout E2E; growth-assumptions API E2E; pre-launch RLS; PROF-1/2)
+# Last updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS)
+
+## Strategy sandbox → actuals — illustrative first, explicit promote (2026-05-27)
+
+**Decision:** All consumer modeled strategy saves (SLAT, ILIT, charitable, GRAT/CRT/CLAT/Roth/Liquidity chips) write `confidence_level='illustrative'` first and appear in **Strategy Sandbox** on Transfer Strategies. Consumer moves a row into **In My Plan** with `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }` (`illustrative` → `probable`, consumer-owned only). Advisor recommendations still use `PATCH /api/consumer/strategy-recommendation` for accept/decline; accepted advisor rows show in **In My Plan** via `consumer_accepted`. Annual gifting and explicit charitable **Save to my plan →** may still write `probable` directly. Roth optimizer adds **Use in Transfer Strategies →** (illustrative row + deep link `?openPanel=roth`).
+
+**Reasoning:** Prior SLAT/ILIT default `probable` bypassed review and immediately reduced taxable estate in composition. Sandbox matches advisor “model then commit” mental model and aligns chip-modeled strategies with the same promote step.
+
+**Alternatives considered:** Auto-promote on save (rejected — no user confirmation). Single combined list without sandbox section (rejected — unclear what affects tax). Advisor promote via same PATCH (rejected — keep accept path and audit fields).
+
+**Docs:** [MASTER_ARCHITECTURE.md § Strategy sandbox contract](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction), [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md).
+
+---
 
 ## Profile layout E2E — spouse toggle and live headers (2026-05-27)
 

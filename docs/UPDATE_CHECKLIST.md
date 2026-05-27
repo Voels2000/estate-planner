@@ -69,6 +69,18 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Wizard skips all steps → dashboard shows `SetupPromptCard`
 - [x] Wizard completes all steps → dashboard shows conflict alerts (not `SetupPromptCard`)
 
+## Strategy sandbox → actuals (2026-05-27) — shipped (3 commits)
+
+- [x] SLAT/ILIT/charitable + modeled chips default `illustrative`; annual gifting stays `probable`
+- [x] `StrategySandboxSection` / `StrategyConfirmedSection`; `PATCH` promote by `id`
+- [x] Roth **Use in Transfer Strategies →** + `?openPanel=roth`
+- [x] [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) Transfer Strategies + handoff §5
+- [x] [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) sandbox contract + advisor workflow step 4
+- [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) `confidence_level` notes
+- [x] [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+- [x] [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) §10c sandbox steps
+- [ ] Playwright: promote sandbox → In My Plan (optional post-launch)
+
 ## Advisor flywheel (Sprint AF-1) — shipped `a255616`
 
 - [x] `POST /api/consumer/ask-advisor` + `AskAdvisorAboutStrategyButton` on strategy education cards

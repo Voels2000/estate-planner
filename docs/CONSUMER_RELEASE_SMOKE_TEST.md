@@ -209,18 +209,21 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.6 | Save a **named** gifting scenario (Gifting tab) | Appears in saved list | ☐ |
 | 10.7 | **Remove** only that named scenario | Others remain | ☐ |
 
-#### 10c. Transfer Strategies (SLAT, ILIT, DAF)
+#### 10c. Transfer Strategies (sandbox, SLAT, ILIT, DAF)
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
-| 10.8 | **Transfer Strategies** tab → **SLAT** (MFJ household only) | Pill clickable; save contribution (e.g. $100,000), funding source, optional notes | ☐ |
-| 10.8b | After save | Green summary “SLAT funded: …”; pill shows active dot; **About this strategy** collapsed | ☐ |
-| 10.8c | **Edit** then **Remove from plan** | Form returns; pill inactive | ☐ |
+| 10.7a | **Transfer Strategies** tab — top sections | **Strategy Sandbox** and **In My Plan** visible above strategy pills | ☐ |
+| 10.8 | **SLAT** (MFJ household only) | Pill clickable; save contribution (e.g. $100,000), funding source, optional notes | ☐ |
+| 10.8b | After save | Row in **Strategy Sandbox** (amber dot on pill); green summary “SLAT funded: …”; **About this strategy** collapsed; estate composition **unchanged** until promoted | ☐ |
+| 10.8b2 | **Add to plan** on sandbox row | Row moves to **In My Plan**; composition/horizons reflect outside reduction | ☐ |
+| 10.8c | **Edit** then **Remove** from sandbox or plan | Form returns; pill inactive; row cleared | ☐ |
 | 10.9 | **Transfer Strategies** tab → **ILIT** | If policies exist: dropdown + save; else manual coverage amount + amber note linking to Insurance | ☐ |
 | 10.9b | After save | Green summary “ILIT funded: …”; dashboard refresh updates estate/strategy totals | ☐ |
 | 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
-| 10.11 | **Transfer Strategies** → **DAF** | Save DAF or direct charitable amount; summary **Charitable giving: $X/yr**; pill active | ☐ |
-| 10.11b | **Edit** / **Remove from plan** | Works; horizons/estate totals refresh | ☐ |
+| 10.11 | **Transfer Strategies** → **DAF** | Save DAF or direct charitable amount; appears in **Strategy Sandbox** first | ☐ |
+| 10.11b | **Add to plan** then **Edit** / **Remove** | Promote moves to In My Plan; remove clears row; horizons refresh after promote | ☐ |
+| 10.11c | **Roth Conversion** (`/roth`) | When conversions &gt; 0: **Use in Transfer Strategies →** opens strategies tab with Roth panel; sandbox row present | ☐ |
 
 #### 10d. Gift History
 

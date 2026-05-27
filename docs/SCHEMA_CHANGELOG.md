@@ -8,6 +8,25 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Strategy sandbox → actuals (2026-05-27, no migration)
+
+**Code only** — `strategy_line_items.confidence_level` enum unchanged; application contract tightened.
+
+| Area | Change |
+|------|--------|
+| **Consumer default** | `saveConsumerStrategyLineItem` default `illustrative`; SLAT/ILIT/charitable forms + modeled chips write sandbox first |
+| **Promote** | `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }` — consumer-owned rows only; `illustrative` → `probable` |
+| **UI** | `StrategySandboxSection` + `StrategyConfirmedSection` on Transfer Strategies; `partitionStrategyLineItems` in `lib/consumer/strategyLineItemViews.ts` |
+| **Labels** | `lib/strategy/strategyLabels.ts` shared by sandbox components + `StrategyRecommendationPanel` |
+| **Roth** | `/roth` **Use in Transfer Strategies →** saves illustrative `roth` row; navigates `?tab=strategies&openPanel=roth` |
+| **Docs** | [MASTER_ARCHITECTURE.md § Strategy sandbox contract](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction), [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) Transfer Strategies |
+
+**Advisor path unchanged:** `/api/advisor/strategy-recommendation` + consumer `PATCH /api/consumer/strategy-recommendation` for accept/decline.
+
+**Commits (intended):** `fix(strategy): SLAT and ILIT illustrative` · `feat(strategy): sandbox → actuals UI` · `feat(roth): Roth optimizer handoff`
+
+---
+
 ## Pre-launch RLS household scope (2026-05-27)
 
 **Migration:** `20260527150000_prelaunch_rls_household_scope.sql`

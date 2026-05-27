@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (profile spouse-layout + growth-assumptions E2E; pre-launch RLS; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (strategy sandbox → actuals; profile E2E; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Security (shipped):** Grant audit clean (119 tables). RLS fix `20260527150000` on prod; `verify-loose-rls-policies.sql` → 0 rows; commits `1f41ce1` (migration), `7cab1be` (GST API), `35b0738` (template). **PROF-1/2** + **ENG-2** + **profile layout** (`_profile-client.tsx` two-column people) shipped. **E2E:** `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api` (see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) pre-launch E2E baseline). Deploy app when ready. **Remaining (manual):** isolation smoke (2 consumers + advisor/client), legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Security (shipped):** Grant audit clean (119 tables). RLS fix `20260527150000` on prod. **PROF-1/2** + **ENG-2** + **profile layout** + **strategy sandbox → actuals** (Transfer Strategies Sandbox / In My Plan, Roth handoff) shipped. **E2E:** `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api`. **Remaining (manual):** isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) §10c sandbox).
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -44,6 +44,21 @@
 | ENG-2C — insurance cash value growth | ✅ | `604b1b9` |
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
+| Strategy sandbox → actuals | ✅ | 3 commits: SLAT/ILIT illustrative · sandbox UI · Roth handoff |
+
+---
+
+## Strategy sandbox → actuals ✅ (2026-05-27)
+
+| Area | Outcome |
+|------|---------|
+| **Consumer** | Transfer Strategies: **Strategy Sandbox** (`illustrative`) → **Add to plan** → **In My Plan** (`probable`/`certain`); chip dots amber/green/blue ring |
+| **API** | `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }`; `DELETE` by `id` |
+| **Roth** | `/roth` **Use in Transfer Strategies →** → `?tab=strategies&openPanel=roth` |
+| **Advisor** | Send/accept path unchanged; accepted rows surface in In My Plan; illustrative advisor rows stay in sandbox until accept |
+| **Docs** | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md), [MASTER_ARCHITECTURE.md § sandbox](./MASTER_ARCHITECTURE.md#consumer-and-advisor-interaction) |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Strategy sandbox](./SCHEMA_CHANGELOG.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -96,8 +111,8 @@
 |------|------------------------------|
 | **Overview** | `PlanStatusCard` plan readiness; critical gaps above the fold with Discussed / Deferred / Resolved |
 | **Strategy** | Severity banners → Step 1 Situation → Step 2 Opportunities (**Model this ↓** inline panels) → Step 3 Recommendations & Impact (tax delta) → Strategy Horizon (table + `CompositeOverlay`) → Monte Carlo |
-| **Send** | Inline panel → `strategy_line_items` (`source_role='advisor'`) → `router.refresh()` → Step 3 + CompositeOverlay update → consumer `StrategyRecommendationPanel` |
-| **Accept** | Actual horizon set → Estate/Tax tabs via `advisorHorizons.today` (ENG-1) |
+| **Send** | Inline panel → `strategy_line_items` (`source_role='advisor'`) → `router.refresh()` → Step 3 + CompositeOverlay → consumer dashboard panel + Transfer Strategies **Strategy Sandbox** when `illustrative` |
+| **Accept** | Consumer `PATCH /api/consumer/strategy-recommendation` or promote own row → **In My Plan** when `probable`/`certain` or accepted; actual horizon set → Estate/Tax via `advisorHorizons.today` (ENG-1) |
 | **Other tabs** | Tax, Domicile, Estate, Retirement — proactive alert banners for time-sensitive issues |
 
 No duplicate entry points, no dead-end panels, no tab-hopping required to act.

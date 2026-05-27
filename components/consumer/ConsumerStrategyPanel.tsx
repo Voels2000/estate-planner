@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AskAdvisorAboutStrategyButton } from '@/components/consumer/AskAdvisorAboutStrategyButton'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDollarsCompact } from '@/lib/utils/formatCurrency'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
@@ -21,6 +21,12 @@ import {
   CharitableStrategyForm,
   type CharitableSavedRow,
 } from '@/components/consumer/CharitableStrategyForm'
+import { StrategySandboxSection } from '@/components/consumer/strategy/StrategySandboxSection'
+import { StrategyConfirmedSection } from '@/components/consumer/strategy/StrategyConfirmedSection'
+import {
+  partitionStrategyLineItems,
+  type StrategyLineItemRow,
+} from '@/lib/consumer/strategyLineItemViews'
 
 type AdvisorLineItem = {
   strategy_source: string
@@ -466,6 +472,7 @@ export default function ConsumerStrategyPanel({
   ownerUserId,
 }: ConsumerStrategyPanelProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Use real data when provided, fall back gracefully if not
   const ctx = estateContext ?? FALLBACK_CONTEXT
@@ -487,11 +494,6 @@ export default function ConsumerStrategyPanel({
     () => new Map(advisorLineItems.map((item) => [item.strategy_source, item])),
     [advisorLineItems],
   )
-  const advisorLineItemSources = useMemo(
-    () => new Set(advisorLineItems.map((item) => item.strategy_source)),
-    [advisorLineItems],
-  )
-
   function advisorMeta(strategySource: string): Record<string, unknown> {
     return advisorLineItemBySource.get(strategySource)?.metadata ?? {}
   }
@@ -502,10 +504,89 @@ export default function ConsumerStrategyPanel({
   const { saved, savedDetails, saving, toggle, statuses, cycleStatus, loadingInitial, reloadSaved } =
     useRecommendAdvanced(householdId)
 
+  const [strategyRows, setStrategyRows] = useState<StrategyLineItemRow[]>([])
+  const [loadingStrategies, setLoadingStrategies] = useState(true)
+
+  const loadAllStrategyItems = useCallback(async () => {
+    if (!householdId) {
+      setStrategyRows([])
+      setLoadingStrategies(false)
+      return
+    }
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('strategy_line_items')
+      .select(
+        'id, strategy_source, source_role, confidence_level, amount, scenario_name, consumer_accepted, consumer_rejected, effective_year',
+      )
+      .eq('household_id', householdId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+
+    setStrategyRows(
+      (data ?? []).map((row) => ({
+        id: row.id as string,
+        strategy_source: row.strategy_source as string,
+        source_role: row.source_role as 'consumer' | 'advisor',
+        confidence_level: row.confidence_level as string,
+        amount: row.amount != null ? Number(row.amount) : null,
+        scenario_name: (row.scenario_name as string | null) ?? null,
+        consumer_accepted: Boolean(row.consumer_accepted),
+        consumer_rejected: Boolean(row.consumer_rejected),
+        effective_year: row.effective_year as number | null,
+      })),
+    )
+    setLoadingStrategies(false)
+  }, [householdId])
+
+  useEffect(() => {
+    void loadAllStrategyItems()
+  }, [loadAllStrategyItems])
+
+  useEffect(() => {
+    const open = searchParams.get('openPanel')
+    if (!open) return
+    const panelIds = ['grat', 'crt', 'clat', 'daf', 'liquidity', 'roth', 'slat', 'ilit'] as const
+    if ((panelIds as readonly string[]).includes(open)) {
+      setActivePanel(open as AdvancedPanel)
+    }
+  }, [searchParams])
+
+  const { sandbox: sandboxStrategies, confirmed: confirmedStrategies } = useMemo(
+    () => partitionStrategyLineItems(strategyRows),
+    [strategyRows],
+  )
+
+  const sandboxSources = useMemo(
+    () => new Set(sandboxStrategies.map((s) => s.strategy_source)),
+    [sandboxStrategies],
+  )
+  const confirmedSources = useMemo(
+    () => new Set(confirmedStrategies.map((s) => s.strategy_source)),
+    [confirmedStrategies],
+  )
+  const advisorSandboxSources = useMemo(
+    () =>
+      new Set(
+        sandboxStrategies.filter((s) => s.source_role === 'advisor').map((s) => s.strategy_source),
+      ),
+    [sandboxStrategies],
+  )
+
   const refreshAfterStrategyWrite = useCallback(() => {
     void reloadSaved()
+    void loadAllStrategyItems()
     router.refresh()
-  }, [reloadSaved, router])
+  }, [reloadSaved, loadAllStrategyItems, router])
+
+  const handleModelToggle = useCallback(
+    async (strategySource: string, lineItemInput: Omit<StrategyLineItemInput, 'household_id'>) => {
+      await toggle(strategySource, lineItemInput)
+      await loadAllStrategyItems()
+      router.refresh()
+    },
+    [toggle, loadAllStrategyItems, router],
+  )
 
   const slatSaved: SlatSavedRow | null = saved.has('slat')
     ? {
@@ -653,7 +734,7 @@ export default function ConsumerStrategyPanel({
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
 
-  if (loadingInitial) {
+  if (loadingInitial || loadingStrategies) {
     return (
       <div className="py-8 text-center text-sm text-gray-400">Loading your saved strategies…</div>
     )
@@ -661,11 +742,47 @@ export default function ConsumerStrategyPanel({
 
   return (
     <div className="space-y-6">
+      <div className="mb-2">
+        <h3 className="text-sm font-medium text-gray-700">Transfer Strategies</h3>
+      </div>
+
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Transfer Strategies</h3>
+        <div className="mb-3 border-l-4 border-amber-400 pl-3">
+          <h4 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Sandbox</h4>
+          <p className="mt-0.5 text-xs text-gray-400">
+            Strategies you&apos;re exploring — not yet in your plan
+          </p>
+        </div>
+        <StrategySandboxSection
+          householdId={householdId}
+          items={sandboxStrategies}
+          onAction={refreshAfterStrategyWrite}
+        />
+      </div>
+
+      <div>
+        <div className="mb-3 border-l-4 border-green-400 pl-3">
+          <h4 className="text-sm font-semibold text-[color:var(--mwm-navy)]">In My Plan</h4>
+          <p className="mt-0.5 text-xs text-gray-400">
+            Confirmed strategies reducing your taxable estate
+          </p>
+        </div>
+        <StrategyConfirmedSection
+          items={confirmedStrategies}
+          onRemove={refreshAfterStrategyWrite}
+        />
+      </div>
+
+      <div className="border-t border-gray-100 pt-6">
+        <p className="mb-4 text-xs text-gray-400">
+          Model a strategy below to explore its impact, then add it to your plan.
+        </p>
         <div className="flex flex-wrap gap-2">
           {PANELS.map((p) => {
             const slatDisabled = p.id === 'slat' && !mfjFiling
+            const hasSandbox = sandboxSources.has(p.id ?? '')
+            const hasConfirmed = confirmedSources.has(p.id ?? '')
+            const hasAdvisorSandbox = advisorSandboxSources.has(p.id ?? '')
             return (
             <button
               key={p.id}
@@ -682,12 +799,20 @@ export default function ConsumerStrategyPanel({
               title={slatDisabled ? 'Available for married couples only' : undefined}
             >
               {p.label}
-              {advisorLineItemSources.has(p.id ?? '') && (
-                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-blue-400" title="Advisor modeled" />
-              )}
-              {(p.id === 'daf' ? charitablePanelActive : saved.has(p.id ?? '')) && (
-                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
-              )}
+              <span className="ml-1.5 inline-flex items-center gap-0.5 align-middle">
+                {hasConfirmed && (
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" title="In your plan" />
+                )}
+                {hasSandbox && !hasConfirmed && (
+                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400" title="In sandbox" />
+                )}
+                {hasAdvisorSandbox && (
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full border-2 border-blue-500 bg-white"
+                    title="Advisor recommendation"
+                  />
+                )}
+              </span>
             </button>
             )
           })}
@@ -748,7 +873,7 @@ export default function ConsumerStrategyPanel({
           <RecommendButton
             strategySource="grat" saved={saved} saving={saving} userRole={userRole}
             status={statuses['grat']} onCycleStatus={() => cycleStatus('grat')}
-            onToggle={() => toggle('grat', {
+            onToggle={() => void handleModelToggle('grat', {
               scenario_id: 'current_law', metric_target: 'gross_estate', category: 'trust_exclusion',
               strategy_source: 'grat', amount: gratResult?.projectedRemainder ?? 0, sign: -1,
               confidence_level: 'illustrative',
@@ -796,7 +921,7 @@ export default function ConsumerStrategyPanel({
           <RecommendButton
             strategySource="crt" saved={saved} saving={saving} userRole={userRole}
             status={statuses['crt']} onCycleStatus={() => cycleStatus('crt')}
-            onToggle={() => toggle('crt', {
+            onToggle={() => void handleModelToggle('crt', {
               scenario_id: 'current_law', metric_target: 'taxable_estate', category: 'charitable',
               strategy_source: 'crt', amount: crtResult?.estateReduction ?? crtConfig.fundingAmount,
               sign: -1, confidence_level: 'illustrative',
@@ -845,7 +970,7 @@ export default function ConsumerStrategyPanel({
           <RecommendButton
             strategySource="clat" saved={saved} saving={saving} userRole={userRole}
             status={statuses['clat']} onCycleStatus={() => cycleStatus('clat')}
-            onToggle={() => toggle('clat', {
+            onToggle={() => void handleModelToggle('clat', {
               scenario_id: 'current_law', metric_target: 'taxable_estate', category: 'charitable',
               strategy_source: 'clat', amount: clatResult?.projectedRemainder ?? clatConfig.fundingAmount,
               sign: -1, confidence_level: 'illustrative',
@@ -931,7 +1056,7 @@ export default function ConsumerStrategyPanel({
           <RecommendButton
             strategySource="liquidity" saved={saved} saving={saving} userRole={userRole}
             status={statuses.liquidity} onCycleStatus={() => cycleStatus('liquidity')}
-            onToggle={() => toggle('liquidity', {
+            onToggle={() => void handleModelToggle('liquidity', {
               scenario_id: 'current_law', metric_target: 'gross_estate', category: 'liability',
               strategy_source: 'liquidity', amount: liquidityConfig.ilitDeathBenefit, sign: -1, confidence_level: 'illustrative',
             })}
@@ -996,7 +1121,7 @@ export default function ConsumerStrategyPanel({
           <RecommendButton
             strategySource="roth" saved={saved} saving={saving} userRole={userRole}
             status={statuses.roth} onCycleStatus={() => cycleStatus('roth')}
-            onToggle={() => toggle('roth', {
+            onToggle={() => void handleModelToggle('roth', {
               scenario_id: 'current_law', metric_target: 'taxable_estate', category: 'trust_exclusion',
               strategy_source: 'roth',
               amount: rothResult?.estateReductionFromTaxPayment ?? rothConfig.annualConversionAmount * rothConfig.conversionYears,

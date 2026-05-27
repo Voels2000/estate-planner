@@ -218,7 +218,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/businesses` | `_business-form-client.tsx` | `/api/businesses`, `/api/businesses/[id]` | Legacy top-level routes; `afterHouseholdWriteForOwner` |
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
-| `/roth` | `roth/_roth-client.tsx` | Read-heavy; uses projection + `getRmdStartAge` for conversion window | Tier 2 |
+| `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** writes `illustrative` `roth` line item then navigates to `?tab=strategies&openPanel=roth` | Tier 2 |
 | `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 2; CSV/XLSX; upload → map/edit → commit; F-2: preamble headers, sheet picker, duplicates, traceability |
 
 ### Bulk import — `/import` (Sprint F-1 + F-2)
@@ -362,14 +362,17 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 
 | | |
 |--|--|
-| **Client** | `components/consumer/ConsumerStrategyPanel.tsx`, `StrategyHorizonTable`, advisor recommendation block on `_client.tsx` |
-| **Sub-nav (client state)** | Strategy **pills**: GRAT, CRT, CLAT, DAF, Liquidity, Roth Conversion, SLAT, ILIT — selects panel; not URL segments |
-| **Write APIs** | `POST/PATCH/DELETE /api/strategy-line-items`; `PATCH /api/consumer/strategy-recommendation` (accept advisor line); SLAT/ILIT via `lib/consumer/consumerStrategyLineItems.ts` |
-| **Read** | Server-prefetched `estateContext`, `strategyImpact`, `advisorHorizons` |
-| **Advisor block** | “Advisor Recommended Strategies” — pending `strategy_line_items` (`source_role='advisor'`, not rejected); empty copy when none |
-| **Education CTA** | **Ask your advisor about this →** in each strategy’s “About this strategy” card → `/find-advisor` (directory only; does not notify linked advisor) |
-| **Key lib** | Strategy categories must match DB check constraint (see e2e file header) |
-| **E2E** | `consumer-strategy-writes.spec.ts` |
+| **Client** | `ConsumerStrategyPanel.tsx`, `StrategySandboxSection`, `StrategyConfirmedSection`, `StrategyHorizonTable`; dashboard `StrategyRecommendationPanel` for advisor rows |
+| **Layout (top → bottom)** | **Strategy Sandbox** (all active `illustrative` rows, consumer + advisor, not rejected) → **In My Plan** (`probable`/`certain` + advisor rows with `consumer_accepted`) → strategy pills + modeled panels |
+| **Sub-nav (client state)** | Strategy **pills**: GRAT, CRT, CLAT, DAF, Liquidity, Roth Conversion, SLAT, ILIT — selects panel; `?openPanel=roth` (etc.) opens a pill on load |
+| **Confidence contract** | New modeled saves default **`illustrative`** (sandbox only — does not reduce `outside_strategy_total` in `calculate_estate_composition`). **Add to plan** → `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }` (`illustrative` → `probable`, consumer-owned only). **Annual gifting** on the Gifting tab still writes **`probable`** directly (committed program). |
+| **Write APIs** | `POST`/`PATCH`/`DELETE /api/strategy-line-items` (upsert, promote by `id`, soft-delete by `id`); `PATCH`/`DELETE /api/consumer/strategy-recommendation` (accept/decline advisor row); SLAT/ILIT/charitable forms via `lib/consumer/consumerStrategyLineItems.ts` |
+| **Read** | Server-prefetched `estateContext`, `strategyImpact`, `advisorHorizons`; client refetch of all active `strategy_line_items` for sandbox/confirmed lists |
+| **Chip indicators** | Amber dot = illustrative in sandbox; green = in plan; blue ring = advisor-authored sandbox row |
+| **Advisor rows** | Appear in **Strategy Sandbox** until client accepts via dashboard panel or sandbox **Accept**; accept sets `consumer_accepted` (moves to **In My Plan** when accepted; composition still requires `probable`/`certain` for outside-estate reduction) |
+| **Education CTA** | **Ask your advisor about this →** — connected advisor: `POST /api/consumer/ask-advisor`; else `/find-advisor` |
+| **Key lib** | `lib/consumer/strategyLineItemViews.ts` (`partitionStrategyLineItems`), `lib/strategy/strategyLabels.ts` |
+| **E2E** | `consumer-strategy-writes.spec.ts` (API contracts; sandbox UI promote not yet covered) |
 
 #### Tab: Trusts & Documents (`?tab=trusts`)
 
@@ -386,7 +389,7 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 **Advisor overlay on this page:**
 
 - `strategy_configs` → in-app `advisor_strategy_recommended` notifications
-- Pending advisor `strategy_line_items` → accept/reject on strategies tab + dashboard panel
+- Advisor `strategy_line_items` → **Strategy Sandbox** on Transfer Strategies + dashboard `StrategyRecommendationPanel`; accept/reject unchanged
 - Horizon federal values require base-case projection; missing context shows amber server banner
 
 ---
@@ -412,7 +415,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 
 | Channel | Consumer surface | API / data |
 |---------|------------------|------------|
-| **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** (“Advisor Recommended Strategies”) | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Reject: `DELETE` same. Rows: `strategy_line_items` `source_role='advisor'` |
+| **Strategy recommendations** | Dashboard `StrategyRecommendationPanel` (accept/decline); trust-strategy **Transfer Strategies** — **Strategy Sandbox** + **In My Plan** (`ConsumerStrategyPanel`) | Advisor: `/api/advisor/strategy-recommendation` (`source_role='advisor'`, confidence from advisor `low`/`medium`/`high` → `illustrative`/`probable`/`certain`). Consumer accept advisor row: `PATCH /api/consumer/strategy-recommendation`. Consumer promote own sandbox row: `PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }`. Reject/remove: `DELETE` on recommendation route or `DELETE /api/strategy-line-items` by `id` |
 | **Advisor GST ledger (SLAT)** | Advisor client Strategy tab — `SLATILITPanel` “Save to GST ledger” | `POST /api/advisor/gst-entry` (not browser `gst_ledger`); validates `advisor_clients` then service-role insert. RLS: `20260527150000` |
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
 | **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel`; gold onboarding note when `!connection && !wizardComplete && !pendingRequest` (OB-3b) |
@@ -432,7 +435,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Notifications** | In-app | `advisor_strategy_recommended` when new `strategy_configs` appear on trust-strategy load |
 | **Ask advisor about strategy** | **Ask your advisor about this →** on strategy education cards | If connected advisor: POST `/api/consumer/ask-advisor` → `create_notification` (type: `consumer_strategy_question`) → advisor sees in portal "Strategy Questions" section → responds via strategy recommendation. If no connected advisor: redirects to `/find-advisor` directory. |
 
-**Computation parity:** Accepted advisor lines + consumer lines feed `buildStrategyHorizons` and `calculate_estate_composition` so federal/state figures align with advisor client view (same household snapshot).
+**Computation parity:** `probable`/`certain` consumer lines + consumer-accepted advisor lines feed **actual** horizons and `outside_strategy_total` in `calculate_estate_composition`. `illustrative` rows appear in **projected** horizons only until promoted or written as `probable` (e.g. annual gifting). Advisor client view uses the same `buildStrategyHorizons` sets via `lib/advisor/strategyMappers.ts` (ENG-1).
 
 ---
 
@@ -456,7 +459,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 
 | Route | Used by |
 |-------|---------|
-| `/api/strategy-line-items` | Gifting, charitable, strategies (consumer + advisor roles) |
+| `/api/strategy-line-items` | Gifting (`probable`), charitable/strategies sandbox (`illustrative`), promote (`PATCH` + `id` + `promoteConfidence`), remove (`DELETE` + `id`) |
 | `/api/businesses`, `/api/insurance` | Business and life/P&C forms |
 | `/api/estate-composition` | Client refresh of composition card; e2e assertions |
 
@@ -523,4 +526,4 @@ When consumer behavior changes, follow **[UPDATE_CHECKLIST.md](./UPDATE_CHECKLIS
 
 ---
 
-*Last structured pass: Session 127+ (profile gate, trust-strategy sub-nav, advisor handoff, doc consolidation).*
+*Last structured pass: 2026-05-27 (strategy sandbox → actuals on Transfer Strategies; Roth → sandbox handoff; advisor accept + consumer promote paths).*

@@ -1,7 +1,7 @@
 // app/api/strategy-line-items/route.ts
 // POST   — upsert a strategy line item
 // DELETE — deactivate by household + strategy_source + source_role
-// PATCH  — update consumer_status on an active row
+// PATCH  — promote confidence by id, or update consumer_status by household + strategy_source
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
@@ -10,7 +10,7 @@ import {
   resolveOwnedHouseholdId,
 } from '@/lib/consumer/afterHouseholdWrite'
 import { resolveStrategyLineItemCategory } from '@/lib/strategy/resolveStrategyLineItemCategory'
-import { upsertStrategyLineItem } from '@/lib/strategy/upsertStrategyLineItem'
+import { upsertStrategyLineItem, type DbConfidenceLevel } from '@/lib/strategy/upsertStrategyLineItem'
 
 type SourceRole = 'consumer' | 'advisor'
 
@@ -92,12 +92,42 @@ export async function DELETE(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const body = await request.json()
+    const { id } = body as { id?: string }
+
+    if (id) {
+      const { data: row } = await supabase
+        .from('strategy_line_items')
+        .select('household_id')
+        .eq('id', id)
+        .eq('is_active', true)
+        .single()
+
+      if (!row) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+
+      const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, row.household_id)
+      if (!ownedHouseholdId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      const { error } = await supabase
+        .from('strategy_line_items')
+        .update({ is_active: false })
+        .eq('id', id)
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await afterHouseholdWrite(supabase, ownedHouseholdId)
+      return NextResponse.json({ success: true })
+    }
+
     const {
       householdId,
       strategySource,
       scenarioName,
       source_role: sourceRoleRaw,
-    } = await request.json()
+    } = body
     const source_role = resolveSourceRole(sourceRoleRaw)
     if (source_role === null) {
       return NextResponse.json({ error: 'source_role must be consumer or advisor' }, { status: 400 })
@@ -134,13 +164,90 @@ export async function DELETE(request: Request) {
   }
 }
 
+const CONFIDENCE_PROMOTE: Partial<Record<DbConfidenceLevel, DbConfidenceLevel>> = {
+  illustrative: 'probable',
+  probable: 'certain',
+}
+
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { householdId, strategySource, consumer_status } = await request.json()
+    const body = await request.json()
+    const { id, promoteConfidence, householdId, strategySource, consumer_status } = body as {
+      id?: string
+      promoteConfidence?: boolean
+      householdId?: string
+      strategySource?: string
+      consumer_status?: string
+    }
+
+    if (id) {
+      const { data: existing, error: fetchError } = await supabase
+        .from('strategy_line_items')
+        .select('id, confidence_level, household_id, source_role')
+        .eq('id', id)
+        .eq('is_active', true)
+        .single()
+
+      if (fetchError || !existing) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+
+      const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, existing.household_id)
+      if (!ownedHouseholdId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      if (promoteConfidence) {
+        if (existing.source_role !== 'consumer') {
+          return NextResponse.json(
+            { error: 'Use /api/consumer/strategy-recommendation to accept advisor rows' },
+            { status: 400 },
+          )
+        }
+        const current = existing.confidence_level as DbConfidenceLevel
+        const nextLevel = CONFIDENCE_PROMOTE[current]
+        if (!nextLevel) {
+          return NextResponse.json(
+            { error: `Cannot promote from ${current}` },
+            { status: 400 },
+          )
+        }
+        const { data, error } = await supabase
+          .from('strategy_line_items')
+          .update({ confidence_level: nextLevel })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        await afterHouseholdWrite(supabase, ownedHouseholdId)
+        return NextResponse.json(data)
+      }
+
+      if (consumer_status) {
+        const VALID_STATUSES = ['not_started', 'in_progress', 'complete']
+        if (!VALID_STATUSES.includes(consumer_status)) {
+          return NextResponse.json({ error: 'Invalid consumer_status value' }, { status: 400 })
+        }
+        const { data, error } = await supabase
+          .from('strategy_line_items')
+          .update({ consumer_status })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        await afterHouseholdWrite(supabase, ownedHouseholdId)
+        return NextResponse.json(data)
+      }
+
+      return NextResponse.json({ error: 'promoteConfidence or consumer_status required' }, { status: 400 })
+    }
+
     if (!householdId || !strategySource || !consumer_status) {
       return NextResponse.json(
         { error: 'householdId, strategySource, and consumer_status required' },

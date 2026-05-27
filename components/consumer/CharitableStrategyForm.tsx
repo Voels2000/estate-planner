@@ -78,6 +78,7 @@ export function CharitableStrategyForm({
         strategy_source: strategyType as StrategyLineItemSource,
         category: 'charitable',
         amount: Math.round(parsed),
+        confidence_level: 'illustrative',
         metadata: {
           recipient: recipient.trim() || undefined,
           notes: notes.trim() || undefined,

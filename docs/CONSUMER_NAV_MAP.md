@@ -132,7 +132,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 |---------------|-------|------------|------|-------------|
 | Social Security | `/social-security` | Social Security | 2 | `social-security` |
 | RMD Calculator | `/rmd` | RMD Calculator | 2 | `rmd` |
-| Roth Conversion | `/roth` | Roth Conversion | 2 | `roth` |
+| Roth Conversion | `/roth` | Roth Conversion | 2 | `roth` — optional CTA to Transfer Strategies sandbox (`?tab=strategies&openPanel=roth`); see [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) |
 | Lifetime Snapshot | `/complete` | Lifetime Snapshot | 2 | `complete` |
 | Monte Carlo | `/monte-carlo` | Monte Carlo Simulations | 2 | `monte-carlo` |
 
