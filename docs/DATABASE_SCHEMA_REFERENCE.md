@@ -65,6 +65,21 @@ This is a developer reference, not a full SQL DDL dump.
 
 **Edited via Asset Allocation:** `risk_tolerance`, `target_stocks_pct`, `target_bonds_pct`, `target_cash_pct` (`PATCH /api/consumer/allocation-targets`).
 
+#### Household-scoped RLS (pre-launch `20260527150000`)
+
+These tables had permissive `auth.uid() IS NOT NULL` policies; migration replaces with owner + advisor scope:
+
+| Table | Consumer scope | Advisor scope | App notes |
+|-------|----------------|---------------|-----------|
+| `gst_ledger` | `households.owner_id = auth.uid()` | `advisor_clients` → `households.owner_id` (`active`, `accepted_at` set) | Advisor writes: `POST /api/advisor/gst-entry` only |
+| `liquidity_analysis` | same | same | — |
+| `monte_carlo_results` | SELECT own household | SELECT connected clients | Writes: `estate-monte-carlo` edge (service role) |
+| `domicile_schedule` | ALL own household | SELECT connected clients | — |
+| `domicile_analysis` | `user_id = auth.uid()` (unchanged) | SELECT via advisor join (fixed) | — |
+| `strategy_configs` | SELECT own household (unchanged) | ALL via advisor join; loose OR policies dropped | — |
+
+**Verify:** `scripts/verify-loose-rls-policies.sql` (expect zero rows after migration).
+
 - **Succession intake (Sprint 10):** minimal business succession booleans; `PATCH /api/consumer/succession-intake`.
 
 ### `advisor_clients`

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (security audits; PROF-1/2; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (pre-launch RLS on prod; PROF-1/2; Sprint 17 go-live prep)
 
 ---
 
@@ -24,8 +24,9 @@
 ### Security — migration template + audits (2026-05-27) ✅
 
 - `[x]` `supabase/MIGRATION_TEMPLATE.sql` + grant/RLS audit scripts + prod baselines
-- `[x]` Pre-launch RLS household scope — `20260527150000` + `/api/advisor/gst-entry`
-- `[ ]` Post-deploy: `verify-loose-rls-policies.sql` on prod + isolation smoke
+- `[x]` Pre-launch RLS household scope — `20260527150000` on prod (`1f41ce1`, `7cab1be`, `35b0738`)
+- `[x]` Prod verify — `verify-loose-rls-policies.sql` zero rows; `rls-policies-post-fix-2026-05-27.csv`
+- `[ ]` Manual isolation smoke (pre-launch)
 
 ### Profile cleanup PROF-1/2 (2026-05-27) ✅
 

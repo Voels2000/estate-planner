@@ -16,7 +16,9 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - Advisor scope: `advisor_clients` → `households.owner_id` with `status = 'active'` AND `accepted_at IS NOT NULL`.
 - App: `POST/DELETE /api/advisor/gst-entry` (advisor_clients validation + `createAdminClient` insert); `SLATILITPanel` no longer writes `gst_ledger` from browser.
 
-**Verify on prod:** `scripts/verify-loose-rls-policies.sql` → zero rows.
+**Verify on prod:** `scripts/verify-loose-rls-policies.sql` → zero rows. Post-fix export: `docs/audits/rls-policies-post-fix-2026-05-27.csv`.
+
+**Commits:** `1f41ce1` (migration), `7cab1be` (`/api/advisor/gst-entry` + `SLATILITPanel`), `35b0738` (`MIGRATION_TEMPLATE.sql` advisor join comment).
 
 ---
 
@@ -24,7 +26,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **Code/docs only:**
 
-- `supabase/MIGRATION_TEMPLATE.sql` — standard `CREATE TABLE` + explicit `GRANT` + RLS policies (future-proof vs Supabase Oct 2026 default)
+- `supabase/MIGRATION_TEMPLATE.sql` — standard `CREATE TABLE` + explicit `GRANT` + RLS policies (future-proof vs Supabase Oct 2026 default); advisor join uses `client_id` → `households.owner_id` (`35b0738`)
 - `scripts/audit-table-grants-rls.sql`, `scripts/audit-rls-policies.sql`, `scripts/audit-rls-policies-risk.sql`
 - `docs/audits/table-grants-rls-2026-05-27.csv` — 119 tables; all `authenticated`/`service_role`/`anon` grants present; RLS enabled — **no grant fix migration**
 - `docs/audits/rls-policies-*.csv` — pre-launch data-isolation baseline

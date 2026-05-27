@@ -26,9 +26,9 @@ npx supabase db query --linked --agent=no -o csv -f scripts/audit-rls-policies-r
 
 Answers: “Which rows can each role see?” Separate from grants; review household-scoped policies and avoid `USING (true)` on PII tables.
 
-**Pre-launch fix (migration `20260527150000_prelaunch_rls_household_scope.sql`):** household-scoped policies on `gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis` (advisor SELECT), `strategy_configs` (drop loose advisor policies). Verify: `scripts/verify-loose-rls-policies.sql` returns zero rows.
+**Pre-launch fix (migration `20260527150000_prelaunch_rls_household_scope.sql`):** household-scoped policies on `gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis` (advisor SELECT), `strategy_configs` (drop loose advisor policies). **Prod status (2026-05-27):** applied; `scripts/verify-loose-rls-policies.sql` → zero rows. Post-fix baseline: [rls-policies-post-fix-2026-05-27.csv](./rls-policies-post-fix-2026-05-27.csv). App: deploy `7cab1be` for GST API route.
 
-After applying on prod, export post-fix baseline:
+Re-export after future policy changes:
 
 ```bash
 npx supabase db query --linked --agent=no -o csv -f scripts/audit-rls-high-risk-policies.sql > docs/audits/rls-policies-post-fix-$(date +%Y-%m-%d).csv

@@ -412,6 +412,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | Channel | Consumer surface | API / data |
 |---------|------------------|------------|
 | **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** (“Advisor Recommended Strategies”) | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Reject: `DELETE` same. Rows: `strategy_line_items` `source_role='advisor'` |
+| **Advisor GST ledger (SLAT)** | Advisor client Strategy tab — `SLATILITPanel` “Save to GST ledger” | `POST /api/advisor/gst-entry` (not browser `gst_ledger`); validates `advisor_clients` then service-role insert. RLS: `20260527150000` |
 | **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
 | **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; invite-via-email when no connection; cancel pending via `POST /api/connection-requests/cancel`; gold onboarding note when `!connection && !wizardComplete && !pendingRequest` (OB-3b) |
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |

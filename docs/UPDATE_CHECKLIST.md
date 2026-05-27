@@ -149,9 +149,10 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `scripts/audit-table-grants-rls.sql` + baseline CSV (119 tables, all grants + RLS on)
 - [x] `scripts/audit-rls-policies.sql` + risk helper + baseline CSVs
 - [x] `supabase/MIGRATION_TEMPLATE.sql` — GRANT + RLS pattern for future tables
-- [x] Master docs: MASTER_ARCHITECTURE · UPDATE_CHECKLIST · SCHEMA_CHANGELOG · DECISION_LOG · LAUNCH_CHECKLIST · docs/audits/README.md
-- [x] Pre-launch RLS fix migration `20260527150000` + `/api/advisor/gst-entry` + verify script
-- [ ] After prod `db push`: run `scripts/verify-loose-rls-policies.sql` (zero rows) + save post-fix CSV
+- [x] Master docs: MASTER_ARCHITECTURE · UPDATE_CHECKLIST · SCHEMA_CHANGELOG · DECISION_LOG · ROADMAP · NEXT_SESSION · LAUNCH_CHECKLIST · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE · docs/audits/README.md
+- [x] Pre-launch RLS fix migration `20260527150000` + `/api/advisor/gst-entry` (`1f41ce1`, `7cab1be`, `35b0738`)
+- [x] Prod `db push` + `scripts/verify-loose-rls-policies.sql` (zero rows); post-fix CSV `docs/audits/rls-policies-post-fix-2026-05-27.csv`
+- [ ] Manual isolation smoke (two consumers + advisor/client) — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
 
 ## PROF-1/2 — Profile cleanup (2026-05-27)
 

@@ -106,6 +106,7 @@ personalized recommendations come only from licensed advisors connected by the u
 - Added `WITH CHECK` to `advisor_clients` ALL policy
 - Added INSERT policy to `profiles`
 - Migration: `20260602000000_sprint_c3_rls_fixes.sql` — applied to production
+- Pre-launch (2026-05-27): `20260527150000_prelaunch_rls_household_scope.sql` — six tables (`gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis`, `strategy_configs`); `verify-loose-rls-policies.sql` zero rows on prod; GST writes via `/api/advisor/gst-entry`
 
 **Authentication:**
 - Created missing `/auth/callback` route — email confirmation and password reset

@@ -1,12 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (security audits; PROF-1/2; ENG-2)
+# Last updated: 2026-05-27 (pre-launch RLS; security audits; PROF-1/2)
 
 ## Pre-launch RLS household scope — six tables (2026-05-27)
 
-**Decision:** Migration `20260527150000` drops permissive `auth.uid() IS NOT NULL` policies and replaces with household owner + `advisor_clients` (via `households.owner_id = client_id`, `status = 'active'`, `accepted_at IS NOT NULL`). GST advisor writes use `/api/advisor/gst-entry` with server-side link validation and `createAdminClient` (same pattern as other advisor writes that bypass client RLS edge cases).
+**Decision:** Migration `20260527150000` drops permissive `auth.uid() IS NOT NULL` policies and replaces with household owner + `advisor_clients` (via `households.owner_id = client_id`, `status = 'active'`, `accepted_at IS NOT NULL`). GST advisor writes use `/api/advisor/gst-entry` with server-side link validation and `createAdminClient` (mirrors `strategy-recommendation` / `gap-status` pattern). `SLATILITPanel` no longer inserts to `gst_ledger` from the browser.
 
 **Reasoning:** Permissive policies OR'd with scoped policies, exposing cross-household reads/writes before public signup.
+
+**Shipped:** `1f41ce1` (migration + docs), `7cab1be` (GST API), `35b0738` (MIGRATION_TEMPLATE advisor join). Applied on prod; `verify-loose-rls-policies.sql` returns zero rows.
 
 ---
 

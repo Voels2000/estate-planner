@@ -520,7 +520,7 @@ Two layers — do not conflate them:
 
 **Prod baseline (2026-05-27):** [docs/audits/table-grants-rls-2026-05-27.csv](./audits/table-grants-rls-2026-05-27.csv) — 119 public tables; all three API roles granted; RLS enabled on all. **No grant backfill migration needed.**
 
-**Policy audit (pre-launch security):** Baselines in [docs/audits/](./audits/README.md). **Fixed** in `20260527150000_prelaunch_rls_household_scope.sql` (`gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis`, `strategy_configs`). Advisor RLS join: `advisor_clients.client_id = households.owner_id` (not a `client_household_id` column). GST advisor insert: `POST /api/advisor/gst-entry`. Post-deploy: `scripts/verify-loose-rls-policies.sql` must return zero rows.
+**Policy audit (pre-launch security):** Baselines in [docs/audits/](./audits/README.md). **Fixed** in `20260527150000_prelaunch_rls_household_scope.sql` (`gst_ledger`, `liquidity_analysis`, `monte_carlo_results`, `domicile_schedule`, `domicile_analysis`, `strategy_configs`) — on prod; `scripts/verify-loose-rls-policies.sql` returns zero rows. Advisor RLS join: `advisor_clients.client_id = households.owner_id` (not `client_household_id`). GST advisor insert: `POST /api/advisor/gst-entry` (validates link, then `createAdminClient`). New migrations: copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql).
 
 **New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
 
@@ -861,6 +861,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/strategy/upsertStrategyLineItem.ts` (shared strategy line item upsert for consumer and advisor routes)
 - `app/api/advisor/strategy-recommendation/route.ts`
 - `app/api/advisor/strategy-recommendations-read/route.ts`
+- `app/api/advisor/gap-status/route.ts`
+- `app/api/advisor/gst-entry/route.ts` (advisor GST ledger writes; `SLATILITPanel`)
 - `app/api/consumer/strategy-recommendation/route.ts`
 - `app/api/consumer/digital-assets/route.ts`
 - `app/api/consumer/gift-history/route.ts`
@@ -1042,6 +1044,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
+- **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.
 - **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab (six core metrics cached server-side).
 - **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x.
 - **Strategy tab UX (UX-4):** Opportunities catalog rows expand inline (`InlineStrategyPanel`, `catalogToPanel.ts`); recommend refreshes Step 3 via `loadConsumerData` + `router.refresh`.
