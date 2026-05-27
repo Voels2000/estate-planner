@@ -81,8 +81,8 @@ export function GrowthAssumptionInputs({
       </div>
 
       <p className="text-[11px] text-gray-400 leading-relaxed">
-        These rates determine how your estate grows in projections and tax horizon calculations.
-        Inflation (expenses and spending) is set separately in your profile.
+        Portfolio growth rates apply to financial assets only. Real estate and business interests
+        use their own rates above. Inflation is configured separately below.
       </p>
     </div>
   )

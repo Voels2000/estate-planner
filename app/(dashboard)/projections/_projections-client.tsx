@@ -81,7 +81,7 @@ export function ProjectionsClient({
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
-      {/* Growth assumptions (read-only from profile) */}
+      {/* Planning assumptions (read-only — edit on Scenarios) */}
       <ProjectionAssumptions
         household={household}
         hasRealEstate={hasRealEstate}
