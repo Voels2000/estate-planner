@@ -39,9 +39,12 @@ export async function PATCH(request: NextRequest) {
       business: Number(ga.business ?? GROWTH_ASSUMPTION_DEFAULTS.business),
     }
   }
+  if (body.inflation_rate != null) {
+    updates.inflation_rate = Number(body.inflation_rate)
+  }
 
   if (Object.keys(updates).length <= 1) {
-    return NextResponse.json({ error: 'No growth fields provided' }, { status: 400 })
+    return NextResponse.json({ error: 'No planning assumption fields provided' }, { status: 400 })
   }
 
   const { data, error } = await supabase
@@ -49,7 +52,9 @@ export async function PATCH(request: NextRequest) {
     .update(updates)
     .eq('id', owned.householdId)
     .eq('owner_id', user.id)
-    .select('id, growth_rate_accumulation, growth_rate_retirement, growth_assumptions')
+    .select(
+      'id, growth_rate_accumulation, growth_rate_retirement, growth_assumptions, inflation_rate',
+    )
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

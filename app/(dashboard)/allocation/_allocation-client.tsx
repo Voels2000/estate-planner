@@ -120,15 +120,22 @@ function BarRow({ label, current, target, color }: { label: string; current: num
   )
 }
 
+type RiskLevel = 'conservative' | 'moderate' | 'aggressive'
+
 export default function AllocationClient({
   userTier: _userTier,
   initialTargets,
+  initialRiskTolerance,
 }: {
   userTier: number
   initialTargets: AllocationTargets
+  initialRiskTolerance: RiskLevel
 }) {
   void _userTier
   const router = useRouter()
+  const [riskTolerance, setRiskTolerance] = useState<RiskLevel>(initialRiskTolerance)
+  const [savingRisk, setSavingRisk] = useState(false)
+  const [riskSaveError, setRiskSaveError] = useState<string | null>(null)
   const [data, setData] = useState<AllocationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -177,6 +184,30 @@ export default function AllocationClient({
     setStocks(s); setBonds(b); setCash(c)
   }
 
+  async function handleRiskChange(level: RiskLevel) {
+    setRiskTolerance(level)
+    setSavingRisk(true)
+    setRiskSaveError(null)
+    try {
+      const res = await fetch('/api/consumer/allocation-targets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ risk_tolerance: level }),
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setRiskSaveError(payload.error ?? 'Failed to save risk profile')
+        setRiskTolerance(initialRiskTolerance)
+        return
+      }
+      const fresh = await fetch('/api/asset-allocation').then((r) => r.json())
+      if (!fresh.error) setData(fresh)
+      router.refresh()
+    } finally {
+      setSavingRisk(false)
+    }
+  }
+
   async function handleSave() {
     if (!valid) return
     setSaving(true); setSaveError(null)
@@ -188,6 +219,7 @@ export default function AllocationClient({
           target_stocks_pct: stocks,
           target_bonds_pct: bonds,
           target_cash_pct: cash,
+          risk_tolerance: riskTolerance,
         }),
       })
       const payload = await res.json()
@@ -208,7 +240,8 @@ export default function AllocationClient({
   if (loading) return <div className="flex items-center justify-center h-64 text-gray-400 text-sm">Loading…</div>
   if (error)   return <div className="max-w-2xl mx-auto mt-10 p-4 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
 
-  const riskLabel = data ? (data.risk.charAt(0).toUpperCase() + data.risk.slice(1)) : 'Moderate'
+  const riskLabel =
+    riskTolerance.charAt(0).toUpperCase() + riskTolerance.slice(1)
   const name = data?.person1_first_name ?? 'Your'
 
   // Use saved target for drift display, fall back to data.recommended
@@ -256,6 +289,38 @@ export default function AllocationClient({
           ))}
         </div>
       )}
+
+      {/* Risk profile */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
+            Risk Profile
+          </label>
+          <div className="flex gap-2">
+            {(['conservative', 'moderate', 'aggressive'] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => handleRiskChange(level)}
+                disabled={savingRisk}
+                className={`flex-1 rounded-lg border py-2 text-sm font-medium capitalize transition-colors disabled:opacity-50 ${
+                  riskTolerance === level
+                    ? 'border-[#0F1B3C] bg-[#0F1B3C] text-white'
+                    : 'border-gray-200 text-gray-600 hover:border-[#0F1B3C]/30'
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">
+            Affects industry benchmark mix and Monte Carlo return suggestions.
+          </p>
+          {riskSaveError && (
+            <p className="text-xs text-red-600 mt-2">{riskSaveError}</p>
+          )}
+        </div>
+      </div>
 
       {/* Section 1 — Benchmark Models */}
       <div>

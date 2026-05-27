@@ -32,6 +32,7 @@ type Household = {
   state_primary: string
   growth_rate_accumulation: number
   growth_rate_retirement: number
+  inflation_rate?: number | null
   growth_assumptions?: { real_estate?: number; business?: number } | null
 }
 
@@ -148,6 +149,7 @@ export default function ScenariosClient({
   const [financialRetire, setFinancialRetire] = useState(5)
   const [realEstateGrowth, setRealEstateGrowth] = useState(4.5)
   const [businessGrowth, setBusinessGrowth] = useState(7)
+  const [inflationRate, setInflationRate] = useState(2.5)
 
   // Debounce timers
   const timerB = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -182,6 +184,7 @@ export default function ScenariosClient({
     setFinancialRetire(initialHousehold.growth_rate_retirement ?? 5)
     setRealEstateGrowth(parsedGrowth.real_estate)
     setBusinessGrowth(parsedGrowth.business)
+    setInflationRate(initialHousehold.inflation_rate ?? 2.5)
     const base: ScenarioOverrides = {
       name: 'Scenario B',
       person1_retirement_age:  initialHousehold.person1_retirement_age ?? 65,
@@ -253,6 +256,7 @@ export default function ScenariosClient({
           growth_rate_accumulation: financialAccum,
           growth_rate_retirement: financialRetire,
           growth_assumptions: { real_estate: realEstateGrowth, business: businessGrowth },
+          inflation_rate: inflationRate,
         }),
       })
       const data = await res.json()
@@ -262,6 +266,7 @@ export default function ScenariosClient({
         growth_rate_accumulation: financialAccum,
         growth_rate_retirement: financialRetire,
         growth_assumptions: { real_estate: realEstateGrowth, business: businessGrowth },
+        inflation_rate: inflationRate,
       })
       setGrowthSaved(true)
       setTimeout(() => setGrowthSaved(false), 2500)
@@ -343,6 +348,47 @@ export default function ScenariosClient({
           showRealEstateInput={hasRealEstate}
           showBusinessInput={hasBusiness}
         />
+
+        <div className="border-l-4 border-[#C9A84C] pl-3 mt-6">
+          <h3 className="text-sm font-semibold text-[#0F1B3C]">Inflation Assumption</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Applied to expenses, inflation-adjusted income, and spending growth
+          </p>
+        </div>
+
+        <div className="mt-3 max-w-md">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
+            Inflation Rate
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={0.25}
+              value={inflationRate}
+              onChange={(e) => setInflationRate(parseFloat(e.target.value))}
+              className="flex-1 accent-[#0F1B3C]"
+            />
+            <div className="flex items-center border border-gray-200 rounded px-2 py-1 w-16">
+              <input
+                type="number"
+                min={0}
+                max={10}
+                step={0.25}
+                value={inflationRate}
+                onChange={(e) => setInflationRate(parseFloat(e.target.value) || 0)}
+                className="w-full text-sm text-right focus:outline-none"
+              />
+              <span className="text-xs text-gray-400 ml-0.5">%</span>
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">
+            Default: 2.5%. Applies to expenses and inflation-adjusted income.
+            Does not affect real estate appreciation or business growth (those are set above).
+          </p>
+        </div>
+
         <div className="mt-4 flex justify-end">
           <button
             type="button"
@@ -350,7 +396,7 @@ export default function ScenariosClient({
             disabled={savingGrowth}
             className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50"
           >
-            {savingGrowth ? 'Saving…' : growthSaved ? '✓ Saved — recomputing' : 'Save growth assumptions'}
+            {savingGrowth ? 'Saving…' : growthSaved ? '✓ Saved — recomputing' : 'Save planning assumptions'}
           </button>
         </div>
       </div>
