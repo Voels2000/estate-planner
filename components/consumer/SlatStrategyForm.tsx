@@ -70,6 +70,7 @@ export function SlatStrategyForm({
         strategy_source: 'slat',
         category: 'trust_exclusion',
         amount: Math.round(parsed),
+        confidence_level: 'illustrative',
         metadata: {
           funding_source: fundingSource,
           notes: notes.trim() || undefined,

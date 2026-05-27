@@ -146,6 +146,7 @@ export function IlitStrategyForm({
         strategy_source: 'ilit',
         category: 'trust_exclusion',
         amount,
+        confidence_level: 'illustrative',
         metadata,
       })
       setEditing(false)
