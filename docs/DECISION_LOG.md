@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (PROF-1/2 profile cleanup; ENG-2 growth assumptions)
+# Last updated: 2026-05-27 (security audits; PROF-1/2; ENG-2)
+
+## Security — explicit GRANTs in migrations; grant vs RLS audits (2026-05-27)
+
+**Decision:** Add `supabase/MIGRATION_TEMPLATE.sql` requiring explicit `GRANT` + RLS in every new table migration. Prod grant audit (119 tables) shows all API roles already granted and RLS enabled — **no backfill migration**. Policy audit CSV exported for pre-launch review (`signed_in_only` advisor/consumer policies flagged separately from reference-table `USING (true)`).
+
+**Reasoning:** PostgREST access (grants) and row isolation (policies) are different questions. Future Supabase defaults may skip auto-grants; baking grants into migrations prevents regressions. Reference tables may use `USING (true)` for authenticated read; household PII must not.
+
+**Alternatives considered:** One-shot `GRANT ALL` migration on prod (rejected — audit shows nothing missing). Defer policy audit until post-launch (rejected for launch gate — tracked in LAUNCH_CHECKLIST as review item).
+
+---
 
 ## PROF-1/2 — Profile cleanup: canonical homes for planning assumptions (2026-05-27)
 

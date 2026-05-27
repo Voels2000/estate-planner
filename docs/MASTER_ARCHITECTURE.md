@@ -509,6 +509,23 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 **Opening signups (go-live flip):** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
+### Supabase Data API access (grants + RLS)
+
+Two layers — do not conflate them:
+
+| Layer | Question | Tooling |
+|-------|----------|---------|
+| **Table GRANTs** | Can `authenticated` / `anon` / `service_role` call PostgREST on this table at all? | `scripts/audit-table-grants-rls.sql` |
+| **RLS policies** | Which rows does each role see (household isolation, advisor scope)? | `scripts/audit-rls-policies.sql`, `scripts/audit-rls-policies-risk.sql` |
+
+**Prod baseline (2026-05-27):** [docs/audits/table-grants-rls-2026-05-27.csv](./audits/table-grants-rls-2026-05-27.csv) — 119 public tables; all three API roles granted; RLS enabled on all. **No grant backfill migration needed.**
+
+**Policy audit (pre-launch security):** [docs/audits/rls-policies-2026-05-27.csv](./audits/rls-policies-2026-05-27.csv) + [rls-policies-risk-2026-05-27.csv](./audits/rls-policies-risk-2026-05-27.csv). `USING (true)` is expected on reference/tax/config tables (`ref_*`, brackets, `app_config`). Review `signed_in_only` flags (`auth.uid() IS NOT NULL` without household/advisor join) before launch — e.g. `domicile_schedule`, `strategy_configs` advisor policies. Household PII tables must scope via `households.owner_id = auth.uid()` or `advisor_clients` with `active`/`accepted`.
+
+**New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
+
+**Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
+
 **Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass.
 
 **Test account seed scripts (staging / local, not Vercel env):**

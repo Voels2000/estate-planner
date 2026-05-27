@@ -1,0 +1,501 @@
+schemaname,tablename,policyname,roles,cmd,qual
+public,adjusted_taxable_gifts,Advisors manage client adjusted taxable gifts,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = adjusted_taxable_gifts.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,adjusted_taxable_gifts,Consumers manage own adjusted taxable gifts,{public},ALL,"(EXISTS ( SELECT 1
+   FROM households h
+  WHERE ((h.id = adjusted_taxable_gifts.household_id) AND (h.owner_id = auth.uid()))))"
+public,advisor_access_log,Advisors can log their own access,{authenticated},INSERT,NULL
+public,advisor_access_log,Advisors can view their own log,{authenticated},SELECT,(advisor_id = auth.uid())
+public,advisor_access_log,Clients can view access to their data,{authenticated},SELECT,(client_id = auth.uid())
+public,advisor_clients,Advisors manage their clients,{public},ALL,(advisor_id = auth.uid())
+public,advisor_clients,Clients see their advisors,{public},SELECT,(client_id = auth.uid())
+public,advisor_directory,Active listings visible to authenticated users,{authenticated},SELECT,(is_active = true)
+public,advisor_directory,Admins have full access,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,advisor_directory,Advisors can submit their own listing,{authenticated},INSERT,NULL
+public,advisor_directory,Advisors can update their own listing,{authenticated},UPDATE,(submitted_by = auth.uid())
+public,advisor_directory,Public can view active advisor listings,{public},SELECT,(is_active = true)
+public,advisor_gap_statuses,Advisor can manage own gap statuses,{public},ALL,(advisor_id = auth.uid())
+public,advisor_notes,Advisors manage own notes,{public},ALL,(advisor_id = auth.uid())
+public,advisor_notes,advisor_notes_delete,{authenticated},DELETE,(advisor_id = auth.uid())
+public,advisor_notes,advisor_notes_insert,{authenticated},INSERT,NULL
+public,advisor_notes,advisor_notes_select,{authenticated},SELECT,"((advisor_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = advisor_notes.client_id) AND (ac.status = 'active'::text)))))"
+public,advisor_notes,advisor_notes_update,{authenticated},UPDATE,(advisor_id = auth.uid())
+public,advisor_projection_assumptions,advisor_client_assumptions_read,{public},SELECT,"(client_household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,advisor_projection_assumptions,advisor_own_assumptions,{public},ALL,(advisor_id = auth.uid())
+public,advisor_projection_assumptions,consumer_accept_assumption,{public},UPDATE,"(client_household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,advisor_projection_assumptions,consumer_accepted_assumptions,{public},SELECT,"((client_household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid()))) AND (accepted_by_client = true))"
+public,advisor_tier_config,Authenticated read,{authenticated},SELECT,true
+public,advisor_tiers,Anyone can read active advisor tiers,{public},SELECT,(is_active = true)
+public,alert_rules,authenticated_select_alert_rules,{public},SELECT,(auth.uid() IS NOT NULL)
+public,annual_financials,annual_financials_advisor,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = annual_financials.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,annual_financials,annual_financials_owner,{public},ALL,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = annual_financials.household_id) AND (households.owner_id = auth.uid()))))"
+public,app_config,Admins can manage config,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,app_config,Anyone can read config,{public},SELECT,true
+public,assessment_results,Users can insert own assessment results,{public},INSERT,NULL
+public,assessment_results,Users can read own assessment results,{public},SELECT,(auth.uid() = user_id)
+public,asset_beneficiaries,Advisors can manage client beneficiaries,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = asset_beneficiaries.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,asset_beneficiaries,Users manage own asset_beneficiaries,{public},ALL,(auth.uid() = owner_id)
+public,asset_growth_classes,authenticated users can read growth classes,{authenticated},SELECT,true
+public,asset_growth_classes,service role can manage growth classes,{public},ALL,true
+public,asset_titling,Advisors can manage client asset titling,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = asset_titling.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,asset_titling,Users manage own asset_titling,{public},ALL,(auth.uid() = owner_id)
+public,asset_types,Admins can insert asset types,{authenticated},INSERT,NULL
+public,asset_types,Admins can update asset types,{authenticated},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,asset_types,Anyone can view asset types,{public},SELECT,true
+public,assets,Advisors can manage client assets,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = assets.owner_id) AND (ac.status = ANY (ARRAY['active'::text, 'accepted'::text])))))"
+public,assets,Users can delete own assets,{public},DELETE,(auth.uid() = owner_id)
+public,assets,Users can insert own assets,{public},INSERT,NULL
+public,assets,Users can update own assets,{public},UPDATE,(auth.uid() = owner_id)
+public,assets,Users can view own assets,{public},SELECT,(auth.uid() = owner_id)
+public,attorney_clients,attorney_clients_attorney_insert,{public},INSERT,NULL
+public,attorney_clients,attorney_clients_attorney_select,{public},SELECT,(attorney_id = auth.uid())
+public,attorney_clients,attorney_clients_attorney_update,{public},UPDATE,(attorney_id = auth.uid())
+public,attorney_clients,attorney_clients_consumer_insert,{public},INSERT,NULL
+public,attorney_clients,attorney_clients_consumer_select,{public},SELECT,(client_id = auth.uid())
+public,attorney_listings,Admins can manage all listings,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,attorney_listings,Attorneys can manage own listing,{authenticated},ALL,(attorney_id = auth.uid())
+public,attorney_listings,Public can view active listings,{public},SELECT,(is_active = true)
+public,attorney_listings,attorney_listings_advisor_select,{public},SELECT,((submitted_by = auth.uid()) OR ((is_active = true) AND (is_verified = true)))
+public,attorney_listings,attorney_listings_consumer_select,{public},SELECT,((is_active = true) AND (is_verified = true))
+public,attorney_referrals,Advisors and admins can update referrals,{authenticated},UPDATE,"((advisor_id = auth.uid()) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))))"
+public,attorney_referrals,Authenticated users can insert referrals,{authenticated},INSERT,NULL
+public,attorney_referrals,Users can view own referrals,{authenticated},SELECT,((client_id = auth.uid()) OR (requested_by = auth.uid()) OR (advisor_id = auth.uid()))
+public,attorney_tier_config,Authenticated read,{authenticated},SELECT,true
+public,beneficiary_access_grants,authenticated users can insert grants,{public},INSERT,NULL
+public,beneficiary_access_grants,can view grants,{public},SELECT,"((granted_by_user_id = auth.uid()) OR (household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid()))))"
+public,beneficiary_access_grants,grantor can revoke grants,{public},UPDATE,(granted_by_user_id = auth.uid())
+public,beneficiary_conflicts,advisor can read client conflicts,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,beneficiary_conflicts,owner can read own conflicts,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,beneficiary_conflicts,service role can manage conflicts,{public},ALL,true
+public,business_entity_types,Admins can manage entity types,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,business_entity_types,Anyone can read active entity types,{public},SELECT,(is_active = true)
+public,business_interests,Advisors manage client business interests,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = business_interests.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,business_interests,Users manage own business interests,{public},ALL,(auth.uid() = owner_id)
+public,business_succession_notes,advisor_client_notes_select,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text) AND (h.id = business_succession_notes.household_id))))"
+public,business_succession_notes,consumer_own_notes_delete,{public},DELETE,(user_id = auth.uid())
+public,business_succession_notes,consumer_own_notes_insert,{public},INSERT,NULL
+public,business_succession_notes,consumer_own_notes_select,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,business_succession_notes,consumer_own_notes_update,{public},UPDATE,(user_id = auth.uid())
+public,business_titling,Users manage own business titling,{public},ALL,(auth.uid() = owner_id)
+public,business_valuation_discounts,advisor_delete_business_valuation_discounts,{public},DELETE,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = business_valuation_discounts.household_id) AND (EXISTS ( SELECT 1
+           FROM advisor_clients
+          WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = households.owner_id) AND (advisor_clients.status = 'active'::text)))))))"
+public,business_valuation_discounts,advisor_insert_business_valuation_discounts,{public},INSERT,NULL
+public,business_valuation_discounts,advisor_select_business_valuation_discounts,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = business_valuation_discounts.household_id) AND (EXISTS ( SELECT 1
+           FROM advisor_clients
+          WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = households.owner_id) AND (advisor_clients.status = 'active'::text)))))))"
+public,business_valuation_discounts,advisor_update_business_valuation_discounts,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = business_valuation_discounts.household_id) AND (EXISTS ( SELECT 1
+           FROM advisor_clients
+          WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = households.owner_id) AND (advisor_clients.status = 'active'::text)))))))"
+public,businesses,advisor can update business discounts,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = businesses.owner_id) AND (ac.status = 'active'::text))))"
+public,businesses,advisor can view client businesses,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = businesses.owner_id) AND (ac.status = ANY (ARRAY['active'::text, 'accepted'::text])))))"
+public,businesses,owner can manage their businesses,{public},ALL,(owner_id = auth.uid())
+public,change_log,Service role full access,{service_role},ALL,true
+public,charitable_deduction_limits,Authenticated read,{authenticated},SELECT,true
+public,charitable_donations,charitable_donations_advisor,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = charitable_donations.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,charitable_donations,charitable_donations_owner,{public},ALL,(owner_id = auth.uid())
+public,charitable_vehicle_types,Authenticated read,{authenticated},SELECT,true
+public,connection_requests,connection_requests_consumer_insert,{public},INSERT,NULL
+public,connection_requests,connection_requests_consumer_select,{public},SELECT,(consumer_id = auth.uid())
+public,connection_requests,connection_requests_profile_select,{public},SELECT,(profile_id = auth.uid())
+public,deletion_audit_log,Service role manages deletion audit log,{service_role},ALL,true
+public,deletion_schedule,Service role manages deletion schedule,{service_role},ALL,true
+public,digital_assets,advisor can read client digital assets,{public},SELECT,"(owner_id IN ( SELECT advisor_clients.client_id
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.status = 'active'::text))))"
+public,digital_assets,owner can manage own digital assets,{public},ALL,(owner_id = auth.uid())
+public,document_download_log,download_log_attorney_select,{public},SELECT,"(document_id IN ( SELECT ld.id
+   FROM (legal_documents ld
+     JOIN attorney_clients ac ON ((ac.client_id = ld.household_id)))
+  WHERE ((ac.attorney_id = auth.uid()) AND (ac.status = ANY (ARRAY['active'::text, 'accepted'::text])))))"
+public,document_download_log,download_log_consumer_select,{public},SELECT,"(document_id IN ( SELECT ld.id
+   FROM (legal_documents ld
+     JOIN households h ON ((h.id = ld.household_id)))
+  WHERE (h.owner_id = auth.uid())))"
+public,document_download_log,download_log_insert,{public},INSERT,NULL
+public,domicile_analysis,advisors insert client domicile_analysis,{public},INSERT,NULL
+public,domicile_analysis,advisors select client domicile_analysis,{public},SELECT,(auth.uid() IS NOT NULL)
+public,domicile_analysis,advisors update client domicile_analysis,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = domicile_analysis.user_id) AND (advisor_clients.status = 'active'::text))))"
+public,domicile_analysis,consumers delete own domicile_analysis,{public},DELETE,(auth.uid() = user_id)
+public,domicile_analysis,consumers insert own domicile_analysis,{public},INSERT,NULL
+public,domicile_analysis,consumers select own domicile_analysis,{public},SELECT,(auth.uid() = user_id)
+public,domicile_analysis,consumers update own domicile_analysis,{public},UPDATE,(auth.uid() = user_id)
+public,domicile_checklist_items,advisors select client checklist,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = domicile_checklist_items.user_id) AND (advisor_clients.status = 'active'::text))))"
+public,domicile_checklist_items,advisors update client checklist,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = domicile_checklist_items.user_id) AND (advisor_clients.status = 'active'::text))))"
+public,domicile_checklist_items,consumers insert own checklist,{public},INSERT,NULL
+public,domicile_checklist_items,consumers select own checklist,{public},SELECT,(auth.uid() = user_id)
+public,domicile_checklist_items,consumers update own checklist,{public},UPDATE,(auth.uid() = user_id)
+public,domicile_schedule,advisor can view client domicile schedule,{public},SELECT,(auth.uid() IS NOT NULL)
+public,domicile_schedule,owner can manage domicile schedule,{public},ALL,(auth.uid() IS NOT NULL)
+public,education_progress,education_progress_insert_own,{public},INSERT,NULL
+public,education_progress,education_progress_select_own,{public},SELECT,(auth.uid() = user_id)
+public,education_progress,education_progress_update_own,{public},UPDATE,(auth.uid() = user_id)
+public,email_captures,Allow insert via API,"{anon,authenticated}",INSERT,NULL
+public,email_captures,Service role full access,{public},ALL,(auth.role() = 'service_role'::text)
+public,estate_document_types,Admins can manage document types,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,estate_document_types,Anyone can read active document types,{public},SELECT,(is_active = true)
+public,estate_documents,Advisors can access client estate documents by household,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = estate_documents.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,estate_documents,Advisors manage client estate documents,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = estate_documents.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,estate_documents,Users manage own estate documents,{public},ALL,(auth.uid() = owner_id)
+public,estate_flow_share_links,advisor_insert_share_links,{public},INSERT,NULL
+public,estate_flow_share_links,advisor_select_share_links,{public},SELECT,(created_by = auth.uid())
+public,estate_flow_share_links,advisor_update_share_links,{public},UPDATE,(created_by = auth.uid())
+public,estate_flow_share_links,public_select_share_link_by_token,{public},SELECT,true
+public,estate_flow_snapshots,advisor_insert_estate_flow_snapshots,{public},INSERT,NULL
+public,estate_flow_snapshots,advisor_select_estate_flow_snapshots,{public},SELECT,"(household_id IN ( SELECT estate_flow_snapshots.household_id
+   FROM advisor_clients
+  WHERE (advisor_clients.advisor_id = auth.uid())))"
+public,estate_flow_snapshots,consumer_insert_own_estate_flow_snapshots,{public},INSERT,NULL
+public,estate_flow_snapshots,consumer_select_own_estate_flow_snapshots,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,estate_health_check,advisor can read client health check,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,estate_health_check,owner can read and write own health check,{public},ALL,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,estate_health_scores,advisor can read client health scores,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,estate_health_scores,owner can read own health score,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,estate_health_scores,service role can upsert health scores,{public},ALL,true
+public,estate_recommendations,advisor_select,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = estate_recommendations.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,estate_recommendations,owner_insert,{public},INSERT,NULL
+public,estate_recommendations,owner_select,{public},SELECT,(auth.uid() = owner_id)
+public,expense_types,Admins can insert expense types,{authenticated},INSERT,NULL
+public,expense_types,Admins can update expense types,{authenticated},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,expense_types,Anyone can view expense types,{public},SELECT,true
+public,expenses,Advisors can manage client expenses,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = expenses.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,expenses,Users can manage own expenses,{public},ALL,(auth.uid() = owner_id)
+public,federal_estate_tax_brackets,Admin delete federal_estate_tax_brackets,{public},DELETE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,federal_estate_tax_brackets,Admin insert federal_estate_tax_brackets,{public},INSERT,NULL
+public,federal_estate_tax_brackets,Admin update federal_estate_tax_brackets,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,federal_estate_tax_brackets,Anyone can read estate tax brackets,{public},SELECT,true
+public,federal_estate_tax_parameters,Authenticated read,{authenticated},SELECT,true
+public,federal_tax_brackets,Allow read for authenticated,{authenticated},SELECT,true
+public,federal_tax_config,authenticated users can read tax config,{authenticated},SELECT,true
+public,federal_tax_config,service role can manage tax config,{public},ALL,true
+public,feedback,Admins can view feedback,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,feedback,Users can insert feedback,{public},INSERT,NULL
+public,firm_members,firm_members_owner_insert,{public},INSERT,NULL
+public,firm_members,firm_members_select,{public},SELECT,((user_id = auth.uid()) OR (firm_id IN ( SELECT firm_ids_for_current_user() AS firm_ids_for_current_user)))
+public,firm_members,firm_members_self_insert,{public},INSERT,NULL
+public,firms,firms_owner_insert,{public},INSERT,NULL
+public,firms,firms_owner_select,{public},SELECT,(owner_id = auth.uid())
+public,firms,firms_owner_update,{public},UPDATE,(owner_id = auth.uid())
+public,funnel_events,Service role full access funnel_events,{public},ALL,(auth.role() = 'service_role'::text)
+public,funnel_events,Users read own funnel events,{public},SELECT,(auth.uid() = user_id)
+public,gift_history,Advisors manage client gift history,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = gift_history.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,gift_history,Users manage own gift history,{public},ALL,(auth.uid() = owner_id)
+public,gift_types,Admins can manage gift types,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,gift_types,Anyone can read active gift types,{public},SELECT,(is_active = true)
+public,gst_ledger,Advisors can manage gst ledger entries,{public},ALL,(auth.uid() IS NOT NULL)
+public,household_alerts,advisor can read client alerts,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,household_alerts,advisor_update_household_alerts,{public},UPDATE,"(household_id IN ( SELECT household_alerts.household_id
+   FROM advisor_clients
+  WHERE (advisor_clients.advisor_id = auth.uid())))"
+public,household_alerts,owner can dismiss own alerts,{public},UPDATE,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,household_alerts,owner can read own alerts,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,household_alerts,service role can manage alerts,{public},ALL,true
+public,household_people,Advisors read client household people,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,household_people,Users manage own household people,{public},ALL,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,households,Advisors can manage client households,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = households.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,households,Owners can manage their households,{public},ALL,(owner_id = auth.uid())
+public,income,Service role can read all income,{service_role},SELECT,true
+public,income,Users can manage own income,{public},ALL,(auth.uid() = owner_id)
+public,income_streams,Advisors manage client income,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = income_streams.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,income_streams,Household members manage income,{public},ALL,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = income_streams.household_id) AND (households.owner_id = auth.uid()))))"
+public,income_types,Admins can insert income types,{authenticated},INSERT,NULL
+public,income_types,Admins can update income types,{authenticated},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,income_types,Anyone can view income types,{public},SELECT,true
+public,ingestion_jobs,Users can manage their own ingestion jobs,{public},ALL,(owner_id = auth.uid())
+public,ingestion_jobs,Users manage own ingestion jobs,{public},ALL,(owner_id = auth.uid())
+public,insurance_policies,Users can delete own policies,{public},DELETE,(auth.uid() = user_id)
+public,insurance_policies,Users can insert own policies,{public},INSERT,NULL
+public,insurance_policies,Users can update own policies,{public},UPDATE,(auth.uid() = user_id)
+public,insurance_policies,Users can view own policies,{public},SELECT,(auth.uid() = user_id)
+public,insurance_policy_titling,Users manage own insurance titling,{public},ALL,(auth.uid() = owner_id)
+public,irmaa_brackets,Admin delete irmaa_brackets,{public},DELETE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,irmaa_brackets,Admin insert irmaa_brackets,{public},INSERT,NULL
+public,irmaa_brackets,Admin update irmaa_brackets,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,irmaa_brackets,Anyone can read,{public},SELECT,true
+public,irs_rmd_tables,Anyone can read RMD tables,{public},SELECT,true
+public,legal_documents,legal_documents_attorney_insert,{public},INSERT,NULL
+public,legal_documents,legal_documents_attorney_select,{public},SELECT,"(household_id IN ( SELECT ac.client_id
+   FROM attorney_clients ac
+  WHERE ((ac.attorney_id = auth.uid()) AND (ac.status = ANY (ARRAY['active'::text, 'accepted'::text])))))"
+public,legal_documents,legal_documents_consumer_insert,{public},INSERT,NULL
+public,legal_documents,legal_documents_consumer_select,{public},SELECT,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,legal_documents,legal_documents_consumer_update,{public},UPDATE,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,liabilities,Advisors can manage client liabilities,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = liabilities.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,liabilities,Users can manage their own liabilities,{public},ALL,(auth.uid() = owner_id)
+public,liability_types,Admins can insert liability types,{authenticated},INSERT,NULL
+public,liability_types,Admins can update liability types,{authenticated},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,liability_types,Anyone can view liability types,{public},SELECT,true
+public,life_events,Users own their life events,{public},ALL,(auth.uid() = user_id)
+public,liquidity_analysis,Advisors can manage liquidity analysis,{public},ALL,(auth.uid() IS NOT NULL)
+public,milestone_completions,Users can view own milestones,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = milestone_completions.household_id) AND (households.owner_id = auth.uid()))))"
+public,monte_carlo_results,Advisors can manage monte carlo results,{public},ALL,(auth.uid() IS NOT NULL)
+public,monte_carlo_runs,Advisors can view client monte carlo runs,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = monte_carlo_runs.user_id) AND (ac.status = ANY (ARRAY['active'::text, 'accepted'::text])))))"
+public,monte_carlo_runs,Users manage own monte carlo runs,{public},ALL,(user_id = auth.uid())
+public,notifications,notifications_delete_own,{public},DELETE,(auth.uid() = user_id)
+public,notifications,notifications_insert_service,{public},INSERT,NULL
+public,notifications,notifications_select_own,{public},SELECT,(auth.uid() = user_id)
+public,notifications,notifications_update_own,{public},UPDATE,(auth.uid() = user_id)
+public,privacy_requests,Service role manages privacy requests,{service_role},ALL,true
+public,privacy_requests,Users can submit privacy requests,{authenticated},INSERT,NULL
+public,profiles,Advisors can view client profiles,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = profiles.id))))"
+public,profiles,Users can insert own profile,{public},INSERT,NULL
+public,profiles,Users can update own profile,{public},UPDATE,(auth.uid() = id)
+public,profiles,Users can view own profile,{public},SELECT,(auth.uid() = id)
+public,projection_assumption_audit,audit_insert,{public},INSERT,NULL
+public,projection_assumption_audit,audit_select_advisor,{public},SELECT,"(assumption_id IN ( SELECT advisor_projection_assumptions.id
+   FROM advisor_projection_assumptions
+  WHERE (advisor_projection_assumptions.advisor_id = auth.uid())))"
+public,projection_assumption_audit,audit_select_consumer,{public},SELECT,"(assumption_id IN ( SELECT advisor_projection_assumptions.id
+   FROM advisor_projection_assumptions
+  WHERE (advisor_projection_assumptions.client_household_id IN ( SELECT households.id
+           FROM households
+          WHERE (households.owner_id = auth.uid())))))"
+public,projection_scenarios,advisor can read client projection scenarios,{public},SELECT,"(household_id IN ( SELECT h.id
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,projection_scenarios,owner can manage own projection scenarios,{public},ALL,"(household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid())))"
+public,projections,Advisors manage client projections,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = projections.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,projections,Household members manage projections,{public},ALL,"(EXISTS ( SELECT 1
+   FROM households
+  WHERE ((households.id = projections.household_id) AND (households.owner_id = auth.uid()))))"
+public,qcd_limits,Authenticated read,{authenticated},SELECT,true
+public,real_estate,Advisors can manage client real estate,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = real_estate.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,real_estate,Users can manage their own real estate,{public},ALL,(owner_id = auth.uid())
+public,real_estate_titling,Users manage own real_estate_titling,{public},ALL,(auth.uid() = owner_id)
+public,ref_insurance_types,public read ref_insurance_types,{public},SELECT,true
+public,ref_liquidity_types,public read ref_liquidity_types,{public},SELECT,true
+public,ref_pc_insurance_types,public read ref_pc_insurance_types,{public},SELECT,true
+public,ref_property_types,public read ref_property_types,{public},SELECT,true
+public,ref_succession_plans,public read ref_succession_plans,{public},SELECT,true
+public,ref_titling_types,public read ref_titling_types,{public},SELECT,true
+public,ref_valuation_methods,public read ref_valuation_methods,{public},SELECT,true
+public,referral_clicks,Advisors see their own referral clicks,{public},SELECT,(auth.uid() = advisor_id)
+public,referral_clicks,Attorneys read own referral clicks,{public},SELECT,(auth.uid() = attorney_profile_id)
+public,referral_clicks,Service role full access referral_clicks,{public},ALL,(auth.role() = 'service_role'::text)
+public,rmd_uniform_lifetime,Allow read for authenticated,{authenticated},SELECT,true
+public,standard_deductions,Anyone can read standard deductions,{public},SELECT,true
+public,state_estate_tax_rules,Admin delete state_estate_tax_rules,{public},DELETE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,state_estate_tax_rules,Admin insert state_estate_tax_rules,{public},INSERT,NULL
+public,state_estate_tax_rules,Admin update state_estate_tax_rules,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,state_estate_tax_rules,public_read_state_estate_tax_rules,{public},SELECT,true
+public,state_income_tax_brackets,Admin write,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,state_income_tax_brackets,Public read,{public},SELECT,true
+public,state_income_tax_rates,Admin insert state_income_tax_rates,{public},INSERT,NULL
+public,state_income_tax_rates,Admin only,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,state_income_tax_rates,Admin update state_income_tax_rates,{public},UPDATE,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,state_inheritance_tax_rules,public_read_state_inheritance_tax_rules,{public},SELECT,true
+public,state_tax_rates,Allow read for authenticated,{authenticated},SELECT,true
+public,strategy_configs,Advisors can delete strategy configs,{public},DELETE,(auth.uid() IS NOT NULL)
+public,strategy_configs,Advisors can insert strategy configs,{public},INSERT,NULL
+public,strategy_configs,Advisors can read strategy configs for their clients,{public},SELECT,(auth.uid() IS NOT NULL)
+public,strategy_configs,Advisors can update strategy configs,{public},UPDATE,(auth.uid() IS NOT NULL)
+public,strategy_configs,Advisors manage strategy configs,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = strategy_configs.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,strategy_configs,Consumers read own strategy configs,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM households h
+  WHERE ((h.id = strategy_configs.household_id) AND (h.owner_id = auth.uid()))))"
+public,strategy_line_items,Advisors manage strategy line items,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (advisor_clients ac
+     JOIN households h ON ((h.owner_id = ac.client_id)))
+  WHERE ((h.id = strategy_line_items.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,strategy_line_items,Consumers read own strategy line items,{public},SELECT,"(EXISTS ( SELECT 1
+   FROM households h
+  WHERE ((h.id = strategy_line_items.household_id) AND (h.owner_id = auth.uid()))))"
+public,strategy_line_items,advisor_strategy_line_items_write,{authenticated},ALL,"((source_role = 'advisor'::text) AND (EXISTS ( SELECT 1
+   FROM advisor_clients ac
+  WHERE ((ac.advisor_id = auth.uid()) AND (ac.client_id = ( SELECT h.owner_id
+           FROM households h
+          WHERE (h.id = strategy_line_items.household_id))) AND (ac.status = 'active'::text)))))"
+public,strategy_line_items,consumer_accept_strategy_recommendation,{public},UPDATE,"((household_id IN ( SELECT households.id
+   FROM households
+  WHERE (households.owner_id = auth.uid()))) AND (source_role = 'advisor'::text))"
+public,strategy_line_items,consumer_write_own_strategy_line_items,{public},ALL,"((source_role = 'consumer'::text) AND (EXISTS ( SELECT 1
+   FROM households h
+  WHERE ((h.id = strategy_line_items.household_id) AND (h.owner_id = auth.uid())))))"
+public,subscription_tiers,Admins can manage subscription tiers,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,subscription_tiers,Anyone can read active subscription tiers,{public},SELECT,(is_active = true)
+public,superuser_action_log,superuser_action_log_insert,{authenticated},INSERT,NULL
+public,superuser_action_log,superuser_action_log_select,{authenticated},SELECT,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND ((profiles.is_superuser = true) OR (profiles.role = 'admin'::text)))))"
+public,tax_brackets_federal,Anyone can read federal brackets,{public},SELECT,true
+public,titling_asset_categories,Anyone can read titling categories,{public},SELECT,true
+public,titling_asset_categories,Authenticated users can delete titling categories,{public},DELETE,(auth.role() = 'authenticated'::text)
+public,titling_asset_categories,Authenticated users can manage titling categories,{public},INSERT,NULL
+public,titling_asset_categories,Authenticated users can update titling categories,{public},UPDATE,(auth.role() = 'authenticated'::text)
+public,trust_types,Admins can manage trust types,{public},ALL,"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))"
+public,trust_types,Anyone can read active trust types,{public},SELECT,(is_active = true)
+public,trusts,Advisors can access client trusts by household,{public},ALL,"(EXISTS ( SELECT 1
+   FROM (households h
+     JOIN advisor_clients ac ON ((ac.client_id = h.owner_id)))
+  WHERE ((h.id = trusts.household_id) AND (ac.advisor_id = auth.uid()) AND (ac.status = 'active'::text))))"
+public,trusts,Advisors can manage client trusts,{public},ALL,"(EXISTS ( SELECT 1
+   FROM advisor_clients
+  WHERE ((advisor_clients.advisor_id = auth.uid()) AND (advisor_clients.client_id = trusts.owner_id) AND (advisor_clients.status = 'active'::text))))"
+public,trusts,Owner can manage trusts,{public},ALL,(owner_id = auth.uid())

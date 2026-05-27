@@ -188,6 +188,7 @@ In **Authentication → Settings**:
 - [x] **`app/layout.tsx`** — no change needed; Search Console verified via Cloudflare (meta tag env not required)
 - [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited; `audit-ux-language.sh` 0 findings; all `DISCLAIMER_STRINGS` surfaces wired. Completed: 2026-05-24 (`788aa08`)
 - [x] **RLS security (Sprint C-3 Phase 1)** — `20260602000000_sprint_c3_rls_fixes.sql` applied or ready to push; advisor joins `active` + `accepted`. Completed: 2026-06-02 (`236890c`)
+- [ ] **RLS policy audit (pre-launch)** — Export: `scripts/audit-rls-policies.sql` → `docs/audits/`. Review `rls-policies-risk-*.csv` `signed_in_only` rows; confirm household PII tables scope via `households` / `advisor_clients`. Grant audit baseline: all 119 tables OK ([docs/audits/README.md](./audits/README.md))
 - [x] **Auth + security (Sprint C-3 Phase 1b + Phase 3)** — `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging. Completed: 2026-06-02 (`56a4407`)
 - [x] **Billing disclosures (Sprint C-4 — code)** — RCW 19.316, FTC cancel, renewal reminders (`462bda9`). **Manual:** Stripe Dashboard + walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 - [x] **Privacy + Terms (Sprint C-5 — code)** — `/privacy`, `/terms`, footer links, sitemap (`2e1dff3`, `695a860`). **Manual:** [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders + counsel sign-off

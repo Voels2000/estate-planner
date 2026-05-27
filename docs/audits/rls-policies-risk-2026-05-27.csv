@@ -1,0 +1,54 @@
+tablename,policyname,roles,cmd,qual,risk_flag
+advisor_tier_config,Authenticated read,{authenticated},SELECT,true,permissive_true
+app_config,Anyone can read config,{public},SELECT,true,permissive_true
+asset_growth_classes,authenticated users can read growth classes,{authenticated},SELECT,true,permissive_true
+asset_growth_classes,service role can manage growth classes,{public},ALL,true,permissive_true
+asset_types,Anyone can view asset types,{public},SELECT,true,permissive_true
+attorney_tier_config,Authenticated read,{authenticated},SELECT,true,permissive_true
+beneficiary_conflicts,service role can manage conflicts,{public},ALL,true,permissive_true
+change_log,Service role full access,{service_role},ALL,true,permissive_true
+charitable_deduction_limits,Authenticated read,{authenticated},SELECT,true,permissive_true
+charitable_vehicle_types,Authenticated read,{authenticated},SELECT,true,permissive_true
+deletion_audit_log,Service role manages deletion audit log,{service_role},ALL,true,permissive_true
+deletion_schedule,Service role manages deletion schedule,{service_role},ALL,true,permissive_true
+estate_flow_share_links,public_select_share_link_by_token,{public},SELECT,true,permissive_true
+estate_health_scores,service role can upsert health scores,{public},ALL,true,permissive_true
+expense_types,Anyone can view expense types,{public},SELECT,true,permissive_true
+federal_estate_tax_brackets,Anyone can read estate tax brackets,{public},SELECT,true,permissive_true
+federal_estate_tax_parameters,Authenticated read,{authenticated},SELECT,true,permissive_true
+federal_tax_brackets,Allow read for authenticated,{authenticated},SELECT,true,permissive_true
+federal_tax_config,authenticated users can read tax config,{authenticated},SELECT,true,permissive_true
+federal_tax_config,service role can manage tax config,{public},ALL,true,permissive_true
+household_alerts,service role can manage alerts,{public},ALL,true,permissive_true
+income,Service role can read all income,{service_role},SELECT,true,permissive_true
+income_types,Anyone can view income types,{public},SELECT,true,permissive_true
+irmaa_brackets,Anyone can read,{public},SELECT,true,permissive_true
+irs_rmd_tables,Anyone can read RMD tables,{public},SELECT,true,permissive_true
+liability_types,Anyone can view liability types,{public},SELECT,true,permissive_true
+privacy_requests,Service role manages privacy requests,{service_role},ALL,true,permissive_true
+qcd_limits,Authenticated read,{authenticated},SELECT,true,permissive_true
+ref_insurance_types,public read ref_insurance_types,{public},SELECT,true,permissive_true
+ref_liquidity_types,public read ref_liquidity_types,{public},SELECT,true,permissive_true
+ref_pc_insurance_types,public read ref_pc_insurance_types,{public},SELECT,true,permissive_true
+ref_property_types,public read ref_property_types,{public},SELECT,true,permissive_true
+ref_succession_plans,public read ref_succession_plans,{public},SELECT,true,permissive_true
+ref_titling_types,public read ref_titling_types,{public},SELECT,true,permissive_true
+ref_valuation_methods,public read ref_valuation_methods,{public},SELECT,true,permissive_true
+rmd_uniform_lifetime,Allow read for authenticated,{authenticated},SELECT,true,permissive_true
+standard_deductions,Anyone can read standard deductions,{public},SELECT,true,permissive_true
+state_estate_tax_rules,public_read_state_estate_tax_rules,{public},SELECT,true,permissive_true
+state_income_tax_brackets,Public read,{public},SELECT,true,permissive_true
+state_inheritance_tax_rules,public_read_state_inheritance_tax_rules,{public},SELECT,true,permissive_true
+state_tax_rates,Allow read for authenticated,{authenticated},SELECT,true,permissive_true
+tax_brackets_federal,Anyone can read federal brackets,{public},SELECT,true,permissive_true
+titling_asset_categories,Anyone can read titling categories,{public},SELECT,true,permissive_true
+alert_rules,authenticated_select_alert_rules,{public},SELECT,(auth.uid() IS NOT NULL),signed_in_only
+domicile_analysis,advisors select client domicile_analysis,{public},SELECT,(auth.uid() IS NOT NULL),signed_in_only
+domicile_schedule,advisor can view client domicile schedule,{public},SELECT,(auth.uid() IS NOT NULL),signed_in_only
+domicile_schedule,owner can manage domicile schedule,{public},ALL,(auth.uid() IS NOT NULL),signed_in_only
+gst_ledger,Advisors can manage gst ledger entries,{public},ALL,(auth.uid() IS NOT NULL),signed_in_only
+liquidity_analysis,Advisors can manage liquidity analysis,{public},ALL,(auth.uid() IS NOT NULL),signed_in_only
+monte_carlo_results,Advisors can manage monte carlo results,{public},ALL,(auth.uid() IS NOT NULL),signed_in_only
+strategy_configs,Advisors can delete strategy configs,{public},DELETE,(auth.uid() IS NOT NULL),signed_in_only
+strategy_configs,Advisors can read strategy configs for their clients,{public},SELECT,(auth.uid() IS NOT NULL),signed_in_only
+strategy_configs,Advisors can update strategy configs,{public},UPDATE,(auth.uid() IS NOT NULL),signed_in_only

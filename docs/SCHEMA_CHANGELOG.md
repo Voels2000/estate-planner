@@ -8,6 +8,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Security — migration template + grant/RLS audits (2026-05-27, no migration)
+
+**Code/docs only:**
+
+- `supabase/MIGRATION_TEMPLATE.sql` — standard `CREATE TABLE` + explicit `GRANT` + RLS policies (future-proof vs Supabase Oct 2026 default)
+- `scripts/audit-table-grants-rls.sql`, `scripts/audit-rls-policies.sql`, `scripts/audit-rls-policies-risk.sql`
+- `docs/audits/table-grants-rls-2026-05-27.csv` — 119 tables; all `authenticated`/`service_role`/`anon` grants present; RLS enabled — **no grant fix migration**
+- `docs/audits/rls-policies-*.csv` — pre-launch data-isolation baseline
+
+---
+
 ## PROF-1/2 — Profile cleanup: assumption UI homes (2026-05-27, no migration)
 
 **Code only (four commits):**

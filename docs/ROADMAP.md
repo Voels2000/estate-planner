@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (PROF-1/2 profile cleanup; ENG-2 growth assumptions; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (security audits; PROF-1/2; Sprint 17 go-live prep)
 
 ---
 
@@ -20,6 +20,11 @@
 ---
 
 ## Current sprint
+
+### Security — migration template + audits (2026-05-27) ✅
+
+- `[x]` `supabase/MIGRATION_TEMPLATE.sql` + grant/RLS audit scripts + prod baselines
+- `[ ]` Pre-launch: review RLS `signed_in_only` flags ([docs/audits/README.md](./audits/README.md))
 
 ### Profile cleanup PROF-1/2 (2026-05-27) ✅
 

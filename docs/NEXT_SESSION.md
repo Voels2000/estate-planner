@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (PROF-1/2 profile cleanup; ENG-2; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (security audits; PROF-1/2; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **PROF-1/2** shipped: Profile = demographics/tax only; **Scenarios** = all planning growth + inflation; **Asset Allocation** = risk + target mix. **ENG-2** (`5589b89`–`8e90fa4`): RE/business engine, `growth_assumptions` jsonb, insurance/income growth, MC alignment. **Deploy ENG-2:** `db push` → redeploy **`estate-monte-carlo`** → app → `20260527130400` staleness bump. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Security:** `MIGRATION_TEMPLATE.sql` + grant/RLS audit baselines (119 tables granted; no fix migration). Pre-launch: review `docs/audits/rls-policies-risk-*.csv` `signed_in_only` rows. **PROF-1/2** shipped. **ENG-2:** `db push` → **`estate-monte-carlo`** → app. **Remaining:** RLS policy sign-off, legal, Stripe, go-live ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >

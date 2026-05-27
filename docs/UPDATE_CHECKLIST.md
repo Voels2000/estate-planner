@@ -27,6 +27,19 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 + P-2 — performance quick wins and pre-launch refactors |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
 
+## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
+
+Before merge, confirm the migration file includes:
+
+- [ ] `ALTER TABLE … ENABLE ROW LEVEL SECURITY`
+- [ ] Policies scoped to **household owner** (`households.owner_id = auth.uid()` or equivalent join) for consumer PII — not `USING (true)` on household data
+- [ ] Advisor policies use `advisor_clients` with `status` in `active` + `accepted` (see `lib/advisor/clientConnectionStatus.ts`)
+- [ ] `GRANT` to `authenticated` and `service_role` on the new table (copy from [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql))
+- [ ] `GRANT` to `anon` **only** if the table is intentionally public (directories, `ref_*`, pre-signup assessment) — read-only `SELECT` where possible
+- [ ] Re-run grant audit after deploy if unsure: `npx supabase db query --linked -o csv -f scripts/audit-table-grants-rls.sql`
+
+See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.md#supabase-data-api-access-grants--rls) and [docs/audits/README.md](./audits/README.md).
+
 ## When to update docs
 
 > **Sprint hygiene rule:** Add "Doc sync pass" as the final task in every sprint.
@@ -130,6 +143,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Strategy Horizon section below Step 3; `StrategyImpactPanel` in Recommendations & Impact
 - [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
+
+## Security audits — grants + RLS (2026-05-27)
+
+- [x] `scripts/audit-table-grants-rls.sql` + baseline CSV (119 tables, all grants + RLS on)
+- [x] `scripts/audit-rls-policies.sql` + risk helper + baseline CSVs
+- [x] `supabase/MIGRATION_TEMPLATE.sql` — GRANT + RLS pattern for future tables
+- [x] Master docs: MASTER_ARCHITECTURE · UPDATE_CHECKLIST · SCHEMA_CHANGELOG · DECISION_LOG · LAUNCH_CHECKLIST · docs/audits/README.md
+- [ ] Pre-launch: review `rls-policies-risk-2026-05-27.csv` `signed_in_only` rows (separate from grant audit)
 
 ## PROF-1/2 — Profile cleanup (2026-05-27)
 
