@@ -9,11 +9,14 @@
 // Sprint 13 — Roth Optimizer UI
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { RothAnalysisResult } from "@/lib/calculations/roth-analysis";
+import { saveConsumerStrategyLineItem } from "@/lib/consumer/consumerStrategyLineItems";
 import { DISCLAIMER_STRINGS } from "@/lib/compliance/language-policy";
 
 interface Props {
   result: RothAnalysisResult;
+  householdId: string;
 }
 
 function fmt(n: number) {
@@ -24,12 +27,44 @@ function pct(n: number) {
   return (n * 100).toFixed(0) + "%";
 }
 
-export function RothClient({ result }: Props) {
+export function RothClient({ result, householdId }: Props) {
+  const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [tab, setTab] = useState<"table" | "balances">("table");
+  const [savingToStrategies, setSavingToStrategies] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const displayRows = showAll ? result.rows : result.rows.slice(0, 15);
   const hasWindow = result.optimalConversionWindow != null;
+
+  async function handleUseInTransferStrategies() {
+    if (!householdId || result.totalConversions <= 0) return;
+    setSavingToStrategies(true);
+    setSaveError(null);
+    try {
+      const windowLabel = hasWindow
+        ? `${result.optimalConversionWindow!.startYear}–${result.optimalConversionWindow!.endYear}`
+        : 'Roth conversion plan'
+      await saveConsumerStrategyLineItem(householdId, {
+        strategy_source: 'roth',
+        category: 'trust_exclusion',
+        confidence_level: 'illustrative',
+        amount: Math.round(result.totalConversions),
+        scenario_name: `Roth optimizer — ${windowLabel}`,
+        metadata: {
+          source: 'roth_optimizer',
+          total_conversions: result.totalConversions,
+          total_lifetime_tax_savings: result.totalLifetimeTaxSavings,
+          optimal_window: result.optimalConversionWindow,
+        },
+      })
+      router.push('/my-estate-trust-strategy?tab=strategies&openPanel=roth')
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save to Transfer Strategies')
+    } finally {
+      setSavingToStrategies(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -202,6 +237,29 @@ export function RothClient({ result }: Props) {
               {showAll ? "Show fewer years" : `Show all ${result.rows.length} years`}
             </button>
           )}
+        </div>
+      )}
+
+      {result.totalConversions > 0 && (
+        <div className="rounded-lg border border-[color:var(--mwm-navy)]/10 bg-[color:var(--mwm-navy)]/[0.02] px-4 py-4">
+          <p className="mb-1 text-sm font-semibold text-[color:var(--mwm-navy)]">
+            Ready to add this to your plan?
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Saves this Roth conversion scenario to your sandbox on Transfer Strategies. Review
+            the impact there, then add to your plan when ready.
+          </p>
+          {saveError && (
+            <p className="mb-2 text-xs text-red-600">{saveError}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => void handleUseInTransferStrategies()}
+            disabled={savingToStrategies}
+            className="w-full rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[color:var(--mwm-navy)]/90 disabled:opacity-50"
+          >
+            {savingToStrategies ? 'Saving…' : 'Use in Transfer Strategies →'}
+          </button>
         </div>
       )}
 

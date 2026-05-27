@@ -32,9 +32,24 @@ Consumers and advisors share one **household** data model but operate in separat
 **1. Strategy recommendations**
 
 - Advisor writes `strategy_line_items` with `source_role='advisor'` via `/api/advisor/strategy-recommendation`.
-- Consumer UI: dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** tab (“Advisor Recommended Strategies”).
+- Consumer UI: dashboard `StrategyRecommendationPanel`; trust-strategy **Transfer Strategies** tab (`ConsumerStrategyPanel` — Sandbox + In My Plan sections).
 - Consumer accept/reject: `PATCH` / `DELETE` on `/api/consumer/strategy-recommendation` sets `consumer_accepted` / `consumer_rejected`.
-- Accepted rows join consumer-entered lines in **actual** horizon and composition calculations.
+- Accepted advisor rows join consumer-entered lines in **actual** horizon and composition calculations when `confidence_level` is `probable`/`certain`, or when `consumer_accepted` (UI “In My Plan”).
+
+**Strategy sandbox contract (consumer Transfer Strategies):**
+
+| `confidence_level` | Meaning | Affects `calculate_estate_composition` outside reduction | Horizons |
+|---|---|---|---|
+| `illustrative` | Sandbox — modeled, not committed | No | Projected bucket |
+| `probable` | In my plan — consumer confirmed | Yes (when `effective_year` met) | Actual + projected |
+| `certain` | Completed transfer | Yes | Actual + projected |
+
+- **Sandbox** lists all active `illustrative` rows (consumer + advisor, not rejected). Source badge: Advisor vs You modeled.
+- **In My Plan** lists `probable`/`certain` plus advisor rows with `consumer_accepted`.
+- Consumer promotes own rows: `PATCH /api/strategy-line-items` with `{ id, promoteConfidence: true }` (`illustrative` → `probable`).
+- Advisor rows in sandbox: accept via `/api/consumer/strategy-recommendation` (unchanged).
+- Entry points writing `illustrative` first: modeled chips (GRAT, CRT, CLAT, Roth, Liquidity), SLAT/ILIT/DAF forms, Roth optimizer **Use in Transfer Strategies** (`/roth` → `/my-estate-trust-strategy?tab=strategies&openPanel=roth`).
+- Annual gifting on trust-strategy tab still writes `probable` directly (committed program).
 
 **2. Monte Carlo assumptions**
 
@@ -73,6 +88,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor portal UX-4 | Step 2 Opportunities rows expand inline to `SLATILITPanel` / `AdvancedStrategyPanel` via `InlineStrategyPanel` + `catalogToPanel.ts` (CST: catalog `cst`, chip `credit_shelter_trust`) — SCHEMA_CHANGELOG UX-4 |
 | Advisor portal UX-5 | Strategy tab layout: redundant full-width panels removed; Step 3 **Recommendations & Impact** + `StrategyImpactPanel`; **Strategy Horizon** below Step 3 (`StrategyHorizonTable` + `CompositeOverlay`) — SCHEMA_CHANGELOG UX-5 |
 | Advisor portal UX-5b | `CompositeOverlay` default `recommendations` mode; manual entry removed — SCHEMA_CHANGELOG UX-5b |
+| Consumer strategy sandbox → actuals | Transfer Strategies **Strategy Sandbox** / **In My Plan**; `promoteConfidence` PATCH; Roth optimizer handoff — SCHEMA_CHANGELOG 2026-05-27 |
 | Connection status | `CONNECTED_ADVISOR_CLIENT_STATUSES` in `lib/advisor/clientConnectionStatus.ts` |
 
 **Known limitations / open gaps:**
@@ -346,8 +362,9 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - As of Session 122, `/dashboard` (`dashboard/page.tsx`) fetches `calculate_gifting_summary` server-side, passes `lifetime_exemption_used` into `classifyEstateAssets`, and renders `components/dashboard/EstateCalloutCard.tsx` below net worth (gross estate, headroom before federal tax, est. federal/state tax, link to `/estate-tax`). Display-only props — no client RPC. Headroom uses `computeHeadroomBeforeFederalTax` (`lib/estate/exemptionLabels.ts`) — `exemption_available − inside estate` (gross minus `outside_strategy_total`), matching My Estate Strategy horizons; not raw RPC `exemption_remaining` (which uses taxable estate after admin deductions).
 - As of Session 122, advisor/consumer SVG estate flow (`components/estate-flow/EstateFlowDiagram.tsx`) uses colocated `buildEdgeLabelLanes` (rendering-only; not in `lib/`) to stagger overlapping edge labels plus dark label backgrounds.
 - As of Session 121, `components/consumer/ConsumerStrategyPanel.tsx` (Transfer Strategies tab) shows a collapsible **About this strategy** card (`STRATEGY_INFO` + `StrategyEducationCard`) above each active panel’s model form — full name, description, best for, and personalized `contextNote` from `EstateContext` + `filingStatus` (illiquid %, IRA balance, exemption headroom, MFJ gating). Pills include **SLAT** and **ILIT**. SLAT pill is grayed and non-clickable when `filingStatus !== 'married_joint'`; the SLAT form is also disabled for non-MFJ. `filingStatus` is passed from `my-estate-trust-strategy/_client.tsx` via `giftingScenario.filing`. Advisor CTA links to `/find-advisor`. Uses `formatDollarsCompact` from `lib/utils/formatCurrency.ts`.
-- As of Session 124, consumer **SLAT** (`SlatStrategyForm`) and **ILIT** (`IlitStrategyForm`) save via `lib/consumer/consumerStrategyLineItems.ts` → `POST`/`DELETE` `/api/strategy-line-items` (`strategy_source` `slat`/`ilit`, `category` `trust_exclusion`, `scenario_name` `base`, `source_role` `consumer`, default `confidence_level` `probable` so rows flow into `outside_strategy_total`). SLAT: contribution amount, funding source metadata, notes. ILIT: policy dropdown from `insurance_policies` by `user_id` (`ownerUserId` from page) or manual coverage amount. Saved rows show green summary + edit/remove; education card collapses when saved (`defaultOpen={!saved}`). `router.refresh()` + `reloadSaved()` after write.
-- As of Session 125, **Gift History** in `GiftingDashboard.tsx` groups gifts by tax year with client-side split-election badges (all years with any annual gift where `form_709_filed=true` → **Gift Split Elected ✓**; MFJ households see **Split available — file Form 709** on years with annual gifts but no split). Consumer **charitable** modeling: `CharitableStrategyForm` on the DAF panel (`strategy_source` `daf` or `charitable`, `category` `charitable`, `scenario_name` `base`); migration `20260518120000` adds `charitable` to `strategy_source` allowlist. Playwright `consumer-strategy-writes.spec.ts` uses `try/finally` deletes, `afterEach` scenario sweep, and pre-cleanup of shared `base` rows before DAF/charitable/composition tests.
+- As of Session 124, consumer **SLAT** (`SlatStrategyForm`) and **ILIT** (`IlitStrategyForm`) save via `lib/consumer/consumerStrategyLineItems.ts` → `POST`/`DELETE` `/api/strategy-line-items` (`strategy_source` `slat`/`ilit`, `category` `trust_exclusion`, `scenario_name` `base`, `source_role` `consumer`). SLAT: contribution amount, funding source metadata, notes. ILIT: policy dropdown from `insurance_policies` by `user_id` (`ownerUserId` from page) or manual coverage amount. Saved rows show green summary + edit/remove; education card collapses when saved (`defaultOpen={!saved}`). `router.refresh()` + `reloadSaved()` after write.
+- As of 2026-05-27 (**strategy sandbox → actuals**), consumer modeled saves (SLAT, ILIT, charitable, GRAT/CRT/CLAT/Roth/Liquidity chips) default to **`confidence_level='illustrative'`** and land in **Strategy Sandbox** until the consumer **Add to plan** (`PATCH /api/strategy-line-items` `{ id, promoteConfidence: true }` → `probable`). **In My Plan** lists `probable`/`certain` plus advisor rows with `consumer_accepted`. Chip dots: amber = sandbox, green = confirmed, blue ring = advisor sandbox. `lib/consumer/strategyLineItemViews.ts` partitions rows for `StrategySandboxSection` / `StrategyConfirmedSection`. Roth optimizer (`/roth`) can push an illustrative `roth` row and deep-link `?tab=strategies&openPanel=roth`. Annual gifting on trust-strategy still writes `probable` directly.
+- As of Session 125, **Gift History** in `GiftingDashboard.tsx` groups gifts by tax year with client-side split-election badges (all years with any annual gift where `form_709_filed=true` → **Gift Split Elected ✓**; MFJ households see **Split available — file Form 709** on years with annual gifts but no split). Consumer **charitable** modeling: `CharitableStrategyForm` on the DAF panel (`strategy_source` `daf` or `charitable`, `category` `charitable`, `scenario_name` `base`, `illustrative` until promoted); migration `20260518120000` adds `charitable` to `strategy_source` allowlist. Playwright `consumer-strategy-writes.spec.ts` uses `try/finally` deletes, `afterEach` scenario sweep, and pre-cleanup of shared `base` rows before DAF/charitable/composition tests.
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately.
@@ -410,8 +427,8 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 
 1. **Overview** — `PlanStatusCard` plan readiness; critical gaps above the fold with Discussed / Deferred / Resolved actions.
 2. **Strategy** — Severity-ordered alert banners (liquidity shortfall → exemption → GRAT margin); Step 1 Situation metrics; Step 2 Opportunities catalog with inline **Model this ↓** (`InlineStrategyPanel`); Step 3 Recommendations & Impact (`StrategyImpactPanel` before/after tax delta); Strategy Horizon (`StrategyHorizonTable` + `CompositeOverlay` in recommendations mode); Monte Carlo.
-3. **Send recommendation** — Inline panel writes `strategy_line_items` (`source_role='advisor'`); `router.refresh()` updates Step 3; `CompositeOverlay` picks up the row; consumer sees `StrategyRecommendationPanel`.
-4. **Client accepts** — Row joins actual horizon set; Estate and Tax tabs reflect accepted strategies via `advisorHorizons.today` (ENG-1).
+3. **Send recommendation** — Inline panel writes `strategy_line_items` (`source_role='advisor'`, confidence from advisor low/medium/high); `router.refresh()` updates Step 3; `CompositeOverlay` picks up the row; consumer sees `StrategyRecommendationPanel` and, when `illustrative`, the row in **Strategy Sandbox** on Transfer Strategies.
+4. **Client accepts / promotes** — Advisor row: `PATCH /api/consumer/strategy-recommendation` (`consumer_accepted`); appears in **In My Plan** when accepted (composition outside reduction still requires `probable`/`certain`). Consumer modeled row: **Add to plan** promotes `illustrative` → `probable` via `/api/strategy-line-items`. Accepted/probable rows join the actual horizon set; Estate and Tax tabs reflect via `advisorHorizons.today` (ENG-1).
 5. **Tax, Domicile, Estate, Retirement** — Proactive alert banners for time-sensitive issues on each tab.
 
 ---

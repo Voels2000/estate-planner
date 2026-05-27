@@ -192,7 +192,7 @@ export default async function RothPage() {
         Year-by-year Roth conversion strategy to minimize lifetime federal
         and state income tax.
       </p>
-      <RothClient result={result} />
+      <RothClient result={result} householdId={hh.id} />
     </div>
   );
 }
