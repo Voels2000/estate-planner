@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (UX-4 inline modeling; UX-3 Strategy tab; Sprint 17 go-live prep)
+# Updated: 2026-05-26 (ENG-1 estate/tax inclusion audit; UX-4 inline modeling; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **UX-3 Strategy tab** — three-step workflow (Situation / Opportunities / Recommendations), severity system, Meeting Prep horizons. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. **Advisor tax parity** (`cb04d64`). Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **ENG-1** shipped: advisor Estate/Tax now align to horizon actual strategy set (`consumer + consumer_accepted advisor`), with accepted-strategy inclusion indicators and no RPC/migration changes. **UX-4 Strategy tab** inline modeling remains in place. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. **Advisor tax parity** (`cb04d64`). Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -33,6 +33,21 @@
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
+| Advisor portal ENG-1 | ✅ | TBD |
+
+---
+
+## Advisor portal ENG-1 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Audit** | Composition RPC `source_role` limitation documented; strategyMappers actual set confirmed |
+| **Estate tab** | Advisor display uses horizon-derived composition override (`horizonComposition`) |
+| **Tax tab** | Current-law already horizon-driven; accepted-strategy indicator added |
+| **Outside strategy total** | Uses horizon `outsideCertainProbableTotal + outsideIllustrativeTotal` |
+| **Consumer path** | `classifyEstateAssets(..., 'consumer')` unchanged |
+
+**Detail:** [SCHEMA_CHANGELOG.md § ENG-1](./SCHEMA_CHANGELOG.md)
 
 ---
 

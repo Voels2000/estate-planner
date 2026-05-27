@@ -359,6 +359,16 @@ export interface ClientViewShellProps {
     warnings: number
   } | null
   estateComposition: EstateComposition
+  advisorEstateComposition?: {
+    grossEstate: number
+    outsideStrategyTotal: number
+    insideTaxableEstate: number
+    estimatedFederalTax: number
+    estimatedStateTax: number
+    estimatedTotalTax: number
+    federalExemption: number
+    lifetimeGiftsUsed: number
+  }
   advisorHorizons?: MyEstateStrategyHorizonsResult
   advisorHorizonsProjected?: MyEstateStrategyHorizonsResult
   strategySetSummary?: {

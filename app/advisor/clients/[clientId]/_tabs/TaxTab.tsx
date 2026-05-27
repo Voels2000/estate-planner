@@ -53,6 +53,10 @@ export default function TaxTab({
   stateEstateTaxRules,
   projectionRowsDomicile,
 }: ClientViewShellProps) {
+  // ENG-1 AUDIT NOTE:
+  // Tax tab current-law numbers are horizon-driven (advisorHorizons.today).
+  // This includes actualStrategies from strategyMappers.ts:
+  // consumer rows + advisor rows where consumer_accepted = true.
   const [lawScenario, setLawScenario] = useState<EstateScenario>('current_law')
   const filingStatus: FilingStatus = isMFJFilingStatus(household?.filing_status) ? 'mfj' : 'single'
   const isMFJ = filingStatus === 'mfj'
@@ -84,6 +88,8 @@ export default function TaxTab({
   const horizonTodayStateTax = isFiniteNumber(advisorHorizons?.today.stateTax)
     ? Number(advisorHorizons?.today.stateTax)
     : null
+  const acceptedStrategyTotal = Number(advisorHorizons?.today.outsideCertainProbableTotal ?? 0) +
+    Number(advisorHorizons?.today.outsideIllustrativeTotal ?? 0)
   const horizonTodayStateTaxWithCST = isFiniteNumber(advisorHorizons?.today.stateTaxWithCST)
     ? Number(advisorHorizons?.today.stateTaxWithCST)
     : null
@@ -175,6 +181,12 @@ export default function TaxTab({
           stateTaxWithCSTFromHorizon={lawScenario === 'current_law' ? horizonTodayStateTaxWithCST : null}
           taxBasisNote={taxBasisNote}
         />
+        {lawScenario === 'current_law' && acceptedStrategyTotal > 0 && (
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-green-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            Includes {formatCurrency(acceptedStrategyTotal)} in accepted strategies
+          </div>
+        )}
       </section>
 
       <section>

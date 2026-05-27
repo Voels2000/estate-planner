@@ -87,10 +87,16 @@ export default function EstateTab({
   beneficiaries,
   estateDocuments,
   estateComposition,
+  advisorEstateComposition,
   advisorHorizons,
   conflictReport,
   beneficiaryGrants = [],
 }: ClientViewShellProps) {
+  // ENG-1 AUDIT NOTE:
+  // calculate_estate_composition with p_source_role='consumer' underreports
+  // outside_strategy_total when advisor rows are consumer_accepted, because the
+  // RPC filters by source_role only. Advisor Estate tab uses horizon-derived
+  // composition from strategyMappers.ts actualStrategies for display parity.
   const [deathView, setDeathView] = useState<'first_death' | 'second_death'>('first_death')
   const [hasCSTStrategy, setHasCSTStrategy] = useState<boolean>(false)
   const [composition, setComposition] = useState<import('@/lib/estate/types').EstateComposition | null>(
@@ -319,14 +325,14 @@ export default function EstateTab({
   }
 
   const outsideTaxableEstateTotal =
-    (composition?.outside_structure_total ?? 0) + (composition?.outside_strategy_total ?? 0)
+    (composition?.outside_structure_total ?? 0) + (advisorEstateComposition?.outsideStrategyTotal ?? composition?.outside_strategy_total ?? 0)
   const transfers = [
     ...(composition?.outside_structure_items ?? []),
     ...(composition?.outside_strategy_items ?? []),
   ]
   const hasTransferStrategies = outsideTaxableEstateTotal > 0 || transfers.length > 0
-  const estimatedTax = composition?.estimated_tax ?? 0
-  const grossEstate = composition?.gross_estate ?? 0
+  const estimatedTax = advisorEstateComposition?.estimatedTotalTax ?? composition?.estimated_tax ?? 0
+  const grossEstate = advisorEstateComposition?.grossEstate ?? composition?.gross_estate ?? 0
 
   return (
     <div className="space-y-6">
@@ -361,6 +367,7 @@ export default function EstateTab({
       {composition && (
         <EstateCompositionCard
           composition={composition}
+          horizonComposition={advisorEstateComposition}
           label={`${household.person1_first_name ?? 'Client'}'s Estate`}
           snapshotLabel="Current snapshot"
           variant="advisor"

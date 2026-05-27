@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## ENG-1 — Estate/Tax strategy inclusion audit (2026-05-26, no migration)
+
+**Code only (advisor Estate/Tax parity; zero consumer route changes):**
+
+- **Audit conclusion:** `calculate_estate_composition` filters strategy rows by `source_role` only, so one RPC call cannot express `(consumer rows OR accepted advisor rows)`.
+- **Canonical actual set:** `lib/advisor/strategyMappers.ts` remains source of truth (`actual = consumer + advisor where consumer_accepted=true`).
+- **Estate tab (Option B):** advisor page now builds `advisorEstateComposition` from `advisorHorizons.today` and passes it through `ClientViewShell`; `EstateCompositionCard` adds additive `horizonComposition` override for advisor display parity.
+- **Outside strategy total source:** advisor composition uses horizon `outsideCertainProbableTotal + outsideIllustrativeTotal` (current output shape) for accepted-strategy inclusion.
+- **Indicators:** Estate and Tax tabs show a subtle “Includes $X in accepted strategies” indicator when applicable.
+- **Tax tab verification:** current-law federal/state were already horizon-driven; stress-test (`no_exemption`) path unchanged.
+
+**No RPC changes. No migrations. No engine changes.** Consumer composition path (`classifyEstateAssets(..., 'consumer')`) unchanged.
+
+---
+
 ## UX-4 — Inline strategy modeling in Opportunities (2026-05-26, no migration)
 
 **Code only (advisor Strategy tab Step 2; zero consumer routes):**

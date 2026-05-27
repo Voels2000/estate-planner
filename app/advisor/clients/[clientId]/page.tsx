@@ -37,6 +37,11 @@ interface PageProps {
 }
 
 export default async function AdvisorClientPage({ params, searchParams }: PageProps) {
+  // ENG-1 AUDIT NOTE:
+  // calculate_estate_composition with p_source_role='consumer' underreports
+  // outside_strategy_total when advisor rows are consumer_accepted, because RPC
+  // filters by source_role only. For advisor Estate display, use advisorHorizons.today
+  // (actualStrategies: consumer + accepted advisor) built in strategyMappers.ts.
   const { clientId } = await params
   const tab = (await searchParams).tab ?? 'overview'
 
@@ -55,7 +60,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const scenarioId = household.base_case_scenario_id
 
   const datasetInclude = advisorDatasetIncludeForTab(tab)
-  const needsStrategyVm = ['strategy', 'tax', 'domicile', 'meeting-prep'].includes(tab)
+  const needsStrategyVm = ['strategy', 'tax', 'domicile', 'meeting-prep', 'estate'].includes(tab)
 
   const stalenessPromise = loadAdvisorProjectionStaleness(supabase, {
     ownerId,
@@ -257,6 +262,18 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   let scenarioForStrategy = scenario
   let projectionRowsDomicile: ReturnType<typeof buildAdvisorStrategyViewModels>['projectionRowsDomicile'] = []
   let strategySetSummary = undefined
+  let advisorEstateComposition:
+    | {
+        grossEstate: number
+        outsideStrategyTotal: number
+        insideTaxableEstate: number
+        estimatedFederalTax: number
+        estimatedStateTax: number
+        estimatedTotalTax: number
+        federalExemption: number
+        lifetimeGiftsUsed: number
+      }
+    | undefined
 
   if (needsStrategyVm) {
     const giftingSummaryRes = await supabase.rpc('calculate_gifting_summary', {
@@ -286,6 +303,22 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenarioForStrategy = strategyVm.scenarioForStrategy
     projectionRowsDomicile = strategyVm.projectionRowsDomicile
     strategySetSummary = strategyVm.strategySetSummary
+    const today = strategyVm.advisorHorizons.today
+    const outsideStrategyTotal =
+      Number(today.outsideCertainProbableTotal ?? 0) + Number(today.outsideIllustrativeTotal ?? 0)
+    const grossEstate = Number(today.grossEstate ?? 0)
+    const estimatedFederalTax = Number(today.federalTaxEstimate ?? 0)
+    const estimatedStateTax = Number(today.stateTax ?? 0)
+    advisorEstateComposition = {
+      grossEstate,
+      outsideStrategyTotal,
+      insideTaxableEstate: Math.max(0, grossEstate - outsideStrategyTotal),
+      estimatedFederalTax,
+      estimatedStateTax,
+      estimatedTotalTax: estimatedFederalTax + estimatedStateTax,
+      federalExemption: Number(today.federalExemption ?? 0),
+      lifetimeGiftsUsed,
+    }
   }
 
   let cachedAdvisoryMetrics: AdvisoryMetric[] | undefined
@@ -403,6 +436,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       stateIncomeTaxBrackets={stateIncomeTaxBrackets}
       conflictReport={conflictReport}
       estateComposition={estateComposition}
+      advisorEstateComposition={advisorEstateComposition}
       advisorHorizons={advisorHorizons}
       advisorHorizonsProjected={advisorHorizonsProjected}
       strategySetSummary={strategySetSummary}

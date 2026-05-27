@@ -72,6 +72,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **No perf change** — reuses existing panel components; inline instances mount on expand only (one row at a time). `router.refresh()` on recommend is intentional for Step 3 parity with server props.
 
+## Advisor portal ENG-1 — Estate/Tax strategy inclusion audit (2026-05-26)
+
+**No perf regression expected** — reuses already-built `advisorHorizons.today` values for advisor Estate/Tax display parity. No new RPCs or migrations; consumer composition path unchanged.
+
 ## Post-launch refactors (not in this sprint)
 
 - Dashboard read model / materialized summaries *(partially addressed in P-2 — recommendations cache)*

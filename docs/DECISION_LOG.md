@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (UX-4 inline modeling; UX-3 Strategy tab; UX-2; advisor tax parity)
+# Last updated: 2026-05-26 (ENG-1 estate/tax inclusion audit; UX-4 inline modeling; UX-3 Strategy tab)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — ENG-1: Estate/Tax strategy inclusion via horizon actual set
+
+**Decision:** For advisor Estate/Tax display parity, use horizon-derived actual-set values (`advisorHorizons.today`) instead of relying solely on `calculate_estate_composition` output for strategy inclusion. Additive override path (`horizonComposition`) is advisor-only; consumer composition calls stay unchanged.
+
+**Reasoning:** `calculate_estate_composition` filters strategy rows by `p_source_role`, so it cannot represent `(consumer rows OR accepted advisor rows)` in a single call. `strategyMappers.ts` already defines the correct actual set and horizon outputs are consistent with advisor workflow expectations.
+
+**Alternatives considered:** Add new RPC parameter (deferred to post-launch ENG-2). Keep current advisor Estate composition path (rejected — underreports accepted advisor strategy impact).
 
 ---
 

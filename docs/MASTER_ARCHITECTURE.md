@@ -298,6 +298,27 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 3. Accepted recommendation amounts should be immutable; revisions create new rows.
 4. Advisor surfaces may display rejected rows as declined history, but rejected rows must be excluded from active strategy impact calculations.
 
+### Estate and Tax Tab Strategy Inclusion (ENG-1)
+
+**Advisor Estate tab:**
+- Uses `advisorHorizons.today` for advisor composition overrides (`horizonComposition`).
+- `outsideStrategyTotal` uses horizon output (`outsideCertainProbableTotal + outsideIllustrativeTotal`) from the actual strategy set.
+- `estimatedFederalTax` and `estimatedStateTax` are horizon-derived for advisor display parity.
+- Pending (not-yet-accepted) advisor recommendations are not included in the actual horizon set.
+- Consumer composition path (`calculate_estate_composition` with `p_source_role='consumer'`) remains unchanged.
+
+**Advisor Tax tab:**
+- Current-law federal estimate uses `advisorHorizons.today.federalTaxEstimate`.
+- Current-law state estimate uses `advisorHorizons.today.stateTax`.
+- Includes the actual strategy set (consumer rows + consumer-accepted advisor rows).
+- Sunset / No Exemption stress test remains exemption-free and does not reuse horizon federal estimate.
+
+**Why advisor estate/tax display does not rely only on composition RPC:**
+- `calculate_estate_composition` filters strategy rows by `p_source_role`.
+- It cannot directly express: consumer rows **OR** advisor rows where `consumer_accepted=true`.
+- `strategyMappers.ts` pre-separates actual vs pending sets correctly; horizons consume those sets.
+- ENG-1 uses horizon-derived values for advisor parity without changing RPC contract.
+
 ---
 
 ## Monte Carlo Workflow

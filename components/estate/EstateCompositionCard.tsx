@@ -146,6 +146,17 @@ interface EstateCompositionCardProps {
   showBreakdown?: boolean
   /** Advisor portal: prominent tax callout + collapsed empty outside panel */
   variant?: 'default' | 'advisor'
+  /** Optional advisor override from horizon actual set (ENG-1) */
+  horizonComposition?: {
+    grossEstate: number
+    outsideStrategyTotal: number
+    insideTaxableEstate: number
+    estimatedFederalTax: number
+    estimatedStateTax: number
+    estimatedTotalTax: number
+    federalExemption: number
+    lifetimeGiftsUsed: number
+  }
 }
 
 export default function EstateCompositionCard({
@@ -156,7 +167,12 @@ export default function EstateCompositionCard({
   showMetrics = true,
   showBreakdown = true,
   variant = 'default',
+  horizonComposition,
 }: EstateCompositionCardProps) {
+  // ENG-1 AUDIT NOTE:
+  // calculate_estate_composition with p_source_role='consumer' excludes
+  // advisor rows that are consumer_accepted. For advisor displays, horizonComposition
+  // (from strategyMappers actualStrategies) overrides key totals for parity.
   const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
   const [loading, setLoading] = useState(!compositionProp)
   const [error, setError] = useState<string | null>(null)
@@ -220,8 +236,6 @@ export default function EstateCompositionCard({
     liabilities,
     taxable_estate,
     exemption_available,
-    exemption_remaining,
-    lifetime_gifts_used,
     admin_expense,
     marital_deduction,
     adjusted_taxable_gifts = 0,
@@ -230,13 +244,22 @@ export default function EstateCompositionCard({
     estimated_tax_state,
   } = composition
 
-  const outside_total = outside_structure_total + outside_strategy_total
+  const displayInsideTotal = horizonComposition?.insideTaxableEstate ?? inside_total
+  const displayOutsideStrategyTotal = horizonComposition?.outsideStrategyTotal ?? outside_strategy_total
+  const displayGrossEstate = horizonComposition?.grossEstate ?? gross_estate
+  const displayTaxableEstate = horizonComposition?.insideTaxableEstate ?? taxable_estate
+  const displayEstimatedFederalTax = horizonComposition?.estimatedFederalTax ?? (estimated_tax_federal ?? 0)
+  const displayEstimatedStateTax = horizonComposition?.estimatedStateTax ?? (estimated_tax_state ?? 0)
+  const displayEstimatedTax = horizonComposition?.estimatedTotalTax ?? estimated_tax
+  const displayExemptionAvailable = horizonComposition?.federalExemption ?? exemption_available
+  const displayExemptionRemaining = Math.max(0, displayExemptionAvailable - displayTaxableEstate)
+  const outside_total = outside_structure_total + displayOutsideStrategyTotal
   const transfers = [...outside_structure_items, ...outside_strategy_items]
   const hasOutsideEstateContent = outside_total > 0 || transfers.length > 0
   const hasOutside = outside_total > 0
   const hasStrategies = outside_strategy_items.length > 0
   const hasStructural = outside_structure_items.length > 0
-  const liquidPct = inside_total > 0 ? Math.round((inside_liquid / inside_total) * 100) : 0
+  const liquidPct = displayInsideTotal > 0 ? Math.round((inside_liquid / displayInsideTotal) * 100) : 0
   const isAdvisor = variant === 'advisor'
 
   return (
@@ -244,39 +267,47 @@ export default function EstateCompositionCard({
       {/* Header */}
       <div className="px-5 py-3 border-b border-gray-100">
         {isAdvisor ? (
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">
-                {label}
-                <span className="ml-2 text-xs font-normal text-gray-400">{snapshotLabel}</span>
-              </h2>
-            </div>
-            {estimated_tax > 0 ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-right min-w-[180px] shrink-0">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-red-500 mb-0.5">
-                  Estimated Tax Liability
-                </p>
-                <p className="text-xl font-bold text-red-700 tabular-nums">{fmt(estimated_tax)}</p>
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  {label}
+                  <span className="ml-2 text-xs font-normal text-gray-400">{snapshotLabel}</span>
+                </h2>
               </div>
-            ) : (
-              <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium shrink-0">
-                No federal estate tax
-              </span>
+              {displayEstimatedTax > 0 ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-right min-w-[180px] shrink-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-red-500 mb-0.5">
+                    Estimated Tax Liability
+                  </p>
+                  <p className="text-xl font-bold text-red-700 tabular-nums">{fmt(displayEstimatedTax)}</p>
+                </div>
+              ) : (
+                <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium shrink-0">
+                  No federal estate tax
+                </span>
+              )}
+            </div>
+            {horizonComposition && horizonComposition.outsideStrategyTotal > 0 && (
+              <div className="mb-1 mt-2 flex items-center gap-1.5 text-[11px] text-green-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                Includes {fmt(horizonComposition.outsideStrategyTotal)} in accepted strategies
+              </div>
             )}
-          </div>
+          </>
         ) : (
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm font-semibold text-gray-800">{label}</span>
               <span className="ml-2 text-xs text-gray-400">{snapshotLabel}</span>
             </div>
-            {estimated_tax === 0 ? (
+            {displayEstimatedTax === 0 ? (
               <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5 font-medium">
                 No federal estate tax
               </span>
             ) : (
               <span className="text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-0.5 font-medium">
-                Est. tax: {fmt(estimated_tax)}
+                Est. tax: {fmt(displayEstimatedTax)}
               </span>
             )}
           </div>
@@ -292,7 +323,7 @@ export default function EstateCompositionCard({
             <span className="text-xs font-semibold text-blue-800 uppercase tracking-wide">
               Inside Taxable Estate
             </span>
-            <span className="text-lg font-bold text-blue-900">{fmtK(inside_total)}</span>
+            <span className="text-lg font-bold text-blue-900">{fmtK(displayInsideTotal)}</span>
           </div>
 
           {/* Asset breakdown */}
@@ -345,12 +376,12 @@ export default function EstateCompositionCard({
           <div className="pt-2 border-t border-gray-100 space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-gray-500">{FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}</span>
-              <span className="font-medium text-gray-700">{fmt(exemption_available)}</span>
+              <span className="font-medium text-gray-700">{fmt(displayExemptionAvailable)}</span>
             </div>
             <div className="flex justify-between text-xs mt-0.5">
               <span className="text-gray-500">{HEADROOM_BEFORE_FEDERAL_TAX_LABEL}</span>
-              <span className={`font-semibold ${exemption_remaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
-                {fmt(exemption_remaining)}
+              <span className={`font-semibold ${displayExemptionRemaining > 0 ? 'text-green-700' : 'text-red-600'}`}>
+                {fmt(displayExemptionRemaining)}
               </span>
             </div>
           </div>
@@ -414,7 +445,7 @@ export default function EstateCompositionCard({
               ))}
               <div className="flex justify-between text-xs font-semibold pt-1 border-t border-gray-100">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="text-gray-700">{fmt(outside_strategy_total)}</span>
+                <span className="text-gray-700">{fmt(displayOutsideStrategyTotal)}</span>
               </div>
               <p className="text-[10px] text-gray-400 pt-1 leading-relaxed">
                 <span className="font-medium text-green-700">Certain</span> = transfer complete.{' '}
@@ -432,7 +463,7 @@ export default function EstateCompositionCard({
       {showMetrics && (
         <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
           <div className="flex flex-wrap gap-2 justify-between">
-            <MetricPill label="Gross Estate" value={gross_estate} />
+            <MetricPill label="Gross Estate" value={displayGrossEstate} />
             <MetricPill label="Net Estate" value={net_estate} sub="after liabilities" />
             <MetricPill label="Admin Expense" value={admin_expense} sub="2% est." />
             {adjusted_taxable_gifts > 0 && (
@@ -441,7 +472,7 @@ export default function EstateCompositionCard({
             {marital_deduction > 0 && (
               <MetricPill label="Marital Deduction" value={marital_deduction} sub="at first death" />
             )}
-            <MetricPill label="Taxable Estate" value={taxable_estate} />
+            <MetricPill label="Taxable Estate" value={displayTaxableEstate} />
           </div>
         </div>
       )}
@@ -495,29 +526,29 @@ export default function EstateCompositionCard({
                 },
                 {
                   label: '= Taxable Estate',
-                  value: taxable_estate,
+                  value: displayTaxableEstate,
                   sign: '=',
                   bold: true,
                 },
                 {
                   label: `− ${FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}`,
-                  value: exemption_available,
+                  value: displayExemptionAvailable,
                   sign: '−',
                 },
                 {
                   label: '= Est. Federal Tax',
-                  value: estimated_tax_federal ?? 0,
+                  value: displayEstimatedFederalTax,
                   sign: '=',
                   bold: true,
-                  color: (estimated_tax_federal ?? 0) > 0 ? 'text-red-600' : 'text-green-700',
+                  color: displayEstimatedFederalTax > 0 ? 'text-red-600' : 'text-green-700',
                 },
                 {
                   label: '= Est. State Tax',
-                  value: estimated_tax_state ?? 0,
+                  value: displayEstimatedStateTax,
                   sign: '=',
                   bold: true,
-                  hide: (estimated_tax_state ?? 0) === 0,
-                  color: (estimated_tax_state ?? 0) > 0 ? 'text-red-600' : 'text-green-700',
+                  hide: displayEstimatedStateTax === 0,
+                  color: displayEstimatedStateTax > 0 ? 'text-red-600' : 'text-green-700',
                 },
               ]
                 .filter((r) => !r.hide)
