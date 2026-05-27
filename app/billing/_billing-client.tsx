@@ -145,11 +145,6 @@ export function BillingClient({
           <p className="mt-3 text-neutral-600">
             Your plan is managed by your advisor. There&apos;s nothing to do here.
           </p>
-          <div className="mt-8">
-            <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
-              ← Back to Dashboard
-            </ButtonLink>
-          </div>
         </Card>
       </div>
     )
@@ -157,15 +152,6 @@ export function BillingClient({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-6">
-        <ButtonLink
-          href="/dashboard"
-          variant="link"
-          className="text-sm text-neutral-500 hover:text-neutral-900"
-        >
-          ← Back to Dashboard
-        </ButtonLink>
-      </div>
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Choose your plan</h1>
         <p className="mt-3 text-neutral-600">Start planning your estate and retirement today.</p>

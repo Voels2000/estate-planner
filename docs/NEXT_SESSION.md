@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Client Summary PDF; brand pass; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Nav consistency; Client Summary PDF; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Client Summary PDF** upgraded to Attorney Summary visual standard (navy/gold header, household profile grid, no letter grade, Not on file checklist). **Brand pass** (`fbaa709`) on consumer + advisor pages. **UX-5b** CompositeOverlay; **ENG-1** Estate/Tax parity; **UX-4/UX-5** Strategy tab workflow complete. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Nav consistency** — homepage uses `PublicNav`; billing `MinimalAuthNav`; utility pages `WordmarkOnly`. **Client Summary PDF** upgraded to Attorney Summary visual standard. **Brand pass** (`fbaa709`) on consumer + advisor pages. **UX-5b** CompositeOverlay; **ENG-1** Estate/Tax parity; **UX-4/UX-5** Strategy tab workflow complete. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -38,6 +38,20 @@
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 | Brand consistency pass | ✅ | `fbaa709` |
 | Client Summary PDF upgrade | ✅ | `0816f37` |
+| Nav consistency (homepage, billing, utility) | ✅ | `TBD` |
+
+---
+
+## Nav consistency ✅ (2026-05-27)
+
+| Area | Outcome |
+|------|---------|
+| **Homepage** | `app/(public)/page.tsx` — `PublicNav` + footer (removed inline nav) |
+| **Billing** | `app/billing/layout.tsx` + `MinimalAuthNav` |
+| **Utility** | `WordmarkOnly` on invite, beneficiary, share, confirm-email, attorney-invite, claim-listing |
+| **Unchanged** | Dashboard sidebar, advisor, education, auth login/signup, admin |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Nav consistency](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md § Layout and Navigation](./MASTER_ARCHITECTURE.md)
 
 ---
 

@@ -567,7 +567,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 - **Sprint 1:** Education, Assessment, Find Advisor, and Find Attorney are **not** in the app sidebar Overview group. They live under `app/(public)/` with URLs unchanged (`/education`, `/assess`, `/find-advisor`, `/find-attorney`). Overview sidebar = Profile + Estate Summary only.
 - **Dashboard footer (2026-06):** `📖 Education Guide` link in sidebar footer for consumers and superusers → `/education` (public; not tier-gated).
-- Root route behavior (`app/page.tsx`) is now:
+- Root route behavior (`app/(public)/page.tsx`) is now:
   - Signed-out users: public education-first marketing landing page
   - Signed-in users with profile: redirect to `/dashboard`
   - Signed-in users without profile: redirect to `/profile`
@@ -586,14 +586,14 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
   - Files: `app/(public)/find-advisor/page.tsx`, `app/(public)/find-advisor/_advisor-directory-client.tsx`
   - Connection requests from the public advisor directory client post to `/api/advisor-directory/request-connect`
   - Legacy public route `/advisor-directory` now redirects server-side to `/find-advisor`
-- Signed-out landing page (`app/page.tsx`) now includes a **Find a professional** section with cards linking to `/find-advisor` and `/find-attorney`; bottom advisor CTA strip also links to `/find-advisor` (replacing `/advisor-directory`).
+- Signed-out landing page (`app/(public)/page.tsx`) now includes a **Find a professional** section with cards linking to `/find-advisor` and `/find-attorney`; bottom advisor CTA strip also links to `/find-advisor` (replacing `/advisor-directory`).
 - Marketing copy for education module count is aligned to **20+ learning modules** on hero and education path card.
 
 **Public layout + marketing (Sprint 2 Track A):**
 
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · **Life Events** · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
 - Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, **`/events`**, event pages. **`/education/*` is excluded** — education layout provides its own header.
-- Root landing `app/page.tsx` is **outside** `(public)` and keeps its own inline nav; includes social proof section and life-event quick-start (links to `/events`). Homepage copy targets **$2M–$30M** segment.
+- Root landing `app/(public)/page.tsx` inherits `PublicNav` from `(public)/layout.tsx`; includes social proof section and life-event quick-start (links to `/events`). Homepage copy targets **$2M–$30M** segment.
 - `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
 
 **Life event hub (Sprint UX-1):**
@@ -728,6 +728,26 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 1. Keep admin-managed `federal_tax_brackets` as the single source of truth for federal income tax in the canonical projection engine.
 2. Continue using bracket-table timestamp staleness triggers so admin bracket edits regenerate projections.
 3. Ensure required bracket coverage by filing status/year in non-prod seed data and admin maintenance workflow.
+
+---
+
+## Layout and Navigation Reference
+
+| Zone | Layout file | Nav component | Notes |
+|------|-------------|---------------|-------|
+| Consumer app | `(dashboard)/layout.tsx` | Sidebar | Navy sidebar is the brand |
+| Advisor portal | `advisor/layout.tsx` | Advisor top bar + tabs | Navy, UX-2 |
+| Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip |
+| Attorney portal | `(attorney)/layout.tsx` | Attorney header | Separate surface; no MWM wordmark today (future sprint) |
+| Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
+| Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
+| Billing | `billing/layout.tsx` | `MinimalAuthNav` | Wordmark + back to dashboard |
+| Utility/token | `invite`, `beneficiary`, `share/estate-flow`, `auth/confirm-email`, `attorney-invite`, `claim-listing` layouts | `WordmarkOnly` | Brand mark only |
+| Auth flows | `(auth)/*` pages | None | Intentional — no nav on login/signup |
+| Admin | `admin/layout.tsx` | Admin header | Internal only |
+| Root | `app/layout.tsx` | None | Fonts + globals only |
+
+`(public)/layout.tsx` skips `PublicNav`/footer only when `x-pathname` starts with `/education` (set in `middleware.ts`). Homepage `/` uses the full public chrome.
 
 ---
 

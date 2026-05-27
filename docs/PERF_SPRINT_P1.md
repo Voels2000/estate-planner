@@ -76,6 +76,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **Slight DOM reduction** — removed two full-width panel mounts below three-step workflow; `StrategyImpactPanel` derives from already-loaded `advisorHorizons` / `advisorHorizonsProjected` (no new fetches).
 
+## Nav consistency — homepage, billing, utility (2026-05-27)
+
+**No perf change** — layout-only; no new data fetches. Homepage removes duplicate inline nav DOM; utility layouts add lightweight static headers.
+
 ## Client Summary PDF brand upgrade (2026-05-27)
 
 **Two additional RPCs on consumer export** — `calculate_federal_estate_tax`, `calculate_state_estate_tax`, and assets read when `profile.role === 'consumer'` (same as advisor/attorney-variant paths). One-time cost per PDF download; no change to advisor or attorney-variant fetch pattern.

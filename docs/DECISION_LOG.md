@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Client Summary PDF; UX-5b CompositeOverlay; UX-5 Strategy tab)
+# Last updated: 2026-05-27 (Nav consistency; Client Summary PDF; UX-5b CompositeOverlay)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — Nav consistency: homepage uses PublicNav; billing and utility pages get brand chrome
+
+**Decision:** Move marketing homepage into `(public)` so `/` uses the same `PublicNav` as `/pricing` and `/assess`. Add `MinimalAuthNav` for billing (authenticated, no sidebar). Add `WordmarkOnly` on token/utility layouts (invite, beneficiary, share, confirm-email, claim-listing, attorney-invite). Do not change dashboard sidebar, advisor nav, education layout, or auth login/signup (no nav is intentional).
+
+**Reasoning:** Three surfaces had inconsistent or missing brand presence: duplicate inline homepage nav, billing with only inline back links, and utility flows with no wordmark. Attorney portal header remains a separate surface (no MWM wordmark today) — logged for a future sprint.
+
+**Alternatives considered:** Extract homepage-only `HomepageNav` without center links (rejected — marketing consistency favors full `PublicNav`). Add full `PublicNav` to billing (rejected — wrong chrome for post-auth checkout).
 
 ---
 

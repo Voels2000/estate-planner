@@ -131,6 +131,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
+## Nav consistency — homepage, billing, utility (2026-05-27)
+
+- [x] Homepage `app/(public)/page.tsx` inherits `PublicNav` + footer; inline nav removed
+- [x] `MinimalAuthNav` on `app/billing/layout.tsx`
+- [x] `WordmarkOnly` on invite, beneficiary, share, confirm-email, attorney-invite, claim-listing layouts
+- [x] `MASTER_ARCHITECTURE.md` Layout and Navigation Reference table
+- [x] Master docs: SCHEMA_CHANGELOG · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_NAV_MAP
+
 ## Client Summary PDF brand upgrade (2026-05-27)
 
 - [x] ConsumerEstatePlanPDF: navy/gold header, purpose callout, household profile grid, readiness without letter grade

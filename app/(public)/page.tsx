@@ -2,79 +2,17 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { getSignupHref, isWaitlistMode } from '@/lib/waitlist-mode'
+import { getSignupHref } from '@/lib/waitlist-mode'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
-import { LegalFooterLinks } from '@/components/layout/LegalFooterLinks'
-
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    const signupHref = getSignupHref()
-    const label = isWaitlistMode() ? 'Join waitlist' : 'Get started'
-
     return (
       <main style={{ fontFamily: 'var(--font-body)', background: 'var(--mwm-off-white)', minHeight: '100vh' }}>
 
-      {/* NAV */}
-      <nav style={{
-        background: 'var(--mwm-navy)',
-        padding: '14px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 2px 20px rgba(0,0,0,0.2)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36,
-            background: 'var(--mwm-gold)',
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 600, fontSize: 16,
-            color: 'var(--mwm-navy)',
-            flexShrink: 0,
-          }}>M</div>
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 17, fontWeight: 500,
-              color: 'white', lineHeight: 1.2,
-            }}>My Wealth Maps</div>
-            <div style={{
-              fontSize: 10,
-              color: 'rgba(255,255,255,0.45)',
-              letterSpacing: '0.5px',
-              textTransform: 'uppercase',
-            }}>mywealthmaps.com</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <ButtonLink
-            href="/login"
-            variant="secondary"
-            size="sm"
-            className="!border-white/20 !bg-transparent !text-white/80 hover:!text-white hover:!border-white/40"
-          >
-            Sign In
-          </ButtonLink>
-          <ButtonLink
-            href={signupHref}
-            variant="primary"
-            size="sm"
-            className="!bg-[#c9a84c] !text-[#0f1f3d] hover:!bg-[#e8c97a] font-semibold"
-          >
-            {label}
-          </ButtonLink>
-        </div>
-      </nav>
-
-      {/* DISCLAIMER */}
+      {/* DISCLAIMER — PublicNav from (public)/layout sits above */}
       <div style={{
         background: 'var(--mwm-navy-light)',
         borderLeft: '4px solid var(--mwm-gold)',
@@ -768,18 +706,6 @@ export default async function HomePage() {
             Find an Advisor →
           </ButtonLink>
         </div>
-
-        <footer
-          style={{
-            borderTop: '1px solid #e2e8f0',
-            padding: '24px 32px 40px',
-            textAlign: 'center',
-            fontSize: 13,
-            color: '#718096',
-          }}
-        >
-          <LegalFooterLinks linkClassName="text-[#4a5568] hover:text-[#0f1f3d]" />
-        </footer>
 
       </div>
       </main>

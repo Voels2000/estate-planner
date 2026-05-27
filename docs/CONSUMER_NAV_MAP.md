@@ -62,7 +62,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 | Label | Route | Layout | Notes |
 |-------|-------|--------|--------|
-| Home | `/` | Root `app/page.tsx` | Marketing landing; **own** inline nav (not `(public)` layout) |
+| Home | `/` | `(public)/page.tsx` | Marketing landing; `PublicNav` + footer via `(public)/layout.tsx` |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
 | Events Hub | `/events` | `(public)/events` | Public; SSG; all 24 life events by category; no auth required |
 | Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |

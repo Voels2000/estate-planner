@@ -8,6 +8,22 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Nav consistency — homepage, billing, utility pages (2026-05-27, no migration)
+
+**Code only:**
+
+- **Homepage:** `app/page.tsx` → `app/(public)/page.tsx`; inherits `PublicNav` + footer from `(public)/layout.tsx` (removed inline nav and duplicate footer).
+- **Billing:** `app/billing/layout.tsx` + `MinimalAuthNav` (wordmark + back to dashboard); removed redundant back links from `_billing-client.tsx`.
+- **Utility/token flows:** `WordmarkOnly` on layouts for `invite`, `beneficiary`, `share/estate-flow`, `auth/confirm-email`, `attorney-invite`, `claim-listing`.
+- **Shared components:** `components/nav/MwmWordmark.tsx`, `MinimalAuthNav.tsx`, `WordmarkOnly.tsx`.
+- **Docs:** `MASTER_ARCHITECTURE.md` — Layout and Navigation Reference table.
+
+**Unchanged:** `(dashboard)`, `advisor`, `(public)/education`, `(auth)`, `(attorney)`, `(advisor-tools)`, `admin` layouts.
+
+**No migrations.**
+
+---
+
 ## Client Summary PDF brand upgrade (2026-05-27, no migration)
 
 **Code only (`components/pdf/EstatePlanPDF.tsx`, `app/(dashboard)/print/_print-client.tsx`, `app/api/export-estate-plan/route.ts`):**
