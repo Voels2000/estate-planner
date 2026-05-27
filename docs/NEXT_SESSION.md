@@ -32,7 +32,7 @@
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
-| Advisor portal UX-4 | ✅ | TBD |
+| Advisor portal UX-4 | ✅ | `3c5c0ef` |
 
 ---
 
