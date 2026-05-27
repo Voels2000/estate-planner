@@ -429,6 +429,30 @@ const s = StyleSheet.create({
     fontSize: 7,
     color: '#15803d',
   },
+  consumerPurposeBanner: {
+    backgroundColor: '#FFF8EC',
+    borderLeftWidth: 3,
+    borderLeftColor: GOLD,
+    padding: 10,
+    borderRadius: 3,
+    marginBottom: 16,
+  },
+  consumerPurposeTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: NAVY,
+    marginBottom: 4,
+  },
+  consumerPurposeSub: {
+    fontSize: 8,
+    color: GRAY_MID,
+    lineHeight: 1.5,
+  },
+  scoreStageLabel: {
+    fontSize: 9,
+    color: GRAY_MID,
+    marginTop: 4,
+  },
   infoGrid: {
     flexDirection: 'row',
     gap: 10,
@@ -552,6 +576,7 @@ type EstatePlanPdfData = {
   } | null
   documents?: PdfDoc[] | null
   trusts?: PdfTrust[] | null
+  assets_summary?: PdfAssetSummary[] | null
 }
 
 type PdfConflict = {
@@ -590,6 +615,33 @@ const clientName = (h: PdfHousehold) => {
 
 const preparedByLabel = (data: EstatePlanPdfData) =>
   data.prepared_by_name?.trim() || clientName(data.household) || 'Account holder'
+
+const primaryClientName = (h: PdfHousehold) =>
+  [h.person1_first_name, h.person1_last_name].filter(Boolean).join(' ') || '—'
+
+const spouseName = (h: PdfHousehold) =>
+  h.has_spouse
+    ? [h.person2_first_name, h.person2_last_name].filter(Boolean).join(' ') || '—'
+    : '—'
+
+const filingStatusLabel = (status?: string | null) => {
+  if (!status) return 'Filing status not set'
+  if (status === 'mfj' || status === 'married_joint') return 'Married Filing Jointly'
+  return status.replace(/_/g, ' ').toUpperCase()
+}
+
+const readinessStageLabel = (pct: number) => {
+  if (pct >= 80) return 'Strong'
+  if (pct >= 60) return 'Progressing'
+  if (pct >= 40) return 'Developing'
+  return 'Early Stage'
+}
+
+const grossEstateFromData = (data: EstatePlanPdfData) => {
+  const fromAssets = (data.assets_summary ?? []).reduce((sum, a) => sum + (a.value ?? 0), 0)
+  if (fromAssets > 0) return fromAssets
+  return data.federal_estate_tax?.gross_estate ?? 0
+}
 
 // --- Cover (disclaimer + title before household data) ---
 const PDFCoverBlock = ({
@@ -837,11 +889,10 @@ const AttorneyPDFHeader = ({ data }: { data: AttorneyPdfData }) => (
   </View>
 )
 
-// --- Household Profile (attorney) ---
-const AttorneyProfileSection = ({ data }: { data: AttorneyPdfData }) => {
+// --- Household Profile (consumer + attorney) ---
+const HouseholdProfileSection = ({ data }: { data: EstatePlanPdfData }) => {
   const h = data.household
-  const grossEstate = (data.assets_summary ?? [])
-    .reduce((sum, a) => sum + (a.value ?? 0), 0)
+  const grossEstate = grossEstateFromData(data)
   const fedTax = data.federal_estate_tax?.estimated_tax ?? 0
   const stateTax = data.state_estate_tax?.estimated_state_tax ?? 0
 
@@ -850,18 +901,12 @@ const AttorneyProfileSection = ({ data }: { data: AttorneyPdfData }) => {
       <View style={s.infoGrid}>
         <View style={s.infoCard}>
           <Text style={s.infoCardLabel}>Primary Client</Text>
-          <Text style={s.infoCardValue}>
-            {[h.person1_first_name, h.person1_last_name].filter(Boolean).join(' ') || '—'}
-          </Text>
+          <Text style={s.infoCardValue}>{primaryClientName(h)}</Text>
         </View>
-        {h.has_spouse && (
-          <View style={s.infoCard}>
-            <Text style={s.infoCardLabel}>Spouse</Text>
-            <Text style={s.infoCardValue}>
-              {[h.person2_first_name, h.person2_last_name].filter(Boolean).join(' ') || '—'}
-            </Text>
-          </View>
-        )}
+        <View style={s.infoCard}>
+          <Text style={s.infoCardLabel}>Spouse / Partner</Text>
+          <Text style={s.infoCardValue}>{spouseName(h)}</Text>
+        </View>
         <View style={s.infoCard}>
           <Text style={s.infoCardLabel}>State of Domicile</Text>
           <Text style={s.infoCardValue}>{h.state_primary ?? '—'}</Text>
@@ -888,6 +933,10 @@ const AttorneyProfileSection = ({ data }: { data: AttorneyPdfData }) => {
     </Section>
   )
 }
+
+const AttorneyProfileSection = ({ data }: { data: AttorneyPdfData }) => (
+  <HouseholdProfileSection data={data} />
+)
 
 // --- Document Status (attorney) ---
 const AttorneyDocumentSection = ({ data }: { data: AttorneyPdfData }) => {
@@ -1017,12 +1066,94 @@ const AttorneyDisclaimerSection = () => (
   </View>
 )
 
-// --- Consumer T3 Checklist ---
-const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
+// --- Consumer header (matches attorney intake branding) ---
+const ConsumerPDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
+  <View>
+    <View style={s.headerAccent} />
+    <View style={s.header}>
+      <Text style={s.headerAppName}>MY WEALTH MAPS — CLIENT ESTATE SUMMARY</Text>
+      <Text style={s.headerClientName}>{clientName(data.household)}</Text>
+      <Text style={s.headerSubtitle}>
+        {data.household.state_primary ?? '—'}
+        {'  |  '}
+        {filingStatusLabel(data.household.filing_status)}
+        {'  |  Estate Planning Summary'}
+      </Text>
+      <View style={s.headerMeta}>
+        <View>
+          <Text style={s.headerMetaLabel}>DOCUMENT TYPE</Text>
+          <Text style={s.headerMetaValue}>Client Estate Summary</Text>
+        </View>
+        <View>
+          <Text style={s.headerMetaLabel}>PREPARED BY</Text>
+          <Text style={s.headerMetaValue}>{preparedByLabel(data)}</Text>
+        </View>
+        <View>
+          <Text style={s.headerMetaLabel}>GENERATED</Text>
+          <Text style={s.headerMetaValue}>{fmtDate(data.generated_at)}</Text>
+        </View>
+      </View>
+    </View>
+  </View>
+)
+
+const ConsumerPurposeBanner = () => (
+  <View style={s.consumerPurposeBanner}>
+    <Text style={s.consumerPurposeTitle}>Your Personal Estate Planning Summary</Text>
+    <Text style={s.consumerPurposeSub}>
+      Prepared from information you entered in My Wealth Maps · For your records and to share with
+      your advisor or attorney · Not legal or financial advice
+    </Text>
+  </View>
+)
+
+// --- Consumer readiness (no letter grade) ---
+const ConsumerCompletenessSection = ({ data }: { data: EstatePlanPdfData }) => {
+  const c = data.completeness
+  if (!c) return null
+  const pct = Math.round(c.completeness_pct ?? c.completeness_score ?? 0)
+  const stage = readinessStageLabel(pct)
+
+  return (
+    <Section title="Estate Plan Readiness">
+      <View style={s.scoreRow}>
+        <View style={s.scoreDetails}>
+          <Text style={s.scoreLabel}>ESTATE PLAN READINESS</Text>
+          <Text style={s.scoreValue}>
+            {pct} / 100 — {stage}
+          </Text>
+          <View style={s.progressBarOuter}>
+            <View style={[s.progressBarInner, { width: Math.max(0, Math.min(370, (pct / 100) * 370)) }]} />
+          </View>
+          <Text style={s.scoreSubtext}>
+            Will/Trust · DPOA · Healthcare Directive · Beneficiaries · Tax Strategy
+          </Text>
+        </View>
+      </View>
+      {c.attorney_cta_triggered && (
+        <View style={s.ctaBanner}>
+          <Text style={s.ctaBannerText}>
+            This household has significant planning gaps. An estate planning attorney consultation
+            is recommended to address the items below.
+          </Text>
+        </View>
+      )}
+    </Section>
+  )
+}
+
+// --- Consumer document checklist ---
+const ConsumerDocumentStatusSection = ({ data }: { data: EstatePlanPdfData }) => {
   const inc = data.incapacity
   const c = data.completeness
+  const docs = data.documents ?? []
+  const trusts = data.trusts ?? []
+
   const items = [
-    { label: 'Will or Trust', complete: c?.breakdown?.has_will_or_trust ?? false },
+    {
+      label: 'Will or Trust',
+      complete: (c?.breakdown?.has_will_or_trust ?? false) || docs.length > 0 || trusts.length > 0,
+    },
     { label: 'Durable Power of Attorney', complete: inc?.has_dpoa ?? false },
     { label: 'Medical Power of Attorney', complete: inc?.has_medical_poa ?? false },
     { label: 'Advance Healthcare Directive', complete: inc?.has_advance_directive ?? false },
@@ -1030,25 +1161,19 @@ const ConsumerChecklistSection = ({ data }: { data: EstatePlanPdfData }) => {
     { label: 'Beneficiaries Designated', complete: c?.breakdown?.has_beneficiaries ?? false },
     { label: 'Tax Strategy in Place', complete: c?.breakdown?.has_tax_strategy ?? false },
   ]
+
   return (
-    <Section title="Your household's current picture">
+    <Section title="Document Status">
       <View style={s.table}>
         {items.map((item, i) => (
           <View key={i} style={[s.consumerCheckRow, i % 2 !== 0 ? { backgroundColor: GRAY_LIGHT } : {}]} wrap={false}>
             <View style={[s.consumerCheckDot, { backgroundColor: item.complete ? GREEN : RED }]} />
             <Text style={s.consumerCheckLabel}>{item.label}</Text>
             <Text style={[s.consumerCheckStatus, { color: item.complete ? GREEN : RED }]}>
-              {item.complete ? 'Complete' : 'Action Needed'}
+              {item.complete ? 'On file' : 'Not on file'}
             </Text>
           </View>
         ))}
-      </View>
-      <View style={s.consumerCTABox}>
-        <Text style={s.consumerCTATitle}>Ready to Complete Your Estate Plan?</Text>
-        <Text style={s.consumerCTAText}>
-          An estate planning attorney can help you put the right documents in place.
-          Your advisor can connect you with a qualified professional in your area.
-        </Text>
       </View>
     </Section>
   )
@@ -1074,16 +1199,28 @@ export const AdvisorEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
 
 // --- Consumer T3 PDF Export ---
 export const ConsumerEstatePlanPDF = ({ data }: { data: EstatePlanPdfData }) => (
-  <Document title={`${PDF_DOCUMENT_TITLE} — ${clientName(data.household)}`} author="Estate Planner">
+  <Document title={`Client Estate Summary — ${clientName(data.household)}`} author="My Wealth Maps">
     <Page size="LETTER" style={s.page}>
       <PDFCoverBlock />
-      <PDFHeader data={data} />
+      <ConsumerPDFHeader data={data} />
       <View style={s.body}>
-        <CompletenessSection data={data} />
-        <ConsumerChecklistSection data={data} />
+        <ConsumerPurposeBanner />
+        <HouseholdProfileSection data={data} />
+        <ConsumerCompletenessSection data={data} />
+        <ConsumerDocumentStatusSection data={data} />
         <IncapacitySection data={data} />
       </View>
-      <PDFFooter data={data} />
+      <View style={s.footer} fixed>
+        <Text style={s.footerText}>
+          My Wealth Maps · Confidential · {clientName(data.household)}
+        </Text>
+        <Text
+          style={s.footerText}
+          render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
+            `Page ${pageNumber} of ${totalPages}`
+          }
+        />
+      </View>
     </Page>
   </Document>
 )

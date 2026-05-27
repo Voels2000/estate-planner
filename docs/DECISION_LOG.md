@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (UX-5b CompositeOverlay; UX-5 Strategy tab; ENG-1; UX-4 inline modeling)
+# Last updated: 2026-05-27 (Client Summary PDF; UX-5b CompositeOverlay; UX-5 Strategy tab)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — Client Summary PDF: match Attorney Summary standard
+
+**Decision:** Upgrade `ConsumerEstatePlanPDF` to the same navy/gold structure as `AttorneyEstatePlanPDF` (brand label, purpose callout, household profile grid, gold section headers). Remove letter-grade display for consumer readiness; use `N / 100 — Early Stage` (etc.) with progress bar. Document checklist uses **Not on file** (not **Action Needed**). Enable tax + assets in `/api/export-estate-plan` for consumer role so profile figures populate.
+
+**Reasoning:** Client Summary looked like a different product (ESTATE PLANNER header, alarming **F** grade, advisor-oriented copy). Attorney Summary is the reference standard; consumer export should feel professional and self-owned, not punitive.
+
+**Alternatives considered:** Keep letter grades (rejected — misleading for early-stage households). Green purpose bar like attorney (rejected — gold/navy differentiates client vs attorney-ready export).
 
 ---
 

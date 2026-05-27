@@ -8,6 +8,19 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Client Summary PDF brand upgrade (2026-05-27, no migration)
+
+**Code only (`components/pdf/EstatePlanPDF.tsx`, `app/(dashboard)/print/_print-client.tsx`, `app/api/export-estate-plan/route.ts`):**
+
+- **ConsumerEstatePlanPDF** aligned to Attorney Summary visual standard: navy header `MY WEALTH MAPS — CLIENT ESTATE SUMMARY`; metadata uses client name in Prepared By; gold purpose callout; Household Profile grid; Estate Plan Readiness without letter grade (`N / 100 — stage` + progress bar); Document Status with **Not on file** / **On file**.
+- **`/api/export-estate-plan`:** consumer role now receives tax + assets payload (`includeFinancialProfile`) for household profile figures in Client Summary.
+- **`/print` UI:** updated export card copy; gold **New** badge on Attorney Summary; data-ownership note at page bottom.
+- **AttorneyEstatePlanPDF:** unchanged.
+
+**No migrations.**
+
+---
+
 ## UX-5 — Strategy tab restructure (2026-05-26, no migration)
 
 **Code only (advisor Strategy tab layout; zero consumer routes):**

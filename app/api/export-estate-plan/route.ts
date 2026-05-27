@@ -63,7 +63,9 @@ export async function GET(request: NextRequest) {
     const isAdvisor = profile.role === 'advisor'
     const variant = searchParams.get('variant') ?? null
     const isAttorneyVariant = variant === 'attorney'
-    const includeTax = isAdvisor || isAttorneyVariant
+    // Client Summary + attorney intake PDFs need household profile figures (tax + assets).
+    const includeFinancialProfile =
+      isAdvisor || isAttorneyVariant || profile.role === 'consumer'
 
     // Run all data fetches in parallel
     const [
@@ -107,13 +109,13 @@ export async function GET(request: NextRequest) {
       // 4. Incapacity recommendations
       supabase.rpc('generate_incapacity_recommendations', { p_household_id: householdId }),
 
-      // 5. Federal estate tax (advisor + attorney variant)
-      includeTax
+      // 5. Federal estate tax (advisor, attorney variant, consumer client summary)
+      includeFinancialProfile
         ? supabase.rpc('calculate_federal_estate_tax', { p_household_id: householdId })
         : Promise.resolve({ data: null, error: null }),
 
-      // 6. State estate tax (advisor + attorney variant)
-      includeTax
+      // 6. State estate tax (advisor, attorney variant, consumer client summary)
+      includeFinancialProfile
         ? supabase.rpc('calculate_state_estate_tax', { p_household_id: householdId })
         : Promise.resolve({ data: null, error: null }),
 
@@ -176,15 +178,14 @@ export async function GET(request: NextRequest) {
       completeness: completenessResult.data,
       recommendations: recommendationsResult.data ?? null,
       incapacity: incapacityResult.data,
-      // Tax data: only included for advisors and attorney variant
-      federal_estate_tax: includeTax ? estateTaxResult.data : null,
-      state_estate_tax: includeTax ? stateTaxResult.data : null,
+      federal_estate_tax: includeFinancialProfile ? estateTaxResult.data : null,
+      state_estate_tax: includeFinancialProfile ? stateTaxResult.data : null,
       documents: documentsResult.data ?? [],
       trusts: trustsResult.data ?? [],
       beneficiaries: beneficiariesResult.data ?? [],
       // Attorney variant extras
       conflicts: isAttorneyVariant ? (conflictsResult.data ?? []) : [],
-      assets_summary: isAttorneyVariant ? (assetsSummaryResult.data ?? []) : [],
+      assets_summary: includeFinancialProfile ? (assetsSummaryResult.data ?? []) : [],
     }
 
     return NextResponse.json(payload)

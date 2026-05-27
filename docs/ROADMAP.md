@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-26 (UX-5b CompositeOverlay; ENG-1 estate/tax inclusion audit; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (Client Summary PDF; brand pass; Sprint 17 go-live prep)
 
 ---
 
@@ -98,6 +98,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Advisor portal UX-5** | `[x]` | Strategy tab restructure — impact panel, Strategy Horizon, remove redundant panels — SCHEMA_CHANGELOG UX-5 |
 | **Advisor portal ENG-1** | `[x]` | Estate/Tax strategy inclusion parity via horizon actual set (no RPC change) — SCHEMA_CHANGELOG ENG-1 |
 | **Advisor portal UX-5b** | `[x]` | CompositeOverlay: remove manual entry; default `recommendations` mode — SCHEMA_CHANGELOG UX-5b |
+| **Brand consistency pass** | `[x]` | Consumer + advisor page headings/buttons — navy/gold tokens (`fbaa709`) |
+| **Client Summary PDF upgrade** | `[x]` | ConsumerEstatePlanPDF matches Attorney Summary standard — SCHEMA_CHANGELOG 2026-05-27 |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -160,6 +162,8 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Advisor portal UX-5 | ✅ | `d6e5c5e` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
 | Advisor portal UX-5b | ✅ | `4220c0a` |
+| Brand consistency pass | ✅ | `fbaa709` |
+| Client Summary PDF upgrade | ✅ | `TBD` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

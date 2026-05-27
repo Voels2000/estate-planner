@@ -76,6 +76,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **Slight DOM reduction** — removed two full-width panel mounts below three-step workflow; `StrategyImpactPanel` derives from already-loaded `advisorHorizons` / `advisorHorizonsProjected` (no new fetches).
 
+## Client Summary PDF brand upgrade (2026-05-27)
+
+**Two additional RPCs on consumer export** — `calculate_federal_estate_tax`, `calculate_state_estate_tax`, and assets read when `profile.role === 'consumer'` (same as advisor/attorney-variant paths). One-time cost per PDF download; no change to advisor or attorney-variant fetch pattern.
+
 ## Advisor portal UX-5b — CompositeOverlay remove manual entry (2026-05-26)
 
 **No perf change** — removes unused local state and form render path; recommendations fetch on mount unchanged (`useEffect` when `mode === 'recommendations'`).

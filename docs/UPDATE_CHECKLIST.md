@@ -131,6 +131,15 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
+## Client Summary PDF brand upgrade (2026-05-27)
+
+- [x] ConsumerEstatePlanPDF: navy/gold header, purpose callout, household profile grid, readiness without letter grade
+- [x] Document Status: Not on file / On file; section titles renamed (Estate Plan Readiness, Document Status)
+- [x] export-estate-plan: financial profile data for consumer exports
+- [x] /print: card descriptions + data ownership note
+- [x] Attorney Summary PDF unchanged
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
+
 ## Advisor portal UX-5b — CompositeOverlay remove manual entry (2026-05-26)
 
 - [x] Remove `custom` mode: `customStrategies`, "This Household" button, manual form

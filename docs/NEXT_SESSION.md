@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-26 (UX-5b CompositeOverlay; ENG-1 estate/tax inclusion audit; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Client Summary PDF; brand pass; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **UX-5b** shipped: `CompositeOverlay` manual entry removed; default `recommendations` mode loads from `strategy_line_items`. **ENG-1** advisor Estate/Tax align to horizon actual set. **UX-4/UX-5** Strategy tab: inline Step 2 modeling, Recommendations & Impact, Strategy Horizon. Advisor portal end-to-end workflow is coherent (Overview gaps → Strategy three-step → send → client accept → Estate/Tax parity). **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Client Summary PDF** upgraded to Attorney Summary visual standard (navy/gold header, household profile grid, no letter grade, Not on file checklist). **Brand pass** (`fbaa709`) on consumer + advisor pages. **UX-5b** CompositeOverlay; **ENG-1** Estate/Tax parity; **UX-4/UX-5** Strategy tab workflow complete. **UX-2** — apply `20260626120000_advisor_gap_statuses.sql` if not applied. Compliance **C-2b → C-7** live. **Pre-go-live DB:** `20260526000001_handle_new_user_trigger.sql`. **Remaining:** legal review, Stripe Dashboard config, go-live day ops.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -36,6 +36,22 @@
 | Advisor portal UX-5 | ✅ | `d6e5c5e` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
 | Advisor portal UX-5b | ✅ | `4220c0a` |
+| Brand consistency pass | ✅ | `fbaa709` |
+| Client Summary PDF upgrade | ✅ | `TBD` |
+
+---
+
+## Client Summary PDF upgrade ✅ (2026-05-27)
+
+| Area | Outcome |
+|------|---------|
+| **Consumer PDF** | Navy/gold header, purpose callout, household profile grid, readiness without letter grade |
+| **Checklist** | Document Status — Not on file / On file |
+| **Export API** | Consumer role receives tax + assets for profile figures |
+| **Print page** | Updated card copy + data ownership note |
+| **Attorney PDF** | Unchanged |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Client Summary PDF brand upgrade](./SCHEMA_CHANGELOG.md)
 
 ---
 

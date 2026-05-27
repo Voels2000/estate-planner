@@ -40,17 +40,17 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
       label: isAdvisor ? 'Full Advisor Report' : 'Client Summary',
       description: isAdvisor
         ? 'Full estate plan report including tax exposure, recommendations, and incapacity planning.'
-        : 'Your estate plan summary including checklist and incapacity planning documents.',
-      sub: 'PDF — includes all estate plan data',
+        : 'Your complete estate plan — readiness score, document checklist, asset overview, and planning gaps. For your records or to share with your advisor.',
+      sub: 'PDF · Complete estate plan data',
     },
     {
       mode: 'attorney',
       label: 'Attorney Summary',
       description:
-        'A concise, attorney-ready summary of your household profile, asset overview, document status, and beneficiary designations. Formatted for intake meetings.',
-      sub: 'PDF — formatted for attorney review',
+        'Concise intake summary formatted for your estate attorney — household profile, asset overview, document status, and beneficiary designations. Ready for your first meeting.',
+      sub: 'PDF · Attorney intake format',
       badge: 'New',
-      badgeColor: 'bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]',
+      badgeColor: 'text-[10px] font-semibold uppercase tracking-wide text-[#C9A84C] bg-[#C9A84C]/10 border border-[#C9A84C]/30 px-1.5 py-0.5 rounded',
     },
   ]
 
@@ -91,13 +91,9 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-neutral-900">{exp.label}</p>
+                    <p className="font-semibold text-[color:var(--mwm-navy)]">{exp.label}</p>
                     {exp.badge && (
-                      <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${exp.badgeColor}`}
-                      >
-                        {exp.badge}
-                      </span>
+                      <span className={exp.badgeColor}>{exp.badge}</span>
                     )}
                   </div>
                   <p className="text-sm text-neutral-500 mt-1 leading-relaxed">
@@ -169,6 +165,11 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
           </Link>
         </div>
       )}
+
+      <p className="text-xs text-gray-400 text-center mt-6 max-w-lg mx-auto">
+        These exports include all data you have entered into My Wealth Maps. Your data belongs to
+        you and can be exported at any time.
+      </p>
     </div>
   )
 }
