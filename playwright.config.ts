@@ -7,10 +7,12 @@ const hasTier1Consumer =
   Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL) &&
   Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD)
 
+const setupTimeout = 120_000
+
 const projects: Project[] = [
-  { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/ },
-  { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/ },
-  { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/ },
+  { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
+  { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
+  { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
   {
     name: 'advisor',
     dependencies: ['advisor-setup'],
@@ -46,7 +48,11 @@ const projects: Project[] = [
 
 if (hasTier1Consumer) {
   projects.push(
-    { name: 'consumer-tier1-setup', testMatch: /helpers\/consumer-tier1\.setup\.ts/ },
+    {
+      name: 'consumer-tier1-setup',
+      testMatch: /helpers\/consumer-tier1\.setup\.ts/,
+      timeout: setupTimeout,
+    },
     {
       name: 'consumer-tier1',
       dependencies: ['consumer-tier1-setup'],

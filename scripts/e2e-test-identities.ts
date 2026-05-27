@@ -116,11 +116,15 @@ export function buildEnvTestFileLines(opts: {
     `SEED_ADVISOR_EMAIL=${E2E_IDENTITIES.advisor.email}`,
     `SEED_CLIENT_EMAIL=${E2E_IDENTITIES.advisorClient.email}`,
   ]
-  if (opts.supabaseServiceRoleKey) {
-    lines.push('', `SUPABASE_SERVICE_ROLE_KEY=${opts.supabaseServiceRoleKey}`)
-  }
   if (opts.supabaseAnonKey) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+    if (supabaseUrl) {
+      lines.push('', `NEXT_PUBLIC_SUPABASE_URL=${supabaseUrl}`)
+    }
     lines.push(`NEXT_PUBLIC_SUPABASE_ANON_KEY=${opts.supabaseAnonKey}`)
+  }
+  if (opts.supabaseServiceRoleKey) {
+    lines.push(`SUPABASE_SERVICE_ROLE_KEY=${opts.supabaseServiceRoleKey}`)
   }
   return lines.join('\n') + '\n'
 }

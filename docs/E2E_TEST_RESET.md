@@ -60,7 +60,15 @@ npx dotenv-cli -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.t
 
 ### 2. Update `.env.test`
 
-Copy the printed block from step 1, or start from [.env.test.example](../.env.test.example) and fill `PLAYWRIGHT_HOUSEHOLD_ID` from seed output.
+Copy the printed block from step 1, or start from [.env.test.example](../.env.test.example) and fill `PLAYWRIGHT_HOUSEHOLD_ID` from seed output. The block must include **`NEXT_PUBLIC_SUPABASE_URL`** (same project as Vercel / `.env.local`).
+
+Verify Auth passwords (optional):
+
+```bash
+npm run verify:e2e-auth
+```
+
+Setup projects auto-sync the canonical password (`E2eTest!2026Mwm`) before UI login when `SUPABASE_SERVICE_ROLE_KEY` is present.
 
 ### 3. Prune Playwright test debris (optional, before each full run)
 

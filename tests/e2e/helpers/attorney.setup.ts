@@ -1,11 +1,12 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import { resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
 setup('authenticate attorney portal', async ({ page }) => {
-  const email =
-    process.env.PLAYWRIGHT_ATTORNEY_EMAIL ?? E2E_IDENTITIES.attorneyPortal.email
-  const password =
-    process.env.PLAYWRIGHT_ATTORNEY_PASSWORD ?? E2E_IDENTITIES.attorneyPortal.password
+  const email = process.env.PLAYWRIGHT_ATTORNEY_EMAIL ?? E2E_IDENTITIES.attorneyPortal.email
+  const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_ATTORNEY_PASSWORD)
+
+  await syncE2ePasswordForEmail(email, password)
 
   await page.goto('/login')
   await page.waitForSelector('input[id="email"]', { state: 'visible' })

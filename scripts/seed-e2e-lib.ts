@@ -121,6 +121,7 @@ export async function seedE2eConsumerHousehold(
       role: 'consumer',
       terms_accepted_at: now,
       terms_version: '2026-03-31',
+      onboarding_wizard_completed_at: now,
       onboarding_invite_advisor_completed_at: now,
       updated_at: now,
     })

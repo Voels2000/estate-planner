@@ -1,11 +1,12 @@
 import { test as setup } from '@playwright/test'
+import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import { resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
 setup('authenticate advisor', async ({ page }) => {
-  const email = process.env.PLAYWRIGHT_ADVISOR_EMAIL
-  const password = process.env.PLAYWRIGHT_ADVISOR_PASSWORD
-  if (!email || !password) {
-    throw new Error('PLAYWRIGHT_ADVISOR_EMAIL and PLAYWRIGHT_ADVISOR_PASSWORD must be set (e.g. via .env.test)')
-  }
+  const email = process.env.PLAYWRIGHT_ADVISOR_EMAIL ?? E2E_IDENTITIES.advisor.email
+  const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_ADVISOR_PASSWORD)
+
+  await syncE2ePasswordForEmail(email, password)
 
   await page.goto('/login')
   await page.waitForSelector('input[id="email"]', { state: 'visible' })

@@ -36,10 +36,11 @@ Template: [.env.test.example](../.env.test.example)
 | Variable | Purpose |
 |----------|---------|
 | `PLAYWRIGHT_BASE_URL` | Target deployment |
-| `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Estate-tier consumer (`e2e-consumer@mywealthmaps.test`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Must match the Supabase project your `PLAYWRIGHT_BASE_URL` app uses (from `seed:e2e` output) |
+| `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Estate-tier consumer (`e2e-consumer@mywealthmaps.test`; password defaults to `E2eTest!2026Mwm` from `e2e-test-identities.ts`) |
 | `PLAYWRIGHT_ADVISOR_EMAIL` / `PASSWORD` | Advisor portal |
 | `PLAYWRIGHT_HOUSEHOLD_ID` | Strategy + recompute + titling tests — from `seed:e2e` |
-| `SUPABASE_SERVICE_ROLE_KEY` | `seed:e2e` only — do not use in Playwright polls (Supabase blocks secret key in browser context) |
+| `SUPABASE_SERVICE_ROLE_KEY` | `seed:e2e` + setup projects sync Auth password before login; do not use in browser polls |
 
 ## Optional env
 
