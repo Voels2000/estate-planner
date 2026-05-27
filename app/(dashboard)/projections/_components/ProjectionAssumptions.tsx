@@ -1,30 +1,42 @@
 import type { HouseholdProjectionProfile } from '@/lib/projections/types'
+import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
+import { GrowthAssumptionInputs } from '@/components/projections/GrowthAssumptionInputs'
 
 type ProjectionAssumptionsProps = {
-  household: HouseholdProjectionProfile
+  household: HouseholdProjectionProfile & {
+    growth_assumptions?: unknown
+  }
+  hasRealEstate?: boolean
+  hasBusiness?: boolean
 }
 
-export function ProjectionAssumptions({ household }: ProjectionAssumptionsProps) {
+export function ProjectionAssumptions({
+  household,
+  hasRealEstate = true,
+  hasBusiness = true,
+}: ProjectionAssumptionsProps) {
+  const growth = parseGrowthAssumptions(household.growth_assumptions)
+
   return (
     <div className="mb-6 rounded-xl border border-neutral-200 bg-white shadow-sm p-4">
       <h2 className="mb-3 text-sm font-semibold text-neutral-700">Projection Assumptions</h2>
-      <div className="flex flex-wrap gap-6 items-end">
-        <div>
-          <p className="mb-1 block text-xs font-medium text-neutral-500">Accumulation Growth Rate</p>
-          <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
-            {(household.growth_rate_accumulation ?? 7).toFixed(1)}%
-          </div>
-        </div>
-        <div>
-          <p className="mb-1 block text-xs font-medium text-neutral-500">Retirement Growth Rate</p>
-          <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
-            {(household.growth_rate_retirement ?? 5).toFixed(1)}%
-          </div>
-        </div>
-        <p className="pb-2 text-xs text-neutral-500">
-          This projection is based on growth assumptions from your profile.
-        </p>
-      </div>
+      <GrowthAssumptionInputs
+        financialAccumulation={household.growth_rate_accumulation ?? 7}
+        financialRetirement={household.growth_rate_retirement ?? 5}
+        realEstate={growth.real_estate}
+        business={growth.business}
+        onChange={() => {}}
+        readOnly
+        showRealEstateInput={hasRealEstate}
+        showBusinessInput={hasBusiness}
+      />
+      <p className="mt-3 text-xs text-neutral-500">
+        Edit these on the{' '}
+        <a href="/scenarios" className="text-[color:var(--mwm-navy)] underline">
+          Scenarios
+        </a>{' '}
+        page. Financial accumulation and retirement rates can also be updated in your profile.
+      </p>
     </div>
   )
 }

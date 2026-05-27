@@ -11,6 +11,7 @@ import {
   type StateIncomeTaxBracket as SharedStateIncomeTaxBracket,
 } from '@/lib/calculations/stateIncomeTax'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
+import { resolveGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 export type YearRow = {
   year: number
@@ -200,11 +201,14 @@ export type CompleteProjectionInput = {
     is_ilit: boolean
     is_employer_provided: boolean
   }>
+  growthAssumptions?: Partial<import('../types/growthAssumptions').GrowthAssumptions>
   // Optional overrides — used by Scenarios page to test alternate states / growth rates
   overrides?: {
     state_primary?: string | null
     growth_rate_accumulation?: number
     growth_rate_retirement?: number
+    real_estate_growth?: number
+    business_growth?: number
     person1_retirement_age?: number
     person1_ss_claiming_age?: number
     person2_retirement_age?: number | null
@@ -667,10 +671,21 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const effectiveRetireRate  = (overrides.growth_rate_retirement   ?? household.growth_rate_retirement   ?? 5) / 100
   const inflationRate        = (household.inflation_rate ?? 3) / 100
 
-  const householdGrowth = (household as { growth_assumptions?: { real_estate?: number; business?: number } })
-    .growth_assumptions
-  const reGrowthRate = (householdGrowth?.real_estate ?? 4.5) / 100
-  const bizGrowthRate = (householdGrowth?.business ?? 7.0) / 100
+  const growthAssumptions = resolveGrowthAssumptions(
+    (household as { growth_assumptions?: unknown }).growth_assumptions,
+    {
+      input: input.growthAssumptions,
+      scenarioOverrides:
+        overrides.real_estate_growth != null || overrides.business_growth != null
+          ? {
+              real_estate: overrides.real_estate_growth,
+              business: overrides.business_growth,
+            }
+          : undefined,
+    },
+  )
+  const reGrowthRate = growthAssumptions.real_estate / 100
+  const bizGrowthRate = growthAssumptions.business / 100
 
   const p1RetirementAge = overrides.person1_retirement_age ?? household.person1_retirement_age
   const p1SsClaimingAge = overrides.person1_ss_claiming_age ?? household.person1_ss_claiming_age
@@ -727,7 +742,7 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   for (let year = currentYear; year <= endYear; year++) {
     const yearsFromNow    = year - currentYear
     const inflationFactor = Math.pow(1 + inflationRate, yearsFromNow)
-    const businessValue   = Math.round(baseBusinessValue * inflationFactor)
+    const businessValue   = Math.round(baseBusinessValue * Math.pow(1 + bizGrowthRate, yearsFromNow))
     const insuranceDeathBenefit = insurancePoliciesInput
       .filter(p => !p.is_ilit && p.death_benefit)
       .reduce((s, p) => s + (p.death_benefit ?? 0), 0)
@@ -1109,9 +1124,10 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
     // Grow real estate values AFTER pushing current year values (skips sold properties)
     for (const re of reStates) {
       if (!re.sold) {
-        re.value = Math.round(re.value * (1 + inflationRate))
+        re.value = Math.round(re.value * (1 + reGrowthRate))
       }
     }
+
   }
 
   return rows

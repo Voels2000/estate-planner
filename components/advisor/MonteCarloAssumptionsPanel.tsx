@@ -25,11 +25,15 @@ interface ScenarioRow {
   simulation_count: number | null
   planning_horizon_yr: number | null
   inflation_rate_pct: number | null
+  real_estate_growth_pct: number | null
+  business_growth_pct: number | null
 }
 
 interface MonteCarloAssumptionsPanelProps {
   householdId: string
   grossEstate: number
+  householdRealEstateGrowth?: number
+  householdBusinessGrowth?: number
   onAssumptionsChange?: (assumptions: MonteCarloAssumptions | null) => void
 }
 
@@ -64,6 +68,8 @@ const fmtM = (n: number) => `$${(n / 1_000_000).toFixed(2)}M`
 export default function MonteCarloAssumptionsPanel({
   householdId,
   grossEstate,
+  householdRealEstateGrowth = 4.5,
+  householdBusinessGrowth = 7,
   onAssumptionsChange,
 }: MonteCarloAssumptionsPanelProps) {
   const [scenarios, setScenarios] = useState<ScenarioRow[]>([])
@@ -80,6 +86,8 @@ export default function MonteCarloAssumptionsPanel({
   const [shareMessage, setShareMessage] = useState<string | null>(null)
   const [baseResult, setBaseResult] = useState<CompareResult | null>(null)
   const [advisorResult, setAdvisorResult] = useState<CompareResult | null>(null)
+  const [realEstateGrowthPct, setRealEstateGrowthPct] = useState(householdRealEstateGrowth)
+  const [businessGrowthPct, setBusinessGrowthPct] = useState(householdBusinessGrowth)
   const isDirty = useMemo(() => JSON.stringify(draftValues) !== JSON.stringify(MONTE_CARLO_SYSTEM_DEFAULTS), [draftValues])
 
   const loadPresets = useCallback(async () => {
@@ -104,6 +112,8 @@ export default function MonteCarloAssumptionsPanel({
       setDraftName(active.scenario_name)
       const assumptions = monteCarloAssumptionsFromRow(active)
       setDraftValues(assumptions)
+      setRealEstateGrowthPct(active.real_estate_growth_pct ?? householdRealEstateGrowth)
+      setBusinessGrowthPct(active.business_growth_pct ?? householdBusinessGrowth)
       onAssumptionsChange?.(assumptions)
       setDefaultPresetApplied(true)
     } else {
@@ -169,6 +179,8 @@ export default function MonteCarloAssumptionsPanel({
           simulationCount: draftValues.simulationCount,
           planningHorizonYr: draftValues.planningHorizonYr,
           inflationRatePct: draftValues.inflationRatePct,
+          realEstateGrowthPct,
+          businessGrowthPct,
         }),
       })
       const data = await res.json()
@@ -317,6 +329,41 @@ export default function MonteCarloAssumptionsPanel({
             {errors[f.key] && <p className="mt-1 text-xs text-red-600">{errors[f.key]}</p>}
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-gray-100 pt-3">
+        <div>
+          <label className="text-xs text-gray-500">Real Estate Growth Override</label>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={15}
+              step={0.5}
+              value={realEstateGrowthPct}
+              onChange={(e) => setRealEstateGrowthPct(Number(e.target.value))}
+              className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm"
+            />
+            <span className="text-xs text-gray-400">%</span>
+          </div>
+          <p className="mt-1 text-[11px] text-gray-400">Client default: {householdRealEstateGrowth}%</p>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">Business Growth Override</label>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={25}
+              step={0.5}
+              value={businessGrowthPct}
+              onChange={(e) => setBusinessGrowthPct(Number(e.target.value))}
+              className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm"
+            />
+            <span className="text-xs text-gray-400">%</span>
+          </div>
+          <p className="mt-1 text-[11px] text-gray-400">Client default: {householdBusinessGrowth}%</p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

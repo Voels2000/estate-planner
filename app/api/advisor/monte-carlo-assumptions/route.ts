@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
     simulationCount,
     planningHorizonYr,
     inflationRatePct,
+    realEstateGrowthPct,
+    businessGrowthPct,
     notes,
   } = body
 
@@ -117,6 +119,8 @@ export async function POST(request: NextRequest) {
       simulation_count: simulationCount ?? null,
       planning_horizon_yr: planningHorizonYr ?? null,
       inflation_rate_pct: inflationRatePct ?? null,
+      real_estate_growth_pct: realEstateGrowthPct ?? null,
+      business_growth_pct: businessGrowthPct ?? null,
       notes: notes ?? null,
     }, {
       onConflict: 'advisor_id,client_household_id,scenario_name',

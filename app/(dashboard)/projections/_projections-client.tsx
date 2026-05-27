@@ -26,13 +26,17 @@ import {
 } from '@/lib/planning/planningEmptyState'
 
 type ProjectionsClientProps = {
-  initialHousehold: HouseholdProjectionProfile | null
+  initialHousehold: (HouseholdProjectionProfile & { growth_assumptions?: unknown }) | null
   initialProjections: ProjectionYear[]
+  hasRealEstate?: boolean
+  hasBusiness?: boolean
 }
 
 export function ProjectionsClient({
   initialHousehold,
   initialProjections,
+  hasRealEstate = true,
+  hasBusiness = true,
 }: ProjectionsClientProps) {
   const [household, setHousehold] = useState<HouseholdProjectionProfile | null>(initialHousehold)
   const [projections, setProjections] = useState<ProjectionYear[]>(initialProjections)
@@ -78,7 +82,11 @@ export function ProjectionsClient({
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
       {/* Growth assumptions (read-only from profile) */}
-      <ProjectionAssumptions household={household} />
+      <ProjectionAssumptions
+        household={household}
+        hasRealEstate={hasRealEstate}
+        hasBusiness={hasBusiness}
+      />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

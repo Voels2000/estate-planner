@@ -12,6 +12,11 @@ import type { YearRow } from '@/lib/calculations/projection-complete'
 import { summarizeScenario, type ScenarioSummary } from '@/lib/scenarios/summarizeScenario'
 import { PLANNING_SURFACES } from '@/lib/planning/planningSurfaces'
 import { PlanningSurfaceNav } from '@/app/(dashboard)/_components/PlanningSurfaceNav'
+import {
+  GrowthAssumptionInputs,
+  type GrowthAssumptionField,
+} from '@/components/projections/GrowthAssumptionInputs'
+import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 type Household = {
   id: string
@@ -27,6 +32,7 @@ type Household = {
   state_primary: string
   growth_rate_accumulation: number
   growth_rate_retirement: number
+  growth_assumptions?: { real_estate?: number; business?: number } | null
 }
 
 type ScenarioOverrides = {
@@ -38,6 +44,8 @@ type ScenarioOverrides = {
   state_primary: string
   growth_rate_accumulation: number
   growth_rate_retirement: number
+  real_estate_growth: number
+  business_growth: number
 }
 
 type ScenarioResult = ScenarioSummary | null
@@ -57,6 +65,8 @@ function buildQueryString(overrides: ScenarioOverrides): string {
     state_primary:            overrides.state_primary ?? '',
     growth_rate_accumulation: String(overrides.growth_rate_accumulation),
     growth_rate_retirement:   String(overrides.growth_rate_retirement),
+    real_estate_growth:       String(overrides.real_estate_growth),
+    business_growth:          String(overrides.business_growth),
     person1_retirement_age:   String(overrides.person1_retirement_age),
     person1_ss_claiming_age:  String(overrides.person1_ss_claiming_age),
   })
@@ -107,11 +117,15 @@ export type ScenariosHousehold = Household
 type ScenariosClientProps = {
   initialHousehold: ScenariosHousehold | null
   initialResultA: ScenarioResult
+  hasRealEstate?: boolean
+  hasBusiness?: boolean
 }
 
 export default function ScenariosClient({
   initialHousehold,
   initialResultA,
+  hasRealEstate = true,
+  hasBusiness = true,
 }: ScenariosClientProps) {
   const [household, setHousehold]     = useState<Household | null>(initialHousehold)
   const [isSaving, setIsSaving]       = useState<number | null>(null)
@@ -128,6 +142,12 @@ export default function ScenariosClient({
   const [loadingA, setLoadingA] = useState(false)
   const [loadingB, setLoadingB] = useState(false)
   const [loadingC, setLoadingC] = useState(false)
+  const [savingGrowth, setSavingGrowth] = useState(false)
+  const [growthSaved, setGrowthSaved] = useState(false)
+  const [financialAccum, setFinancialAccum] = useState(7)
+  const [financialRetire, setFinancialRetire] = useState(5)
+  const [realEstateGrowth, setRealEstateGrowth] = useState(4.5)
+  const [businessGrowth, setBusinessGrowth] = useState(7)
 
   // Debounce timers
   const timerB = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -157,6 +177,11 @@ export default function ScenariosClient({
     setHousehold(initialHousehold)
     setResultA(initialResultA)
     if (!initialHousehold) return
+    const parsedGrowth = parseGrowthAssumptions(initialHousehold.growth_assumptions)
+    setFinancialAccum(initialHousehold.growth_rate_accumulation ?? 7)
+    setFinancialRetire(initialHousehold.growth_rate_retirement ?? 5)
+    setRealEstateGrowth(parsedGrowth.real_estate)
+    setBusinessGrowth(parsedGrowth.business)
     const base: ScenarioOverrides = {
       name: 'Scenario B',
       person1_retirement_age:  initialHousehold.person1_retirement_age ?? 65,
@@ -166,6 +191,8 @@ export default function ScenariosClient({
       state_primary:           initialHousehold.state_primary ?? '',
       growth_rate_accumulation: initialHousehold.growth_rate_accumulation ?? 7,
       growth_rate_retirement:   initialHousehold.growth_rate_retirement ?? 5,
+      real_estate_growth: parsedGrowth.real_estate,
+      business_growth: parsedGrowth.business,
     }
     const storedB = loadStoredScenario(initialHousehold.id, 'B')
     const storedC = loadStoredScenario(initialHousehold.id, 'C')
@@ -212,6 +239,52 @@ export default function ScenariosClient({
   const loading  = [loadingA, loadingB, loadingC]
 
   const peakAll = Math.max(...results.flatMap(r => r?.rows.map(row => row.net_worth) ?? [0]))
+
+  async function handleSaveGrowthAssumptions() {
+    if (!household) return
+    setSavingGrowth(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/consumer/growth-assumptions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: household.id,
+          growth_rate_accumulation: financialAccum,
+          growth_rate_retirement: financialRetire,
+          growth_assumptions: { real_estate: realEstateGrowth, business: businessGrowth },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save growth assumptions')
+      setHousehold({
+        ...household,
+        growth_rate_accumulation: financialAccum,
+        growth_rate_retirement: financialRetire,
+        growth_assumptions: { real_estate: realEstateGrowth, business: businessGrowth },
+      })
+      setGrowthSaved(true)
+      setTimeout(() => setGrowthSaved(false), 2500)
+      setLoadingA(true)
+      const baseRes = await fetch('/api/projection')
+      const baseData = await baseRes.json()
+      if (baseData.rows) {
+        setResultA(summarizeScenario(baseData.rows, household.person1_retirement_age ?? 65))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSavingGrowth(false)
+      setLoadingA(false)
+    }
+  }
+
+  function handleGrowthFieldChange(field: GrowthAssumptionField, value: number) {
+    if (field === 'financial_accumulation') setFinancialAccum(value)
+    if (field === 'financial_retirement') setFinancialRetire(value)
+    if (field === 'real_estate') setRealEstateGrowth(value)
+    if (field === 'business') setBusinessGrowth(value)
+  }
 
   async function handleSave(idx: number) {
     const result = results[idx]
@@ -260,6 +333,28 @@ export default function ScenariosClient({
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
+      <div className="mb-8 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <GrowthAssumptionInputs
+          financialAccumulation={financialAccum}
+          financialRetirement={financialRetire}
+          realEstate={realEstateGrowth}
+          business={businessGrowth}
+          onChange={handleGrowthFieldChange}
+          showRealEstateInput={hasRealEstate}
+          showBusinessInput={hasBusiness}
+        />
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSaveGrowthAssumptions}
+            disabled={savingGrowth}
+            className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50"
+          >
+            {savingGrowth ? 'Saving…' : growthSaved ? '✓ Saved — recomputing' : 'Save growth assumptions'}
+          </button>
+        </div>
+      </div>
+
       {/* Scenario Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         {/* Base Case — locked */}
@@ -278,7 +373,14 @@ export default function ScenariosClient({
             <p><span className="font-medium text-neutral-800">{displayPersonFirstName(household.person1_name, 'Person 1')}</span> retires at {household.person1_retirement_age}, SS at {household.person1_ss_claiming_age}</p>
             {household.has_spouse && <p><span className="font-medium text-neutral-800">{displayPersonFirstName(household.person2_name, 'Person 2')}</span> retires at {household.person2_retirement_age ?? '—'}, SS at {household.person2_ss_claiming_age ?? '—'}</p>}
             <p>State: <span className="font-medium text-neutral-800">{household.state_primary || 'None'}</span></p>
-            <p>Growth: <span className="font-medium text-neutral-800">{household.growth_rate_accumulation}% / {household.growth_rate_retirement}%</span></p>
+            <p>Growth: <span className="font-medium text-neutral-800">{financialAccum}% / {financialRetire}%</span></p>
+            {(hasRealEstate || hasBusiness) && (
+              <p className="text-xs text-neutral-500">
+                {hasRealEstate && <>RE {realEstateGrowth}%</>}
+                {hasRealEstate && hasBusiness && ' · '}
+                {hasBusiness && <>Business {businessGrowth}%</>}
+              </p>
+            )}
           </div>
           {loadingA && <p className="mt-3 text-xs text-neutral-400 animate-pulse">Calculating…</p>}
         </div>
@@ -288,6 +390,8 @@ export default function ScenariosClient({
           scenario={scenarioB}
           onChange={setScenarioB}
           household={household}
+          hasRealEstate={hasRealEstate}
+          hasBusiness={hasBusiness}
           colorIdx={1}
           onSave={() => handleSave(1)}
           isSaving={isSaving === 1}
@@ -300,6 +404,8 @@ export default function ScenariosClient({
           scenario={scenarioC}
           onChange={setScenarioC}
           household={household}
+          hasRealEstate={hasRealEstate}
+          hasBusiness={hasBusiness}
           colorIdx={2}
           onSave={() => handleSave(2)}
           isSaving={isSaving === 2}
@@ -408,11 +514,13 @@ export default function ScenariosClient({
 }
 
 function ScenarioEditor({
-  scenario, onChange, household, colorIdx, onSave, isSaving, saved, isCalculating,
+  scenario, onChange, household, hasRealEstate, hasBusiness, colorIdx, onSave, isSaving, saved, isCalculating,
 }: {
   scenario: ScenarioOverrides
   onChange: (s: ScenarioOverrides) => void
   household: Household
+  hasRealEstate: boolean
+  hasBusiness: boolean
   colorIdx: number
   onSave: () => void
   isSaving: boolean
@@ -483,20 +591,20 @@ function ScenarioEditor({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Accum. Growth %</label>
-            <input type="number" min={0} max={20} step={0.5} value={scenario.growth_rate_accumulation}
-              onChange={e => onChange({ ...scenario, growth_rate_accumulation: Number(e.target.value) })}
-              className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Retire Growth %</label>
-            <input type="number" min={0} max={20} step={0.5} value={scenario.growth_rate_retirement}
-              onChange={e => onChange({ ...scenario, growth_rate_retirement: Number(e.target.value) })}
-              className={inputClass} />
-          </div>
-        </div>
+        <GrowthAssumptionInputs
+          financialAccumulation={scenario.growth_rate_accumulation}
+          financialRetirement={scenario.growth_rate_retirement}
+          realEstate={scenario.real_estate_growth}
+          business={scenario.business_growth}
+          onChange={(field, value) => {
+            if (field === 'financial_accumulation') onChange({ ...scenario, growth_rate_accumulation: value })
+            if (field === 'financial_retirement') onChange({ ...scenario, growth_rate_retirement: value })
+            if (field === 'real_estate') onChange({ ...scenario, real_estate_growth: value })
+            if (field === 'business') onChange({ ...scenario, business_growth: value })
+          }}
+          showRealEstateInput={hasRealEstate}
+          showBusinessInput={hasBusiness}
+        />
       </div>
 
       {isCalculating && <p className="mt-3 text-xs text-neutral-400 animate-pulse">Recalculating…</p>}

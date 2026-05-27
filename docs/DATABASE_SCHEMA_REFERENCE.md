@@ -53,8 +53,9 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `households`
 
-- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
+- **Key columns:** `id`, `owner_id`, `filing_status`, `state_primary`, `base_case_scenario_id`, `growth_rate_accumulation`, `growth_rate_retirement`, `growth_assumptions`, `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`, `succession_plan_in_place`, `succession_key_person_identified`, `succession_buy_sell_in_place`
 - **Purpose:** central planning record for person/spouse demographics and modeling defaults.
+- **`growth_assumptions` (jsonb):** per-asset-class rates. Keys: `real_estate` (default 4.5), `business` (default 7.0). Financial growth uses `growth_rate_accumulation` / `growth_rate_retirement`. Migration: `20260527130000_household_growth_assumptions.sql`.
 - **Succession intake (Sprint 10):** minimal business succession booleans; `PATCH /api/consumer/succession-intake`.
 
 ### `advisor_clients`
@@ -292,8 +293,9 @@ This is a developer reference, not a full SQL DDL dump.
 
 ### `advisor_projection_assumptions`
 
-- **Key columns:** `advisor_id`, `client_household_id`, `is_preset`, `is_default`, `is_active`, assumption fields, `shared_at`, `accepted_by_client`, `accepted_at`
+- **Key columns:** `advisor_id`, `client_household_id`, `is_preset`, `is_default`, `is_active`, assumption fields, `real_estate_growth_pct`, `business_growth_pct`, `shared_at`, `accepted_by_client`, `accepted_at`
 - **Purpose:** advisor Monte Carlo scenario assumptions and consumer acceptance state. Presets (`is_preset = true`, `client_household_id` null) are advisor-wide templates; at most one `is_default` preset per advisor (partial unique index `advisor_projection_assumptions_one_default_preset_idx`).
+- **Growth overrides:** `real_estate_growth_pct` / `business_growth_pct` null = use household `growth_assumptions`. Migration: `20260527130100_advisor_growth_assumption_overrides.sql`.
 - **Migration:** `20260517185228_add_is_default_to_advisor_projection_assumptions.sql`
 - **Acceptance behavior:** consumer accept/revert toggles `accepted_by_client`/`accepted_at` on household-linked rows; latest accepted row is consumer-effective state.
 - **Consumer UI (Session 98):** `/dashboard` and `/my-estate-strategy` server pages fetch rows where `accepted_by_client=true` or `shared_at` is set; `MonteCarloScenarioBanner` calls `/api/monte-carlo/advisor-assumptions` for accept/revert with `router.refresh()`.

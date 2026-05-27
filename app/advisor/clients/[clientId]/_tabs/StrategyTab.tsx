@@ -25,6 +25,7 @@ import {
 } from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
+import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 export default function StrategyTab({
   household,
@@ -65,6 +66,9 @@ export default function StrategyTab({
       ? Math.min(100, (Math.min(grossEstate, federalExemption) / federalExemption) * 100)
       : null
   const unusedExemptionAmount = Math.max(0, federalExemption - grossEstate)
+  const householdGrowth = parseGrowthAssumptions(
+    (household as { growth_assumptions?: unknown } | undefined)?.growth_assumptions,
+  )
   const impactData = {
     currentGrossEstate: Number(advisorHorizons?.today.grossEstate ?? 0),
     currentFederalTax: Number(advisorHorizons?.today.federalTaxEstimate ?? 0),
@@ -421,6 +425,12 @@ export default function StrategyTab({
             <p className="text-xs text-gray-400">
               How the estate evolves over time with current and projected strategies
             </p>
+            {activeAssumptions && mcReturnDiff > 1.5 && (
+              <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
+                Horizon uses deterministic {householdAccumRate.toFixed(1)}% financial growth.
+                Monte Carlo uses {activeAssumptions.returnMeanPct.toFixed(1)}% mean return.
+              </p>
+            )}
           </div>
           <button
             onClick={() => setCompositeOpen((o) => !o)}
@@ -533,6 +543,8 @@ export default function StrategyTab({
           <MonteCarloAssumptionsPanel
             householdId={household.id}
             grossEstate={grossEstate}
+            householdRealEstateGrowth={householdGrowth.real_estate}
+            householdBusinessGrowth={householdGrowth.business}
             onAssumptionsChange={setActiveAssumptions}
           />
         )}

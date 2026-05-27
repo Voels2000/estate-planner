@@ -14,6 +14,7 @@ import type {
   IncomeRowSelect,
   ExpenseRowSelect,
 } from '@/lib/types/planner-rows'
+import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 export async function generateBaseCase(householdId: string): Promise<{
   scenarioId: string
@@ -122,8 +123,11 @@ export async function generateBaseCase(householdId: string): Promise<{
     ])
 
     // Run income projection engine
+    const growthAssumptions = parseGrowthAssumptions(household.growth_assumptions)
+
     const projectionRows = computeCompleteProjection({
       household,
+      growthAssumptions,
       assets: (assets ?? []) as AssetRowSelect[],
       liabilities: (liabilities ?? []) as LiabilityRowSelect[],
       income: (income ?? []) as unknown as IncomeRowSelect[],
@@ -233,13 +237,10 @@ export async function generateBaseCase(householdId: string): Promise<{
       inflation_rate: household.inflation_rate ?? 2.5,
       growth_rate_accumulation: household.growth_rate_accumulation ?? 7,
       growth_rate_retirement: household.growth_rate_retirement ?? 5,
-      growth_assumptions: (() => {
-        const raw = household.growth_assumptions as { real_estate?: number; business?: number } | null | undefined
-        return {
-          real_estate: raw?.real_estate ?? 4.5,
-          business: raw?.business ?? 7.0,
-        }
-      })(),
+      growth_assumptions: {
+        real_estate: growthAssumptions.real_estate,
+        business: growthAssumptions.business,
+      },
       tax_scenario: 'current_law_extended',
       estate_exemption_individual: currentLawConfig.estate_exemption_individual,
       estate_exemption_married: currentLawConfig.estate_exemption_married,

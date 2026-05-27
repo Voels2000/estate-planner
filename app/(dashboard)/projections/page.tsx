@@ -17,7 +17,11 @@ export default async function ProjectionsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { household, rows } = await loadProjectionData(supabase, user.id)
+  const [{ household, rows }, { count: reCount }, { count: bizCount }] = await Promise.all([
+    loadProjectionData(supabase, user.id),
+    supabase.from('real_estate').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
+    supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
+  ])
   const projections = household
     ? mapProjectionRows(rows, household as unknown as HouseholdProjectionProfile)
     : []
@@ -26,6 +30,8 @@ export default async function ProjectionsPage() {
     <ProjectionsClient
       initialHousehold={(household as unknown as HouseholdProjectionProfile) ?? null}
       initialProjections={projections}
+      hasRealEstate={(reCount ?? 0) > 0}
+      hasBusiness={(bizCount ?? 0) > 0}
     />
   )
 }

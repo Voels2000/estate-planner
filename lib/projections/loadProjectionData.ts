@@ -14,6 +14,7 @@ import type {
   ExpenseRowSelect,
 } from '@/lib/types/planner-rows'
 import type { YearRow } from '@/lib/calculations/projection-complete'
+import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 export type ProjectionOverrides = Record<string, string | number | null>
 
@@ -27,6 +28,12 @@ export function parseProjectionOverrides(
   }
   if (sp.has('growth_rate_retirement')) {
     overrides.growth_rate_retirement = Number(sp.get('growth_rate_retirement'))
+  }
+  if (sp.has('real_estate_growth')) {
+    overrides.real_estate_growth = Number(sp.get('real_estate_growth'))
+  }
+  if (sp.has('business_growth')) {
+    overrides.business_growth = Number(sp.get('business_growth'))
   }
   if (sp.has('person1_retirement_age')) {
     overrides.person1_retirement_age = Number(sp.get('person1_retirement_age'))
@@ -59,7 +66,7 @@ const HOUSEHOLD_SELECT = `
         has_spouse, person2_name, person2_birth_year, person2_retirement_age,
         person2_ss_claiming_age, person2_longevity_age, person2_ss_pia,
         filing_status, state_primary, state_secondary, inflation_rate,
-        growth_rate_accumulation, growth_rate_retirement,
+        growth_rate_accumulation, growth_rate_retirement, growth_assumptions,
         deduction_mode, custom_deduction_amount
       `
 
@@ -179,6 +186,7 @@ export async function loadProjectionData(
 
   const rows = computeCompleteProjection({
     household,
+    growthAssumptions: parseGrowthAssumptions(household.growth_assumptions),
     assets: (assets ?? []) as AssetRowSelect[],
     liabilities: (liabilities ?? []) as LiabilityRowSelect[],
     income: (income ?? []) as unknown as IncomeRowSelect[],
