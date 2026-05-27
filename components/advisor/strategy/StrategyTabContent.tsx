@@ -35,6 +35,15 @@ interface StrategyTabContentProps {
   inlineStrategyId: string | null
   onInlineExpand: (catalogId: string) => void
   inlinePanelProps: InlineStrategyPanelBundle
+  impactData: {
+    currentGrossEstate: number
+    currentFederalTax: number
+    currentStateTax: number
+    currentOutsideEstate: number
+    projectedFederalTax: number
+    projectedStateTax: number
+    projectedOutsideEstate: number
+  }
 }
 
 export function StrategyTabContent({
@@ -58,6 +67,7 @@ export function StrategyTabContent({
   inlineStrategyId,
   onInlineExpand,
   inlinePanelProps,
+  impactData,
 }: StrategyTabContentProps) {
   const metrics = useMemo(
     () =>
@@ -87,31 +97,34 @@ export function StrategyTabContent({
         />
       </StrategyStep>
 
-      <StrategyStep
-        step={2}
-        title="Opportunities"
-        subtitle="Strategies available to model for this client"
-      >
-        <OpportunitiesPanel
-          metrics={metrics}
-          hasRunModules={hasRunStrategyModules}
-          onRunStrategyModules={onRunStrategyModules}
-          inlineStrategyId={inlineStrategyId}
-          onInlineExpand={onInlineExpand}
-          inlinePanelProps={inlinePanelProps}
-          strategyLineItems={strategyLineItems}
-        />
-      </StrategyStep>
+      <div id="strategy-opportunities">
+        <StrategyStep
+          step={2}
+          title="Opportunities"
+          subtitle="Strategies available to model for this client"
+        >
+          <OpportunitiesPanel
+            metrics={metrics}
+            hasRunModules={hasRunStrategyModules}
+            onRunStrategyModules={onRunStrategyModules}
+            inlineStrategyId={inlineStrategyId}
+            onInlineExpand={onInlineExpand}
+            inlinePanelProps={inlinePanelProps}
+            strategyLineItems={strategyLineItems}
+          />
+        </StrategyStep>
+      </div>
 
       <StrategyStep
         step={3}
-        title="Recommendations"
-        subtitle="Strategies sent to client and their response"
+        title="Recommendations & Impact"
+        subtitle="Tax effect of strategies sent to client"
       >
         <RecommendationsPanel
           strategyLineItems={strategyLineItems}
           strategyQuestions={strategyQuestions}
           onAddRecommendation={onAddRecommendation}
+          impactData={impactData}
         />
       </StrategyStep>
 

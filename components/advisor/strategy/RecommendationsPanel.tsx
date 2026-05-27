@@ -3,6 +3,7 @@
 import type { AdvisorStrategyLineItemSummary } from '@/lib/estate/strategyLedger'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { AddRecommendationButton } from '@/components/advisor/strategy/AddRecommendationButton'
+import { StrategyImpactPanel } from '@/components/advisor/strategy/StrategyImpactPanel'
 
 const MONEY = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -74,12 +75,22 @@ interface RecommendationsPanelProps {
   strategyLineItems: AdvisorStrategyLineItemSummary[]
   strategyQuestions?: StrategyQuestionNotification[]
   onAddRecommendation: () => void
+  impactData: {
+    currentGrossEstate: number
+    currentFederalTax: number
+    currentStateTax: number
+    currentOutsideEstate: number
+    projectedFederalTax: number
+    projectedStateTax: number
+    projectedOutsideEstate: number
+  }
 }
 
 export function RecommendationsPanel({
   strategyLineItems,
   strategyQuestions = [],
   onAddRecommendation,
+  impactData,
 }: RecommendationsPanelProps) {
   const advisorRows = strategyLineItems.filter((r) => r.source_role === 'advisor')
   const pendingRows = advisorRows.filter((r) => !r.consumer_accepted && !r.consumer_rejected)
@@ -88,6 +99,12 @@ export function RecommendationsPanel({
 
   return (
     <div className="space-y-4">
+      <StrategyImpactPanel
+        {...impactData}
+        pendingCount={pendingRows.length}
+        acceptedCount={acceptedRows.length}
+      />
+
       {strategyQuestions.length > 0 && (
         <div className="mb-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">

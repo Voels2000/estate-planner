@@ -11,8 +11,6 @@ import { StrategyTabContent } from '@/components/advisor/strategy/StrategyTabCon
 import type { InlineStrategyPanelBundle } from '@/components/advisor/strategy/InlineStrategyPanel'
 import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import { ClientViewShellProps } from '../_client-view-shell'
-import SLATILITPanel from '@/components/advisor/SLATILITPanel'
-import AdvancedStrategyPanel from '@/components/advisor/AdvancedStrategyPanel'
 import CompositeOverlay from '@/components/advisor/CompositeOverlay'
 import StrategyHorizonTable from '@/components/shared/StrategyHorizonTable'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
@@ -67,11 +65,25 @@ export default function StrategyTab({
       ? Math.min(100, (Math.min(grossEstate, federalExemption) / federalExemption) * 100)
       : null
   const unusedExemptionAmount = Math.max(0, federalExemption - grossEstate)
+  const impactData = {
+    currentGrossEstate: Number(advisorHorizons?.today.grossEstate ?? 0),
+    currentFederalTax: Number(advisorHorizons?.today.federalTaxEstimate ?? 0),
+    currentStateTax: Number(advisorHorizons?.today.stateTax ?? 0),
+    currentOutsideEstate:
+      Number(advisorHorizons?.today.outsideCertainProbableTotal ?? 0) +
+      Number(advisorHorizons?.today.outsideIllustrativeTotal ?? 0),
+    projectedFederalTax: Number(advisorHorizonsProjected?.today.federalTaxEstimate ?? 0),
+    projectedStateTax: Number(advisorHorizonsProjected?.today.stateTax ?? 0),
+    projectedOutsideEstate:
+      Number(advisorHorizonsProjected?.today.outsideCertainProbableTotal ?? 0) +
+      Number(advisorHorizonsProjected?.today.outsideIllustrativeTotal ?? 0),
+  }
 
   function scrollToStrategyModules() {
-    setAdvancedOpen(true)
-    setSlatIlitOpen(true)
-    advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.querySelector('#strategy-opportunities')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }
   const rawLawScenario = scenario?.law_scenario as string | undefined
   const lawScenario: EstateScenario =
@@ -83,13 +95,10 @@ export default function StrategyTab({
   const rothBalance = Number(scenario?.roth_balance ?? 0)
   const router = useRouter()
   const [inlineStrategyId, setInlineStrategyId] = useState<string | null>(null)
-  const [slatIlitOpen, setSlatIlitOpen] = useState(true)
-  const [advancedOpen, setAdvancedOpen] = useState(true)
   const [compositeOpen, setCompositeOpen] = useState(true)
   const [combinedMode, setCombinedMode] = useState<'actual' | 'projected'>('actual')
   const [monteCarloAssumptionsOpen, setMonteCarloAssumptionsOpen] = useState(false)
   const [monteCarloOpen, setMonteCarloOpen] = useState(true)
-  const advancedSectionRef = useRef<HTMLElement>(null)
   const [activeAssumptions, setActiveAssumptions] = useState<MonteCarloAssumptions | null>(null)
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
   const [advisorLineItems, setAdvisorLineItems] = useState<AdvisorStrategyLineItemSummary[]>([])
@@ -114,9 +123,10 @@ export default function StrategyTab({
   }
 
   function scrollToAddRecommendation() {
-    setAdvancedOpen(true)
-    setSlatIlitOpen(true)
-    advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.querySelector('#strategy-opportunities')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }
 
   // Gifting actuals from RPC
@@ -401,11 +411,17 @@ export default function StrategyTab({
         inlineStrategyId={inlineStrategyId}
         onInlineExpand={handleInlineExpand}
         inlinePanelProps={inlinePanelProps}
+        impactData={impactData}
       />
 
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Combined Strategy View</h2>
+      <section id="strategy-horizon">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-[#0F1B3C]">Strategy Horizon</h2>
+            <p className="text-xs text-gray-400">
+              How the estate evolves over time with current and projected strategies
+            </p>
+          </div>
           <button
             onClick={() => setCompositeOpen((o) => !o)}
             className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -477,59 +493,6 @@ export default function StrategyTab({
               estateViewMode={combinedMode}
             />
           </div>
-        )}
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Irrevocable Trust Strategies</h2>
-          <button
-            onClick={() => setSlatIlitOpen((o) => !o)}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {slatIlitOpen ? '▲ Collapse' : '▼ Expand'}
-          </button>
-        </div>
-        {slatIlitOpen && (
-          <SLATILITPanel
-            householdId={household.id}
-            grossEstate={grossEstate}
-            federalExemption={federalExemption}
-            person1BirthYear={person1BirthYear}
-            person2BirthYear={person2BirthYear}
-          />
-        )}
-      </section>
-
-      <section ref={advancedSectionRef} id="advisor-advanced-strategies">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Advanced Strategies</h2>
-          <button
-            onClick={() => setAdvancedOpen((o) => !o)}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {advancedOpen ? '▲ Collapse' : '▼ Expand'}
-          </button>
-        </div>
-        {advancedOpen && (
-          <AdvancedStrategyPanel
-            householdId={household.id}
-            grossEstate={grossEstate}
-            federalExemption={federalExemption}
-            estimatedFederalTax={estimatedFederalTax}
-            estimatedStateTax={estimatedStateTax}
-            person1BirthYear={person1BirthYear}
-            person2BirthYear={person2BirthYear}
-            filingStatus={filingStatus}
-            giftingActuals={giftingActuals}
-            advisorHorizons={advisorHorizons}
-            annualRMD={annualRMD}
-            preIRABalance={preIRABalance}
-            rothBalance={rothBalance}
-            onRecommend={async () => {
-              await loadConsumerData()
-            }}
-          />
         )}
       </section>
 
