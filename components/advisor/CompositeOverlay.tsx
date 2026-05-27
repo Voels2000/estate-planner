@@ -74,13 +74,7 @@ export default function CompositeOverlay({
   advisorHorizonsProjected,
   estateViewMode = 'actual',
 }: CompositeOverlayProps) {
-  const [mode, setMode] = useState<'custom' | 'recommendations' | '30m' | '100m'>('custom')
-  const [customStrategies, setCustomStrategies] = useState<StrategyLayer[]>([
-    { name: 'Annual Gifting', estateReduction: 0, assetSource: 'cash' },
-    { name: 'Credit Shelter Trust', estateReduction: 0, assetSource: 'investment_portfolio' },
-    { name: 'SLAT', estateReduction: 0, assetSource: 'real_estate' },
-    { name: 'ILIT Death Benefit', estateReduction: 0, assetSource: 'life_insurance' },
-  ])
+  const [mode, setMode] = useState<'recommendations' | '30m' | '100m'>('recommendations')
   const [recommendedItems, setRecommendedItems] = useState<Array<{
     id: string
     strategy_source: string
@@ -135,9 +129,7 @@ export default function CompositeOverlay({
       ? build30MArchetype(federalExemption)
       : mode === '100m'
         ? build100MArchetype(federalExemption)
-        : mode === 'recommendations'
-          ? { grossEstate, strategies: recommendedStrategies, federalExemption }
-        : { grossEstate, strategies: customStrategies.filter((s) => s.estateReduction > 0), federalExemption }
+        : { grossEstate, strategies: recommendedStrategies, federalExemption }
 
   const result = validateStrategyComposability(
     activeConfig.grossEstate,
@@ -162,8 +154,7 @@ export default function CompositeOverlay({
         <h3 className="text-sm font-medium text-gray-700 mb-3">Composite Strategy View</h3>
         <div className="flex gap-2 flex-wrap">
           {[
-            { id: 'custom' as const, label: 'This Household' },
-            ...(householdId ? [{ id: 'recommendations' as const, label: 'From Recommendations' }] : []),
+            { id: 'recommendations' as const, label: 'From Recommendations' },
             { id: '30m' as const, label: '$30M Archetype' },
             { id: '100m' as const, label: '$100M Archetype' },
           ].map((m) => (
@@ -181,35 +172,6 @@ export default function CompositeOverlay({
           ))}
         </div>
       </div>
-
-      {/* Custom strategy inputs */}
-      {mode === 'custom' && (
-        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-          <h4 className="text-sm font-semibold text-gray-800">Enter Strategy Reductions</h4>
-          <p className="text-xs text-gray-500">
-            Enter the estate reduction amount for each strategy active for this household. Leave at 0 to exclude
-            from composite.
-          </p>
-          <div className="space-y-3">
-            {customStrategies.map((s, i) => (
-              <div key={i} className="grid grid-cols-3 gap-3 items-center">
-                <span className="text-sm text-gray-700">{s.name}</span>
-                <input
-                  type="number"
-                  placeholder="Estate reduction ($)"
-                  value={s.estateReduction || ''}
-                  onChange={(e) => {
-                    const updated = [...customStrategies]
-                    updated[i] = { ...updated[i], estateReduction: Number(e.target.value) }
-                    setCustomStrategies(updated)
-                  }}
-                  className="col-span-2 border border-gray-200 rounded px-3 py-1.5 text-sm"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {mode === 'recommendations' && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
@@ -231,9 +193,9 @@ export default function CompositeOverlay({
           )}
           {!isLoadingRecommendations && !recommendationsError && recommendedItems.length === 0 && (
             <div className="text-center py-6">
-              <p className="text-sm text-gray-500">No advisor recommendations yet.</p>
+              <p className="text-sm text-gray-500">No recommendations sent yet.</p>
               <p className="text-xs text-gray-400 mt-1">
-                Use the strategy panels above and mark items as recommended.
+                Model a strategy in Step 2 above and mark it as recommended to see its composite estate impact here.
               </p>
             </div>
           )}

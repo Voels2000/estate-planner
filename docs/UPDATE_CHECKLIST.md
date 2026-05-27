@@ -124,6 +124,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] `isSent` from advisor `strategy_line_items`; Combined Strategy / panels below unchanged
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
+## Advisor portal UX-5b — CompositeOverlay remove manual entry (2026-05-26)
+
+- [x] Remove `custom` mode: `customStrategies`, "This Household" button, manual form
+- [x] Default mode `recommendations`; modes `recommendations` | `30m` | `100m`
+- [x] Empty state references Step 2 inline modeling
+- [x] `StrategyHorizonTable`, recommendations API, archetypes, boundary snapshot unchanged
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
+
 ## Advisor portal ENG-1 — Estate/Tax strategy inclusion audit (2026-05-26)
 
 - [x] Audit: composition RPC `source_role` limitation documented; strategyMappers actual set confirmed

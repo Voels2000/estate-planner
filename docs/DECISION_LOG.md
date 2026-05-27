@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (ENG-1 estate/tax inclusion audit; UX-4 inline modeling; UX-3 Strategy tab)
+# Last updated: 2026-05-26 (UX-5b CompositeOverlay; ENG-1 estate/tax inclusion audit; UX-4 inline modeling)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — UX-5b: Remove CompositeOverlay manual entry mode
+
+**Decision:** Remove `custom` ("Enter Strategy Reductions") mode from `CompositeOverlay`. Default to `recommendations`, which reads `strategy_line_items` via the existing read API. Keep `30m` and `100m` archetype modes for illustration.
+
+**Reasoning:** UX-4 inline modeling in Step 2 is the single entry point for client-specific strategies. Manual dollar entry duplicated that workflow, could drift from saved recommendations, and had no DB persistence. CompositeOverlay’s role is visualization of recommended strategies, not a second entry form.
+
+**Alternatives considered:** Keep manual mode as fallback for households without recommendations (rejected — empty state + Step 2 modeling is sufficient). Wire manual amounts into `strategy_line_items` (rejected — out of scope, wrong data contract).
 
 ---
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-26 (ENG-1 estate/tax inclusion audit; UX-4 inline modeling; Sprint 17 go-live prep)
+# Last updated: 2026-05-26 (UX-5b CompositeOverlay; ENG-1 estate/tax inclusion audit; Sprint 17 go-live prep)
 
 ---
 
@@ -96,6 +96,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Advisor portal UX-3** | `[x]` | Strategy tab three-step workflow, severity system, opportunities + recommendations panels — SCHEMA_CHANGELOG UX-3 |
 | **Advisor portal UX-4** | `[x]` | Inline Opportunities modeling — `InlineStrategyPanel`, `catalogToPanel.ts`, 11-strategy catalog — SCHEMA_CHANGELOG UX-4 |
 | **Advisor portal ENG-1** | `[x]` | Estate/Tax strategy inclusion parity via horizon actual set (no RPC change) — SCHEMA_CHANGELOG ENG-1 |
+| **Advisor portal UX-5b** | `[x]` | CompositeOverlay: remove manual entry; default `recommendations` mode — SCHEMA_CHANGELOG UX-5b |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
 | **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
 
@@ -156,6 +157,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
+| Advisor portal UX-5b | ✅ | `TBD` |
 
 **Success criteria**
 - [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off

@@ -319,6 +319,20 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - `strategyMappers.ts` pre-separates actual vs pending sets correctly; horizons consume those sets.
 - ENG-1 uses horizon-derived values for advisor parity without changing RPC contract.
 
+### CompositeOverlay modes (UX-5b)
+
+Manual entry (`custom` mode) removed. Default mode is now `recommendations`, which loads from `strategy_line_items` via `/api/advisor/strategy-recommendations-read`. Available modes: `recommendations` | `30m` | `100m`. Strategy entry is exclusively through the inline modeling panels in Step 2 (UX-4 — `SLATILITPanel` / `AdvancedStrategyPanel` via `InlineStrategyPanel`). Archetype modes (`30m`, `100m`) and the `advisorHorizons` boundary snapshot panel are unchanged. `StrategyHorizonTable` is a separate sibling with no shared state.
+
+### Advisor portal end-to-end workflow (post UX-5b)
+
+Coherent advisor path with no duplicate entry points or dead-end panels:
+
+1. **Overview** — `PlanStatusCard` plan readiness; critical gaps above the fold with Discussed / Deferred / Resolved actions.
+2. **Strategy** — Severity-ordered alert banners (liquidity shortfall → exemption → GRAT margin); Step 1 Situation metrics; Step 2 Opportunities catalog with inline **Model this ↓** (`InlineStrategyPanel`); Step 3 Recommendations & Impact (`StrategyImpactPanel` before/after tax delta); Strategy Horizon (`StrategyHorizonTable` + `CompositeOverlay` in recommendations mode); Monte Carlo.
+3. **Send recommendation** — Inline panel writes `strategy_line_items` (`source_role='advisor'`); `router.refresh()` updates Step 3; `CompositeOverlay` picks up the row; consumer sees `StrategyRecommendationPanel`.
+4. **Client accepts** — Row joins actual horizon set; Estate and Tax tabs reflect accepted strategies via `advisorHorizons.today` (ENG-1).
+5. **Tax, Domicile, Estate, Retirement** — Proactive alert banners for time-sensitive issues on each tab.
+
 ---
 
 ## Monte Carlo Workflow

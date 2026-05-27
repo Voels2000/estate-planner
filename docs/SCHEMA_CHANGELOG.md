@@ -8,6 +8,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## UX-5b — Remove manual strategy reductions from CompositeOverlay (2026-05-26, no migration)
+
+**Code only (`components/advisor/CompositeOverlay.tsx`; zero consumer routes):**
+
+- Removed `custom` mode: `customStrategies` state, "This Household" button, "Enter Strategy Reductions" form.
+- Default mode: `recommendations` (loads via `/api/advisor/strategy-recommendations-read`).
+- Mode type narrowed: `recommendations` | `30m` | `100m`.
+- Empty state copy references Step 2 inline modeling.
+- Unchanged: recommendations fetch/list, `30m`/`100m` archetypes, `advisorHorizons` boundary snapshot, `StrategyHorizonTable` sibling.
+
+**No API changes. No migrations.**
+
+---
+
 ## ENG-1 — Estate/Tax strategy inclusion audit (2026-05-26, no migration)
 
 **Code only (advisor Estate/Tax parity; zero consumer route changes):**
