@@ -121,7 +121,14 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 - [x] Catalog: `annual_gifting` id; 11 strategies; `catalogToPanel.ts` (CST chip `credit_shelter_trust`)
 - [x] `InlineStrategyPanel` + row expand; `inlinePanelProps` mirrors full-width SLAT/ILIT + Advanced props
 - [x] `initialActivePanel` / `onRecommend` on panels (additive); `ModelStrategyButton` removed
-- [x] `isSent` from advisor `strategy_line_items`; Combined Strategy / panels below unchanged
+- [x] `isSent` from advisor `strategy_line_items`; full-width panels removed in UX-5
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
+
+## Advisor portal UX-5 — Strategy tab restructure (2026-05-26)
+
+- [x] Remove full-width SLAT/ILIT + Advanced panels below three-step area; scroll → `#strategy-opportunities`
+- [x] Strategy Horizon section below Step 3; `StrategyImpactPanel` in Recommendations & Impact
+- [x] Horizon impact uses `outsideCertainProbableTotal + outsideIllustrativeTotal` + `stateTax`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · PERF_SPRINT_P1
 
 ## Advisor portal UX-5b — CompositeOverlay remove manual entry (2026-05-26)

@@ -72,6 +72,10 @@ See [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run in Sup
 
 **No perf change** — reuses existing panel components; inline instances mount on expand only (one row at a time). `router.refresh()` on recommend is intentional for Step 3 parity with server props.
 
+## Advisor portal UX-5 — Strategy tab restructure (2026-05-26)
+
+**Slight DOM reduction** — removed two full-width panel mounts below three-step workflow; `StrategyImpactPanel` derives from already-loaded `advisorHorizons` / `advisorHorizonsProjected` (no new fetches).
+
 ## Advisor portal UX-5b — CompositeOverlay remove manual entry (2026-05-26)
 
 **No perf change** — removes unused local state and form render path; recommendations fetch on mount unchanged (`useEffect` when `mode === 'recommendations'`).

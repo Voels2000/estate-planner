@@ -33,6 +33,7 @@
 | Advisor tax parity (Tax/Domicile/Strategy) | ✅ | `cb04d64` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
+| Advisor portal UX-5 | ✅ | `d6e5c5e` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 
@@ -51,6 +52,19 @@
 No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 
 **Architecture detail:** [MASTER_ARCHITECTURE.md § Advisor portal end-to-end workflow](./MASTER_ARCHITECTURE.md)
+
+---
+
+## Advisor portal UX-5 ✅ (2026-05-26)
+
+| Area | Outcome |
+|------|---------|
+| **Removed** | Full-width SLAT/ILIT + Advanced panels below three-step workflow |
+| **Step 3** | Recommendations & Impact + `StrategyImpactPanel` (Current / Projected / With Accepted) |
+| **Horizon** | Renamed Strategy Horizon; section below Step 3; scroll → `#strategy-opportunities` |
+| **Impact data** | `outsideCertainProbableTotal + outsideIllustrativeTotal`, `stateTax` from horizons |
+
+**Detail:** [SCHEMA_CHANGELOG.md § UX-5](./SCHEMA_CHANGELOG.md)
 
 ---
 

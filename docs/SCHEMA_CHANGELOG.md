@@ -8,6 +8,19 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## UX-5 — Strategy tab restructure (2026-05-26, no migration)
+
+**Code only (advisor Strategy tab layout; zero consumer routes):**
+
+- Removed redundant full-width `SLATILITPanel` + `AdvancedStrategyPanel` below the three-step workflow; scroll helpers target `#strategy-opportunities` (Step 2).
+- Renamed "Combined Strategy View" → **Strategy Horizon** (`id="strategy-horizon"`); section repositioned below Step 3.
+- **Step 3** → "Recommendations & Impact"; `StrategyImpactPanel` at top (Current / Projected / With Accepted tax comparison from `advisorHorizons` + `advisorHorizonsProjected`; `outsideCertainProbableTotal + outsideIllustrativeTotal`, `stateTax`).
+- `id="strategy-opportunities"` on Step 2 wrapper for scroll target.
+
+**No engine changes. No API changes. No migrations.** Inline modeling (UX-4) is the sole strategy entry path.
+
+---
+
 ## UX-5b — Remove manual strategy reductions from CompositeOverlay (2026-05-26, no migration)
 
 **Code only (`components/advisor/CompositeOverlay.tsx`; zero consumer routes):**

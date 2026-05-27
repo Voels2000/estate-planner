@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-26 (UX-5b CompositeOverlay; ENG-1 estate/tax inclusion audit; UX-4 inline modeling)
+# Last updated: 2026-05-26 (UX-5b CompositeOverlay; UX-5 Strategy tab; ENG-1; UX-4 inline modeling)
 
 ---
 
@@ -9,6 +9,16 @@
 This document records significant product, UX, and strategy decisions — what was decided, why, and what alternatives were considered. It exists so decisions made in one session don't get relitigated in the next. If a decision is here, it was made deliberately. If you want to revisit it, add a new entry rather than editing the old one.
 
 **How to add an entry:** Date · Topic · Decision · Reasoning · Alternatives considered.
+
+---
+
+### May 2026 — UX-5: Strategy tab layout — horizon below recommendations, impact panel
+
+**Decision:** Remove redundant full-width SLAT/ILIT and Advanced panels below the three-step workflow; rename Combined Strategy View to **Strategy Horizon** and place it after Step 3; add `StrategyImpactPanel` (before/after tax delta) at the top of Step 3. Scroll targets point to Step 2 Opportunities (`#strategy-opportunities`).
+
+**Reasoning:** UX-4 inline modeling made full-width panels duplicate entry points. Advisors need impact visibility at the moment of recommendation review, then the multi-horizon table — not modeling forms repeated below the fold.
+
+**Alternatives considered:** Keep full-width panels as fallback (rejected after UX-4 — inline panels are sufficient). Single combined section without impact panel (rejected — advisors asked for tax delta before horizon table).
 
 ---
 

@@ -95,6 +95,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | **Advisor portal UX-2** | `[x]` | Brand, tab-scoped load, PlanStatusCard, gap statuses, metrics cache, estate/strategy alerts — see SCHEMA_CHANGELOG UX-2 |
 | **Advisor portal UX-3** | `[x]` | Strategy tab three-step workflow, severity system, opportunities + recommendations panels — SCHEMA_CHANGELOG UX-3 |
 | **Advisor portal UX-4** | `[x]` | Inline Opportunities modeling — `InlineStrategyPanel`, `catalogToPanel.ts`, 11-strategy catalog — SCHEMA_CHANGELOG UX-4 |
+| **Advisor portal UX-5** | `[x]` | Strategy tab restructure — impact panel, Strategy Horizon, remove redundant panels — SCHEMA_CHANGELOG UX-5 |
 | **Advisor portal ENG-1** | `[x]` | Estate/Tax strategy inclusion parity via horizon actual set (no RPC change) — SCHEMA_CHANGELOG ENG-1 |
 | **Advisor portal UX-5b** | `[x]` | CompositeOverlay: remove manual entry; default `recommendations` mode — SCHEMA_CHANGELOG UX-5b |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
@@ -156,6 +157,7 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 | Advisor portal UX-2 | ✅ | `1ba93eb` |
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
+| Advisor portal UX-5 | ✅ | `d6e5c5e` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
 | Advisor portal UX-5b | ✅ | `4220c0a` |
 
