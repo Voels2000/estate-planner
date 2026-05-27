@@ -34,7 +34,7 @@
 | Advisor portal UX-3 | ✅ | `06edb1a` |
 | Advisor portal UX-4 | ✅ | `3c5c0ef` |
 | Advisor portal ENG-1 | ✅ | `b5cc8da` |
-| Advisor portal UX-5b | ✅ | `TBD` |
+| Advisor portal UX-5b | ✅ | `4220c0a` |
 
 ---
 
