@@ -33,6 +33,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Profile layout redesign — two-column people (2026-05-27, no migration)
+
+**Code only:** `app/(dashboard)/profile/_profile-client.tsx` — layout/typography only.
+
+- Page heading navy `text-[#0F1B3C]`; form container `max-w-2xl`
+- **Household** card (was “Personal Information”) — Full Name, Email, Household Name
+- **People** — Person 1 / Person 2 columns when `hasSpouse`; live headers from `person1Name` / `person2Name`; spouse checkbox below grid
+- **Household Planning** (was “Tax & Location”) — filing status + primary state in one row; merged Scenarios/Allocation callout
+- Welcome banner, `ProfileRequiredBanner`, wizard intro + wizard household card unchanged
+- Save: `PATCH /api/consumer/profile` unchanged; `ProfileSavePayload` unchanged
+
+**No schema change.**
+
+---
+
 ## PROF-1/2 — Profile cleanup: assumption UI homes (2026-05-27, no migration)
 
 **Code only (four commits):**

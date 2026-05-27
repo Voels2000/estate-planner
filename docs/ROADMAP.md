@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (pre-launch RLS on prod; PROF-1/2; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (profile layout; pre-launch RLS on prod; PROF-1/2; Sprint 17 go-live prep)
 
 ---
 
@@ -34,6 +34,12 @@
 - `[x]` PROF-2 — Risk tolerance on Asset Allocation; inflation on Scenarios; APIs extended
 - `[x]` PROF-3 — Outdated engine copy (Complete footer, ProjectionAssumptions)
 - `[x]` DOC-1 — Projection Engine Assumption Reference in master docs
+
+### Profile layout — two-column people (2026-05-27) ✅
+
+- `[x]` `refactor(profile)` — `_profile-client.tsx` layout: `max-w-2xl`, `ProfileSectionHeader`, Household / People / Household Planning sections
+- `[x]` Live column headers from `person1Name` / `person2Name`; spouse toggle below grid; merged planning callout
+- `[x]` No field, validation, save path, or API changes
 
 ## ⚠️ Go-live gate
 

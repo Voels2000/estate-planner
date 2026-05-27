@@ -122,8 +122,10 @@ Pick **one** module you already use (Assets is simplest).
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
-| 3.1 | Go to **Profile** (`/profile`) | Form loads with your household data | ☐ |
-| 3.2 | Change a harmless field (e.g. note or retirement age), **Save** | Success, no error | ☐ |
+| 3.1 | Go to **Profile** (`/profile`) | Form loads with your household data; sections **Household**, person column(s), **Household Planning**; no growth/inflation/risk inputs | ☐ |
+| 3.1b | Type your name in **Your Name** | Person column header updates live (not stuck on “You”) | ☐ |
+| 3.1c | Toggle **Include spouse / partner** | Second column appears on desktop (`sm+`); stacks on narrow viewport | ☐ |
+| 3.2 | Change a harmless field (e.g. retirement age), **Save** | Success, no error | ☐ |
 | 3.3 | Refresh Dashboard | Still loads; no 500 | ☐ |
 
 ---

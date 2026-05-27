@@ -262,8 +262,8 @@ export function ProfileClient({
         />
       )}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Your Profile</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <h1 className="mb-1 text-2xl font-bold text-[#0F1B3C]">Your Profile</h1>
+        <p className="text-sm text-gray-500">
           Complete your household information for accurate projections.
         </p>
       </div>
@@ -313,9 +313,7 @@ export function ProfileClient({
         )}
 
         <Card className="rounded-2xl p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Personal Information
-          </h2>
+          <ProfileSectionHeader>Household</ProfileSectionHeader>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Full Name" required>
               <input type="text" required value={fullName}
@@ -335,189 +333,245 @@ export function ProfileClient({
           </div>
         </Card>
 
-        <Card className="rounded-2xl p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Your Information
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Your Name" required>
-              <input type="text" required value={person1Name}
-                onChange={(e) => setPerson1Name(e.target.value)}
-                className={inputClass} placeholder="Jane" />
-            </Field>
-            <Field label="Birth Year" required>
-              <input
-                id="profile-field-person1-birth-year"
-                type="number"
-                min="1920"
-                max="2005"
-                required
-                value={person1BirthYear}
-                onChange={(e) => setPerson1BirthYear(e.target.value)}
-                className={inputClass}
-                placeholder="1970"
-              />
-            </Field>
-            <Field label="Retirement Age">
-              <input type="number" min="50" max="80" value={person1RetirementAge}
-                onChange={(e) => setPerson1RetirementAge(e.target.value)}
-                className={inputClass} placeholder="65" />
-            </Field>
-            <Field label="Social Security Claiming Age">
-              <input type="number" min="62" max="70" value={person1SSClaimingAge}
-                onChange={(e) => setPerson1SSClaimingAge(e.target.value)}
-                className={inputClass} placeholder="67" />
-            </Field>
-            <Field label="Longevity Age (life expectancy)">
-              <input type="number" min="70" max="110" value={person1LongevityAge}
-                onChange={(e) => setPerson1LongevityAge(e.target.value)}
-                className={inputClass} placeholder="90" />
-            </Field>
-            <div>
-              <label className={`${formLabelClass} mb-1 block`}>
-                Your Monthly SS Benefit at Full Retirement Age (PIA)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={person1SSPia}
-                  onChange={(e) => setPerson1SSPia(e.target.value)}
-                  className={`${formControlClass} pl-7`}
-                  placeholder="e.g. 2400"
-                />
+        <div className="space-y-4">
+          <div
+            className={`grid gap-4 ${
+              hasSpouse ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+            }`}
+          >
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <ProfileSectionHeader>
+                {person1Name.trim() || 'You'}
+              </ProfileSectionHeader>
+              <div className="space-y-4">
+                <Field label="Your Name" required>
+                  <input
+                    type="text"
+                    required
+                    value={person1Name}
+                    onChange={(e) => setPerson1Name(e.target.value)}
+                    className={inputClass}
+                    placeholder="Jane"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Birth Year" required>
+                    <input
+                      id="profile-field-person1-birth-year"
+                      type="number"
+                      min="1920"
+                      max="2005"
+                      required
+                      value={person1BirthYear}
+                      onChange={(e) => setPerson1BirthYear(e.target.value)}
+                      className={inputClass}
+                      placeholder="1970"
+                    />
+                  </Field>
+                  <Field label="Retirement Age">
+                    <input
+                      type="number"
+                      min="50"
+                      max="80"
+                      value={person1RetirementAge}
+                      onChange={(e) => setPerson1RetirementAge(e.target.value)}
+                      className={inputClass}
+                      placeholder="65"
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Social Security Claiming Age">
+                    <input
+                      type="number"
+                      min="62"
+                      max="70"
+                      value={person1SSClaimingAge}
+                      onChange={(e) => setPerson1SSClaimingAge(e.target.value)}
+                      className={inputClass}
+                      placeholder="67"
+                    />
+                  </Field>
+                  <Field label="Longevity Age (life expectancy)">
+                    <input
+                      type="number"
+                      min="70"
+                      max="110"
+                      value={person1LongevityAge}
+                      onChange={(e) => setPerson1LongevityAge(e.target.value)}
+                      className={inputClass}
+                      placeholder="90"
+                    />
+                  </Field>
+                </div>
+                <div>
+                  <label className={`${formLabelClass} mb-1 block`}>
+                    Your Monthly SS Benefit at Full Retirement Age (PIA)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={person1SSPia}
+                      onChange={(e) => setPerson1SSPia(e.target.value)}
+                      className={`${formControlClass} pl-7`}
+                      placeholder="e.g. 2400"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-neutral-400">
+                    Enter your PIA — the monthly amount you&apos;d receive if you claim at your Full
+                    Retirement Age. Find this on your Social Security statement at ssa.gov/myaccount.
+                    The projection adjusts this amount based on your chosen claiming age.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-neutral-400 mt-1">
-                Enter your PIA — the monthly amount you&apos;d receive if you claim at your Full Retirement Age.
-                Find this on your Social Security statement at ssa.gov/myaccount.
-                The projection adjusts this amount based on your chosen claiming age.
-              </p>
             </div>
-          </div>
-        </Card>
 
-        <Card className="rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <input id="hasSpouse" type="checkbox" checked={hasSpouse}
+            {hasSpouse && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <ProfileSectionHeader>
+                  {person2Name.trim() || 'Spouse / Partner'}
+                </ProfileSectionHeader>
+                <div className="space-y-4">
+                  <Field label="Spouse Name">
+                    <input
+                      type="text"
+                      value={person2Name}
+                      onChange={(e) => setPerson2Name(e.target.value)}
+                      className={inputClass}
+                      placeholder="John"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Spouse Birth Year">
+                      <input
+                        type="number"
+                        min="1920"
+                        max="2005"
+                        value={person2BirthYear}
+                        onChange={(e) => setPerson2BirthYear(e.target.value)}
+                        className={inputClass}
+                        placeholder="1968"
+                      />
+                    </Field>
+                    <Field label="Spouse Retirement Age">
+                      <input
+                        type="number"
+                        min="50"
+                        max="80"
+                        value={person2RetirementAge}
+                        onChange={(e) => setPerson2RetirementAge(e.target.value)}
+                        className={inputClass}
+                        placeholder="65"
+                      />
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Spouse SS Claiming Age">
+                      <input
+                        type="number"
+                        min="62"
+                        max="70"
+                        value={person2SSClaimingAge}
+                        onChange={(e) => setPerson2SSClaimingAge(e.target.value)}
+                        className={inputClass}
+                        placeholder="67"
+                      />
+                    </Field>
+                    <Field label="Spouse Longevity Age">
+                      <input
+                        type="number"
+                        min="70"
+                        max="110"
+                        value={person2LongevityAge}
+                        onChange={(e) => setPerson2LongevityAge(e.target.value)}
+                        className={inputClass}
+                        placeholder="88"
+                      />
+                    </Field>
+                  </div>
+                  <div>
+                    <label className={`${formLabelClass} mb-1 block`}>
+                      Spouse Monthly SS Benefit at Full Retirement Age (PIA)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={person2SSPia}
+                        onChange={(e) => setPerson2SSPia(e.target.value)}
+                        className={`${formControlClass} pl-7`}
+                        placeholder="e.g. 1800"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      Spouse&apos;s PIA — the monthly amount at their Full Retirement Age.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 px-1">
+            <input
+              id="hasSpouse"
+              type="checkbox"
+              checked={hasSpouse}
               onChange={(e) => setHasSpouse(e.target.checked)}
-              className="h-4 w-4 rounded border-neutral-300" />
-            <label htmlFor="hasSpouse" className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-              Include Spouse / Partner
+              className="h-4 w-4 rounded border-gray-300 accent-[#0F1B3C]"
+            />
+            <label htmlFor="hasSpouse" className="cursor-pointer text-sm text-gray-700">
+              Include spouse / partner
             </label>
           </div>
-          {hasSpouse && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Spouse Name">
-                <input type="text" value={person2Name}
-                  onChange={(e) => setPerson2Name(e.target.value)}
-                  className={inputClass} placeholder="John" />
-              </Field>
-              <Field label="Spouse Birth Year">
-                <input type="number" min="1920" max="2005" value={person2BirthYear}
-                  onChange={(e) => setPerson2BirthYear(e.target.value)}
-                  className={inputClass} placeholder="1968" />
-              </Field>
-              <Field label="Spouse Retirement Age">
-                <input type="number" min="50" max="80" value={person2RetirementAge}
-                  onChange={(e) => setPerson2RetirementAge(e.target.value)}
-                  className={inputClass} placeholder="65" />
-              </Field>
-              <Field label="Spouse SS Claiming Age">
-                <input type="number" min="62" max="70" value={person2SSClaimingAge}
-                  onChange={(e) => setPerson2SSClaimingAge(e.target.value)}
-                  className={inputClass} placeholder="67" />
-              </Field>
-              <Field label="Spouse Longevity Age">
-                <input type="number" min="70" max="110" value={person2LongevityAge}
-                  onChange={(e) => setPerson2LongevityAge(e.target.value)}
-                  className={inputClass} placeholder="88" />
-              </Field>
-              <div>
-                <label className={`${formLabelClass} mb-1 block`}>
-                  Spouse Monthly SS Benefit at Full Retirement Age (PIA)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={person2SSPia}
-                    onChange={(e) => setPerson2SSPia(e.target.value)}
-                    className={`${formControlClass} pl-7`}
-                    placeholder="e.g. 1800"
-                  />
-                </div>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Spouse&apos;s PIA — the monthly amount at their Full Retirement Age.
-                </p>
-              </div>
-            </div>
-          )}
-        </Card>
+        </div>
 
         <Card className="rounded-2xl p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-            Tax &amp; Location
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Filing Status">
-              <select
-                id="profile-field-filing-status"
-                value={filingStatus}
-                onChange={(e) => setFilingStatus(e.target.value)}
-                className={inputClass}
-              >
-                {FILING_STATUSES.map((s) => (
-                  <option key={s} value={s}>{FILING_STATUS_LABELS[s]}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Primary State">
-              <select
-                id="profile-field-state-primary"
-                value={statePrimary}
-                onChange={(e) => setStatePrimary(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Select state</option>
-                {US_STATES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </Field>
-
-            <div className="sm:col-span-2 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
-              <p className="text-xs font-semibold text-gray-700">Growth &amp; Return Assumptions</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Portfolio growth rates (financial assets), real estate appreciation, business growth,
-                and inflation are configured in{' '}
-                <a href="/scenarios" className="text-[#0F1B3C] underline hover:text-[#C9A84C]">
-                  Scenarios
-                </a>
-                .
-              </p>
-            </div>
-
-            <div className="sm:col-span-2 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
-              <p className="text-xs font-semibold text-gray-700">Risk Profile</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Your risk tolerance and target asset allocation are configured in{' '}
-                <a href="/allocation" className="text-[#0F1B3C] underline hover:text-[#C9A84C]">
-                  Asset Allocation
-                </a>
-                .
-              </p>
+          <ProfileSectionHeader>Household Planning</ProfileSectionHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Filing Status">
+                <select
+                  id="profile-field-filing-status"
+                  value={filingStatus}
+                  onChange={(e) => setFilingStatus(e.target.value)}
+                  className={inputClass}
+                >
+                  {FILING_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {FILING_STATUS_LABELS[s]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Primary State">
+                <select
+                  id="profile-field-state-primary"
+                  value={statePrimary}
+                  onChange={(e) => setStatePrimary(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select state</option>
+                  {US_STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             </div>
 
             <Field label="Tax Deduction Method">
-              <div className="flex gap-2 mt-1">
+              <div className="mt-1 flex gap-2">
                 {(['standard', 'custom', 'none'] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => setDeductionMode(mode)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium transition capitalize ${
+                    className={`rounded-lg px-3 py-2 text-sm font-medium capitalize transition ${
                       deductionMode === mode
                         ? 'bg-[var(--mwm-navy)] text-white shadow-sm'
                         : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
@@ -543,6 +597,36 @@ export function ProfileClient({
                 />
               </Field>
             )}
+
+            <div className="rounded-lg border border-gray-100 bg-gray-50/60 px-4 py-3">
+              <p className="mb-2 text-xs font-semibold text-gray-600">
+                Additional planning settings
+              </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-gray-500">
+                    Growth rates, real estate &amp; business assumptions
+                  </span>
+                  <a
+                    href="/scenarios"
+                    className="shrink-0 text-xs font-medium text-[#0F1B3C] transition-colors hover:text-[#C9A84C]"
+                  >
+                    Scenarios →
+                  </a>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-gray-500">
+                    Risk tolerance &amp; target asset allocation
+                  </span>
+                  <a
+                    href="/allocation"
+                    className="shrink-0 text-xs font-medium text-[#0F1B3C] transition-colors hover:text-[#C9A84C]"
+                  >
+                    Asset Allocation →
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -602,7 +686,7 @@ export function ProfileClient({
           type="submit"
           variant="primary"
           disabled={isSubmitting}
-          className="w-full rounded-lg py-3 text-sm font-medium"
+          className="mt-6 w-full rounded-lg py-3 text-sm font-semibold"
         >
           {isSubmitting ? 'Saving...' : 'Save Profile'}
         </Button>
@@ -612,6 +696,14 @@ export function ProfileClient({
 }
 
 const inputClass = formControlClass
+
+function ProfileSectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 border-l-4 border-[#C9A84C] pl-3">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{children}</p>
+    </div>
+  )
+}
 
 function BooleanToggle({
   label,

@@ -293,6 +293,20 @@ Important:
 
 **What Profile contains (post PROF-1/2):** identity and demographics — names, birth years, retirement/longevity ages, SS claiming ages and PIA, state of domicile, filing status, tax deduction method, onboarding metadata.
 
+**Profile UI layout (2026-05-27, `_profile-client.tsx` only):**
+
+| Section | Label | Contents |
+|---------|--------|----------|
+| Page | — | `max-w-2xl` container; title `text-[#0F1B3C]` |
+| Card 1 | **Household** | Full Name, Email, Household Name (`ProfileSectionHeader` — gold `#C9A84C` left border) |
+| People | Live headers | Person 1 header from `person1Name` (fallback “You”); Person 2 when `hasSpouse` from `person2Name` (fallback “Spouse / Partner”); `grid-cols-1 sm:grid-cols-2` when spouse |
+| Below people | Spouse toggle | Checkbox + “Include spouse / partner” (not a card header) |
+| Card 2 | **Household Planning** | Filing status + primary state (one row); tax deduction method; custom amount when `deductionMode === 'custom'`; unified callout → `/scenarios`, `/allocation` |
+| Conditional | Wizard household card | Unchanged when `showWizardFields` |
+| Untouched | Banners | Welcome banner, `ProfileRequiredBanner`, wizard foundation intro |
+
+Inside each person column: name full width; birth year + retirement age paired; SS claiming + longevity paired; PIA full width with help text. Save: `Button` full width, `PATCH /api/consumer/profile` unchanged.
+
 **What Scenarios contains:** all planning growth assumptions — financial accumulation/retirement, RE/business rates, inflation — plus scenario B/C overrides (retirement timing, SS ages, state).
 
 **What Asset Allocation contains:** risk tolerance, target stocks/bonds/cash mix, benchmark comparison.

@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (pre-launch RLS; security audits; PROF-1/2)
+# Last updated: 2026-05-27 (profile layout; pre-launch RLS; PROF-1/2)
+
+## Profile page layout — two-column people, brand section headers (2026-05-27)
+
+**Decision:** Refactor `/profile` client layout only (`_profile-client.tsx`). `max-w-2xl` form width; gold left-border `ProfileSectionHeader`; sections **Household** (identity), side-by-side **people** columns when `hasSpouse` (`grid-cols-1 sm:grid-cols-2`), **Household Planning** (tax/domicile/deduction). Column headers bind to `person1Name` / `person2Name` live (`trim() || 'You'` / `'Spouse / Partner'`). Spouse toggle sits **below** the person grid (not a card header). Paired fields inside each column (birth year + retirement age; SS claiming + longevity); PIA full width. Single callout links to Scenarios + Asset Allocation. No field, validation, save path, or API changes.
+
+**Reasoning:** PROF-1/2 removed planning-assumption inputs but left a long vertical form; two-column person layout and live names make spouse entry obvious and scannable. Narrower page width avoids sparse 1280px forms.
+
+**Alternatives considered:** Keep separate “Your Information” and spouse cards with header checkbox (rejected — toggle read as section label). Use shared `SectionHeader` primitive (deferred — profile uses local `ProfileSectionHeader` with audit gold `#C9A84C`).
+
+**Docs:** `CONSUMER_FLOWS.md` Profile row; `MASTER_ARCHITECTURE.md` Profile UI layout.
+
+---
 
 ## Pre-launch RLS household scope — six tables (2026-05-27)
 

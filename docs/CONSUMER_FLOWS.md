@@ -106,11 +106,12 @@ Each feature section below uses this shape:
 | **Tier / gate** | Tier 1; **not** profile-gated (this is where users complete the gate) |
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
+| **Layout (2026-05-27)** | `max-w-2xl`; `ProfileSectionHeader` (gold left border). **Household** card (identity). **People:** side-by-side columns when `hasSpouse` (`sm:grid-cols-2`); column headers live from `person1Name` / `person2Name`; spouse checkbox below grid. **Household Planning:** filing + state, deduction, unified callout to Scenarios + Allocation. Welcome banner, required banner, wizard cards unchanged. |
 | **Write APIs** | `PATCH /api/consumer/profile` |
 | **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete and wizard not done → `/onboarding/wizard`; if MVP complete and wizard done → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
 | **Extended fields (OB-1)** | When `onboarding_wizard_completed_at` is null: `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests` |
 | **Key lib** | `lib/estate/profileGate.ts` (`isMinimumViableProfile`), `lib/profile/buildHouseholdPayload.ts` (pass-through preserves `growth_rate_*`, `inflation_rate`, `risk_tolerance` when not sent) |
-| **Cross-links** | Tax & Location → `/scenarios` (growth + inflation), `/allocation` (risk + target mix) |
+| **Cross-links** | Household Planning callout → `/scenarios` (growth + inflation), `/allocation` (risk + target mix) |
 | **E2E** | Implicit via gated-page tests; manual smoke §3 |
 
 **Minimum viable profile** (required for estate planning pages):

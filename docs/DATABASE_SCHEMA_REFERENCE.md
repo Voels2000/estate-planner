@@ -59,7 +59,7 @@ This is a developer reference, not a full SQL DDL dump.
 
 #### `households` — field ownership (post PROF-1/2)
 
-**Edited via Profile:** name fields, birth years, retirement ages, longevity ages, SS claiming ages, PIA amounts, `state_primary`, `filing_status`, `tax_deduction_method`, `custom_deduction_amount`, onboarding metadata (`gross_estate_estimate`, `has_minor_children`, `has_business_interests`).
+**Edited via Profile:** name fields, birth years, retirement ages, longevity ages, SS claiming ages, PIA amounts, `state_primary`, `filing_status`, `tax_deduction_method`, `custom_deduction_amount`, onboarding metadata (`gross_estate_estimate`, `has_minor_children`, `has_business_interests`). UI: `app/(dashboard)/profile/_profile-client.tsx` — Household / People (two-column when `hasSpouse`) / Household Planning; see [CONSUMER_FLOWS.md § Profile](./CONSUMER_FLOWS.md#profile--profile).
 
 **Edited via Scenarios:** `growth_rate_accumulation`, `growth_rate_retirement`, `growth_assumptions` (jsonb), `inflation_rate` (`PATCH /api/consumer/growth-assumptions`).
 

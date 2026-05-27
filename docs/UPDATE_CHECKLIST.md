@@ -162,6 +162,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `ProjectionAssumptions` + Complete footer copy aligned with ENG-2A engine
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE
 
+## Profile layout — two-column people (2026-05-27)
+
+- [x] `_profile-client.tsx` — layout only; no field/state/API changes
+- [x] `max-w-2xl`; navy page title; `ProfileSectionHeader` (gold `#C9A84C` left border)
+- [x] Household / People / Household Planning sections; live `person1Name` / `person2Name` column headers
+- [x] Spouse toggle below person grid; paired fields per column; unified Scenarios + Allocation callout
+- [x] Welcome banner, `ProfileRequiredBanner`, wizard cards untouched
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · CONSUMER_RELEASE_SMOKE_TEST
+
 ## ENG-2 — Growth assumptions (2026-05-27)
 
 - [x] Migrations `20260527130000`–`20260527130300` + staleness bump `20260527130400`
