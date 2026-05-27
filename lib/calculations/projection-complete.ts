@@ -667,6 +667,11 @@ export function computeCompleteProjection(input: CompleteProjectionInput): YearR
   const effectiveRetireRate  = (overrides.growth_rate_retirement   ?? household.growth_rate_retirement   ?? 5) / 100
   const inflationRate        = (household.inflation_rate ?? 3) / 100
 
+  const householdGrowth = (household as { growth_assumptions?: { real_estate?: number; business?: number } })
+    .growth_assumptions
+  const reGrowthRate = (householdGrowth?.real_estate ?? 4.5) / 100
+  const bizGrowthRate = (householdGrowth?.business ?? 7.0) / 100
+
   const p1RetirementAge = overrides.person1_retirement_age ?? household.person1_retirement_age
   const p1SsClaimingAge = overrides.person1_ss_claiming_age ?? household.person1_ss_claiming_age
   const p2RetirementAge = overrides.person2_retirement_age !== undefined

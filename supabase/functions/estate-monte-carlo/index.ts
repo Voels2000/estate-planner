@@ -15,7 +15,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Inline the Monte Carlo engine (Edge Functions are self-contained)
 // This mirrors lib/calculations/estate-monte-carlo.ts
 
-const RETURN_ASSUMPTIONS = { mean: 0.07, stdDev: 0.12 }
+const DEFAULT_RETURN_MEAN = 0.07
+const DEFAULT_RETURN_VOL = 0.12
 
 function randomNormal(mean: number, stdDev: number): number {
   let u = 0,
@@ -47,6 +48,8 @@ function runEstateMonteCarlo(inputs: {
   strategyEstateReduction: number
   lawScenario: string
   simulationCount: number
+  returnMeanPct?: number
+  volatilityPct?: number
 }) {
   const {
     grossEstate,
@@ -56,7 +59,12 @@ function runEstateMonteCarlo(inputs: {
     strategyEstateReduction,
     lawScenario,
     simulationCount,
+    returnMeanPct,
+    volatilityPct,
   } = inputs
+
+  const returnMean = (returnMeanPct ?? 7) / 100
+  const returnVol = (volatilityPct ?? 12) / 100
 
   const startTime = Date.now()
   const adjustedEstate = Math.max(0, grossEstate - strategyEstateReduction)
@@ -66,7 +74,7 @@ function runEstateMonteCarlo(inputs: {
   for (let sim = 0; sim < simulationCount; sim++) {
     let estate = adjustedEstate
     for (let year = 0; year <= yearsUntilDeath; year++) {
-      const ret = randomNormal(RETURN_ASSUMPTIONS.mean, RETURN_ASSUMPTIONS.stdDev)
+      const ret = randomNormal(returnMean, returnVol)
       estate = Math.max(0, estate * (1 + ret))
       yearlyEstates[year].push(estate)
     }
@@ -197,6 +205,7 @@ serve(async (req) => {
       strategyEstateReduction = 0,
       lawScenario = 'current_law',
       simulationCount = 500,
+      assumptions,
     } = body
 
     if (!householdId || !grossEstate || !federalExemption) {
@@ -215,6 +224,8 @@ serve(async (req) => {
       strategyEstateReduction,
       lawScenario,
       simulationCount,
+      returnMeanPct: assumptions?.returnMeanPct,
+      volatilityPct: assumptions?.volatilityPct,
     })
 
     // Persist results

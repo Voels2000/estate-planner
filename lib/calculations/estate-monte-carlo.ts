@@ -30,6 +30,10 @@ export interface EstateMCInputs {
   simulationCount: number
   // Whether to include sensitivity analysis
   includeSensitivity: boolean
+  /** Annual return mean (percent, e.g. 7 = 7%). Default 7. */
+  returnMeanPct?: number
+  /** Annual return volatility (percent, e.g. 12 = 12%). Default 12. */
+  volatilityPct?: number
 }
 
 export interface FanChartDataPoint {
@@ -73,11 +77,8 @@ export interface EstateMCResult {
   run_duration_ms: number
 }
 
-// Asset class return assumptions (matching consumer Monte Carlo)
-const RETURN_ASSUMPTIONS = {
-  mean: 0.07, // 7% blended mean (60/40 portfolio approximation)
-  stdDev: 0.12, // 12% standard deviation
-}
+const DEFAULT_RETURN_MEAN = 0.07
+const DEFAULT_RETURN_VOL = 0.12
 
 // Box-Muller transform for normal distribution
 function randomNormal(mean: number, stdDev: number): number {
@@ -120,7 +121,12 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     lawScenario,
     simulationCount,
     includeSensitivity,
+    returnMeanPct,
+    volatilityPct,
   } = inputs
+
+  const returnMean = (returnMeanPct ?? 7) / 100
+  const returnVol = (volatilityPct ?? 12) / 100
 
   const startTime = Date.now()
   const adjustedEstate = Math.max(0, grossEstate - strategyEstatereduction)
@@ -133,7 +139,7 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     let estate = adjustedEstate
 
     for (let year = 0; year <= yearsUntilDeath; year++) {
-      const annualReturn = randomNormal(RETURN_ASSUMPTIONS.mean, RETURN_ASSUMPTIONS.stdDev)
+      const annualReturn = randomNormal(returnMean, returnVol)
       estate = Math.max(0, estate * (1 + annualReturn))
       yearlyEstates[year].push(estate)
     }

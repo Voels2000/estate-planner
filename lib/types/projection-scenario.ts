@@ -31,6 +31,10 @@ export type AssumptionSnapshot = {
   inflation_rate: number
   growth_rate_accumulation: number
   growth_rate_retirement: number
+  growth_assumptions?: {
+    real_estate: number
+    business: number
+  }
   // Tax config snapshot
   tax_scenario: ScenarioType
   estate_exemption_individual: number

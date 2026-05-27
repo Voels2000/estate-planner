@@ -233,6 +233,13 @@ export async function generateBaseCase(householdId: string): Promise<{
       inflation_rate: household.inflation_rate ?? 2.5,
       growth_rate_accumulation: household.growth_rate_accumulation ?? 7,
       growth_rate_retirement: household.growth_rate_retirement ?? 5,
+      growth_assumptions: (() => {
+        const raw = household.growth_assumptions as { real_estate?: number; business?: number } | null | undefined
+        return {
+          real_estate: raw?.real_estate ?? 4.5,
+          business: raw?.business ?? 7.0,
+        }
+      })(),
       tax_scenario: 'current_law_extended',
       estate_exemption_individual: currentLawConfig.estate_exemption_individual,
       estate_exemption_married: currentLawConfig.estate_exemption_married,
