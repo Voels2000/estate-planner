@@ -336,7 +336,7 @@ Important:
 
 Inside each person column: name full width; birth year + retirement age paired; SS claiming + longevity paired; PIA full width with help text. Save: `Button` full width, `PATCH /api/consumer/profile` unchanged.
 
-**What Scenarios contains:** all planning growth assumptions — financial accumulation/retirement, RE/business rates, inflation — plus scenario B/C overrides (retirement timing, SS ages, state).
+**What Scenarios contains:** all planning growth assumptions — financial accumulation/retirement, RE/business rates, inflation — plus scenario B/C overrides (retirement timing, SS ages, state). As of **2026-05-27 (Sprint C)**, only Base Case is computed on page load; Scenario B/C projection runs are lazy until the user edits inputs (localStorage overrides auto-activate on return visits).
 
 **What Asset Allocation contains:** risk tolerance, target stocks/bonds/cash mix, benchmark comparison.
 

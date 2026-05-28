@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint B — Monte Carlo + Allocation server prefetch)
+# Last updated: 2026-05-27 (Sprint C — Scenarios lazy B/C projection fetch)
+
+## Post-launch perf — Scenarios lazy B/C projection fetch (2026-05-27)
+
+**Decision:** Defer Scenario B and C `/api/projection` calls until the user edits B/C inputs (`bActivated` / `cActivated` gates). Returning users with localStorage overrides auto-activate so saved scenarios still recalculate on load.
+
+**Reasoning:** Every `/scenarios` visit fired two projection runs (~600ms after mount) even when users only viewed Base Case — unnecessary compute and API load.
+
+**Docs:** [app/(dashboard)/scenarios/_scenarios-client.tsx](../app/(dashboard)/scenarios/_scenarios-client.tsx), [CONSUMER_FLOWS.md § Retirement modeling](./CONSUMER_FLOWS.md).
+
+---
 
 ## Post-launch perf — Monte Carlo + Allocation server prefetch (2026-05-27)
 

@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-27 (Sprint B Monte Carlo + Allocation prefetch; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (Sprint C Scenarios lazy B/C; Sprint B Monte Carlo + Allocation prefetch; Sprint 17 go-live prep)
 
 ---
 
@@ -323,6 +323,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`, `3ceb125`); runtime middleware redirect + force-dynamic signup |
 | 2026-05-24 | Sprint 15 | **Closed** — Domain live, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed. Open signups pending billing setup — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy when ready. |
 | 2026-06-02 | Sprint P-2 | **Closed** — Pre-launch perf refactors (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`. |
+| 2026-05-27 | Post-launch perf Sprint C | **Closed** — Scenarios lazy B/C projection fetch; skip mount waterfalls when only Base Case viewed. |
 | 2026-05-27 | Post-launch perf Sprint B | **Closed** — Monte Carlo + Allocation server prefetch; shared loaders; eliminate mount waterfalls on `/monte-carlo` and `/allocation`. |
 | 2026-05-27 | Post-launch perf Sprint A | **Closed** — advisor tab loader alignment; strategy line-item dedupe; trust composition dedupe; Meeting Prep fixes; upgrade banner cache read. |
 | 2026-05-27 | Post-launch perf | **Closed** — StrategyTab server hydration; SS/setup/charitable prefetch; composition cache (`20260527180000`); trust-strategy loading/error + notification off render. |

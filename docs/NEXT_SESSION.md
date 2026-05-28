@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Sprint B Monte Carlo + Allocation prefetch; post-launch perf Sprint A; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Sprint C Scenarios lazy B/C; Sprint B Monte Carlo + Allocation prefetch; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab hydration; SS/setup/charitable prefetch; composition cache; advisor tab loader alignment; trust-strategy composition dedupe; Meeting Prep fixes; **Monte Carlo + Allocation server prefetch (Sprint B).** **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Next perf:** Scenarios lazy B/C projection fetch; advisor tab `dynamic()` imports; domicile tab mount refetch.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab hydration; SS/setup/charitable prefetch; composition cache; advisor tab loader alignment; trust-strategy composition dedupe; Meeting Prep fixes; Monte Carlo + Allocation server prefetch (Sprint B); **Scenarios lazy B/C projection fetch (Sprint C).** **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Next perf:** advisor tab `dynamic()` imports; domicile tab mount refetch.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,18 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Post-launch perf Sprint C — Scenarios lazy B/C fetch ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **Lazy B/C** | Scenario B/C skip `/api/projection` on mount until user edits inputs |
+| **Returning users** | localStorage saved overrides auto-activate fetch on load |
+| **UX hint** | “Adjust an input to calculate this scenario” when B/C not yet run |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Post-launch perf Sprint C](./SCHEMA_CHANGELOG.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 

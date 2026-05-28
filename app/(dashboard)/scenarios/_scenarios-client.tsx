@@ -136,6 +136,8 @@ export default function ScenariosClient({
 
   const [scenarioB, setScenarioB] = useState<ScenarioOverrides | null>(null)
   const [scenarioC, setScenarioC] = useState<ScenarioOverrides | null>(null)
+  const [bActivated, setBActivated] = useState(false)
+  const [cActivated, setCActivated] = useState(false)
 
   const [resultA, setResultA] = useState<ScenarioResult>(initialResultA)
   const [resultB, setResultB] = useState<ScenarioResult>(null)
@@ -201,29 +203,41 @@ export default function ScenariosClient({
     const storedC = loadStoredScenario(initialHousehold.id, 'C')
     setScenarioB({ ...base, name: 'Scenario B', ...storedB })
     setScenarioC({ ...base, name: 'Scenario C', ...storedC })
+    setBActivated(!!storedB)
+    setCActivated(!!storedC)
   }, [initialHousehold, initialResultA])
 
-  // ── Re-run B when scenarioB changes (debounced 600ms) ───────────────────────
+  const updateScenarioB = useCallback((next: ScenarioOverrides) => {
+    setBActivated(true)
+    setScenarioB(next)
+  }, [])
+
+  const updateScenarioC = useCallback((next: ScenarioOverrides) => {
+    setCActivated(true)
+    setScenarioC(next)
+  }, [])
+
+  // ── Re-run B when scenarioB changes (debounced 600ms; lazy until activated) ─
   useEffect(() => {
-    if (!scenarioB) return
+    if (!scenarioB || !bActivated) return
     if (household) saveStoredScenario(household.id, 'B', scenarioB)
     if (timerB.current) clearTimeout(timerB.current)
     timerB.current = setTimeout(() => {
       fetchScenario(scenarioB, setResultB, setLoadingB)
     }, 600)
     return () => { if (timerB.current) clearTimeout(timerB.current) }
-  }, [scenarioB, household])
+  }, [scenarioB, household, bActivated])
 
-  // ── Re-run C when scenarioC changes (debounced 600ms) ───────────────────────
+  // ── Re-run C when scenarioC changes (debounced 600ms; lazy until activated) ─
   useEffect(() => {
-    if (!scenarioC) return
+    if (!scenarioC || !cActivated) return
     if (household) saveStoredScenario(household.id, 'C', scenarioC)
     if (timerC.current) clearTimeout(timerC.current)
     timerC.current = setTimeout(() => {
       fetchScenario(scenarioC, setResultC, setLoadingC)
     }, 600)
     return () => { if (timerC.current) clearTimeout(timerC.current) }
-  }, [scenarioC, household])
+  }, [scenarioC, household, cActivated])
 
   if (!household || !scenarioB || !scenarioC) {
     return (
@@ -434,7 +448,7 @@ export default function ScenariosClient({
         {/* Scenario B */}
         <ScenarioEditor
           scenario={scenarioB}
-          onChange={setScenarioB}
+          onChange={updateScenarioB}
           household={household}
           hasRealEstate={hasRealEstate}
           hasBusiness={hasBusiness}
@@ -443,12 +457,13 @@ export default function ScenariosClient({
           isSaving={isSaving === 1}
           saved={savedIdx === 1}
           isCalculating={loadingB}
+          awaitingCalculation={!bActivated && !resultB}
         />
 
         {/* Scenario C */}
         <ScenarioEditor
           scenario={scenarioC}
-          onChange={setScenarioC}
+          onChange={updateScenarioC}
           household={household}
           hasRealEstate={hasRealEstate}
           hasBusiness={hasBusiness}
@@ -457,6 +472,7 @@ export default function ScenariosClient({
           isSaving={isSaving === 2}
           saved={savedIdx === 2}
           isCalculating={loadingC}
+          awaitingCalculation={!cActivated && !resultC}
         />
       </div>
 
@@ -561,6 +577,7 @@ export default function ScenariosClient({
 
 function ScenarioEditor({
   scenario, onChange, household, hasRealEstate, hasBusiness, colorIdx, onSave, isSaving, saved, isCalculating,
+  awaitingCalculation = false,
 }: {
   scenario: ScenarioOverrides
   onChange: (s: ScenarioOverrides) => void
@@ -572,6 +589,7 @@ function ScenarioEditor({
   isSaving: boolean
   saved: boolean
   isCalculating: boolean
+  awaitingCalculation?: boolean
 }) {
   const borderColor = colorIdx === 1 ? 'border-blue-500' : 'border-green-500'
   const badgeBg     = colorIdx === 1 ? 'bg-blue-600'     : 'bg-green-600'
@@ -654,6 +672,9 @@ function ScenarioEditor({
       </div>
 
       {isCalculating && <p className="mt-3 text-xs text-neutral-400 animate-pulse">Recalculating…</p>}
+      {awaitingCalculation && !isCalculating && (
+        <p className="mt-3 text-xs text-neutral-400">Adjust an input to calculate this scenario.</p>
+      )}
     </div>
   )
 }

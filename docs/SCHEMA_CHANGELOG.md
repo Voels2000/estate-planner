@@ -10,6 +10,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint C — Scenarios lazy B/C fetch (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **Lazy activation** | `bActivated` / `cActivated` gates debounced B/C projection fetches |
+| **localStorage** | Stored overrides set activated on load so returning users still get results |
+| **UX** | `awaitingCalculation` hint on ScenarioEditor when not yet run |
+
+**Docs:** [CONSUMER_FLOWS.md § Retirement modeling](./CONSUMER_FLOWS.md), [DECISION_LOG.md](./DECISION_LOG.md).
+
+---
+
 ## Post-launch perf Sprint B — Monte Carlo + Allocation prefetch (2026-05-27, code only)
 
 | Area | Change |

@@ -252,7 +252,7 @@ Three related routes share projection engines but answer different questions. **
 |-------|-----------|-----------------|
 | `/projections` | `loadProjectionData` → `ProjectionsClient` | Cache-first when fresh (`outputs_s1_first`); full compute when stale. Read-only `ProjectionAssumptions` links to `/scenarios`. `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
 | `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale |
-| `/scenarios` | `loadProjectionData` + client variant query strings | (scenario-specific UI) |
+| `/scenarios` | `loadProjectionData` + client variant query strings | Base Case server-prefetched; B/C lazy until user edits (or localStorage overrides on return) |
 
 **Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
 
@@ -262,6 +262,7 @@ Three related routes share projection engines but answer different questions. **
 |-------|------|-----------------|-----------------|
 | `/monte-carlo` | 3 | `loadMonteCarloPrefill` + `loadMonteCarloHistory` + `loadMonteCarloAdvisorAssumptions` | Fetch APIs only when corresponding prop is null |
 | `/allocation` | 2 | `loadAssetAllocationData` (+ household targets/risk) | `GET /api/asset-allocation` when `initialAllocationData` is null |
+| `/scenarios` | 1 | `loadProjectionData` (Base Case only) | B/C `/api/projection` only after user edits or stored overrides |
 | `/social-security` | 2 | `loadSocialSecurityData` | `GET /api/social-security` when `data` prop is null |
 
 ### Dashboard mobile shell (Sprint 12)
