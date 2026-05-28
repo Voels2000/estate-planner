@@ -162,7 +162,11 @@ export default function MyEstateTrustStrategyClient({
   const router = useRouter()
 
   useEffect(() => {
-    void fetch('/api/consumer/advisor-strategy-notifications', { method: 'POST' })
+    const key = `advisor-strategy-notifications:${householdId}`
+    if (typeof window !== 'undefined' && sessionStorage.getItem(key)) return
+    void fetch('/api/consumer/advisor-strategy-notifications', { method: 'POST' }).then(() => {
+      sessionStorage.setItem(key, '1')
+    })
   }, [householdId])
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'

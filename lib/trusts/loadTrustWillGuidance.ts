@@ -1,5 +1,6 @@
 import type { createClient } from '@/lib/supabase/server'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import type { EstateComposition } from '@/lib/estate/types'
 import {
   getTrustWillChecklist,
   getTrustWillRecommendations,
@@ -24,7 +25,12 @@ export async function loadTrustWillGuidance(
   supabase: ServerSupabase,
   userId: string,
   householdId: string,
+  preloadedComposition?: EstateComposition | null,
 ): Promise<TrustWillGuidancePayload> {
+  const compositionPromise = preloadedComposition
+    ? Promise.resolve(preloadedComposition)
+    : classifyEstateAssets(supabase, householdId)
+
   const [
     composition,
     { data: trusts },
@@ -33,7 +39,7 @@ export async function loadTrustWillGuidance(
     { data: householdPeople },
     { data: businesses },
   ] = await Promise.all([
-    classifyEstateAssets(supabase, householdId),
+    compositionPromise,
     supabase
       .from('trusts')
       .select('*')

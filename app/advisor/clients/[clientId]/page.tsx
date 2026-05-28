@@ -12,6 +12,7 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import {
   fetchStrategyConfigsWithClient,
   fetchStrategyLineItemsWithClient,
+  strategyLineItemsForHorizons,
   type AdvisorStrategyLineItemSummary,
   type StrategyLineItemSummary,
 } from '@/lib/estate/strategyLedger'
@@ -278,6 +279,59 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         )
       : []
 
+  let initialAdvisorLineItems: AdvisorStrategyLineItemSummary[] | undefined
+  let initialConsumerLineItems: StrategyLineItemSummary[] | undefined
+  let initialStrategyConfigs: Record<string, unknown>[] | undefined
+  let initialGiftingActuals:
+    | {
+        annualUsed: number
+        annualCapacity: number
+        lifetimeUsed: number
+        lifetimeRemaining: number
+        perRecipientLimit: number
+        splitElected: boolean
+        uniqueRecipients: number
+      }
+    | undefined
+  let strategyLineItemsForVm = strategyLineItems
+
+  if (tab === 'strategy') {
+    const giftingData = giftingSummaryRes.data as {
+      annual_used?: number
+      annual_capacity?: number
+      lifetime_used?: number
+      lifetime_remaining?: number
+      per_recipient_limit?: number
+      split_elected?: boolean
+      unique_recipients?: number
+    } | null
+
+    if (giftingData) {
+      initialGiftingActuals = {
+        annualUsed: giftingData.annual_used ?? 0,
+        annualCapacity: giftingData.annual_capacity ?? 0,
+        lifetimeUsed: giftingData.lifetime_used ?? 0,
+        lifetimeRemaining: giftingData.lifetime_remaining ?? 0,
+        perRecipientLimit: giftingData.per_recipient_limit ?? 19000,
+        splitElected: giftingData.split_elected ?? false,
+        uniqueRecipients: giftingData.unique_recipients ?? 2,
+      }
+    }
+
+    const [advisorItems, consumerItems, configs] = await Promise.all([
+      fetchStrategyLineItemsWithClient(supabase, household.id, 'advisor'),
+      fetchStrategyLineItemsWithClient(supabase, household.id, 'consumer'),
+      fetchStrategyConfigsWithClient(supabase, household.id),
+    ])
+    initialAdvisorLineItems = advisorItems
+    initialConsumerLineItems = consumerItems
+    initialStrategyConfigs = configs
+    strategyLineItemsForVm = strategyLineItemsForHorizons(
+      advisorItems,
+      consumerItems,
+    ) as typeof strategyLineItems
+  }
+
   let advisorHorizons = undefined
   let advisorHorizonsProjected = undefined
   let scenarioForStrategy = scenario
@@ -308,7 +362,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioOutputsSecondDeath,
       latestOutput,
       assumptionSnapshot,
-      strategyLineItems,
+      strategyLineItems: strategyLineItemsForVm,
     })
     advisorHorizons = strategyVm.advisorHorizons
     advisorHorizonsProjected = strategyVm.advisorHorizonsProjected
@@ -337,7 +391,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   let advisoryMetricsInput: AdvisoryMetricsInput | undefined
   let hasRunStrategyModules = false
   if (tab === 'strategy' && needsStrategyVm && advisorHorizons) {
-    hasRunStrategyModules = (strategyLineItems ?? []).some(
+    hasRunStrategyModules = (strategyLineItemsForVm ?? []).some(
       (item) => item.is_active && Math.abs(Number(item.amount ?? 0)) > 0,
     )
     const today = advisorHorizons.today
@@ -363,7 +417,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         ...advisoryMetricsInput,
         cstFundingAmount: hasRunStrategyModules
           ? Number(
-              strategyLineItems.find((i) => i.strategy_source === 'cst')?.amount ?? 0,
+              strategyLineItemsForVm.find((i) => i.strategy_source === 'cst')?.amount ?? 0,
             ) || undefined
           : undefined,
       },
@@ -417,54 +471,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     }))
 
   void markClientStrategyQuestionsRead(supabase, userId, clientId)
-
-  let initialAdvisorLineItems: AdvisorStrategyLineItemSummary[] | undefined
-  let initialConsumerLineItems: StrategyLineItemSummary[] | undefined
-  let initialStrategyConfigs: Record<string, unknown>[] | undefined
-  let initialGiftingActuals:
-    | {
-        annualUsed: number
-        annualCapacity: number
-        lifetimeUsed: number
-        lifetimeRemaining: number
-        perRecipientLimit: number
-        splitElected: boolean
-        uniqueRecipients: number
-      }
-    | undefined
-
-  if (tab === 'strategy') {
-    const giftingData = giftingSummaryRes.data as {
-      annual_used?: number
-      annual_capacity?: number
-      lifetime_used?: number
-      lifetime_remaining?: number
-      per_recipient_limit?: number
-      split_elected?: boolean
-      unique_recipients?: number
-    } | null
-
-    if (giftingData) {
-      initialGiftingActuals = {
-        annualUsed: giftingData.annual_used ?? 0,
-        annualCapacity: giftingData.annual_capacity ?? 0,
-        lifetimeUsed: giftingData.lifetime_used ?? 0,
-        lifetimeRemaining: giftingData.lifetime_remaining ?? 0,
-        perRecipientLimit: giftingData.per_recipient_limit ?? 19000,
-        splitElected: giftingData.split_elected ?? false,
-        uniqueRecipients: giftingData.unique_recipients ?? 2,
-      }
-    }
-
-    const [advisorItems, consumerItems, configs] = await Promise.all([
-      fetchStrategyLineItemsWithClient(supabase, household.id, 'advisor'),
-      fetchStrategyLineItemsWithClient(supabase, household.id, 'consumer'),
-      fetchStrategyConfigsWithClient(supabase, household.id),
-    ])
-    initialAdvisorLineItems = advisorItems
-    initialConsumerLineItems = consumerItems
-    initialStrategyConfigs = configs
-  }
 
   // 4) Route shell composition
   return (

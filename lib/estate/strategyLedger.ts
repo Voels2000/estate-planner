@@ -212,6 +212,43 @@ export async function fetchStrategyLineItemsWithClient(
   return (data ?? []) as StrategyLineItemSummary[]
 }
 
+export function strategyLineItemsForHorizons(
+  advisor: AdvisorStrategyLineItemSummary[],
+  consumer: StrategyLineItemSummary[],
+): Array<{
+  strategy_source: string
+  source_role: string
+  amount: number
+  sign: number
+  confidence_level: 'certain' | 'probable' | 'illustrative'
+  effective_year: number | null
+  consumer_accepted: boolean
+  consumer_rejected: boolean
+}> {
+  return [
+    ...advisor.map((item) => ({
+      strategy_source: item.strategy_source,
+      source_role: 'advisor',
+      amount: Number(item.amount ?? 0),
+      sign: typeof item.sign === 'number' ? item.sign : -1,
+      confidence_level: item.confidence_level ?? 'illustrative',
+      effective_year: item.effective_year ?? null,
+      consumer_accepted: Boolean(item.consumer_accepted),
+      consumer_rejected: Boolean(item.consumer_rejected),
+    })),
+    ...consumer.map((item) => ({
+      strategy_source: item.strategy_source,
+      source_role: 'consumer',
+      amount: Number(item.amount ?? 0),
+      sign: typeof item.sign === 'number' ? item.sign : -1,
+      confidence_level: item.confidence_level ?? 'illustrative',
+      effective_year: item.effective_year ?? null,
+      consumer_accepted: false,
+      consumer_rejected: false,
+    })),
+  ]
+}
+
 export async function fetchStrategyConfigs(householdId: string) {
   return fetchStrategyConfigsWithClient(createClient(), householdId)
 }

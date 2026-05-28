@@ -2,6 +2,16 @@
 # My Wealth Maps — Key Decisions and Reasoning
 # Last updated: 2026-05-27 (post-launch perf — StrategyTab hydration, composition cache)
 
+## Post-launch perf — advisor tab loader alignment (2026-05-27)
+
+**Decision:** `advisorDatasetIncludeForTab()` must load `scenario`, `strategyLineItems`, and `stateTax` on every tab where `needsStrategyVm` builds `advisorHorizons` (estate, tax, domicile, meeting-prep, strategy). Strategy tab uses a single dedicated line-item fetch (`strategyLineItems: false` in loader) to avoid duplicate queries.
+
+**Reasoning:** Estate/Tax tabs showed empty or wrong horizon numbers because accepted advisor strategies were excluded from the dataset include flags.
+
+**Docs:** [lib/advisor/loaders.ts](../lib/advisor/loaders.ts), [SCHEMA_CHANGELOG.md § Post-launch perf Sprint A](./SCHEMA_CHANGELOG.md).
+
+---
+
 ## Post-launch perf — StrategyTab server hydration (2026-05-27)
 
 **Decision:** When advisor client workspace loads with `?tab=strategy`, server prefetches advisor + consumer `strategy_line_items`, `strategy_configs`, and gifting summary (`calculate_gifting_summary`). Pass as `initialAdvisorLineItems`, `initialConsumerLineItems`, `initialStrategyConfigs`, `initialGiftingActuals` through `ClientViewShell` → `StrategyTab`. Client state initializes from props; `loadConsumerData(false)` on mount fetches only missing slices; `loadConsumerData(true)` after inline recommend refreshes all.

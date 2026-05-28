@@ -6,7 +6,7 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab server hydration; SS/setup progress/charitable server prefetch; ConsumerStrategyPanel dynamic import; trust-strategy notification off render + loading/error boundaries; `estate_composition_cache` at recompute. **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Strategy reversal (shipped):** return to sandbox / withdraw / unwind + gifting delete warning + advisor withdrawn view. **Remaining (manual):** `supabase db push` for `20260531120000` (if not applied), isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab hydration; SS/setup/charitable prefetch; composition cache; advisor tab loader alignment (Estate/Tax/Domicile horizons); trust-strategy composition dedupe; Meeting Prep fixes. **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Next perf:** Monte Carlo + Allocation server prefetch.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,20 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Post-launch perf Sprint A — advisor correctness ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **Advisor tab includes** | `advisorDatasetIncludeForTab` aligned with `needsStrategyVm` for estate/tax/domicile/meeting-prep |
+| **Strategy tab dedupe** | Single line-item fetch; `strategyLineItemsForHorizons()` feeds VM + StrategyTab |
+| **Trust composition dedupe** | `loadTrustWillGuidance(..., preloadedComposition)` on trust-strategy |
+| **Meeting Prep** | Server composition prop; `?tab=strategy` links; recalculate → `router.refresh()` |
+| **Quick wins** | Upgrade banner cache read; dashboard loading skeleton; notification sessionStorage gate |
+
+**Detail:** [SCHEMA_CHANGELOG.md § Post-launch perf Sprint A](./SCHEMA_CHANGELOG.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 

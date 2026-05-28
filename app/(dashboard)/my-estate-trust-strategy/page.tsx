@@ -107,7 +107,6 @@ export default async function MyEstateTrustStrategyPage({
 
   const [
     { data: liabilitiesRows },
-    trustWillGuidance,
     { data: federalBracketRows },
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
@@ -120,7 +119,6 @@ export default async function MyEstateTrustStrategyPage({
     { data: charitableSummaryData },
   ] = await Promise.all([
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
-    loadTrustWillGuidance(supabase, user.id, householdRow.id),
     supabase
       .from('federal_estate_tax_brackets')
       .select('tax_year, min_amount, max_amount, rate_pct')
@@ -185,6 +183,13 @@ export default async function MyEstateTrustStrategyPage({
     householdRow.id,
     'consumer',
     lifetimeGiftsUsedForComposition,
+  )
+
+  const trustWillGuidance = await loadTrustWillGuidance(
+    supabase,
+    user.id,
+    householdRow.id,
+    composition,
   )
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]

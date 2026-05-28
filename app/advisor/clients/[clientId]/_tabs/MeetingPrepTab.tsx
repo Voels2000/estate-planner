@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
 import { meetingPrepBriefFromHorizons } from '@/lib/advisor/meetingPrepHorizons'
@@ -27,6 +28,7 @@ export default function MeetingPrepTab({
   estateComposition,
   advisorHorizons,
 }: ClientViewShellProps) {
+  const router = useRouter()
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
@@ -49,7 +51,8 @@ export default function MeetingPrepTab({
         return
       }
 
-      setRecalcSuccess('Base case updated — reload to see new figures')
+      setRecalcSuccess('Base case updated — refreshing figures…')
+      router.refresh()
     } catch (error) {
       setRecalcError(error instanceof Error ? error.message : 'Failed to recalculate base case')
     } finally {
@@ -110,6 +113,7 @@ export default function MeetingPrepTab({
           advisorHorizons={advisorHorizons}
           initialHealthScore={exportPanelProps?.healthScore ?? null}
           initialBriefSeed={initialBriefSeed}
+          estateComposition={estateComposition}
         />
       </section>
 

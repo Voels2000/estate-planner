@@ -383,7 +383,7 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | **Client** | `components/consumer/TrustDocumentsPanel.tsx` |
 | **Summary strip** | Estimated Taxable Estate, Federal Exemption Remaining, Headroom Before Federal Tax (annotated with lifetime gifts used when applicable) |
 | **Write APIs** | `POST/PATCH/DELETE /api/consumer/trusts` |
-| **Read** | `loadTrustWillGuidance` — trusts, recommendations, checklist; `trustEstateSummary` from composition + gifting RPC |
+| **Read** | `loadTrustWillGuidance(supabase, userId, householdId, preloadedComposition?)` — trusts, recommendations, checklist; trust-strategy passes cached composition to avoid duplicate RPC |
 | **Educational UI** | Common planning topics (Pour-Over Will, Business Succession Trust, etc.) via `lib/estate/planningTopicPresentation.ts` — framing only, not personalized advice |
 | **Key lib** | `lib/trusts/trustPayload.ts`, `lib/trusts/trustEstateTaxEstimate.ts` (`excludes_from_estate`, `~Est. Tax Saved`) |
 | **E2E** | `tests/e2e/consumer/consumer-trust-crud.spec.ts` |

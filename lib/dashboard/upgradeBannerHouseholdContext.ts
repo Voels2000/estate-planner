@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 
 export type UpgradeBannerHouseholdContext = {
@@ -21,7 +21,7 @@ export async function loadUpgradeBannerHouseholdContext(
 
   let grossEstate: number | null = null
   if (householdRow?.id) {
-    const composition = await classifyEstateAssets(supabase, householdRow.id, 'consumer', 0)
+    const composition = await getCachedComposition(supabase, householdRow.id, 'consumer', 0)
     grossEstate = composition.gross_estate ?? null
   }
 

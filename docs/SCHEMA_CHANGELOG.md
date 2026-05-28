@@ -10,6 +10,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint A — advisor correctness (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **Advisor tab includes** | estate/tax/domicile/meeting-prep: `scenario` + `strategyLineItems` + `stateTax` where horizons built |
+| **Strategy tab dedupe** | `strategyLineItems: false` in loader; `strategyLineItemsForHorizons()` in `lib/estate/strategyLedger.ts` |
+| **Trust guidance** | `loadTrustWillGuidance(..., preloadedComposition?)` |
+| **Meeting Prep** | Server `estateComposition`; `?tab=strategy` deep links; `router.refresh()` after recalculate |
+| **Upgrade banner** | `getCachedComposition` in `loadUpgradeBannerHouseholdContext` |
+| **Dashboard loading** | Estate Summary skeleton copy |
+| **Notifications** | Trust-strategy POST gated by `sessionStorage` per household |
+
+---
+
 ## Post-launch perf sprint (2026-05-27)
 
 | Area | Change |

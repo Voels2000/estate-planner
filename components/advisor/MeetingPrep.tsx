@@ -12,6 +12,7 @@ import {
   meetingPrepBriefFromHorizons,
   type MeetingPrepHorizonColumn,
 } from '@/lib/advisor/meetingPrepHorizons'
+import type { EstateComposition } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 const STRATEGY_LABELS: Record<string, string> = {
@@ -87,6 +88,7 @@ interface Props {
   advisorHorizons?: MyEstateStrategyHorizonsResult
   initialHealthScore?: number | null
   initialBriefSeed?: MeetingBriefSeed | null
+  estateComposition?: EstateComposition | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -165,8 +167,22 @@ async function generateMeetingBrief(
   clientName: string,
   initialHealthScore?: number | null,
   advisorHorizons?: MyEstateStrategyHorizonsResult,
+  preloadedComposition?: EstateComposition | null,
 ): Promise<MeetingBrief> {
   const supabase = createClient()
+
+  const compositionPromise = preloadedComposition
+    ? Promise.resolve(preloadedComposition)
+    : fetch('/api/estate-composition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          sourceRole: 'consumer',
+        }),
+      })
+        .then(async (res) => (res.ok ? await res.json() : null))
+        .catch(() => null)
 
   const [
     alertsRes,
@@ -210,17 +226,7 @@ async function generateMeetingBrief(
       .eq('household_id', householdId)
       .eq('source_role', 'advisor')
       .eq('is_active', true),
-    // Current estate composition via API (matches consumer flow/classifyEstateAssets)
-    fetch('/api/estate-composition', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        householdId,
-        sourceRole: 'consumer',
-      }),
-    })
-      .then(async (res) => (res.ok ? await res.json() : null))
-      .catch(() => null),
+    compositionPromise,
   ])
 
   const alerts = alertsRes.data ?? []
@@ -337,6 +343,7 @@ export default function MeetingPrep({
   advisorHorizons,
   initialHealthScore = null,
   initialBriefSeed = null,
+  estateComposition = null,
 }: Props) {
   const [brief, setBrief] = useState<MeetingBrief | null>(
     initialBriefSeed ? buildBriefFromSeed(clientName, initialBriefSeed) : null,
@@ -356,6 +363,7 @@ export default function MeetingPrep({
       clientName,
       initialHealthScore,
       advisorHorizons,
+      estateComposition,
     )
     setBrief((prev) => ({
       ...b,
@@ -605,7 +613,7 @@ export default function MeetingPrep({
                   ) : (
                     <div className="text-center py-2">
                       <p className="text-sm text-neutral-400">No estate data available yet.</p>
-                      <Link href={`/advisor/clients/${clientId}`}
+                      <Link href={`/advisor/clients/${clientId}?tab=strategy`}
                         className="text-xs text-[color:var(--mwm-navy)] hover:underline mt-1 inline-block">
                         Run a projection in StrategyTab →
                       </Link>
@@ -619,7 +627,10 @@ export default function MeetingPrep({
                     <p className="text-sm text-neutral-600">
                       Without additional planning, the projected estate tax liability is{' '}
                       <strong className="text-neutral-900">{fmt(brief.cost_of_inaction)}</strong>.
-                      Strategy options are available in the StrategyTab.
+                      Strategy options are available in the{' '}
+                      <Link href={`/advisor/clients/${clientId}?tab=strategy`} className="text-[color:var(--mwm-navy)] hover:underline">
+                        Strategy tab
+                      </Link>.
                     </p>
                   </BriefSection>
                 )}
@@ -635,7 +646,10 @@ export default function MeetingPrep({
                       ))}
                     </ul>
                     <p className="mt-3 text-xs text-neutral-400">
-                      Review implementation details with the client in the Strategy tab.
+                      Review implementation details with the client in the{' '}
+                      <Link href={`/advisor/clients/${clientId}?tab=strategy`} className="text-[color:var(--mwm-navy)] hover:underline">
+                        Strategy tab
+                      </Link>.
                     </p>
                   </BriefSection>
                 )}
