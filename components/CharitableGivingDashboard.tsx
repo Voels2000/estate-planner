@@ -14,6 +14,7 @@ interface CharitableGivingDashboardProps {
   userRole: 'consumer' | 'advisor';
   consumerTier?: number;
   householdContext?: CharitableHouseholdContext | null;
+  initialCharitableSummary?: CharitableSummary | null;
 }
 
 interface DonationRow {
@@ -33,7 +34,7 @@ interface DonationRow {
   created_at: string;
 }
 
-interface CharitableSummary {
+export interface CharitableSummary {
   household_id: string;
   tax_year: number;
   summary: {
@@ -100,6 +101,7 @@ export default function CharitableGivingDashboard({
   householdId,
   userRole,
   householdContext = null,
+  initialCharitableSummary = null,
 }: CharitableGivingDashboardProps) {
   const router = useRouter();
   const CURRENT_YEAR = new Date().getFullYear();
@@ -118,8 +120,10 @@ export default function CharitableGivingDashboard({
     notes: '',
   };
 
-  const [summary, setSummary] = useState<CharitableSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<CharitableSummary | null>(
+    initialCharitableSummary,
+  );
+  const [loading, setLoading] = useState(initialCharitableSummary == null);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -153,7 +157,10 @@ export default function CharitableGivingDashboard({
     }
   }, [householdId, supabase]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (initialCharitableSummary != null) return
+    void load()
+  }, [initialCharitableSummary, load])
 
   const isAppreciatedVehicle = ['appreciated_asset', 'daf_asset', 'crt'].includes(form.vehicle_type);
   const isQcdVehicle = form.vehicle_type === 'qcd';

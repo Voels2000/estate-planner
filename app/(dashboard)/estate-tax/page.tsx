@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 
 export default async function EstateTaxPage() {
@@ -24,7 +24,7 @@ export default async function EstateTaxPage() {
   if (!hasFeatureAccess('estate-tax', access.tier, access.isAdvisor, access.isTrial)) {
     let grossEstate: number | null = null
     if (householdRow?.id) {
-      const compositionForBanner = await classifyEstateAssets(
+      const compositionForBanner = await getCachedComposition(
         supabase,
         householdRow.id,
         'consumer',
@@ -189,7 +189,7 @@ export default async function EstateTaxPage() {
   )
 
   const composition = householdRow?.id
-    ? await classifyEstateAssets(supabase, householdRow.id, 'consumer', lifetimeGiftsUsed)
+    ? await getCachedComposition(supabase, householdRow.id, 'consumer', lifetimeGiftsUsed)
     : null
 
   return (

@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import MyEstateTrustStrategyClient from './_client'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
 import {
@@ -20,18 +20,6 @@ import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-str
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
-
-const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
-  gifting: 'Annual Gifting Program',
-  revocable_trust: 'Revocable Living Trust',
-  credit_shelter_trust: 'Credit Shelter Trust (CST)',
-  grat: 'Grantor Retained Annuity Trust (GRAT)',
-  crt: 'Charitable Remainder Trust (CRT)',
-  clat: 'Charitable Lead Annuity Trust (CLAT)',
-  daf: 'Donor Advised Fund (DAF)',
-  roth: 'Roth Conversion',
-  liquidity: 'Estate Liquidity Planning',
-}
 
 function num(v: unknown): number {
   if (typeof v === 'number' && !Number.isNaN(v)) return v
@@ -117,43 +105,6 @@ export default async function MyEstateTrustStrategyPage({
     .eq('household_id', householdRow.id)
     .eq('is_active', true)
 
-  // Create one in-app notification per newly added advisor recommendation.
-  const recommendationRows = advisorRecommendations ?? []
-  const { data: existingRecommendationNotifs } = await supabase
-    .from('notifications')
-    .select('metadata')
-    .eq('user_id', user.id)
-    .eq('type', 'advisor_strategy_recommended')
-
-  const alreadyNotified = new Set<string>(
-    (existingRecommendationNotifs ?? [])
-      .map((row) => {
-        const strategyType = row.metadata?.strategy_type
-        return typeof strategyType === 'string' ? strategyType : null
-      })
-      .filter((value): value is string => value !== null),
-  )
-
-  const newRecommendationNotifs = recommendationRows
-    .filter((row) => !alreadyNotified.has(row.strategy_type))
-    .map((row) => {
-      const strategyLabel =
-        row.label ?? ADVISOR_STRATEGY_LABELS[row.strategy_type] ?? row.strategy_type
-      return {
-        user_id: user.id,
-        type: 'advisor_strategy_recommended',
-        title: 'New advisor strategy recommendation',
-        body: `${strategyLabel} was added to your recommended strategies list.`,
-        delivery: 'in_app',
-        read: false,
-        metadata: { strategy_type: row.strategy_type, household_id: householdRow.id },
-      }
-    })
-
-  if (newRecommendationNotifs.length > 0) {
-    await supabase.from('notifications').insert(newRecommendationNotifs)
-  }
-
   const [
     { data: liabilitiesRows },
     trustWillGuidance,
@@ -166,6 +117,7 @@ export default async function MyEstateTrustStrategyPage({
     { data: scenarioData },
     { data: stateBracketRows },
     { data: householdFull },
+    { data: charitableSummaryData },
   ] = await Promise.all([
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
     loadTrustWillGuidance(supabase, user.id, householdRow.id),
@@ -215,6 +167,7 @@ export default async function MyEstateTrustStrategyPage({
       .select('person1_name, person2_name, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age, has_spouse, filing_status, state_primary, base_case_scenario_id')
       .eq('owner_id', user.id)
       .single(),
+    supabase.rpc('calculate_charitable_summary', { p_household_id: householdRow.id }),
   ])
 
   const lifetimeGiftsUsedForComposition = giftingSummaryError
@@ -227,7 +180,7 @@ export default async function MyEstateTrustStrategyPage({
         ) || 0,
       )
 
-  const composition = await classifyEstateAssets(
+  const composition = await getCachedComposition(
     supabase,
     householdRow.id,
     'consumer',
@@ -555,6 +508,7 @@ export default async function MyEstateTrustStrategyPage({
           person1Name: householdRow.person1_name ?? null,
           preIraBalance: estateContext.preIRABalance,
         }}
+        initialCharitableSummary={charitableSummaryData ?? null}
       />
     </div>
   )

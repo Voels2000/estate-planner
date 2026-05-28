@@ -27,7 +27,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Household model | `households` | One primary planning container per owner |
 | Financial inputs | `assets`, `liabilities`, `income`, `expenses`, `real_estate`, `businesses`, `insurance_policies` | Projection inputs |
 | Projection outputs | `projection_scenarios` | Stores generated snapshots (`outputs_*`) |
-| Estate composition | `calculate_estate_composition` RPC + related tables | Derived values |
+| Estate composition | `calculate_estate_composition` RPC + `estate_composition_cache` (post-launch read path) | Derived values; cache populated at recompute |
 | Estate tax rules | `federal_tax_config`, `state_estate_tax_rules` | Estate transfer tax calculations |
 | Income tax rules | `state_income_tax_brackets` | Progressive state income rules (canonical target) |
 | Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results`, `advisor_gap_statuses` | Cached analytics + user assessment history; `advisor_gap_statuses` tracks advisor-private gap workflow state |
@@ -337,6 +337,15 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Key columns:** `household_id`, `score`, `component_scores`, `computed_at`, `recommendations` (jsonb — cached `generate_estate_recommendations` output; Sprint P-2)
 - **Purpose:** cached health score summary + recommendations (read path should avoid recomputing synchronously).
 
+### `estate_composition_cache`
+
+- **Key columns:** `household_id`, `source_role` (`consumer` \| `advisor`), `composition` (jsonb — full `calculate_estate_composition` payload), `lifetime_gifts_used`, `computed_at`
+- **Unique:** `(household_id, source_role)`
+- **Purpose:** materialized estate composition at recompute time; read via `getCachedComposition` (cache miss falls back to live RPC)
+- **Writes:** service role only — `/api/recompute-estate-health` upserts after household writes
+- **RLS:** household owner SELECT; advisor SELECT via active `advisor_clients` link
+- **Migration:** `20260527180000_estate_composition_cache.sql`
+
 ### `household_alerts`
 
 - **Purpose:** household-level alerts.
@@ -429,6 +438,7 @@ After each schema-affecting session:
 - `20260602000000_sprint_c3_rls_fixes.sql` — Sprint C-3 RLS policy fixes (`236890c`); advisor joins `active` + `accepted`
 - `20260602120000_sprint_p1_indexes.sql` — Sprint P-1 — `idx_assets_owner_id`, `idx_liabilities_owner_id` (`5c24160`)
 - `20260602130000_sprint_p2_recommendations_cache.sql` — Sprint P-2 — `estate_health_scores.recommendations` jsonb (`47a38f3`)
+- `20260527180000_estate_composition_cache.sql` — Post-launch perf — materialized composition at recompute; `getCachedComposition` read path
 - `20260625170000_sprint_c7_privacy_requests.sql` — Sprint C-7 — `privacy_requests` WCPA intake ✅ prod
 - `20260625120000_sprint_c6_deletion_compliance.sql` — Sprint C-6 — `deletion_audit_log`, `deletion_schedule` ✅ prod (`4d9571e`, `01b997a`)
 - `20260602150000_sprint_f2_import_traceability.sql` — Sprint F-2 — `ingestion_job_id` on financial tables; `header_row_index`, `sheet_name` on `ingestion_jobs`

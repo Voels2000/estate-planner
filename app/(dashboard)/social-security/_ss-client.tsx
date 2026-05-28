@@ -17,7 +17,7 @@ type Scenario = {
 
 type PersonData = {
   name: string
-  birthYear: number
+  birthYear: number | null
   fra: number
   pia: number
   electedAge: number
@@ -172,14 +172,15 @@ function BreakevenChart({ person, compareAge }: { person: PersonData; compareAge
 
 export function SSClient({ data: initialData }: { data: SSData | null }) {
   const [data, setData] = useState<SSData | null>(initialData)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(initialData === null)
 
   useEffect(() => {
+    if (initialData !== null) return
     fetch('/api/social-security')
       .then(r => r.ok ? r.json() : null)
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [initialData])
 
   if (loading) {
     return (

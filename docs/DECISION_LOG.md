@@ -1,6 +1,36 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (pre-launch consistency — tier gating, cache revalidation)
+# Last updated: 2026-05-27 (post-launch perf — StrategyTab hydration, composition cache)
+
+## Post-launch perf — StrategyTab server hydration (2026-05-27)
+
+**Decision:** When advisor client workspace loads with `?tab=strategy`, server prefetches advisor + consumer `strategy_line_items`, `strategy_configs`, and gifting summary (`calculate_gifting_summary`). Pass as `initialAdvisorLineItems`, `initialConsumerLineItems`, `initialStrategyConfigs`, `initialGiftingActuals` through `ClientViewShell` → `StrategyTab`. Client state initializes from props; `loadConsumerData(false)` on mount fetches only missing slices; `loadConsumerData(true)` after inline recommend refreshes all.
+
+**Reasoning:** `loadConsumerData()` on every StrategyTab mount duplicated 4+ client round trips (line items ×2, configs, estate-composition) despite server already loading composition and line items for horizons.
+
+**Docs:** [MASTER_ARCHITECTURE.md § Advisor portal](./MASTER_ARCHITECTURE.md), [SCHEMA_CHANGELOG.md § Post-launch perf](./SCHEMA_CHANGELOG.md).
+
+---
+
+## Post-launch perf — estate composition cache (2026-05-27)
+
+**Decision:** Add `estate_composition_cache` (unique per `household_id` + `source_role`). `/api/recompute-estate-health` upserts consumer + advisor composition after health/conflicts/recommendations. Read path uses `getCachedComposition` (cache hit → jsonb; miss → live `classifyEstateAssets` RPC). Applied on dashboard, estate-tax, my-estate-strategy, my-estate-trust-strategy, advisor client page, `POST /api/estate-composition`.
+
+**Reasoning:** P-2 cached recommendations; composition RPC remained on every high-traffic page load. Materializing at recompute aligns with existing `afterHouseholdWrite` pipeline.
+
+**Migration:** `20260527180000_estate_composition_cache.sql`
+
+**Docs:** [DATABASE_SCHEMA_REFERENCE.md § estate_composition_cache](./DATABASE_SCHEMA_REFERENCE.md), [MASTER_ARCHITECTURE.md § Estate health recompute](./MASTER_ARCHITECTURE.md#estate-health-recompute--operations).
+
+---
+
+## Post-launch perf — server prefetch + render-path fixes (2026-05-27)
+
+**Decision:** (1) Social Security page calls `loadSocialSecurityData` server-side; client skips fetch when hydrated. (2) Dashboard passes `initialSetupProgress` from server counts. (3) Trust-strategy prefetches charitable summary; `CharitableGivingDashboard` accepts `initialCharitableSummary`. (4) `ConsumerStrategyPanel` dynamic import on trust-strategy. (5) Advisor strategy notification INSERT moved to `POST /api/consumer/advisor-strategy-notifications` on client mount; add `loading.tsx` / `error.tsx` for trust-strategy and dashboard.
+
+**Reasoning:** Eliminate useEffect waterfalls and remove side-effect INSERT from trust-strategy server render path.
+
+---
 
 ## Pre-launch tier gating — pages are authority (2026-05-27)
 
@@ -384,7 +414,7 @@ Session-only “Your advisor has been notified” confirmation (refresh resets U
 
 **Decision:** Sprint P-2 (`47a38f3`) shipped pre-launch: `estate_health_scores.recommendations` jsonb populated during `/api/recompute-estate-health`; dashboard reads cache on load (empty array before first recompute — never live RPC on hot path). Projections serve fresh `outputs_s1_first` via cache-first branch in `loadProjectionData`. Layout uses `getDashboardLayoutContext` (React `cache()`) for single auth/profile/household/notifications load per request.
 
-**Remaining post-launch perf:** Materialize `calculate_estate_composition` at recompute — recommendations done; composition still on-demand on some surfaces.
+**Remaining post-launch perf:** ~~Materialize `calculate_estate_composition` at recompute~~ — shipped 2026-05-27 (`estate_composition_cache`).
 
 **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors) · Migration: `20260602130000_sprint_p2_recommendations_cache.sql`
 

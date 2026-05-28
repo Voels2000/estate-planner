@@ -507,7 +507,7 @@ Runtime behavior:
 - As of Session 114, `/scenarios` “Save” archives comparison results via `POST /api/consumer/scenario-snapshots` (`lib/scenarios/buildScenarioSnapshot.ts` → `projections` table). Scenario math remains `GET /api/projection` with query overrides; no `afterHouseholdWrite` on snapshot-only saves.
 - As of Session 115 (Phase A consumer cleanup), canonical nav/URL/title/tier map lives in `docs/CONSUMER_NAV_MAP.md`. Sidebar labels aligned with page `<h1>` titles; duplicate `asset-allocation/_allocation-client.tsx` removed (`/asset-allocation` still redirects to `/allocation`). `FEATURE_TIERS`: fixed `projections` key, `allocation` tier 2, added `trust-will` tier 3.
 - As of **2026-05-27 (pre-launch consistency)**, `FEATURE_TIERS` values follow **page gates as authority** (`real-estate`, `allocation`, `digital-assets` → tier 2; `business-succession` → tier 3; `my-estate-strategy` / `my-estate-trust-strategy` keys added). Sidebar and all gated pages use `hasFeatureAccess(feature, tier, isAdvisor, isTrial)` from `lib/tiers.ts`; `UpgradeBanner` uses `featureUpgradeTier(feature)`. Layout passes `isTrial` to sidebar for trial unlock parity.
-- As of **2026-05-27**, advisor client page fetches `calculate_gifting_summary` before `classifyEstateAssets(..., lifetimeGiftsUsed)` so advisor Overview/Estate exemption matches consumer Estate Tax Snapshot when lifetime gifts are logged. Advisor Strategy tab receives server `advisoryMetricsInput` (`liquidAssets`, `ilitDeathBenefit` from loaders — not `grossEstate * 0.3` / hardcoded `0`).
+- As of **2026-05-27**, advisor client page fetches `calculate_gifting_summary` before `getCachedComposition(..., lifetimeGiftsUsed)` so advisor Overview/Estate exemption matches consumer Estate Tax Snapshot when lifetime gifts are logged. Advisor Strategy tab receives server `advisoryMetricsInput` (`liquidAssets`, `ilitDeathBenefit` from loaders — not `grossEstate * 0.3` / hardcoded `0`). When `?tab=strategy`, server also prefetches advisor/consumer line items, strategy configs, and gifting actuals; `StrategyTab` hydrates from props and skips duplicate client fetches on mount (`loadConsumerData(false)`).
 - As of **2026-05-27**, consumer accept/decline on advisor recommendations (`my-estate-trust-strategy/_client.tsx`) checks `res.ok` before optimistic UI update; errors surface inline (matches `StrategySandboxSection` pattern).
 - As of **2026-05-27**, `/digital-assets` missing-household redirect is `/profile?required=true` (not `/onboarding`); auth redirect uses `/login`.
 - As of Session 116 (Phase A½ trust merge), full Trust & Will UI lives on **Gifting, Strategies & Trusts** → **Trusts & Documents** tab (`/my-estate-trust-strategy?tab=trusts`). Shared `components/consumer/TrustDocumentsPanel.tsx` + `lib/trusts/loadTrustWillGuidance.ts`; `/trust-will` redirects to that tab (no separate sidebar link). Sidebar **Gifting, Strategies & Trusts** opens `?tab=trusts`; tab clicks sync URL via `router.replace`.
@@ -519,7 +519,7 @@ Runtime behavior:
 
 ## Estate health recompute — operations
 
-Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealthRecompute`, which POSTs to `/api/recompute-estate-health` with header `x-recompute-secret`. The route runs `computeEstateHealthScore`, `detectConflicts`, and `generate_estate_recommendations` (cached to `estate_health_scores.recommendations`) in the background so dashboard pages stay fast. **Sprint P-2:** dashboard reads recommendations from cache on load — no live RPC call.
+Consumer and strategy writes call `afterHouseholdWrite` → `triggerEstateHealthRecompute`, which POSTs to `/api/recompute-estate-health` with header `x-recompute-secret`. The route runs `computeEstateHealthScore`, `detectConflicts`, `generate_estate_recommendations` (cached to `estate_health_scores.recommendations`), and **upserts `estate_composition_cache`** for both `consumer` and `advisor` roles (via `classifyEstateAssets` + `upsertCompositionCache`) in the background so dashboard pages stay fast. **Sprint P-2:** dashboard reads recommendations from cache on load — no live RPC call. **Post-launch perf:** high-traffic pages read composition via `getCachedComposition` (cache miss → live RPC until first recompute).
 
 **Required environment (staging + production):**
 
@@ -1096,7 +1096,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.
 - **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab (six core metrics cached server-side).
 - **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x.
-- **Strategy tab UX (UX-4):** Opportunities catalog rows expand inline (`InlineStrategyPanel`, `catalogToPanel.ts`); recommend refreshes Step 3 via `loadConsumerData` + `router.refresh`.
+- **Strategy tab UX (UX-4):** Opportunities catalog rows expand inline (`InlineStrategyPanel`, `catalogToPanel.ts`); recommend refreshes Step 3 via `loadConsumerData(true)` + `router.refresh()`.
 - **Strategy tab UX (UX-5):** Step 3 **Recommendations & Impact** with `StrategyImpactPanel` (Current / Projected / With Accepted from horizons); **Strategy Horizon** section below Step 3 (`StrategyHorizonTable` + `CompositeOverlay`); full-width SLAT/ILIT/Advanced panels removed (inline only).
 - **Strategy tab UX (UX-5b):** `CompositeOverlay` loads recommendations from API by default; no manual reduction form.
 - **Attorney export:** `app/(dashboard)/print/_print-client.tsx` + `AttorneyEstatePlanPDF` — cover disclaimer, user attribution, title **Estate Planning Preparation Report** (Sprint C-2b, 2026-05-24).
@@ -1179,7 +1179,7 @@ Two concepts must stay separate until product designs unified intake:
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
 5. **Drip step 2 production verify** — `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+).
-6. **Estate composition read model (post-launch)** — materialize `calculate_estate_composition` at recompute; recommendations done in P-2; highest remaining ceiling per Query A / [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
+6. **Estate composition read model** — **shipped 2026-05-27:** `estate_composition_cache` + `getCachedComposition`; recompute upserts both roles. Apply migration `20260527180000`. See [SCHEMA_CHANGELOG.md § Post-launch perf](./SCHEMA_CHANGELOG.md).
 
 ### High priority — confirmed post-launch
 

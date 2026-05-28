@@ -22,6 +22,7 @@ import {
   fetchStrategyLineItems,
   fetchStrategyConfigs,
   type AdvisorStrategyLineItemSummary,
+  type StrategyLineItemSummary,
 } from '@/lib/estate/strategyLedger'
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
@@ -37,6 +38,11 @@ export default function StrategyTab({
   hasRunStrategyModules = false,
   advisoryMetricsInput,
   strategyQuestions = [],
+  estateComposition,
+  initialAdvisorLineItems = [],
+  initialConsumerLineItems = [],
+  initialStrategyConfigs = [],
+  initialGiftingActuals,
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -111,11 +117,19 @@ export default function StrategyTab({
       ? Math.abs(activeAssumptions.returnMeanPct - householdAccumRate)
       : 0
   type StrategyLineItemSummary = Pick<StrategyLineItem, 'amount' | 'confidence_level' | 'effective_year' | 'is_active' | 'sign' | 'strategy_source' | 'source_role'>
-  const [advisorLineItems, setAdvisorLineItems] = useState<AdvisorStrategyLineItemSummary[]>([])
-  const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>([])
+  const [advisorLineItems, setAdvisorLineItems] = useState<AdvisorStrategyLineItemSummary[]>(
+    initialAdvisorLineItems,
+  )
+  const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>(
+    initialConsumerLineItems,
+  )
   type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
-  const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>([])
-  const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
+  const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>(
+    initialStrategyConfigs as StrategyConfigSummary[],
+  )
+  const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(
+    estateComposition ?? null,
+  )
   const missingHorizonTelemetrySent = useRef(false)
 
   const metricsInput: AdvisoryMetricsInput = advisoryMetricsInput ?? {
@@ -139,7 +153,6 @@ export default function StrategyTab({
     })
   }
 
-  // Gifting actuals from RPC
   const [giftingActuals, setGiftingActuals] = useState<{
     annualUsed: number
     annualCapacity: number
@@ -148,10 +161,10 @@ export default function StrategyTab({
     perRecipientLimit: number
     splitElected: boolean
     uniqueRecipients: number
-  } | null>(null)
+  } | null>(initialGiftingActuals ?? null)
 
   useEffect(() => {
-    if (!householdId) return
+    if (!householdId || initialGiftingActuals != null) return
     fetch('/api/gifting-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -171,7 +184,7 @@ export default function StrategyTab({
         })
       })
       .catch(() => null)
-  }, [householdId])
+  }, [householdId, initialGiftingActuals])
 
   useEffect(() => {
     if (!householdId) return
@@ -195,32 +208,55 @@ export default function StrategyTab({
     }).catch(() => null)
   }, [advisorHorizons?.today.federalExemption, advisorHorizons?.today.federalTaxEstimate, advisorHorizons?.today.grossEstate, advisorHorizons?.today.stateTax, hasHorizonTodayInputs, householdId, rawLawScenario])
 
-  const loadConsumerData = useCallback(async () => {
+  const loadConsumerData = useCallback(async (forceRefresh = false) => {
     if (!householdId) return
-    Promise.all([
-      fetchStrategyLineItems(householdId, 'advisor'),
-      fetchStrategyLineItems(householdId, 'consumer'),
-      fetchStrategyConfigs(householdId),
-    ]).then(async ([adv, con, configs]) => {
-      setAdvisorLineItems(adv)
-      setConsumerLineItems(con)
-      setStrategyConfigs((configs as StrategyConfigSummary[]) ?? [])
-      try {
-        const r = await fetch('/api/estate-composition', {
+
+    const fetches: Promise<unknown>[] = []
+
+    if (forceRefresh || initialAdvisorLineItems.length === 0) {
+      fetches.push(
+        fetchStrategyLineItems(householdId, 'advisor').then((items) => {
+          setAdvisorLineItems(items)
+        }),
+        fetchStrategyLineItems(householdId, 'consumer').then((items) => {
+          setConsumerLineItems(items)
+        }),
+      )
+    }
+
+    if (forceRefresh || initialStrategyConfigs.length === 0) {
+      fetches.push(
+        fetchStrategyConfigs(householdId).then((configs) => {
+          setStrategyConfigs((configs as StrategyConfigSummary[]) ?? [])
+        }),
+      )
+    }
+
+    if (forceRefresh || !estateComposition) {
+      fetches.push(
+        fetch('/api/estate-composition', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ householdId, sourceRole: 'consumer' }),
         })
-        const d = await r.json()
-        if (!d.error) setConsumerComposition(d)
-      } catch {
-        // non-fatal — ConsumerPlanStatus handles null gracefully
-      }
-    }).catch(() => null)
-  }, [householdId])
+          .then((r) => r.json())
+          .then((d) => {
+            if (!d.error) setConsumerComposition(d)
+          })
+          .catch(() => null),
+      )
+    }
+
+    await Promise.all(fetches)
+  }, [
+    estateComposition,
+    householdId,
+    initialAdvisorLineItems.length,
+    initialStrategyConfigs.length,
+  ])
 
   const handleInlineRecommend = useCallback(async () => {
-    await loadConsumerData()
+    await loadConsumerData(true)
     router.refresh()
     setInlineStrategyId(null)
   }, [loadConsumerData, router])
@@ -292,8 +328,8 @@ export default function StrategyTab({
   ])
 
   useEffect(() => {
-    loadConsumerData()
-  }, [loadConsumerData])
+    void loadConsumerData(false)
+  }, [householdId, loadConsumerData])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)

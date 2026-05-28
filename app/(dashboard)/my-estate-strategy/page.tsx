@@ -16,7 +16,7 @@ import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
@@ -42,7 +42,7 @@ export default async function MyEstateStrategyPage() {
   if (!household) redirect('/profile')
 
   if (!hasFeatureAccess('my-estate-strategy', access.tier, access.isAdvisor, access.isTrial)) {
-    const compositionForBanner = await classifyEstateAssets(supabase, household.id, 'consumer', 0)
+    const compositionForBanner = await getCachedComposition(supabase, household.id, 'consumer', 0)
 
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -293,7 +293,7 @@ export default async function MyEstateStrategyPage() {
     Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) || 0,
   )
 
-  const composition = await classifyEstateAssets(
+  const composition = await getCachedComposition(
     supabase,
     household.id,
     'consumer',

@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { computeEstateHealthScore } from '@/lib/estate-health-score'
 import { detectConflicts } from '@/lib/conflict-detector'
+import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { upsertCompositionCache } from '@/lib/estate/getCachedComposition'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -42,6 +44,27 @@ export async function POST(request: Request) {
         .update({ recommendations: recsData })
         .eq('household_id', householdId)
     }
+
+    const { data: giftingSummary } = await supabase.rpc('calculate_gifting_summary', {
+      p_household_id: householdId,
+    })
+    const lifetimeGiftsUsed = Math.max(
+      0,
+      Number(
+        (giftingSummary as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ??
+          0,
+      ) || 0,
+    )
+
+    const [consumerComposition, advisorComposition] = await Promise.all([
+      classifyEstateAssets(supabase, householdId, 'consumer', lifetimeGiftsUsed),
+      classifyEstateAssets(supabase, householdId, 'advisor', lifetimeGiftsUsed),
+    ])
+
+    await Promise.all([
+      upsertCompositionCache(supabase, householdId, 'consumer', consumerComposition, lifetimeGiftsUsed),
+      upsertCompositionCache(supabase, householdId, 'advisor', advisorComposition, lifetimeGiftsUsed),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (e: unknown) {

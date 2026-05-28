@@ -10,6 +10,7 @@ import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { SSClient } from './_ss-client'
+import { loadSocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
 
 export default async function SocialSecurityPage() {
   const access = await getUserAccess()
@@ -46,6 +47,8 @@ export default async function SocialSecurityPage() {
     .single()
   if (!household) redirect('/profile')
 
+  const ssData = await loadSocialSecurityData(supabase, user.id)
+
   return (
     <div className='max-w-7xl mx-auto px-4 py-8'>
       <div className='mb-6'>
@@ -54,7 +57,7 @@ export default async function SocialSecurityPage() {
           Break-even claiming analysis and spousal coordination scenarios
         </p>
       </div>
-      <SSClient data={null} />
+      <SSClient data={ssData} />
     </div>
   )
 }

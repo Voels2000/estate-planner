@@ -8,6 +8,27 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+---
+
+## Post-launch perf sprint (2026-05-27)
+
+| Area | Change |
+|------|--------|
+| **StrategyTab hydration** | Server prefetch line items (advisor + consumer), strategy configs, gifting actuals when `tab=strategy`; `fetchStrategyLineItemsWithClient` / `fetchStrategyConfigsWithClient` in `lib/estate/strategyLedger.ts` |
+| **SS prefetch** | `lib/social-security/loadSocialSecurityData.ts`; page passes `ssData`; API route reuses loader |
+| **Setup progress** | Dashboard server `fetchSetupProgressCounts` → `initialSetupProgress` |
+| **Charitable** | Trust-strategy page RPC + `CharitableGivingDashboard` `initialCharitableSummary` |
+| **Dynamic import** | `ConsumerStrategyPanel` via `next/dynamic` on trust-strategy `_client.tsx` |
+| **Notifications** | `createAdvisorStrategyNotifications` + `POST /api/consumer/advisor-strategy-notifications`; removed INSERT from trust-strategy `page.tsx` render |
+| **Loading/error** | `my-estate-trust-strategy/loading.tsx`, `error.tsx`; `dashboard/error.tsx` |
+| **Composition cache** | Migration `20260527180000_estate_composition_cache.sql`; `getCachedComposition` / `upsertCompositionCache`; recompute route writes both roles |
+
+**Deploy:** `supabase db push` for `20260527180000` before expecting warm cache.
+
+**Docs:** [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), [DECISION_LOG.md](./DECISION_LOG.md).
+
+---
+
 ## Pre-launch consistency fixes (2026-05-27, code only)
 
 | Area | Change |

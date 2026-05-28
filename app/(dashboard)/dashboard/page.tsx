@@ -36,10 +36,11 @@ import { buildNetWorthSummaryFromDashboardInput } from '@/lib/view-models/netWor
 import { buildRetirementSnapshot } from '@/lib/view-models/retirementSnapshot'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
 import { DashboardClient } from '../_dashboard-client'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
 import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
@@ -221,7 +222,7 @@ export default async function DashboardPage() {
   const [completionScore, composition] = await Promise.all([
     isConsumerTier2 ? getCompletionScore(user!.id) : Promise.resolve(null),
     household?.id
-      ? classifyEstateAssets(supabase, household.id, 'consumer', lifetimeGiftsUsed)
+      ? getCachedComposition(supabase, household.id, 'consumer', lifetimeGiftsUsed)
       : Promise.resolve(null),
   ])
 
@@ -405,10 +406,12 @@ export default async function DashboardPage() {
   })
 
   const wizardComplete = isWizardComplete(profile)
+  const setupProgress = await fetchSetupProgressCounts(supabase, user!.id)
 
   return (
     <DashboardClient
       wizardComplete={wizardComplete}
+      initialSetupProgress={setupProgress}
       composition={composition}
       userName={profile?.full_name ?? user!.email ?? ''}
       totalAssets={totalAssets}

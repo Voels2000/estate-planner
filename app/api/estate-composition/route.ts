@@ -9,7 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 
 export async function POST(request: Request) {
   try {
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       ) || 0,
     )
 
-    const composition = await classifyEstateAssets(
+    const composition = await getCachedComposition(
       supabase,
       householdId,
       normalizedSourceRole,

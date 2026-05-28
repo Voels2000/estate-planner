@@ -8,7 +8,13 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
+import {
+  fetchStrategyConfigsWithClient,
+  fetchStrategyLineItemsWithClient,
+  type AdvisorStrategyLineItemSummary,
+  type StrategyLineItemSummary,
+} from '@/lib/estate/strategyLedger'
 import {
   loadAdvisorClientHouseholdOrRedirect,
   loadAdvisorClientLinkOrRedirect,
@@ -99,7 +105,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0,
     ) || 0,
   )
-  const estateComposition = await classifyEstateAssets(
+  const estateComposition = await getCachedComposition(
     supabase,
     household.id,
     'consumer',
@@ -412,6 +418,54 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   void markClientStrategyQuestionsRead(supabase, userId, clientId)
 
+  let initialAdvisorLineItems: AdvisorStrategyLineItemSummary[] | undefined
+  let initialConsumerLineItems: StrategyLineItemSummary[] | undefined
+  let initialStrategyConfigs: Record<string, unknown>[] | undefined
+  let initialGiftingActuals:
+    | {
+        annualUsed: number
+        annualCapacity: number
+        lifetimeUsed: number
+        lifetimeRemaining: number
+        perRecipientLimit: number
+        splitElected: boolean
+        uniqueRecipients: number
+      }
+    | undefined
+
+  if (tab === 'strategy') {
+    const giftingData = giftingSummaryRes.data as {
+      annual_used?: number
+      annual_capacity?: number
+      lifetime_used?: number
+      lifetime_remaining?: number
+      per_recipient_limit?: number
+      split_elected?: boolean
+      unique_recipients?: number
+    } | null
+
+    if (giftingData) {
+      initialGiftingActuals = {
+        annualUsed: giftingData.annual_used ?? 0,
+        annualCapacity: giftingData.annual_capacity ?? 0,
+        lifetimeUsed: giftingData.lifetime_used ?? 0,
+        lifetimeRemaining: giftingData.lifetime_remaining ?? 0,
+        perRecipientLimit: giftingData.per_recipient_limit ?? 19000,
+        splitElected: giftingData.split_elected ?? false,
+        uniqueRecipients: giftingData.unique_recipients ?? 2,
+      }
+    }
+
+    const [advisorItems, consumerItems, configs] = await Promise.all([
+      fetchStrategyLineItemsWithClient(supabase, household.id, 'advisor'),
+      fetchStrategyLineItemsWithClient(supabase, household.id, 'consumer'),
+      fetchStrategyConfigsWithClient(supabase, household.id),
+    ])
+    initialAdvisorLineItems = advisorItems
+    initialConsumerLineItems = consumerItems
+    initialStrategyConfigs = configs
+  }
+
   // 4) Route shell composition
   return (
     <ClientViewShell
@@ -459,6 +513,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       cachedAdvisoryMetrics={cachedAdvisoryMetrics}
       advisoryMetricsInput={advisoryMetricsInput}
       hasRunStrategyModules={hasRunStrategyModules}
+      initialAdvisorLineItems={initialAdvisorLineItems}
+      initialConsumerLineItems={initialConsumerLineItems}
+      initialStrategyConfigs={initialStrategyConfigs}
+      initialGiftingActuals={initialGiftingActuals}
     />
   )
 }

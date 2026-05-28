@@ -11,7 +11,11 @@ import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
-import type { EstateComposition } from '@/lib/estate/types'
+import type { EstateComposition, StrategyLineItem } from '@/lib/estate/types'
+import type {
+  AdvisorStrategyLineItemSummary,
+  StrategyLineItemSummary,
+} from '@/lib/estate/strategyLedger'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
@@ -383,4 +387,16 @@ export interface ClientViewShellProps {
   cachedAdvisoryMetrics?: import('@/lib/advisoryMetrics').AdvisoryMetric[]
   advisoryMetricsInput?: import('@/lib/advisoryMetrics').AdvisoryMetricsInput
   hasRunStrategyModules?: boolean
+  initialAdvisorLineItems?: AdvisorStrategyLineItemSummary[]
+  initialConsumerLineItems?: StrategyLineItemSummary[]
+  initialStrategyConfigs?: Array<{ strategy_source?: StrategyLineItem['strategy_source'] }>
+  initialGiftingActuals?: {
+    annualUsed: number
+    annualCapacity: number
+    lifetimeUsed: number
+    lifetimeRemaining: number
+    perRecipientLimit: number
+    splitElected: boolean
+    uniqueRecipients: number
+  } | null
 }

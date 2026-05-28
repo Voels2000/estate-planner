@@ -14,6 +14,7 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 | `profile`, `dashboard`, … | Listed in `FEATURE_TIERS` (`lib/tiers.ts`); sidebar and pages use `hasFeatureAccess(feature, tier, isAdvisor, isTrial)` |
 | — (dash) | **Legacy note:** estate horizon routes now have `FEATURE_TIERS` keys (`my-estate-strategy`, `my-estate-trust-strategy`); sidebar Estate group still uses group-level tier lock (`tier < 3`) for nav leaves without per-item `feature` keys |
 | Sub-tabs | Not separate routes — documented under parent in [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (e.g. trust-strategy `?tab=`) |
+| Loading/error | `/my-estate-trust-strategy` has `loading.tsx` + `error.tsx`; `/dashboard` has `error.tsx` (post-launch perf) |
 
 **Active nav indicator (NAV-1):** `app/(dashboard)/_components/sidebar-nav.tsx` uses `usePathname()` + `isNavItemActive()` to apply `NAV_ACTIVE` (navy background, gold left border). Planning groups auto-expand when any child matches the current path. `/dashboard` matches exactly; other routes match path or subpath; hrefs with `?query` compare on the path segment only.
 

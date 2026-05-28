@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import ConsumerStrategyPanel from '@/components/consumer/ConsumerStrategyPanel'
 import { TrustDocumentsPanel } from '@/components/consumer/TrustDocumentsPanel'
 import type {
   TrustRow,
@@ -17,6 +16,7 @@ import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type { GiftingSummary } from '@/components/GiftingDashboard'
+import type { CharitableSummary } from '@/components/CharitableGivingDashboard'
 import { ReversalModal, type ReversalModalAction } from '@/components/consumer/strategy/ReversalModal'
 import {
   returnStrategyToSandbox,
@@ -40,6 +40,23 @@ const GiftingDashboard = dynamic(() => import('@/components/GiftingDashboard'), 
 const CharitableGivingDashboard = dynamic(() => import('@/components/CharitableGivingDashboard'), {
   ssr: false,
 })
+const ConsumerStrategyPanel = dynamic(
+  () => import('@/components/consumer/ConsumerStrategyPanel'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="animate-pulse space-y-4 p-6">
+        <div className="h-10 rounded-lg bg-gray-100" />
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-10 rounded-lg bg-gray-100" />
+          ))}
+        </div>
+        <div className="h-48 rounded-lg bg-gray-100" />
+      </div>
+    ),
+  },
+)
 
 type Tab = 'gifting' | 'charitable' | 'strategies' | 'trusts'
 
@@ -103,6 +120,7 @@ interface Props {
   }
   marginalStateEstateRatePct?: number
   charitableHouseholdContext?: CharitableHouseholdContext | null
+  initialCharitableSummary?: CharitableSummary | null
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -139,8 +157,13 @@ export default function MyEstateTrustStrategyClient({
   trustEstateSummary,
   marginalStateEstateRatePct = 0,
   charitableHouseholdContext = null,
+  initialCharitableSummary = null,
 }: Props) {
   const router = useRouter()
+
+  useEffect(() => {
+    void fetch('/api/consumer/advisor-strategy-notifications', { method: 'POST' })
+  }, [householdId])
   const validTabs: Tab[] = ['gifting', 'charitable', 'strategies', 'trusts']
   const startTab = validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'gifting'
   const [activeTab, setActiveTab] = useState<Tab>(startTab)
@@ -788,6 +811,7 @@ export default function MyEstateTrustStrategyClient({
           userRole={userRole}
           consumerTier={consumerTier}
           householdContext={charitableHouseholdContext}
+          initialCharitableSummary={initialCharitableSummary}
         />
       )}
 

@@ -161,6 +161,27 @@ export async function fetchStrategyLineItems(
   sourceRole: StrategySourceRole,
 ): Promise<StrategyLineItemSummary[] | AdvisorStrategyLineItemSummary[]> {
   const supabase = createClient()
+  if (sourceRole === 'advisor') {
+    return fetchStrategyLineItemsWithClient(supabase, householdId, 'advisor')
+  }
+  return fetchStrategyLineItemsWithClient(supabase, householdId, 'consumer')
+}
+
+export async function fetchStrategyLineItemsWithClient(
+  supabase: SupabaseClient,
+  householdId: string,
+  sourceRole: 'consumer',
+): Promise<StrategyLineItemSummary[]>
+export async function fetchStrategyLineItemsWithClient(
+  supabase: SupabaseClient,
+  householdId: string,
+  sourceRole: 'advisor',
+): Promise<AdvisorStrategyLineItemSummary[]>
+export async function fetchStrategyLineItemsWithClient(
+  supabase: SupabaseClient,
+  householdId: string,
+  sourceRole: StrategySourceRole,
+): Promise<StrategyLineItemSummary[] | AdvisorStrategyLineItemSummary[]> {
 
   if (sourceRole === 'advisor') {
     const { data, error } = await supabase
@@ -192,8 +213,13 @@ export async function fetchStrategyLineItems(
 }
 
 export async function fetchStrategyConfigs(householdId: string) {
-  const supabase = createClient()
+  return fetchStrategyConfigsWithClient(createClient(), householdId)
+}
 
+export async function fetchStrategyConfigsWithClient(
+  supabase: SupabaseClient,
+  householdId: string,
+) {
   const { data, error } = await supabase
     .from('strategy_configs')
     .select('*')

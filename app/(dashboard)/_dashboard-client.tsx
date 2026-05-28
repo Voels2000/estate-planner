@@ -14,7 +14,6 @@ import {
   SetupProgressCardSkeleton,
 } from '@/components/dashboard/SetupProgressCard'
 import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
-import { Card } from '@/components/ui/Card'
 import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
@@ -132,6 +131,7 @@ type Props = {
     distinctPropertyStates: string[]
   } | null
   wizardComplete?: boolean
+  initialSetupProgress?: SetupProgressCounts
 }
 
 // ---------------------------------------------------------------------------
@@ -179,14 +179,17 @@ export function DashboardClient(props: Props) {
     successionGap = false,
     personaAlerts = null,
     wizardComplete = false,
+    initialSetupProgress,
   } = props
 
   const router = useRouter()
-  const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(null)
-  const [setupProgressLoading, setSetupProgressLoading] = useState(true)
+  const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(
+    initialSetupProgress ?? null,
+  )
+  const [setupProgressLoading, setSetupProgressLoading] = useState(initialSetupProgress == null)
 
   useEffect(() => {
-    if (isAdvisor) {
+    if (isAdvisor || initialSetupProgress != null) {
       setSetupProgressLoading(false)
       return
     }
@@ -204,7 +207,7 @@ export function DashboardClient(props: Props) {
     return () => {
       cancelled = true
     }
-  }, [isAdvisor])
+  }, [isAdvisor, initialSetupProgress])
   void hasBaseCase
   void scenarioId
   void isAdvisor

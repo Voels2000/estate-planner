@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-31 (strategy reversal lifecycle; pre-launch RLS; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (post-launch perf sprint; strategy reversal lifecycle; pre-launch RLS; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Strategy reversal (shipped):** return to sandbox / withdraw / unwind + gifting delete warning + advisor withdrawn view. **Strategy sandbox → actuals** shipped. **Remaining (manual):** `supabase db push` for `20260531120000`, isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab server hydration; SS/setup progress/charitable server prefetch; ConsumerStrategyPanel dynamic import; trust-strategy notification off render + loading/error boundaries; `estate_composition_cache` at recompute. **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Strategy reversal (shipped):** return to sandbox / withdraw / unwind + gifting delete warning + advisor withdrawn view. **Remaining (manual):** `supabase db push` for `20260531120000` (if not applied), isolation smoke, legal, Stripe, `PUBLIC_SIGNUP_OPEN=true`, release smoke.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,22 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Post-launch perf sprint ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **StrategyTab hydration** | Advisor `page.tsx` prefetches advisor/consumer line items, strategy configs, gifting actuals when `tab=strategy`; `StrategyTab` hydrates from props; `loadConsumerData(false)` skips mount fetches; `loadConsumerData(true)` after writes |
+| **Server prefetch** | Social Security (`loadSocialSecurityData`), dashboard setup progress, charitable summary on trust-strategy |
+| **Dynamic import** | `ConsumerStrategyPanel` — `dynamic(..., { ssr: false })` on trust-strategy tabs |
+| **Render path** | Advisor strategy notifications via `POST /api/consumer/advisor-strategy-notifications` (client mount); `loading.tsx` / `error.tsx` on trust-strategy + dashboard |
+| **Composition cache** | `estate_composition_cache` table; `getCachedComposition` read path; recompute upserts consumer + advisor roles |
+
+**Migration:** `20260527180000_estate_composition_cache.sql` — apply before cache is warm in prod.
+
+**Detail:** [SCHEMA_CHANGELOG.md § Post-launch perf](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md § Estate health recompute](./MASTER_ARCHITECTURE.md#estate-health-recompute--operations) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -474,7 +490,7 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 
 **Commit:** `47a38f3` · **Migration:** `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy if not already applied · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
 
-**Remaining post-launch perf:** Materialize `calculate_estate_composition` at recompute (recommendations done; composition still on-demand on some surfaces).
+**Remaining post-launch perf:** ~~Materialize `calculate_estate_composition` at recompute~~ — **shipped 2026-05-27** (`estate_composition_cache` + `getCachedComposition`). Apply migration `20260527180000` in prod.
 
 ---
 
