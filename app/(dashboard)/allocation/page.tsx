@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadAssetAllocationData } from '@/lib/allocation/loadAssetAllocationData'
 import AllocationClient from './_allocation-client'
 
 export const metadata = {
@@ -31,11 +32,14 @@ export default async function AssetAllocationPage() {
     )
   }
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('target_stocks_pct, target_bonds_pct, target_cash_pct, risk_tolerance')
-    .eq('owner_id', user.id)
-    .maybeSingle()
+  const [{ data: household }, allocationData] = await Promise.all([
+    supabase
+      .from('households')
+      .select('target_stocks_pct, target_bonds_pct, target_cash_pct, risk_tolerance')
+      .eq('owner_id', user.id)
+      .maybeSingle(),
+    loadAssetAllocationData(supabase, user.id),
+  ])
 
   const initialTargets =
     household?.target_stocks_pct != null
@@ -58,6 +62,7 @@ export default async function AssetAllocationPage() {
       userTier={access.tier}
       initialTargets={initialTargets}
       initialRiskTolerance={initialRiskTolerance}
+      initialAllocationData={allocationData}
     />
   )
 }

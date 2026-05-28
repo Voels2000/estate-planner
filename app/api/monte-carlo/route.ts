@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserAccess } from '@/lib/get-user-access'
 import { runSimulation, MonteCarloInputs } from '@/lib/monte-carlo'
+import { loadMonteCarloHistory } from '@/lib/monte-carlo/loadMonteCarloHistory'
 
 export async function GET() {
   const access = await getUserAccess()
@@ -14,15 +15,13 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('monte_carlo_runs')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  try {
+    const data = await loadMonteCarloHistory(user.id)
+    return NextResponse.json(data)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load history'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {

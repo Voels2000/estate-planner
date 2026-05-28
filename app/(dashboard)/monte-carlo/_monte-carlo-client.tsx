@@ -13,6 +13,8 @@ import { formatCurrency } from '@/lib/insurance'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { MonteCarloInputs, YearlyDataPoint } from '@/lib/monte-carlo'
+import type { MonteCarloPrefillPayload } from '@/lib/monte-carlo/loadMonteCarloPrefill'
+import type { MonteCarloAdvisorAssumptionsPayload } from '@/lib/monte-carlo/loadMonteCarloAdvisorAssumptions'
 
 interface SavedRun {
   id: string
@@ -53,7 +55,7 @@ interface PrefillSummary {
 
 interface AdvisorAssumptionScenario {
   id: string
-  scenarioName: string
+  scenarioName: string | null
   sharedAt?: string | null
   acceptedAt?: string | null
   assumptions: {
@@ -376,21 +378,106 @@ function CompareView({ history, compareA, compareB, setCompareA, setCompareB }: 
   )
 }
 
-export function MonteCarloClient() {
+function applyPrefillToInputs(
+  inputs: MonteCarloInputs,
+  prefillData: MonteCarloPrefillPayload,
+): MonteCarloInputs {
+  const p = prefillData.prefill
+  return {
+    ...inputs,
+    birth_year: p.birth_year ?? inputs.birth_year,
+    current_age: p.current_age ?? inputs.current_age,
+    retirement_age: p.retirement_age ?? inputs.retirement_age,
+    life_expectancy: p.life_expectancy ?? inputs.life_expectancy,
+    inflation_rate: p.inflation_rate ?? inputs.inflation_rate,
+    social_security_monthly: p.social_security_monthly ?? inputs.social_security_monthly,
+    social_security_start_age: p.social_security_start_age ?? inputs.social_security_start_age,
+    has_spouse: p.has_spouse ?? inputs.has_spouse,
+    p2_birth_year: p.p2_birth_year ?? inputs.p2_birth_year,
+    p2_current_age: p.p2_current_age ?? inputs.p2_current_age,
+    p2_retirement_age: p.p2_retirement_age ?? inputs.p2_retirement_age,
+    p2_life_expectancy: p.p2_life_expectancy ?? inputs.p2_life_expectancy,
+    p2_social_security_monthly: p.p2_social_security_monthly ?? inputs.p2_social_security_monthly,
+    p2_social_security_start_age:
+      p.p2_social_security_start_age ?? inputs.p2_social_security_start_age,
+    current_portfolio: p.current_portfolio ?? inputs.current_portfolio,
+    monthly_contribution: p.monthly_contribution ?? inputs.monthly_contribution,
+    stocks_pct: p.stocks_pct ?? inputs.stocks_pct,
+    bonds_pct: p.bonds_pct ?? inputs.bonds_pct,
+    cash_pct: p.cash_pct ?? inputs.cash_pct,
+    other_income_annual: p.other_income_annual ?? inputs.other_income_annual,
+    annual_spending: p.annual_spending ?? inputs.annual_spending,
+    survivor_spending_pct: p.survivor_spending_pct ?? inputs.survivor_spending_pct,
+  }
+}
+
+function applyAdvisorAssumptionsToInputs(
+  inputs: MonteCarloInputs,
+  advisorData: MonteCarloAdvisorAssumptionsPayload | null,
+): MonteCarloInputs {
+  const accepted = advisorData?.acceptedScenario
+  if (!accepted?.assumptions) return inputs
+  return {
+    ...inputs,
+    inflation_rate: Number(accepted.assumptions.inflationRatePct ?? inputs.inflation_rate),
+    simulation_count: Number(accepted.assumptions.simulationCount ?? inputs.simulation_count),
+  }
+}
+
+function buildInitialMonteCarloState(
+  initialPrefill: MonteCarloPrefillPayload | null,
+  initialAdvisorAssumptions: MonteCarloAdvisorAssumptionsPayload | null,
+) {
+  let inputs = { ...EMPTY_INPUTS }
+  if (initialPrefill?.prefill) {
+    inputs = applyPrefillToInputs(inputs, initialPrefill)
+  }
+  inputs = applyAdvisorAssumptionsToInputs(inputs, initialAdvisorAssumptions)
+
+  return {
+    inputs,
+    confidence: (initialPrefill?.confidence ?? {}) as Record<string, Confidence>,
+    summary: initialPrefill?.summary ?? null,
+    p1Name: initialPrefill?.person1_name
+      ? displayPersonFirstName(initialPrefill.person1_name, 'Person 1')
+      : 'Person 1',
+    p2Name: initialPrefill?.person2_name
+      ? displayPersonFirstName(initialPrefill.person2_name, 'Person 2')
+      : 'Person 2',
+    acceptedAdvisorScenario: initialAdvisorAssumptions?.acceptedScenario ?? null,
+    latestSharedAdvisorScenario: initialAdvisorAssumptions?.latestSharedScenario ?? null,
+  }
+}
+
+export function MonteCarloClient({
+  initialPrefill = null,
+  initialHistory = null,
+  initialAdvisorAssumptions = null,
+}: {
+  initialPrefill?: MonteCarloPrefillPayload | null
+  initialHistory?: SavedRun[] | null
+  initialAdvisorAssumptions?: MonteCarloAdvisorAssumptionsPayload | null
+}) {
+  const initialState = buildInitialMonteCarloState(initialPrefill, initialAdvisorAssumptions)
+
   const [step, setStep]             = useState<Step>('portfolio')
-  const [inputs, setInputs]         = useState<MonteCarloInputs>(EMPTY_INPUTS)
-  const [confidence, setConfidence] = useState<Record<string, Confidence>>({})
-  const [summary, setSummary]       = useState<PrefillSummary | null>(null)
+  const [inputs, setInputs]         = useState<MonteCarloInputs>(initialState.inputs)
+  const [confidence, setConfidence] = useState<Record<string, Confidence>>(initialState.confidence)
+  const [summary, setSummary]       = useState<PrefillSummary | null>(initialState.summary)
   const [result, setResult]         = useState<SavedRun | null>(null)
-  const [history, setHistory]       = useState<SavedRun[]>([])
+  const [history, setHistory]       = useState<SavedRun[]>(initialHistory ?? [])
   const [loading, setLoading]       = useState(false)
-  const [prefilling, setPrefilling] = useState(true)
+  const [prefilling, setPrefilling] = useState(initialPrefill === null)
   const [error, setError]           = useState<string | null>(null)
   const [label, setLabel]           = useState('')
-  const [p1Name, setP1Name]         = useState('Person 1')
-  const [p2Name, setP2Name]         = useState('Person 2')
-  const [acceptedAdvisorScenario, setAcceptedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(null)
-  const [latestSharedAdvisorScenario, setLatestSharedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(null)
+  const [p1Name, setP1Name]         = useState(initialState.p1Name)
+  const [p2Name, setP2Name]         = useState(initialState.p2Name)
+  const [acceptedAdvisorScenario, setAcceptedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(
+    initialState.acceptedAdvisorScenario,
+  )
+  const [latestSharedAdvisorScenario, setLatestSharedAdvisorScenario] = useState<AdvisorAssumptionScenario | null>(
+    initialState.latestSharedAdvisorScenario,
+  )
   const [assumptionActionLoading, setAssumptionActionLoading] = useState(false)
 
   const [activeTab, setActiveTab] = useState<'simulate' | 'compare'>('simulate')
@@ -406,48 +493,37 @@ export function MonteCarloClient() {
   const missingCritical = ['current_age', 'current_portfolio', 'annual_spending'].filter(k => confidence[k] === 'missing' || !inputs[k as keyof MonteCarloInputs])
 
   useEffect(() => {
+    if (initialPrefill !== null && initialHistory !== null) return
+
     Promise.all([
-      fetch('/api/monte-carlo/prefill').then(r => r.json()),
-      fetch('/api/monte-carlo').then(r => r.json()),
-    ]).then(([prefillData, historyData]) => {
-      if (prefillData?.prefill) {
-        const p = prefillData.prefill
-        setInputs(prev => ({
-          ...prev,
-          birth_year:                  p.birth_year               ?? prev.birth_year,
-          current_age:                 p.current_age              ?? prev.current_age,
-          retirement_age:              p.retirement_age           ?? prev.retirement_age,
-          life_expectancy:             p.life_expectancy          ?? prev.life_expectancy,
-          inflation_rate:              p.inflation_rate           ?? prev.inflation_rate,
-          social_security_monthly:     p.social_security_monthly  ?? prev.social_security_monthly,
-          social_security_start_age:   p.social_security_start_age ?? prev.social_security_start_age,
-          has_spouse:                  p.has_spouse               ?? prev.has_spouse,
-          p2_birth_year:               p.p2_birth_year            ?? prev.p2_birth_year,
-          p2_current_age:              p.p2_current_age           ?? prev.p2_current_age,
-          p2_retirement_age:           p.p2_retirement_age        ?? prev.p2_retirement_age,
-          p2_life_expectancy:          p.p2_life_expectancy       ?? prev.p2_life_expectancy,
-          p2_social_security_monthly:  p.p2_social_security_monthly ?? prev.p2_social_security_monthly,
-          p2_social_security_start_age: p.p2_social_security_start_age ?? prev.p2_social_security_start_age,
-          current_portfolio:           p.current_portfolio        ?? prev.current_portfolio,
-          monthly_contribution:        p.monthly_contribution     ?? prev.monthly_contribution,
-          stocks_pct:                  p.stocks_pct               ?? prev.stocks_pct,
-          bonds_pct:                   p.bonds_pct                ?? prev.bonds_pct,
-          cash_pct:                    p.cash_pct                 ?? prev.cash_pct,
-          other_income_annual:         p.other_income_annual      ?? prev.other_income_annual,
-          annual_spending:             p.annual_spending          ?? prev.annual_spending,
-          survivor_spending_pct:       p.survivor_spending_pct    ?? prev.survivor_spending_pct,
-        }))
-        if (prefillData.person1_name) setP1Name(displayPersonFirstName(prefillData.person1_name, 'Person 1'))
-        if (prefillData.person2_name) setP2Name(displayPersonFirstName(prefillData.person2_name, 'Person 2'))
-        setConfidence(prefillData.confidence ?? {})
-        setSummary(prefillData.summary ?? null)
-      }
-      if (Array.isArray(historyData)) setHistory(historyData)
-      setPrefilling(false)
-    }).catch(() => setPrefilling(false))
-  }, [])
+      initialPrefill === null
+        ? fetch('/api/monte-carlo/prefill').then((r) => r.json())
+        : Promise.resolve(initialPrefill),
+      initialHistory === null
+        ? fetch('/api/monte-carlo').then((r) => r.json())
+        : Promise.resolve(initialHistory),
+    ])
+      .then(([prefillData, historyData]) => {
+        if (prefillData?.prefill) {
+          setInputs((prev) => applyPrefillToInputs(prev, prefillData))
+          if (prefillData.person1_name) {
+            setP1Name(displayPersonFirstName(prefillData.person1_name, 'Person 1'))
+          }
+          if (prefillData.person2_name) {
+            setP2Name(displayPersonFirstName(prefillData.person2_name, 'Person 2'))
+          }
+          setConfidence(prefillData.confidence ?? {})
+          setSummary(prefillData.summary ?? null)
+        }
+        if (Array.isArray(historyData)) setHistory(historyData)
+        setPrefilling(false)
+      })
+      .catch(() => setPrefilling(false))
+  }, [initialPrefill, initialHistory])
 
   useEffect(() => {
+    if (initialAdvisorAssumptions !== null) return
+
     fetch('/api/monte-carlo/advisor-assumptions')
       .then((r) => r.json())
       .then((data) => {
@@ -456,15 +532,11 @@ export function MonteCarloClient() {
         setAcceptedAdvisorScenario(accepted)
         setLatestSharedAdvisorScenario(shared)
         if (accepted?.assumptions) {
-          setInputs((prev) => ({
-            ...prev,
-            inflation_rate: Number(accepted.assumptions.inflationRatePct ?? prev.inflation_rate),
-            simulation_count: Number(accepted.assumptions.simulationCount ?? prev.simulation_count),
-          }))
+          setInputs((prev) => applyAdvisorAssumptionsToInputs(prev, data))
         }
       })
       .catch(() => null)
-  }, [])
+  }, [initialAdvisorAssumptions])
 
   async function acceptAdvisorAssumptions() {
     if (!latestSharedAdvisorScenario?.id) return

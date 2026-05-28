@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (post-launch perf — StrategyTab hydration, composition cache)
+# Last updated: 2026-05-27 (Sprint B — Monte Carlo + Allocation server prefetch)
+
+## Post-launch perf — Monte Carlo + Allocation server prefetch (2026-05-27)
+
+**Decision:** Extract shared loaders for `/monte-carlo` and `/allocation` (same pattern as Social Security): `loadMonteCarloPrefill`, `loadMonteCarloHistory`, `loadMonteCarloAdvisorAssumptions`, `loadAssetAllocationData`. Server pages prefetch in `Promise.all`; client components initialize state from props and skip mount-time API waterfalls when hydrated.
+
+**Reasoning:** `/monte-carlo` fired three client fetches on mount (prefill, history, advisor assumptions); `/allocation` always fetched `/api/asset-allocation` despite partial server props for targets/risk only.
+
+**Docs:** [lib/monte-carlo/](../lib/monte-carlo/), [lib/allocation/loadAssetAllocationData.ts](../lib/allocation/loadAssetAllocationData.ts), [SCHEMA_CHANGELOG.md § Post-launch perf Sprint B](./SCHEMA_CHANGELOG.md).
+
+---
 
 ## Post-launch perf — advisor tab loader alignment (2026-05-27)
 

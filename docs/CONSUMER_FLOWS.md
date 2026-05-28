@@ -256,6 +256,14 @@ Three related routes share projection engines but answer different questions. **
 
 **Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
 
+### Retirement modeling — Monte Carlo + Allocation (Sprint B prefetch)
+
+| Route | Tier | Server prefetch | Client fallback |
+|-------|------|-----------------|-----------------|
+| `/monte-carlo` | 3 | `loadMonteCarloPrefill` + `loadMonteCarloHistory` + `loadMonteCarloAdvisorAssumptions` | Fetch APIs only when corresponding prop is null |
+| `/allocation` | 2 | `loadAssetAllocationData` (+ household targets/risk) | `GET /api/asset-allocation` when `initialAllocationData` is null |
+| `/social-security` | 2 | `loadSocialSecurityData` | `GET /api/social-security` when `data` prop is null |
+
 ### Dashboard mobile shell (Sprint 12)
 
 Consumer routes under `app/(dashboard)/` use **`DashboardShell`**: sidebar is fixed on `lg+` desktops; below `lg`, a top bar opens an off-canvas drawer (overlay, closes on navigation). Active page: navy fill + gold left accent (`NAV_ACTIVE`); Financial Planning group auto-expands when any child route is active (NAV-1). Public routes (`(public)/layout`) are unchanged. Complex modeling is desktop-first; a brief note appears in the mobile sidebar footer.

@@ -9,6 +9,9 @@ import { getUserAccess } from '@/lib/get-user-access'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
+import { loadMonteCarloPrefill } from '@/lib/monte-carlo/loadMonteCarloPrefill'
+import { loadMonteCarloHistory } from '@/lib/monte-carlo/loadMonteCarloHistory'
+import { loadMonteCarloAdvisorAssumptions } from '@/lib/monte-carlo/loadMonteCarloAdvisorAssumptions'
 import { MonteCarloClient } from './_monte-carlo-client'
 
 export const metadata = {
@@ -37,5 +40,17 @@ export default async function MonteCarloPage() {
     )
   }
 
-  return <MonteCarloClient />
+  const [prefill, history, advisorAssumptions] = await Promise.all([
+    loadMonteCarloPrefill(user.id),
+    loadMonteCarloHistory(user.id),
+    loadMonteCarloAdvisorAssumptions(supabase, user.id),
+  ])
+
+  return (
+    <MonteCarloClient
+      initialPrefill={prefill}
+      initialHistory={history}
+      initialAdvisorAssumptions={advisorAssumptions}
+    />
+  )
 }

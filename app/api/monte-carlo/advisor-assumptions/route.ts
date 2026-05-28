@@ -1,13 +1,7 @@
-/**
- * Consumer Monte Carlo advisor-assumption acceptance API.
- *
- * Reads latest shared/accepted advisor scenarios for the consumer household
- * and handles accept/revert by toggling `accepted_by_client` + `accepted_at`
- * in `advisor_projection_assumptions`.
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'
+import { loadMonteCarloAdvisorAssumptions } from '@/lib/monte-carlo/loadMonteCarloAdvisorAssumptions'
 
 function mapAssumptions(row: Record<string, unknown>) {
   return {
@@ -43,43 +37,8 @@ export async function GET() {
     .single()
   if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
 
-  const { data: acceptedRow } = await supabase
-    .from('advisor_projection_assumptions')
-    .select('*')
-    .eq('client_household_id', household.id)
-    .eq('accepted_by_client', true)
-    .order('accepted_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const { data: sharedRow } = await supabase
-    .from('advisor_projection_assumptions')
-    .select('*')
-    .eq('client_household_id', household.id)
-    .not('shared_at', 'is', null)
-    .order('shared_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  return NextResponse.json({
-    acceptedScenario: acceptedRow
-      ? {
-          id: acceptedRow.id,
-          scenarioName: acceptedRow.scenario_name,
-          acceptedAt: acceptedRow.accepted_at,
-          assumptions: mapAssumptions(acceptedRow as Record<string, unknown>),
-        }
-      : null,
-    latestSharedScenario: sharedRow
-      ? {
-          id: sharedRow.id,
-          scenarioName: sharedRow.scenario_name,
-          sharedAt: sharedRow.shared_at,
-          assumptions: mapAssumptions(sharedRow as Record<string, unknown>),
-        }
-      : null,
-    systemDefaults: MONTE_CARLO_SYSTEM_DEFAULTS,
-  })
+  const data = await loadMonteCarloAdvisorAssumptions(supabase, user.id)
+  return NextResponse.json(data)
 }
 
 export async function PATCH(request: NextRequest) {

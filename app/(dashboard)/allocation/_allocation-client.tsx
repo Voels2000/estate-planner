@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import type { AssetAllocationData } from '@/lib/allocation/loadAssetAllocationData'
 
 export type AllocationTargets = {
   target_stocks_pct: number
@@ -11,26 +12,7 @@ export type AllocationTargets = {
 } | null
 
 interface Benchmark { stocks: number; bonds: number; cash: number }
-interface AllocationData {
-  person1_first_name: string | null
-  age: number | null
-  risk: string
-  retirement_year: number | null
-  years_to_retirement: number | null
-  total_portfolio: number
-  annual_spending: number
-  withdrawal_rate: number | null
-  current_amounts: { stocks: number; bonds: number; cash: number; other: number }
-  current_pct: { stocks: number; bonds: number; cash: number; other: number }
-  target_mix: Benchmark | null
-  target_mix_source: string
-  recommended: Benchmark | null
-  drift: { stocks: number; bonds: number; cash: number } | null
-  rebalance: { stocks: number; bonds: number; cash: number } | null
-  benchmarks: { age_based: Benchmark | null; risk_based: Benchmark; target_date: Benchmark | null }
-  breakdown: { name: string; type: string; value: number; asset_class: string; pct: number }[]
-  has_assets: boolean
-}
+type AllocationData = AssetAllocationData
 
 const COLORS: Record<string, string> = {
   stocks: '#6366f1',
@@ -126,18 +108,20 @@ export default function AllocationClient({
   userTier: _userTier,
   initialTargets,
   initialRiskTolerance,
+  initialAllocationData = null,
 }: {
   userTier: number
   initialTargets: AllocationTargets
   initialRiskTolerance: RiskLevel
+  initialAllocationData?: AllocationData | null
 }) {
   void _userTier
   const router = useRouter()
   const [riskTolerance, setRiskTolerance] = useState<RiskLevel>(initialRiskTolerance)
   const [savingRisk, setSavingRisk] = useState(false)
   const [riskSaveError, setRiskSaveError] = useState<string | null>(null)
-  const [data, setData] = useState<AllocationData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<AllocationData | null>(initialAllocationData)
+  const [loading, setLoading] = useState(initialAllocationData === null)
   const [error, setError] = useState<string | null>(null)
 
   // Target mix sliders
@@ -152,6 +136,8 @@ export default function AllocationClient({
   const valid = Math.abs(total - 100) < 0.01
 
   useEffect(() => {
+    if (initialAllocationData !== null) return
+
     fetch('/api/asset-allocation')
       .then(r => r.json())
       .then(allocData => {
@@ -166,7 +152,7 @@ export default function AllocationClient({
         setError('Failed to load data')
         setLoading(false)
       })
-  }, [])
+  }, [initialAllocationData])
 
   useEffect(() => {
     if (initialTargets?.target_stocks_pct != null) {

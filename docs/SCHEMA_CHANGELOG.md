@@ -10,6 +10,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint B — Monte Carlo + Allocation prefetch (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **Monte Carlo loaders** | `lib/monte-carlo/loadMonteCarloPrefill.ts`, `loadMonteCarloHistory.ts`, `loadMonteCarloAdvisorAssumptions.ts` |
+| **Monte Carlo page** | Server prefetch → `initialPrefill`, `initialHistory`, `initialAdvisorAssumptions` on `MonteCarloClient` |
+| **Monte Carlo API** | `/api/monte-carlo/prefill`, `GET /api/monte-carlo`, `GET /api/monte-carlo/advisor-assumptions` delegate to loaders |
+| **Allocation loader** | `lib/allocation/loadAssetAllocationData.ts` |
+| **Allocation page** | `initialAllocationData` prop; client skips mount fetch when hydrated |
+
+**Docs:** [MASTER_ARCHITECTURE.md § Monte Carlo Workflow](./MASTER_ARCHITECTURE.md#monte-carlo-workflow), [DECISION_LOG.md](./DECISION_LOG.md).
+
+---
+
 ## Post-launch perf Sprint A — advisor correctness (2026-05-27, code only)
 
 | Area | Change |
