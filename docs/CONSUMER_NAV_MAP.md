@@ -11,8 +11,8 @@ Update this file when adding or renaming consumer routes (Phase A — Session 11
 
 | Value | Meaning |
 |-------|---------|
-| `profile`, `dashboard`, … | Listed in `FEATURE_TIERS` (`lib/tiers.ts`); sidebar uses `getUserAccess().tier` vs minimum tier |
-| — (dash) | **Intentionally no `FEATURE_TIERS` key** — route still tier-gated in `page.tsx` (e.g. `access.tier < 3` → `UpgradeBanner`) or not subscription-gated (marketing, connections) |
+| `profile`, `dashboard`, … | Listed in `FEATURE_TIERS` (`lib/tiers.ts`); sidebar and pages use `hasFeatureAccess(feature, tier, isAdvisor, isTrial)` |
+| — (dash) | **Legacy note:** estate horizon routes now have `FEATURE_TIERS` keys (`my-estate-strategy`, `my-estate-trust-strategy`); sidebar Estate group still uses group-level tier lock (`tier < 3`) for nav leaves without per-item `feature` keys |
 | Sub-tabs | Not separate routes — documented under parent in [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (e.g. trust-strategy `?tab=`) |
 
 **Active nav indicator (NAV-1):** `app/(dashboard)/_components/sidebar-nav.tsx` uses `usePathname()` + `isNavItemActive()` to apply `NAV_ACTIVE` (navy background, gold left border). Planning groups auto-expand when any child matches the current path. `/dashboard` matches exactly; other routes match path or subpath; hrefs with `?query` compare on the path segment only.
@@ -107,14 +107,14 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Income | `/income` | Income | 1 | `income` |
 | Expenses | `/expenses` | Expenses | 1 | `expenses` |
 | Assets | `/assets` | Assets | 1 | `assets` |
-| Real Estate | `/real-estate` | Real Estate | 1 | `real-estate` |
+| Real Estate | `/real-estate` | Real Estate | 2 | `real-estate` |
 | Business Interests | `/businesses` | Business Interests | 1 | `businesses` |
-| Digital Assets | `/digital-assets` | Digital Assets | 1 | `digital-assets` |
-| Business Succession | `/business-succession` | Business Succession | 1 | `business-succession` |
+| Digital Assets | `/digital-assets` | Digital Assets | 2 | `digital-assets` |
+| Business Succession | `/business-succession` | Business Succession | 3 | `business-succession` |
 | Liabilities | `/liabilities` | Liabilities | 1 | `liabilities` |
 | Life & Estate Insurance | `/insurance` | Life & Estate Insurance | 1 | `insurance` |
 | Property & Casualty | `/property-casualty` | Property & Casualty Insurance | 1 | `insurance` |
-| Asset Allocation | `/allocation` | Asset Allocation | 1 | `allocation` |
+| Asset Allocation | `/allocation` | Asset Allocation | 2 | `allocation` |
 | Projections | `/projections` | Projections | 1 | `projections` |
 | Scenarios | `/scenarios` | Scenarios | 1 | `scenarios` |
 
@@ -147,8 +147,8 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Incapacity Planning | `/incapacity-planning` | Incapacity Planning | 3 | `incapacity` |
 | Domicile Analysis | `/domicile-analysis` | Domicile Analysis | 3 | `domicile-analysis` |
 | Estate Tax Snapshot | `/estate-tax` | Estate Tax Snapshot | 3 | `estate-tax` |
-| Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | — (tier 3 + profile gate in `page.tsx`; no sidebar `FEATURE_TIERS` key) |
-| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | — (tier 3 + profile gate; tabs via `?tab=` not feature keys) |
+| Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | `my-estate-strategy` |
+| Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | `my-estate-trust-strategy` (tabs via `?tab=`; default sidebar href opens Trusts tab) |
 
 ---
 

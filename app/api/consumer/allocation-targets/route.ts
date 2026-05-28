@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { afterHouseholdWrite, requireOwnedHouseholdId } from '@/lib/consumer/afterHouseholdWrite'
 
@@ -79,6 +80,8 @@ export async function PATCH(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await afterHouseholdWrite(supabase, owned.householdId)
+  revalidatePath('/allocation')
+  revalidatePath('/projections')
 
   return NextResponse.json({
     ...(hasTargets

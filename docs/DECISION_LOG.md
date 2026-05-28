@@ -1,6 +1,26 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-31 (strategy reversal lifecycle)
+# Last updated: 2026-05-27 (pre-launch consistency — tier gating, cache revalidation)
+
+## Pre-launch tier gating — pages are authority (2026-05-27)
+
+**Decision:** `FEATURE_TIERS` in `lib/tiers.ts` must match each gated page’s `hasFeatureAccess` check (pages are authority, not sidebar guesses). Sidebar `isLocked()` and every consumer `UpgradeBanner` gate use `hasFeatureAccess(feature, tier, isAdvisor, isTrial)` + `featureUpgradeTier(feature)` for banner copy. Drift fixed before `PUBLIC_SIGNUP_OPEN`: `real-estate`, `allocation`, `digital-assets` → tier 2; `business-succession` → tier 3; added `my-estate-strategy` / `my-estate-trust-strategy` keys.
+
+**Reasoning:** Tier-1 users could click sidebar links that immediately hit `UpgradeBanner` (e.g. Real Estate showed unlocked at tier 1 in nav but gated at tier 2 on the page). Single helper prevents future drift.
+
+**Docs:** [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md), [MASTER_ARCHITECTURE.md § Consumer Billing](./MASTER_ARCHITECTURE.md#consumer-billing--access-contract).
+
+---
+
+## Pre-launch cache revalidation on strategy writes (2026-05-27)
+
+**Decision:** After successful `POST`/`PATCH`/`DELETE` on `/api/strategy-line-items`, call `revalidatePath` for `/my-estate-trust-strategy`, `/my-estate-strategy`, `/dashboard`, `/estate-tax` (same pattern as gift-history). Also revalidate `/scenarios` + `/projections` on growth-assumptions writes and `/allocation` + `/projections` on allocation-targets writes.
+
+**Reasoning:** Strategy confidence changes affect server-rendered composition on multiple routes; clients were relying on `router.refresh()` alone.
+
+**Docs:** [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md).
+
+---
 
 ## Strategy reversal — logged withdraw, consumer-owned (2026-05-31)
 

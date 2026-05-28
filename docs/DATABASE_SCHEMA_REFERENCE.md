@@ -252,6 +252,7 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
   - consumer dashboard reads active advisor rows for `StrategyRecommendationPanel` (accept/decline via `/api/consumer/strategy-recommendation`)
   - consumer removal uses `DELETE /api/strategy-line-items` by `id` (preferred) or legacy household + `strategy_source` + `source_role` (+ optional `scenarioName`); sets `is_active=false`, row retained for audit
   - **Reversal columns (2026-05-31):** `consumer_withdrawn`, `withdrawn_at`, `reversal_reason`, `reversed_from`, `previously_active_at` — consumer-owned audit trail; `PATCH` actions `return_to_sandbox`, `withdraw`, `demote`, `promote` on `/api/strategy-line-items`
+  - **Cache (2026-05-27):** successful `POST` / `PATCH` / `DELETE` on `/api/strategy-line-items` call `afterHouseholdWrite` then `revalidatePath` for `/my-estate-trust-strategy`, `/my-estate-strategy`, `/dashboard`, `/estate-tax` (same pattern as gift-history)
   - consumer accept/reject operations update advisor rows via `consumer_accepted` / `consumer_rejected` / `accepted_at`
   - advisor read APIs may include rejected rows for declined-history visibility, while calculation surfaces filter rejected rows from active impact
   - `my-estate-trust-strategy` and `my-estate-strategy` horizon builds include consumer rows; trust-strategy page merges consumer + non-rejected advisor items before `buildStrategyHorizons`

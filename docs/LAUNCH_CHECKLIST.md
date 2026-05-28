@@ -81,6 +81,7 @@ These must be complete before launch. Update status as sprints close them.
 
 - [x] **App URL in emails** — `lib/app-url.ts` `getAppUrl()` on email routes (Sprint 9)
 - [x] **Digital Assets tier gate** — `FEATURE_TIERS['digital-assets'] = 2` + `UpgradeBanner` on page (Sprint 9)
+- [x] **Tier gating consistency (pre-launch)** — `FEATURE_TIERS` aligned to page gates; `hasFeatureAccess` on sidebar + all gated pages (2026-05-27)
 
 ### Data deletion & WCPA (Sprint C-6) ✅ verified 2026-05-25
 

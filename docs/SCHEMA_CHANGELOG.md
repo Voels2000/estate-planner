@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pre-launch consistency fixes (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **Tier gating** | `FEATURE_TIERS` aligned to page gates; `hasFeatureAccess` + `featureUpgradeTier` on sidebar and all gated pages |
+| **Redirects** | `/digital-assets`: auth `/login`; missing household → `/profile?required=true` |
+| **Advisor Strategy tab** | Server passes `advisoryMetricsInput` (`liquidAssets`, `ilitDeathBenefit`) — removes `grossEstate * 0.3` placeholder |
+| **Advisor composition** | `calculate_gifting_summary` before `classifyEstateAssets(..., lifetimeGiftsUsed)` — advisor exemption matches consumer for lifetime gifts |
+| **Accept/reject** | `my-estate-trust-strategy/_client.tsx` checks `res.ok`; error state; no optimistic update on failure |
+| **Cache** | `revalidatePath` on strategy-line-items POST/PATCH/DELETE; growth-assumptions; allocation-targets |
+
+**Docs:** [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md).
+
+---
+
 ## Strategy sandbox → actuals (2026-05-27, no migration)
 
 **Code only** — `strategy_line_items.confidence_level` enum unchanged; application contract tightened.

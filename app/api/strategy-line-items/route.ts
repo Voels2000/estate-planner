@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import {
   afterHouseholdWrite,
   resolveOwnedHouseholdId,
@@ -18,6 +19,13 @@ function resolveSourceRole(raw: unknown): SourceRole | null {
   if (raw === undefined || raw === null) return 'consumer'
   if (raw === 'consumer' || raw === 'advisor') return raw
   return null
+}
+
+function revalidateStrategyLineItemPaths() {
+  revalidatePath('/my-estate-trust-strategy')
+  revalidatePath('/my-estate-strategy')
+  revalidatePath('/dashboard')
+  revalidatePath('/estate-tax')
 }
 
 export async function POST(request: Request) {
@@ -76,6 +84,7 @@ export async function POST(request: Request) {
     }
 
     await afterHouseholdWrite(supabase, ownedHouseholdId)
+    revalidateStrategyLineItemPaths()
 
     return NextResponse.json(data)
   } catch (err) {
@@ -119,6 +128,7 @@ export async function DELETE(request: Request) {
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       await afterHouseholdWrite(supabase, ownedHouseholdId)
+      revalidateStrategyLineItemPaths()
       return NextResponse.json({ success: true })
     }
 
@@ -156,6 +166,7 @@ export async function DELETE(request: Request) {
     const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
     if (ownedHouseholdId) {
       await afterHouseholdWrite(supabase, ownedHouseholdId)
+      revalidateStrategyLineItemPaths()
     }
 
     return NextResponse.json({ success: true })
@@ -248,6 +259,7 @@ export async function PATCH(request: Request) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         await afterHouseholdWrite(supabase, ownedHouseholdId)
+        revalidateStrategyLineItemPaths()
         return NextResponse.json(data)
       }
 
@@ -273,6 +285,7 @@ export async function PATCH(request: Request) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         await afterHouseholdWrite(supabase, ownedHouseholdId)
+        revalidateStrategyLineItemPaths()
         return NextResponse.json(data)
       }
 
@@ -297,6 +310,7 @@ export async function PATCH(request: Request) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         await afterHouseholdWrite(supabase, ownedHouseholdId)
+        revalidateStrategyLineItemPaths()
         return NextResponse.json(data)
       }
 
@@ -323,6 +337,7 @@ export async function PATCH(request: Request) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         await afterHouseholdWrite(supabase, ownedHouseholdId)
+        revalidateStrategyLineItemPaths()
         return NextResponse.json(data)
       }
 
@@ -340,6 +355,7 @@ export async function PATCH(request: Request) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         await afterHouseholdWrite(supabase, ownedHouseholdId)
+        revalidateStrategyLineItemPaths()
         return NextResponse.json(data)
       }
 
@@ -377,6 +393,7 @@ export async function PATCH(request: Request) {
     const ownedHouseholdId = await resolveOwnedHouseholdId(supabase, user.id, householdId)
     if (ownedHouseholdId) {
       await afterHouseholdWrite(supabase, ownedHouseholdId)
+      revalidateStrategyLineItemPaths()
     }
 
     return NextResponse.json(data[0])

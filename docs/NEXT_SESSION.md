@@ -525,7 +525,7 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 | **Parse API** | `POST /api/ingest` — CSV/XLSX only; auto-detect table + field mapping |
 | **Commit** | `POST /api/import/commit` — INSERT_COLUMNS allowlist; 4 assets rows smoke-tested |
 | **Schema** | `ingestion_jobs` — final 14 columns: `file_name`, `file_type` (NOT NULL); legacy names removed |
-| **Tier gate** | `/import` tier 2 via `hasFeatureAccess('import', …)` |
+| **Tier gating** | All gated pages + sidebar use `hasFeatureAccess` / `FEATURE_TIERS` (`lib/tiers.ts`); pages are authority for minimum tier |
 | **Templates** | `public/templates/import-sample*.csv` |
 
 **Commits:** `d3400b1`, `0f8cf2d`, `b5bb0b1`, schema cleanup (this session)
