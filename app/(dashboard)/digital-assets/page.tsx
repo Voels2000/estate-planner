@@ -7,6 +7,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -19,22 +20,22 @@ export default async function DigitalAssetsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
+  if (!user) redirect('/login')
 
-  if (access.tier < 2 && !access.isAdvisor) {
+  if (!hasFeatureAccess('digital-assets', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
       user.id,
-      2,
+      featureUpgradeTier('digital-assets'),
       'Catalogue digital assets so your executor can locate accounts and platforms.',
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Digital Assets</h1>
         <UpgradeBanner
-          requiredTier={2}
+          requiredTier={featureUpgradeTier('digital-assets')}
           moduleName="Digital Assets"
           valueProposition={valueProposition}
           householdContext={householdContext}
@@ -49,7 +50,7 @@ export default async function DigitalAssetsPage() {
     .eq('owner_id', user.id)
     .single()
 
-  if (!household) redirect('/onboarding')
+  if (!household) redirect('/profile?required=true')
 
   const { data: assets } = await supabase
     .from('digital_assets')

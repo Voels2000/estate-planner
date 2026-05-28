@@ -1,4 +1,5 @@
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
@@ -20,7 +21,7 @@ export default async function EstateTaxPage() {
     .eq('owner_id', user.id)
     .maybeSingle()
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('estate-tax', access.tier, access.isAdvisor, access.isTrial)) {
     let grossEstate: number | null = null
     if (householdRow?.id) {
       const compositionForBanner = await classifyEstateAssets(
@@ -36,7 +37,7 @@ export default async function EstateTaxPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Estate Tax Snapshot</h1>
         <UpgradeBanner
-          requiredTier={3}
+          requiredTier={featureUpgradeTier('estate-tax')}
           moduleName="Estate Tax Snapshot"
           valueProposition="See exactly how your estate tax is calculated, what's driving it, and how much headroom you have before federal tax kicks in."
           ctaLabel="See your estate tax breakdown →"

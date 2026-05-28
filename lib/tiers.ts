@@ -61,11 +61,11 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   income:                1,
   expenses:              1,
   projections:           1,
-  allocation:            1,
-  'real-estate':         1,
+  allocation:            2,
+  'real-estate':         2,
   businesses:            1,
   scenarios:             1,
-  'social-security':     1,
+  'social-security':     2,
   // Tier 2 — Retirement Planning
   complete:              2,
   rmd:                   2,
@@ -80,10 +80,12 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   incapacity:            3,
   gifting:               3,
   charitable:            3,
-  'business-succession': 1,
-  'digital-assets':      1,
+  'business-succession': 3,
+  'digital-assets':      2,
   'property-casualty':   1,
   'my-family':           3,
+  'my-estate-strategy':  3,
+  'my-estate-trust-strategy': 3,
   'trust-will':          3,
 }
 // Free trial gets tier 2 access
@@ -115,6 +117,12 @@ export function hasFeatureAccess(
   const required = FEATURE_TIERS[feature] ?? 1
   if (isTrial) return required <= TRIAL_TIER
   return userTier >= required
+}
+
+/** Tier shown on UpgradeBanner (gated modules are always tier 2+). */
+export function featureUpgradeTier(feature: string): 2 | 3 {
+  const required = FEATURE_TIERS[feature] ?? 1
+  return required >= 3 ? 3 : 2
 }
 
 // Price ID → tier number map — used in webhook and terms page

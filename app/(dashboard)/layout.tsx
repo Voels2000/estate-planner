@@ -180,6 +180,9 @@ export default async function DashboardLayout({
     !isActive &&
     trialActive
 
+  const isTrial =
+    profileFull?.subscription_status === 'trialing' || trialActive
+
   return (
     <DashboardShell
       sidebar={
@@ -187,6 +190,7 @@ export default async function DashboardLayout({
           user={sessionUser}
           role={profileFull?.role}
           tier={tier}
+          isTrial={isTrial}
           isAdvisor={isAdvisorResolved || isAdvisorClient}
           isAdmin={isAdminResolved}
           isAttorney={isAttorneyResolved}

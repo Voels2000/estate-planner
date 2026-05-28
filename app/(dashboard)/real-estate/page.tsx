@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { fetchPropertyTypes, fetchTitlingTypes } from '@/lib/ref-data-fetchers'
 import RealEstateClient from './_real-estate-client'
@@ -19,12 +20,12 @@ export default async function RealEstatePage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (access.tier < 2) {
+  if (!hasFeatureAccess('real-estate', access.tier, access.isAdvisor, access.isTrial)) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Real Estate</h1>
         <UpgradeBanner
-          requiredTier={2}
+          requiredTier={featureUpgradeTier('real-estate')}
           moduleName="Real Estate"
           valueProposition="Analyze equity, titling risk, and out-of-state property exposure."
         />

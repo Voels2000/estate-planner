@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
-import { hasFeatureAccess } from '@/lib/tiers'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { ImportClient } from './_import-client'
@@ -30,7 +30,7 @@ export default async function ImportPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Import Data</h1>
         <UpgradeBanner
-          requiredTier={2}
+          requiredTier={featureUpgradeTier('import')}
           moduleName="Import Data"
           valueProposition="Upload CSV or Excel files to import assets, liabilities, income, and expenses in bulk."
         />

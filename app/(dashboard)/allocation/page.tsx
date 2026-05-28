@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import AllocationClient from './_allocation-client'
 
@@ -17,12 +18,12 @@ export default async function AssetAllocationPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (access.tier < 2) {
+  if (!hasFeatureAccess('allocation', access.tier, access.isAdvisor, access.isTrial)) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Asset Allocation</h1>
         <UpgradeBanner
-          requiredTier={2}
+          requiredTier={featureUpgradeTier('allocation')}
           moduleName="Asset Allocation"
           valueProposition="See your full portfolio breakdown, advisor-entered targets, and how rebalancing affects your projected retirement income and estate value."
         />

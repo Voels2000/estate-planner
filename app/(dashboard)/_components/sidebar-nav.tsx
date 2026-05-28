@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { FEATURE_TIERS, TIER_NAMES } from '@/lib/tiers'
+import { FEATURE_TIERS, TIER_NAMES, hasFeatureAccess } from '@/lib/tiers'
 import { NotificationBell } from './notification-bell'
 
 type NavItem = {
@@ -138,6 +138,7 @@ export function SidebarNav({
   user,
   role,
   tier = 1,
+  isTrial = false,
   isAdvisor = false,
   isAdmin = false,
   isAttorney = false,
@@ -148,6 +149,7 @@ export function SidebarNav({
   user: User
   role?: string
   tier?: number
+  isTrial?: boolean
   isAdvisor?: boolean
   isAdmin?: boolean
   isAttorney?: boolean
@@ -191,9 +193,7 @@ export function SidebarNav({
   function isLocked(feature?: string): boolean {
     if (isSuperuser) return false
     if (!feature) return false
-    if (isAdvisor) return false
-    const required = FEATURE_TIERS[feature] ?? 1
-    return tier < required
+    return !hasFeatureAccess(feature, tier, isAdvisor, isTrial)
   }
 
   function lockLabel(feature?: string): string {
@@ -546,7 +546,7 @@ export function SidebarNav({
         )}
 
         {/* Import Data (tier 2+; was under Retirement Planning) */}
-        {(isAdvisor || isSuperuser || tier >= 2) &&
+        {(isAdvisor || isSuperuser || hasFeatureAccess('import', tier, isAdvisor, isTrial)) &&
           (isLockedUser ? (
             <Link
               href="#"

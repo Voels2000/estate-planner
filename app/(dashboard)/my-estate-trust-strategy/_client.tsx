@@ -164,6 +164,7 @@ export default function MyEstateTrustStrategyClient({
     })),
   )
   const [actionSaving, setActionSaving] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [giftingScenarioLabel, setGiftingScenarioLabel] = useState('Annual Gifting Program')
   const [giftingSaving, setGiftingSaving] = useState(false)
   const [giftingSaveMessage, setGiftingSaveMessage] = useState<{
@@ -245,28 +246,42 @@ export default function MyEstateTrustStrategyClient({
 
   async function handleAccept(item: PendingAdvisorItem) {
     setActionSaving(item.id)
-    await fetch('/api/consumer/strategy-recommendation', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lineItemId: item.id, householdId }),
-    })
-    setPendingItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, consumer_accepted: true } : i)),
-    )
-    setActionSaving(null)
+    setActionError(null)
+    try {
+      const res = await fetch('/api/consumer/strategy-recommendation', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lineItemId: item.id, householdId }),
+      })
+      if (!res.ok) throw new Error('Failed to accept recommendation')
+      setPendingItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, consumer_accepted: true } : i)),
+      )
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Action failed')
+    } finally {
+      setActionSaving(null)
+    }
   }
 
   async function handleReject(item: PendingAdvisorItem) {
     setActionSaving(item.id)
-    await fetch('/api/consumer/strategy-recommendation', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lineItemId: item.id, householdId }),
-    })
-    setPendingItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, consumer_rejected: true } : i)),
-    )
-    setActionSaving(null)
+    setActionError(null)
+    try {
+      const res = await fetch('/api/consumer/strategy-recommendation', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lineItemId: item.id, householdId }),
+      })
+      if (!res.ok) throw new Error('Failed to decline recommendation')
+      setPendingItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, consumer_rejected: true } : i)),
+      )
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Action failed')
+    } finally {
+      setActionSaving(null)
+    }
   }
 
   async function handleSaveGiftingScenario() {
@@ -402,6 +417,9 @@ export default function MyEstateTrustStrategyClient({
           <p className="mb-4 text-sm text-gray-500">
             Review how your advisor&apos;s recommendations affect your estate across each planning horizon.
           </p>
+          {actionError && (
+            <p className="mb-3 text-sm text-red-600">{actionError}</p>
+          )}
           <StrategyHorizonTable
             horizons={advisorHorizons}
             pendingItems={pendingItems}

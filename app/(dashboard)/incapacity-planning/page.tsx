@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────
 
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
@@ -18,20 +19,20 @@ export default async function IncapacityPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('incapacity', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
       user.id,
-      3,
+      featureUpgradeTier('incapacity'),
       'Confirm and track DPOA, Medical POA, Advance Directive, and Living Will.',
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Incapacity Planning</h1>
         <UpgradeBanner
-          requiredTier={3}
+          requiredTier={featureUpgradeTier('incapacity')}
           moduleName="Incapacity Planning"
           valueProposition={valueProposition}
           householdContext={householdContext}

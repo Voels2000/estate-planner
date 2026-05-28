@@ -11,6 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
@@ -40,14 +41,14 @@ export default async function MyEstateStrategyPage() {
 
   if (!household) redirect('/profile')
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('my-estate-strategy', access.tier, access.isAdvisor, access.isTrial)) {
     const compositionForBanner = await classifyEstateAssets(supabase, household.id, 'consumer', 0)
 
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Estate Value &amp; Tax Horizons</h1>
         <UpgradeBanner
-          requiredTier={3}
+          requiredTier={featureUpgradeTier('my-estate-strategy')}
           moduleName="Estate Value & Tax Horizons"
           valueProposition="See how your estate grows over time, federal and state tax exposure at each horizon, and how strategies change the picture."
           ctaLabel="See your estate horizons →"

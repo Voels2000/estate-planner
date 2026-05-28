@@ -35,6 +35,7 @@ export default function StrategyTab({
   strategySetSummary,
   cachedAdvisoryMetrics,
   hasRunStrategyModules = false,
+  advisoryMetricsInput,
   strategyQuestions = [],
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
@@ -117,14 +118,14 @@ export default function StrategyTab({
   const [consumerComposition, setConsumerComposition] = useState<EstateComposition | null>(null)
   const missingHorizonTelemetrySent = useRef(false)
 
-  const metricsInput: AdvisoryMetricsInput = {
+  const metricsInput: AdvisoryMetricsInput = advisoryMetricsInput ?? {
     grossEstate,
     federalExemption,
     federalTax: estimatedFederalTax,
     stateTax: estimatedStateTax,
     hasSpouse: household?.has_spouse ?? false,
     dsueAvailable: household?.has_spouse ? federalExemption : 0,
-    liquidAssets: grossEstate * 0.3,
+    liquidAssets: grossEstate * 0.1,
     ilitDeathBenefit: 0,
     section7520Rate: 0.052,
     cstGrowthRate: 0.06,

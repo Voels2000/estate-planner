@@ -6,6 +6,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import TitlingClient from './_titling-client'
@@ -19,20 +20,20 @@ export default async function TitlingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('titling', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
       user.id,
-      3,
+      featureUpgradeTier('titling'),
       'Review and optimize how assets are titled to avoid probate and tax exposure.',
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Titling & Beneficiaries</h1>
         <UpgradeBanner
-          requiredTier={3}
+          requiredTier={featureUpgradeTier('titling')}
           moduleName="Titling & Beneficiaries"
           valueProposition={valueProposition}
           householdContext={householdContext}

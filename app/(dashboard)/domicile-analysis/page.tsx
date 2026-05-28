@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import DomicileAnalysisClient from './_domicile-analysis-client'
@@ -21,20 +22,20 @@ export default async function DomicileAnalysisPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (access.tier < 3) {
+  if (!hasFeatureAccess('domicile-analysis', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
     const { getEventUpgradeValueProp } = await import('@/lib/events/upgradeContext')
     const valueProposition = await getEventUpgradeValueProp(
       supabase,
       user.id,
-      3,
+      featureUpgradeTier('domicile-analysis'),
       'Compare state tax climates and model the impact of changing your primary domicile.',
     )
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Domicile Analysis</h1>
         <UpgradeBanner
-          requiredTier={3}
+          requiredTier={featureUpgradeTier('domicile-analysis')}
           moduleName="Domicile Analysis"
           valueProposition={valueProposition}
           householdContext={householdContext}

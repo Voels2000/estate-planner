@@ -26,7 +26,7 @@ import {
   logAdvisorClientAccess,
 } from '@/lib/advisor/loaders'
 import { getCachedAdvisoryMetrics } from '@/lib/advisor/cachedAdvisoryMetrics'
-import type { AdvisoryMetric } from '@/lib/advisoryMetrics'
+import type { AdvisoryMetric, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { markClientStrategyQuestionsRead } from '@/lib/advisor/markClientStrategyQuestionsRead'
 import ClientViewShell from './_client-view-shell'
@@ -68,7 +68,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     householdUpdatedAt: household.updated_at ?? null,
     skipGlobalTaxTableStaleness: true,
   })
-  const compositionPromise = classifyEstateAssets(supabase, household.id)
+  const giftingSummaryPromise = supabase.rpc('calculate_gifting_summary', {
+    p_household_id: household.id,
+  })
   const datasetsPromise = loadAdvisorClientDatasets(supabase, {
     clientId,
     userId,
@@ -84,12 +86,25 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     clientId,
   })
 
-  const [{ isStale }, estateComposition, datasetsBundle, gapStatuses] = await Promise.all([
+  const [{ isStale }, giftingSummaryRes, datasetsBundle, gapStatuses] = await Promise.all([
     stalenessPromise,
-    compositionPromise,
+    giftingSummaryPromise,
     datasetsPromise,
     gapStatusesPromise,
   ])
+
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number(
+      (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0,
+    ) || 0,
+  )
+  const estateComposition = await classifyEstateAssets(
+    supabase,
+    household.id,
+    'consumer',
+    lifetimeGiftsUsed,
+  )
 
   if (isStale) {
     const [
@@ -276,15 +291,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     | undefined
 
   if (needsStrategyVm) {
-    const giftingSummaryRes = await supabase.rpc('calculate_gifting_summary', {
-      p_household_id: household.id,
-    })
-    const giftingSummaryData = giftingSummaryRes.data
-    const lifetimeGiftsUsed = Math.max(
-      0,
-      Number((giftingSummaryData as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0) ||
-        0,
-    )
     const strategyVm = buildAdvisorStrategyViewModels({
       currentYear,
       household,
@@ -322,34 +328,38 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   }
 
   let cachedAdvisoryMetrics: AdvisoryMetric[] | undefined
+  let advisoryMetricsInput: AdvisoryMetricsInput | undefined
   let hasRunStrategyModules = false
   if (tab === 'strategy' && needsStrategyVm && advisorHorizons) {
     hasRunStrategyModules = (strategyLineItems ?? []).some(
       (item) => item.is_active && Math.abs(Number(item.amount ?? 0)) > 0,
     )
     const today = advisorHorizons.today
+    advisoryMetricsInput = {
+      grossEstate: Number(today.grossEstate ?? 0),
+      federalExemption: Number(today.federalExemption ?? 0),
+      federalTax: Number(today.federalTaxEstimate ?? 0),
+      stateTax: Number(today.stateTax ?? 0),
+      hasSpouse: household.has_spouse ?? false,
+      dsueAvailable: household.has_spouse ? Number(today.federalExemption ?? 0) : 0,
+      liquidAssets,
+      ilitDeathBenefit: (insurancePolicies ?? [])
+        .filter((p) => p.is_ilit)
+        .reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0),
+      section7520Rate: 0.052,
+      cstGrowthRate: 0.06,
+      survivorExemption: Number(today.federalExemption ?? 0),
+    }
     cachedAdvisoryMetrics = await getCachedAdvisoryMetrics(
       household.id,
       `${household.updated_at ?? 'na'}-${today.grossEstate}-${today.federalTaxEstimate}`,
       {
-        grossEstate: Number(today.grossEstate ?? 0),
-        federalExemption: Number(today.federalExemption ?? 0),
-        federalTax: Number(today.federalTaxEstimate ?? 0),
-        stateTax: Number(today.stateTax ?? 0),
-        hasSpouse: household.has_spouse ?? false,
-        dsueAvailable: household.has_spouse ? Number(today.federalExemption ?? 0) : 0,
-        liquidAssets,
-        ilitDeathBenefit: (insurancePolicies ?? [])
-          .filter((p) => p.is_ilit)
-          .reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0),
-        section7520Rate: 0.052,
+        ...advisoryMetricsInput,
         cstFundingAmount: hasRunStrategyModules
           ? Number(
               strategyLineItems.find((i) => i.strategy_source === 'cst')?.amount ?? 0,
             ) || undefined
           : undefined,
-        cstGrowthRate: 0.06,
-        survivorExemption: Number(today.federalExemption ?? 0),
       },
     )
   }
@@ -447,6 +457,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       strategyQuestions={strategyQuestions}
       gapStatuses={gapStatuses}
       cachedAdvisoryMetrics={cachedAdvisoryMetrics}
+      advisoryMetricsInput={advisoryMetricsInput}
       hasRunStrategyModules={hasRunStrategyModules}
     />
   )

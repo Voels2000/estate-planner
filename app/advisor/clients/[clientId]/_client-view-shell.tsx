@@ -381,5 +381,6 @@ export interface ClientViewShellProps {
   strategyQuestions?: StrategyQuestionNotification[]
   gapStatuses?: Record<string, { status: string; note?: string | null }>
   cachedAdvisoryMetrics?: import('@/lib/advisoryMetrics').AdvisoryMetric[]
+  advisoryMetricsInput?: import('@/lib/advisoryMetrics').AdvisoryMetricsInput
   hasRunStrategyModules?: boolean
 }
