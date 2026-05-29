@@ -155,6 +155,13 @@ export default function AllocationClient({
   }, [initialAllocationData])
 
   useEffect(() => {
+    if (initialAllocationData != null) {
+      setData(initialAllocationData)
+      setLoading(false)
+    }
+  }, [initialAllocationData])
+
+  useEffect(() => {
     if (initialTargets?.target_stocks_pct != null) {
       setStocks(initialTargets.target_stocks_pct)
       setBonds(initialTargets.target_bonds_pct ?? 30)
@@ -186,8 +193,6 @@ export default function AllocationClient({
         setRiskTolerance(initialRiskTolerance)
         return
       }
-      const fresh = await fetch('/api/asset-allocation').then((r) => r.json())
-      if (!fresh.error) setData(fresh)
       router.refresh()
     } finally {
       setSavingRisk(false)
@@ -215,8 +220,6 @@ export default function AllocationClient({
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-      const fresh = await fetch('/api/asset-allocation').then(r => r.json())
-      if (!fresh.error) setData(fresh)
       router.refresh()
     } finally {
       setSaving(false)

@@ -51,7 +51,7 @@ Each feature section below uses this shape:
 | **Server** | `page.tsx` data loading |
 | **Client** | Interactive component |
 | **Write APIs** | Mutations |
-| **Read APIs / RPCs** | Reads used on the page |
+| **Read APIs / RPCs** | Dashboard server prefetch (`loadAssessmentHistory`); assessment widget skips client fetch when hydrated |
 | **After save** | Side effects and how UI updates |
 | **Key lib** | Shared logic |
 | **E2E** | Playwright spec (living contract) |

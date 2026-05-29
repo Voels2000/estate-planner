@@ -41,6 +41,7 @@ import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
+import { loadAssessmentHistory } from '@/lib/dashboard/loadAssessmentHistory'
 import { DashboardClient } from '../_dashboard-client'
 import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
@@ -420,7 +421,10 @@ export async function DashboardBody({
   })
 
   const wizardComplete = isWizardComplete(profile)
-  const setupProgress = await fetchSetupProgressCounts(supabase, user!.id)
+  const [setupProgress, initialAssessmentResults] = await Promise.all([
+    fetchSetupProgressCounts(supabase, user!.id),
+    loadAssessmentHistory(supabase, user!.id),
+  ])
 
   return (
     <DashboardClient
@@ -480,6 +484,7 @@ export async function DashboardBody({
       hasAdvisorConnection={hasAdvisorConnection}
       successionGap={successionGap}
       personaAlerts={personaAlerts}
+      initialAssessmentResults={initialAssessmentResults}
     />
   )
 }

@@ -19,7 +19,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Post-launch perf Sprint O — shells + composition cache (2026-05-28, code only)
+## Post-launch perf Sprint 19a — deferred review fixes (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Allocation save: `router.refresh()` only (no duplicate GET) | `_allocation-client.tsx` |
+| Dashboard assessment history server prefetch | `loadAssessmentHistory.ts`, `AssessmentHistoryWidget.tsx`, `_dashboard-body.tsx` |
+| Meeting Prep: instant brief from server seed; optional refresh | `MeetingPrep.tsx`, `MeetingPrepTab.tsx` |
+
+---
 
 | Change | Files |
 |--------|-------|

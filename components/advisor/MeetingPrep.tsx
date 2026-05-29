@@ -4,7 +4,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
@@ -89,6 +89,8 @@ interface Props {
   initialHealthScore?: number | null
   initialBriefSeed?: MeetingBriefSeed | null
   estateComposition?: EstateComposition | null
+  /** When true, opening the brief uses server seed only (no client refetch) */
+  briefHydratedFromServer?: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -344,18 +346,56 @@ export default function MeetingPrep({
   initialHealthScore = null,
   initialBriefSeed = null,
   estateComposition = null,
+  briefHydratedFromServer = false,
 }: Props) {
-  const [brief, setBrief] = useState<MeetingBrief | null>(
-    initialBriefSeed ? buildBriefFromSeed(clientName, initialBriefSeed) : null,
-  )
+  const [brief, setBrief] = useState<MeetingBrief | null>(() => {
+    if (!initialBriefSeed) return null
+    return mergeHorizonBrief(buildBriefFromSeed(clientName, initialBriefSeed), advisorHorizons)
+  })
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
+  const buildBriefFromProps = () =>
+    initialBriefSeed
+      ? mergeHorizonBrief(buildBriefFromSeed(clientName, initialBriefSeed), advisorHorizons)
+      : null
+
+  useEffect(() => {
+    if (!briefHydratedFromServer || !initialBriefSeed) return
+    setBrief(buildBriefFromProps())
+  }, [briefHydratedFromServer, initialBriefSeed, clientName, advisorHorizons])
+
   const handleGenerate = async () => {
     setOpen(true)
-    if (!brief && initialBriefSeed) {
-      setBrief(buildBriefFromSeed(clientName, initialBriefSeed))
+    if (briefHydratedFromServer && initialBriefSeed) {
+      setBrief(buildBriefFromProps())
+      return
     }
+    if (!brief && initialBriefSeed) {
+      setBrief(buildBriefFromProps())
+    }
+    setLoading(true)
+    const b = await generateMeetingBrief(
+      clientId,
+      householdId,
+      clientName,
+      initialHealthScore,
+      advisorHorizons,
+      estateComposition,
+    )
+    setBrief((prev) => ({
+      ...b,
+      cst_benefit_at_death:
+        b.cst_benefit_at_death ??
+        prev?.cst_benefit_at_death ??
+        initialBriefSeed?.cst_benefit_at_death ??
+        null,
+    }))
+    setLoading(false)
+  }
+
+  const handleRefreshBrief = async () => {
+    setOpen(true)
     setLoading(true)
     const b = await generateMeetingBrief(
       clientId,
@@ -385,13 +425,24 @@ export default function MeetingPrep({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleGenerate}
-        className="px-3 py-1.5 text-sm border border-[color:var(--mwm-border)] rounded-lg text-[color:var(--mwm-navy)] hover:bg-[var(--mwm-gold-pale)] font-medium transition"
-      >
-        📋 Prepare for Meeting
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={handleGenerate}
+          className="px-3 py-1.5 text-sm border border-[color:var(--mwm-border)] rounded-lg text-[color:var(--mwm-navy)] hover:bg-[var(--mwm-gold-pale)] font-medium transition"
+        >
+          📋 Prepare for Meeting
+        </button>
+        {briefHydratedFromServer && (
+          <button
+            type="button"
+            onClick={handleRefreshBrief}
+            className="px-3 py-1.5 text-sm text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition"
+          >
+            Refresh from latest data
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 p-4 md:p-8 overflow-y-auto print:inset-0 print:bg-white print:p-0">

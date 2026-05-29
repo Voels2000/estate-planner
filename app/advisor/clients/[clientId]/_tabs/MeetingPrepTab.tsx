@@ -114,6 +114,7 @@ export default function MeetingPrepTab({
           initialHealthScore={exportPanelProps?.healthScore ?? null}
           initialBriefSeed={initialBriefSeed}
           estateComposition={estateComposition}
+          briefHydratedFromServer
         />
       </section>
 

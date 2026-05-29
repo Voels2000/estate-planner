@@ -31,7 +31,7 @@ import {
   EstateCalloutCard,
   type EstateCalloutCardProps,
 } from '@/components/dashboard/EstateCalloutCard'
-import { AssessmentHistoryWidget } from '@/app/(dashboard)/_components/dashboard/AssessmentHistoryWidget'
+import { AssessmentHistoryWidget } from '@/components/dashboard/AssessmentHistoryWidget'
 import StrategyRecommendationPanel, {
   type AdvisorRecommendationItem,
 } from '@/components/consumer/StrategyRecommendationPanel'
@@ -132,6 +132,14 @@ type Props = {
   } | null
   wizardComplete?: boolean
   initialSetupProgress?: SetupProgressCounts
+  initialAssessmentResults?: Array<{
+    id: string
+    taken_at: string
+    overall_score: number
+    financial_pct: number
+    retirement_pct: number
+    estate_pct: number
+  }>
 }
 
 // ---------------------------------------------------------------------------
@@ -180,6 +188,7 @@ export function DashboardClient(props: Props) {
     personaAlerts = null,
     wizardComplete = false,
     initialSetupProgress,
+    initialAssessmentResults,
   } = props
 
   const router = useRouter()
@@ -376,7 +385,7 @@ export function DashboardClient(props: Props) {
           </div>
         )}
 
-      <AssessmentHistoryWidget />
+      <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
 
       {householdId && advisorStrategyItems.length > 0 && (
         <div className="mt-6">

@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-
-type AssessmentResult = {
-  id: string
-  taken_at: string
-  overall_score: number
-  financial_pct: number
-  retirement_pct: number
-  estate_pct: number
-}
+import type { AssessmentHistoryRow } from '@/lib/dashboard/loadAssessmentHistory'
 
 function getLevel(pct: number) {
   if (pct >= 80) return { label: 'Strong', color: '#4a7c6f' }
@@ -20,13 +11,27 @@ function getLevel(pct: number) {
   return { label: 'Areas to review', color: '#d85a30' }
 }
 
-export function AssessmentHistoryWidget() {
-  const [results, setResults] = useState<AssessmentResult[]>([])
-  const [loading, setLoading] = useState(true)
+export function AssessmentHistoryWidget({
+  initialResults,
+}: {
+  /** Server-prefetched — skips client Supabase fetch when provided */
+  initialResults?: AssessmentHistoryRow[] | null
+}) {
+  const hasInitial = initialResults !== undefined
+  const [results, setResults] = useState<AssessmentHistoryRow[]>(
+    hasInitial ? (initialResults ?? []) : [],
+  )
+  const [loading, setLoading] = useState(!hasInitial)
 
   useEffect(() => {
+    if (initialResults !== undefined) {
+      setResults(initialResults ?? [])
+      setLoading(false)
+      return
+    }
     async function load() {
       try {
+        const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
         const { data } = await supabase
           .from('assessment_results')
@@ -40,8 +45,8 @@ export function AssessmentHistoryWidget() {
         setLoading(false)
       }
     }
-    load()
-  }, [])
+    void load()
+  }, [initialResults])
 
   if (loading) return null
   if (results.length === 0) {
@@ -121,14 +126,12 @@ export function AssessmentHistoryWidget() {
         </Link>
       </div>
 
-      {/* Overall score + pillars */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto 1fr',
         gap: 24, alignItems: 'center',
         marginBottom: 20,
       }}>
-        {/* Score ring */}
         <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
           <svg width="90" height="90" viewBox="0 0 90 90">
             <circle cx="45" cy="45" r="38" fill="none"
@@ -157,7 +160,6 @@ export function AssessmentHistoryWidget() {
           </div>
         </div>
 
-        {/* Pillar bars */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
             { label: '💰 Financial', score: latest.financial_pct, color: '#0f1f3d' },
@@ -189,7 +191,6 @@ export function AssessmentHistoryWidget() {
         </div>
       </div>
 
-      {/* Level badge + date */}
       <div style={{
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
