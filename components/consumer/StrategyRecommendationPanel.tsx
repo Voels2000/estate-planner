@@ -137,12 +137,12 @@ export default function StrategyRecommendationPanel({
                   </span>
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-end sm:shrink-0">
                 <button
                   type="button"
                   onClick={() => void handleAccept(item)}
                   disabled={actionSaving === item.id}
-                  className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto rounded-md bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 >
                   {actionSaving === item.id ? 'Saving…' : 'Accept'}
                 </button>
@@ -150,7 +150,7 @@ export default function StrategyRecommendationPanel({
                   type="button"
                   onClick={() => void handleReject(item)}
                   disabled={actionSaving === item.id}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 >
                   Decline
                 </button>

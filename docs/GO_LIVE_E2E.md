@@ -45,6 +45,18 @@ npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profi
 
 ---
 
+## Post-deploy automated verification
+
+After profile pre-flight, import unit tests should pass:
+
+```bash
+npm run test:import:unit   # 24 tests — projection readiness, wizard gate, import normalizer
+```
+
+**Prospect + Mobile sprint (2026-05-29):** No new Playwright coverage. Manual 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
+
+---
+
 ## Broader go-live automated suite
 
 After profile pre-flight passes, run the full consumer project (or complete suite):
@@ -66,6 +78,7 @@ See [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) for mapping to manual
 - Fresh signup → Supabase attribution (`?ref=` / `?aref=`)
 - Email drip inbox delivery
 - Counsel sign-off on ToS ([LEGAL_TODO.md](./LEGAL_TODO.md))
+- **Prospect Mode + Mobile Review (2026-05-29)** — 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29)
 
 ---
 

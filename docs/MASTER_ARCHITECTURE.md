@@ -932,7 +932,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 |------|-------------|---------------|-------|
 | Consumer app | `(dashboard)/layout.tsx` | Sidebar | Navy sidebar is the brand |
 | Advisor portal | `advisor/layout.tsx` | Advisor top bar + tabs | Navy, UX-2 |
-| Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip |
+| Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip; canonical route `/prospect` |
+| Prospect PDF | `GET /api/advisor/prospect-pdf` | — | Print-to-PDF HTML; query params mirror prospect form |
 | Attorney portal | `(attorney)/layout.tsx` | Attorney header | Separate surface; no MWM wordmark today (future sprint) |
 | Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
 | Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
@@ -950,6 +951,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 ### Engines
 
+- `lib/prospect/getProspectTaxConfig.ts` — `federal_tax_config` read for prospect tool (fallback to OBBBA / TCJA sunset)
+- `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
 - `lib/calculations/stateEstateTax.ts`
 - `lib/calculations/stateIncomeTax.ts` (shared income tax engine)
 - `lib/calculations/projection-complete.ts`

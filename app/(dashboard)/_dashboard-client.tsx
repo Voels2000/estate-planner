@@ -333,6 +333,12 @@ export function DashboardClient(props: Props) {
     (setupProgress?.assets ?? 0) === 0 &&
     assetTypes.length > 0
 
+  const pendingRecsCount = advisorStrategyItems.filter(
+    (i) => !i.consumer_accepted && !i.consumer_rejected,
+  ).length
+  const openAlertsCount =
+    (conflictReport?.critical ?? 0) + (conflictReport?.warnings ?? 0)
+
   return (
     <>
       {!isAdvisor && (
@@ -412,6 +418,21 @@ export function DashboardClient(props: Props) {
         }
       />
 
+      {(openAlertsCount > 0 || pendingRecsCount > 0) && (
+        <div className="lg:hidden mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          <p className="text-sm font-medium text-amber-900">
+            {openAlertsCount > 0 &&
+              `${openAlertsCount} open alert${openAlertsCount > 1 ? 's' : ''}`}
+            {openAlertsCount > 0 && pendingRecsCount > 0 && ' · '}
+            {pendingRecsCount > 0 &&
+              `${pendingRecsCount} advisor recommendation${pendingRecsCount > 1 ? 's' : ''} to review`}
+          </p>
+          <p className="text-xs text-amber-700 mt-0.5">
+            Tap to review — full planning features are best on desktop.
+          </p>
+        </div>
+      )}
+
       {!isAdvisor && (
         <div className="mt-4">
           <PlanProgressBar
@@ -481,7 +502,7 @@ export function DashboardClient(props: Props) {
                 </p>
                 {conflictReport.conflicts[0] && (
                   <p
-                    className={`mt-0.5 text-xs truncate ${
+                    className={`mt-0.5 text-xs leading-relaxed line-clamp-2 sm:line-clamp-none sm:truncate ${
                       conflictReport.critical > 0 ? 'text-red-600' : 'text-amber-600'
                     }`}
                   >
@@ -493,7 +514,7 @@ export function DashboardClient(props: Props) {
             <div className="flex shrink-0 items-center gap-3">
               <a
                 href={conflictDetailsHref}
-                className={`text-xs font-medium underline-offset-2 hover:underline ${
+                className={`inline-flex items-center min-h-[44px] py-2 text-xs font-medium underline-offset-2 hover:underline ${
                   conflictReport.critical > 0 ? 'text-red-700' : 'text-amber-700'
                 }`}
               >
@@ -502,7 +523,7 @@ export function DashboardClient(props: Props) {
               <button
                 type="button"
                 onClick={() => setConflictDismissed(true)}
-                className={`text-xs leading-none ${
+                className={`inline-flex items-center justify-center min-h-[44px] min-w-[44px] text-xs leading-none ${
                   conflictReport.critical > 0
                     ? 'text-red-400 hover:text-red-600'
                     : 'text-amber-400 hover:text-amber-600'

@@ -257,8 +257,9 @@ export function RmdClient({ household, assets }: { household: Household | null; 
             {periodStartYear} – {periodEndYear}
           </span>
         </div>
-        <div className="overflow-auto">
-          <table className="min-w-full divide-y divide-neutral-100">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="overflow-auto">
+          <table className="min-w-[640px] w-full divide-y divide-neutral-100">
             <thead className="bg-neutral-50 sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">Year</th>
@@ -343,6 +344,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* ── Pagination controls ── */}

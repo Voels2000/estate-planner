@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Professional Acquisition & Activation shipped)
+# Updated: 2026-05-29 (Prospect Mode Polish + Mobile Review Mode shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake request flow (`/intake/[token]`), advisor `ReferralImpactPanel`, meeting prep print-one-pager — apply `20260530_attorney_intake_requests.sql` before deploy. **Persona-based onboarding (shipped 2026-05-29):** `/onboarding/persona`; apply `20260530_onboarding_persona.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization:** Stripe checkout + drip (503 until Stripe prices). **Projections readiness:** `checkProjectionReadiness()` on `/projections`.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Prospect Mode + Mobile Review (shipped 2026-05-29):** `/prospect` DB-backed tax config, print PDF, intake CTA; mobile review banner + table scroll wrappers — commits `feat(prospect)` + `feat(mobile)`. **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake, referral impact, meeting prep — migrations `20260530100000_onboarding_persona.sql` + `20260530110000_attorney_intake_requests.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 >
-> **Before deploy:** apply `20260530_attorney_intake_requests.sql` + `20260530_onboarding_persona.sql` + attorney import/drip migrations; create Stripe attorney products.
+> **Before deploy:** migrations applied on prod (persona + intake renamed timestamps); attorney Stripe products if billing sprint pending.
 >
 > **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
@@ -16,7 +16,41 @@
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). Projections readiness: `npx playwright test tests/unit/projectionReadiness.spec.ts --project=import-unit`. Optional staging: `npm run test:import:api`.
+> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). **Prospect/mobile manual smoke:** [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
+
+---
+
+## Prospect Mode Polish + Mobile Review Mode ✅ (2026-05-29)
+
+**Sprint: Prospect Mode Polish + Mobile Review Mode — COMPLETE**
+
+**Commits:** `feat(prospect): DB tax config, PDF export, intake invitation CTA` · `feat(mobile): review mode banner, tappable recs, table scroll wrappers`
+
+### Track 1 — Prospect mode
+| Item | Notes |
+|------|-------|
+| `lib/prospect/getProspectTaxConfig.ts` | Reads `federal_tax_config` (`current_law`, `sunset_2026`); falls back to OBBBA / TCJA sunset baselines |
+| `lib/prospect/calculateProspectSummary.ts` | Federal + state via `calculateStateEstateTax` + `state_estate_tax_rules` — **not** `calculate_state_estate_tax` RPC (no `household_id` in prospect mode) |
+| `GET /api/advisor/prospect-pdf` | Print-to-PDF HTML (500ms delay), same pattern as meeting prep |
+| Intake CTA | Reuses `POST /api/attorney/send-intake-request`; **advisor role permitted**; free-tier cap attorney-only |
+| Canonical route | `/prospect`; `/advisor/prospect` → redirect |
+
+### Track 2 — Mobile review mode
+| Item | Notes |
+|------|-------|
+| Mobile alert banner | `< lg` when conflicts or pending advisor recs |
+| `StrategyRecommendationPanel` | Stacked Accept/Decline, `min-h-[44px]` |
+| Table scroll | `overflow-x-auto -mx-4 px-4` on projections, RMD, scenarios |
+| Net worth grid | Already `grid-cols-2 lg:grid-cols-4` — no change |
+| Estate tax page | Card-based — no change |
+
+**Locked decisions:** Prospect state tax uses `calculateStateEstateTax` directly (not RPC); `getProspectTaxConfig()` DB fallback; mobile is review-only (desktop-first planning).
+
+**Automated verify (2026-05-29):** `npm run test:import:unit` 24/24 pass; ESLint on sprint files — 0 errors; TypeScript clean except pre-existing `consumer-import.spec.ts`.
+
+**Manual smoke:** 19-step checklist in [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29) — **not run in CI** (requires Resend inbox, advisor2 login, DevTools 390px).
+
+**CA note for step 4:** CA has no state estate tax — sunset delta should appear; state tax card should not. Use **WA** or **OR** to verify state tax figure.
 
 ---
 
@@ -27,7 +61,7 @@
 ### Track 1 — Attorney intake request flow
 | Item | Notes |
 |------|-------|
-| Migration | `20260530_attorney_intake_requests.sql` |
+| Migration | `20260530110000_attorney_intake_requests.sql` (renamed from invalid `20260530_*`) |
 | Free tier | 5 requests/month cap enforced server-side |
 | Token flow | sessionStorage → auto-grant on profile save or login |
 | Email | Resend, BCC `avoels@comcast.net` |
@@ -49,7 +83,7 @@
 
 **Locked decisions:** Signup attribution via `profiles.referral_code` (not `referral_clicks.user_id); meeting prep is print-to-PDF (no new library); intake expiry 14 days; `attorney_listings.referral_code` confirmed (`20260528000000_attorney_referrals.sql`).
 
-**Before deploy:** apply `20260530_attorney_intake_requests.sql`. **Manual smoke:** 20-step checklist in commit message / LAUNCH_CHECKLIST (Tracks 1–3).
+**Before deploy:** apply `20260530110000_attorney_intake_requests.sql`. **Manual smoke:** 20-step checklist in LAUNCH_CHECKLIST (Tracks 1–3).
 
 **Watch post-deploy:** intake completion rate (`completed` / `sent`); advisor referral notification open rate; Firefox print layout (may need 800ms delay).
 
@@ -59,7 +93,7 @@
 
 | Category | Item | Status | Notes |
 |----------|------|--------|-------|
-| DB | `onboarding_persona` + `persona_set_at` on `profiles` | ✅ | Migration `20260530_onboarding_persona.sql` |
+| DB | `onboarding_persona` + `persona_set_at` on `profiles` | ✅ | Migration `20260530100000_onboarding_persona.sql` |
 | FEATURE | Persona selection `/onboarding/persona` | ✅ | 4 cards, post-profile redirect, funnel events |
 | FEATURE | Persona-aware wizard step 1 | ✅ | Headline, body, asset type, template per persona |
 | FEATURE | `PersonaInsightCard` on dashboard | ✅ | 4 variants, 7-day window, sessionStorage dismiss |
@@ -68,7 +102,7 @@
 
 **Locked decisions:** Persona set once (`persona_set_at` immutable for analytics); fallback `accumulator` on sidebar skip; persona does not gate features — copy/routing only; insight card is 7-day first-run only.
 
-**Before deploy:** apply `supabase/migrations/20260530_onboarding_persona.sql`. Smoke: fresh signup → profile → persona screen → wizard (persona headline) → dashboard (`PersonaInsightCard`).
+**Before deploy:** apply `supabase/migrations/20260530100000_onboarding_persona.sql`. Smoke: fresh signup → profile → persona screen → wizard (persona headline) → dashboard (`PersonaInsightCard`).
 
 ---
 

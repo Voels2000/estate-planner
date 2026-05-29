@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-29 (TERMS-2/3/5 billing fixes; Stripe go-live guide)
+# Last updated: 2026-05-29 (Prospect Mode + Mobile Review Mode shipped)
 
 ---
 
@@ -34,8 +34,10 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
 - [x] **Ask advisor about strategy (AF-1)** — connected consumer notifies advisor from Transfer Strategies education cards; advisor **Client Strategy Questions** on client Overview (`a255616`)
 - [x] **Setup progress onboarding (OB-3)** — `SetupProgressCard` on dashboard; wizard gate only when no data; Tier 1 import during onboarding
-- [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; migration `20260530_onboarding_persona.sql`
-- [ ] **Acquisition sprint migration (2026-05-29)** — apply `20260530_attorney_intake_requests.sql`; run Tracks 1–3 manual smoke (see NEXT_SESSION)
+- [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; migration `20260530100000_onboarding_persona.sql`
+- [x] **Prospect Mode polish (2026-05-29)** — `/prospect` DB tax config, PDF export, intake CTA; advisor role on send-intake-request
+- [x] **Mobile review mode (2026-05-29)** — alert banner, stacked rec buttons, table scroll wrappers
+- [ ] **Acquisition sprint migration (2026-05-29)** — apply `20260530110000_attorney_intake_requests.sql`; run Tracks 1–3 manual smoke (see NEXT_SESSION)
 
 ### Email drip
 
@@ -48,7 +50,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **RMD start age by birth year** — `getRmdStartAge` (72 / 73 / 75); advisor Retirement tab + projection/dashboard/RMD calculator aligned (verify 1960+ cohort shows age **75**)
 - [x] **Business succession planning page** — minimal intake shipped (Path A); sidebar link live; tier 3 (Sprint 10)
 - [x] **Invite-your-advisor onboarding** — `/onboarding/invite-advisor`; `onboarding_invite_advisor_completed_at` (Sprint 10)
-- [x] **Mobile nav audit** — dashboard off-canvas drawer on `<lg` shipped (Sprint 12); full route-by-route audit post-launch
+- [x] **Mobile nav audit** — dashboard off-canvas drawer on `<lg` shipped (Sprint 12); mobile review layer (alert banner, rec cards, table scroll) shipped 2026-05-29
 - [x] **Projections + Lifetime Snapshot** — `PlanningSurfaceNav` + distinct descriptions on each surface (Sprint 11)
 - [x] **Charitable Giving empty state** — personalized topics from household when no donations (Sprint 11)
 - [x] **Scenarios page discoverability** — “Open Scenarios” card on `/projections` (Sprint 11)
@@ -70,7 +72,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
 - [x] **Pre-launch E2E baseline (profile + growth API, 2026-05-27)** — `consumer-profile-spouse-layout.spec.ts` (4 tests: section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2`); `consumer-growth-assumptions-api.spec.ts` (empty-body 400 always; round-trip PATCH + revert when `PLAYWRIGHT_HOUSEHOLD_ID` set). Run: `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts --project=consumer --workers=1`. Enable skipped round-trip: `npm run seed:e2e` → copy `PLAYWRIGHT_HOUSEHOLD_ID` to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
 - [x] **Post-deploy partial PATCH smoke (inline profile prompts, 2026-05-27)** — verified on production (SS + retirement/longevity). Third case (custom deduction) + UI prompts: `npm run test:e2e:go-live-profile`.
-- [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): `npm run test:e2e:go-live-profile` then `npm run test:e2e:consumer -- --workers=1`.
+- [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): `npm run test:e2e:go-live-profile` then `npm run test:e2e:consumer -- --workers=1`. Then [Prospect + Mobile manual smoke](#prospect--mobile-review-mode-manual-smoke-2026-05-29) (Track 1 before Track 2).
 - [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
   attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
   life-event-on-connect)
@@ -111,11 +113,54 @@ These must be complete before launch. Update status as sprints close them.
 
 - [ ] **Attorney referral production test** — run `npm run seed:e2e` (or register manually); confirm `referral_code` on listing; sign in as `e2e-attorney@mywealthmaps.test` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **Attorney billing (2026-05-29)** — apply `20260529130000_attorney_drip_columns.sql`; create Stripe Attorney Starter/Growth prices; set `STRIPE_PRICE_ATTORNEY_*`; test `/attorney/billing` checkout in test mode; confirm webhook sets `attorney_tier`; smoke free-tier upgrade prompts (client cap, PDF, doc dashboard blur)
-- [ ] **Persona onboarding migration (2026-05-29)** — apply `20260530_onboarding_persona.sql`; smoke fresh signup → profile → persona screen → wizard (persona headline) → dashboard insight card
+- [ ] **Persona onboarding migration (2026-05-29)** — apply `20260530100000_onboarding_persona.sql`; smoke fresh signup → profile → persona screen → wizard (persona headline) → dashboard insight card
+- [ ] **Prospect + Mobile manual smoke (2026-05-29)** — [19-step checklist below](#prospect--mobile-review-mode-manual-smoke-2026-05-29); Track 1 (prospect/PDF/intake) before Track 2 (mobile)
 - [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: run SQL in [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops); confirm `attorney_drip_step_2_sent_at` populates; step 3 by day 7 after step 1
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
 **Sprint 14 manual smoke (2026-05-23):** Core §1–3, estate §4–7, §8, §11 **passed** on staging; §9 skipped (needs linked advisor); §10 E2E 19/19; bugs fixed `f4e9160`. See CONSUMER_RELEASE_SMOKE_TEST.md sign-off block.
+
+### Prospect + Mobile Review Mode manual smoke (2026-05-29)
+
+**Automated pre-check (CI/local):** `npm run test:import:unit` (24/24); ESLint on sprint files; TypeScript (excluding pre-existing `consumer-import.spec.ts`).
+
+**Not automated** — requires advisor2 login, Resend inbox, DevTools 390px. Run **Track 1 first** (more moving parts).
+
+#### Track 1 — Prospect mode
+
+| # | Step | Pass |
+|---|------|------|
+| 1 | Log in as `advisor2@rolobe.resend.app` | [ ] |
+| 2 | Navigate to `/prospect` (or Prospect Mode tab) | [ ] |
+| 3 | Fill: California, $5M–$15M, Married, Business owner, Age 58, Name "Test Prospect" | [ ] |
+| 4 | Submit — tax figures render; **sunset delta** visible (CA has no state estate tax — card should not appear) | [ ] |
+| 4b | *(Optional)* Re-run with **WA** or **OR** — state tax card appears with non-zero figure | [ ] |
+| 5 | Federal tax current law is NOT zero (DB-backed exemption) | [ ] |
+| 6 | Click "Download opportunity summary" — print dialog after ~500ms | [ ] |
+| 7 | PDF header shows "Prepared by [advisor name]" | [ ] |
+| 8 | Sunset delta banner appears in PDF | [ ] |
+| 9 | Enter `consumer1@rolobe.resend.app` → Send intake invitation | [ ] |
+| 10 | Email arrives at `avoels@comcast.net` (BCC) | [ ] |
+| 11 | `/advisor/prospect` redirects cleanly to `/prospect` | [ ] |
+
+#### Track 2 — Mobile review mode
+
+| # | Step | Pass |
+|---|------|------|
+| 12 | DevTools → iPhone 12 (390px) → `/dashboard` | [ ] |
+| 13 | Mobile alert banner appears if open alerts exist for test account | [ ] |
+| 14 | No horizontal overflow on dashboard cards | [ ] |
+| 15 | `/projections` — year-by-year table scrolls horizontally | [ ] |
+| 16 | `/rmd` — table scrolls horizontally | [ ] |
+| 17 | `/scenarios` — comparison table scrolls horizontally | [ ] |
+| 18 | Advisor recommendation Accept/Decline buttons full-width stacked (not side-by-side) | [ ] |
+| 19 | Hamburger menu → tap nav item → drawer closes | [ ] |
+
+**Verify federal_tax_config (if step 5 fails):**
+```sql
+SELECT scenario_id, estate_exemption_individual, estate_exemption_married
+FROM federal_tax_config WHERE scenario_id IN ('current_law', 'sunset_2026');
+```
 
 ---
 
@@ -617,6 +662,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-29 | Prospect + Mobile Review | **Closed** — `feat(prospect)` DB tax config, PDF, intake CTA; `feat(mobile)` review banner, rec cards, table scroll; manual smoke checklist added |
 | 2026-05-29 | TERMS-2/3/5 billing fixes | Trial checkout access; direct post-Stripe redirect; `repair-orphaned-user` script (`48e7326`) |
 | 2026-05-28 | Stripe go-live docs + annual toggle guard | LAUNCH_CHECKLIST Phase 1/2 sandbox→production; `isAnnualBillingConfigured()` hides toggle |
 | 2026-05-28 | Advisor dashboard tier fix | `_dashboard-body` uses `getUserAccess().tier`; LAUNCH_CHECKLIST advisor manual billing |

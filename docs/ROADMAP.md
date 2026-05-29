@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (Attorney monetization + projections readiness)
+# Last updated: 2026-05-29 (Prospect Mode + Mobile Review Mode shipped)
 
 ---
 
@@ -20,6 +20,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — Prospect Mode + Mobile Review (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `getProspectTaxConfig` + DB-backed prospect calculations | `[x]` |
+| `GET /api/advisor/prospect-pdf` print route | `[x]` |
+| Intake invitation CTA (advisor on send-intake-request) | `[x]` |
+| Mobile alert banner + stacked rec buttons | `[x]` |
+| Table scroll wrappers (projections, RMD, scenarios) | `[x]` |
+| Manual smoke checklist in LAUNCH_CHECKLIST | `[x]` |
+
+**Commits:** `feat(prospect)` · `feat(mobile)` · Manual smoke: [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29)
+
+---
 
 ### Sprint — Inline profile prompts (2026-05-27) **← shipped**
 

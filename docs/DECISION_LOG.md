@@ -1190,6 +1190,34 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### May 2026 — Prospect Mode state tax path (no household RPC)
+
+**Decision:** Prospect Mode (`/prospect`, `GET /api/advisor/prospect-pdf`) computes state estate tax via `calculateStateEstateTax` in `lib/calculations/stateEstateTax.ts` with rows from `state_estate_tax_rules`. It does **not** call the `calculate_state_estate_tax(p_household_id)` SQL RPC.
+
+**Reasoning:** Prospect inputs are anonymous ranges — there is no household, so the RPC signature cannot apply. The TypeScript engine mirrors the RPC logic and is the same source used elsewhere for bracket-based state tax.
+
+**Implementation:** `lib/prospect/calculateProspectSummary.ts`, `lib/prospect/getProspectTaxConfig.ts` (federal from `federal_tax_config` with OBBBA / sunset fallbacks).
+
+---
+
+### May 2026 — Prospect intake CTA reuses attorney send-intake route
+
+**Decision:** Advisors send prospect intake invitations via existing `POST /api/attorney/send-intake-request`. Role guard accepts `advisor` in addition to attorney. Free-tier 5/month cap remains **attorney-only** (`attorney_tier === 0`).
+
+**Reasoning:** Same email template, token flow, and `attorney_intake_requests` table; avoids duplicate route. Advisor name in email comes from `profiles.full_name`.
+
+---
+
+### May 2026 — Mobile review mode is additive (desktop-first)
+
+**Decision:** Mobile changes are review-only: alert banner (`< lg`), stacked Accept/Decline on advisor recommendations, horizontal scroll on wide tables (projections, RMD, scenarios). No rebuild of planning surfaces for mobile.
+
+**Reasoning:** Professionals and consumers primarily review numbers, alerts, and recs on phone; full modeling stays desktop-first.
+
+**Implementation:** `_dashboard-client.tsx`, `StrategyRecommendationPanel.tsx`, table wrappers in projections/RMD/scenarios clients.
+
+---
+
 ### May 2026 — Waitlist mode gates public signup pre-launch (Sprint 15)
 
 **Decision:** While the marketing site is live but not yet accepting accounts, public signup is disabled via env flags. Visitors to `/signup` or public **Get started** CTAs see `/waitlist` (email capture only). Invite/token signup flows bypass the gate (`?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`).

@@ -497,6 +497,7 @@ export default function ScenariosClient({
         <div className="px-6 py-4 border-b border-neutral-100">
           <h2 className="text-sm font-semibold text-neutral-900">Comparison Summary</h2>
         </div>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-neutral-50">
@@ -547,6 +548,7 @@ export default function ScenariosClient({
               </tr>
             </tbody>
           </table>
+        </div>
         </div>
       </div>
 
@@ -750,8 +752,9 @@ function ComparisonTable({ results, names, loading }: {
   const baseRows = results.find(r => r !== null)?.rows ?? []
 
   return (
-    <div className="overflow-auto max-h-96">
-      <table className="min-w-full text-sm">
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="overflow-auto max-h-96">
+        <table className="min-w-[640px] w-full text-sm">
         <thead className="sticky top-0 bg-white">
           <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
             <th className="pb-2 pr-4">Age</th>
@@ -801,6 +804,7 @@ function ComparisonTable({ results, names, loading }: {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
