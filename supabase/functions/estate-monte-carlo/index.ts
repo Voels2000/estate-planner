@@ -180,18 +180,32 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Verify auth header presence (JWT validation delegated to RLS)
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    // Auth validated via RLS on database operations
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     // Parse request body
     const body = await req.json()
@@ -215,6 +229,41 @@ serve(async (req) => {
       })
     }
 
+    const { data: household, error: householdError } = await userClient
+      .from('households')
+      .select('owner_id')
+      .eq('id', householdId)
+      .maybeSingle()
+
+    if (householdError || !household) {
+      return new Response(JSON.stringify({ error: 'Household not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const isOwner = household.owner_id === user.id
+    let isAdvisor = false
+
+    if (!isOwner) {
+      const { data: link } = await userClient
+        .from('advisor_clients')
+        .select('id')
+        .eq('advisor_id', user.id)
+        .eq('client_id', household.owner_id)
+        .in('status', ['active', 'accepted'])
+        .maybeSingle()
+
+      isAdvisor = Boolean(link)
+    }
+
+    if (!isOwner && !isAdvisor) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Run Monte Carlo
     const result = runEstateMonteCarlo({
       grossEstate,
@@ -228,8 +277,9 @@ serve(async (req) => {
       volatilityPct: assumptions?.volatilityPct,
     })
 
-    // Persist results
-    const { data: saved, error: saveError } = await supabase
+    // Persist results (service role only after caller access verified above)
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+    const { data: saved, error: saveError } = await adminClient
       .from('monte_carlo_results')
       .insert({
         household_id: householdId,
