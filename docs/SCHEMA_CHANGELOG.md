@@ -18,10 +18,10 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 | Change | Files |
 |--------|-------|
-| Signup defaults `subscription_status = 'none'` (free Tier 1); Stripe-only Estate trial | `20260527130000_fix_signup_subscription_defaults.sql`, `lib/tiers.ts`, `app/(dashboard)/layout.tsx` |
+| Signup defaults `subscription_status = 'none'` (free Tier 1); Stripe-only Estate trial | `20260527130500_fix_signup_subscription_defaults.sql`, `lib/tiers.ts`, `app/(dashboard)/layout.tsx` |
 | Assessment → recommended plan → `/billing?plan=` | `lib/assessment/recommendPlanFromScores.ts`, `app/(public)/assess/_assess-client.tsx`, `app/billing/` |
 
-**Apply on remote:** `20260527130000_fix_signup_subscription_defaults.sql`
+**Apply on remote:** `20260527130500_fix_signup_subscription_defaults.sql`
 
 ---
 
