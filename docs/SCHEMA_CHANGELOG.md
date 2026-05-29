@@ -10,6 +10,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Estate execution checklist — Sprint 2 (2026-05-28)
+
+| Change | Files |
+|--------|-------|
+| `estate_checklist_items` table + RLS | `20260528120000_estate_checklist_items.sql` |
+| Task allowlist + trust task mapping | `lib/estate/estateChecklistTaskKeys.ts` |
+| Unified builder (no new RPCs) | `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/dashboard/estateUpgradeHref.ts` |
+| Consumer API | `GET` / `PATCH` `/api/consumer/estate-checklist` |
+| Dashboard UI | `EstateExecutionChecklist.tsx`, `_dashboard-body.tsx`, `_dashboard-client.tsx` |
+| Trust tab persistence | `TrustDocumentsPanel.tsx`, `my-estate-trust-strategy/page.tsx`, `_client.tsx` |
+
+**Apply migration:** `supabase db push --include-all --yes` (or deploy pipeline).
+
+**Estate preview UX (same release, pre-checklist):** `EstateCalloutCard` tier CTA; callout after intro; tier-aware conflict/estate links (`estateUpgradeHref`); personalized `/estate-tax` upgrade wall.
+
+---
+
 ## Post-launch perf Sprint J — complete + estate-tax shells (2026-05-27, code only)
 
 | Route | Files |

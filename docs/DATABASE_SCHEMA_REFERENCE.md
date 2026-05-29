@@ -30,7 +30,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Estate composition | `calculate_estate_composition` RPC + `estate_composition_cache` (post-launch read path) | Derived values; cache populated at recompute |
 | Estate tax rules | `federal_tax_config`, `state_estate_tax_rules` | Estate transfer tax calculations |
 | Income tax rules | `state_income_tax_brackets` | Progressive state income rules (canonical target) |
-| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results`, `advisor_gap_statuses` | Cached analytics + user assessment history; `advisor_gap_statuses` tracks advisor-private gap workflow state |
+| Alerts/health | `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`, `assessment_results`, `advisor_gap_statuses`, `estate_checklist_items` | Cached analytics + user assessment history; `advisor_gap_statuses` tracks advisor-private gap workflow state; `estate_checklist_items` = persisted consumer execution checklist (Sprint 2) |
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
 | Gifting activity | `gift_history` | Annual/lifetime/529/medical/tuition gifts; feeds `calculate_gifting_summary` |
@@ -336,6 +336,16 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 - **Key columns:** `household_id`, `score`, `component_scores`, `computed_at`, `recommendations` (jsonb — cached `generate_estate_recommendations` output; Sprint P-2)
 - **Purpose:** cached health score summary + recommendations (read path should avoid recomputing synchronously).
+
+### `estate_checklist_items`
+
+- **Key columns:** `household_id`, `task_key`, `completed`, `completed_at`, `notes`
+- **task_key allowlist:** `will_on_file`, `dpoa_on_file`, `healthcare_directive`, `trust_funded`, `beneficiaries_updated`, `titling_reviewed`, `guardian_named`, `annual_gifts_logged`
+- **RLS:** consumer own household; advisor read connected clients (`advisor_clients` active + `accepted_at` not null)
+- **API:** `GET` + `PATCH` `/api/consumer/estate-checklist`
+- **Purpose:** consumer-toggled execution checklist items; merged on dashboard with auto-detected status from `estate_documents`, `trusts`, `estate_health_check`, and `beneficiary_conflicts` via `buildEstateExecutionChecklist()` — no new RPCs
+- **Added:** Sprint 2 (execution checklist)
+- **Migration:** `20260528120000_estate_checklist_items.sql`
 
 ### `estate_composition_cache`
 
