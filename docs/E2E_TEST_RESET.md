@@ -42,7 +42,9 @@ This will:
 - Mark terms accepted and advisor-invite onboarding complete (dashboard smoke)
 - Seed tier-1 consumer household
 - Seed advisor portal user + directory row with `e2eadv01`
+- Seed attorney portal user + directory row with `e2eatt01` (`attorney_tier=0` set explicitly)
 - Run Michael Johnson advisor client seed + link advisor ↔ client
+- **Verify** all `@mywealthmaps.test` profiles (fail seed if `attorney_tier`, `consumer_tier`, or advisor `subscription_status` is null)
 - Seed attorney listing + portal with `e2eatt01`
 - Print a complete **`.env.test` block** — copy into your local `.env.test`
 

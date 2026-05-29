@@ -363,6 +363,14 @@ export async function ensureAttorneyListingAndPortal(): Promise<string> {
     role: 'attorney',
   })
 
+  // Attorney account — always set attorney_tier explicitly; don't rely on column default
+  const { error: tierErr } = await admin
+    .from('profiles')
+    .update({ attorney_tier: 0, updated_at: new Date().toISOString() })
+    .eq('email', portal.email)
+  if (tierErr) throw new Error(`profiles attorney_tier: ${tierErr.message}`)
+  console.log(`  profiles: attorney_tier=0 for ${portal.email}`)
+
   await admin
     .from('attorney_listings')
     .update({ profile_id: portalUserId })
@@ -399,6 +407,38 @@ export async function linkAdvisorToClient(advisorId: string, clientId: string) {
   } else {
     console.log('  advisor_clients: already active')
   }
+}
+
+/** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
+export async function verifyE2eAccounts(): Promise<void> {
+  const admin = createAdminClient()
+  const { data: accounts, error } = await admin
+    .from('profiles')
+    .select('email, role, consumer_tier, attorney_tier, subscription_status')
+    .like('email', '%mywealthmaps.test%')
+
+  if (error) throw new Error(`E2E seed validation query: ${error.message}`)
+
+  const issues: string[] = []
+  for (const account of accounts ?? []) {
+    if (account.role === 'attorney' && account.attorney_tier === null) {
+      issues.push(`${account.email}: attorney_tier is null`)
+    }
+    if (account.role === 'consumer' && account.consumer_tier === null) {
+      issues.push(`${account.email}: consumer_tier is null`)
+    }
+    if (account.role === 'advisor' && account.subscription_status === null) {
+      issues.push(`${account.email}: subscription_status is null`)
+    }
+  }
+
+  if (issues.length > 0) {
+    console.error('E2E seed validation failed:')
+    issues.forEach((i) => console.error(' -', i))
+    process.exit(1)
+  }
+
+  console.log(`✓ All ${accounts?.length ?? 0} E2E accounts verified`)
 }
 
 /** Run Michael Johnson demo seed via env (existing script). */

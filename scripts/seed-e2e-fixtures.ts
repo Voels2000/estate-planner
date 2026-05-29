@@ -30,6 +30,7 @@ import {
   runMichaelJohnsonDemoSeed,
   seedE2eConsumerHousehold,
   findUserIdByEmail,
+  verifyE2eAccounts,
 } from './seed-e2e-lib'
 
 function parseOnlyFlag(): Set<string> | null {
@@ -136,6 +137,10 @@ async function main() {
     console.error('Household id missing — consumer seed failed')
     process.exit(1)
   }
+
+  console.log('6. Verify E2E account state')
+  await verifyE2eAccounts()
+  console.log('')
 
   const envBlock = buildEnvTestFileLines({
     baseUrl,
