@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint F profile gates + Sprint E form refresh)
+# Last updated: 2026-05-27 (Sprint G sidebar billing links)
+
+## Post-launch perf — sidebar tier-locked billing links (2026-05-27)
+
+**Decision:** Tier-locked sidebar leaves and locked Retirement/Estate group items navigate to `/billing?returnTo={href}` instead of non-interactive greyed divs.
+
+**Reasoning:** Dead-end lock icons blocked upgrade conversion; attorney-access items already linked to billing — extend pattern to all feature gates.
+
+---
 
 ## Post-launch perf — profile gate consistency (2026-05-27)
 

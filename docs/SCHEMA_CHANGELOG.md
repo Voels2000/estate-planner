@@ -10,6 +10,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint G — sidebar billing links (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **sidebar-nav.tsx** | `billingHrefForNavItem()`; tier-locked leaves + group items link to billing |
+
+---
+
 ## Post-launch perf Sprint F — profile gate consistency (2026-05-27, code only)
 
 | Area | Change |

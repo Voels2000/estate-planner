@@ -48,6 +48,15 @@
 
 ---
 
+## Post-launch perf Sprint G — sidebar tier-locked billing links ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **Tier-locked leaves** | Feature-gated nav items link to `/billing?returnTo=…` instead of dead clicks |
+| **Locked groups** | Retirement/Estate group items and upgrade banner link to billing |
+
+---
+
 ## Post-launch perf Sprint F — profile gate consistency ✅ (2026-05-27)
 
 | Fix | Outcome |

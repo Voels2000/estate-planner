@@ -202,10 +202,14 @@ export function SidebarNav({
     return TIER_NAMES[required as 1 | 2 | 3]
   }
 
-  function blockLockedNavInteraction(e: SyntheticEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-  }
+function blockLockedNavInteraction(e: SyntheticEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function billingHrefForNavItem(href: string): string {
+  return `/billing?returnTo=${encodeURIComponent(href)}`
+}
 
   return (
     <aside className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-xl border border-[color:var(--mwm-border)] bg-white lg:my-2 lg:ml-2 lg:w-64">
@@ -275,7 +279,13 @@ export function SidebarNav({
                   {groupIsLocked && (
                     <div className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-lg mb-1">
                       {group.label === 'Retirement Planning' ? (
-                        <span>{`Upgrade to the ${TIER_NAMES[2]} plan to unlock`}</span>
+                        <Link
+                          href={billingHrefForNavItem('/social-security')}
+                          className="flex items-center justify-between hover:underline"
+                        >
+                          <span>{`Upgrade to the ${TIER_NAMES[2]} plan to unlock`}</span>
+                          <span className="ml-1 shrink-0">→</span>
+                        </Link>
                       ) : tier < 2 ? (
                         <span>{`Upgrade to the ${TIER_NAMES[2]} plan first`}</span>
                       ) : (
@@ -315,15 +325,16 @@ export function SidebarNav({
                     }
                     if (groupIsLocked) {
                       return (
-                        <div
+                        <Link
                           key={item.href}
-                          role="presentation"
-                          onClick={blockLockedNavInteraction}
-                          onPointerDown={blockLockedNavInteraction}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 cursor-not-allowed select-none"
+                          href={billingHrefForNavItem(item.href)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-[var(--mwm-off-white)] hover:text-[color:var(--mwm-navy)] transition-colors"
                         >
                           <span className="flex-1 truncate">{item.label}</span>
-                        </div>
+                          <span className="shrink-0 text-amber-400 text-sm" aria-hidden>
+                            🔒
+                          </span>
+                        </Link>
                       )
                     }
                     if (
@@ -356,25 +367,24 @@ export function SidebarNav({
                       tier < (item.minTier ?? 0)
                     const attorneyTierGate =
                       (item.href === '/settings/attorney-access' || item.href === '/my-attorney') && tierBelowMin
-                    const linkHref = attorneyTierGate ? '/billing' : item.href
-                    const isActive = isNavItemActive(item.href, activePath) && !attorneyTierGate
                     const locked = isLocked(item.feature)
+                    const featureTierLocked = locked && !attorneyTierGate
+                    const linkHref =
+                      attorneyTierGate || featureTierLocked
+                        ? billingHrefForNavItem(item.href)
+                        : item.href
+                    const isActive = isNavItemActive(item.href, activePath) && !attorneyTierGate && !featureTierLocked
                     const greyedLeaf = locked || attorneyTierGate
                     const leafClasses = navLinkClass(
                       isActive,
-                      locked || attorneyTierGate
-                        ? 'px-3 text-[color:var(--mwm-text-muted)] cursor-not-allowed'
+                      greyedLeaf
+                        ? 'px-3 text-[color:var(--mwm-text-muted)]'
                         : '',
                     )
                     return (
                       <div key={item.href}>
                         {greyedLeaf ? (
-                          <div
-                            role="presentation"
-                            onClick={blockLockedNavInteraction}
-                            onPointerDown={blockLockedNavInteraction}
-                            className={`${leafClasses} cursor-not-allowed`}
-                          >
+                          <Link href={linkHref} className={leafClasses}>
                             <span className="flex-1 truncate">{item.label}</span>
                             {locked && (
                               <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1 py-0 text-[10px] font-medium text-amber-700">
@@ -384,7 +394,7 @@ export function SidebarNav({
                             {attorneyTierGate && (
                               <span className="ml-auto shrink-0 text-amber-400 text-sm">🔒</span>
                             )}
-                          </div>
+                          </Link>
                         ) : (
                           <Link href={linkHref} className={leafClasses}>
                             <span className="flex-1 truncate">{item.label}</span>
