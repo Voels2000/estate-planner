@@ -53,7 +53,7 @@ Engineering perf/correctness sprints shipped on `main` (`88cc63d`–`a4d2e38`, S
 | **G** | Sidebar tier-locked → billing links | `f0f004d` |
 | **H** | `loading.tsx` on hot prefetch routes | `b1f995f` |
 | **I** | `error.tsx` + `RouteErrorFallback` | `a4d2e38` |
-| **J** | Complete + estate-tax loading/error | (this commit) |
+| **J** | Complete + estate-tax loading/error | `e93f9a0` |
 
 Detail: [NEXT_SESSION.md § Post-launch perf](./NEXT_SESSION.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md).
 
