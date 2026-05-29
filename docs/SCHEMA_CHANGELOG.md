@@ -19,6 +19,32 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint O — shells + composition cache (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Route shells | `assets/loading`, `titling/loading+error`, `advisor/loading+error`, `my-estate-strategy/error` |
+| Composition cache invalidation | `afterHouseholdWrite.ts` → `revalidateTag(household-composition-{id})` |
+
+---
+
+## Post-launch perf Sprint N — advisor tab perf (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Batch roster alert counts | `rosterAlertCounts.ts`, `advisor/page.tsx`, `AdvisorAlertBadge.tsx` |
+| Strategy tab hydrate gate | `StrategyTab.tsx` |
+
+---
+
+## Post-launch perf Sprint M — dashboard Suspense (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Async dashboard body + Suspense | `dashboard/page.tsx`, `_dashboard-body.tsx` |
+
+---
+
 ## Post-launch perf Sprint L — bundle + duplicate fetch (2026-05-28, code only)
 
 | Change | Files |

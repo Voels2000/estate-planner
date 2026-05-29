@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf B–J closed)
+# Last updated: 2026-05-28 (Sprints K–O flow & perf program closed)
 
 ---
 
@@ -60,12 +60,25 @@ Engineering perf/correctness sprints shipped on `main` (`88cc63d`–`a4d2e38`, S
 | Sprint | Theme | Status |
 |--------|--------|--------|
 | **K** | Consumer flow consistency (reload → refresh, strategy hydrate, charitable API) | ✅ |
-| **L** | Bundle + duplicate fetch | `[~]` CURRENT |
-| **M** | Dashboard Suspense streaming | `[ ]` |
-| **N** | Advisor tab perf | `[ ]` |
-| **O** | Shells + composition cache tags | `[ ]` |
+| **L** | Bundle + duplicate fetch | ✅ `5da71b0` |
+| **M** | Dashboard Suspense streaming | ✅ `c5186ca` |
+| **N** | Advisor tab perf | ✅ |
+| **O** | Shells + composition cache tags | ✅ |
 
 Detail: [NEXT_SESSION.md § Flow & perf K–O](./NEXT_SESSION.md)
+
+---
+
+### Sprint 19 — Go-live hardening **← CURRENT**
+
+**Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke.
+
+| Item | Status |
+|------|--------|
+| Manual RLS isolation smoke | `[ ]` |
+| LEGAL_TODO counsel handoff | `[ ]` |
+| Stripe Dashboard config | `[ ]` |
+| Go-live smoke (fresh email) | `[ ]` |
 
 ---
 

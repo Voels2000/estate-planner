@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
-# Sprint 18 — Session Start Document
-# Updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf B–J closed; Sprint 17 go-live blockers remain)
+# Sprint 19 — Session Start Document
+# Updated: 2026-05-28 (Sprints K–O closed; go-live hardening)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 18 (planning shell completion + go-live hardening).** **Post-launch perf (closed):** Sprints B–I on `main`; Sprint J adds `/complete` + `/estate-tax` loading/error shells. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md) counsel handoff; Stripe Dashboard config; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke with fresh email. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next engineering:** RLS manual isolation smoke; optional RouteErrorFallback on dashboard/trust-strategy errors.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O on `main`. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
