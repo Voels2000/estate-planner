@@ -34,7 +34,8 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
 - [x] **Ask advisor about strategy (AF-1)** — connected consumer notifies advisor from Transfer Strategies education cards; advisor **Client Strategy Questions** on client Overview (`a255616`)
 - [x] **Setup progress onboarding (OB-3)** — `SetupProgressCard` on dashboard; wizard gate only when no data; Tier 1 import during onboarding
-- [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; persona-aware wizard step 1; `PersonaInsightCard`; migration `20260530_onboarding_persona.sql`
+- [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; migration `20260530_onboarding_persona.sql`
+- [ ] **Acquisition sprint migration (2026-05-29)** — apply `20260530_attorney_intake_requests.sql`; run Tracks 1–3 manual smoke (see NEXT_SESSION)
 
 ### Email drip
 

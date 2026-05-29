@@ -14,6 +14,7 @@ import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 import { AdvisorEmptyStateCta } from '@/components/advisor/AdvisorEmptyStateCta'
 import { AdvisorFirstConnectionPlaybook } from '@/components/advisor/AdvisorFirstConnectionPlaybook'
 import { AdvisorValuePropBanner } from '@/components/advisor/AdvisorValuePropBanner'
+import { ReferralImpactPanel } from '@/components/advisor/ReferralImpactPanel'
 
 type AdvisorClient = {
   id: string
@@ -378,6 +379,7 @@ Ref: ${referralCode}`
 
         return (
           <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+            <ReferralImpactPanel />
             <div className="px-6 pt-6 pb-4 border-b border-neutral-100">
               <div className="flex items-start justify-between gap-4">
                 <div>

@@ -216,6 +216,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` adds `/scenarios`
 - [x] Master docs sync (this pass)
 
+## Professional Acquisition & Activation (2026-05-29) — shipped
+
+- [x] Migration `20260530_attorney_intake_requests.sql`
+- [x] Track 1 — send intake request, `/intake/[token]`, auto-grant, pending list, 5/mo cap
+- [x] Track 2 — `ReferralImpactPanel`, referral-impact API, advisor signup notification
+- [x] Track 3 — meeting prep PDF route, "Prepare for meeting" button
+- [x] Master docs sync (this pass)
+- [ ] Apply migration on remote + manual smoke Tracks 1–3 ([NEXT_SESSION.md](./NEXT_SESSION.md))
+
 ## Persona-based onboarding (2026-05-29) — shipped
 
 - [x] Migration `20260530_onboarding_persona.sql` — `profiles.onboarding_persona`, `persona_set_at`

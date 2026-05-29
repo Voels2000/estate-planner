@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Persona-based onboarding)
+# Last updated: 2026-05-29 (Professional Acquisition & Activation)
+
+## Professional Acquisition & Activation — intake, referral impact, meeting prep (2026-05-29)
+
+**Decision:** Three independent acquisition/retention tracks — attorney intake invitations, advisor referral feedback loop, advisor meeting prep print export.
+
+**Track 1 — Intake:** `attorney_intake_requests` table; attorney sends Resend email with `/intake/[token]`; consumer signup/login stores token; auto-grant attorney access on profile save; free tier 5 requests/month server-side.
+
+**Track 2 — Referral impact:** Clicks from `referral_clicks.created_at` (not `clicked_at`); signups from `funnel_events` where `event_name = account_created` and matching `referral_code` — **not** `referral_clicks.user_id` (column does not exist). Advisor notified on attributed signup.
+
+**Track 3 — Meeting prep:** HTML route + `window.print()` after 500ms — intentional, no PDF library dependency.
+
+**Migration:** `20260530_attorney_intake_requests.sql`.
+
+---
 
 ## Persona-based onboarding — routing only, not feature gates (2026-05-29)
 

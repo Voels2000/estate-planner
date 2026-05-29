@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -20,10 +21,15 @@ export function SignupForm() {
   const hasAdvisorInvite = advisorInviteToken !== ''
   const consumerConnectToken = searchParams.get('connect')?.trim() ?? ''
   const hasConsumerConnect = consumerConnectToken !== ''
+  const intakeTokenParam = searchParams.get('intake_token')?.trim() ?? ''
   const firmInviteToken = searchParams.get('invite_token')?.trim() ?? ''
   const firmIdParam = searchParams.get('firm_id')?.trim() ?? ''
   const hasFirmInvite = firmInviteToken !== '' && firmIdParam !== ''
   const redirectTo = searchParams.get('redirectTo')?.trim() ?? ''
+
+  useEffect(() => {
+    if (intakeTokenParam) storeIntakeToken(intakeTokenParam)
+  }, [intakeTokenParam])
 
   const [email, setEmail] = useState(inviteEmail)
   const [password, setPassword] = useState('')
@@ -228,6 +234,18 @@ export function SignupForm() {
           .then(({ error: attrError }) => {
             if (attrError) console.error('referral attribution write error:', attrError.message)
           })
+
+        if (referralCode && effectiveRole === 'consumer') {
+          void fetch('/api/advisor/notify-referral-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referralCode,
+              consumerName: fullName.trim(),
+              consumerEmail: email.trim(),
+            }),
+          }).catch(() => {})
+        }
       }
 
       if (sessionFromSignUp && hasConsumerConnect && data.user) {

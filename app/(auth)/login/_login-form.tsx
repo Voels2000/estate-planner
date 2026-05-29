@@ -1,9 +1,10 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getSignupHref } from '@/lib/waitlist-mode'
+import { consumeIntakeToken, storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -13,7 +14,26 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
   const emailFromQuery = searchParams.get('email') ?? ''
+  const intakeTokenParam = searchParams.get('intake_token')?.trim() ?? ''
   const signupHref = getSignupHref()
+
+  useEffect(() => {
+    if (intakeTokenParam) storeIntakeToken(intakeTokenParam)
+  }, [intakeTokenParam])
+
+  async function tryCompleteIntakeAfterLogin() {
+    const token = consumeIntakeToken() ?? intakeTokenParam
+    if (!token) return
+    try {
+      await fetch('/api/consumer/complete-intake-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intakeToken: token }),
+      })
+    } catch {
+      // non-fatal — profile completion may still be needed
+    }
+  }
 
   const [email, setEmail] = useState(emailFromQuery)
   const [password, setPassword] = useState('')
@@ -70,6 +90,7 @@ export function LoginForm() {
           }
         }
       } else {
+        await tryCompleteIntakeAfterLogin()
         router.push(redirectTo)
         router.refresh()
       }

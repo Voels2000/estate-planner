@@ -38,6 +38,7 @@ const PUBLIC_PATHS = [
   '/mfa-enroll',
   '/mfa-challenge',
   '/education',
+  '/intake',
 ]
 
 function isInfraBypassPath(pathname: string): boolean {

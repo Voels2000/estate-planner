@@ -240,6 +240,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | **Advisor flywheel AF-1** | `[x]` | Ask-advisor notification + advisor Strategy Questions card — `a255616` |
 | **Setup progress OB-3** | `[x]` | `SetupProgressCard`, data-inferred wizard, onboarding import bypass — `3376134` |
 | **Persona onboarding** | `[x]` | `/onboarding/persona`, persona-aware wizard, `PersonaInsightCard`, `personaConfig` — 2026-05-29 |
+| **Acquisition & activation** | `[x]` | Attorney intake requests, referral impact panel, meeting prep PDF — 2026-05-29 |
 | **Sidebar unlock OB-3b** | `[x]` | Remove old setup checklist; FP tier 1 + `isLockedUser` exempt; Security/My Advisor/Billing always on; My Advisor onboarding note — `6d2bff3`, `1660f27` |
 | **Superuser sidebar SU-1** | `[x]` | `isSuperuser` prop, staff bypass, Advisor Portal admin check — `3c0d28b` |
 | **Layout household query fix** | `[x]` | Drop invalid `date_of_birth_1` from `getDashboardLayoutContext` (fixes false `hasHousehold`) — `d50a982` |

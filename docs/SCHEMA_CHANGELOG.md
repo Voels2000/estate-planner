@@ -8,6 +8,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Professional Acquisition & Activation (2026-05-29)
+
+**Migration:** `20260530_attorney_intake_requests.sql`
+
+| Change | Detail |
+|--------|--------|
+| `attorney_intake_requests` | Attorney → client email invitations; token, status lifecycle, 14-day expiry |
+| Intake accept | Public `/intake/[token]`; sessionStorage token → `POST /api/consumer/complete-intake-request` |
+| Attorney UI | Send intake modal; pending requests list; 5/mo free cap |
+| Advisor impact | `GET /api/advisor/referral-impact`; `ReferralImpactPanel` on advisor portal |
+| Referral notify | `notifyAdvisorOfReferredSignup` on consumer signup with advisor ref |
+| Meeting prep PDF | `GET /api/advisor/meeting-prep-pdf/[clientId]` — HTML print one-pager |
+
+**Apply on remote:** `20260530_attorney_intake_requests.sql` (before Vercel deploy).
+
+---
+
 ## Persona-based onboarding (2026-05-29)
 
 **Migration:** `20260530_onboarding_persona.sql`

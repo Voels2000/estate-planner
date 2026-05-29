@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
+import { SendIntakeRequestModal } from '@/components/attorney/SendIntakeRequestModal'
 
 type ClientCard = {
   connection_id: string
@@ -22,6 +24,14 @@ type ClientCard = {
   last_updated?: string | null
 }
 
+type IntakeRequestRow = {
+  id: string
+  client_email: string
+  client_name: string | null
+  displayStatus: 'sent' | 'opened' | 'completed' | 'expired'
+  sent_at: string
+}
+
 type Props = {
   attorneyName: string
   clients: ClientCard[]
@@ -31,6 +41,13 @@ type Props = {
   attorneyTier?: number
   clientLimit?: number
   totalClients?: number
+}
+
+const STATUS_BADGE: Record<IntakeRequestRow['displayStatus'], string> = {
+  sent: 'bg-neutral-100 text-neutral-600',
+  opened: 'bg-blue-100 text-blue-700',
+  completed: 'bg-green-100 text-green-700',
+  expired: 'bg-red-100 text-red-700',
 }
 
 const EVENT_REFERRAL_LABELS: Record<string, string> = {
@@ -96,19 +113,54 @@ export function AttorneyDashboardClient({
   clientLimit = 3,
   totalClients = 0,
 }: Props) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [newsletterTab, setNewsletterTab] = useState<'links' | 'email' | 'text'>('links')
   const [copiedNewsletter, setCopiedNewsletter] = useState(false)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const [intakeModalOpen, setIntakeModalOpen] = useState(false)
+  const [intakeRequests, setIntakeRequests] = useState<IntakeRequestRow[]>([])
+  const [sentThisMonth, setSentThisMonth] = useState(0)
+  const [monthlyCap, setMonthlyCap] = useState<number | null>(attorneyTier === 0 ? 5 : null)
+  const [toast, setToast] = useState<string | null>(null)
 
-  const filtered = clients.filter(c =>
-    c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase()) ||
-    c.state.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/attorney/intake-requests')
+        if (!res.ok) return
+        const data = await res.json()
+        setIntakeRequests(data.requests ?? [])
+        setSentThisMonth(data.sentThisMonth ?? 0)
+        setMonthlyCap(data.monthlyCap ?? null)
+      } catch {
+        // non-fatal
+      }
+    })()
+  }, [])
+
+  const filtered = clients.filter(
+    (c) =>
+      c.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      c.email.toLowerCase().includes(search.toLowerCase()) ||
+      c.state.toLowerCase().includes(search.toLowerCase()),
   )
 
   const FREE_TIER_CAP = 3
   const atCap = attorneyTier === 0 && totalClients >= FREE_TIER_CAP
+
+  function handleIntakeSent(email: string) {
+    setToast(`Invitation sent to ${email}.`)
+    setTimeout(() => setToast(null), 4000)
+    void fetch('/api/attorney/intake-requests')
+      .then((r) => r.json())
+      .then((data) => {
+        setIntakeRequests(data.requests ?? [])
+        setSentThisMonth(data.sentThisMonth ?? 0)
+      })
+      .catch(() => {})
+    router.refresh()
+  }
 
   function DocHealthTable({ rows }: { rows: ClientCard[] }) {
     return (
@@ -147,30 +199,94 @@ export function AttorneyDashboardClient({
     )
   }
 
+  const pendingIntake = intakeRequests.filter((r) => r.displayStatus !== 'completed')
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-neutral-900">
-          Attorney Portal
-        </h1>
-        <p className="text-neutral-500 mt-1">
-          Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
-          {(totalClients || clients.length) !== 1 ? 's' : ''}.
-          {attorneyTier === 0 && totalClients > clientLimit && (
-            <span className="block text-xs text-amber-600 mt-1">
-              Free tier shows {clientLimit} clients.{' '}
-              <Link href="/attorney/billing" className="underline">
-                Upgrade for full practice view →
-              </Link>
+      <SendIntakeRequestModal
+        open={intakeModalOpen}
+        onClose={() => setIntakeModalOpen(false)}
+        onSent={handleIntakeSent}
+        sentThisMonth={sentThisMonth}
+        monthlyCap={monthlyCap}
+      />
+
+      {toast && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {toast}
+        </div>
+      )}
+
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900">Attorney Portal</h1>
+          <p className="text-neutral-500 mt-1">
+            Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
+            {(totalClients || clients.length) !== 1 ? 's' : ''}.
+            {attorneyTier === 0 && totalClients > clientLimit && (
+              <span className="block text-xs text-amber-600 mt-1">
+                Free tier shows {clientLimit} clients.{' '}
+                <Link href="/attorney/billing" className="underline">
+                  Upgrade for full practice view →
+                </Link>
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            type="button"
+            onClick={() => setIntakeModalOpen(true)}
+            className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+          >
+            Send intake request
+          </button>
+          {monthlyCap != null && (
+            <span className="text-xs text-neutral-400">
+              {sentThisMonth} of {monthlyCap} intake requests this month
             </span>
           )}
-        </p>
+        </div>
       </div>
 
       {atCap && (
         <div className="mb-6">
           <AttorneyUpgradePrompt feature="client_cap" currentClientCount={totalClients} />
+        </div>
+      )}
+
+      {pendingIntake.length > 0 && (
+        <div className="mb-6 rounded-xl border border-neutral-200 bg-white p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-3">
+            Pending intake requests
+          </h2>
+          <ul className="space-y-2">
+            {pendingIntake.map((req) => (
+              <li
+                key={req.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2 text-sm"
+              >
+                <div>
+                  <span className="font-medium text-neutral-900">
+                    {req.client_name ?? req.client_email}
+                  </span>
+                  {req.client_name && (
+                    <span className="ml-2 text-neutral-400">{req.client_email}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[req.displayStatus]}`}
+                  >
+                    {req.displayStatus}
+                  </span>
+                  <span className="text-xs text-neutral-400">
+                    {new Date(req.sent_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -200,8 +316,8 @@ My Wealth Maps helps households with $2M–$30M understand estate tax exposure, 
 
 Share the link that matches your client's situation:
 
-${EVENT_REFERRAL_GROUPS.flatMap(g =>
-  [`${g.label}:`, ...g.slugs.map(s => `• ${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`), ''],
+${EVENT_REFERRAL_GROUPS.flatMap((g) =>
+  [`${g.label}:`, ...g.slugs.map((s) => `• ${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`), ''],
 ).join('\n')}
 Visits through your links use your attorney referral code (${referralCode}).
 
@@ -209,8 +325,8 @@ Visits through your links use your attorney referral code (${referralCode}).
 
         const textCopy = `My Wealth Maps — estate planning for $2M–$30M households.
 
-${EVENT_REFERRAL_GROUPS.flatMap(g =>
-  g.slugs.map(s => `${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`),
+${EVENT_REFERRAL_GROUPS.flatMap((g) =>
+  g.slugs.map((s) => `${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`),
 ).join('\n')}
 Attorney ref: ${referralCode}`
 
@@ -230,7 +346,7 @@ Attorney ref: ${referralCode}`
                   { key: 'links' as const, label: '🔗 All Links' },
                   { key: 'email' as const, label: '✉️ Email Copy' },
                   { key: 'text' as const, label: '📱 Plain Text' },
-                ] as const).map(t => (
+                ] as const).map((t) => (
                   <button
                     key={t.key}
                     type="button"
@@ -249,8 +365,8 @@ Attorney ref: ${referralCode}`
 
             {newsletterTab === 'links' && (
               <div className="p-6 space-y-6">
-                {EVENT_REFERRAL_GROUPS.map(group => {
-                  const groupSlugs = group.slugs.filter(s => eventReferralUrls[s])
+                {EVENT_REFERRAL_GROUPS.map((group) => {
+                  const groupSlugs = group.slugs.filter((s) => eventReferralUrls[s])
                   if (groupSlugs.length === 0) return null
                   return (
                     <div key={group.label}>
@@ -258,7 +374,7 @@ Attorney ref: ${referralCode}`
                         {group.label}
                       </p>
                       <div className="space-y-1.5">
-                        {groupSlugs.map(slug => {
+                        {groupSlugs.map((slug) => {
                           const url = eventReferralUrls[slug]
                           return (
                             <div
@@ -352,7 +468,6 @@ Attorney ref: ${referralCode}`
         )
       })()}
 
-      {/* Search */}
       {clients.length > 0 && (
         <div className="relative mb-6">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">🔍</span>
@@ -360,34 +475,31 @@ Attorney ref: ${referralCode}`
             type="text"
             placeholder="Search by name, email, or state..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-lg text-sm
                        focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           />
         </div>
       )}
 
-      {/* Empty state */}
       {clients.length === 0 && (
         <div className="text-center py-16 bg-white rounded-xl border border-neutral-200">
           <span className="mx-auto text-4xl mb-3 block text-center">👤</span>
           <p className="text-neutral-500 font-medium">No clients yet</p>
           <p className="text-neutral-400 text-sm mt-1">
-            Clients will appear here once they grant you access to their estate plan.
+            Send an intake request or share your referral links to get clients started.
           </p>
         </div>
       )}
 
-      {/* No search results */}
       {clients.length > 0 && filtered.length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-neutral-200">
           <p className="text-neutral-500">No clients match your search.</p>
         </div>
       )}
 
-      {/* Client cards */}
       <div className="space-y-3">
-        {filtered.map(client => (
+        {filtered.map((client) => (
           <Link
             key={client.connection_id}
             href={`/attorney/clients/${client.household_id}`}
@@ -395,7 +507,6 @@ Attorney ref: ${referralCode}`
                        hover:border-blue-300 hover:shadow-sm transition-all group"
           >
             <div className="flex items-center justify-between">
-              {/* Left - client info */}
               <div className="flex items-start gap-4">
                 <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center
                                 justify-center text-blue-600 font-semibold text-sm shrink-0">
@@ -412,8 +523,10 @@ Attorney ref: ${referralCode}`
                       </span>
                     )}
                     {client.complexity_flag && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                        ${complexityColor[client.complexity_flag] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium
+                        ${complexityColor[client.complexity_flag] ?? 'bg-neutral-100 text-neutral-600'}`}
+                      >
                         {client.complexity_flag} complexity
                       </span>
                     )}
@@ -429,8 +542,6 @@ Attorney ref: ${referralCode}`
                   </div>
                 </div>
               </div>
-
-              {/* Right - chevron */}
               <span className="text-neutral-300 group-hover:text-blue-400 transition-colors shrink-0">›</span>
             </div>
           </Link>

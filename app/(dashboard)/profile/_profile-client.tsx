@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
 import { FILING_STATUSES, type ProfileFormInitial } from '@/lib/profile/profileFormInitial'
 import { isMinimumViableProfile, type ProfileGateHousehold, type ProfileGateMissingField } from '@/lib/estate/profileGate'
+import { consumeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { ProfileRequiredBanner } from './_profile-required-banner'
 
 const FILING_STATUS_LABELS: Record<string, string> = {
@@ -176,6 +177,15 @@ export function ProfileClient({
 
       if (created && savedHouseholdId) {
         setHouseholdId(savedHouseholdId)
+      }
+
+      const intakeToken = consumeIntakeToken()
+      if (intakeToken) {
+        void fetch('/api/consumer/complete-intake-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ intakeToken }),
+        }).catch(() => {})
       }
 
       setSuccess(true)

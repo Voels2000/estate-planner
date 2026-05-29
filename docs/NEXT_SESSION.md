@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Persona-based onboarding shipped)
+# Updated: 2026-05-29 (Professional Acquisition & Activation shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Persona-based onboarding (shipped 2026-05-29):** `/onboarding/persona` after slim profile; persona-aware wizard step 1; `PersonaInsightCard` on dashboard (7-day first-run); funnel events — apply `20260530_onboarding_persona.sql` before deploy. **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization (shipped 2026-05-29):** Stripe checkout route, upgrade prompts, client cap 403, 3-step drip — checkout returns 503 until Stripe products created. **Projections readiness (shipped 2026-05-29):** `checkProjectionReadiness()` + inline prompts on `/projections`.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake request flow (`/intake/[token]`), advisor `ReferralImpactPanel`, meeting prep print-one-pager — apply `20260530_attorney_intake_requests.sql` before deploy. **Persona-based onboarding (shipped 2026-05-29):** `/onboarding/persona`; apply `20260530_onboarding_persona.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization:** Stripe checkout + drip (503 until Stripe prices). **Projections readiness:** `checkProjectionReadiness()` on `/projections`.
 >
-> **Before deploy:** apply `20260530_onboarding_persona.sql` + `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; create Stripe attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+> **Before deploy:** apply `20260530_attorney_intake_requests.sql` + `20260530_onboarding_persona.sql` + attorney import/drip migrations; create Stripe attorney products.
 >
 > **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
@@ -17,6 +17,41 @@
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). Projections readiness: `npx playwright test tests/unit/projectionReadiness.spec.ts --project=import-unit`. Optional staging: `npm run test:import:api`.
+
+---
+
+## Professional Acquisition & Activation ✅ (2026-05-29)
+
+**Sprint: Professional Acquisition & Activation — COMPLETE**
+
+### Track 1 — Attorney intake request flow
+| Item | Notes |
+|------|-------|
+| Migration | `20260530_attorney_intake_requests.sql` |
+| Free tier | 5 requests/month cap enforced server-side |
+| Token flow | sessionStorage → auto-grant on profile save or login |
+| Email | Resend, BCC `avoels@comcast.net` |
+
+### Track 2 — Advisor referral impact panel
+| Item | Notes |
+|------|-------|
+| Clicks | `referral_clicks` — 30-day window, `created_at` column |
+| Signups | `funnel_events` — `account_created` with `referral_code` |
+| Connected | `advisor_clients` — active/accepted |
+| Notify | In-app + email on attributed consumer signup |
+
+### Track 3 — Meeting prep one-pager
+| Item | Notes |
+|------|-------|
+| Route | `GET /api/advisor/meeting-prep-pdf/[clientId]` — HTML → browser print |
+| Data | `estate_health_scores`, `household_alerts`, `estate_composition_cache`, projection scenario |
+| Print delay | `setTimeout(..., 500)` before `window.print()` |
+
+**Locked decisions:** Signup attribution via `profiles.referral_code` (not `referral_clicks.user_id); meeting prep is print-to-PDF (no new library); intake expiry 14 days; `attorney_listings.referral_code` confirmed (`20260528000000_attorney_referrals.sql`).
+
+**Before deploy:** apply `20260530_attorney_intake_requests.sql`. **Manual smoke:** 20-step checklist in commit message / LAUNCH_CHECKLIST (Tracks 1–3).
+
+**Watch post-deploy:** intake completion rate (`completed` / `sent`); advisor referral notification open rate; Firefox print layout (may need 800ms delay).
 
 ---
 

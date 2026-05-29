@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   // ── 2. Parse body ──────────────────────────────────────────
-  const { attorney_id } = await req.json()
+  const body = await req.json()
+  const { attorney_id, intakeToken } = body as { attorney_id?: string; intakeToken?: string }
   if (!attorney_id) {
     return NextResponse.json({ error: 'attorney_id is required' }, { status: 400 })
   }
@@ -167,6 +168,22 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 10. Return success ──────────────────────────────────────
+  if (intakeToken) {
+    try {
+      const admin = createAdminClient()
+      await admin
+        .from('attorney_intake_requests')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('token', intakeToken)
+        .in('status', ['sent', 'opened'])
+    } catch (intakeErr) {
+      console.error('grant-access intake complete error:', intakeErr)
+    }
+  }
+
   if (isSuperuser) {
     const admin = createAdminClient()
     await admin.from('superuser_action_log').insert({
