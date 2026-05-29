@@ -191,11 +191,16 @@ export default async function MyEstateTrustStrategyPage({
     lifetimeGiftsUsedForComposition,
   )
 
-  const trustWillGuidance = await loadTrustWillGuidance(
-    supabase,
-    user.id,
-    householdRow.id,
-    composition,
+  const [trustWillGuidance, { data: checklistPersistedRows }] = await Promise.all([
+    loadTrustWillGuidance(supabase, user.id, householdRow.id, composition),
+    supabase
+      .from('estate_checklist_items')
+      .select('task_key, completed')
+      .eq('household_id', householdRow.id),
+  ])
+
+  const persistedChecklist = Object.fromEntries(
+    (checklistPersistedRows ?? []).map((row) => [row.task_key, row.completed]),
   )
 
   const strategyItems = (composition.outside_strategy_items ?? []) as OutsideStrategyItem[]
@@ -584,6 +589,7 @@ export default async function MyEstateTrustStrategyPage({
         initialStrategyRows={initialStrategyRows}
         initialWithdrawnRows={initialWithdrawnRows}
         initialConsumerSaved={initialConsumerSaved}
+        persistedChecklist={persistedChecklist}
       />
     </div>
   )

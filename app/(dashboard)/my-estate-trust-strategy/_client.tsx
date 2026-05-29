@@ -133,6 +133,7 @@ interface Props {
     withdrawn_at: string | null
   }>
   initialConsumerSaved?: InitialConsumerSavedState
+  persistedChecklist?: Record<string, boolean>
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -173,6 +174,7 @@ export default function MyEstateTrustStrategyClient({
   initialStrategyRows,
   initialWithdrawnRows,
   initialConsumerSaved,
+  persistedChecklist = {},
 }: Props) {
   const router = useRouter()
 
@@ -1068,6 +1070,7 @@ export default function MyEstateTrustStrategyClient({
           initialTrusts={trustWillGuidance.trusts}
           trustEstateSummary={trustEstateSummary}
           marginalStateEstateRatePct={marginalStateEstateRatePct}
+          persistedChecklist={persistedChecklist}
         />
       )}
     </div>

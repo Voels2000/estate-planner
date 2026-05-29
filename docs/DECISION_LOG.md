@@ -1,6 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-28 (Sprints K–O + 19a closed; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Estate execution checklist + estate preview UX; Sprint 19 go-live hardening)
+
+## Estate execution checklist — persisted consumer tasks (2026-05-28)
+
+**Decision:** Add `estate_checklist_items` (mirrors `domicile_checklist_items` pattern) and assemble dashboard checklist from existing tables — `estate_documents`, `trusts`, `estate_health_check`, `beneficiary_conflicts`, plus consumer toggles. **No new RPCs.**
+
+**Status hierarchy:** `flagged` (beneficiary conflicts) > `incomplete` > `complete`. Completion = auto-detected **or** consumer-checked (checkbox persists as override).
+
+**Tier links:** `resolveEstateActionHref()` — tier 1/2 deep links route to `/estate-tax` upgrade wall; tier 3 → planning routes.
+
+**Trust tab:** Action Checklist checkboxes map via `TRUST_TASK_TO_CHECKLIST_KEY`; unmapped tasks stay UI-only.
+
+**Alternatives considered:** Reuse `trust-will-rules` checklist only (rejected — not persisted). New `generate_estate_checklist` RPC (rejected — sprint constraint).
+
+---
+
+## Estate preview UX — dashboard + upgrade wall (2026-05-28)
+
+**Decision:** Move `EstateCalloutCard` immediately after `DashboardIntroSection`; strengthen tax headline and tier-aware CTA; personalize `/estate-tax` `UpgradeBanner` with tax exposure + named conflict; tier-aware estate/conflict links on dashboard sections via `estateDetailsHref` / `estateUpgradeHref`.
+
+**Note:** Sidebar “Estate Summary” remains `/dashboard` (no `/estate-summary` route). Tier 1/2 still see estate tax figures on dashboard; `/estate-tax` is the upgrade wall for deep planning.
+
+---
 
 ## Flow & perf program K–O — closed (2026-05-28)
 

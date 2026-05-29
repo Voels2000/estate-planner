@@ -16,6 +16,7 @@ import type {
 import { formatDollars } from '@/lib/utils/formatCurrency'
 import { HEADROOM_BEFORE_FEDERAL_TAX_LABEL } from '@/lib/estate/exemptionLabels'
 import { estimateTrustTaxSaved } from '@/lib/trusts/trustEstateTaxEstimate'
+import { TRUST_TASK_TO_CHECKLIST_KEY } from '@/lib/estate/estateChecklistTaskKeys'
 
 export type { TrustRow } from '@/lib/trusts/types'
 
@@ -34,6 +35,8 @@ export type TrustDocumentsPanelProps = {
   embedded?: boolean
   trustEstateSummary?: TrustEstateSummary
   marginalStateEstateRatePct?: number
+  /** Persisted completion from estate_checklist_items (task_key → completed). */
+  persistedChecklist?: Record<string, boolean>
 }
 
 const TRUST_TYPES = [
@@ -62,6 +65,7 @@ export function TrustDocumentsPanel({
   embedded = false,
   trustEstateSummary,
   marginalStateEstateRatePct = 0,
+  persistedChecklist = {},
 }: TrustDocumentsPanelProps) {
   const router = useRouter()
   const keyPrefix = embedded ? 'trust-strategy-docs' : 'trust-will'
@@ -304,16 +308,33 @@ export function TrustDocumentsPanel({
         storageKey={`${keyPrefix}-action-checklist`}
       >
         <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100 -m-2">
-          {checklist.map((item, i) => (
-            <div key={i} className="flex items-start gap-3 px-5 py-3">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900"
-                defaultChecked={item.completed}
-              />
-              <p className="text-sm text-neutral-700">{item.task}</p>
-            </div>
-          ))}
+          {checklist.map((item, i) => {
+            const taskKey = TRUST_TASK_TO_CHECKLIST_KEY[item.task]
+            const checked = taskKey
+              ? (persistedChecklist[taskKey] ?? item.completed)
+              : item.completed
+
+            return (
+              <div key={i} className="flex items-start gap-3 px-5 py-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900"
+                  checked={checked}
+                  onChange={async (e) => {
+                    if (!taskKey) return
+                    const completed = e.target.checked
+                    await fetch('/api/consumer/estate-checklist', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ task_key: taskKey, completed }),
+                    })
+                    router.refresh()
+                  }}
+                />
+                <p className="text-sm text-neutral-700">{item.task}</p>
+              </div>
+            )
+          })}
         </div>
       </CollapsibleSection>
 

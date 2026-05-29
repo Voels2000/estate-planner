@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-28 (Sprints K–O closed; go-live hardening)
+# Updated: 2026-05-28 (Estate execution checklist shipped; go-live hardening)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O + **19a** (`b7a15dd`) on `main`. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O + **19a** (`b7a15dd`) on `main`. **Estate checklist (shipped):** `estate_checklist_items` + dashboard `EstateExecutionChecklist` + trust tab persistence — **apply migration** `20260528120000_estate_checklist_items.sql`. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Also apply if missing:** `20260527180000_estate_composition_cache.sql`. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -95,6 +95,22 @@
 |------|--------|
 | `loading.tsx` / `error.tsx` on assets, titling, advisor, my-estate-strategy | ✅ |
 | `revalidateTag(household-composition-{id})` after household writes | ✅ |
+
+---
+
+## Estate execution checklist + preview UX ✅ (2026-05-28)
+
+| Task | Status |
+|------|--------|
+| `estate_checklist_items` migration + RLS | ✅ |
+| `buildEstateExecutionChecklist` (existing tables, no new RPCs) | ✅ |
+| `EstateExecutionChecklist` on dashboard (below callout) | ✅ |
+| Trust `TrustDocumentsPanel` checkboxes → PATCH persist | ✅ |
+| Estate preview: callout position, tier CTAs, upgrade wall, tier-aware links | ✅ |
+
+**Commits (4):** `feat(db): estate_checklist_items` · `feat(checklist): buildEstateExecutionChecklist` · `feat(checklist): EstateExecutionChecklist` · `feat(checklist): TrustDocumentsPanel persist`
+
+**Smoke:** tier 1 with assets → checklist below callout; toggle will → reload persists; trust tab “Gather assets list” → `titling_reviewed` on dashboard.
 
 ---
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-28 (Sprints K–O + 19a closed; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Estate execution checklist shipped; Sprint 19 go-live hardening)
 
 ---
 
@@ -33,6 +33,8 @@
 | Go-live smoke (fresh email) | `[ ]` |
 
 **Engineering (closed):** Sprint 18 shells (J) + flow/perf program K–O + 19a on `main`.
+
+**Consumer estate UX (2026-05-28, 4 commits):** Estate preview (callout position, tier CTAs, upgrade wall) + unified execution checklist (`estate_checklist_items`, `buildEstateExecutionChecklist`, dashboard + trust tab persistence). **Apply migration:** `20260528120000_estate_checklist_items.sql`.
 
 ---
 
