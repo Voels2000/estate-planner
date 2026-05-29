@@ -510,7 +510,8 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-financial-writes.spec.ts` | Consumer CRUD: assets, income, expenses, RE, liabilities |
 | `tests/e2e/consumer/consumer-api-writes.spec.ts` | Allocation targets, health-check, generate-base-case |
 | `tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts` | `PATCH /api/consumer/growth-assumptions` (financial, RE, business, inflation) |
-| `tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts` | Profile layout: live column headers, spouse toggle, planning section labels |
+| `tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts` | Profile layout: live column headers, spouse toggle, planning section labels; **slim profile** (deferred fields absent) |
+| `tests/e2e/consumer/consumer-profile-field-prompt.spec.ts` | **ProfileFieldPrompt** UI: Scenarios + Social Security save/dismiss/deduction; PIA accuracy |
 | `tests/e2e/consumer/consumer-strategy-writes.spec.ts` | Strategy line items, charitable, recommendations |
 | `tests/e2e/consumer/consumer-trust-crud.spec.ts` | `/api/consumer/trusts` |
 | `tests/e2e/consumer/consumer-gift-history.spec.ts` | Gift history API |
@@ -519,7 +520,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-routes-estate-tier.spec.ts` | Estate-tier routes, no upgrade banner, `/trust-will` redirect |
 | `tests/e2e/consumer/consumer-sidebar-navigation.spec.ts` | Sidebar footer, overview nav, no portal links (smoke §1.4) |
 | `tests/e2e/consumer/consumer-route-regression.spec.ts` | Full CONSUMER_NAV_MAP route loads |
-| `tests/e2e/consumer/consumer-profile-save.spec.ts` | Profile PATCH + UI save (smoke §3) |
+| `tests/e2e/consumer/consumer-profile-save.spec.ts` | Profile PATCH + UI save + **3 partial PATCH shapes** (smoke §3) |
 | `tests/e2e/consumer/consumer-ui-asset-save.spec.ts` | UI add asset on `/assets` (smoke §2 UI) |
 | `tests/e2e/consumer/consumer-health-check-ui.spec.ts` | Health check wizard → dashboard (smoke §4) |
 | `tests/e2e/consumer/consumer-family-crud.spec.ts` | My Family API CRUD (smoke §5) |
@@ -541,6 +542,8 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-import.spec.ts` | Import ingest/commit, duplicates, traceability (`npm run test:import:api`) |
 
 **Run full suite:** `npm run test:e2e:complete` (see [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md)).
+
+**Go-live pre-flight (profile + inline prompts):** `npm run test:e2e:go-live-profile` — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md).
 
 Strategy e2e requires `PLAYWRIGHT_HOUSEHOLD_ID` in the environment. Profile API revert test needs `SUPABASE_SERVICE_ROLE_KEY`. Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
 

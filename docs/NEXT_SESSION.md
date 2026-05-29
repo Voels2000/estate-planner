@@ -12,9 +12,7 @@
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **Post-deploy (inline prompts):** Run partial PATCH smoke **independently** — SS fields case and retirement/longevity case — against production after Vercel deploy:
-> `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-save.spec.ts --project=consumer --grep "partial PATCH with SS fields only" --workers=1`
-> `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-save.spec.ts --project=consumer --grep "partial PATCH with retirement/longevity only" --workers=1`
+> **Post-deploy (inline prompts):** `npm run test:e2e:go-live-profile` — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Partial PATCH cases also runnable via `npm run test:e2e:partial-patch`.
 >
 > **Deferred follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — revisit after ~1 week funnel data on scenarios inline-prompt path.
 

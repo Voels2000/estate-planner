@@ -65,6 +65,53 @@ export async function fetchHouseholdById(householdId: string): Promise<Household
   return restGet<HouseholdRow>('households', `id=eq.${householdId}&select=*`)
 }
 
+/** Deferred profile fields surfaced by ProfileFieldPrompt on /social-security and /scenarios. */
+export type HouseholdDeferredFields = Pick<
+  HouseholdRow,
+  | 'person1_ss_claiming_age'
+  | 'person1_ss_pia'
+  | 'person1_longevity_age'
+  | 'deduction_mode'
+  | 'custom_deduction_amount'
+>
+
+export function pickDeferredFields(row: HouseholdRow): HouseholdDeferredFields {
+  return {
+    person1_ss_claiming_age: row.person1_ss_claiming_age,
+    person1_ss_pia: row.person1_ss_pia,
+    person1_longevity_age: row.person1_longevity_age,
+    deduction_mode: row.deduction_mode,
+    custom_deduction_amount: row.custom_deduction_amount,
+  }
+}
+
+/** Service-role PATCH for e2e setup/teardown (inline prompt tests). */
+export async function patchHouseholdById(
+  householdId: string,
+  fields: Record<string, unknown>,
+): Promise<boolean> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return false
+  const res = await fetch(`${cfg.url}/rest/v1/households?id=eq.${householdId}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }),
+  })
+  return res.ok
+}
+
+export async function restoreHouseholdDeferredFields(
+  householdId: string,
+  snapshot: HouseholdDeferredFields,
+): Promise<boolean> {
+  return patchHouseholdById(householdId, { ...snapshot })
+}
+
 export async function fetchHouseholdPlanningFields(
   householdId: string,
 ): Promise<HouseholdPlanningFields | null> {

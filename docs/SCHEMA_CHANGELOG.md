@@ -33,7 +33,8 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | Partial PATCH merge on profile API | `lib/profile/mergeProfilePatch.ts`, `loadProfileSavePayloadForUser.ts`, `app/api/consumer/profile/route.ts` |
 | SS + Scenarios wiring | `social-security/_social-security-page-client.tsx`, `scenarios/_scenarios-client.tsx` |
 | Field defs; deduction prompt when `deduction_mode` null only | `lib/profile/profileFieldPromptDefs.ts` |
-| E2E partial PATCH smoke | `tests/e2e/consumer/consumer-profile-save.spec.ts` |
+| E2E partial PATCH + ProfileFieldPrompt UI | `tests/e2e/consumer/consumer-profile-save.spec.ts`, `consumer-profile-field-prompt.spec.ts` |
+| Go-live commands | `npm run test:e2e:go-live-profile`, `docs/GO_LIVE_E2E.md` |
 
 **No migration.** Replaces interim `ProfileIncompleteInlinePrompt` from friction-reduction sprint.
 

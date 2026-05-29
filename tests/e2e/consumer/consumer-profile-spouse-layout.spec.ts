@@ -76,4 +76,12 @@ test.describe('Consumer profile spouse layout', () => {
       if (!wasChecked) await spouseCheckbox.uncheck()
     }
   })
+
+  test('slim profile — deferred planning fields are not on /profile', async ({ page }) => {
+    await expect(page.getByText('Planned claiming age')).toBeHidden()
+    await expect(page.getByText('Estimated monthly benefit (PIA)')).toBeHidden()
+    await expect(page.getByText('Planning horizon age (you)')).toBeHidden()
+    await expect(page.getByText('Your planned retirement age')).toBeHidden()
+    await expect(page.getByText('Federal income tax deduction method')).toBeHidden()
+  })
 })

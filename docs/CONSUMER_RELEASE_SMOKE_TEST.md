@@ -122,11 +122,25 @@ Pick **one** module you already use (Assets is simplest).
 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
-| 3.1 | Go to **Profile** (`/profile`) | Form loads with your household data; sections **Household**, person column(s), **Household Planning**; no growth/inflation/risk inputs | ☐ |
+| 3.1 | Go to **Profile** (`/profile`) | Form loads: **Household**, person column(s), **Household Planning** (filing status + state only); **no** SS claiming, PIA, retirement age, longevity, or deduction inputs | ☐ (automated: `consumer-profile-spouse-layout.spec.ts` — slim profile) |
 | 3.1b | Type your name in **Your Name** | Person column header updates live (not stuck on “You”) | ☐ (automated: `consumer-profile-spouse-layout.spec.ts`) |
 | 3.1c | Toggle **Include spouse / partner** | Second column appears on desktop (`sm+`); stacks on narrow viewport | ☐ (automated: `consumer-profile-spouse-layout.spec.ts`) |
-| 3.2 | Change a harmless field (e.g. retirement age), **Save** | Success, no error | ☐ |
+| 3.2 | Change household name, **Save Profile** | Success, no error | ☐ (automated: `consumer-profile-save.spec.ts`) |
 | 3.3 | Refresh Dashboard | Still loads; no 500 | ☐ |
+
+### 3.4 Inline profile prompts (deferred fields)
+
+Requires a test account with missing SS or planning fields, or use e2e fixture after service-role clear (automated in `consumer-profile-field-prompt.spec.ts`).
+
+| Step | Action | Expected | Pass? |
+|------|--------|----------|-------|
+| 3.4a | `/scenarios` with longevity unset | Gold **Personalize your projection** card; save persists age | ☐ (automated) |
+| 3.4b | `/scenarios` with `deduction_mode` = null, select **Custom** | Custom amount field appears; save persists | ☐ (automated) |
+| 3.4c | `/scenarios` with `deduction_mode` = **standard** (explicit) | No deduction prompt | ☐ (automated) |
+| 3.4d | `/social-security` with SS claiming + PIA unset | Per-person prompt; save updates PIA on calculator | ☐ (automated) |
+| 3.4e | **Remind me later** on either prompt | Hidden for session; returns next visit if still unset | ☐ (automated) |
+
+**Go-live command:** `npm run test:e2e:go-live-profile` — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md).
 
 ---
 

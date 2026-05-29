@@ -67,7 +67,8 @@ These must be complete before launch. Update status as sprints close them.
 
 - [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
 - [x] **Pre-launch E2E baseline (profile + growth API, 2026-05-27)** — `consumer-profile-spouse-layout.spec.ts` (4 tests: section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2`); `consumer-growth-assumptions-api.spec.ts` (empty-body 400 always; round-trip PATCH + revert when `PLAYWRIGHT_HOUSEHOLD_ID` set). Run: `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts --project=consumer --workers=1`. Enable skipped round-trip: `npm run seed:e2e` → copy `PLAYWRIGHT_HOUSEHOLD_ID` to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
-- [x] **Post-deploy partial PATCH smoke (inline profile prompts, 2026-05-27)** — after Vercel deploy, run **independently** (not combined): `--grep "partial PATCH with SS fields only"` and `--grep "partial PATCH with retirement/longevity only"` on `consumer-profile-save.spec.ts` against production. **Verified 2026-05-27:** both passed on `estate-planner-gules.vercel.app`.
+- [x] **Post-deploy partial PATCH smoke (inline profile prompts, 2026-05-27)** — verified on production (SS + retirement/longevity). Third case (custom deduction) + UI prompts: `npm run test:e2e:go-live-profile`.
+- [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): `npm run test:e2e:go-live-profile` then `npm run test:e2e:consumer -- --workers=1`.
 - [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
   attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
   life-event-on-connect)

@@ -29,7 +29,8 @@
 | `/social-security` SS field prompts | `[x]` |
 | `/scenarios` planning field prompts (deduction: null only) | `[x]` |
 | Partial PATCH merge on profile API | `[x]` |
-| E2E partial-payload smoke | `[x]` |
+| E2E partial-payload + UI prompt smoke | `[x]` |
+| Go-live pre-flight script + doc | `[x]` |
 
 See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` may need update once users fill fields via scenarios prompts.
 

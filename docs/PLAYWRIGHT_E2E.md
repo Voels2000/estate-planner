@@ -23,6 +23,8 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run verify:drip` | Check `email_captures` drip_step_1/2/3 schedule |
 | `npm run cleanup:rolobe` | Retire all `@rolobe.resend.app` auth accounts (prompts) |
 | `npm run test:e2e:consumer` | consumer-setup + consumer |
+| `npm run test:e2e:go-live-profile` | **Go-live pre-flight:** profile save + spouse layout + inline prompts (`--workers=1`) |
+| `npm run test:e2e:partial-patch` | Partial PATCH API smoke only (3 cases) |
 | `npm run test:e2e:advisor` | advisor-setup + advisor |
 | `npm run test:e2e:attorney` | attorney-setup + attorney |
 | `npm run test:e2e:public` | public |
@@ -69,7 +71,8 @@ Prefer `npm run seed:e2e`. Old scripts remain for reference:
 | 2026-05-25 | Staging | `test:e2e:public` | **57 passed**, 2 skipped |
 | 2026-05-25 | Staging | `seed:e2e` + `e2e-consumer@` + `--workers=1` | **136 passed**, 1 skipped (gift recompute flaky under load; re-run green) |
 | 2026-05-27 | Staging | `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api` | **5 passed**, 1 skipped (round-trip needs `PLAYWRIGHT_HOUSEHOLD_ID` in `.env.test`) |
-| 2026-05-27 | Local pre-deploy | `consumer-profile-save` partial PATCH (SS + retirement/longevity, run separately) | **2 passed** each (merge API); production re-run post-deploy required |
+| 2026-05-27 | Production | `consumer-profile-save` partial PATCH (SS + retirement/longevity, run separately) | **2 passed** each (merge API) |
+| 2026-05-27 | Production | `test:e2e:go-live-profile` (profile + inline prompts) | Run before go-live — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) |
 
 Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) under parallel load.
 
@@ -79,7 +82,9 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 ## Spec inventory (42 files)
 
-**Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (includes **partial PATCH** SS-only and retirement/longevity-only cases — run separately post-deploy), `consumer-profile-spouse-layout` (live headers, spouse toggle, section labels), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, `consumer-tier1-gates` (optional).
+**Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, `consumer-tier1-gates` (optional).
+
+**Go-live:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) — `npm run test:e2e:go-live-profile` before flip.
 
 **Selector note (profile layout):** use `getByRole('textbox', { name: 'Jane', exact: true })` for the person-1 name field — `getByPlaceholder('Jane')` also matches Full Name (`Jane Doe`).
 

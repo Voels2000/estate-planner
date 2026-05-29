@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { buildProfilePayloadFromHousehold, fetchHouseholdById } from '../helpers/supabase-fixture'
+import type { ProfileSavePayload } from '../../../lib/profile/buildHouseholdPayload'
 
 test.describe('Consumer profile save (smoke §3)', () => {
   test('PATCH /api/consumer/profile updates household name', async ({ request }) => {
@@ -110,6 +111,43 @@ test.describe('Consumer profile save (smoke §3)', () => {
 
     payload!.person1RetirementAge = String(before!.person1_retirement_age ?? 65)
     payload!.person1LongevityAge = String(before!.person1_longevity_age ?? 90)
+    const revert = await request.patch('/api/consumer/profile', { data: payload })
+    expect(revert.ok(), await revert.text()).toBeTruthy()
+  })
+
+  test('partial PATCH with custom deduction only preserves other fields', async ({ request }) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
+
+    const payload = await buildProfilePayloadFromHousehold(householdId!)
+    test.skip(!payload, 'SUPABASE_SERVICE_ROLE_KEY required to build profile payload')
+
+    const before = await fetchHouseholdById(householdId!)
+    test.skip(!before, 'Could not load household row')
+
+    const originalRetirement = before!.person1_retirement_age
+    const originalDeduction = before!.deduction_mode
+    const originalCustom = before!.custom_deduction_amount
+    const stampCustom = originalCustom === 42000 ? 41000 : 42000
+
+    const res = await request.patch('/api/consumer/profile', {
+      data: {
+        householdId,
+        deductionMode: 'custom',
+        customDeductionAmount: String(stampCustom),
+      },
+    })
+    expect(res.ok(), await res.text()).toBeTruthy()
+
+    const after = await fetchHouseholdById(householdId!)
+    expect(after?.deduction_mode).toBe('custom')
+    expect(after?.custom_deduction_amount).toBe(stampCustom)
+    expect(after?.person1_retirement_age).toBe(originalRetirement)
+
+    payload!.deductionMode =
+      (originalDeduction as ProfileSavePayload['deductionMode']) ?? 'standard'
+    payload!.customDeductionAmount =
+      originalCustom != null ? String(originalCustom) : ''
     const revert = await request.patch('/api/consumer/profile', { data: payload })
     expect(revert.ok(), await revert.text()).toBeTruthy()
   })
