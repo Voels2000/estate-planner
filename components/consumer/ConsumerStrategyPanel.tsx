@@ -243,6 +243,28 @@ interface ConsumerStrategyPanelProps {
   filingStatus?: FilingStatus
   /** Household owner user id — insurance policies use user_id. */
   ownerUserId?: string
+  /** Server-prefetched consumer saved strategies — skips mount Supabase fetch when provided */
+  initialConsumerSaved?: InitialConsumerSavedState
+  /** Server-prefetched active strategy rows — skips mount fetch when provided */
+  initialStrategyRows?: StrategyLineItemRow[]
+  /** Server-prefetched withdrawn strategy rows */
+  initialWithdrawnRows?: WithdrawnStrategyRow[]
+}
+
+export type InitialConsumerSavedState = {
+  savedSources: string[]
+  savedDetails: Record<string, SavedStrategyDetail>
+  statuses: Record<string, ConsumerStatus>
+}
+
+type WithdrawnStrategyRow = {
+  id: string
+  strategy_source: string
+  amount: number | null
+  scenario_name: string | null
+  reversed_from: string | null
+  reversal_reason: string | null
+  withdrawn_at: string | null
 }
 
 export type SavedStrategyDetail = {
@@ -303,12 +325,22 @@ async function updateStrategyStatus(
   })
 }
 
-function useRecommendAdvanced(householdId: string) {
-  const [saved, setSaved] = useState<Set<string>>(new Set())
-  const [savedDetails, setSavedDetails] = useState<Record<string, SavedStrategyDetail>>({})
+function useRecommendAdvanced(
+  householdId: string,
+  initialConsumerSaved?: InitialConsumerSavedState,
+) {
+  const hasInitial = initialConsumerSaved !== undefined
+  const [saved, setSaved] = useState<Set<string>>(
+    () => new Set(hasInitial ? initialConsumerSaved!.savedSources : []),
+  )
+  const [savedDetails, setSavedDetails] = useState<Record<string, SavedStrategyDetail>>(
+    () => (hasInitial ? initialConsumerSaved!.savedDetails : {}),
+  )
   const [saving, setSaving] = useState(false)
-  const [statuses, setStatuses] = useState<Record<string, ConsumerStatus>>({})
-  const [loadingInitial, setLoadingInitial] = useState(true)
+  const [statuses, setStatuses] = useState<Record<string, ConsumerStatus>>(
+    () => (hasInitial ? initialConsumerSaved!.statuses : {}),
+  )
+  const [loadingInitial, setLoadingInitial] = useState(!hasInitial)
 
   const loadSaved = useCallback(async () => {
     if (!householdId) {
@@ -348,8 +380,15 @@ function useRecommendAdvanced(householdId: string) {
   }, [householdId])
 
   useEffect(() => {
+    if (initialConsumerSaved !== undefined) {
+      setSaved(new Set(initialConsumerSaved.savedSources))
+      setSavedDetails(initialConsumerSaved.savedDetails)
+      setStatuses(initialConsumerSaved.statuses)
+      setLoadingInitial(false)
+      return
+    }
     void loadSaved()
-  }, [loadSaved])
+  }, [initialConsumerSaved, loadSaved])
 
   async function toggle(
     strategySource: string,
@@ -471,6 +510,9 @@ export default function ConsumerStrategyPanel({
   estateContext,
   filingStatus = 'single',
   ownerUserId,
+  initialConsumerSaved,
+  initialStrategyRows,
+  initialWithdrawnRows,
 }: ConsumerStrategyPanelProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -503,21 +545,16 @@ export default function ConsumerStrategyPanel({
   }
 
   const { saved, savedDetails, saving, toggle, statuses, cycleStatus, loadingInitial, reloadSaved } =
-    useRecommendAdvanced(householdId)
+    useRecommendAdvanced(householdId, initialConsumerSaved)
 
-  const [strategyRows, setStrategyRows] = useState<StrategyLineItemRow[]>([])
-  const [withdrawnRows, setWithdrawnRows] = useState<
-    Array<{
-      id: string
-      strategy_source: string
-      amount: number | null
-      scenario_name: string | null
-      reversed_from: string | null
-      reversal_reason: string | null
-      withdrawn_at: string | null
-    }>
-  >([])
-  const [loadingStrategies, setLoadingStrategies] = useState(true)
+  const hasInitialStrategyRows = initialStrategyRows !== undefined
+  const [strategyRows, setStrategyRows] = useState<StrategyLineItemRow[]>(
+    () => initialStrategyRows ?? [],
+  )
+  const [withdrawnRows, setWithdrawnRows] = useState<WithdrawnStrategyRow[]>(
+    () => initialWithdrawnRows ?? [],
+  )
+  const [loadingStrategies, setLoadingStrategies] = useState(!hasInitialStrategyRows)
 
   const loadAllStrategyItems = useCallback(async () => {
     if (!householdId) {
@@ -575,8 +612,14 @@ export default function ConsumerStrategyPanel({
   }, [householdId])
 
   useEffect(() => {
+    if (initialStrategyRows !== undefined) {
+      setStrategyRows(initialStrategyRows)
+      setWithdrawnRows(initialWithdrawnRows ?? [])
+      setLoadingStrategies(false)
+      return
+    }
     void loadAllStrategyItems()
-  }, [loadAllStrategyItems])
+  }, [initialStrategyRows, initialWithdrawnRows, loadAllStrategyItems])
 
   useEffect(() => {
     const open = searchParams.get('openPanel')

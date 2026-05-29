@@ -9,7 +9,8 @@ import type {
   TrustWillChecklistItem,
   TrustWillRecommendation,
 } from '@/lib/trusts/types'
-import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
+import type { EstateContext, InitialConsumerSavedState } from '@/components/consumer/ConsumerStrategyPanel'
+import type { StrategyLineItemRow } from '@/lib/consumer/strategyLineItemViews'
 import type { CharitableHouseholdContext } from '@/lib/charitable/buildPersonalizedCharitableTopics'
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
@@ -121,6 +122,17 @@ interface Props {
   marginalStateEstateRatePct?: number
   charitableHouseholdContext?: CharitableHouseholdContext | null
   initialCharitableSummary?: CharitableSummary | null
+  initialStrategyRows?: StrategyLineItemRow[]
+  initialWithdrawnRows?: Array<{
+    id: string
+    strategy_source: string
+    amount: number | null
+    scenario_name: string | null
+    reversed_from: string | null
+    reversal_reason: string | null
+    withdrawn_at: string | null
+  }>
+  initialConsumerSaved?: InitialConsumerSavedState
 }
 
 const ADVISOR_STRATEGY_LABELS: Record<string, string> = {
@@ -158,6 +170,9 @@ export default function MyEstateTrustStrategyClient({
   marginalStateEstateRatePct = 0,
   charitableHouseholdContext = null,
   initialCharitableSummary = null,
+  initialStrategyRows,
+  initialWithdrawnRows,
+  initialConsumerSaved,
 }: Props) {
   const router = useRouter()
 
@@ -1037,6 +1052,9 @@ export default function MyEstateTrustStrategyClient({
             advisorLineItems={advisorLineItems}
             estateContext={estateContext}
             filingStatus={giftingScenario.filing}
+            initialStrategyRows={initialStrategyRows}
+            initialWithdrawnRows={initialWithdrawnRows}
+            initialConsumerSaved={initialConsumerSaved}
           />
         </div>
       )}

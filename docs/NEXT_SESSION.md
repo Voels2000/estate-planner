@@ -48,6 +48,16 @@
 
 ---
 
+## Sprint K — consumer flow consistency ✅ (2026-05-28)
+
+| Task | Status |
+|------|--------|
+| Remove `window.location.reload` (P&C, my-estate-strategy, advisor/attorney invite, Strategy base-case) | ✅ |
+| Trust-strategy `ConsumerStrategyPanel` server hydrate | ✅ |
+| Charitable donations → `/api/consumer/charitable-donations` | ✅ |
+
+---
+
 ## Sprint 18 — planning shell completion (2026-05-27)
 
 | Task | Status |

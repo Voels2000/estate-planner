@@ -5,7 +5,8 @@
 // Route: /property-casualty
 // ─────────────────────────────────────────
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface PCPolicy {
   id: string
@@ -51,13 +52,19 @@ const EMPTY: Partial<PCPolicy> = {
   notes: null,
 }
 
-export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Props) {
+export default function PCInsuranceFormClient({ policies: initialPolicies, pcInsuranceTypes }: Props) {
+  const router = useRouter()
+  const [policies, setPolicies] = useState(initialPolicies)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<PCPolicy | null>(null)
   const [form, setForm] = useState<Partial<PCPolicy>>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPolicies(initialPolicies)
+  }, [initialPolicies])
 
   const openAdd = () => {
     setEditing(null)
@@ -94,7 +101,16 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
       const data = await res.json()
       if (data.error) { setSaveError(data.error); return }
       closeModal()
-      window.location.reload()
+      setPolicies((prev) => {
+        const idx = prev.findIndex((p) => p.id === data.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = data
+          return next
+        }
+        return [data, ...prev]
+      })
+      router.refresh()
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -107,7 +123,8 @@ export default function PCInsuranceFormClient({ policies, pcInsuranceTypes }: Pr
     setDeletingId(id)
     await fetch(`/api/insurance/${id}`, { method: 'DELETE' })
     setDeletingId(null)
-    window.location.reload()
+    setPolicies((prev) => prev.filter((p) => p.id !== id))
+    router.refresh()
   }
 
   return (

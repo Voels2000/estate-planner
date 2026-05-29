@@ -1,4 +1,12 @@
 # UX Language Audit — Sprint C-2b
-# Run: 2026-05-25 13:18
+# Run: 2026-05-28 19:46
 # Project root: /Users/al/Estate
+
+
+═══════════════════════════════════════════
+PHRASE: "for your estate"
+SEVERITY: HIGH — personalizes generic strategy education
+HITS: 1 (in app/(dashboard))
+───────────────────────────────────────────
+app/(dashboard)/print/_print-client.tsx:50:        'Concise intake summary formatted for your estate attorney — household profile, asset overview, document status, and beneficiary designations. Ready for your first meeting.',
 

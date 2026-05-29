@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type AttorneyClient = {
   id: string
@@ -33,6 +34,7 @@ export default function AttorneyClientPage({
   attorneyId,
 }: Props) {
   void attorneyId
+  const router = useRouter()
   const [clients, setClients] = useState(attorneyClients)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +67,7 @@ export default function AttorneyClientPage({
       }
       setInviteMessage(data.message)
       setInviteEmail('')
-      setTimeout(() => window.location.reload(), 2000)
+      setTimeout(() => router.refresh(), 500)
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

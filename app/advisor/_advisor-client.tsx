@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 
@@ -128,6 +129,7 @@ export default function AdvisorClientPage({
   eventReferralUrls,
 }: Props) {
   void advisorId
+  const router = useRouter()
   const [clients, setClients] = useState(advisorClients)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [newsletterTab, setNewsletterTab] = useState<'links' | 'email' | 'text'>('links')
@@ -169,7 +171,7 @@ export default function AdvisorClientPage({
 
       setInviteMessage(data.message)
       setInviteEmail('')
-      setTimeout(() => window.location.reload(), 2000)
+      setTimeout(() => router.refresh(), 500)
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

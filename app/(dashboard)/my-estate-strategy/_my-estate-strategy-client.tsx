@@ -10,6 +10,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
@@ -87,6 +88,7 @@ export default function MyEstateStrategyClient({
   latestSharedMCScenario,
   lifetimeGiftsUsed = 0,
 }: Props) {
+  const router = useRouter()
   const [generating, setGenerating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -104,7 +106,7 @@ export default function MyEstateStrategyClient({
       const data = await res.json()
       if (data.success) {
         setRefreshing(true)
-        window.location.reload()
+        router.refresh()
       } else {
         setGenerateError(data.error ?? 'Failed to generate estate plan. Please try again.')
       }

@@ -158,6 +158,13 @@ export default function CharitableGivingDashboard({
   }, [householdId, supabase]);
 
   useEffect(() => {
+    if (initialCharitableSummary != null) {
+      setSummary(initialCharitableSummary)
+      setLoading(false)
+    }
+  }, [initialCharitableSummary])
+
+  useEffect(() => {
     if (initialCharitableSummary != null) return
     void load()
   }, [initialCharitableSummary, load])
@@ -169,26 +176,30 @@ export default function CharitableGivingDashboard({
     if (!form.organization_name || !form.amount) return;
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: insertError } = await supabase.from('charitable_donations').insert({
-        household_id: householdId,
-        owner_id: user!.id,
-        tax_year: form.tax_year,
-        vehicle_type: form.vehicle_type,
-        donor_person: form.donor_person,
-        organization_name: form.organization_name,
-        amount: parseFloat(form.amount as string),
-        fmv_at_donation: form.fmv_at_donation ? parseFloat(form.fmv_at_donation as string) : null,
-        cost_basis: form.cost_basis ? parseFloat(form.cost_basis as string) : null,
-        deductible_amount: form.deductible_amount ? parseFloat(form.deductible_amount as string) : null,
-        is_qcd: isQcdVehicle,
-        ira_account_label: form.ira_account_label || null,
-        notes: form.notes || null,
+      const res = await fetch('/api/consumer/charitable-donations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          household_id: householdId,
+          tax_year: form.tax_year,
+          vehicle_type: form.vehicle_type,
+          donor_person: form.donor_person,
+          organization_name: form.organization_name,
+          amount: parseFloat(form.amount as string),
+          fmv_at_donation: form.fmv_at_donation ? parseFloat(form.fmv_at_donation as string) : null,
+          cost_basis: form.cost_basis ? parseFloat(form.cost_basis as string) : null,
+          deductible_amount: form.deductible_amount ? parseFloat(form.deductible_amount as string) : null,
+          is_qcd: isQcdVehicle,
+          ira_account_label: form.ira_account_label || null,
+          notes: form.notes || null,
+        }),
       });
-      if (insertError) throw insertError;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save donation');
       setForm(emptyForm);
       setShowAddForm(false);
       await load();
+      router.refresh();
     } catch (error: unknown) {
       setError(getErrorMessage(error));
     } finally {
@@ -199,9 +210,15 @@ export default function CharitableGivingDashboard({
   const handleDelete = async (id: string) => {
     setDeleteId(id);
     try {
-      const { error: delError } = await supabase.from('charitable_donations').delete().eq('id', id);
-      if (delError) throw delError;
+      const res = await fetch('/api/consumer/charitable-donations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, household_id: householdId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to delete donation');
       await load();
+      router.refresh();
     } catch (error: unknown) {
       setError(getErrorMessage(error));
     } finally {

@@ -1,8 +1,9 @@
 # UX Language Audit — Summary
-# 2026-05-25 13:18
-# Total flagged instances: 0
+# 2026-05-28 19:46
+# Total flagged instances: 1
 
 | Phrase | Hits | Severity |
 |--------|------|----------|
+| "for your estate" | 1 | HIGH — personalizes generic strategy education |
 
 Full findings: audit-results.txt

@@ -19,6 +19,16 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint K — consumer flow consistency (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| `router.refresh()` replaces full reload on P&C, my-estate-strategy base-case, advisor/attorney invite, Strategy tab base-case | `_pc-insurance-form-client.tsx`, `_my-estate-strategy-client.tsx`, `_advisor-client.tsx`, `StrategyTab.tsx`, `_attorney-client.tsx` |
+| Trust-strategy strategy panel server hydrate | `ConsumerStrategyPanel.tsx`, `my-estate-trust-strategy/page.tsx` |
+| Charitable CRUD via consumer API | `app/api/consumer/charitable-donations/route.ts`, `CharitableGivingDashboard.tsx` |
+
+---
+
 ## Post-launch perf Sprint I — error boundaries (2026-05-27, code only)
 
 | Area | Change |

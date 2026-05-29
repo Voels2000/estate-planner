@@ -15,7 +15,11 @@ import {
 import { loadTrustWillGuidance } from '@/lib/trusts/loadTrustWillGuidance'
 import { computeFederalEstateTax, type EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
-import type { EstateContext } from '@/components/consumer/ConsumerStrategyPanel'
+import type {
+  EstateContext,
+  InitialConsumerSavedState,
+} from '@/components/consumer/ConsumerStrategyPanel'
+import type { StrategyLineItemRow } from '@/lib/consumer/strategyLineItemViews'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
@@ -104,6 +108,7 @@ export default async function MyEstateTrustStrategyPage({
     { data: giftHistoryRows },
     { data: advisorLineItemRows },
     { data: consumerLineItemRows },
+    { data: withdrawnLineItemRows },
     { data: retirementAssetRows },
     { data: scenarioData },
     { data: stateBracketRows },
@@ -131,11 +136,20 @@ export default async function MyEstateTrustStrategyPage({
     supabase
       .from('strategy_line_items')
       .select(
-        'id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_withdrawn',
+        'id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_withdrawn, consumer_status, consumer_accepted, consumer_rejected',
       )
       .eq('household_id', householdRow.id)
       .eq('source_role', 'consumer')
       .eq('is_active', true),
+    supabase
+      .from('strategy_line_items')
+      .select(
+        'id, strategy_source, amount, scenario_name, reversed_from, reversal_reason, withdrawn_at',
+      )
+      .eq('household_id', householdRow.id)
+      .eq('consumer_withdrawn', true)
+      .eq('is_active', false)
+      .order('withdrawn_at', { ascending: false }),
     supabase
       .from('assets')
       .select('type, value, owner')
@@ -448,6 +462,67 @@ export default async function MyEstateTrustStrategyPage({
     headroom,
   }
 
+  const mapActiveStrategyRow = (
+    row: {
+      id: string
+      strategy_source: string
+      confidence_level: string
+      amount: unknown
+      scenario_name?: string | null
+      consumer_accepted?: boolean | null
+      consumer_rejected?: boolean | null
+      effective_year?: number | null
+    },
+    sourceRole: 'advisor' | 'consumer',
+  ): StrategyLineItemRow => ({
+    id: row.id,
+    strategy_source: row.strategy_source,
+    source_role: sourceRole,
+    confidence_level: row.confidence_level,
+    amount: row.amount != null ? Number(row.amount) : null,
+    scenario_name: row.scenario_name ?? null,
+    consumer_accepted: Boolean(row.consumer_accepted),
+    consumer_rejected: Boolean(row.consumer_rejected),
+    effective_year: row.effective_year ?? null,
+  })
+
+  const initialStrategyRows: StrategyLineItemRow[] = [
+    ...(advisorLineItemRows ?? []).map((row) => mapActiveStrategyRow(row, 'advisor')),
+    ...(consumerLineItemRows ?? []).map((row) => mapActiveStrategyRow(row, 'consumer')),
+  ]
+
+  const initialWithdrawnRows = (withdrawnLineItemRows ?? []).map((row) => ({
+    id: row.id as string,
+    strategy_source: row.strategy_source as string,
+    amount: row.amount != null ? Number(row.amount) : null,
+    scenario_name: (row.scenario_name as string | null) ?? null,
+    reversed_from: (row.reversed_from as string | null) ?? null,
+    reversal_reason: (row.reversal_reason as string | null) ?? null,
+    withdrawn_at: (row.withdrawn_at as string | null) ?? null,
+  }))
+
+  const initialConsumerSaved: InitialConsumerSavedState = {
+    savedSources: (consumerLineItemRows ?? []).map((row) => row.strategy_source as string),
+    statuses: Object.fromEntries(
+      (consumerLineItemRows ?? []).map((row) => [
+        row.strategy_source as string,
+        ((row.consumer_status as string | null) ?? 'not_started') as
+          | 'not_started'
+          | 'in_progress'
+          | 'complete',
+      ]),
+    ),
+    savedDetails: Object.fromEntries(
+      (consumerLineItemRows ?? []).map((row) => [
+        row.strategy_source as string,
+        {
+          amount: Number(row.amount ?? 0),
+          metadata: (row.metadata as Record<string, unknown> | null) ?? null,
+        },
+      ]),
+    ),
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       {!hasHorizonFederalContext && (
@@ -506,6 +581,9 @@ export default async function MyEstateTrustStrategyPage({
           preIraBalance: estateContext.preIRABalance,
         }}
         initialCharitableSummary={charitableSummaryData ?? null}
+        initialStrategyRows={initialStrategyRows}
+        initialWithdrawnRows={initialWithdrawnRows}
+        initialConsumerSaved={initialConsumerSaved}
       />
     </div>
   )

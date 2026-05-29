@@ -55,7 +55,17 @@ Engineering perf/correctness sprints shipped on `main` (`88cc63d`–`a4d2e38`, S
 | **I** | `error.tsx` + `RouteErrorFallback` | `a4d2e38` |
 | **J** | Complete + estate-tax loading/error | `e93f9a0` |
 
-Detail: [NEXT_SESSION.md § Post-launch perf](./NEXT_SESSION.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md).
+### Flow & perf program (Sprints K–O) — 2026-05-28
+
+| Sprint | Theme | Status |
+|--------|--------|--------|
+| **K** | Consumer flow consistency (reload → refresh, strategy hydrate, charitable API) | ✅ |
+| **L** | Bundle + duplicate fetch | `[~]` CURRENT |
+| **M** | Dashboard Suspense streaming | `[ ]` |
+| **N** | Advisor tab perf | `[ ]` |
+| **O** | Shells + composition cache tags | `[ ]` |
+
+Detail: [NEXT_SESSION.md § Flow & perf K–O](./NEXT_SESSION.md)
 
 ---
 

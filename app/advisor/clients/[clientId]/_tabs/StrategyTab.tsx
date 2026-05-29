@@ -355,8 +355,8 @@ export default function StrategyTab({
           if (!res.ok || data.error) {
             throw new Error(data.error ?? 'Failed to generate base case')
           }
-          // Reload to refetch server-side household/scenario data
-          window.location.reload()
+          router.refresh()
+          setGenerating(false)
         })
         .catch((err: Error) => {
           setGenerateError(err.message)
@@ -365,7 +365,7 @@ export default function StrategyTab({
         })
     }, 0)
     return () => window.clearTimeout(timeoutId)
-  }, [needsGeneration, generating, householdId])
+  }, [needsGeneration, generating, householdId, router])
 
   function handleRetry() {
     hasTriggeredRef.current = false
