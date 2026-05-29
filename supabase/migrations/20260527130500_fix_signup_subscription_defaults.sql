@@ -61,10 +61,29 @@ END;
 $function$;
 
 -- Existing signup-time "trialing" rows without a Stripe subscription were not real trials.
-UPDATE public.profiles
-SET
-  subscription_status = 'none',
-  trial_started_at = null
-WHERE role = 'consumer'
-  AND subscription_status = 'trialing'
-  AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '');
+-- Remote DBs may lack stripe_subscription_id (20250313120000 not applied) — branch on column presence.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'stripe_subscription_id'
+  ) THEN
+    UPDATE public.profiles
+    SET
+      subscription_status = 'none',
+      trial_started_at = null
+    WHERE role = 'consumer'
+      AND subscription_status = 'trialing'
+      AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '');
+  ELSE
+    UPDATE public.profiles
+    SET
+      subscription_status = 'none',
+      trial_started_at = null
+    WHERE role = 'consumer'
+      AND subscription_status = 'trialing';
+  END IF;
+END $$;
