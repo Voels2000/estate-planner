@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
@@ -9,6 +10,7 @@ import { PlanningGapsSection } from '@/app/(dashboard)/_components/dashboard/Pla
 import { hasEstateData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
 import { softenEducationalCopy } from '@/lib/estate/planningTopicPresentation'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { resolveEstateActionHref } from '@/lib/dashboard/estateUpgradeHref'
 
 type ConflictReport = {
   conflicts: Array<{
@@ -34,9 +36,31 @@ type EstateSummarySectionProps = {
     priority: 'high' | 'moderate' | 'low'
     reason: string
   }> | null
+  consumerTier?: number
+}
+
+function TierAwareEstateLink({
+  href,
+  consumerTier,
+  className,
+  children,
+}: {
+  href: string
+  consumerTier?: number
+  className?: string
+  children: ReactNode
+}) {
+  const resolved = resolveEstateActionHref(href, consumerTier)
+  return (
+    <Link href={resolved} className={className}>
+      {children}
+    </Link>
+  )
 }
 
 export function EstateSummarySection(props: EstateSummarySectionProps) {
+  const { consumerTier } = props
+
   return (
     <CollapsibleSection
       title="Estate Summary"
@@ -81,7 +105,12 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {props.estateHealthScore.components.map((component) => (
-                <Link key={component.key} href={component.actionHref} className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition">
+                <TierAwareEstateLink
+                  key={component.key}
+                  href={component.actionHref}
+                  consumerTier={consumerTier}
+                  className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition block"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-neutral-600 truncate">{component.label}</span>
                     <span className={`text-xs font-bold ml-2 shrink-0 ${component.status === 'good' ? 'text-[color:var(--mwm-sage)]' : component.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
@@ -95,7 +124,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
                     />
                   </div>
                   <p className="text-[10px] text-neutral-400 mt-1.5 truncate">{component.actionLabel}</p>
-                </Link>
+                </TierAwareEstateLink>
               ))}
             </div>
           </div>
@@ -164,9 +193,18 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
               </div>
               {props.conflictReport.conflicts.length > 4 && (
                 <div className="px-4 py-3 border-t border-neutral-100 text-center">
-                  <Link href="/titling" className="text-xs text-[color:var(--mwm-navy)] hover:underline">
-                    View all {props.conflictReport.conflicts.length} items →
-                  </Link>
+                  {consumerTier && consumerTier < 3 ? (
+                    <Link
+                      href="/estate-tax"
+                      className="text-xs text-[color:var(--mwm-navy)] hover:underline"
+                    >
+                      Upgrade to address these gaps →
+                    </Link>
+                  ) : (
+                    <Link href="/titling" className="text-xs text-[color:var(--mwm-navy)] hover:underline">
+                      View all {props.conflictReport.conflicts.length} items →
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

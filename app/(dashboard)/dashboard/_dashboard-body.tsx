@@ -47,6 +47,8 @@ import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/L
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 import { isWizardComplete } from '@/lib/estate/profileGate'
+import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
+import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 
 type HouseholdRow = Record<string, unknown> & {
   id: string
@@ -66,6 +68,8 @@ type HouseholdRow = Record<string, unknown> & {
   person2_retirement_age: number | null
   succession_plan_in_place: boolean | null
   state_primary: string | null
+  has_minor_children: boolean | null
+  has_business_interests: boolean | null
 }
 
 export async function DashboardBody({
@@ -426,6 +430,22 @@ export async function DashboardBody({
     loadAssessmentHistory(supabase, user!.id),
   ])
 
+  const consumerTier = profile?.consumer_tier ?? 1
+  const conflictCount = conflictReport?.conflicts.length ?? 0
+
+  let executionChecklist: EstateExecutionItem[] = []
+  if (household?.id && totalAssets > 0) {
+    executionChecklist = await buildEstateExecutionChecklist(supabase, {
+      householdId: household.id,
+      ownerId: user!.id,
+      userTier: consumerTier,
+      beneficiaryConflictsCount: conflictCount,
+      hasMinorChildren: household.has_minor_children === true,
+      hasBusinessInterests:
+        household.has_business_interests === true || hasBusinessInterests,
+    })
+  }
+
   return (
     <DashboardClient
       wizardComplete={wizardComplete}
@@ -456,7 +476,8 @@ export async function DashboardBody({
       hasBaseCase={!!household?.base_case_scenario_id}
       scenarioId={household?.base_case_scenario_id ?? null}
       completionScore={completionScore}
-      consumerTier={profile?.consumer_tier ?? 1}
+      consumerTier={consumerTier}
+      executionChecklist={executionChecklist}
       isAdvisor={profile?.role === 'advisor'}
       rmdStatus={rmdStatus}
       mortgageBalance={totalMortgageBalance}
@@ -485,6 +506,7 @@ export async function DashboardBody({
       successionGap={successionGap}
       personaAlerts={personaAlerts}
       initialAssessmentResults={initialAssessmentResults}
+      statePrimary={household?.state_primary ?? null}
     />
   )
 }

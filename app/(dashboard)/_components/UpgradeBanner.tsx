@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { formatDollars } from '@/lib/utils/formatCurrency'
 
 function LockIcon({ className }: { className?: string }) {
   return (
@@ -31,6 +32,9 @@ interface UpgradeBannerProps {
     grossEstate?: number | null
     statePrimary?: string | null
     firstName?: string | null
+    estimatedTaxState?: number | null
+    estimatedTaxFederal?: number | null
+    topConflict?: string | null
   }
 }
 
@@ -91,6 +95,10 @@ export default function UpgradeBanner({
 
   const personalizedCopy = buildPersonalizedCopy()
 
+  const totalTax =
+    (householdContext?.estimatedTaxState ?? 0) + (householdContext?.estimatedTaxFederal ?? 0)
+  const hasTaxExposure = totalTax > 0
+
   const tierContext =
     requiredTier === 2 ? (
       <div className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
@@ -132,7 +140,33 @@ export default function UpgradeBanner({
     )
 
   return (
-    <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 sm:flex-row sm:items-start sm:gap-4">
+    <div className="mb-6 flex flex-col gap-3">
+      {hasTaxExposure && householdContext?.grossEstate != null && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-500">
+            Your estimated estate tax exposure
+          </p>
+          <p className="mb-1 text-3xl font-bold text-red-700">{formatDollars(totalTax)}</p>
+          <p className="text-sm text-gray-600">
+            Based on your {formatDollars(householdContext.grossEstate)} estate
+            {householdContext.statePrimary ? ` in ${householdContext.statePrimary}` : ''}. Upgrade
+            to see your full breakdown, 10-year horizon, and strategies to reduce this exposure.
+          </p>
+        </div>
+      )}
+
+      {householdContext?.topConflict && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <span className="mt-0.5">⚠</span>
+          <p>
+            <span className="font-medium">Planning gap identified: </span>
+            {householdContext.topConflict} — and potentially more. Upgrade to see all gaps and how
+            to address them.
+          </p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 sm:flex-row sm:items-start sm:gap-4">
       <LockIcon className="mt-0.5 h-6 w-6 shrink-0 text-amber-700" />
       <div className="min-w-0 flex-1">
         {tierContext}
@@ -148,6 +182,7 @@ export default function UpgradeBanner({
       >
         {ctaLabel}
       </Link>
+      </div>
     </div>
   )
 }

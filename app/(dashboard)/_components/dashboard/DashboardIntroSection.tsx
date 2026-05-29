@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import type { CompletionScore } from '@/lib/get-completion-score'
+import { formatDollars } from '@/lib/utils/formatCurrency'
+import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 
 type DashboardIntroSectionProps = {
   greeting: string
@@ -9,10 +11,20 @@ type DashboardIntroSectionProps = {
     critical: number
     warnings: number
   } | null
+  consumerTier?: number
+  estateTaxExposure?: {
+    estimatedTaxState: number
+    estimatedTaxFederal: number
+  } | null
 }
 
 export function DashboardIntroSection(props: DashboardIntroSectionProps) {
-  const { greeting, firstName, completionScore, conflictReport } = props
+  const { greeting, firstName, completionScore, conflictReport, consumerTier, estateTaxExposure } =
+    props
+
+  const totalTax =
+    (estateTaxExposure?.estimatedTaxState ?? 0) + (estateTaxExposure?.estimatedTaxFederal ?? 0)
+  const conflictDetailsHref = estateDetailsHref(consumerTier)
 
   return (
     <>
@@ -31,7 +43,9 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
             <div>
               <h2 className="text-sm font-semibold text-neutral-900">🔓 Unlock Estate Planning</h2>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Complete {completionScore.threshold} of {completionScore.total} Retirement Planning steps
+                {totalTax > 0
+                  ? `Your estate has ${formatDollars(totalTax)} in estimated tax exposure. Upgrade to model strategies to reduce it.`
+                  : `Complete ${completionScore.threshold} of ${completionScore.total} Retirement Planning steps`}
               </p>
             </div>
             <Link
@@ -67,7 +81,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
           <div className="mb-4 flex items-center gap-2">
             {conflictReport.critical > 0 && (
               <a
-                href="#estate-conflicts"
+                href={conflictDetailsHref}
                 className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
               >
                 🚨 {conflictReport.critical} critical
@@ -75,17 +89,17 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
             )}
             {conflictReport.warnings > 0 && (
               <a
-                href="#estate-conflicts"
+                href={conflictDetailsHref}
                 className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition"
               >
                 ⚠️ {conflictReport.warnings} warnings
               </a>
             )}
             <a
-              href="#estate-conflicts"
+              href={conflictDetailsHref}
               className="text-xs text-neutral-400 hover:text-neutral-600 underline-offset-2 hover:underline transition"
             >
-              See issues below
+              See details
             </a>
           </div>
         )}

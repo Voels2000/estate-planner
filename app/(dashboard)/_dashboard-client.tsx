@@ -31,12 +31,15 @@ import {
   EstateCalloutCard,
   type EstateCalloutCardProps,
 } from '@/components/dashboard/EstateCalloutCard'
+import { EstateExecutionChecklist } from '@/components/consumer/EstateExecutionChecklist'
+import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import { AssessmentHistoryWidget } from '@/components/dashboard/AssessmentHistoryWidget'
 import StrategyRecommendationPanel, {
   type AdvisorRecommendationItem,
 } from '@/components/consumer/StrategyRecommendationPanel'
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -140,6 +143,8 @@ type Props = {
     retirement_pct: number
     estate_pct: number
   }>
+  statePrimary?: string | null
+  executionChecklist?: EstateExecutionItem[]
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +194,13 @@ export function DashboardClient(props: Props) {
     wizardComplete = false,
     initialSetupProgress,
     initialAssessmentResults,
+    statePrimary,
+    executionChecklist: initialExecutionChecklist = [],
   } = props
+
+  const tier = consumerTier ?? 1
+  const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
+  const conflictDetailsHref = estateDetailsHref(tier)
 
   const router = useRouter()
   const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(
@@ -228,6 +239,30 @@ export function DashboardClient(props: Props) {
   })
   const [conflictDismissed, setConflictDismissed] = useState(false)
 
+  useEffect(() => {
+    setExecutionChecklist(initialExecutionChecklist)
+  }, [initialExecutionChecklist])
+
+  const toggleChecklistItem = async (taskKey: string, completed: boolean) => {
+    const res = await fetch('/api/consumer/estate-checklist', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_key: taskKey, completed }),
+    })
+    if (!res.ok) return
+    setExecutionChecklist((prev) =>
+      prev.map((item) =>
+        item.task_key === taskKey
+          ? {
+              ...item,
+              consumerChecked: completed,
+              status: completed ? 'complete' : item.status,
+            }
+          : item,
+      ),
+    )
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <DashboardIntroSection
@@ -235,30 +270,107 @@ export function DashboardClient(props: Props) {
         firstName={fn}
         completionScore={completionScore}
         conflictReport={conflictReport}
+        consumerTier={tier}
+        estateTaxExposure={
+          estateCallout
+            ? {
+                estimatedTaxState: estateCallout.estimatedTaxState,
+                estimatedTaxFederal: estateCallout.estimatedTaxFederal,
+              }
+            : null
+        }
       />
 
-      <LifeEventBanner
-        pendingEvents={pendingLifeEvents}
-        loggedEvents={loggedLifeEvents}
-        relevanceHousehold={lifeEventRelevance}
-        hasAdvisorConnection={hasAdvisorConnection}
-      />
-
-      {!isAdvisor && (
+      {estateCallout && (
         <div className="mt-4">
-          {setupProgressLoading || !setupProgress ? (
-            <SetupProgressCardSkeleton />
-          ) : (
-            <SetupProgressCard
-              progress={setupProgress}
-              wizardComplete={wizardComplete}
-              consumerTier={consumerTier ?? 1}
-              onContinueWizard={() => router.push('/onboarding/wizard')}
-              onImport={() => router.push('/import')}
-            />
-          )}
+          <EstateCalloutCard
+            {...estateCallout}
+            userTier={tier}
+            statePrimary={statePrimary}
+          />
         </div>
       )}
+
+      {executionChecklist.length > 0 && (
+        <div className="mt-4">
+          <EstateExecutionChecklist
+            items={executionChecklist}
+            userTier={tier}
+            onToggle={toggleChecklistItem}
+          />
+        </div>
+      )}
+
+      {conflictReport &&
+        (conflictReport.critical > 0 || conflictReport.warnings > 0) &&
+        !conflictDismissed && (
+          <div
+            className={`mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 ${
+              conflictReport.critical > 0
+                ? 'border-red-200 bg-red-50'
+                : 'border-amber-200 bg-amber-50'
+            }`}
+          >
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="mt-0.5 shrink-0 text-base">
+                {conflictReport.critical > 0 ? '🚨' : '⚠️'}
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`text-sm font-semibold ${
+                    conflictReport.critical > 0 ? 'text-red-800' : 'text-amber-800'
+                  }`}
+                >
+                  {conflictReport.critical > 0 && (
+                    <span>
+                      {conflictReport.critical} critical issue
+                      {conflictReport.critical > 1 ? 's' : ''}
+                      {conflictReport.warnings > 0 ? ' · ' : ''}
+                    </span>
+                  )}
+                  {conflictReport.warnings > 0 && (
+                    <span>
+                      {conflictReport.warnings} warning
+                      {conflictReport.warnings > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {' '}found in your plan
+                </p>
+                {conflictReport.conflicts[0] && (
+                  <p
+                    className={`mt-0.5 text-xs truncate ${
+                      conflictReport.critical > 0 ? 'text-red-600' : 'text-amber-600'
+                    }`}
+                  >
+                    {conflictReport.conflicts[0].description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <a
+                href={conflictDetailsHref}
+                className={`text-xs font-medium underline-offset-2 hover:underline ${
+                  conflictReport.critical > 0 ? 'text-red-700' : 'text-amber-700'
+                }`}
+              >
+                See details ↓
+              </a>
+              <button
+                type="button"
+                onClick={() => setConflictDismissed(true)}
+                className={`text-xs leading-none ${
+                  conflictReport.critical > 0
+                    ? 'text-red-400 hover:text-red-600'
+                    : 'text-amber-400 hover:text-amber-600'
+                }`}
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
       {successionGap && (
         <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -314,78 +426,12 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {conflictReport &&
-        (conflictReport.critical > 0 || conflictReport.warnings > 0) &&
-        !conflictDismissed && (
-          <div
-            className={`mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 ${
-              conflictReport.critical > 0
-                ? 'border-red-200 bg-red-50'
-                : 'border-amber-200 bg-amber-50'
-            }`}
-          >
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="mt-0.5 shrink-0 text-base">
-                {conflictReport.critical > 0 ? '🚨' : '⚠️'}
-              </span>
-              <div className="min-w-0">
-                <p
-                  className={`text-sm font-semibold ${
-                    conflictReport.critical > 0 ? 'text-red-800' : 'text-amber-800'
-                  }`}
-                >
-                  {conflictReport.critical > 0 && (
-                    <span>
-                      {conflictReport.critical} critical issue
-                      {conflictReport.critical > 1 ? 's' : ''}
-                      {conflictReport.warnings > 0 ? ' · ' : ''}
-                    </span>
-                  )}
-                  {conflictReport.warnings > 0 && (
-                    <span>
-                      {conflictReport.warnings} warning
-                      {conflictReport.warnings > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {' '}found in your plan
-                </p>
-                {conflictReport.conflicts[0] && (
-                  <p
-                    className={`mt-0.5 text-xs truncate ${
-                      conflictReport.critical > 0 ? 'text-red-600' : 'text-amber-600'
-                    }`}
-                  >
-                    {conflictReport.conflicts[0].description}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <a
-                href="#estate-conflicts"
-                className={`text-xs font-medium underline-offset-2 hover:underline ${
-                  conflictReport.critical > 0 ? 'text-red-700' : 'text-amber-700'
-                }`}
-              >
-                See details ↓
-              </a>
-              <button
-                type="button"
-                onClick={() => setConflictDismissed(true)}
-                className={`text-xs leading-none ${
-                  conflictReport.critical > 0
-                    ? 'text-red-400 hover:text-red-600'
-                    : 'text-amber-400 hover:text-amber-600'
-                }`}
-                aria-label="Dismiss"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-
-      <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+      <LifeEventBanner
+        pendingEvents={pendingLifeEvents}
+        loggedEvents={loggedLifeEvents}
+        relevanceHousehold={lifeEventRelevance}
+        hasAdvisorConnection={hasAdvisorConnection}
+      />
 
       {householdId && advisorStrategyItems.length > 0 && (
         <div className="mt-6">
@@ -402,8 +448,26 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
+      <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+
+      {!isAdvisor && (
+        <div className="mt-4">
+          {setupProgressLoading || !setupProgress ? (
+            <SetupProgressCardSkeleton />
+          ) : (
+            <SetupProgressCard
+              progress={setupProgress}
+              wizardComplete={wizardComplete}
+              consumerTier={tier}
+              onContinueWizard={() => router.push('/onboarding/wizard')}
+              onImport={() => router.push('/import')}
+            />
+          )}
+        </div>
+      )}
+
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 1 — Financial Summary                                     */}
+      {/* Financial Summary                                                 */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <FinancialSummarySection
         storageKey={SECTION_KEYS.financial}
@@ -419,14 +483,8 @@ export function DashboardClient(props: Props) {
         allocationContext={allocationContext}
       />
 
-      {estateCallout && (
-        <div className="mt-6">
-          <EstateCalloutCard {...estateCallout} />
-        </div>
-      )}
-
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 2 — Retirement Summary                                    */}
+      {/* Retirement Summary                                                  */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <RetirementSummarySection
         storageKey={SECTION_KEYS.retirement}
@@ -442,7 +500,7 @@ export function DashboardClient(props: Props) {
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* SECTION 3 — Estate Summary                                        */}
       {/* ══════════════════════════════════════════════════════════════════ */}
-      <div id="estate-conflicts">
+      <div id={tier >= 3 ? 'estate-conflicts' : undefined}>
         <EstateSummarySection
           storageKey={SECTION_KEYS.estate}
           totalAssets={totalAssets}
@@ -452,6 +510,7 @@ export function DashboardClient(props: Props) {
           composition={composition}
           householdId={householdId}
           initialRecommendations={initialRecommendations}
+          consumerTier={tier}
         />
       </div>
 

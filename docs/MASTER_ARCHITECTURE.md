@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-28 (Sprints K–O + 19a; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Estate execution checklist + preview UX; Sprint 19 go-live hardening)
 
 ---
 
@@ -112,6 +112,28 @@ Consumers and advisors share one **household** data model but operate in separat
 | Session-persistent “asked” state on strategy cards | Confirmation resets on refresh; notification persists in DB | V2 if needed |
 
 Sidebar portal link visibility: [CONSUMER_NAV_MAP.md → Sidebar portal links](./CONSUMER_NAV_MAP.md#sidebar-portal-links-consumer-layout).
+
+---
+
+## Estate Execution Checklist
+
+Unified consumer checklist on `/dashboard` (`EstateExecutionChecklist`, below `EstateCalloutCard`) and persisted trust-tab Action Checklist checkboxes (`TrustDocumentsPanel` → `estate_checklist_items`).
+
+### Data sources (no new RPCs — all from existing tables)
+
+- `estate_documents` (`doc_type` + `status`, or legacy `document_type` + `exists`) → will, DPOA, healthcare on file
+- `trusts` (`status`) → trust funded
+- `estate_health_check` (five questions) → consumer self-reported
+- `beneficiary_conflicts` (count) → flagged status
+- `estate_checklist_items` (`task_key` + `completed`) → consumer-toggled
+
+### Status hierarchy
+
+`flagged` (conflict detected) > `incomplete` > `complete`
+
+### Completion = auto-detected OR consumer-checked
+
+Auto-detection uses existing data; consumer checkbox is an override that persists even when auto-detection cannot confirm. Builder: `lib/dashboard/buildEstateExecutionChecklist.ts`. API: `GET` / `PATCH` `/api/consumer/estate-checklist`. Checklist hidden when household has no assets (`totalAssets === 0`).
 
 ---
 
@@ -372,7 +394,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - As of Session 97, consumer dashboard (`/dashboard`) loads active advisor `strategy_line_items` and renders `StrategyRecommendationPanel` for accept/decline with `router.refresh()`; estate health recompute runs server-side on accept/reject (Session 101).
 - Gifting scenario save supports an optional **Program name** (`scenario_name`); **Your Saved Strategies** displays `scenario_name` when set.
 - `my-estate-trust-strategy/page.tsx` now fetches consumer and advisor `strategy_line_items` in parallel, merges them for `buildStrategyHorizons` (consumer first, advisor second), and passes `consumerLineItems` to the client for the Transfer Strategies tab.
-- As of Session 122, `/dashboard` (`dashboard/page.tsx`) fetches `calculate_gifting_summary` server-side, passes `lifetime_exemption_used` into `classifyEstateAssets`, and renders `components/dashboard/EstateCalloutCard.tsx` below net worth (gross estate, headroom before federal tax, est. federal/state tax, link to `/estate-tax`). Display-only props — no client RPC. Headroom uses `computeHeadroomBeforeFederalTax` (`lib/estate/exemptionLabels.ts`) — `exemption_available − inside estate` (gross minus `outside_strategy_total`), matching My Estate Strategy horizons; not raw RPC `exemption_remaining` (which uses taxable estate after admin deductions).
+- As of Session 122, `/dashboard` (`dashboard/page.tsx`) fetches `calculate_gifting_summary` server-side, passes `lifetime_exemption_used` into `classifyEstateAssets`, and renders `components/dashboard/EstateCalloutCard.tsx` (gross estate, headroom before federal tax, est. federal/state tax; tier-aware CTA via `estateUpgradeHref`). **2026-05-28:** callout sits immediately after `DashboardIntroSection` (position 2); `EstateExecutionChecklist` below callout when household has assets (`buildEstateExecutionChecklist` in `dashboard/_dashboard-body.tsx`). Display-only callout props — checklist toggles via `PATCH /api/consumer/estate-checklist`. Headroom uses `computeHeadroomBeforeFederalTax` (`lib/estate/exemptionLabels.ts`).
 - As of Session 122, advisor/consumer SVG estate flow (`components/estate-flow/EstateFlowDiagram.tsx`) uses colocated `buildEdgeLabelLanes` (rendering-only; not in `lib/`) to stagger overlapping edge labels plus dark label backgrounds.
 - As of Session 121, `components/consumer/ConsumerStrategyPanel.tsx` (Transfer Strategies tab) shows a collapsible **About this strategy** card (`STRATEGY_INFO` + `StrategyEducationCard`) above each active panel’s model form — full name, description, best for, and personalized `contextNote` from `EstateContext` + `filingStatus` (illiquid %, IRA balance, exemption headroom, MFJ gating). Pills include **SLAT** and **ILIT**. SLAT pill is grayed and non-clickable when `filingStatus !== 'married_joint'`; the SLAT form is also disabled for non-MFJ. `filingStatus` is passed from `my-estate-trust-strategy/_client.tsx` via `giftingScenario.filing`. Advisor CTA links to `/find-advisor`. Uses `formatDollarsCompact` from `lib/utils/formatCurrency.ts`.
 - As of Session 124, consumer **SLAT** (`SlatStrategyForm`) and **ILIT** (`IlitStrategyForm`) save via `lib/consumer/consumerStrategyLineItems.ts` → `POST`/`DELETE` `/api/strategy-line-items` (`strategy_source` `slat`/`ilit`, `category` `trust_exclusion`, `scenario_name` `base`, `source_role` `consumer`). SLAT: contribution amount, funding source metadata, notes. ILIT: policy dropdown from `insurance_policies` by `user_id` (`ownerUserId` from page) or manual coverage amount. Saved rows show green summary + edit/remove; education card collapses when saved (`defaultOpen={!saved}`). `router.refresh()` + `reloadSaved()` after write.

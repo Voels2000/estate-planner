@@ -6,6 +6,7 @@ import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -23,6 +24,10 @@ export default async function EstateTaxPage() {
 
   if (!hasFeatureAccess('estate-tax', access.tier, access.isAdvisor, access.isTrial)) {
     let grossEstate: number | null = null
+    let estimatedTaxState: number | null = null
+    let estimatedTaxFederal: number | null = null
+    let topConflict: string | null = null
+
     if (householdRow?.id) {
       const compositionForBanner = await getCachedComposition(
         supabase,
@@ -31,6 +36,23 @@ export default async function EstateTaxPage() {
         0,
       )
       grossEstate = compositionForBanner.gross_estate ?? null
+      estimatedTaxState = compositionForBanner.estimated_tax_state ?? null
+      estimatedTaxFederal = compositionForBanner.estimated_tax_federal ?? null
+
+      const admin = createAdminClient()
+      const { data: conflictRows } = await admin
+        .from('beneficiary_conflicts')
+        .select('description, severity')
+        .eq('household_id', householdRow.id)
+
+      if (conflictRows && conflictRows.length > 0) {
+        const severityRank = (s: string | null) =>
+          s === 'critical' ? 0 : s === 'warning' ? 1 : 2
+        const sorted = [...conflictRows].sort(
+          (a, b) => severityRank(a.severity) - severityRank(b.severity),
+        )
+        topConflict = sorted[0]?.description ?? null
+      }
     }
 
     return (
@@ -43,6 +65,9 @@ export default async function EstateTaxPage() {
           ctaLabel="See your estate tax breakdown →"
           householdContext={{
             grossEstate,
+            estimatedTaxState,
+            estimatedTaxFederal,
+            topConflict,
             statePrimary: householdRow?.state_primary ?? null,
             firstName: null,
           }}
