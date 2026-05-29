@@ -12,6 +12,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+---
+
+## Advisor dashboard tier fix (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Dashboard uses resolved access tier | `app/(dashboard)/dashboard/_dashboard-body.tsx` — `consumerTier = access.tier` via `getUserAccess()` |
+| Unlock banner tier check | same file — `isConsumerTier2` uses `access.tier === 2` |
+
+**Effect:** Advisor-connected consumers (`advisor_clients` active/accepted) and `subscription_status = 'advisor_managed'` see Stage 3 golden path, direct estate links, and no unlock banner — matching sidebar and page gates.
+
+**No schema migration.**
+
+---
+
 ## Sprint 4 — consumer pricing (2026-05-28, code only)
 
 | Change | Files |

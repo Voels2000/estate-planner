@@ -1,6 +1,40 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-28 (Sprint 4 pricing; Golden Path)
+# Last updated: 2026-05-28 (Advisor dashboard tier fix; Sprint 4 pricing; Golden Path)
+
+## Advisor Billing — Deferred to post-launch (2026-05-28)
+
+**Decision:** No Stripe advisor products at launch. First advisors onboarded and billed manually. Advisor-connected consumers get Tier 3 via existing `getUserAccess()` `advisor_clients` check.
+
+**What already works (no code needed):**
+- `advisor_clients` connected status → automatic Tier 3 on all API/page gates
+- `subscription_status = 'advisor_managed'` → Tier 3 treatment
+- `isAdvisor = true` → all features unlocked in advisor portal
+
+**What was fixed this sprint:**
+- `_dashboard-body.tsx` now uses `getUserAccess().tier` (not raw `consumer_tier`) so advisor-connected consumers see correct Stage 3 dashboard behavior
+
+**Manual process at launch:**
+- Set `profiles.role = 'advisor'` for advisor accounts
+- Invoice advisors directly
+- Pause consumer Stripe subscription manually when advisor takes them on
+- Set `subscription_status = 'advisor_managed'` in Supabase
+
+**Recommended advisor pricing for launch conversations:**
+- 1–10 clients: $149/mo
+- 11–50 clients: $349/mo
+- 50+: custom / enterprise
+
+**Post-launch scope (Advisor adoption package):**
+- Stripe products for advisor tiers
+- Automated subscription pause/resume on advisor connect/disconnect
+- Seat count enforcement
+- Advisor billing portal
+
+**Rationale for deferral:**
+First advisor cohort is small and high-touch. Manual billing gives flexibility to experiment with pricing before committing to Stripe product structures. Advisor connection already grants correct access — billing automation is an ops improvement, not a blocker.
+
+---
 
 ## Pricing — Sprint 4 (2026-05-28)
 

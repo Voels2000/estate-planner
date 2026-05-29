@@ -276,6 +276,40 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ---
 
+## Advisor Integration (launch + manual billing)
+
+### Code (automated — already works)
+- [x] `advisor_clients` connected status → Tier 3 access via `getUserAccess()`
+- [x] Dashboard tier split fixed — `_dashboard-body` uses `access.tier` not `profile.consumer_tier`
+- [x] `subscription_status = 'advisor_managed'` treated as Tier 3
+
+### Manual process for first advisors
+- [ ] Advisor account setup: set `profiles.role = 'advisor'` in Supabase
+- [ ] Advisor billing: invoice directly until post-launch Stripe automation (see ROADMAP Advisor adoption package)
+- [ ] When advisor takes on consumer client with active subscription:
+  1. Pause consumer Stripe subscription in Stripe Dashboard
+  2. Set `profiles.subscription_status = 'advisor_managed'` in Supabase
+- [ ] When advisor connection ends:
+  1. Prompt consumer to resubscribe (manual email at launch)
+  2. Set `profiles.subscription_status = NULL` in Supabase
+  3. Resume Stripe subscription if paused
+
+### Verify before first advisor onboarding
+- [ ] Advisor-connected consumer sees Stage 3 dashboard (not Stage 1)
+- [ ] Advisor-connected consumer sees "View Estate Tax Snapshot →" (not upgrade CTA) on `EstateCalloutCard`
+- [ ] Advisor portal fully functional for connected advisor
+- [ ] Consumer can disconnect advisor from `/my-advisor`
+- [ ] After disconnect: consumer reverts to DB column tier
+
+### Post-launch automation (Advisor adoption package)
+- Stripe products for advisor tiers ($149/mo starter, $349/mo growth)
+- Automated subscription pause on advisor connection
+- Automated consumer resubscribe prompt on advisor disconnect
+- Seat count enforcement
+- Advisor billing portal
+
+---
+
 ## Stripe Setup (required before `PUBLIC_SIGNUP_OPEN=true`)
 
 ### Dashboard configuration (manual — Stripe Dashboard)
@@ -372,6 +406,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-28 | Advisor dashboard tier fix | `_dashboard-body` uses `getUserAccess().tier`; LAUNCH_CHECKLIST advisor manual billing |
 | 2026-05-28 | Sprint 4 consumer pricing | **Code complete** — $29/$79/$149 + annual; Estate 14-day trial; `stripePrices.ts`; billing + pricing toggle; LAUNCH_CHECKLIST Stripe section |
 | May 2026 | Sprint 8 | Attorney referral migration applied; trigger confirmed |
 | May 2026 | Sprint 9 | Signup referral attribution — profiles + funnel_events |

@@ -689,6 +689,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`).
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
+- **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
 - Consumer billing page shows all three subscription tiers at initial purchase entry:
   - Financial
   - Retirement

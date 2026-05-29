@@ -41,6 +41,27 @@
 
 **Golden Path / guided mode (2026-05-29, 4 commits):** `determinePlanStage`, `PlanProgressBar`, stage-gated dashboard sections, localStorage `mwm_show_all_tools`. E2E: `npm run test:e2e:golden-path`. Wizard / unlock-estate / tier gates unchanged.
 
+**Advisor dashboard tier fix (2026-05-28):** `_dashboard-body.tsx` uses `getUserAccess().tier` — advisor-connected consumers get Stage 3 dashboard (was reading raw `consumer_tier`). Manual advisor billing documented in [LAUNCH_CHECKLIST § Advisor Integration](./LAUNCH_CHECKLIST.md#advisor-integration-launch--manual-billing).
+
+---
+
+### Post-launch — Advisor adoption package (Month 2) `[ ]`
+
+**Goal:** Automate advisor billing; deepen advisor onboarding UX.
+
+**Billing automation (deferred from launch)**
+- `[ ]` Stripe products: Advisor Starter ($149/mo, 10 clients), Advisor Growth ($349/mo, 50 clients)
+- `[ ]` Auto-pause consumer subscription on advisor connection
+- `[ ]` Auto-resume / resubscribe prompt on advisor disconnect
+- `[ ]` Seat count enforcement (`advisor_clients` count vs plan limit)
+- `[ ]` Advisor billing portal (Stripe Customer Portal)
+
+**Adoption UX**
+- `[ ]` Advisor onboarding tour (3-step: connect client, model strategy, send recommendation)
+- `[ ]` "Invite your first client" as primary advisor CTA on empty portal
+- `[ ]` Competitive positioning copy in advisor portal (why this vs eMoney client portal)
+- `[ ]` Advisor-specific email sequence (activation + client milestone alerts)
+
 ---
 
 ### Sprint 18 — Planning shell completion ✅ (2026-05-27)
