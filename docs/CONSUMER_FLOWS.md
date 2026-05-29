@@ -540,6 +540,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/advisor/*.spec.ts` | Advisor portal (incl. RMD copy, newsletter kit) |
 | `tests/e2e/attorney/attorney-portal.spec.ts` | Attorney dashboard + `?aref=` links |
 | `tests/unit/import-parse.spec.ts` | Import header detection, sheets, aliases (`npm run test:import:unit`) |
+| `tests/unit/import-type-normalizer.spec.ts` | Type normalization aliases (`npm run test:import:unit`) |
 | `tests/e2e/consumer/consumer-import.spec.ts` | Import ingest/commit, duplicates, traceability (`npm run test:import:api`) |
 
 **Run full suite:** `npm run test:e2e:complete` (see [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md)).
