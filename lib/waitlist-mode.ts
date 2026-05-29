@@ -18,18 +18,19 @@ function isLocalDevFromAppUrl(): boolean {
   )
 }
 
+function isExplicitWaitlistDisabled(): boolean {
+  return (
+    process.env.PUBLIC_SIGNUP_OPEN === 'true' ||
+    process.env.NEXT_PUBLIC_SIGNUP_OPEN === 'true' ||
+    process.env.WAITLIST_MODE === 'false' ||
+    process.env.NEXT_PUBLIC_WAITLIST_MODE === 'false'
+  )
+}
+
 function isExplicitWaitlistEnabled(): boolean {
   return (
     process.env.WAITLIST_MODE === 'true' ||
     process.env.NEXT_PUBLIC_WAITLIST_MODE === 'true'
-  )
-}
-
-function isExplicitWaitlistDisabled(): boolean {
-  return (
-    process.env.PUBLIC_SIGNUP_OPEN === 'true' ||
-    process.env.WAITLIST_MODE === 'false' ||
-    process.env.NEXT_PUBLIC_WAITLIST_MODE === 'false'
   )
 }
 
@@ -40,6 +41,10 @@ type WaitlistModeOptions = {
 
 /** True when public signup is disabled and visitors are sent to /waitlist instead. */
 export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
+  if (isExplicitWaitlistDisabled()) {
+    return false
+  }
+
   if (typeof window !== 'undefined') {
     if (isLocalDevHost(window.location.hostname)) {
       return isExplicitWaitlistEnabled()
@@ -54,16 +59,12 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
     return isExplicitWaitlistEnabled()
   }
 
-  if (isExplicitWaitlistDisabled()) {
-    return false
-  }
-
   if (isExplicitWaitlistEnabled()) {
     return true
   }
 
-  // Pre-launch default: gate signup on Vercel Production without requiring env vars
-  return process.env.VERCEL_ENV === 'production'
+  // Build-time default via next.config env (mirrors VERCEL_ENV=production pre-launch gate).
+  return process.env.NEXT_PUBLIC_WAITLIST_MODE === 'true'
 }
 
 /** Invite / token signup flows bypass the waitlist gate. */
@@ -76,7 +77,7 @@ export function shouldBypassWaitlistForSignup(
   return false
 }
 
-type SignupHrefOptions = {
+type SignupHrefOptions = WaitlistModeOptions & {
   redirectTo?: string
   intent?: string
   restored?: string
@@ -84,7 +85,7 @@ type SignupHrefOptions = {
 
 /** Public signup URL — `/waitlist` in waitlist mode, otherwise `/signup` with optional query params. */
 export function getSignupHref(options?: SignupHrefOptions): string {
-  if (isWaitlistMode()) return '/waitlist'
+  if (isWaitlistMode(options)) return '/waitlist'
 
   if (!options) return '/signup'
 

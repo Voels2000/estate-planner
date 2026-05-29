@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -7,6 +8,8 @@ import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const hostname = (await headers()).get('host')
+  const signupOpts = { intent: 'plan' as const, hostname }
 
   if (!user) {
     return (
@@ -165,7 +168,7 @@ export default async function HomePage() {
                 icon: '🗂️',
                 label: 'I want to build my plan',
                 sub: 'Start organizing your estate, retirement, and financial picture',
-                href: getSignupHref({ intent: 'plan' }),
+                href: getSignupHref(signupOpts),
               },
             ].map((opt) => (
               <a
@@ -237,7 +240,7 @@ export default async function HomePage() {
               ],
               checkColor: '#0f1f3d',
               cta: 'Go to My Plan →',
-              href: getSignupHref({ intent: 'plan' }),
+              href: getSignupHref({ ...signupOpts, intent: 'plan' }),
               btnClass: '!bg-[#0f1f3d] !text-white hover:!bg-[#1a3460] w-full justify-center text-xs',
               locked: true,
             },
