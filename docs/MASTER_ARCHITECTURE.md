@@ -693,7 +693,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - **Terms acceptance (2026-05-27):** TERMS-1 signup checkbox sets `terms_accepted_at` + `terms_version`; email-confirm users synced in `/auth/callback` from signup metadata. Section F soft banner on dashboard for users without `terms_accepted_at` (dismissible, non-blocking).
 - **Single ToS source (2026-05-27):** Canonical Terms of Service = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). `/terms`, `/terms/accept`, `GET /api/terms/content`, and `recordTermsAcceptance` all use `getCanonicalTerms()`. Legacy Estate Planner copy removed from accept UI; `app_config` synced via migration `20260527120000_sync_terms_app_config_mwm.sql`.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
-- **Dashboard access:** `app/(dashboard)/layout.tsx` `hasAccess` includes `subscription_status === 'trialing'` (Stripe Estate trial), not only `active` and signup `trial_started_at`.
+- **Dashboard access:** `app/(dashboard)/layout.tsx` — consumers with `subscription_status = 'none'` get free Tier 1 access; Estate trial (`trialing`) only from Stripe checkout; banner uses `subscription_period_end`.
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
 - Consumer billing page shows all three subscription tiers at initial purchase entry:
   - Financial

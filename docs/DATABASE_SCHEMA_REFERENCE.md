@@ -48,7 +48,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Referral attribution (Sprint 9):** set once at signup from event-page sessionStorage; join `referral_code` → `advisor_directory.referral_code`, `attorney_referral_code` → `attorney_listings.referral_code`.
 - **Invite-advisor gate (Sprint 10):** `onboarding_invite_advisor_completed_at` — set when consumer completes or skips `/onboarding/invite-advisor` (same timestamp for both; no separate skipped flag).
 - **Onboarding wizard (Sprint OB-1):** `onboarding_wizard_completed_at` — set when consumer finishes `/onboarding/wizard` (also sets invite-advisor timestamp via `POST /api/consumer/onboarding-wizard-complete`).
-- **Signup trigger:** `on_auth_user_created` → `handle_new_user()` inserts a `profiles` row for each new `auth.users` row (`role` from `raw_user_meta_data`, consumer defaults: `consumer_tier=1`, `subscription_status=trialing`, `trial_started_at=now()`).
+- **Signup trigger:** `on_auth_user_created` → `handle_new_user()` inserts a `profiles` row (`role` from metadata; consumer defaults: `consumer_tier=1`, `subscription_status=none`). Estate trial (`trialing`) is set only by Stripe webhook after checkout.
 - **Migrations:** `20260526000001_handle_new_user_trigger.sql` (canonical), `20260529000000_profiles_referral_attribution.sql`, `20260530000000_sprint9_10_gates.sql`
 
 ### `households`

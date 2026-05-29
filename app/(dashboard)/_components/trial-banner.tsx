@@ -1,73 +1,48 @@
 'use client'
+
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { ButtonLink } from '@/components/ui/Button'
 
-export function TrialBanner({
-  expiryTimestamp,
-}: {
-  secondsLeft: number
-  minutesLeft: number
-  expiryTimestamp: number
-}) {
-  const router = useRouter()
-  const [timeLeft, setTimeLeft] = useState(() =>
-    Math.max(0, expiryTimestamp - Date.now())
-  )
+export function TrialBanner({ expiryTimestamp }: { expiryTimestamp: number }) {
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, expiryTimestamp - Date.now()))
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = Math.max(0, expiryTimestamp - Date.now())
-      setTimeLeft(remaining)
-      if (remaining === 0) {
-        clearInterval(interval)
-        router.push('/billing')
-        router.refresh()
-      }
-    }, 60000) // update every minute
+      setTimeLeft(Math.max(0, expiryTimestamp - Date.now()))
+    }, 60_000)
     return () => clearInterval(interval)
-  }, [expiryTimestamp, router])
+  }, [expiryTimestamp])
 
-  const totalHours = Math.floor(timeLeft / (1000 * 60 * 60))
-  const daysLeft = Math.floor(totalHours / 24)
-  const hoursLeft = totalHours % 24
-  const isUrgent = totalHours <= 24 // last day
+  const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24))
+  const isUrgent = daysLeft <= 3
 
-  function formatTimeLeft() {
-    if (daysLeft >= 2) return `${daysLeft} days`
-    if (daysLeft === 1) return `1 day${hoursLeft > 0 ? ` ${hoursLeft}h` : ''}`
-    if (hoursLeft > 1) return `${hoursLeft} hours`
-    if (hoursLeft === 1) return 'less than 1 hour'
-    return 'a few minutes'
-  }
+  const label =
+    daysLeft <= 0
+      ? 'Your Estate trial ends today'
+      : daysLeft === 1
+        ? 'Your Estate trial ends tomorrow'
+        : `Your 14-day Estate trial ends in ${daysLeft} days`
 
   return (
-    <div className={`w-full px-4 py-2.5 text-sm font-medium text-center 
-      flex items-center justify-center gap-4 transition-colors ${
-      isUrgent
-        ? 'bg-red-600 text-white'
-        : 'bg-amber-500 text-white'
-    }`}>
+    <div
+      className={`flex w-full items-center justify-center gap-4 px-4 py-2.5 text-center text-sm font-medium transition-colors ${
+        isUrgent ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'
+      }`}
+    >
       <span>
-        {isUrgent ? '⚠️' : '⏳'}{' '}
-        Your 3-day free trial ends in{' '}
-        <span className="font-bold">
-          {formatTimeLeft()}
-        </span>
-        {' '}— subscribe to keep access.
+        {isUrgent ? '⚠️' : '⏳'} {label} — subscribe to keep Estate access.
       </span>
       <ButtonLink
-        href="/billing"
+        href="/billing?plan=estate"
         variant="secondary"
         size="sm"
-        className={`rounded-full border-transparent px-3 py-1 
-          text-xs font-semibold shadow-sm ${
+        className={`rounded-full border-transparent px-3 py-1 text-xs font-semibold shadow-sm ${
           isUrgent
             ? 'bg-white text-red-600 hover:bg-red-50'
             : 'bg-white text-amber-700 hover:bg-amber-50'
         }`}
       >
-        Subscribe now →
+        Choose a plan →
       </ButtonLink>
     </div>
   )

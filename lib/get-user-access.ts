@@ -45,7 +45,10 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
   const isAdmin = profile?.is_admin === true
   const subscriptionStatus = profile?.subscription_status ?? null
   const isTrial = subscriptionStatus === 'trialing'
-  const isActive = subscriptionStatus === 'active' || isTrial
+  const isActive =
+    subscriptionStatus === 'active' ||
+    isTrial ||
+    subscriptionStatus === 'canceling'
   const isAdvisorManaged = subscriptionStatus === 'advisor_managed'
 
   let isAdvisorClient = false

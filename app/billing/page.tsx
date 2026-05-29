@@ -12,7 +12,17 @@ import {
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string; returnTo?: string }>
+}) {
+  const params = await searchParams
+  const recommendedPlanId =
+    params.plan === 'financial' || params.plan === 'retirement' || params.plan === 'estate'
+      ? params.plan
+      : null
+
   const access = await getAccessContext()
   if (!access.user) redirect('/login')
 
@@ -140,6 +150,7 @@ export default async function BillingPage() {
       subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
       isAdvisorClient={isAdvisorClient}
       annualBillingAvailable={isAnnualBillingConfigured()}
+      recommendedPlanId={recommendedPlanId}
     />
   )
 }

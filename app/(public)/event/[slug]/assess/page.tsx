@@ -470,7 +470,7 @@ function ResultsScreen({
             Build my plan
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-            Start your estate and financial plan — free for 3 days.
+            Start your estate and financial plan — free Tier 1, or try Estate with a 14-day trial.
           </div>
         </a>
       </div>

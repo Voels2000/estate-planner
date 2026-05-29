@@ -124,8 +124,7 @@ async function repairOrphanedUser(email: string) {
         : null,
     role,
     consumer_tier: isConsumer ? 1 : null,
-    subscription_status: isConsumer ? 'trialing' : null,
-    trial_started_at: isConsumer ? new Date().toISOString() : null,
+    subscription_status: isConsumer ? 'none' : null,
     is_admin: false,
     updated_at: new Date().toISOString(),
   })

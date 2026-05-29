@@ -90,7 +90,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   'my-estate-trust-strategy': 3,
   'trust-will':          3,
 }
-// Free trial gets tier 2 access
+// Stripe Estate trial (subscription_status = 'trialing' from webhook) unlocks tier-3 features.
 export const TRIAL_TIER = 3
 /** Resolve which consumer tier a profile maps to */
 export function resolveConsumerTier(

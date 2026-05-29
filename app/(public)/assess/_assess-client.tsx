@@ -5,6 +5,11 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import {
+  billingHrefForPlan,
+  recommendPlanFromScores,
+  type PlanRecommendation,
+} from '@/lib/assessment/recommendPlanFromScores'
 
 const QUESTIONS = [
   {
@@ -770,6 +775,8 @@ export default function AssessClient() {
   const fl = getLevel(fp)
   const rl = getLevel(rp)
   const el = getLevel(ep)
+  const planRec = recommendPlanFromScores(fp, rp, ep)
+  const planBillingHref = billingHrefForPlan(planRec.planId, '/assess')
 
   const isLoggedOut = showSaveCTA
 
@@ -927,6 +934,12 @@ export default function AssessClient() {
           ))}
         </div>
 
+        <PlanRecommendationCard
+          planRec={planRec}
+          isLoggedOut={isLoggedOut}
+          planBillingHref={planBillingHref}
+        />
+
         {/* Gate — logged-out users see CTA instead of full gap report */}
         {isLoggedOut ? (
           <div style={{
@@ -976,19 +989,48 @@ export default function AssessClient() {
               ))}
             </ul>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a href={getSignupHref({ redirectTo: '/assess', restored: '1' })} style={{
-                padding: '11px 22px', borderRadius: 8,
-                background: '#c9a84c', color: '#0f1f3d',
-                fontSize: 14, fontWeight: 700, textDecoration: 'none',
-              }}>
-                Create free account →
+              <a
+                href={getSignupHref({
+                  redirectTo: planBillingHref,
+                })}
+                style={{
+                  padding: '11px 22px',
+                  borderRadius: 8,
+                  background: '#c9a84c',
+                  color: '#0f1f3d',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                {planRec.ctaLabel} →
               </a>
-              <a href={`/login?redirectTo=/assess&restored=1`} style={{
-                padding: '11px 22px', borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.3)',
-                color: 'rgba(255,255,255,0.85)',
-                fontSize: 14, fontWeight: 500, textDecoration: 'none',
-              }}>
+              <a
+                href={getSignupHref({ redirectTo: '/assess', restored: '1' })}
+                style={{
+                  padding: '11px 22px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                }}
+              >
+                Create free account
+              </a>
+              <a
+                href={`/login?redirectTo=${encodeURIComponent('/assess')}&restored=1`}
+                style={{
+                  padding: '11px 22px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: 'rgba(255,255,255,0.65)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                }}
+              >
                 Sign in
               </a>
             </div>
@@ -1005,21 +1047,56 @@ export default function AssessClient() {
               fontSize: 20, color: '#0f1f3d', marginBottom: 18,
             }}>Your Recommended Next Steps</h3>
             {[
+              {
+                num: 0,
+                title: `Recommended: ${planRec.planName} plan`,
+                desc: planRec.reason,
+                cta: `${planRec.ctaLabel} →`,
+                href: planBillingHref,
+                highlight: true,
+              },
               { num: 1, title: 'Review your gaps with a professional', desc: 'Share this report with your estate attorney, financial advisor, and CPA. Your gaps become the agenda for your next meeting.', cta: 'Find an Advisor →', href: '/find-advisor' },
               { num: 2, title: 'Complete relevant education modules', desc: 'The My Wealth Maps education library has modules covering every gap identified in your assessment.', cta: 'Go to Education →', href: '/education' },
               { num: 3, title: 'Build your plan', desc: 'Use what you\'ve learned to start building your financial, retirement, and estate plan.', cta: 'Go to My Plan →', href: '/dashboard' },
-            ].map(step => (
-              <div key={step.num} style={{
-                display: 'flex', gap: 14, padding: '14px 0',
-                borderBottom: '1px solid #e2e8f0', alignItems: 'flex-start',
-              }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: '#0f1f3d', color: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 600, flexShrink: 0,
-                  fontFamily: 'Playfair Display, Georgia, serif',
-                }}>{step.num}</div>
+            ].map((step) => (
+              <div
+                key={step.num}
+                style={{
+                  display: 'flex',
+                  gap: 14,
+                  padding: '14px 0',
+                  borderBottom: '1px solid #e2e8f0',
+                  alignItems: 'flex-start',
+                  ...(step.highlight
+                    ? {
+                        background: '#fdf6e3',
+                        margin: '0 -12px',
+                        padding: '14px 12px',
+                        borderRadius: 8,
+                        borderBottom: 'none',
+                        marginBottom: 8,
+                      }
+                    : {}),
+                }}
+              >
+                <div
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: '50%',
+                    background: step.highlight ? '#c9a84c' : '#0f1f3d',
+                    color: step.highlight ? '#0f1f3d' : 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    flexShrink: 0,
+                    fontFamily: 'Playfair Display, Georgia, serif',
+                  }}
+                >
+                  {step.num === 0 ? '★' : step.num}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{
                     fontSize: 14, fontWeight: 500, color: '#0f1f3d', marginBottom: 4,
@@ -1095,5 +1172,73 @@ export default function AssessClient() {
         </div>
       </div>
     </main>
+  )
+}
+
+function PlanRecommendationCard({
+  planRec,
+  isLoggedOut,
+  planBillingHref,
+}: {
+  planRec: PlanRecommendation
+  isLoggedOut: boolean
+  planBillingHref: string
+}) {
+  return (
+    <div
+      style={{
+        background: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: 12,
+        padding: '20px 24px',
+        marginBottom: 24,
+        boxShadow: '0 4px 20px rgba(15,31,61,0.06)',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          color: '#c9a84c',
+          textTransform: 'uppercase',
+          marginBottom: 8,
+        }}
+      >
+        Recommended plan
+      </div>
+      <h3
+        style={{
+          fontFamily: 'Playfair Display, Georgia, serif',
+          fontSize: 20,
+          color: '#0f1f3d',
+          marginBottom: 8,
+        }}
+      >
+        {planRec.planName} — address your biggest gaps
+      </h3>
+      <p style={{ fontSize: 14, color: '#718096', lineHeight: 1.65, marginBottom: 16, maxWidth: 560 }}>
+        {planRec.reason}
+      </p>
+      <a
+        href={
+          isLoggedOut
+            ? getSignupHref({ redirectTo: planBillingHref })
+            : planBillingHref
+        }
+        style={{
+          display: 'inline-block',
+          padding: '10px 20px',
+          borderRadius: 8,
+          background: '#0f1f3d',
+          color: 'white',
+          fontSize: 14,
+          fontWeight: 600,
+          textDecoration: 'none',
+        }}
+      >
+        {planRec.ctaLabel} →
+      </a>
+    </div>
   )
 }

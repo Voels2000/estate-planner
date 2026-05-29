@@ -124,7 +124,7 @@ The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** f
 
 Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 
-- [ ] **`handle_new_user` trigger in production** — Apply `supabase/migrations/20260526000001_handle_new_user_trigger.sql` **before** flipping `PUBLIC_SIGNUP_OPEN`. Without it, new `auth.users` rows may not get a `profiles` row and onboarding breaks. Verify: sign up with a fresh email on staging after migration → `profiles` row exists with `trial_started_at`. Code on `main`: `1133b4f`.
+- [ ] **`handle_new_user` trigger in production** — Apply `20260526000001_handle_new_user_trigger.sql` and **`20260527130000_fix_signup_subscription_defaults.sql`** before flipping `PUBLIC_SIGNUP_OPEN`. Verify: fresh signup → `profiles.subscription_status = 'none'`, `consumer_tier = 1` (not signup-time `trialing`).
 - [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
@@ -269,7 +269,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 - [ ] **`20260626120000_advisor_gap_statuses.sql`** — UX-2 advisor gap workflow; apply before advisor portal UX-2 deploy
 - [ ] **`20260526000000_onboarding_wizard_fields.sql`** — OB-1 wizard columns; apply before OB-1 deploy
-- [ ] **`20260526000001_handle_new_user_trigger.sql`** — **Required before open signups** — `on_auth_user_created` → `handle_new_user()` (`trial_started_at`, not legacy `trial_ends_at`)
+- [ ] **`20260527130000_fix_signup_subscription_defaults.sql`** — Signup `none` + free Tier 1; backfill orphan `trialing` rows without Stripe sub
 - [x] Through `20260601000000_advisor_directory_referral_code_trigger.sql` (Sprint 13 verify)
 - [x] Final prod spot-check before Sprint 15 go-live (2026-05-24)
 - [x] Attorney referral code trigger: `attorney_listings_referral_code_trigger` (Sprint 8; backfill via `seed-test-attorney.ts` if absent) (2026-05-24)

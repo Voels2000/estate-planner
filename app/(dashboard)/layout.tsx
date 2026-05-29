@@ -19,16 +19,12 @@ import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectio
 function DashboardMain({
   children,
   showBanner,
-  trialSecondsLeft,
-  trialMinutesLeft,
   trialExpiry,
   needsWizardOnboarding,
   needsInviteAdvisorOnboarding,
 }: {
   children: React.ReactNode
   showBanner?: boolean
-  trialSecondsLeft?: number
-  trialMinutesLeft?: number
   trialExpiry?: Date
   needsWizardOnboarding: boolean
   needsInviteAdvisorOnboarding: boolean
@@ -36,11 +32,7 @@ function DashboardMain({
   return (
     <>
       {showBanner && trialExpiry && (
-        <TrialBanner
-          secondsLeft={trialSecondsLeft ?? 0}
-          minutesLeft={trialMinutesLeft ?? 0}
-          expiryTimestamp={trialExpiry.getTime()}
-        />
+        <TrialBanner expiryTimestamp={trialExpiry.getTime()} />
       )}
       <WizardOnboardingGate needsWizard={needsWizardOnboarding} />
       <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
@@ -133,17 +125,16 @@ export default async function DashboardLayout({
   const isAdminResolved = profileFull?.role === 'admin' || profileFull?.is_admin === true
   const isAdvisorResolved = profileFull?.role === 'advisor'
   const isAttorneyResolved = profileFull?.role === 'attorney' || profileFull?.is_attorney === true
-  const isActive = profileFull?.subscription_status === 'active'
-  const isStripeTrial = profileFull?.subscription_status === 'trialing'
-  const isAdvisorManaged = profileFull?.subscription_status === 'advisor_managed'
+  const isConsumer = profileFull?.role === 'consumer'
+  const subscriptionStatus = profileFull?.subscription_status ?? 'none'
+  const isActive = subscriptionStatus === 'active'
+  const isStripeTrial = subscriptionStatus === 'trialing'
+  const isAdvisorManaged = subscriptionStatus === 'advisor_managed'
+  const needsBillingRedirect = subscriptionStatus === 'past_due' || subscriptionStatus === 'unpaid'
 
-  // Check trial status
-  const trialStarted = profileFull?.trial_started_at ? new Date(profileFull.trial_started_at) : null
-  const trialExpiry = trialStarted ? new Date(trialStarted.getTime() + 3 * 24 * 60 * 60 * 1000) : null
-  const now = new Date()
-  const trialActive = trialExpiry ? now < trialExpiry : false
-  const trialMinutesLeft = trialExpiry ? Math.max(0, Math.ceil((trialExpiry.getTime() - now.getTime()) / 60000)) : 0
-  const trialSecondsLeft = trialExpiry ? Math.max(0, Math.ceil((trialExpiry.getTime() - now.getTime()) / 1000)) : 0
+  const stripeTrialEndsAt = profileFull?.subscription_period_end
+    ? new Date(profileFull.subscription_period_end)
+    : null
 
   // Check if user is an advisor client
   let isAdvisorClient = false
@@ -165,8 +156,10 @@ export default async function DashboardLayout({
     isAdvisorManaged ||
     isActive ||
     isStripeTrial ||
-    trialActive ||
-    isAttorneyResolved
+    subscriptionStatus === 'canceling' ||
+    isAttorneyResolved ||
+    (isConsumer && !needsBillingRedirect)
+
   if (!hasAccess) redirect('/billing')
 
   const tier =
@@ -174,17 +167,16 @@ export default async function DashboardLayout({
       ? 3
       : (profileFull?.consumer_tier ?? 1)
 
-  const showBanner =
+  const showStripeTrialBanner =
+    isStripeTrial &&
     !isAdminResolved &&
     !isAdvisorResolved &&
     !isAdvisorClient &&
     !isAdvisorManaged &&
-    !isActive &&
-    !isStripeTrial &&
-    trialActive
+    stripeTrialEndsAt != null &&
+    stripeTrialEndsAt.getTime() > Date.now()
 
-  const isTrial =
-    profileFull?.subscription_status === 'trialing' || trialActive
+  const isTrial = isStripeTrial
 
   return (
     <DashboardShell
@@ -204,10 +196,8 @@ export default async function DashboardLayout({
       }
     >
       <DashboardMain
-        showBanner={showBanner}
-        trialSecondsLeft={trialSecondsLeft}
-        trialMinutesLeft={trialMinutesLeft}
-        trialExpiry={trialExpiry ?? undefined}
+        showBanner={showStripeTrialBanner}
+        trialExpiry={stripeTrialEndsAt ?? undefined}
         needsWizardOnboarding={needsWizardOnboarding}
         needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
       >

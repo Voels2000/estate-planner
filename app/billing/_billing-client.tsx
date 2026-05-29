@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -18,6 +18,7 @@ type Props = {
   subscriptionPeriodEnd: string | null
   isAdvisorClient: boolean
   annualBillingAvailable: boolean
+  recommendedPlanId?: 'financial' | 'retirement' | 'estate' | null
 }
 
 export function BillingClient({
@@ -26,6 +27,7 @@ export function BillingClient({
   subscriptionPeriodEnd,
   isAdvisorClient,
   annualBillingAvailable,
+  recommendedPlanId = null,
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
@@ -132,6 +134,15 @@ export function BillingClient({
     subscriptionStatus === 'canceling'
   const activePlan = plans.find((p) => p.priceId === currentPlan)
   const activeRenewalDate = formatRenewalDate(subscriptionPeriodEnd)
+  const recommendedPlan = recommendedPlanId
+    ? plans.find((p) => p.id === recommendedPlanId) ?? null
+    : null
+
+  useEffect(() => {
+    if (!recommendedPlanId) return
+    const el = document.getElementById(`plan-card-${recommendedPlanId}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [recommendedPlanId])
 
   if (isAdvisorClient) {
     return (
@@ -170,6 +181,14 @@ export function BillingClient({
         annualAvailable={annualBillingAvailable}
       />
 
+      {recommendedPlan && !isActive && (
+        <div className="mb-6 rounded-lg border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold)]/10 px-4 py-3 text-center text-sm text-[color:var(--mwm-navy)]">
+          Based on your assessment, we recommend the{' '}
+          <strong>{recommendedPlan.name}</strong> plan
+          {recommendedPlan.trialDays > 0 ? ' — includes a 14-day free trial' : ''}.
+        </div>
+      )}
+
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
           {error}
@@ -200,15 +219,17 @@ export function BillingClient({
           const isEstate = plan.tier === 3
           const highlighted = isEstate
 
+          const isRecommended = recommendedPlanId === plan.id
+
           return (
+            <div key={`${plan.tier}-${period}`} id={`plan-card-${plan.id}`}>
             <Card
-              key={`${plan.tier}-${period}`}
               hover={!highlighted}
               className={`relative rounded-2xl p-8 shadow-md ring-1 ${
                 highlighted
                   ? 'border-[color:var(--mwm-navy)] bg-[color:var(--mwm-navy)] ring-[color:var(--mwm-navy)]'
                   : 'ring-neutral-200'
-              }`}
+              } ${isRecommended ? 'ring-2 ring-[color:var(--mwm-gold)] ring-offset-2' : ''}`}
             >
               {plan.badge && (
                 <span
@@ -302,6 +323,7 @@ export function BillingClient({
                     : plan.cta}
               </Button>
             </Card>
+            </div>
           )
         })}
       </div>
