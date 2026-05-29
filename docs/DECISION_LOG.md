@@ -1,6 +1,12 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint H — loading.tsx on hot routes)
+# Last updated: 2026-05-27 (Sprint I — error boundaries on hot routes)
+
+## Post-launch perf — error boundaries on hot routes (2026-05-27)
+
+**Decision:** Add `error.tsx` on the same five hot prefetch routes; extract shared `RouteErrorFallback` for consistent retry UX (matches dashboard / trust-strategy pattern).
+
+---
 
 ## Post-launch perf — loading skeletons on hot routes (2026-05-27)
 

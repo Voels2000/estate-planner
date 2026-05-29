@@ -10,6 +10,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint I — error boundaries (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **RouteErrorFallback** | Shared `app/(dashboard)/_components/RouteErrorFallback.tsx` |
+| **error.tsx** | monte-carlo, allocation, scenarios, social-security, projections |
+
+---
+
 ## Post-launch perf Sprint H — loading skeletons (2026-05-27, code only)
 
 | Route | File |

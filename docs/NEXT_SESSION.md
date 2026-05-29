@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Sprint H loading skeletons; Sprint G sidebar billing; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Sprint I error boundaries; Sprint H loading skeletons; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** Monte Carlo + Allocation (B); Scenarios lazy B/C (C); advisor tab code-split + domicile dedupe (D); insurance/businesses router.refresh (E); profile gate consistency (F); sidebar tier-locked billing links (G); **loading.tsx on hot routes (H).** **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next:** error boundaries on hot routes.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** … sidebar billing links (G); loading.tsx (H); **error boundaries (I)** on monte-carlo, allocation, scenarios, social-security, projections. **Apply migration:** `20260527180000_estate_composition_cache.sql`.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,14 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Post-launch perf Sprint I — error boundaries ✅ (2026-05-27)
+
+| Route | File |
+|-------|------|
+| Hot prefetch routes | `error.tsx` + shared `RouteErrorFallback` |
 
 ---
 
