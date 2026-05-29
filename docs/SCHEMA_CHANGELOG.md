@@ -10,6 +10,26 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint F — profile gate consistency (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **requireHouseholdRecord** | `lib/estate/requireMinimumProfile.ts` — shared missing-household redirect |
+| **Pages** | health-check, social-security, digital-assets, settings/attorney-access |
+| **Trust-strategy** | Empty-state paragraph → `requireMinimumViableProfile` redirect |
+| **Types** | `requireMinimumViableProfile` assertion; `ProfileGateHousehold.id` |
+
+---
+
+## Post-launch perf Sprint E — insurance/businesses form refresh (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **Insurance** | `_insurance-form-client.tsx` — local state + `router.refresh()` |
+| **Businesses** | `_business-form-client.tsx` — same pattern |
+
+---
+
 ## Post-launch perf Sprint D — advisor tab code-split + domicile dedupe (2026-05-27, code only)
 
 | Area | Change |

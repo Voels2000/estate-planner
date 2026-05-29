@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireHouseholdRecord } from '@/lib/estate/requireMinimumProfile'
 import { AttorneyAccessClient } from './_attorney-access-client'
 
 export default async function AttorneyAccessPage() {
@@ -28,7 +29,7 @@ export default async function AttorneyAccessPage() {
     .eq('owner_id', user.id)
     .single()
 
-  if (!household) redirect('/profile')
+  requireHouseholdRecord(household, '/settings/attorney-access')
 
   // ── Fetch all active attorney connections ──────────────────
   const { data: connections } = await supabase

@@ -5,7 +5,8 @@
 // Route: /insurance
 // ─────────────────────────────────────────
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { insurancePolicyRowForSave } from '@/lib/insurance-policy-save-payload'
 import type { InsuranceTypeOption } from '@/lib/ref-data-fetchers'
 
@@ -78,12 +79,14 @@ function displayPolicyOwner(
 }
 
 export default function InsuranceFormClient({
-  policies,
+  policies: initialPolicies,
   insuranceTypes,
   person1Name,
   person2Name,
   hasSpouse,
 }: Props) {
+  const router = useRouter()
+  const [policies, setPolicies] = useState(initialPolicies)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<InsurancePolicy | null>(null)
   const [form, setForm] = useState<Partial<InsurancePolicy>>(EMPTY)
@@ -104,6 +107,10 @@ export default function InsuranceFormClient({
   const showIlit = selectedTypeData?.has_ilit_option ?? false
   const showTermYears = form.insurance_type === 'term_life'
   const showPerson2Option = Boolean(hasSpouse && person2Name?.trim())
+
+  useEffect(() => {
+    setPolicies(initialPolicies)
+  }, [initialPolicies])
 
   const openAdd = () => {
     setEditing(null)
@@ -141,7 +148,16 @@ export default function InsuranceFormClient({
       const data = await res.json()
       if (data.error) { setSaveError(data.error); return }
       closeModal()
-      window.location.reload()
+      setPolicies((prev) => {
+        const idx = prev.findIndex((p) => p.id === data.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = data
+          return next
+        }
+        return [data, ...prev]
+      })
+      router.refresh()
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Save failed')
     } finally {
@@ -154,7 +170,8 @@ export default function InsuranceFormClient({
     setDeletingId(id)
     await fetch(`/api/insurance/${id}`, { method: 'DELETE' })
     setDeletingId(null)
-    window.location.reload()
+    setPolicies((prev) => prev.filter((p) => p.id !== id))
+    router.refresh()
   }
 
   return (

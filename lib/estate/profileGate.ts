@@ -1,6 +1,7 @@
 export type ProfileGateMissingField = 'state_primary' | 'filing_status' | 'date_of_birth_1'
 
 export type ProfileGateHousehold = {
+  id?: string
   state_primary?: string | null
   filing_status?: string | null
   /** Primary person birth year (profile “Birth Year” field). */

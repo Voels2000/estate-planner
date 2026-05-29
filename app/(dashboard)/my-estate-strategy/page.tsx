@@ -39,10 +39,12 @@ export default async function MyEstateStrategyPage() {
     .eq('owner_id', user.id)
     .single()
 
-  if (!household) redirect('/profile')
-
   if (!hasFeatureAccess('my-estate-strategy', access.tier, access.isAdvisor, access.isTrial)) {
-    const compositionForBanner = await getCachedComposition(supabase, household.id, 'consumer', 0)
+    let grossEstate: number | null = null
+    if (household?.id) {
+      const compositionForBanner = await getCachedComposition(supabase, household.id, 'consumer', 0)
+      grossEstate = compositionForBanner.gross_estate ?? null
+    }
 
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -53,8 +55,8 @@ export default async function MyEstateStrategyPage() {
           valueProposition="See how your estate grows over time, federal and state tax exposure at each horizon, and how strategies change the picture."
           ctaLabel="See your estate horizons →"
           householdContext={{
-            grossEstate: compositionForBanner.gross_estate ?? null,
-            statePrimary: household.state_primary ?? null,
+            grossEstate,
+            statePrimary: household?.state_primary ?? null,
             firstName: null,
           }}
         />

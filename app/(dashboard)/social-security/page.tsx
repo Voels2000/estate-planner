@@ -11,6 +11,7 @@ import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { SSClient } from './_ss-client'
 import { loadSocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
+import { requireHouseholdRecord } from '@/lib/estate/requireMinimumProfile'
 
 export default async function SocialSecurityPage() {
   const access = await getUserAccess()
@@ -45,7 +46,7 @@ export default async function SocialSecurityPage() {
     .select('id')
     .eq('owner_id', user.id)
     .single()
-  if (!household) redirect('/profile')
+  requireHouseholdRecord(household, '/social-security')
 
   const ssData = await loadSocialSecurityData(supabase, user.id)
 

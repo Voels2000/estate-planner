@@ -12,6 +12,7 @@ import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import DigitalAssetsClient from './_digital-assets-client'
+import { requireHouseholdRecord } from '@/lib/estate/requireMinimumProfile'
 
 export default async function DigitalAssetsPage() {
   const access = await getUserAccess()
@@ -50,7 +51,7 @@ export default async function DigitalAssetsPage() {
     .eq('owner_id', user.id)
     .single()
 
-  if (!household) redirect('/profile?required=true')
+  requireHouseholdRecord(household, '/digital-assets')
 
   const { data: assets } = await supabase
     .from('digital_assets')

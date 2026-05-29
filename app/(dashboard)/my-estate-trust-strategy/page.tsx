@@ -89,14 +89,6 @@ export default async function MyEstateTrustStrategyPage({
     .eq('owner_id', user.id)
     .maybeSingle()
 
-  if (!householdRow?.id) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <p className="text-sm text-neutral-500">No household found. Please complete your profile first.</p>
-      </div>
-    )
-  }
-
   requireMinimumViableProfile(householdRow, '/my-estate-trust-strategy')
 
   const { data: advisorRecommendations } = await supabase

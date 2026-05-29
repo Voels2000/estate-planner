@@ -5,7 +5,8 @@
 // Route: /businesses
 // ─────────────────────────────────────────
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { RefSelect, CurrencyInput, PctInput, ToggleField } from '@/components/ui/RefSelect'
 import type { RefOption } from '@/lib/ref-data-fetchers'
 
@@ -45,12 +46,14 @@ function fmt(n: number) {
 }
 
 export default function BusinessFormClient({
-  businesses,
+  businesses: initialBusinesses,
   entityTypes,
   valuationMethods,
   successionPlans,
   householdId,
 }: BusinessFormClientProps) {
+  const router = useRouter()
+  const [businesses, setBusinesses] = useState(initialBusinesses)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Business | null>(null)
   const [saving, setSaving] = useState(false)
@@ -60,6 +63,10 @@ export default function BusinessFormClient({
     [entityTypes],
   )
   void householdId
+
+  useEffect(() => {
+    setBusinesses(initialBusinesses)
+  }, [initialBusinesses])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,9 +109,19 @@ export default function BusinessFormClient({
     })
 
     if (res.ok) {
+      const data = await res.json()
       setShowForm(false)
       setEditing(null)
-      window.location.reload()
+      setBusinesses((prev) => {
+        const idx = prev.findIndex((b) => b.id === data.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = data
+          return next
+        }
+        return [data, ...prev]
+      })
+      router.refresh()
     }
     setSaving(false)
   }
@@ -112,7 +129,8 @@ export default function BusinessFormClient({
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this business?')) return
     await fetch(`/api/businesses/${id}`, { method: 'DELETE' })
-    window.location.reload()
+    setBusinesses((prev) => prev.filter((b) => b.id !== id))
+    router.refresh()
   }
 
   return (

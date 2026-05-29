@@ -5,6 +5,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireHouseholdRecord } from '@/lib/estate/requireMinimumProfile'
 import { HealthCheckClient } from './_health-check-client'
 
 function boolToAnswer(value: boolean | null | undefined): 'yes' | 'no' | null {
@@ -26,7 +27,7 @@ export default async function HealthCheckPage() {
     .eq('owner_id', user.id)
     .single()
 
-  if (!household) redirect('/profile')
+  requireHouseholdRecord(household, '/health-check')
 
   const { data: existing } = await supabase
     .from('estate_health_check')

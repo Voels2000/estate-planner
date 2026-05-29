@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Sprint D advisor tab code-split + domicile dedupe; Sprint C Scenarios lazy B/C; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Sprint F profile gates + Sprint E form refresh; Sprint D advisor code-split; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** StrategyTab hydration; SS/setup/charitable prefetch; composition cache; advisor tab loader alignment; trust-strategy composition dedupe; Meeting Prep fixes; Monte Carlo + Allocation server prefetch (Sprint B); Scenarios lazy B/C (Sprint C); **advisor tab `dynamic()` imports + domicile mount dedupe (Sprint D).** **Apply migration:** `20260527180000_estate_composition_cache.sql` via `supabase db push`. **Next perf:** profile gate consistency; sidebar tier-locked billing links; insurance/businesses form reload removal.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** … Monte Carlo + Allocation (B); Scenarios lazy B/C (C); advisor tab code-split + domicile dedupe (D); **insurance/businesses router.refresh (E); profile gate consistency (F).** **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next perf:** sidebar tier-locked billing links; more `loading.tsx` on hot routes.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,26 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Post-launch perf Sprint F — profile gate consistency ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **requireHouseholdRecord** | Shared redirect to `/profile?required=true&missing=…&from=…` when no household row |
+| **Pages aligned** | health-check, social-security, digital-assets, attorney-access use shared helper |
+| **Trust-strategy** | Replaced inline empty state with `requireMinimumViableProfile` redirect |
+| **Type narrowing** | `requireMinimumViableProfile` assertion; `ProfileGateHousehold.id` optional field |
+
+---
+
+## Post-launch perf Sprint E — insurance/businesses form refresh ✅ (2026-05-27)
+
+| Fix | Outcome |
+|-----|---------|
+| **Insurance form** | Local state patch + `router.refresh()` after save/delete (no full reload) |
+| **Businesses form** | Same pattern as `/assets` write path |
 
 ---
 

@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint D — advisor tab code-split + domicile dedupe)
+# Last updated: 2026-05-27 (Sprint F profile gates + Sprint E form refresh)
+
+## Post-launch perf — profile gate consistency (2026-05-27)
+
+**Decision:** Add `requireHouseholdRecord(fromPath)` alongside `requireMinimumViableProfile`. All consumer pages that need a household row redirect to `/profile?required=true&missing=…&from=…` instead of bare `/profile` or inline empty states.
+
+**Reasoning:** Inconsistent gates broke the profile required banner and post-save return flow (`from` param).
+
+**Docs:** [lib/estate/requireMinimumProfile.ts](../lib/estate/requireMinimumProfile.ts), [CONSUMER_FLOWS.md § Profile](./CONSUMER_FLOWS.md).
+
+---
+
+## Post-launch perf — insurance/businesses form refresh (2026-05-27)
+
+**Decision:** Replace `window.location.reload()` on `/insurance` and `/businesses` with optimistic local state updates + `router.refresh()` after API success (matches `/assets` pattern).
+
+**Reasoning:** Full page reloads discarded client state and added unnecessary latency after every save/delete.
+
+---
 
 ## Post-launch perf — advisor tab code-split + domicile dedupe (2026-05-27)
 
