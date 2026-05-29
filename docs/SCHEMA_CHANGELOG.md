@@ -920,6 +920,12 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **Application:** `lib/dashboard/personaAlerts.ts` — business $5M/$10M + multi-state RE (≥2 distinct `situs_state`).
 - **Application:** `lib/planning/planningEmptyState.ts` — `TIER2` vs `TIER3` empty-state CTAs.
 
+## Advisor P0 — nullable advisor_id + billing handoff (May 2026)
+
+- **Migration:** `20260527140000_advisor_clients_nullable_advisor_id.sql` — `advisor_clients.advisor_id` nullable for consumer-initiated pre-registration invites (`consumer_requested` + `invite_token`).
+- **Application:** `lib/advisor/applyAdvisorConnectionBilling.ts` — Tier 3 + `advisor_managed` + Stripe pause on connect.
+- **Routes:** `POST /api/consumer/invite-advisor`, `POST /api/advisor/claim-consumer-invite`, `/advisor/connect/[token]`, `/invite/expired`.
+
 ## RMD start age — SECURE Act cohort fix (May 2026)
 
 - **No schema change.**

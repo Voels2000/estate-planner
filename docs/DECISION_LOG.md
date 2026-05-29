@@ -2,6 +2,18 @@
 # My Wealth Maps — Key Decisions and Reasoning
 # Last updated: 2026-05-28 (Advisor dashboard tier fix; Sprint 4 pricing; Golden Path)
 
+## Advisor billing handoff — automated on connect (2026-05-27)
+
+**Decision:** Centralize consumer billing transfer when an advisor connection activates in `lib/advisor/applyAdvisorConnectionBilling.ts`. Called from invite accept, link-pending fallback, and advisor accept-request.
+
+**Behavior:** Sets `consumer_tier = 3`, `subscription_status = 'advisor_managed'`, `subscription_plan = 'advisor_managed'`, records `previous_consumer_tier` on `advisor_clients`, and sets Stripe `cancel_at_period_end` when an active subscription exists.
+
+**Invite completion:** Signup with `?invite=` uses `emailRedirectTo` → `/auth/callback?next=/invite/{token}`. Immediate session redirects to invite page. Dashboard mount calls `POST /api/advisor/link-pending` as email-confirmation fallback.
+
+**Consumer-initiated connect:** `POST /api/consumer/invite-advisor` replaces mailto on onboarding and `/my-advisor`. Registered advisors get `consumer_requested` + in-app notification; unregistered advisors get Resend email with `/signup?role=advisor&connect={token}` → `/advisor/connect/[token]`. Migration `20260527140000` allows nullable `advisor_id` for pre-registration invites.
+
+---
+
 ## Advisor Billing — Deferred to post-launch (2026-05-28)
 
 **Decision:** No Stripe advisor products at launch. First advisors onboarded and billed manually. Advisor-connected consumers get Tier 3 via existing `getUserAccess()` `advisor_clients` check.

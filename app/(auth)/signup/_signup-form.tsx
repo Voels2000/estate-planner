@@ -18,6 +18,8 @@ export function SignupForm() {
   const inviteEmail = searchParams.get('email') || ''
   const advisorInviteToken = searchParams.get('invite') || ''
   const hasAdvisorInvite = advisorInviteToken !== ''
+  const consumerConnectToken = searchParams.get('connect')?.trim() ?? ''
+  const hasConsumerConnect = consumerConnectToken !== ''
   const firmInviteToken = searchParams.get('invite_token')?.trim() ?? ''
   const firmIdParam = searchParams.get('firm_id')?.trim() ?? ''
   const hasFirmInvite = firmInviteToken !== '' && firmIdParam !== ''
@@ -26,7 +28,11 @@ export function SignupForm() {
   const [email, setEmail] = useState(inviteEmail)
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>(
-    hasFirmInvite && !hasAdvisorInvite ? 'advisor' : 'consumer',
+    hasFirmInvite && !hasAdvisorInvite
+      ? 'advisor'
+      : hasConsumerConnect
+        ? 'advisor'
+        : 'consumer',
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,11 +62,21 @@ export function SignupForm() {
 
       const callbackUrl =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/callback${
-              hasFirmInvite
-                ? `?invite_token=${encodeURIComponent(firmInviteToken)}&firm_id=${encodeURIComponent(firmIdParam)}`
-                : ''
-            }`
+          ? (() => {
+              const params = new URLSearchParams()
+              if (hasFirmInvite) {
+                params.set('invite_token', firmInviteToken)
+                params.set('firm_id', firmIdParam)
+              } else if (hasAdvisorInvite) {
+                params.set('next', `/invite/${advisorInviteToken}`)
+              } else if (hasConsumerConnect) {
+                params.set('next', `/advisor/connect/${consumerConnectToken}`)
+              } else if (redirectTo) {
+                params.set('next', redirectTo)
+              }
+              const qs = params.toString()
+              return `${window.location.origin}/auth/callback${qs ? `?${qs}` : ''}`
+            })()
           : undefined
 
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -214,12 +230,43 @@ export function SignupForm() {
           })
       }
 
+      if (sessionFromSignUp && hasConsumerConnect && data.user) {
+        void fetch('/api/advisor/claim-consumer-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: consumerConnectToken }),
+        }).catch((err) => {
+          console.error('claim consumer invite after signup:', err)
+        })
+      }
+
       // Clear all referral sessionStorage keys
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('mwm_referral_code')
         sessionStorage.removeItem('mwm_referral_slug')
         sessionStorage.removeItem('mwm_attorney_referral_code')
         sessionStorage.removeItem('mwm_attorney_referral_slug')
+      }
+
+      if (sessionFromSignUp && hasAdvisorInvite) {
+        router.push(`/invite/${advisorInviteToken}`)
+        router.refresh()
+        setIsSubmitting(false)
+        return
+      }
+
+      if (sessionFromSignUp && hasConsumerConnect) {
+        router.push(`/advisor/connect/${consumerConnectToken}`)
+        router.refresh()
+        setIsSubmitting(false)
+        return
+      }
+
+      if (sessionFromSignUp && redirectTo) {
+        router.push(redirectTo)
+        router.refresh()
+        setIsSubmitting(false)
+        return
       }
 
       router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}`)
@@ -245,6 +292,13 @@ export function SignupForm() {
           <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
             👋 Your financial advisor has invited you to MyWealthMaps. Create your account to get
             started — no subscription required.
+          </div>
+        )}
+
+        {hasConsumerConnect && (
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
+            A client invited you to join My Wealth Maps as their advisor. Create your account to
+            connect.
           </div>
         )}
 

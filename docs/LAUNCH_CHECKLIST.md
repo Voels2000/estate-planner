@@ -282,13 +282,12 @@ npx tsx scripts/seed-test-consumer-estate.ts
 - [x] `advisor_clients` connected status → Tier 3 access via `getUserAccess()`
 - [x] Dashboard tier split fixed — `_dashboard-body` uses `access.tier` not `profile.consumer_tier`
 - [x] `subscription_status = 'advisor_managed'` treated as Tier 3
+- [x] **Advisor P0 bundle (2026-05-27):** unified billing handoff via `lib/advisor/applyAdvisorConnectionBilling.ts` on invite accept, link-pending, and accept-request; signup/email callback preserves `next=/invite/{token}`; dashboard calls `POST /api/advisor/link-pending` on load; consumer email invite via `POST /api/consumer/invite-advisor` (replaces mailto on `/onboarding/invite-advisor` and `/my-advisor`); `/invite/expired` page; advisor pre-registration claim at `/advisor/connect/[token]`
 
 ### Manual process for first advisors
-- [ ] Advisor account setup: set `profiles.role = 'advisor'` in Supabase
+- [ ] Advisor account setup: set `profiles.role = 'advisor'` in Supabase (or advisor self-signup via consumer invite deep link)
 - [ ] Advisor billing: invoice directly until post-launch Stripe automation (see ROADMAP Advisor adoption package)
-- [ ] When advisor takes on consumer client with active subscription:
-  1. Pause consumer Stripe subscription in Stripe Dashboard
-  2. Set `profiles.subscription_status = 'advisor_managed'` in Supabase
+- [ ] When advisor takes on consumer client with active subscription — **automated on connect** when Stripe API key present (sets `advisor_managed`, Tier 3, `cancel_at_period_end`); manual Stripe Dashboard pause still available as fallback
 - [ ] When advisor connection ends:
   1. Prompt consumer to resubscribe (manual email at launch)
   2. Set `profiles.subscription_status = NULL` in Supabase

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
@@ -6,6 +6,7 @@ import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import { pickConnectionLifeEvent } from '@/lib/life-events/connectionContext'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,6 +110,40 @@ export async function POST(request: Request) {
     console.error('Update error:', updateError)
     return NextResponse.json({ error: 'Failed to accept request' }, { status: 500 })
   }
+
+  const clientId = row.client_id
+  const advisorClientRowId = row.id
+
+  after(() => {
+    const adminAfter = createAdminClient()
+    ;(async () => {
+      try {
+        const billing = await applyAdvisorConnectionBilling(adminAfter, {
+          clientId,
+          advisorClientRowId,
+        })
+
+        if (billing.ok) {
+          await adminAfter.rpc('create_notification', {
+            p_user_id: clientId,
+            p_type: 'estate_milestone',
+            p_title: '🎉 Estate Planning unlocked!',
+            p_body:
+              'Your advisor accepted your connection request. Estate Planning features are now available and your subscription will be covered going forward.',
+            p_delivery: 'both',
+            p_metadata: {
+              advisor_id: user.id,
+              unlocked_tier: 3,
+              cancel_at: billing.cancelAt,
+            },
+            p_cooldown: '1 hour',
+          })
+        }
+      } catch (err) {
+        console.error('accept-request billing after():', err)
+      }
+    })()
+  })
 
   void admin.from('funnel_events').insert({
     event_name: 'advisor_connected',

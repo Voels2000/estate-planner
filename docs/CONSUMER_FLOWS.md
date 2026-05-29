@@ -144,8 +144,8 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | **User goal** | Invite an existing advisor or skip; completes post-profile onboarding gate |
 | **Tier / gate** | Consumers only; requires MVP profile; blocked when `onboarding_invite_advisor_completed_at` is set |
 | **Server** | `app/(dashboard)/onboarding/invite-advisor/page.tsx` |
-| **Client** | `_invite-advisor-client.tsx` — mailto invite, link to `/find-advisor`, skip |
-| **Write APIs** | `POST /api/consumer/onboarding-invite-advisor` — skip and continue both set `onboarding_invite_advisor_completed_at` |
+| **Client** | `_invite-advisor-client.tsx` — email form via `InviteAdvisorByEmailForm`, link to `/find-advisor`, skip |
+| **Write APIs** | `POST /api/consumer/invite-advisor` — send invite (sets `consumer_requested` or pre-registration token); `POST /api/consumer/onboarding-invite-advisor` — skip only |
 | **Layout gate** | `(dashboard)/layout.tsx` + `InviteAdvisorOnboardingGate` redirect until column set |
 | **Migration** | `profiles.onboarding_invite_advisor_completed_at` in `20260530000000_sprint9_10_gates.sql` |
 

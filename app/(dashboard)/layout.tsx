@@ -15,6 +15,7 @@ import { ensureWizardBackfill } from '@/lib/onboarding/ensureWizardBackfill'
 import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
 import { shouldRequireWizardOnboarding } from '@/lib/onboarding/shouldRequireWizardOnboarding'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { LinkPendingInviteOnMount } from '@/components/advisor/LinkPendingInviteOnMount'
 
 function DashboardMain({
   children,
@@ -22,15 +23,18 @@ function DashboardMain({
   trialExpiry,
   needsWizardOnboarding,
   needsInviteAdvisorOnboarding,
+  linkPendingInvite,
 }: {
   children: React.ReactNode
   showBanner?: boolean
   trialExpiry?: Date
   needsWizardOnboarding: boolean
   needsInviteAdvisorOnboarding: boolean
+  linkPendingInvite?: boolean
 }) {
   return (
     <>
+      {linkPendingInvite && <LinkPendingInviteOnMount />}
       {showBanner && trialExpiry && (
         <TrialBanner expiryTimestamp={trialExpiry.getTime()} />
       )}
@@ -115,6 +119,7 @@ export default async function DashboardLayout({
         <DashboardMain
           needsWizardOnboarding={needsWizardOnboarding}
           needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+          linkPendingInvite={profileFull?.role === 'consumer'}
         >
           {children}
         </DashboardMain>
@@ -200,6 +205,7 @@ export default async function DashboardLayout({
         trialExpiry={stripeTrialEndsAt ?? undefined}
         needsWizardOnboarding={needsWizardOnboarding}
         needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+        linkPendingInvite={isConsumer}
       >
         {children}
       </DashboardMain>

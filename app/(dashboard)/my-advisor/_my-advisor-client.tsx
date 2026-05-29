@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { InviteAdvisorByEmailForm } from '@/components/consumer/InviteAdvisorByEmailForm'
 
 type Connection = {
   id: string
@@ -41,14 +42,20 @@ type PendingRequest = {
   state: string | null
 } | null
 
+type OutboundInvite = {
+  id: string
+  invited_email: string | null
+  created_at: string
+  advisor_name: string | null
+} | null
+
 type Props = {
   connection: Connection
   wizardComplete: boolean
   listing: Listing
   accessLog: AccessEntry[]
   pendingRequest: PendingRequest
-  inviteEmailSubject: string
-  inviteEmailBody: string
+  outboundInvite: OutboundInvite
   consumerName: string
 }
 
@@ -58,8 +65,7 @@ export default function MyAdvisorClient({
   listing,
   accessLog,
   pendingRequest,
-  inviteEmailSubject,
-  inviteEmailBody,
+  outboundInvite,
   consumerName,
 }: Props) {
   const router = useRouter()
@@ -185,6 +191,31 @@ export default function MyAdvisorClient({
               </button>
             </div>
           </div>
+        ) : outboundInvite ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <div className="text-sm font-semibold text-amber-800 mb-1">Connection Request Pending</div>
+            <p className="text-sm text-amber-700">
+              {outboundInvite.advisor_name ? (
+                <>
+                  Your request to connect with <strong>{outboundInvite.advisor_name}</strong> is
+                  awaiting their response.
+                </>
+              ) : (
+                <>
+                  We emailed <strong>{outboundInvite.invited_email}</strong> an invitation to join
+                  and connect on My Wealth Maps.
+                </>
+              )}
+            </p>
+            <p className="mt-2 text-xs text-amber-600">
+              Sent{' '}
+              {new Date(outboundInvite.created_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="rounded-2xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-6">
@@ -195,18 +226,12 @@ export default function MyAdvisorClient({
                     Invite your advisor
                   </h2>
                   <p className="mt-1 text-sm text-[color:var(--mwm-navy)] leading-relaxed">
-                    Already working with a financial advisor? Send them a pre-written email
-                    inviting them to join My Wealth Maps and connect to your plan.
+                    Already working with a financial advisor? Send them a secure invitation to join
+                    My Wealth Maps and connect to your plan.
                   </p>
-                  <a
-                    href={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
-                    className="mt-4 inline-flex items-center rounded-lg bg-[var(--mwm-navy)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--mwm-navy-light)] transition-colors"
-                  >
-                    Invite my advisor via email →
-                  </a>
-                  <p className="mt-3 text-xs text-[color:var(--mwm-navy)]">
-                    Opens your email app with a message signed as {consumerName}.
-                  </p>
+                  <div className="mt-4">
+                    <InviteAdvisorByEmailForm consumerName={consumerName} />
+                  </div>
                 </div>
               </div>
             </div>

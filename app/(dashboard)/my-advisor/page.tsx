@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAccessContext } from '@/lib/access/getAccessContext'
-import { getAppUrl } from '@/lib/app-url'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import MyAdvisorClient from './_my-advisor-client'
@@ -15,7 +14,6 @@ export default async function MyAdvisorPage() {
 
   const supabase = await createClient()
 
-  // Find active advisor connection
   const { data: connection } = await supabase
     .from('advisor_clients')
     .select(`
@@ -33,7 +31,6 @@ export default async function MyAdvisorPage() {
     .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
 
-  // Try to get advisor listing details
   const advisorId = connection?.advisor_id ?? null
   const { data: listing } = advisorId
     ? await supabase
@@ -43,7 +40,6 @@ export default async function MyAdvisorPage() {
         .maybeSingle()
     : { data: null }
 
-  // Fetch access log — last 5 times advisor viewed their data
   const { data: accessLog } = await supabase
     .from('advisor_access_log')
     .select('accessed_at, page')
@@ -51,7 +47,6 @@ export default async function MyAdvisorPage() {
     .order('accessed_at', { ascending: false })
     .limit(5)
 
-  // Fetch pending connection request (if no accepted connection)
   const { data: pendingRequest } = !connection
     ? await supabase
         .from('connection_requests')
@@ -64,12 +59,31 @@ export default async function MyAdvisorPage() {
         .maybeSingle()
     : { data: null }
 
-  // Fetch listing details for pending request if present
   const { data: pendingListing } = pendingRequest
     ? await supabase
         .from('advisor_directory')
         .select('firm_name, city, state')
         .eq('id', pendingRequest.listing_id)
+        .maybeSingle()
+    : { data: null }
+
+  const { data: outboundInvite } = !connection
+    ? await supabase
+        .from('advisor_clients')
+        .select(`
+          id,
+          invited_email,
+          invited_at,
+          advisor_id,
+          profiles!advisor_clients_advisor_id_fkey (
+            full_name,
+            email
+          )
+        `)
+        .eq('client_id', user.id)
+        .eq('status', 'consumer_requested')
+        .order('invited_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
     : { data: null }
 
@@ -89,17 +103,13 @@ export default async function MyAdvisorPage() {
     .single()
 
   const wizardComplete = isWizardComplete(profile)
-
   const consumerName = profile?.full_name ?? 'Your client'
-  const appUrl = getAppUrl()
 
-  const inviteEmailBody = encodeURIComponent(
-    `Hi,\n\nI've been using My Wealth Maps to organize my estate and financial plan, and I'd like to invite you to connect so you can view my plan and collaborate with me.\n\nClick here to join: ${appUrl}/signup?role=advisor\n\nOnce you're set up, search for me by email to connect.\n\nThanks,\n${consumerName}`,
-  )
-
-  const inviteEmailSubject = encodeURIComponent(
-    'Invitation to connect on My Wealth Maps',
-  )
+  const outboundAdvisorProfile = outboundInvite?.profiles
+    ? Array.isArray(outboundInvite.profiles)
+      ? outboundInvite.profiles[0] ?? null
+      : outboundInvite.profiles
+    : null
 
   return (
     <MyAdvisorClient
@@ -107,15 +117,30 @@ export default async function MyAdvisorPage() {
       wizardComplete={wizardComplete}
       listing={listing ?? null}
       accessLog={accessLog ?? []}
-      pendingRequest={pendingRequest ? {
-        id: pendingRequest.id,
-        created_at: pendingRequest.created_at,
-        firm_name: pendingListing?.firm_name ?? null,
-        city: pendingListing?.city ?? null,
-        state: pendingListing?.state ?? null,
-      } : null}
-      inviteEmailSubject={inviteEmailSubject}
-      inviteEmailBody={inviteEmailBody}
+      pendingRequest={
+        pendingRequest
+          ? {
+              id: pendingRequest.id,
+              created_at: pendingRequest.created_at,
+              firm_name: pendingListing?.firm_name ?? null,
+              city: pendingListing?.city ?? null,
+              state: pendingListing?.state ?? null,
+            }
+          : null
+      }
+      outboundInvite={
+        outboundInvite
+          ? {
+              id: outboundInvite.id,
+              invited_email: outboundInvite.invited_email,
+              created_at: outboundInvite.invited_at ?? new Date().toISOString(),
+              advisor_name:
+                outboundAdvisorProfile?.full_name?.trim() ||
+                outboundAdvisorProfile?.email ||
+                null,
+            }
+          : null
+      }
       consumerName={consumerName}
     />
   )

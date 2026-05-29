@@ -12,9 +12,10 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+  const emailFromQuery = searchParams.get('email') ?? ''
   const signupHref = getSignupHref()
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(emailFromQuery)
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

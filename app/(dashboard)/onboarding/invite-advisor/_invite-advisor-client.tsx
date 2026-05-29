@@ -3,17 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { InviteAdvisorByEmailForm } from '@/components/consumer/InviteAdvisorByEmailForm'
+
 type Props = {
-  inviteEmailSubject: string
-  inviteEmailBody: string
   consumerName: string
 }
 
-export function InviteAdvisorOnboardingClient({
-  inviteEmailSubject,
-  inviteEmailBody,
-  consumerName,
-}: Props) {
+export function InviteAdvisorOnboardingClient({ consumerName }: Props) {
   const router = useRouter()
   const [skipping, setSkipping] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,12 +42,15 @@ export function InviteAdvisorOnboardingClient({
         </p>
 
         <div className="mt-8 space-y-3">
-          <a
-            href={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
-            className="flex w-full items-center justify-center rounded-lg bg-[color:var(--mwm-navy)] px-4 py-3 text-sm font-medium text-white hover:bg-[color:var(--mwm-navy-light)] transition"
-          >
-            Email my advisor an invite
-          </a>
+          <InviteAdvisorByEmailForm
+            consumerName={consumerName}
+            completeOnboarding
+            submitLabel="Send invite and continue"
+            onSuccess={() => {
+              router.push('/dashboard')
+              router.refresh()
+            }}
+          />
           <Link
             href="/find-advisor"
             className="flex w-full items-center justify-center rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition"
