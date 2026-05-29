@@ -123,6 +123,7 @@ export function OnboardingWizardClient({
   const [assetType, setAssetType] = useState(sortedAssetTypes[0]?.value ?? '')
   const [assetValue, setAssetValue] = useState('')
   const [assetOwner, setAssetOwner] = useState('person1')
+  const [step1View, setStep1View] = useState<'fork' | 'manual'>('fork')
 
   const [incomeName, setIncomeName] = useState('')
   const [incomeSource, setIncomeSource] = useState(defaultIncomeType)
@@ -295,7 +296,54 @@ export function OnboardingWizardClient({
           </div>
 
           <Card className="mt-6 shadow-[var(--mwm-shadow)]">
-            {step === 1 && (
+            {step === 1 && step1View === 'fork' && (
+              <>
+                <Card.Header>
+                  <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
+                    Let&apos;s build your financial picture
+                  </h1>
+                  <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+                    Already have your data in Excel or CSV? Import it in one step.
+                  </p>
+                </Card.Header>
+                <Card.Body className="space-y-6">
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => {
+                      captureFunnelEvent({
+                        event_name: 'wizard_import_cta',
+                        properties: { step: 1 },
+                      })
+                      router.push('/import?onboarding=true')
+                    }}
+                  >
+                    Upload a spreadsheet
+                  </Button>
+                  <div className="relative text-center">
+                    <span className="bg-white px-3 text-xs text-[color:var(--mwm-text-muted)] relative z-10">
+                      or
+                    </span>
+                    <div className="absolute inset-x-0 top-1/2 border-t border-[var(--mwm-border)]" />
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => {
+                      captureFunnelEvent({
+                        event_name: 'wizard_manual_asset_cta',
+                        properties: { step: 1 },
+                      })
+                      setStep1View('manual')
+                    }}
+                  >
+                    Add assets manually
+                  </Button>
+                </Card.Body>
+              </>
+            )}
+
+            {step === 1 && step1View === 'manual' && (
               <>
                 <Card.Header>
                   <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">

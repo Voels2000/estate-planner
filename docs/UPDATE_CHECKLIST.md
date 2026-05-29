@@ -19,6 +19,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) | **Go-live E2E user reset** — `npm run seed:e2e`, legacy cleanup |
 | [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) | **Complete Playwright suite** — commands, env, seeds |
 | [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) | **Pre-flip automated gate** — profile + inline prompt commands |
+| [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) | Import expansion + attorney workflow (2026-05-29) |
+| [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md) | Inline profile prompts sprint |
 | [.env.test.example](../.env.test.example) | Template after `seed:e2e` |
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
@@ -182,6 +184,18 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Allocation: editable `risk_tolerance` via `PATCH /api/consumer/allocation-targets`
 - [x] `ProjectionAssumptions` + Complete footer copy aligned with ENG-2A engine
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE
+
+## Import expansion + attorney workflow (2026-05-29) — shipped
+
+- [x] Type normalization — `lib/import/type-normalizer.ts`, review UI
+- [x] Multi-sheet import — `lib/import/multiSheet.ts`, Commit All
+- [x] Onboarding fork — wizard step 1 + `?onboarding=true`
+- [x] Persona templates — `public/templates/template-*.xlsx`
+- [x] Real estate import target
+- [x] Attorney doc status + gaps + tier model + billing page
+- [ ] **Deploy:** apply `20260527120000_sprint_import_attorney.sql`
+- [ ] **Stripe:** `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · SPRINT_IMPORT_ATTORNEY
 
 ## Inline profile prompts E2E (2026-05-27) — shipped
 

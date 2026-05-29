@@ -5,7 +5,13 @@ import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { ImportClient } from './_import-client'
 
-export default async function ImportPage() {
+export default async function ImportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarding?: string }>
+}) {
+  const { onboarding } = await searchParams
+  const onboardingMode = onboarding === 'true'
   const access = await getUserAccess()
   const supabase = await createClient()
   const {
@@ -44,6 +50,7 @@ export default async function ImportPage() {
       showImportHistory={showImportHistory}
       showOnboardingBanner={false}
       consumerTier={access.tier}
+      onboardingMode={onboardingMode}
     />
   )
 }

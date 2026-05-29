@@ -1,20 +1,43 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-27 (Inline profile prompts sprint shipped)
+# Updated: 2026-05-29 (Import expansion + attorney workflow sprint shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork; attorney doc status, gaps, intake PDF, doc health dashboard, `attorney_tier` model — see [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Before deploy:** apply `20260527120000_sprint_import_attorney.sql`; create Stripe attorney price env vars.
+>
+> **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview: create 6 test prices, set all `STRIPE_PRICE_*` + test keys, webhook, portal — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + live env vars + one real-card smoke → `PUBLIC_SIGNUP_OPEN=true`.
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **Post-deploy (inline prompts):** `npm run test:e2e:go-live-profile` — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Partial PATCH cases also runnable via `npm run test:e2e:partial-patch`.
+> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (19 tests). Optional staging: `npm run test:import:api`.
 >
-> **Deferred follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — revisit after ~1 week funnel data on scenarios inline-prompt path.
+> **Deferred follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — revisit after ~1 week funnel data on scenarios inline-prompt path. **Attorney Stripe checkout** — wire `STRIPE_PRICE_ATTORNEY_*` when products created.
+
+---
+
+## Import expansion + attorney workflow ✅ (2026-05-29)
+
+| Task | Status |
+|------|--------|
+| Type normalization (`lib/import/type-normalizer.ts`) + review UI badges | ✅ |
+| Multi-sheet workbook + CSV `record_type` split + Commit All | ✅ |
+| Import-first onboarding fork (`?onboarding=true`) | ✅ |
+| Persona templates (business owner, RE, executive) | ✅ |
+| Real estate import target + property type normalization | ✅ |
+| Attorney doc status lifecycle + gap dismissals migration | ✅ |
+| Document vault status/filter/gaps + intake PDF (tier ≥ 1) | ✅ |
+| Multi-client doc health dashboard (tier ≥ 1) | ✅ |
+| Attorney tier model + `/attorney/billing` (Stripe TODOs) | ✅ |
+| Fix attorney connection lookup (`attorney_listings.id`) | ✅ |
+
+See [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+
+**Before deploy:** apply `supabase/migrations/20260527120000_sprint_import_attorney.sql`; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 
 ---
 

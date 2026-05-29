@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AttorneyDashboardClient } from './_attorney-dashboard-client'
 import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
+import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
+import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
 
 export default async function AttorneyDashboardPage() {
   const supabase = await createClient()
@@ -11,7 +13,7 @@ export default async function AttorneyDashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, attorney_tier')
     .eq('id', user.id)
     .single()
   const { data: attorneyListing } = await supabase
@@ -42,7 +44,10 @@ export default async function AttorneyDashboardPage() {
     : { data: [] }
 
   // 5. Fetch household details for each client
-  const householdIds = (clients ?? []).map(c => c.client_id).filter(Boolean)
+  const tierFeatures = attorneyTierFeatures(profile?.attorney_tier ?? 0)
+  const visibleClients = (clients ?? []).slice(0, tierFeatures.maxClients)
+
+  const householdIds = visibleClients.map((c) => c.client_id).filter(Boolean)
 
   const { data: households } = householdIds.length > 0
     ? await supabase
@@ -75,17 +80,32 @@ export default async function AttorneyDashboardPage() {
   const { data: docCounts } = householdIds.length > 0
     ? await supabase
         .from('legal_documents')
-        .select('household_id')
+        .select('household_id, document_type, is_current, is_deleted')
         .in('household_id', householdIds)
         .eq('is_current', true)
         .eq('is_deleted', false)
     : { data: [] }
 
-  // 8. Shape data for client component
-  const clientCards = (clients ?? []).map(client => {
-    const household = (households ?? []).find(h => h.id === client.client_id)
-    const owner = (ownerProfiles ?? []).find(p => p.id === household?.owner_id)
-    const docCount = (docCounts ?? []).filter(d => d.household_id === client.client_id).length
+  const { data: assetTotals } = ownerIds.length > 0
+    ? await supabase.from('assets').select('owner_id, value').in('owner_id', ownerIds)
+    : { data: [] }
+  const { data: reTotals } = ownerIds.length > 0
+    ? await supabase.from('real_estate').select('owner_id, current_value').in('owner_id', ownerIds)
+    : { data: [] }
+
+  const clientCards = visibleClients.map((client) => {
+    const household = (households ?? []).find((h) => h.id === client.client_id)
+    const owner = (ownerProfiles ?? []).find((p) => p.id === household?.owner_id)
+    const clientDocs = (docCounts ?? []).filter((d) => d.household_id === client.client_id)
+    const docHealth = countDocumentsOnFile(clientDocs)
+    const ownerId = household?.owner_id
+    const estateValue =
+      (assetTotals ?? [])
+        .filter((a) => a.owner_id === ownerId)
+        .reduce((s, a) => s + Number(a.value ?? 0), 0) +
+      (reTotals ?? [])
+        .filter((r) => r.owner_id === ownerId)
+        .reduce((s, r) => s + Number(r.current_value ?? 0), 0)
 
     return {
       connection_id: client.id,
@@ -97,7 +117,12 @@ export default async function AttorneyDashboardPage() {
       household_name: household?.name ?? '',
       state: household?.state_primary ?? '',
       complexity_flag: household?.estate_complexity_flag ?? '',
-      doc_count: docCount,
+      doc_count: clientDocs.length,
+      docs_on_file: docHealth.onFile,
+      docs_total: docHealth.total,
+      missing_docs: summarizeMissingDocs(clientDocs),
+      estate_value: estateValue,
+      last_updated: client.granted_at,
     }
   })
 
@@ -107,6 +132,10 @@ export default async function AttorneyDashboardPage() {
       clients={clientCards}
       referralCode={referralCode}
       eventReferralUrls={eventReferralUrls}
+      showDocHealth={tierFeatures.multiClientDocDashboard}
+      attorneyTier={profile?.attorney_tier ?? 0}
+      clientLimit={tierFeatures.maxClients}
+      totalClients={(clients ?? []).length}
     />
   )
 }

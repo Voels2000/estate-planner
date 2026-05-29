@@ -661,7 +661,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 7. Optional: save two **named** gifting scenarios on trust-strategy; remove one by name only.
 8. Optional: accept or decline one advisor recommendation on the dashboard.
 
-**Playwright E2E (complete suite — May 2026):** See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md), [GO_LIVE_E2E.md](./GO_LIVE_E2E.md), and [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md). **280 tests** in 48 files: consumer (incl. `consumer-profile-field-prompt`, `consumer-profile-save` partial PATCH), advisor, public, attorney, import-unit (+ setup projects). **Pre-flip:** `npm run test:e2e:go-live-profile`.
+**Playwright E2E (complete suite — May 2026):** See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md), [GO_LIVE_E2E.md](./GO_LIVE_E2E.md), and [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md). **280+ tests** in 48+ files: consumer (incl. profile prompts), advisor, public, attorney, import-unit (**19** — parse + type-normalizer + wizard gate). **Pre-flip:** `npm run test:e2e:go-live-profile`; **import:** `npm run test:import:unit`.
 
 | Command | Projects |
 |---------|----------|
@@ -1034,26 +1034,30 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Charitable consumer form: `components/consumer/CharitableStrategyForm.tsx` (DAF panel; `daf` or `charitable` source).
 - Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
 - Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
-- **Financial data import (Sprint F-1 + F-2):** `app/(dashboard)/import/page.tsx`, `_import-client.tsx`; `POST /api/ingest`; `POST /api/import/commit`; `DELETE /api/import/jobs/[id]`; `lib/import/ingestConfig.ts`, `lib/import/parseFile.ts`; `public/templates/`; tests: `tests/unit/import-parse.spec.ts`, `tests/e2e/consumer/consumer-import.spec.ts`, `tests/fixtures/import/`.
+- **Financial data import (Sprint F-1 + F-2 + expansion 2026-05-29):** `app/(dashboard)/import/`; `lib/import/type-normalizer.ts`, `multiSheet.ts`, `reviewTypeHelpers.ts`; `POST /api/ingest`, `POST /api/import/commit`; persona XLSX templates; tests: `tests/unit/import-type-normalizer.spec.ts`, `import-parse.spec.ts`. **Attorney portal (expansion):** `profiles.attorney_tier`; `legal_documents.doc_status`; `document_gap_dismissals`; `/attorney/billing`; vault status/gaps; doc health dashboard — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 
 ---
 
-## Financial Data Import (Sprint F-1 + F-2)
+## Financial Data Import (Sprint F-1 + F-2 + Import Expansion 2026-05-29)
 
 **Current (as built):**
 
-- Route: `/import` — tier **2+** (`FEATURE_TIERS.import`; `hasFeatureAccess('import', …)` on page and parse API).
-- **Supported formats:** CSV (`.csv`), Excel (`.xlsx`, `.xls`) only. PDF/DOCX deferred post-launch (unreliable structured extraction).
-- **Three-step UX:** upload → review (field mapping + inline row edit) → commit confirmation. Import history from `ingestion_jobs`.
-- **Parse API:** `POST /api/ingest` — multipart `file`; optional `sheet_name` for Excel; papaparse (CSV) + SheetJS `xlsx`; scans first 20 rows for header row (`header_row_index`); auto-detect target table; alias/substring `field_map` suggestion; persists parse in `ingestion_jobs` (`header_row_index`, `sheet_name`); returns `job_id`, `headers`, `rows`, `field_map`, `detected_table`, `table_fields`, `header_row_index`, `sheet_names`.
-- **Commit API:** `POST /api/import/commit` — maps rows via user-adjusted `field_map`; pre-commit duplicate check on key fields → **409** `duplicates_found` unless `skip_duplicates` or `force_all`; sets `ingestion_job_id` on inserted rows; bulk `insert` into `assets` | `liabilities` | `income` | `expenses`; marks job `committed`. Returns **200** with `committed: 0` when `skip_duplicates` filters all rows (`a344032`).
-- **Cancel pending:** `DELETE /api/import/jobs/[id]` — owner-scoped; removes job during review.
-- **Target tables + required fields:** assets (`name`, `type`, `value`); liabilities (`name`, `type`, `balance`); income (`source`, `amount`, `start_year`); expenses (`category`, `amount`, `start_year`).
-- **Templates:** `public/templates/import-sample*.csv` — downloadable from import UI.
-- **Migrations:** `20260602140000_sprint_f1_ingestion_jobs.sql` — 16-column final shape on `ingestion_jobs` (`file_name`, `file_type` NOT NULL). **Verified in production** (F-1 smoke). `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on four financial tables; apply before F-2 deploy if not applied.
-- **Automated verification:** `npm run test:import:unit` (7 tests, no auth); `npm run test:import:api` (8 tests, `.env.test`, tier 2+, F-2 migration on test DB). Fixtures in `tests/fixtures/import/`; regenerate XLSX via `scripts/generate-import-fixtures.ts`.
+- Route: `/import` — tier **1+** upload + commit (`FEATURE_TIERS.import = 1`; import **job history** Tier 2+ only). Onboarding: `?onboarding=true` redirects to dashboard after commit.
+- **Supported formats:** CSV (`.csv`), Excel (`.xlsx`, `.xls`) only. PDF/DOCX deferred post-launch.
+- **Target tables:** `assets`, `liabilities`, `income`, `expenses`, **`real_estate`** (expansion sprint).
+- **Three-step UX:** upload → review (field mapping + inline row edit + type normalization badges) → commit confirmation. **Multi-sheet:** per-sheet tabs + **Commit All** with batch summary when workbook has multiple data sheets or CSV has `record_type`/`table`/`category` column.
+- **Type normalization:** `lib/import/type-normalizer.ts` — 30+ aliases (custodian labels, 401(k), property types); applied at commit + review UI override dropdowns (`lib/import/reviewTypeHelpers.ts`).
+- **Multi-sheet:** `lib/import/multiSheet.ts` — sheet-name heuristics; `POST /api/ingest` returns `multi_sheet` + `sheets[]` when detected.
+- **Persona templates:** `public/templates/template-business-owner.xlsx`, `template-real-estate.xlsx`, `template-executive.xlsx` (+ existing CSV samples). Regenerate via `scripts/generate-persona-import-templates.ts`.
+- **Onboarding fork:** Wizard step 1 — Upload spreadsheet (primary) vs Add manually → `/import?onboarding=true`.
+- **Parse API:** `POST /api/ingest` — multipart `file`; optional `sheet_name` or `single_sheet=true`; header row scan; alias `field_map`; persists `ingestion_jobs`.
+- **Commit API:** `POST /api/import/commit` — normalizes `type` / `property_type`; duplicate 409; `ingestion_job_id` traceability.
+- **Migrations:** F-1 `20260602140000`; F-2 `20260602150000`; attorney/doc columns `20260527120000_sprint_import_attorney.sql` (apply before attorney portal features).
+- **Automated verification:** `npm run test:import:unit` (**19 tests** — parse, type-normalizer, wizard gate); `npm run test:import:api` (`.env.test`, tier 2+).
 
-**Post-launch backlog:** PDF/DOCX text extraction; automated purge of `ingestion_jobs` rows older than 24h; optional commit-from-`job_id` without re-posting rows for large files.
+**Post-launch backlog:** PDF/DOCX extraction; update/merge re-import mode; advisor bulk client import.
+
+**Sprint doc:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 
 ---
 

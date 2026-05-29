@@ -220,20 +220,21 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** writes `illustrative` `roth` line item then navigates to `?tab=strategies&openPanel=roth` | Tier 2 |
-| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; import **history** Tier 2+; CSV/XLSX; upload → map/edit → commit; F-2: preamble headers, sheet picker, duplicates, traceability |
+| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; **real_estate** target; multi-sheet + type normalization; persona templates; onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
 
-### Bulk import — `/import` (Sprint F-1 + F-2)
+### Bulk import — `/import` (Sprint F-1 + F-2 + expansion 2026-05-29)
 
 | | |
 |--|--|
-| **User goal** | Import assets, liabilities, income, or expenses from a spreadsheet |
-| **Tier / gate** | Tier 1 upload + commit (`FEATURE_TIERS.import = 1`, was 2 until friction-reduction sprint 2026-05-27); import **job history** Tier 2+ only — see `DECISION_LOG.md` |
-| **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` when Tier 2+; onboarding banner for Tier 1 |
-| **Client** | `_import-client.tsx` — drop zone; field mapping review; inline cell edit + per-row delete; duplicate dialog; history table hidden until Tier 2+; import CTA on `/assets` and `/income` during onboarding |
-| **Write APIs** | `POST /api/ingest` (parse; optional `sheet_name`); `POST /api/import/commit` (`skip_duplicates`, `force_all`); `DELETE /api/import/jobs/[id]` (cancel pending) |
+| **User goal** | Import assets, liabilities, income, expenses, or **real estate** from a spreadsheet (single or multi-sheet workbook) |
+| **Tier / gate** | Tier 1 upload + commit; import **job history** Tier 2+ only — see `DECISION_LOG.md` |
+| **Server** | `app/(dashboard)/import/page.tsx` — `?onboarding=true` for wizard handoff |
+| **Client** | `_import-client.tsx` — persona template picker; multi-sheet tabs + **Commit All**; type normalization badges; onboarding → `/dashboard?setup=imported` |
+| **Onboarding** | Wizard step 1: Upload spreadsheet (primary) vs Add manually |
+| **Write APIs** | `POST /api/ingest` (multi-sheet); `POST /api/import/commit` (type/property normalization); `DELETE /api/import/jobs/[id]` |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
-| **Migrations** | F-1: `20260602140000_sprint_f1_ingestion_jobs.sql` — verified in production. F-2: `20260602150000_sprint_f2_import_traceability.sql` — `ingestion_job_id` on financial rows; `header_row_index`, `sheet_name` on jobs |
-| **Tests** | `npm run test:import:unit`; `npm run test:import:api` — see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) |
+| **Migrations** | F-1/F-2 as before; **apply** `20260527120000_sprint_import_attorney.sql` for attorney doc columns (separate from import tables) |
+| **Tests** | `npm run test:import:unit` (**19**); `npm run test:import:api` — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 

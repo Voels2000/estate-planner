@@ -1,12 +1,19 @@
-export type ImportTable = 'assets' | 'liabilities' | 'income' | 'expenses'
+export type ImportTable = 'assets' | 'liabilities' | 'income' | 'expenses' | 'real_estate'
 
-export const IMPORT_TABLES: ImportTable[] = ['assets', 'liabilities', 'income', 'expenses']
+export const IMPORT_TABLES: ImportTable[] = [
+  'assets',
+  'liabilities',
+  'income',
+  'expenses',
+  'real_estate',
+]
 
 const REQUIRED_FIELDS: Record<ImportTable, string[]> = {
   assets: ['name', 'type', 'value'],
   liabilities: ['name', 'type', 'balance'],
   income: ['source', 'amount', 'start_year'],
   expenses: ['category', 'amount', 'start_year'],
+  real_estate: ['name', 'property_type', 'current_value'],
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -24,6 +31,12 @@ const FIELD_LABELS: Record<string, string> = {
   end_year: 'End year',
   inflation_adjust: 'Inflation adjust',
   category: 'Category',
+  property_type: 'Property type',
+  current_value: 'Current value',
+  purchase_price: 'Purchase price',
+  mortgage_balance: 'Mortgage balance',
+  situs_state: 'Situs state',
+  is_primary_residence: 'Primary residence',
 }
 
 const TABLE_FIELD_KEYS: Record<ImportTable, string[]> = {
@@ -31,6 +44,15 @@ const TABLE_FIELD_KEYS: Record<ImportTable, string[]> = {
   liabilities: ['name', 'type', 'balance', 'interest_rate', 'monthly_payment', 'notes'],
   income: ['source', 'amount', 'start_year', 'end_year', 'inflation_adjust', 'owner'],
   expenses: ['category', 'amount', 'start_year', 'end_year', 'inflation_adjust'],
+  real_estate: [
+    'name',
+    'property_type',
+    'current_value',
+    'situs_state',
+    'mortgage_balance',
+    'owner',
+    'is_primary_residence',
+  ],
 }
 
 export const FIELD_ALIASES: Record<ImportTable, Record<string, string[]>> = {
@@ -102,6 +124,27 @@ export const FIELD_ALIASES: Record<ImportTable, Record<string, string[]>> = {
     end_year: ['endyear', 'end', 'through', 'until', 'to', 'stopyear'],
     inflation_adjust: ['inflationadjust', 'inflation', 'cola', 'adjustforinflation'],
   },
+  real_estate: {
+    name: [
+      'name', 'property', 'propertyname', 'address', 'description', 'title',
+      'location', 'street',
+    ],
+    property_type: [
+      'type', 'propertytype', 'property_type', 'category', 'use', 'classification',
+    ],
+    current_value: [
+      'value', 'currentvalue', 'estimatedvalue', 'marketvalue', 'worth',
+      'current_value', 'appraisedvalue', 'fmv',
+    ],
+    situs_state: ['state', 'situs', 'situsstate', 'situs_state', 'locationstate'],
+    mortgage_balance: [
+      'mortgage', 'mortgagebalance', 'loanbalance', 'mortgage_balance', 'debt',
+    ],
+    owner: ['owner', 'person', 'whose', 'holder'],
+    is_primary_residence: [
+      'primary', 'primaryresidence', 'isprimary', 'is_primary', 'mainhome',
+    ],
+  },
 }
 
 export function normalizeHeader(header: string): string {
@@ -150,6 +193,12 @@ export function detectTable(headers: string[]): ImportTable | null {
     normalizedHeadersMatchAny(headers, ['category', 'type', 'description', 'name', 'expensetype'])
   ) {
     return 'expenses'
+  }
+  if (
+    normalizedHeadersMatchAny(headers, ['propertytype', 'property', 'address', 'situs']) &&
+    normalizedHeadersMatchAny(headers, ['value', 'currentvalue', 'marketvalue', 'estimatedvalue'])
+  ) {
+    return 'real_estate'
   }
   return null
 }

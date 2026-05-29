@@ -223,7 +223,10 @@ export function DashboardClient(props: Props) {
 
   const searchParams = useSearchParams()
   const checkoutSuccess = searchParams.get('checkout') === 'success'
+  const importSetup = searchParams.get('setup') === 'imported'
+  const importSummary = searchParams.get('import_summary')
   const [checkoutBannerDismissed, setCheckoutBannerDismissed] = useState(false)
+  const [importToastDismissed, setImportToastDismissed] = useState(false)
 
   const tier = consumerTier ?? 1
   const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
@@ -340,6 +343,24 @@ export function DashboardClient(props: Props) {
               router.replace('/dashboard')
             }}
             className="ml-4 flex-shrink-0 text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {importSetup && !importToastDismissed && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)] px-4 py-3">
+          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+            Great start — {importSummary ? `${importSummary} imported.` : 'your spreadsheet is imported.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setImportToastDismissed(true)
+              router.replace('/dashboard')
+            }}
+            className="ml-4 flex-shrink-0 text-xs text-[color:var(--mwm-navy)] hover:underline"
           >
             Dismiss
           </button>

@@ -724,8 +724,31 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 - `[x]` `ingestion_job_id` traceability on committed rows + view link
 - `[x]` Richer alias / substring header matching
 - `[x]` Pending import remove + cancel during review (`DELETE /api/import/jobs/[id]`)
-- `[x]` Automated test suite — `a344032` (`test:import:unit` 7 passed; `test:import:api` 8 passed)
+- `[x]` Automated test suite — `a344032` (`test:import:unit`; `test:import:api`)
 - `[ ]` Apply `20260602150000_sprint_f2_import_traceability.sql` in production (if not applied); optional manual I.5–I.9 in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
+
+---
+
+## Import expansion + attorney workflow ✅ shipped 2026-05-29
+
+**Doc:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md)
+
+**Import (Phases 1–5):**
+- `[x]` Type normalization — `lib/import/type-normalizer.ts`; review UI badges + override dropdowns
+- `[x]` Multi-sheet workbook + CSV `record_type` split; Commit All + batch summary
+- `[x]` Import-first onboarding fork (`?onboarding=true` → dashboard toast)
+- `[x]` Persona templates (business owner, RE portfolio, executive)
+- `[x]` Real estate import target + property type normalization
+- `[x]` Unit tests — `import-type-normalizer.spec.ts` (19 import-unit tests total)
+
+**Attorney (Phases 6–7):**
+- `[x]` Migration `20260527120000_sprint_import_attorney.sql` — doc status lifecycle + gap dismissals + `attorney_tier`
+- `[x]` Document vault — status dropdown, type filter, Document Gaps card
+- `[x]` Intake summary PDF (tier ≥ 1); multi-client doc health dashboard (tier ≥ 1)
+- `[x]` `/attorney/billing` plan UI; Stripe price TODOs (no products yet)
+- `[x]` Fix attorney connection lookup (`attorney_listings.id`)
+
+**Before deploy:** apply migration; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 
 ---
 

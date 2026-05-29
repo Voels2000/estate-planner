@@ -681,6 +681,24 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Import expansion + attorney workflow (2026-05-29)
+
+**Migration:** `20260527120000_sprint_import_attorney.sql`
+
+| Change | Detail |
+|--------|--------|
+| `legal_documents` | `doc_status` (`draft`, `pending_execution`, `executed`, `recorded`, `superseded`, `uploaded`); `executed_date`; `status_notes` |
+| `document_gap_dismissals` | `(household_id, attorney_id, gap_key)` unique; attorney-dismissed intake gaps |
+| `profiles.attorney_tier` | `int` default 0 — free (3 clients) / Starter (15) / Growth (50) |
+
+**Import code (no new financial tables):** `real_estate` added as import commit target only; uses existing `real_estate` table.
+
+**APIs:** `PATCH /api/documents/[id]/status`; `POST /api/attorney/gap-dismissals`.
+
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), [DECISION_LOG.md](./DECISION_LOG.md).
+
+---
+
 ## Session cleanup (2026-05-25) — FK dependency fixes for deleteUser
 
 Fixed `lib/compliance/deleteUser.ts` — three tables were missing from

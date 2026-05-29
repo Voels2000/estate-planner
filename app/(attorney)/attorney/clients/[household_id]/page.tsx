@@ -4,6 +4,8 @@ import EstateTaxClient, { type EstateTaxTrustRow } from '@/app/(dashboard)/estat
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { AttorneyClientVault } from '../../_attorney-client-vault'
 import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
+import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
+import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
 export default async function AttorneyClientPage({
   params,
@@ -17,10 +19,18 @@ export default async function AttorneyClientPage({
 
   const { household_id } = await params
 
+  const { data: attorneyListing } = await supabase
+    .from('attorney_listings')
+    .select('id')
+    .eq('profile_id', user.id)
+    .maybeSingle()
+
+  if (!attorneyListing) redirect('/attorney')
+
   const { data: connection } = await supabase
     .from('attorney_clients')
     .select('id, granted_at')
-    .eq('attorney_id', user.id)
+    .eq('attorney_id', attorneyListing.id)
     .eq('client_id', household_id)
     .in('status', ['active', 'accepted'])
     .maybeSingle()
@@ -69,11 +79,28 @@ export default async function AttorneyClientPage({
 
   const { data: documents } = await supabase
     .from('legal_documents')
-    .select('id, document_type, file_name, version, is_current, uploader_role, created_at')
+    .select(
+      'id, document_type, file_name, version, is_current, uploader_role, created_at, doc_status, executed_date, status_notes',
+    )
     .eq('household_id', household_id)
     .eq('is_current', true)
     .eq('is_deleted', false)
     .order('document_type', { ascending: true })
+
+  const { data: gapDismissals } = await supabase
+    .from('document_gap_dismissals')
+    .select('gap_key')
+    .eq('household_id', household_id)
+    .eq('attorney_id', user.id)
+
+  const { data: attorneyProfile } = await supabase
+    .from('profiles')
+    .select('attorney_tier')
+    .eq('id', user.id)
+    .single()
+
+  const tierFeatures = attorneyTierFeatures(attorneyProfile?.attorney_tier ?? 0)
+  const documentGaps = getMissingDocumentAlerts(documents ?? [], gapDismissals ?? [])
 
   const { data: clientProfile } = await supabase
     .from('profiles')
@@ -134,6 +161,8 @@ export default async function AttorneyClientPage({
         householdId={household_id}
         attorneyId={user.id}
         documents={documents ?? []}
+        documentGaps={tierFeatures.documentGapAlerts ? documentGaps : []}
+        canExportIntake={tierFeatures.intakeSummaryExport}
       />
     </div>
   )

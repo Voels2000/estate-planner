@@ -14,6 +14,11 @@ type ClientCard = {
   state: string
   complexity_flag: string
   doc_count: number
+  docs_on_file?: number
+  docs_total?: number
+  missing_docs?: string
+  estate_value?: number
+  last_updated?: string | null
 }
 
 type Props = {
@@ -21,6 +26,10 @@ type Props = {
   clients: ClientCard[]
   referralCode?: string | null
   eventReferralUrls?: Record<string, string> | null
+  showDocHealth?: boolean
+  attorneyTier?: number
+  clientLimit?: number
+  totalClients?: number
 }
 
 const EVENT_REFERRAL_LABELS: Record<string, string> = {
@@ -81,6 +90,10 @@ export function AttorneyDashboardClient({
   clients,
   referralCode,
   eventReferralUrls,
+  showDocHealth = false,
+  attorneyTier = 0,
+  clientLimit = 3,
+  totalClients = 0,
 }: Props) {
   const [search, setSearch] = useState('')
   const [newsletterTab, setNewsletterTab] = useState<'links' | 'email' | 'text'>('links')
@@ -101,10 +114,55 @@ export function AttorneyDashboardClient({
           Attorney Portal
         </h1>
         <p className="text-neutral-500 mt-1">
-          Welcome back, {attorneyName}. You have access to {clients.length} client
-          {clients.length !== 1 ? 's' : ''}.
+          Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
+          {(totalClients || clients.length) !== 1 ? 's' : ''}.
+          {attorneyTier === 0 && totalClients > clientLimit && (
+            <span className="block text-xs text-amber-600 mt-1">
+              Free tier shows {clientLimit} clients.{' '}
+              <Link href="/attorney/billing" className="underline">
+                Upgrade for full practice view →
+              </Link>
+            </span>
+          )}
         </p>
       </div>
+
+      {showDocHealth && clients.length > 0 && (
+        <div className="mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+          <table className="min-w-full text-sm">
+            <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+              <tr>
+                <th className="px-4 py-3 text-left">Client</th>
+                <th className="px-4 py-3 text-left">Estate Value</th>
+                <th className="px-4 py-3 text-left">Docs on File</th>
+                <th className="px-4 py-3 text-left">Missing</th>
+                <th className="px-4 py-3 text-left">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {filtered.map((client) => (
+                <tr key={client.connection_id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{client.full_name}</td>
+                  <td className="px-4 py-3 text-neutral-600">
+                    {client.estate_value != null && client.estate_value > 0
+                      ? `$${(client.estate_value / 1_000_000).toFixed(1)}M`
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-600">
+                    {client.docs_on_file ?? 0} / {client.docs_total ?? 5}
+                  </td>
+                  <td className="px-4 py-3 text-amber-700 text-xs">{client.missing_docs ?? '—'}</td>
+                  <td className="px-4 py-3 text-neutral-400 text-xs">
+                    {client.last_updated
+                      ? new Date(client.last_updated).toLocaleDateString()
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {referralCode && eventReferralUrls && (() => {
         const emailCopy = `Subject: Estate planning resource for [life event] clients

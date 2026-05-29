@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  normalizeAssetType,
+  normalizeLiabilityType,
+  normalizePropertyType,
+} from '@/lib/import/type-normalizer'
 
 export const runtime = 'nodejs'
 
 type CommitPayload = {
   job_id: string
-  target_table: 'assets' | 'liabilities' | 'income' | 'expenses'
+  target_table: 'assets' | 'liabilities' | 'income' | 'expenses' | 'real_estate'
   field_map: Record<string, string>
   rows: Record<string, string>[]
   skip_duplicates?: boolean
@@ -45,6 +50,17 @@ const INSERT_COLUMNS: Record<string, readonly string[]> = {
     'inflation_adjust',
     'ingestion_job_id',
   ],
+  real_estate: [
+    'owner_id',
+    'owner',
+    'name',
+    'property_type',
+    'current_value',
+    'mortgage_balance',
+    'situs_state',
+    'is_primary_residence',
+    'ingestion_job_id',
+  ],
 }
 
 function transformRow(
@@ -59,7 +75,7 @@ function transformRow(
     if (!dbField) continue
     const val = raw[header]?.trim() ?? ''
     if (!val) continue
-    if (['value', 'balance', 'amount', 'interest_rate', 'monthly_payment'].includes(dbField)) {
+    if (['value', 'balance', 'amount', 'interest_rate', 'monthly_payment', 'current_value', 'mortgage_balance'].includes(dbField)) {
       const num = parseFloat(val.replace(/[$,%]/g, ''))
       if (!isNaN(num)) mapped[dbField] = num
     } else if (['start_year', 'end_year'].includes(dbField)) {
@@ -67,6 +83,21 @@ function transformRow(
       if (!isNaN(num)) mapped[dbField] = num
     } else if (dbField === 'inflation_adjust') {
       mapped[dbField] = val.toLowerCase() === 'true' || val === '1' || val.toLowerCase() === 'yes'
+    } else if (table === 'assets' && dbField === 'type') {
+      const { canonical } = normalizeAssetType(val)
+      mapped[dbField] = canonical ?? val
+    } else if (table === 'liabilities' && dbField === 'type') {
+      const { canonical } = normalizeLiabilityType(val)
+      mapped[dbField] = canonical ?? val
+    } else if (table === 'real_estate' && dbField === 'property_type') {
+      const { canonical } = normalizePropertyType(val)
+      mapped[dbField] = canonical ?? val
+    } else if (dbField === 'is_primary_residence') {
+      mapped[dbField] =
+        val.toLowerCase() === 'true' ||
+        val === '1' ||
+        val.toLowerCase() === 'yes' ||
+        val.toLowerCase() === 'primary'
     } else {
       mapped[dbField] = val
     }
@@ -76,12 +107,17 @@ function transformRow(
     liabilities: ['name', 'type', 'balance'],
     income: ['source', 'amount', 'start_year'],
     expenses: ['category', 'amount', 'start_year'],
+    real_estate: ['name', 'property_type', 'current_value'],
   }
   const missing = (required[table] ?? []).filter(
     (f) => mapped[f] === undefined || mapped[f] === '',
   )
   if (missing.length > 0) return null
-  if (table !== 'income' && !mapped.owner) mapped.owner = 'person1'
+  if (table !== 'income' && table !== 'real_estate' && !mapped.owner) mapped.owner = 'person1'
+  if (table === 'real_estate' && !mapped.owner) mapped.owner = 'person1'
+  if (table === 'real_estate' && mapped.is_primary_residence === undefined) {
+    mapped.is_primary_residence = mapped.property_type === 'primary_residence'
+  }
   if (table === 'income' && mapped.inflation_adjust === undefined) mapped.inflation_adjust = true
   if (table === 'expenses' && mapped.inflation_adjust === undefined) mapped.inflation_adjust = true
   return mapped
@@ -123,6 +159,8 @@ async function findDuplicates(
       query = query.eq('source', row.source).eq('amount', row.amount)
     } else if (targetTable === 'expenses' && row.category != null && row.amount != null) {
       query = query.eq('category', row.category).eq('amount', row.amount)
+    } else if (targetTable === 'real_estate' && row.name != null && row.current_value != null) {
+      query = query.eq('name', row.name).eq('current_value', row.current_value)
     } else {
       continue
     }
@@ -145,7 +183,7 @@ export async function POST(req: NextRequest) {
     const body: CommitPayload = await req.json()
     const { job_id, target_table, field_map, rows, skip_duplicates, force_all } = body
 
-    if (!['assets', 'liabilities', 'income', 'expenses'].includes(target_table)) {
+    if (!['assets', 'liabilities', 'income', 'expenses', 'real_estate'].includes(target_table)) {
       return NextResponse.json({ error: 'Invalid target table' }, { status: 400 })
     }
 

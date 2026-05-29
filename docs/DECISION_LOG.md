@@ -1,6 +1,37 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (ProfileFieldPrompt E2E + go-live pre-flight)
+# Last updated: 2026-05-29 (Import expansion + attorney workflow sprint)
+
+## Attorney tier model — B2B2C (2026-05-29)
+
+**Decision:** Add `profiles.attorney_tier` (0 = free read-only, 1 = Attorney Starter, 2 = Attorney Growth). Same adoption pattern as advisor B2B2C: free tier for trial access, paid tiers for practice-level features.
+
+**Gating:**
+- **Tier 0 (free):** Up to **3 client households** visible; document vault read/upload; **no** intake summary PDF export; **no** multi-client doc health dashboard.
+- **Tier 1+:** Intake summary PDF (`ExportPDFButton` attorney variant); Document Gaps card; multi-client doc health table on attorney home; higher client caps (15 / 50 per `lib/attorney/attorneyTierLimits.ts`).
+
+**Stripe:** No products created in sprint — `/attorney/billing` shows plan comparison with TODO env vars `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` and `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+
+**Connection lookup fix:** `attorney_clients.attorney_id` stores `attorney_listings.id` (not `auth.uid()`). Portal APIs and client detail page updated to resolve listing by `profile_id` first.
+
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), migration `20260527120000_sprint_import_attorney.sql`.
+
+---
+
+## Import expansion — normalization + multi-sheet (2026-05-29)
+
+**Decision:** Extend Sprint F-1/F-2 import with type normalization at commit, multi-sheet Excel orchestration, persona workbooks, `real_estate` as fifth import target, and import-first onboarding fork on wizard step 1.
+
+**Reasoning:** HNW users ($2M–$30M) often arrive with Excel workbooks; single-table-per-upload and raw type strings were the main remaining friction after Tier 1 import unlock.
+
+**Locked UX:**
+- Human-readable spreadsheet labels map to canonical slugs via `lib/import/type-normalizer.ts` (review UI shows amber "Mapped to …" + override dropdown).
+- Multi-sheet workbooks: per-sheet tabs, single **Commit All** with progress.
+- Onboarding: primary CTA "Upload a spreadsheet" → `/import?onboarding=true` → `/dashboard?setup=imported` toast after commit.
+
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), [CONSUMER_FLOWS.md § Bulk import](./CONSUMER_FLOWS.md).
+
+---
 
 ## Partial PATCH merge on profile API (2026-05-27)
 

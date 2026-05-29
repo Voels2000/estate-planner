@@ -168,7 +168,7 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | `public` | 59 | Marketing + all event slugs + referral API | Required on PR |
 | `attorney-setup` + `attorney` | 2 | Attorney portal (after seed) | Optional / nightly |
 | `consumer-tier1` | 3 | Upgrade banners (optional env) | Optional |
-| `import-unit` | 7 | Import parse/header/alias | On import changes |
+| `import-unit` | 19 | Import parse, type-normalizer, wizard gate | On import changes |
 | `test:import:api` | — | Import commit/duplicate/traceability | Before F-2 deploy |
 | Manual Core 1–3 + Estate 4–7 | — | Release sign-off | Pre-launch checklist |
 
