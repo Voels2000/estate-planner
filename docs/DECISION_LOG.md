@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint G sidebar billing links)
+# Last updated: 2026-05-27 (Sprint H — loading.tsx on hot routes)
+
+## Post-launch perf — loading skeletons on hot routes (2026-05-27)
+
+**Decision:** Add route-level `loading.tsx` for server-prefetch consumer pages: monte-carlo, allocation, scenarios, social-security, projections. Skeletons mirror each page layout (dashboard / trust-strategy pattern).
+
+**Reasoning:** Server prefetch eliminated client waterfalls but left a blank shell during slow `loadProjectionData` / Monte Carlo parallel fetches.
+
+---
 
 ## Post-launch perf — sidebar tier-locked billing links (2026-05-27)
 

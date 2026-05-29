@@ -10,6 +10,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint H — loading skeletons (2026-05-27, code only)
+
+| Route | File |
+|-------|------|
+| `/monte-carlo` | `app/(dashboard)/monte-carlo/loading.tsx` |
+| `/allocation` | `app/(dashboard)/allocation/loading.tsx` |
+| `/scenarios` | `app/(dashboard)/scenarios/loading.tsx` |
+| `/social-security` | `app/(dashboard)/social-security/loading.tsx` |
+| `/projections` | `app/(dashboard)/projections/loading.tsx` |
+
+---
+
 ## Post-launch perf Sprint G — sidebar billing links (2026-05-27, code only)
 
 | Area | Change |
