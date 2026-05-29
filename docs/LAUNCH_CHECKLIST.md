@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-28 (Sprint 4 consumer pricing; Golden Path; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Stripe sandbox→production go-live guide; annual toggle guard)
 
 ---
 
@@ -312,60 +312,215 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ## Stripe Setup (required before `PUBLIC_SIGNUP_OPEN=true`)
 
-### Dashboard configuration (manual — Stripe Dashboard)
-- [ ] Create 3 products: Financial, Retirement, Estate
-- [ ] Create 6 prices (3 tiers × monthly/annual) with lookup keys
-  - financial_monthly: $29/mo
-  - financial_annual: $290/yr
-  - retirement_monthly: $79/mo
-  - retirement_annual: $790/yr
-  - estate_monthly: $149/mo (14-day trial)
-  - estate_annual: $1,490/yr (14-day trial)
-- [ ] Configure Customer Portal:
-  - Cancel subscriptions enabled
-  - Switch plans enabled
-  - Update payment method enabled
-  - Cancellation collects reason
-- [ ] Configure webhook endpoint:
-  - URL: `https://mywealthmaps.com/api/stripe/webhook`
-  - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.upcoming`
-- [ ] Copy webhook signing secret → `STRIPE_WEBHOOK_SECRET` in production
+**Source of truth in code:** `lib/billing/stripePrices.ts` · Checkout: `app/api/stripe/checkout/route.ts` · Webhook: `app/api/stripe/webhook/route.ts` · Disclosures walkthrough: [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 
-### Environment variables (production)
-- [ ] `STRIPE_SECRET_KEY` (live key, starts with `sk_live_`)
-- [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (live key, starts with `pk_live_`)
-- [ ] `STRIPE_WEBHOOK_SECRET`
-- [ ] `STRIPE_PRICE_FINANCIAL_MONTHLY`
-- [ ] `STRIPE_PRICE_FINANCIAL_ANNUAL`
-- [ ] `STRIPE_PRICE_RETIREMENT_MONTHLY`
-- [ ] `STRIPE_PRICE_RETIREMENT_ANNUAL`
-- [ ] `STRIPE_PRICE_ESTATE_MONTHLY`
-- [ ] `STRIPE_PRICE_ESTATE_ANNUAL`
-- [ ] `STRIPE_CUSTOMER_PORTAL_URL`
+**Consumer pricing (Sprint 4):**
 
-### Code verification (before deploy)
-- [x] `lib/billing/stripePrices.ts` — six price configs; env-driven IDs
-- [x] Checkout session uses `getPriceConfig()` / `getTierFromPriceId()` (not hardcoded consumer IDs)
-- [x] Webhook uses `getTierFromPriceId()` to set `consumer_tier`
-- [x] Estate trial (14 days) wired in checkout `subscription_data.trial_period_days`
-- [x] Billing page shows monthly/annual toggle
-- [x] Pricing page shows new prices ($29/$79/$149) + annual toggle
-- [x] `UpgradeBanner` shows new prices and trial language
+| Tier | Monthly | Annual (billed yearly) | Trial |
+|------|---------|------------------------|-------|
+| Financial (1) | $29/mo | $290/yr ($24/mo equiv) | None |
+| Retirement (2) | $79/mo | $790/yr ($66/mo equiv) | None |
+| Estate (3) | $149/mo | $1,490/yr ($124/mo equiv) | **14 days** (monthly + annual) |
 
-### Functional verification (after deploy to staging with test keys)
-- [ ] Subscribe to Financial ($29/mo test) → tier 1 set correctly
-- [ ] Subscribe to Estate ($149/mo test) → 14-day trial starts, tier 3 set, `subscription_status` = `trialing`
-- [ ] Trial ends → billing begins → tier 3 maintained
-- [ ] Cancel subscription → tier returns to 1 (not deleted)
-- [ ] Customer portal link works → can update payment method
-- [ ] `invoice.payment_failed` → user notified (check email/in-app)
-- [ ] Webhook signature verification passes (not just parsing)
+> ⚠️ **Do not use live Stripe keys for testing.** Complete **Phase 1 (test mode)** on staging/preview with `sk_test_` / `pk_test_` first. Switch to live keys only on go-live day after Phase 1 passes.
 
-### Go/no-go
-- [ ] All environment variables set in Vercel production
-- [ ] Webhook verified in Stripe Dashboard (green check)
-- [ ] One complete subscription flow tested end-to-end with test keys
-- [ ] Switch to live keys — DO NOT test with live keys until all above pass
+### App behavior (env vars)
+
+| Behavior | Detail |
+|----------|--------|
+| Monthly prices | `STRIPE_PRICE_*_MONTHLY` env vars, or legacy test monthly IDs in code if unset (local dev only) |
+| Annual prices | **Requires all three** `STRIPE_PRICE_*_ANNUAL` env vars — no legacy fallback |
+| Monthly/annual toggle | Shown on `/billing` and `/pricing` only when `isAnnualBillingConfigured()` is true (server reads env). If annual IDs missing, toggle is **hidden** and monthly plans render (avoids application error) |
+| Tier after payment | Webhook sets `consumer_tier` via `getTierFromPriceId(priceId)`; `subscription_status` mirrors Stripe (`trialing` during Estate trial) |
+
+---
+
+### Phase 1 — Test mode (sandbox) — complete before live keys
+
+**Where:** Stripe Dashboard → toggle **Test mode** ON (top right).
+
+#### 1. Products and prices (test mode)
+
+Create **three products** (Stripe → Products):
+
+1. **My Wealth Maps — Financial** — financial planning
+2. **My Wealth Maps — Retirement** — retirement planning
+3. **My Wealth Maps — Estate** — estate planning
+
+For **each** product, create **two recurring prices**:
+
+| Lookup key (recommended) | Amount | Interval | Trial |
+|--------------------------|--------|----------|-------|
+| `financial_monthly` | $29.00 USD | Monthly | — |
+| `financial_annual` | $290.00 USD | Yearly | — |
+| `retirement_monthly` | $79.00 USD | Monthly | — |
+| `retirement_annual` | $790.00 USD | Yearly | — |
+| `estate_monthly` | $149.00 USD | Monthly | **14 days** |
+| `estate_annual` | $1,490.00 USD | Yearly | **14 days** |
+
+- [ ] 3 products created in **test mode**
+- [ ] 6 prices created with amounts above
+- [ ] Estate monthly + annual prices have **14-day trial** configured in Stripe
+- [ ] Record all six test `price_…` IDs (copy from each price in Dashboard)
+
+#### 2. Environment variables — staging / preview / local
+
+Set in **Vercel Preview** (and `.env.local` for local checkout tests):
+
+```bash
+# Test keys only (sk_test_… / pk_test_…)
+STRIPE_SECRET_KEY=sk_test_…
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…
+STRIPE_WEBHOOK_SECRET=whsec_…   # from test-mode webhook endpoint (step 3)
+
+STRIPE_PRICE_FINANCIAL_MONTHLY=price_…
+STRIPE_PRICE_FINANCIAL_ANNUAL=price_…
+STRIPE_PRICE_RETIREMENT_MONTHLY=price_…
+STRIPE_PRICE_RETIREMENT_ANNUAL=price_…
+STRIPE_PRICE_ESTATE_MONTHLY=price_…
+STRIPE_PRICE_ESTATE_ANNUAL=price_…
+
+STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/test_…
+```
+
+- [ ] All 10 variables set on staging/preview (not production yet)
+- [ ] Redeploy preview after env change
+- [ ] `/billing` shows **monthly/annual toggle** (confirms all three annual IDs present)
+- [ ] `/pricing` shows toggle and annual copy (“2 months free”)
+
+#### 3. Webhook — test mode
+
+Stripe Dashboard → Developers → Webhooks → **Add endpoint** (test mode):
+
+| Field | Value |
+|-------|--------|
+| URL (preview/staging) | `https://<your-preview-host>/api/stripe/webhook` |
+| URL (local, optional) | `stripe listen --forward-to localhost:3000/api/stripe/webhook` |
+| Events | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.upcoming` |
+
+- [ ] Test webhook endpoint created
+- [ ] Signing secret copied to `STRIPE_WEBHOOK_SECRET` on preview
+- [ ] Stripe Dashboard shows **successful** delivery after a test checkout (green check)
+
+#### 4. Customer Portal — test mode
+
+Stripe → Settings → Billing → Customer portal (test mode):
+
+- [ ] Cancel subscriptions **enabled**
+- [ ] Switch plans **enabled** (between consumer tiers if configured)
+- [ ] Update payment method **enabled**
+- [ ] Cancellation collects reason
+- [ ] Portal login link copied to `STRIPE_CUSTOMER_PORTAL_URL` (test URL)
+
+#### 5. Other Stripe Dashboard (test) — C-4
+
+- [ ] **invoice.upcoming** enabled for renewal reminders (webhook handler in app)
+- [ ] Receipt emails / branding reviewed
+- [ ] Manual walkthrough: [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview with test card `4242 4242 4242 4242`
+
+#### 6. Functional verification — test keys only
+
+Run on **preview** with test mode keys and all six price IDs set:
+
+- [ ] **Financial monthly** ($29) → checkout completes → `consumer_tier` = 1, `subscription_status` = `active`
+- [ ] **Retirement monthly** ($79) → `consumer_tier` = 2
+- [ ] **Estate monthly** ($149) → `consumer_tier` = 3, `subscription_status` = `trialing`, 14-day trial in Stripe
+- [ ] **Annual toggle** → Financial annual ($290) checkout works → tier 1 maintained
+- [ ] **Estate annual** ($1,490) → trial starts if configured on annual price
+- [ ] **Customer portal** — “Manage existing subscription” opens portal; update payment method works
+- [ ] **Cancel** — self-serve cancel shows disclosure; access through period end; webhook updates profile
+- [ ] **Upgrade path** — tier 1 user → gated page → `/billing?returnTo=…` → subscribe → return URL works
+- [ ] Webhook signature verification passes (failed signatures rejected in logs)
+
+---
+
+### Phase 2 — Live mode (production) — go-live day only
+
+**Prerequisite:** Phase 1 fully checked. Legal + [LEGAL_TODO.md](./LEGAL_TODO.md) cleared.
+
+#### 1. Duplicate catalog in live mode
+
+Stripe Dashboard → toggle **Test mode** OFF → repeat product/price creation in **live mode** (same names, amounts, lookup keys, Estate 14-day trial).
+
+- [ ] 3 live products + 6 live prices created (new `price_…` IDs — **not** the test IDs)
+- [ ] Record all six **live** price IDs separately from test
+
+#### 2. Environment variables — Vercel Production
+
+Replace test values with **live** values (never mix test price IDs with live secret key):
+
+```bash
+STRIPE_SECRET_KEY=sk_live_…
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_…
+STRIPE_WEBHOOK_SECRET=whsec_…   # live webhook endpoint secret
+
+STRIPE_PRICE_FINANCIAL_MONTHLY=price_…   # live IDs only
+STRIPE_PRICE_FINANCIAL_ANNUAL=price_…
+STRIPE_PRICE_RETIREMENT_MONTHLY=price_…
+STRIPE_PRICE_RETIREMENT_ANNUAL=price_…
+STRIPE_PRICE_ESTATE_MONTHLY=price_…
+STRIPE_PRICE_ESTATE_ANNUAL=price_…
+
+STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live portal
+```
+
+- [ ] All production env vars updated
+- [ ] **Redeploy** Vercel Production after env change
+- [ ] Confirm `/billing` annual toggle visible on production (all six live price IDs present)
+
+#### 3. Webhook — live mode
+
+- [ ] Live endpoint: `https://mywealthmaps.com/api/stripe/webhook`
+- [ ] Same five events as test mode
+- [ ] Live signing secret in production `STRIPE_WEBHOOK_SECRET`
+- [ ] Dashboard shows verified deliveries after one real checkout
+
+#### 4. Customer Portal — live mode
+
+- [ ] Live portal configured (same settings as test)
+- [ ] `STRIPE_CUSTOMER_PORTAL_URL` updated to live login link
+
+#### 5. Production smoke (minimal real charge)
+
+- [ ] One **live** subscription test with a real card (smallest tier or cancel immediately after verify)
+- [ ] Confirm `profiles.consumer_tier`, `subscription_plan`, `subscription_status` in Supabase prod
+- [ ] Refund or cancel test subscription in Stripe if desired
+
+> After live smoke: set `PUBLIC_SIGNUP_OPEN=true` per [Opening signups — go-live flip](#opening-signups--go-live-flip).
+
+---
+
+### Sandbox → production cutover checklist (summary)
+
+| Step | Test mode | Live mode |
+|------|-----------|-----------|
+| Products + 6 prices | ✅ Phase 1 | ✅ Phase 2 (new IDs) |
+| API keys | `sk_test_` / `pk_test_` | `sk_live_` / `pk_live_` |
+| Price env vars | Test `price_…` IDs | Live `price_…` IDs |
+| Webhook URL | Preview or `stripe listen` | `https://mywealthmaps.com/api/stripe/webhook` |
+| Webhook secret | Test `whsec_…` | Live `whsec_…` |
+| Customer portal URL | Test portal link | Live portal link |
+| End-to-end checkout | Test card 4242… | One real card smoke |
+| Flip signups | — | `PUBLIC_SIGNUP_OPEN=true` |
+
+---
+
+### Code verification (shipped on `main`)
+
+- [x] `lib/billing/stripePrices.ts` — six price configs; `getPriceConfig`, `getTierFromPriceId`, `isAnnualBillingConfigured`
+- [x] Checkout uses `getPriceConfig()` + Estate `trial_period_days: 14`
+- [x] Webhook sets `consumer_tier` + `subscription_status` from Stripe
+- [x] Billing + pricing: $29/$79/$149; annual toggle when annual env vars set
+- [x] `UpgradeBanner` pricing + trial copy
+- [x] Annual toggle hidden when any `STRIPE_PRICE_*_ANNUAL` missing (no client crash)
+
+### Go/no-go (Stripe)
+
+- [ ] Phase 1 complete on preview with **test** keys
+- [ ] [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) walkthrough signed off
+- [ ] Phase 2 live catalog + env vars + webhook on production
+- [ ] One live checkout smoke passed
+- [ ] **Do not** point production at test price IDs or test secret keys
 
 ---
 
@@ -383,7 +538,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Sprint C-3 RLS (Phase 1) | ✅ `236890c` — push migration to production if not applied | Yes (data isolation) |
 | LEGAL_TODO + counsel sign-off | ☐ Open — 3 TODO placeholders; ToS §10/§11/§13 | **Yes** |
 | Sprint C-4 manual verify | ☐ Stripe Dashboard + production walkthrough | **Yes** |
-| Stripe production billing | ☐ Production keys; checkout + webhook | **Yes** |
+| Stripe production billing | ☐ Phase 1 test complete → Phase 2 live keys + 6 prices — [§ Stripe Setup](#stripe-setup-required-before-public_signup_opentrue) | **Yes** |
 | Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — go-live day after blockers cleared | Yes |
 | Section 1 remainder | Drip prod smoke steps 2–3; E2E path; attorney referral prod test | No (waitlist gate) |
 | Dashboard/profile slow renders | ✅ Sprint P-1 + P-2 shipped (`5c24160`, `47a38f3`); remaining ceiling → estate composition read model | No |
@@ -393,9 +548,9 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Item | Owner | Notes |
 |------|-------|-------|
 | **LEGAL_TODO.md** | You | Counsel handoff + one-commit legal update — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
-| **Stripe Dashboard config** | You | invoice.upcoming, portal cancel, receipts |
-| **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
-| **Stripe production billing** | You | Production keys; checkout + webhook |
+| **Stripe Phase 1 (test mode)** | You | [§ Stripe Setup — Phase 1](./LAUNCH_CHECKLIST.md#phase-1--test-mode-sandbox--complete-before-live-keys) — 6 prices + preview env + webhook |
+| **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview |
+| **Stripe Phase 2 (live mode)** | You | [§ Stripe Setup — Phase 2](./LAUNCH_CHECKLIST.md#phase-2--live-mode-production--go-live-day-only) — go-live day only |
 | **Go-live day ops** | You | Supabase Auth ON → verify callback → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke |
 | **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
 | **Sprint P-2 pre-launch refactors** | ✅ `47a38f3` — recommendations cache, projections cache-first, auth dedup — [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
@@ -406,6 +561,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-28 | Stripe go-live docs + annual toggle guard | LAUNCH_CHECKLIST Phase 1/2 sandbox→production; `isAnnualBillingConfigured()` hides toggle |
 | 2026-05-28 | Advisor dashboard tier fix | `_dashboard-body` uses `getUserAccess().tier`; LAUNCH_CHECKLIST advisor manual billing |
 | 2026-05-28 | Sprint 4 consumer pricing | **Code complete** — $29/$79/$149 + annual; Estate 14-day trial; `stripePrices.ts`; billing + pricing toggle; LAUNCH_CHECKLIST Stripe section |
 | May 2026 | Sprint 8 | Attorney referral migration applied; trigger confirmed |

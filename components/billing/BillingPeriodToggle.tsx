@@ -5,9 +5,17 @@ import type { BillingPeriod } from '@/lib/billing/stripePrices'
 type Props = {
   period: BillingPeriod
   onChange: (period: BillingPeriod) => void
+  /** When false, toggle is hidden (annual Stripe price IDs not configured). */
+  annualAvailable?: boolean
 }
 
-export function BillingPeriodToggle({ period, onChange }: Props) {
+export function BillingPeriodToggle({
+  period,
+  onChange,
+  annualAvailable = true,
+}: Props) {
+  if (!annualAvailable) return null
+
   return (
     <div className="mb-8 flex items-center justify-center gap-3">
       <span

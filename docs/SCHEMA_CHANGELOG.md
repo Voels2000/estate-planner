@@ -14,6 +14,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Stripe annual toggle guard (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| `isAnnualBillingConfigured()` / `hasPriceConfig()` | `lib/billing/stripePrices.ts` |
+| Hide toggle when annual IDs missing | `BillingPeriodToggle.tsx`, billing + pricing clients |
+| Server passes `annualBillingAvailable` | `app/billing/page.tsx`, `app/(public)/pricing/page.tsx` |
+
+**No schema migration.** Prevents client crash when toggling annual without `STRIPE_PRICE_*_ANNUAL` env vars.
+
+---
+
 ## Advisor dashboard tier fix (2026-05-28, code only)
 
 | Change | Files |

@@ -17,6 +17,7 @@ type Props = {
   subscriptionStatus: string | null
   subscriptionPeriodEnd: string | null
   isAdvisorClient: boolean
+  annualBillingAvailable: boolean
 }
 
 export function BillingClient({
@@ -24,13 +25,18 @@ export function BillingClient({
   subscriptionStatus,
   subscriptionPeriodEnd,
   isAdvisorClient,
+  annualBillingAvailable,
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
+  const billingPeriod = annualBillingAvailable ? period : 'monthly'
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cancelMessage, setCancelMessage] = useState<string | null>(null)
 
-  const plans = useMemo(() => getConsumerPlansForPeriod(period), [period])
+  const plans = useMemo(
+    () => getConsumerPlansForPeriod(billingPeriod),
+    [billingPeriod],
+  )
 
   async function handleSubscribe(plan: ConsumerPlanForCheckout) {
     setError(null)
@@ -158,7 +164,11 @@ export function BillingClient({
         )}
       </div>
 
-      <BillingPeriodToggle period={period} onChange={setPeriod} />
+      <BillingPeriodToggle
+        period={period}
+        onChange={setPeriod}
+        annualAvailable={annualBillingAvailable}
+      />
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">

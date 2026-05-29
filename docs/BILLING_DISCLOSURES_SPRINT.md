@@ -11,6 +11,8 @@ Sprint C-2b (UX language audit) is complete (`788aa08`). Sprint C-5 (Privacy Pol
 
 **Do not flip `PUBLIC_SIGNUP_OPEN=true` until every checkbox below is verified on production (or production-mode Stripe test).**
 
+**Stripe products, price IDs, test→live cutover:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) (Phase 1 test mode, Phase 2 live mode).
+
 ---
 
 ## Go-live gate order

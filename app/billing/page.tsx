@@ -10,6 +10,7 @@ import {
   ADVISOR_FIRM_SEAT_RATES,
 } from '@/lib/tiers'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 
 export default async function BillingPage() {
   const access = await getAccessContext()
@@ -138,6 +139,7 @@ export default async function BillingPage() {
       subscriptionStatus={profile?.subscription_status ?? null}
       subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
       isAdvisorClient={isAdvisorClient}
+      annualBillingAvailable={isAnnualBillingConfigured()}
     />
   )
 }

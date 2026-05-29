@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-28 (Advisor dashboard tier fix; Sprint 4 pricing; go-live hardening)
+# Updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; advisor tier fix)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Advisor tier fix (shipped):** `_dashboard-body` uses `getUserAccess().tier` — advisor-connected consumers see Stage 3 dashboard. Manual advisor billing: [LAUNCH_CHECKLIST § Advisor Integration](./LAUNCH_CHECKLIST.md#advisor-integration-launch--manual-billing). **Sprint 4 pricing (shipped):** $29/$79/$149 + annual; Estate 14-day trial; Stripe env vars still manual. **Golden Path (shipped):** `determinePlanStage` + `PlanProgressBar` + `npm run test:e2e:golden-path`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe functional verify; `PUBLIC_SIGNUP_OPEN` flip.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Stripe:** Complete [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — **Phase 1 test mode** (6 prices + preview env + webhook + C-4 walkthrough) before **Phase 2 live keys** on go-live day. Annual toggle appears only when all three `STRIPE_PRICE_*_ANNUAL` vars are set. **Advisor tier fix (shipped).** **Sprint 4 pricing (shipped):** $29/$79/$149. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
-> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
+> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview: create 6 test prices, set all `STRIPE_PRICE_*` + test keys, webhook, portal — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + live env vars + one real-card smoke → `PUBLIC_SIGNUP_OPEN=true`.
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
@@ -95,6 +95,17 @@
 |------|--------|
 | `loading.tsx` / `error.tsx` on assets, titling, advisor, my-estate-strategy | ✅ |
 | `revalidateTag(household-composition-{id})` after household writes | ✅ |
+
+---
+
+## Stripe go-live + annual toggle guard ✅ (2026-05-28)
+
+| Task | Status |
+|------|--------|
+| `isAnnualBillingConfigured()` — hide toggle if annual price IDs missing | ✅ |
+| LAUNCH_CHECKLIST Phase 1 (test) + Phase 2 (live) + cutover table | ✅ |
+
+**Ops:** Do not toggle to annual in app until all three `STRIPE_PRICE_*_ANNUAL` env vars are set. See [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 ---
 

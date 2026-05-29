@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-28 (Sprint 4 consumer pricing; Golden Path; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; Sprint 19)
 
 ---
 
@@ -29,8 +29,9 @@
 |------|--------|
 | Manual RLS isolation smoke | `[ ]` |
 | LEGAL_TODO counsel handoff | `[ ]` |
-| Stripe Dashboard — create 6 prices + env vars | `[ ]` |
-| Stripe functional verify (staging test keys) | `[ ]` |
+| Stripe Phase 1 — test mode: 6 prices + preview env + webhook | `[ ]` |
+| Stripe Phase 2 — live mode: live catalog + prod env (go-live day) | `[ ]` |
+| C-4 billing disclosures walkthrough on preview | `[ ]` |
 | Go-live smoke (fresh email) | `[ ]` |
 
 **Engineering (closed):** Sprint 18 shells (J) + flow/perf program K–O + 19a on `main`.

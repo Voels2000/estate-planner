@@ -13,12 +13,21 @@ import type { BillingPeriod } from '@/lib/billing/stripePrices'
 type Props = {
   isLoggedIn: boolean
   signupHref: string
+  annualBillingAvailable: boolean
 }
 
-export function PricingConsumerPlans({ isLoggedIn, signupHref }: Props) {
+export function PricingConsumerPlans({
+  isLoggedIn,
+  signupHref,
+  annualBillingAvailable,
+}: Props) {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
-  const plans = useMemo(() => getConsumerPlansForPeriod(period), [period])
+  const billingPeriod = annualBillingAvailable ? period : 'monthly'
+  const plans = useMemo(
+    () => getConsumerPlansForPeriod(billingPeriod),
+    [billingPeriod],
+  )
 
   async function handleCheckout(plan: ConsumerPlanForCheckout) {
     setLoadingPriceId(plan.priceId)
@@ -39,7 +48,11 @@ export function PricingConsumerPlans({ isLoggedIn, signupHref }: Props) {
 
   return (
     <>
-      <BillingPeriodToggle period={period} onChange={setPeriod} />
+      <BillingPeriodToggle
+        period={period}
+        onChange={setPeriod}
+        annualAvailable={annualBillingAvailable}
+      />
 
       <div
         style={{

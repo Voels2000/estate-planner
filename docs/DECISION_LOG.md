@@ -55,6 +55,8 @@ First advisor cohort is small and high-touch. Manual billing gives flexibility t
 
 **Revisit:** After 90 days of live data — conversion rate by tier, trial-to-paid conversion, churn by tier.
 
+**Go-live ops:** Stripe test mode (Phase 1) must pass before live keys (Phase 2). Annual billing UI requires all three annual price env vars — documented in [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+
 ---
 
 ## Golden Path — unified progress model (2026-05-29)

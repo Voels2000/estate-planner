@@ -80,6 +80,16 @@ const TIER_PERIOD_KEYS: Record<PlanTier, Record<BillingPeriod, string>> = {
   3: { monthly: 'estate_monthly', annual: 'estate_annual' },
 }
 
+export function hasPriceConfig(tier: PlanTier, period: BillingPeriod): boolean {
+  const key = TIER_PERIOD_KEYS[tier][period]
+  return Boolean(STRIPE_PRICES[key]?.priceId)
+}
+
+/** True when all three annual Stripe price IDs are set (env or future fallbacks). */
+export function isAnnualBillingConfigured(): boolean {
+  return ([1, 2, 3] as PlanTier[]).every((tier) => hasPriceConfig(tier, 'annual'))
+}
+
 export function getPriceConfig(tier: PlanTier, period: BillingPeriod): PriceConfig {
   const key = TIER_PERIOD_KEYS[tier][period]
   const config = STRIPE_PRICES[key]

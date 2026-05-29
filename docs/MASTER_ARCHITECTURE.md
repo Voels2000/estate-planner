@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-28 (Sprint 4 consumer pricing; Golden Path; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; Sprint 19)
 
 ---
 
@@ -686,7 +686,8 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Consumer pricing (Sprint 4, 2026-05-28): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **14-day free trial on Estate tier only.**
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts`.
-- Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`).
+- Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
+- **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key.
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).

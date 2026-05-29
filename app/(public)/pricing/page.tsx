@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
+import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { PricingConsumerPlans } from './_pricing-consumer-plans'
 
 const ADVISOR_PLANS = [
@@ -15,6 +16,7 @@ export default async function PricingPage() {
     data: { user },
   } = await supabase.auth.getUser()
   const signupHref = getSignupHref()
+  const annualBillingAvailable = isAnnualBillingConfigured()
 
   return (
     <div
@@ -80,8 +82,8 @@ export default async function PricingPage() {
               lineHeight: 1.6,
             }}
           >
-            Starting at $29/month · Estate plan includes a 14-day free trial · Annual billing saves
-            2 months
+            Starting at $29/month · Estate plan includes a 14-day free trial
+            {annualBillingAvailable ? ' · Annual billing saves 2 months' : ''}
           </p>
           <p
             style={{
@@ -112,7 +114,11 @@ export default async function PricingPage() {
             For Individuals & Families
           </div>
 
-          <PricingConsumerPlans isLoggedIn={!!user} signupHref={signupHref} />
+          <PricingConsumerPlans
+            isLoggedIn={!!user}
+            signupHref={signupHref}
+            annualBillingAvailable={annualBillingAvailable}
+          />
         </div>
 
         <div
@@ -127,7 +133,7 @@ export default async function PricingPage() {
           {[
             '✓ Cancel anytime',
             '✓ 14-day free trial on Estate',
-            '✓ Annual billing — 2 months free',
+            ...(annualBillingAvailable ? ['✓ Annual billing — 2 months free'] : []),
             '✓ A fraction of annual attorney fees',
           ].map((item) => (
             <div
