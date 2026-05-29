@@ -5,22 +5,16 @@ test.beforeEach(async ({ page }) => {
   await gotoMichaelJohnsonClient(page)
 })
 
-test('advisory metrics grid renders without sunset messaging', async ({ page }) => {
+test('strategy tab situation metrics render without sunset messaging', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
-  const dashboard = page.getByText('Advisory Metrics Dashboard')
-  await expect(dashboard.or(page.locator('.animate-pulse')).first()).toBeVisible({ timeout: 30_000 })
-  if (await dashboard.isVisible()) {
-    await expect(page.getByText(/Sunset Urgency|sunset/i)).not.toBeVisible()
-  }
+  await expect(page.getByText('Situation').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/Sunset Urgency|sunset/i)).not.toBeVisible()
 })
 
-test('metric explanations lists multiple rows', async ({ page }) => {
+test('metric explanations accordion on strategy tab', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
-  const dashboard = page.getByText('Advisory Metrics Dashboard')
-  await expect(dashboard.or(page.locator('.animate-pulse')).first()).toBeVisible({ timeout: 30_000 })
-  if (await dashboard.isVisible()) {
-    await expect(page.getByText('Metric Explanations')).toBeVisible()
-  }
+  await expect(page.getByText('Situation').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText('Metric Explanations')).toBeVisible()
 })
 
 test('overview gap analysis or stats row', async ({ page }) => {

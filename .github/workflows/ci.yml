@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Security audit script
+        run: bash scripts/security-audit.sh
+
+      - name: UX language audit
+        run: bash scripts/audit-ux-language.sh
+
+      - name: Event upgrade copy verify
+        run: npx tsx scripts/verify-event-upgrade-copy.ts
+
+      - name: Unit tests (import-unit project)
+        run: npm run test:unit
