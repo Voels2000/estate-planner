@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-27 (TERMS-1 signup checkbox + backfill banner)
+# Updated: 2026-05-27 (Inline profile prompts sprint shipped)
 
 ---
 
@@ -12,7 +12,26 @@
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **WCPA deletion principle:** Deletion is not done when `deleteUserData` returns `success: true`. Run `npm run verify:deletion -- --email …` — must show **PASS** before responding to the user.
+> **Post-deploy (inline prompts):** Run partial PATCH smoke **independently** — SS fields case and retirement/longevity case — against production after Vercel deploy:
+> `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-save.spec.ts --project=consumer --grep "partial PATCH with SS fields only" --workers=1`
+> `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-save.spec.ts --project=consumer --grep "partial PATCH with retirement/longevity only" --workers=1`
+>
+> **Deferred follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — revisit after ~1 week funnel data on scenarios inline-prompt path.
+
+---
+
+## Inline profile prompts ✅ (2026-05-27)
+
+| Task | Status |
+|------|--------|
+| `ProfileFieldPrompt` shared component (session dismiss, save-hidden anti-flash) | ✅ |
+| `/social-security` per-person SS prompts | ✅ |
+| `/scenarios` combined planning prompt (deduction: null/unset only) | ✅ |
+| Partial PATCH merge on `PATCH /api/consumer/profile` | ✅ |
+| E2E partial-payload smoke (SS + retirement/longevity, run separately post-deploy) | ✅ |
+| Master docs sync | ✅ |
+
+See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). Replaces interim `ProfileIncompleteInlinePrompt`.
 
 ---
 

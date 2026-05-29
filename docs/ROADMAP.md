@@ -21,6 +21,20 @@
 
 ## Current sprint
 
+### Sprint — Inline profile prompts (2026-05-27) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `ProfileFieldPrompt` shared component | `[x]` |
+| `/social-security` SS field prompts | `[x]` |
+| `/scenarios` planning field prompts (deduction: null only) | `[x]` |
+| Partial PATCH merge on profile API | `[x]` |
+| E2E partial-payload smoke | `[x]` |
+
+See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` may need update once users fill fields via scenarios prompts.
+
+---
+
 ### Sprint — Friction reduction (2026-05-27) **← shipped**
 
 **Goal:** Reduce time-to-first-value without Plaid, schema changes, or wizard gate changes.

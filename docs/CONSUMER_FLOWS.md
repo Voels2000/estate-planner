@@ -106,7 +106,7 @@ Each feature section below uses this shape:
 | **Tier / gate** | Tier 1; **not** profile-gated (this is where users complete the gate) |
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
-| **Layout (2026-05-27)** | `max-w-2xl`; essentials-only form: name, birth year, spouse toggle, filing + state. Retirement age, SS claiming age, longevity, PIA, and tax deduction **deferred** — inline prompts on `/social-security` and `/scenarios` (`ProfileIncompleteInlinePrompt`). Wizard onboarding cards unchanged when `showWizardFields`. |
+| **Layout (2026-05-27)** | Essentials-only form on `/profile`; deferred fields surface via **`ProfileFieldPrompt`** on `/social-security` and `/scenarios` (session dismiss, partial PATCH merge on API). |
 | **Minimum complete** | `person1_name`, `person1_birth_year`, `state_primary`, `filing_status` (+ spouse name/birth year if `has_spouse`) |
 | **Write APIs** | `PATCH /api/consumer/profile` |
 | **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete and wizard not done → `/onboarding/wizard`; if MVP complete and wizard done → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
@@ -247,7 +247,7 @@ Three related routes share projection engines but answer different questions. **
 |-------|------|------|-----------------|
 | `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
 | `/complete` | 2 | Full year-by-year `YearRow` table (expandable column groups) | Nav pills → projections / scenarios |
-| `/scenarios` | 1 | Side-by-side what-if (base + B + C); **planning assumptions** (financial accum/retire, RE/business growth, inflation) via `PATCH /api/consumer/growth-assumptions` → `afterHouseholdWrite`; scenario rows via `POST /api/consumer/scenario-snapshots` | Nav pills → projections / lifetime |
+| `/scenarios` | 1 | Side-by-side what-if (base + B + C); **`ProfileFieldPrompt`** for deferred retirement/longevity/deduction fields (partial PATCH); planning assumptions via `PATCH /api/consumer/growth-assumptions` | Nav pills → projections / lifetime |
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|
@@ -264,7 +264,7 @@ Three related routes share projection engines but answer different questions. **
 | `/monte-carlo` | 3 | MC loaders (B) | `loading.tsx` + `error.tsx` (H/I) |
 | `/allocation` | 2 | `loadAssetAllocationData` (B) | `loading.tsx` + `error.tsx` (H/I) |
 | `/scenarios` | 1 | Base Case only; B/C lazy (C) | `loading.tsx` + `error.tsx` (H/I) |
-| `/social-security` | 2 | `loadSocialSecurityData` | `loading.tsx` + `error.tsx` (H/I) |
+| `/social-security` | 2 | `loadSocialSecurityData`; **`ProfileFieldPrompt`** for SS claiming age + PIA when unset | `loading.tsx` + `error.tsx` (H/I) |
 | `/projections` | 1 | `loadProjectionData` | `loading.tsx` + `error.tsx` (H/I) |
 | `/complete` | 2 | `loadProjectionData` | `loading.tsx` + `error.tsx` (J) |
 | `/estate-tax` | 2 | composition + household | `loading.tsx` + `error.tsx` (J) |

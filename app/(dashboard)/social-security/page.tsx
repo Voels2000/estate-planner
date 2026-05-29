@@ -9,12 +9,10 @@ import { getUserAccess } from '@/lib/get-user-access'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
-import { SSClient } from './_ss-client'
 import { loadSocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
 import { profileRequiredUrl } from '@/lib/estate/requireMinimumProfile'
-import { ProfileInlinePromptSection } from '@/components/profile/ProfileInlinePromptSection'
-import { buildProfileInlinePayload } from '@/lib/profile/buildProfileInlinePayload'
-import { socialSecurityInlineFields } from '@/lib/profile/profileInlinePrompts'
+import { displayPersonFirstName } from '@/lib/display-person-name'
+import { SocialSecurityPageClient } from './_social-security-page-client'
 
 export default async function SocialSecurityPage() {
   const access = await getUserAccess()
@@ -53,15 +51,9 @@ export default async function SocialSecurityPage() {
     redirect(profileRequiredUrl('/social-security', ['state_primary', 'filing_status', 'date_of_birth_1']))
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('id', user.id)
-    .single()
-
   const ssData = await loadSocialSecurityData(supabase, user.id)
-  const inlineFields = socialSecurityInlineFields(household)
-  const basePayload = buildProfileInlinePayload(household, profile ?? {})
+  const person1Name = displayPersonFirstName(household.person1_name) || 'You'
+  const person2Name = displayPersonFirstName(household.person2_name) || 'Spouse'
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8'>
@@ -71,13 +63,13 @@ export default async function SocialSecurityPage() {
           Break-even claiming analysis and spousal coordination scenarios
         </p>
       </div>
-      <ProfileInlinePromptSection
-        title="Add Social Security details"
-        description="These fields power your claiming analysis. You can find your PIA on your statement at ssa.gov/myaccount."
-        fields={inlineFields}
-        basePayload={basePayload}
+      <SocialSecurityPageClient
+        data={ssData}
+        householdId={household.id}
+        person1Name={person1Name}
+        person2Name={person2Name}
+        householdSnapshot={household}
       />
-      <SSClient data={ssData} />
     </div>
   )
 }

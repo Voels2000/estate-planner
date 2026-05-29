@@ -23,6 +23,8 @@ type HouseholdRow = {
   custom_deduction_amount?: number | null
 }
 
+export type ProfileInlineHouseholdRow = HouseholdRow
+
 type ProfileRow = {
   full_name?: string | null
   email?: string | null

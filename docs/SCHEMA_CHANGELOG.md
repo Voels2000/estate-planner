@@ -25,6 +25,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Inline profile prompts (2026-05-27) — code only
+
+| Change | Files |
+|--------|-------|
+| `ProfileFieldPrompt` + session dismiss + save-hidden anti-flash | `components/profile/ProfileFieldPrompt.tsx` |
+| Partial PATCH merge on profile API | `lib/profile/mergeProfilePatch.ts`, `loadProfileSavePayloadForUser.ts`, `app/api/consumer/profile/route.ts` |
+| SS + Scenarios wiring | `social-security/_social-security-page-client.tsx`, `scenarios/_scenarios-client.tsx` |
+| Field defs; deduction prompt when `deduction_mode` null only | `lib/profile/profileFieldPromptDefs.ts` |
+| E2E partial PATCH smoke | `tests/e2e/consumer/consumer-profile-save.spec.ts` |
+
+**No migration.** Replaces interim `ProfileIncompleteInlinePrompt` from friction-reduction sprint.
+
+---
+
 ## Friction reduction sprint (2026-05-27) — code only
 
 | Change | Files |

@@ -6,6 +6,8 @@ import {
   validateProfileSavePayload,
   type ProfileSavePayload,
 } from '@/lib/profile/buildHouseholdPayload'
+import { loadProfileSavePayloadForUser } from '@/lib/profile/loadProfileSavePayloadForUser'
+import { mergeProfilePatch } from '@/lib/profile/mergeProfilePatch'
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
@@ -14,8 +16,13 @@ export async function PATCH(request: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as ProfileSavePayload
-  const validationErrors = validateProfileSavePayload(body)
+  const body = (await request.json()) as Partial<ProfileSavePayload>
+  const existing = await loadProfileSavePayloadForUser(supabase, user.id)
+  const payload: ProfileSavePayload = existing
+    ? mergeProfilePatch(existing, body)
+    : (body as ProfileSavePayload)
+
+  const validationErrors = validateProfileSavePayload(payload)
   if (validationErrors.length > 0) {
     return NextResponse.json({ error: validationErrors.join(' ') }, { status: 400 })
   }
@@ -23,8 +30,8 @@ export async function PATCH(request: NextRequest) {
   const { error: profileError } = await supabase
     .from('profiles')
     .update({
-      full_name: body.fullName,
-      email: body.email,
+      full_name: payload.fullName,
+      email: payload.email,
       updated_at: new Date().toISOString(),
     })
     .eq('id', user.id)
@@ -33,7 +40,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
-  let householdId = body.householdId ?? null
+  let householdId = payload.householdId ?? null
   let created = false
   let existingDefaults = null
 
@@ -56,7 +63,7 @@ export async function PATCH(request: NextRequest) {
     existingDefaults = existing
   }
 
-  const householdRow = buildHouseholdRow(user.id, body, existingDefaults)
+  const householdRow = buildHouseholdRow(user.id, payload, existingDefaults)
 
   if (householdId && !created) {
     const { error: householdError } = await supabase

@@ -61,6 +61,10 @@ export type HouseholdPlanningFields = {
   growth_assumptions: { real_estate: number; business: number }
 }
 
+export async function fetchHouseholdById(householdId: string): Promise<HouseholdRow | null> {
+  return restGet<HouseholdRow>('households', `id=eq.${householdId}&select=*`)
+}
+
 export async function fetchHouseholdPlanningFields(
   householdId: string,
 ): Promise<HouseholdPlanningFields | null> {

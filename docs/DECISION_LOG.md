@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Friction reduction sprint)
+# Last updated: 2026-05-27 (Inline profile prompts sprint)
+
+## Partial PATCH merge on profile API (2026-05-27)
+
+**Decision:** `PATCH /api/consumer/profile` merges incoming partial bodies with the user's existing household payload (`loadProfileSavePayloadForUser` + `mergeProfilePatch`) before validation and `buildHouseholdRow`. Inline `ProfileFieldPrompt` sends only the fields in the prompt plus `householdId`.
+
+**Reasoning:** Sprint assumed pass-through from `buildHouseholdPayload` alone; without merge, partial PATCH fails validation ("Your name is required…"). Merge keeps full-profile saves unchanged while enabling deferred-field prompts on `/social-security` and `/scenarios`.
+
+**Deduction prompt:** `needsDeductionMode()` is true only when `deduction_mode` is null/unset — explicit `standard` is a user choice and must not re-prompt.
+
+**Verification:** `consumer-profile-save.spec.ts` partial PATCH cases pass locally; re-run against `PLAYWRIGHT_BASE_URL` production after deploy.
+
+---
 
 ## Import at Tier 1 — intentional (2026-05-27)
 

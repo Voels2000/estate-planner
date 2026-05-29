@@ -16,6 +16,8 @@ import {
   GrowthAssumptionInputs,
   type GrowthAssumptionField,
 } from '@/components/projections/GrowthAssumptionInputs'
+import { ProfileFieldPrompt } from '@/components/profile/ProfileFieldPrompt'
+import type { ProfileFieldDef } from '@/lib/profile/profileFieldPromptDefs'
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 
 type Household = {
@@ -120,6 +122,8 @@ type ScenariosClientProps = {
   initialResultA: ScenarioResult
   hasRealEstate?: boolean
   hasBusiness?: boolean
+  scenariosPlanningFields?: ProfileFieldDef[]
+  householdId?: string | null
 }
 
 export default function ScenariosClient({
@@ -127,6 +131,8 @@ export default function ScenariosClient({
   initialResultA,
   hasRealEstate = true,
   hasBusiness = true,
+  scenariosPlanningFields = [],
+  householdId = null,
 }: ScenariosClientProps) {
   const [household, setHousehold]     = useState<Household | null>(initialHousehold)
   const [isSaving, setIsSaving]       = useState<number | null>(null)
@@ -349,6 +355,16 @@ export default function ScenariosClient({
         </div>
         <PlanningSurfaceNav className="sm:pt-1" />
       </div>
+
+      {householdId && scenariosPlanningFields.length > 0 && (
+        <ProfileFieldPrompt
+          promptKey="scenarios_planning"
+          title="Personalize your projection"
+          description="These inputs help tailor the Base Case projection to your timeline. You can refine them anytime."
+          fields={scenariosPlanningFields}
+          householdId={householdId}
+        />
+      )}
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 

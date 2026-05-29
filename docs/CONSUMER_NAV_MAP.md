@@ -56,7 +56,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 | Sidebar label | Route | Page title | Tier | Feature key |
 |---------------|-------|------------|------|-------------|
-| Profile | `/profile` | Your Profile | 1 | `profile` |
+| Profile | `/profile` | Your Profile | 1 | `profile` — essentials only (name, birth year, state, filing status); deferred SS/planning fields via **`ProfileFieldPrompt`** on `/social-security` and `/scenarios` |
 | Estate Summary | `/dashboard` | (dashboard sections) | 1 | `dashboard` |
 
 **Not in app sidebar (public / marketing):**
@@ -117,7 +117,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Property & Casualty | `/property-casualty` | Property & Casualty Insurance | 1 | `insurance` |
 | Asset Allocation | `/allocation` | Asset Allocation | 2 | `allocation` |
 | Projections | `/projections` | Projections | 1 | `projections` |
-| Scenarios | `/scenarios` | Scenarios | 1 | `scenarios` |
+| Scenarios | `/scenarios` | Scenarios | 1 | `scenarios` — inline **`ProfileFieldPrompt`** for retirement/longevity/deduction when unset |
 
 **Redirects (legacy URLs):**
 
@@ -131,7 +131,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 | Sidebar label | Route | Page title | Tier | Feature key |
 |---------------|-------|------------|------|-------------|
-| Social Security | `/social-security` | Social Security | 2 | `social-security` |
+| Social Security | `/social-security` | Social Security | 2 | `social-security` — inline **`ProfileFieldPrompt`** for SS claiming age + PIA when unset |
 | RMD Calculator | `/rmd` | RMD Calculator | 2 | `rmd` |
 | Roth Conversion | `/roth` | Roth Conversion | 2 | `roth` — optional CTA to Transfer Strategies sandbox (`?tab=strategies&openPanel=roth`); see [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) |
 | Lifetime Snapshot | `/complete` | Lifetime Snapshot | 2 | `complete` |

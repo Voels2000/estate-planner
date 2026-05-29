@@ -72,6 +72,8 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 | 3.1b Live person column header | ✅ | `consumer-profile-spouse-layout.spec.ts` | — |
 | 3.1c Spouse toggle / second column | ✅ | `consumer-profile-spouse-layout.spec.ts` | — |
 | 3.2 Save harmless field | ✅ | `consumer-profile-save.spec.ts` | API + UI household name |
+| 3.2b Partial PATCH SS fields only | ✅ | `consumer-profile-save.spec.ts` | `person1SSClaimingAge` + `person1SSPia`; retirement age unchanged — run separately post-deploy |
+| 3.2c Partial PATCH retirement/longevity only | ✅ | `consumer-profile-save.spec.ts` | `person1RetirementAge` + `person1LongevityAge`; SS claiming unchanged — run separately post-deploy |
 | 3.3 Dashboard still loads | ✅ | `consumer-profile-save.spec.ts` | — |
 
 **Note:** Core §3 is **Profile save**, not “planning surfaces.” Planning routes are in §4–7 and optional §8–11. Growth assumptions API: `consumer-growth-assumptions-api.spec.ts` (Scenarios save path; round-trip needs `PLAYWRIGHT_HOUSEHOLD_ID`).

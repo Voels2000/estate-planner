@@ -182,6 +182,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `ProjectionAssumptions` + Complete footer copy aligned with ENG-2A engine
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE
 
+## Inline profile prompts (2026-05-27) — shipped
+
+- [x] `ProfileFieldPrompt` — `components/profile/ProfileFieldPrompt.tsx` (session dismiss, save-hidden, custom deduction follow-on)
+- [x] Partial PATCH merge — `mergeProfilePatch`, `loadProfileSavePayloadForUser`, `app/api/consumer/profile/route.ts`
+- [x] SS + Scenarios wiring — `_social-security-page-client.tsx`, `_scenarios-client.tsx`, `profileFieldPromptDefs.ts`
+- [x] Deduction prompt when `deduction_mode` null/unset only (not explicit `standard`)
+- [x] E2E — `consumer-profile-save.spec.ts` partial PATCH (SS + retirement/longevity; run separately post-deploy)
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · CONSUMER_NAV_MAP · PLAYWRIGHT_E2E · E2E_RELEASE_TEST_PLAN · LAUNCH_CHECKLIST · SPRINT_INLINE_PROFILE_PROMPTS
+
 ## Profile layout — two-column people (2026-05-27)
 
 - [x] `_profile-client.tsx` — layout only; no field/state/API changes
