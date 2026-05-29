@@ -21,6 +21,22 @@
 
 ## Current sprint
 
+### Sprint — Security + CI + audit automation (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Internal API key on email notify routes | `[x]` |
+| Household access checks on RPC read routes | `[x]` |
+| Signed unsubscribe tokens | `[x]` |
+| Dead code cleanup (~3.5k lines) | `[x]` |
+| GitHub Actions CI workflow | `[x]` |
+| Unit tests: health score, prospect, playbook | `[x]` |
+| E2E: prospect redirect, health score, mobile | `[x]` |
+
+**Commits:** `fix(security)` · `chore` · `test(ci)` · `test(e2e)`
+
+---
+
 ### Sprint — Health Score Narrative + Advisor First-Client Playbook (2026-05-29) **← shipped**
 
 | Item | Status |

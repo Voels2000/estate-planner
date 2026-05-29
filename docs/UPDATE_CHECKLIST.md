@@ -493,6 +493,14 @@ Verified in **Vercel → Production**:
 
 Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 
+## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
+
+- [x] `fix(security)` — internal email gates, household access, signed unsubscribe, webhook auth
+- [x] `chore` — remove ~3.5k lines orphaned components + `/advisor/prospect` redirect
+- [x] `test(ci)` — GitHub Actions: lint, build, security-audit, UX language, unit tests (37)
+- [x] `test(e2e)` — prospect redirect, health score, advisor activation, mobile overflow specs
+- [x] Master docs updated
+
 ## Sprint — Health Score + Advisor Playbook ✅ closed 2026-05-29
 
 - [x] `HealthScoreBadge`, `EstateHealthScoreBlock`, `MyEstateStrategyHealthScore`

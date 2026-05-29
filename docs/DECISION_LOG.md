@@ -2,6 +2,18 @@
 # My Wealth Maps — Key Decisions and Reasoning
 # Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook)
 
+# Last updated: 2026-05-29 (Security hardening + CI + dead code cleanup)
+
+## Security hardening — internal email routes and household access (2026-05-29)
+
+**Decision:** Server-only email notify routes (`/api/email/advisor-notify`, `attorney-notify`, `attorney-invite`) require `x-internal-key: INTERNAL_API_KEY`. HTML in emails escaped via shared `escapeHtml()`; attorney invite `signupUrl` must match app origin.
+
+**Household IDOR:** `assertHouseholdAccess()` added — owner or connected advisor required before RPC reads on `gifting-summary`, `estate-composition`, `strategy-configs`, `export-estate-plan`.
+
+**Other:** Signed unsubscribe tokens (HMAC via `CRON_SECRET`); Resend inbound webhook requires cron/internal auth; `debug-tier` hidden in production; invite accept validates invited email; referral signup notify requires authenticated user with matching profile referral code; projection/run no longer accepts bare service-role Bearer without internal key header.
+
+---
+
 ## Health score narrative + advisor first-client playbook (2026-05-29)
 
 **Decision:** Unify health score display language across consumer and advisor surfaces; add in-product first-client activation without new DB tables.
