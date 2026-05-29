@@ -131,6 +131,29 @@ These must be complete before launch. Update status as sprints close them.
 
 See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 
+### Security hardening post-deploy browser smoke (2026-05-29)
+
+**Prod deploy:** migrations `20260629120000` + `20260629130000` applied; `estate-monte-carlo` edge function deployed. SQL verify: `scripts/verify-security-sprint-20260629.sql`.
+
+**Automated (when deployment reachable):**
+
+```bash
+npx dotenv -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
+npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
+npx dotenv -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
+```
+
+E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-consumer@mywealthmaps.test` for RPC pages.
+
+#### Manual checks (rolobe or production accounts)
+
+| # | Check | Pass |
+|---|--------|------|
+| 1 | **Monte Carlo** — `advisor2@rolobe.resend.app` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [ ] |
+| 2 | **Consumer RPCs** — `david@rolobe.resend.app` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [ ] |
+| 3 | **Referral rate limit** — on `/event/selling-a-business`, DevTools Console (see [GO_LIVE_E2E § Security smoke](./GO_LIVE_E2E.md#security-hardening-post-deploy-smoke-2026-05-29)) → `{ 200: ~60, 429: ~5 }` for fake ref `test123` | [ ] |
+| 4 | **Telemetry auth** — logged out / incognito Console → `POST /api/telemetry/horizon-input-missing` → **401** | [ ] |
+
 ### Prospect + Mobile Review Mode manual smoke (2026-05-29)
 
 **Automated pre-check (CI/local):** `npm run test:import:unit` (24/24); ESLint on sprint files; TypeScript (excluding pre-existing `consumer-import.spec.ts`).

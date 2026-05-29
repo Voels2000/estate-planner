@@ -36,7 +36,7 @@
 
 **Prod deploy (2026-05-29):** Migrations applied + edge function deployed on `fnzvlmrqwcqwiqueevux`. SQL verify script: `scripts/verify-security-sprint-20260629.sql`. **Cron note:** `app/api/cron/README.md`.
 
-**Browser smoke still manual:** advisor Monte Carlo; referral/telemetry HTTP checks (production may return 307 at CDN without session — use browser Network tab).
+**Browser smoke still manual:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) · automated: `npm run test:e2e:security-smoke`
 
 **Go-live:** Last structural security requirement before `PUBLIC_SIGNUP_OPEN=true`.
 

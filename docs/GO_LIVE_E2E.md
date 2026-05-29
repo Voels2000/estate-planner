@@ -59,6 +59,65 @@ npm run test:import:unit   # 24 tests — projection readiness, wizard gate, imp
 
 ---
 
+## Security hardening post-deploy smoke (2026-05-29)
+
+Run on **production** (`https://www.mywealthmaps.com`) after `db push` + `estate-monte-carlo` deploy.
+
+### Automated
+
+```bash
+npx dotenv -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
+npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
+npx dotenv -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
+```
+
+| Spec | Proves |
+|------|--------|
+| `security-sprint-post-deploy.spec.ts` | Referral 429 after ~60 POSTs; telemetry 401 without session |
+| `security-sprint-rpc-pages.spec.ts` | Consumer `/estate-tax` + gifting tab load (RPC guards) |
+| `security-sprint-monte-carlo.spec.ts` | Advisor Monte Carlo edge returns P10/P50/P90 (JWT auth) |
+
+### Manual — DevTools Console (rolobe accounts)
+
+**Referral rate limit** — open `/event/selling-a-business`, paste:
+
+```javascript
+const results = []
+for (let i = 0; i < 65; i++) {
+  const r = await fetch('/api/referral/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'test123' })
+  })
+  results.push(r.status)
+}
+console.log(results.reduce((acc, s) => {
+  acc[s] = (acc[s] || 0) + 1; return acc
+}, {}))
+```
+
+Expected: `{ 200: ~60, 429: ~5 }` — unresolved refs return **200** (`ok: true, resolved: false`); **429** confirms rate limiting.
+
+**Telemetry auth** — logged out or incognito:
+
+```javascript
+fetch('/api/telemetry/horizon-input-missing', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ test: true })
+}).then(r => console.log('Status:', r.status))
+```
+
+Expected: **401**
+
+**Monte Carlo:** `advisor2@rolobe.resend.app` → Johnson → Strategy → Run Monte Carlo — P10/P50/P90 in UI; Network: no 401/403 on edge function.
+
+**Consumer RPCs:** `david@rolobe.resend.app` → `/estate-tax`, `/my-estate-trust-strategy?tab=gifting` — data visible, no 403.
+
+Checklist: [LAUNCH_CHECKLIST § Security hardening post-deploy browser smoke](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29).
+
+---
+
 ## Broader go-live automated suite
 
 After profile pre-flight passes, run the full consumer project (or complete suite):

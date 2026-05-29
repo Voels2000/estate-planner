@@ -502,7 +502,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Unit test `simpleRateLimit.spec.ts` — **39/39** in `npm run test:unit`
 - [x] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo` — applied 2026-05-29 on `fnzvlmrqwcqwiqueevux`
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
-- [ ] **Prod live smoke:** advisor Monte Carlo (browser); referral 429 + telemetry 401 curls (may 307 at CDN — run from browser Network tab or authenticated session)
+- [ ] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — Monte Carlo, consumer RPC pages, referral 429, telemetry 401
 
 ## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
 
