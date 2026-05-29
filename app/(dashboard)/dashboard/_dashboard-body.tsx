@@ -49,6 +49,7 @@ import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
+import { determinePlanStage } from '@/lib/dashboard/determinePlanStage'
 
 type HouseholdRow = Record<string, unknown> & {
   id: string
@@ -446,8 +447,38 @@ export async function DashboardBody({
     })
   }
 
+  const financialSectionsComplete = [
+    setupProgress.assets > 0,
+    setupProgress.income > 0,
+    setupProgress.expenses > 0,
+    setupProgress.liabilities > 0,
+    setupProgress.insurance > 0,
+  ].filter(Boolean).length
+
+  const checklistActiveItems = executionChecklist.filter((i) => i.status !== 'not_applicable')
+  const checklistCompletedCount = checklistActiveItems.filter(
+    (i) => i.status === 'complete' || i.consumerChecked,
+  ).length
+  const checklistTotalCount = checklistActiveItems.length
+  const checklistPct =
+    checklistTotalCount > 0
+      ? Math.round((checklistCompletedCount / checklistTotalCount) * 100)
+      : 0
+
+  const planStage = determinePlanStage({
+    financialSectionsComplete,
+    wizardComplete,
+    userTier: consumerTier,
+    checklistPct,
+    checklistCompletedCount,
+    checklistTotalCount,
+    hasEstateData: !!estateCallout,
+    hasAdvisor: hasAdvisorConnection,
+  })
+
   return (
     <DashboardClient
+      planStage={planStage}
       wizardComplete={wizardComplete}
       initialSetupProgress={setupProgress}
       composition={composition}
