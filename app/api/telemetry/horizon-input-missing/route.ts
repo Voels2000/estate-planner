@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, clientIp } from '@/lib/api/simpleRateLimit'
+
+const RATE_MAX = 120
+const RATE_WINDOW_MS = 60 * 1000
 
 const ALLOWED_SURFACES = new Set([
   'advisor_tax_tab_current_law',
@@ -12,6 +17,23 @@ type AllowedSurface =
   | 'advisor_strategy_tab_today'
 
 export async function POST(req: NextRequest) {
+  const ip = clientIp(req)
+  const rl = checkRateLimit(`horizon-telemetry:${ip}`, RATE_MAX, RATE_WINDOW_MS)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: rl.retryAfterSec ? { 'Retry-After': String(rl.retryAfterSec) } : {} },
+    )
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = (await req.json()) as {
       surface?: string

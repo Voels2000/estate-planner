@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit, clientIp } from '@/lib/api/simpleRateLimit'
+
+const RATE_MAX = 60
+const RATE_WINDOW_MS = 60 * 1000
 
 /**
  * POST /api/referral/track
@@ -14,6 +18,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * Unresolved codes (ref not found in directory) are logged with resolved: false.
  */
 export async function POST(req: NextRequest) {
+  const ip = clientIp(req)
+  const rl = checkRateLimit(`referral-track:${ip}`, RATE_MAX, RATE_WINDOW_MS)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many requests' },
+      { status: 429, headers: rl.retryAfterSec ? { 'Retry-After': String(rl.retryAfterSec) } : {} },
+    )
+  }
+
   try {
     const { ref, event_slug, source_url, type } = await req.json()
 
