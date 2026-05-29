@@ -9,6 +9,13 @@ function isAttorneyProfile(profile: { role?: string | null; is_attorney?: boolea
   return profile.role === 'attorney' || profile.is_attorney === true
 }
 
+function isProfessionalProfile(profile: {
+  role?: string | null
+  is_attorney?: boolean | null
+}) {
+  return isAttorneyProfile(profile) || profile.role === 'advisor'
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -27,11 +34,11 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!isAttorneyProfile(profile ?? {})) {
-      return NextResponse.json({ error: 'Attorney role required' }, { status: 403 })
+    if (!isProfessionalProfile(profile ?? {})) {
+      return NextResponse.json({ error: 'Professional role required' }, { status: 403 })
     }
 
-    if ((profile?.attorney_tier ?? 0) === 0) {
+    if (isAttorneyProfile(profile ?? {}) && (profile?.attorney_tier ?? 0) === 0) {
       const startOfMonth = new Date()
       startOfMonth.setDate(1)
       startOfMonth.setHours(0, 0, 0, 0)
@@ -85,7 +92,10 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = getAppUrl()
     const acceptUrl = `${baseUrl}/intake/${intakeRequest.token}`
-    const attorneyName = profile?.full_name ?? listing?.firm_name ?? 'Your attorney'
+    const attorneyName =
+      profile?.full_name ??
+      listing?.firm_name ??
+      (profile?.role === 'advisor' ? 'Your advisor' : 'Your attorney')
 
     const { error: emailError } = await resend.emails.send({
       from: 'My Wealth Maps <hello@mywealthmaps.com>',

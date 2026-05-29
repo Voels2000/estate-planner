@@ -7,12 +7,14 @@ export function ProspectSelects({
   range,
   marital,
   age,
+  name,
   usStates,
 }: {
   state: string
   range: string
   marital: string
   age: number
+  name: string
   usStates: string[]
 }) {
   const stateRef = useRef<HTMLSelectElement>(null)
@@ -41,7 +43,6 @@ export function ProspectSelects({
       if (stateHiddenRef.current) stateHiddenRef.current.value = (e.target as HTMLSelectElement).value
     }
     const handleRange = (e: Event) => {
-      console.log('Range changed to:', (e.target as HTMLSelectElement).value)
       if (rangeHiddenRef.current) rangeHiddenRef.current.value = (e.target as HTMLSelectElement).value
     }
     const handleMarital = (e: Event) => {
@@ -77,6 +78,19 @@ export function ProspectSelects({
       <input ref={rangeHiddenRef} type="hidden" name="range" />
       <input ref={maritalHiddenRef} type="hidden" name="marital" />
       <input ref={ageHiddenRef} type="hidden" name="age" />
+
+      <div>
+        <label className="block text-xs font-medium text-neutral-600 mb-1.5">
+          Prospect name <span className="text-neutral-400 font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          name="name"
+          defaultValue={name}
+          placeholder="Jane Smith"
+          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+        />
+      </div>
 
       <div>
         <label className="block text-xs font-medium text-neutral-600 mb-1.5">State</label>

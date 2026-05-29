@@ -1,135 +1,91 @@
-import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
+import { createClient } from '@/lib/supabase/server'
+import { calculateProspectSummary } from '@/lib/prospect/calculateProspectSummary'
+import { PROSPECT_US_STATES } from '@/lib/prospect/constants'
 import { ProspectSelects } from './_prospect-selects'
-
-const ASSET_MIDPOINTS: Record<string, number> = {
-  sm: 3_000_000, md: 10_000_000, lg: 22_500_000, xl: 40_000_000,
-}
-const ESTATE_TAX_STATES = ['CT', 'HI', 'IL', 'ME', 'MD', 'MA', 'MN', 'NY', 'OR', 'RI', 'VT', 'WA', 'DC']
-const STATE_EXEMPTIONS: Record<string, number> = {
-  CT: 12920000, HI: 5490000, IL: 4000000, ME: 6800000, MD: 5000000, MA: 1000000,
-  MN: 3000000, NY: 6940000, OR: 1000000, RI: 1733264, VT: 5000000, WA: 2193000, DC: 4528800,
-}
-const STATE_TOP_RATES: Record<string, number> = {
-  CT: 0.12, HI: 0.20, IL: 0.16, ME: 0.12, MD: 0.16, MA: 0.16,
-  MN: 0.16, NY: 0.16, OR: 0.16, RI: 0.16, VT: 0.16, WA: 0.20, DC: 0.16,
-}
-const US_STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC']
-
-function fmt(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
-}
+import { ProspectResults } from './_prospect-results'
 
 interface Props {
-  searchParams: Promise<{ state?: string; range?: string; marital?: string; biz?: string; age?: string }>
+  searchParams: Promise<{
+    state?: string
+    range?: string
+    marital?: string
+    biz?: string
+    age?: string
+    name?: string
+  }>
 }
 
 export default async function ProspectPage({ searchParams }: Props) {
   const params = await searchParams
   const state = params.state ?? 'CA'
   const range = params.range ?? 'md'
-  const marital = params.marital ?? 'married'
+  const marital = (params.marital ?? 'married') as 'single' | 'married'
   const businessOwner = params.biz === '1'
-  const age = parseInt(params.age ?? '55')
-  const hasResult = !!params.range
+  const age = parseInt(params.age ?? '55', 10)
+  const prospectName = params.name?.trim() ?? ''
+  const hasResult = params.range != null
 
-  let result = null
+  const supabase = await createClient()
+
+  let summary = null
   if (hasResult) {
-    const assets = ASSET_MIDPOINTS[range] ?? 10_000_000
-    const exemptionCurrent = marital === 'married'
-      ? OBBBA_2026.BASIC_EXCLUSION_MFJ
-      : OBBBA_2026.BASIC_EXCLUSION_SINGLE
-    const taxableCurrent = Math.max(0, assets - exemptionCurrent)
-    const federalTaxCurrent = Math.round(taxableCurrent * OBBBA_2026.TOP_RATE)
-    let stateTax = 0
-    if (ESTATE_TAX_STATES.includes(state)) {
-      const stateExemption = STATE_EXEMPTIONS[state] ?? 2_000_000
-      stateTax = Math.round(Math.max(0, assets - stateExemption) * (STATE_TOP_RATES[state] ?? 0.16))
-    }
-    const gaps: string[] = []
-    if (assets > exemptionCurrent) gaps.push('Federal estate tax exposure above the $15M/$30M permanent exemption')
-    if (marital === 'married' && assets > 5_000_000) gaps.push('Credit shelter trust opportunity at first death')
-    if (businessOwner) gaps.push('Business succession and valuation planning needed')
-    if (assets > 10_000_000) gaps.push('Annual gifting program could reduce estate over time')
-    if (ESTATE_TAX_STATES.includes(state)) gaps.push(`${state} state estate tax applies - separate from federal`)
-    if (age > 60) gaps.push('Beneficiary designation review recommended')
-    const lookAt: string[] = [
-      'Review all beneficiary designations and account titling',
-      'Analyze federal and state estate tax exposure under OBBBA 2026 law',
-    ]
-    if (marital === 'married') lookAt.push('Evaluate portability election and credit shelter trust')
-    if (assets > 10_000_000) lookAt.push('Annual gifting program and lifetime exemption utilization')
-    if (businessOwner) lookAt.push('Business succession plan and valuation discount strategies')
-    if (ESTATE_TAX_STATES.includes(state)) lookAt.push(`${state} state estate tax mitigation strategies`)
-    result = { federalTaxCurrent, stateTax, state, gaps: gaps.slice(0, 5), lookAt: lookAt.slice(0, 6) }
+    summary = await calculateProspectSummary(supabase, {
+      state,
+      range,
+      marital,
+      businessOwner,
+      age,
+    })
   }
+
+  const pdfUrl = hasResult
+    ? `/api/advisor/prospect-pdf?${new URLSearchParams({
+        state,
+        range,
+        marital,
+        biz: businessOwner ? '1' : '0',
+        age: String(age),
+        name: prospectName || 'Prospect',
+      }).toString()}`
+    : ''
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-neutral-900">Prospect Mode</h1>
-      <p className="text-sm text-neutral-500">Generate an Estate Planning Opportunity Summary. No data is stored.</p>
+      <p className="text-sm text-neutral-500">
+        Generate an Estate Planning Opportunity Summary. No data is stored.
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <form method="GET" className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 space-y-5">
           <h2 className="text-sm font-semibold text-neutral-900">Prospect Profile</h2>
 
-          <ProspectSelects state={state} range={range} marital={marital} age={age} usStates={US_STATES} />
+          <ProspectSelects
+            state={state}
+            range={range}
+            marital={marital}
+            age={age}
+            name={prospectName}
+            usStates={PROSPECT_US_STATES}
+          />
 
           <div className="flex items-center gap-3">
-            <input type="checkbox" name="biz" value="1" id="biz" defaultChecked={businessOwner} className="w-4 h-4 rounded border-neutral-300" />
-            <label htmlFor="biz" className="text-sm text-neutral-700">Business owner</label>
+            <input
+              type="checkbox"
+              name="biz"
+              value="1"
+              id="biz"
+              defaultChecked={businessOwner}
+              className="w-4 h-4 rounded border-neutral-300"
+            />
+            <label htmlFor="biz" className="text-sm text-neutral-700">
+              Business owner
+            </label>
           </div>
-
         </form>
 
-        {result && (
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-neutral-900">Estate Planning Opportunity Summary</h2>
-
-            <div className="bg-white rounded-xl border border-neutral-200 p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Federal Estate Tax</h3>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-600">Current law</span>
-                <span className="font-semibold">{fmt(result.federalTaxCurrent)}</span>
-              </div>
-              {result.stateTax > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">{result.state} state estate tax</span>
-                  <span className="font-semibold text-amber-700">{fmt(result.stateTax)}</span>
-                </div>
-              )}
-            </div>
-
-            {result.gaps.length > 0 && (
-              <div className="bg-white rounded-xl border border-neutral-200 p-4">
-                <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Top Planning Gaps</h3>
-                <div className="space-y-2">
-                  {result.gaps.map((gap, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <span className="text-amber-500 shrink-0">o</span>
-                      <span className="text-sm text-neutral-700">{gap}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-[var(--mwm-gold-pale)] rounded-xl border border-[color:var(--mwm-border)] p-4">
-              <h3 className="text-xs font-semibold text-[color:var(--mwm-navy)] uppercase tracking-wide mb-3">What we would look at together</h3>
-              <div className="space-y-2">
-                {result.lookAt.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <span className="text-[color:var(--mwm-text-muted)] font-bold text-xs mt-0.5">{i + 1}.</span>
-                    <span className="text-sm text-[color:var(--mwm-navy)]">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <DisclaimerBanner context="prospect analysis" />
-          </div>
+        {summary && (
+          <ProspectResults summary={summary} pdfUrl={pdfUrl} prospectName={prospectName} />
         )}
       </div>
     </div>
