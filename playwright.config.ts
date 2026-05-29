@@ -44,7 +44,7 @@ const projects: Project[] = [
   {
     name: 'import-unit',
     testDir: './tests/unit',
-    testMatch: /(import|wizard-onboarding-gate|type-normalizer).*\.spec\.ts/,
+    testMatch: /(import|wizard-onboarding-gate|type-normalizer|projectionReadiness).*\.spec\.ts/,
     use: {
       baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },

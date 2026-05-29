@@ -14,6 +14,7 @@ export type ProfileFieldDef = {
 }
 
 export type HouseholdPromptSource = {
+  person1_birth_year?: number | null
   person1_ss_claiming_age?: number | null
   person1_ss_pia?: number | null
   person1_retirement_age?: number | null
@@ -166,6 +167,38 @@ export function buildScenariosPlanningFields(household: HouseholdPromptSource): 
       ],
       helpText:
         'Used in the income tax projection. Most households use standard; choose custom for a specific annual deduction.',
+    })
+  }
+
+  return fields
+}
+
+/** Inline prompts on `/projections` for birth year and retirement age only. */
+export function buildProjectionPlanningFields(household: HouseholdPromptSource): ProfileFieldDef[] {
+  const fields: ProfileFieldDef[] = []
+
+  if (!household.person1_birth_year) {
+    fields.push({
+      name: 'person1_birth_year',
+      payloadKey: 'person1BirthYear',
+      label: 'Your birth year',
+      type: 'number',
+      placeholder: '1965',
+      min: 1900,
+      max: 2100,
+      helpText: 'Required for retirement timeline calculations',
+    })
+  }
+  if (!household.person1_retirement_age) {
+    fields.push({
+      name: 'person1_retirement_age',
+      payloadKey: 'person1RetirementAge',
+      label: 'Target retirement age',
+      type: 'number',
+      placeholder: '65',
+      min: 50,
+      max: 80,
+      helpText: 'The age you plan to retire',
     })
   }
 

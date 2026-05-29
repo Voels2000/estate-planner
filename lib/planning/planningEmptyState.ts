@@ -14,6 +14,7 @@
 
 export const PLANNING_MISSING_PROJECTION_ACTIONS_TIER2 = [
   { href: '/profile', label: 'Complete your profile →' },
+  { href: '/scenarios', label: 'Add planning details →' },
 ] as const
 
 export const PLANNING_MISSING_PROJECTION_ACTIONS_TIER3 = [

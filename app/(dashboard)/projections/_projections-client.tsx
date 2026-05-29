@@ -10,6 +10,9 @@
 import { useEffect, useState } from 'react'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { HouseholdProjectionProfile, ProjectionYear } from '@/lib/projections/types'
+import type { ProjectionReadinessResult } from '@/lib/planning/projectionReadiness'
+import type { ProfileFieldDef } from '@/lib/profile/profileFieldPromptDefs'
+import { ProfileFieldPrompt } from '@/components/profile/ProfileFieldPrompt'
 import { SummaryCard } from '@/app/(dashboard)/projections/_components/SummaryCard'
 import { ProjectionEmptyState } from '@/app/(dashboard)/projections/_components/ProjectionEmptyState'
 import { ProjectionTabs } from '@/app/(dashboard)/projections/_components/ProjectionTabs'
@@ -28,6 +31,9 @@ import {
 type ProjectionsClientProps = {
   initialHousehold: (HouseholdProjectionProfile & { growth_assumptions?: unknown }) | null
   initialProjections: ProjectionYear[]
+  readiness: ProjectionReadinessResult
+  projectionPlanningFields: ProfileFieldDef[]
+  householdId: string | null
   hasRealEstate?: boolean
   hasBusiness?: boolean
 }
@@ -35,6 +41,9 @@ type ProjectionsClientProps = {
 export function ProjectionsClient({
   initialHousehold,
   initialProjections,
+  readiness,
+  projectionPlanningFields,
+  householdId,
   hasRealEstate = true,
   hasBusiness = true,
 }: ProjectionsClientProps) {
@@ -57,13 +66,29 @@ export function ProjectionsClient({
     )
   }
 
+  if (!readiness.ready && !readiness.canShowPartial) {
+    return <ProjectionEmptyState missingFields={readiness.missingFields} />
+  }
+
   if (projections.length === 0) {
     return (
-      <ProjectionEmptyState
-        title="No projection data yet"
-        description={PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS}
-        actions={[...PLANNING_MISSING_PROJECTION_ACTIONS_TIER2]}
-      />
+      <div className="mx-auto max-w-7xl px-4 py-12">
+        <ProjectionsHeader />
+        {householdId && projectionPlanningFields.length > 0 ? (
+          <ProfileFieldPrompt
+            promptKey="projections_planning"
+            title="Complete your projection setup"
+            description="Add the details below to generate your retirement timeline."
+            fields={projectionPlanningFields}
+            householdId={householdId}
+          />
+        ) : null}
+        <ProjectionEmptyState
+          title="No projection data yet"
+          description={PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS}
+          actions={[...PLANNING_MISSING_PROJECTION_ACTIONS_TIER2]}
+        />
+      </div>
     )
   }
 
@@ -79,17 +104,29 @@ export function ProjectionsClient({
     <div className="mx-auto max-w-7xl px-4 py-12">
       <ProjectionsHeader />
 
-      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+      {!readiness.ready && readiness.canShowPartial && householdId && projectionPlanningFields.length > 0 ? (
+        <ProfileFieldPrompt
+          promptKey="projections_planning"
+          title="Complete your projection setup"
+          description="Add the details below to improve your retirement timeline."
+          fields={projectionPlanningFields}
+          householdId={householdId}
+        />
+      ) : null}
 
-      {/* Planning assumptions (read-only — edit on Scenarios) */}
+      {error && (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
       <ProjectionAssumptions
         household={household}
         hasRealEstate={hasRealEstate}
         hasBusiness={hasBusiness}
       />
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((card) => (
           <SummaryCard
             key={card.label}
@@ -101,11 +138,10 @@ export function ProjectionsClient({
         ))}
       </div>
 
-      <p className="text-xs text-neutral-400 mb-6">{DISCLAIMER_STRINGS.projections}</p>
+      <p className="mb-6 text-xs text-neutral-400">{DISCLAIMER_STRINGS.projections}</p>
 
       <ScenariosExploreCard />
 
-      {/* Chart / Table / Income tabs */}
       <ProjectionTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -123,4 +159,3 @@ export function ProjectionsClient({
     </div>
   )
 }
-
