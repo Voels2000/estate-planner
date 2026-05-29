@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Security + CI + audit automation shipped)
+# Updated: 2026-05-29 (RPC access guards + attorney RLS shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Security + CI (shipped 2026-05-29):** email route gates (`INTERNAL_API_KEY`), household access checks, signed unsubscribe tokens, dead code cleanup (~3.5k lines), GitHub Actions CI (lint/build/security/unit), 4 new E2E specs — commits `fix(security)` · `chore(dead-code)` · `test(ci)` · `test(e2e)`. **Health Score + Advisor Playbook (shipped 2026-05-29):** unified `HealthScoreBadge` across dashboard, my-estate-strategy, health-check completion, advisor client list, meeting prep; advisor first-client 3-option empty state, 3-step playbook (localStorage), needs-attention panel, `first_client_connected` notification — commits `feat(health-score)` + `feat(advisor)`. **Prospect Mode + Mobile Review (shipped 2026-05-29):** `/prospect` DB-backed tax config, print PDF, intake CTA; mobile review banner + table scroll wrappers — commits `feat(prospect)` + `feat(mobile)`. **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake, referral impact, meeting prep — migrations `20260530100000_onboarding_persona.sql` + `20260530110000_attorney_intake_requests.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **RPC guards + attorney RLS (shipped 2026-05-29):** `assert_household_caller_access` on estate/gifting/recommendations RPCs; attorney RLS fixed (`attorney_listings` join); Monte Carlo edge JWT auth; referral/telemetry rate limits — migrations `20260629120000` + `20260629130000`; deploy edge function `estate-monte-carlo`. **Security + CI (shipped 2026-05-29):** email route gates, household API access checks, CI workflow, 39 unit tests, 4 E2E specs. **Health Score + Advisor Playbook (shipped 2026-05-29):** unified `HealthScoreBadge`; first-client playbook + needs-attention panel. **Prospect + Mobile (shipped 2026-05-29):** `/prospect` DB tax config, PDF, intake CTA; mobile review layer. **Import + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 >
-> **Before deploy:** migrations applied on prod (persona + intake renamed timestamps); attorney Stripe products if billing sprint pending. **Ops:** Resend inbound webhook needs `CRON_SECRET` Bearer or `x-internal-key`; drip unsubscribe links now require signed `token` param.
+> **Before deploy:** `supabase db push` (RPC + attorney RLS migrations); `supabase functions deploy estate-monte-carlo`. Resend inbound webhook needs `CRON_SECRET` Bearer or `x-internal-key`.
 >
 > **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
@@ -16,11 +16,27 @@
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Unit: `npm run test:unit` (37 tests). Import unit: `npm run test:import:unit` (24 tests). **E2E:** prospect, mobile, health score, playbook specs in CI. **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md).
+> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Unit: `npm run test:unit` (39 tests). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md).
 
 ---
 
-## Security + CI + audit automation ✅ (2026-05-29)
+## RPC guards + attorney RLS + edge auth ✅ (2026-05-29)
+
+**Sprint: Audit follow-up security — COMPLETE**
+
+**Commits:** `security: RPC household access guards + attorney RLS policy fix` · `security: Monte Carlo edge function JWT auth + ownership check` · `security: rate limits on referral track + telemetry endpoints`
+
+| Item | Notes |
+|------|-------|
+| `assert_household_caller_access()` | Owner, advisor, or attorney; `service_role` bypass for recompute |
+| RPCs guarded | `calculate_estate_composition`, `calculate_gifting_summary`, `generate_estate_recommendations` |
+| Attorney RLS | `attorney_listings.profile_id = auth.uid()`; `client_id = households.id` |
+| Monte Carlo edge | JWT validation + household access before service-role insert |
+| Rate limits | `simpleRateLimit.ts`; referral 60/min; telemetry 120/min + auth |
+
+**Prod deploy pending:** `supabase db push` · `supabase functions deploy estate-monte-carlo`
+
+---
 
 **Sprint: Codebase audit remediation — COMPLETE**
 
@@ -45,7 +61,7 @@
 | Item | Notes |
 |------|-------|
 | `.github/workflows/ci.yml` | lint, build, security-audit, UX language, unit tests |
-| Unit specs | health score, prospect summary, advisor playbook storage — **37/37 pass** |
+| Unit specs | health score, prospect summary, advisor playbook storage, rate limit — **39/39 pass** |
 
 ### PR4 — E2E specs
 | Spec | Coverage |
@@ -55,7 +71,7 @@
 | `consumer-health-score-narrative.spec.ts` | Score badge + context sentence |
 | `consumer-mobile-review.spec.ts` | Mobile banner + table scroll |
 
-**Follow-ups (not in scope):** RPC `auth.uid()` guards migration; attorney RLS `client_id` fix; Monte Carlo edge function auth; rate limits on telemetry endpoints.
+**Follow-ups (not in scope):** Manual 18-step health/playbook and 19-step prospect/mobile checklists.
 
 ---
 

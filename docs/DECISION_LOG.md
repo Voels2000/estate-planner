@@ -1,8 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook)
+# Last updated: 2026-05-29 (RPC access guards + attorney RLS + edge auth)
 
-# Last updated: 2026-05-29 (Security hardening + CI + dead code cleanup)
+## RPC household access guards + attorney RLS + edge auth (2026-05-29)
+
+**Decision:** Close remaining audit follow-ups with DB and edge-layer enforcement — not app-only patches.
+
+**RPC guards:** `assert_household_caller_access(p_household_id)` in Postgres; called at top of `calculate_estate_composition`, `calculate_gifting_summary`, and `generate_estate_recommendations`. Allows household owner, connected advisor (`advisor_clients.client_id = owner_id`), or connected attorney (`attorney_clients.client_id = household_id` via `attorney_listings.profile_id`). `service_role` bypasses for recompute cron.
+
+**Attorney RLS:** Policies rewritten — `attorney_clients.attorney_id` is `attorney_listings.id` (not `auth.uid()`); `client_id` is `households.id`. Fixed `legal_documents` and `document_download_log` attorney policies to join through listing.
+
+**Monte Carlo edge:** `estate-monte-carlo` validates JWT, checks owner or connected advisor, then persists with service role only after access check.
+
+**Rate limits:** `lib/api/simpleRateLimit.ts` — 60 req/min per IP on `/api/referral/track`; 120 req/min + auth required on `/api/telemetry/horizon-input-missing`.
+
+**Migrations:** `20260629120000_rpc_household_access_guards.sql`, `20260629130000_attorney_rls_policy_fix.sql`. **Deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo`.
+
+---
 
 ## Security hardening — internal email routes and household access (2026-05-29)
 

@@ -956,9 +956,11 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
 - `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
-- `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads
+- `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads (API routes)
+- `lib/api/simpleRateLimit.ts` — IP-based rate limit helper for public POST endpoints
 - `lib/api/escapeHtml.ts` — shared HTML escaping for email templates
 - `lib/email/unsubscribeToken.ts` — HMAC-signed unsubscribe URLs
+- DB: `assert_household_caller_access(uuid)` — Postgres guard on `calculate_estate_composition`, `calculate_gifting_summary`, `generate_estate_recommendations` (migration `20260629120000`)
 - `lib/advisor/advisorPlaybookStorage.ts` — first-client playbook state in `localStorage` (`mwm_advisor_playbook_${advisorId}`)
 - `lib/advisor/notifyFirstClientConnected.ts` — `first_client_connected` via `create_notification` RPC
 - `lib/calculations/stateEstateTax.ts`

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook shipped)
+# Last updated: 2026-05-29 (RPC access guards + attorney RLS shipped)
 
 ---
 
@@ -20,6 +20,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — RPC guards + attorney RLS + edge auth (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `assert_household_caller_access()` on household RPCs | `[x]` |
+| Attorney RLS policy fix (`attorney_listings` join) | `[x]` |
+| Monte Carlo edge function JWT + ownership check | `[x]` |
+| Rate limits on referral track + telemetry | `[x]` |
+
+**Commits:** `security: RPC household access guards + attorney RLS policy fix` · `security: Monte Carlo edge function JWT auth + ownership check` · `security: rate limits on referral track + telemetry endpoints`
+
+**Deploy:** `supabase db push` (migrations `20260629120000`, `20260629130000`) · `supabase functions deploy estate-monte-carlo`
+
+---
 
 ### Sprint — Security + CI + audit automation (2026-05-29) **← shipped**
 

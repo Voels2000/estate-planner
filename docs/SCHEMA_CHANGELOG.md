@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## RPC household access guards + attorney RLS (2026-05-29)
+
+**Migrations:** `20260629120000_rpc_household_access_guards.sql` · `20260629130000_attorney_rls_policy_fix.sql`
+
+| Change | Detail |
+|--------|--------|
+| `assert_household_caller_access(uuid)` | Postgres helper; owner, connected advisor, or connected attorney; `service_role` bypass |
+| RPC guards | `calculate_estate_composition`, `calculate_gifting_summary`, `generate_estate_recommendations` |
+| `attorney_clients` RLS | `attorney_id` → `attorney_listings.id`; consumer `client_id` → `households.id` |
+| `legal_documents` / `document_download_log` | Attorney policies join via `attorney_listings.profile_id = auth.uid()` |
+
+**Apply on remote:** both migrations + `supabase functions deploy estate-monte-carlo`.
+
+---
+
 ## Professional Acquisition & Activation (2026-05-29)
 
 **Migration:** `20260530_attorney_intake_requests.sql`

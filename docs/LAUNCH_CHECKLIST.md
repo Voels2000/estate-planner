@@ -673,6 +673,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-29 | RPC guards + attorney RLS + edge auth | **Closed** — `assert_household_caller_access`, attorney RLS fix, Monte Carlo JWT auth, referral/telemetry rate limits; migrations `20260629120000` + `20260629130000` |
 | 2026-05-29 | Security + CI + dead code | **Closed** — email route gates, household access, CI workflow, 37 unit tests, 4 E2E specs |
 | 2026-05-29 | Health Score + Advisor Playbook | **Closed** — `feat(health-score)` unified badge + context; `feat(advisor)` first-client playbook + needs-attention; migration timestamp renames |
 | 2026-05-29 | Prospect + Mobile Review | **Closed** — `feat(prospect)` DB tax config, PDF, intake CTA; `feat(mobile)` review banner, rec cards, table scroll; manual smoke checklist added |

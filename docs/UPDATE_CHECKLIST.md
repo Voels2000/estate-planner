@@ -493,11 +493,20 @@ Verified in **Vercel → Production**:
 
 Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 
+## Sprint — RPC guards + attorney RLS + edge auth ✅ closed 2026-05-29
+
+- [x] `assert_household_caller_access()` — migration `20260629120000_rpc_household_access_guards.sql`
+- [x] Attorney RLS fix — migration `20260629130000_attorney_rls_policy_fix.sql`
+- [x] Monte Carlo edge JWT auth — `supabase/functions/estate-monte-carlo/index.ts`
+- [x] Rate limits — `lib/api/simpleRateLimit.ts`; referral 60/min; telemetry 120/min + auth
+- [x] Unit test `simpleRateLimit.spec.ts` — **39/39** in `npm run test:unit`
+- [ ] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo`
+
 ## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
 
 - [x] `fix(security)` — internal email gates, household access, signed unsubscribe, webhook auth
 - [x] `chore` — remove ~3.5k lines orphaned components + `/advisor/prospect` redirect
-- [x] `test(ci)` — GitHub Actions: lint, build, security-audit, UX language, unit tests (37)
+- [x] `test(ci)` — GitHub Actions: lint, build, security-audit, UX language, unit tests (39)
 - [x] `test(e2e)` — prospect redirect, health score, advisor activation, mobile overflow specs
 - [x] Master docs updated
 
