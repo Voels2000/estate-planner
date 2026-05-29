@@ -298,7 +298,8 @@ npx tsx scripts/seed-test-consumer-estate.ts
 - [ ] Consumer can disconnect advisor from `/my-advisor` → tier restored + resubscribe email when applicable
 - [ ] After disconnect: consumer reverts to `previous_consumer_tier` (or Tier 1 if advisor-managed)
 - [ ] Advisor invite blocked at client limit (same as accept-request)
-- [ ] Meeting prep → “Email brief to client” delivers Resend email + in-app notification
+- [x] Meeting prep → “Email brief to client” delivers Resend email + in-app notification
+- [x] Advisor activation drip (day 0 / 3 / 7) + competitive value prop banner on `/advisor`
 
 ### Post-launch automation (Advisor adoption package — still Stripe Dashboard)
 - [ ] Stripe products for advisor firm tiers ($149/mo starter, $349/mo growth) — **code references test IDs in `lib/tiers.ts`; create live products on go-live day**

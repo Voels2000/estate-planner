@@ -93,6 +93,8 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor billing handoff | `lib/advisor/applyAdvisorConnectionBilling.ts` — invite accept, link-pending, accept-request |
 | Advisor disconnect billing | `lib/advisor/restoreConsumerBillingOnDisconnect.ts` — consumer disconnect, advisor remove-client |
 | Advisor client limits | `lib/advisor/advisorClientLimits.ts` — invite + accept-request |
+| Advisor activation drip | `lib/emails/advisor-drip-templates.ts`, `POST /api/email/advisor-drip`, cron step 8 |
+| Advisor value prop UI | `AdvisorValuePropBanner` on `/advisor` — vs eMoney/PDF portals, B2B2C, workflow |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; Tier 1 import upload while `!onboarding_wizard_completed_at` (history Tier 2+) |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |

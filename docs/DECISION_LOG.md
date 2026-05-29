@@ -14,6 +14,8 @@
 
 **P1 (2026-05-27):** `restoreConsumerBillingOnDisconnect` on consumer disconnect + advisor remove-client; seat limits via `advisorClientLimits.ts`; advisor empty-state + first-connection playbook; consumer `AdvisorConnectedBanner`; meeting prep email via `POST /api/advisor/share-meeting-prep`. Stripe firm products still manual — see LAUNCH_CHECKLIST § Stripe Advisor & B2B2C.
 
+**Advisor activation + positioning (2026-05-27):** Three-step advisor drip on `profiles.advisor_drip_*` columns; `AdvisorValuePropBanner` on `/advisor` frames MWM vs PDF-first portals (eMoney-class) and B2B2C client dashboard value.
+
 ---
 
 ## Advisor Billing — Deferred to post-launch (2026-05-28)

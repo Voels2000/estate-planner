@@ -927,6 +927,13 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **Routes:** `POST /api/consumer/disconnect-advisor`, `POST /api/advisor/share-meeting-prep`
 - **UI:** `AdvisorEmptyStateCta`, `AdvisorFirstConnectionPlaybook`, `AdvisorConnectedBanner`
 
+## Advisor activation drip (May 2026)
+
+- **Migration:** `20260527160000_advisor_activation_drip.sql` — drip timestamps + unsubscribe on `profiles`
+- **Templates:** `lib/emails/advisor-drip-templates.ts`; send via `lib/advisor/sendAdvisorDripStep.ts`
+- **Cron:** notifications cron step 8 — day 3 empty-roster nudge, day 7 case study
+- **UI:** `AdvisorValuePropBanner` on `/advisor` — dismissible positioning vs PDF-first portals
+
 ## Advisor P0 — nullable advisor_id + billing handoff (May 2026)
 
 - **Migration:** `20260527140000_advisor_clients_nullable_advisor_id.sql` — `advisor_clients.advisor_id` nullable for consumer-initiated pre-registration invites (`consumer_requested` + `invite_token`).

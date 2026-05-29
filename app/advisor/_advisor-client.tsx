@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 import { AdvisorEmptyStateCta } from '@/components/advisor/AdvisorEmptyStateCta'
 import { AdvisorFirstConnectionPlaybook } from '@/components/advisor/AdvisorFirstConnectionPlaybook'
+import { AdvisorValuePropBanner } from '@/components/advisor/AdvisorValuePropBanner'
 
 type AdvisorClient = {
   id: string
@@ -329,6 +330,8 @@ export default function AdvisorClientPage({
           </div>
         </div>
       )}
+
+      <AdvisorValuePropBanner />
 
       {/* Header */}
       <div className="flex items-center justify-between">

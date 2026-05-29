@@ -62,7 +62,8 @@
 **Adoption UX**
 - `[x]` "Invite your first client" primary CTA on empty advisor portal (`AdvisorEmptyStateCta`)
 - `[x]` First-connection playbook (Overview → Strategy → Meeting prep)
-- `[ ]` Competitive positioning copy in advisor portal (why this vs eMoney client portal)
+- `[x]` Advisor activation drip — day 0 welcome, day 3 no-clients nudge, day 7 case study (`lib/emails/advisor-drip-templates.ts`, cron + `/api/email/advisor-drip`)
+- `[x]` Competitive positioning copy in advisor portal — `AdvisorValuePropBanner` on `/advisor` (dismissible)
 - `[ ]` Advisor-specific email sequence (activation + client milestone alerts)
 
 ---

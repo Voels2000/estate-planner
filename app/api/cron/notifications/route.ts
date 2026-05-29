@@ -381,6 +381,58 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── 8. Advisor activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  const { data: advisorDripCandidates } = await supabase
+    .from('profiles')
+    .select('id, advisor_drip_step_1_sent_at, advisor_drip_step_2_sent_at, advisor_drip_step_3_sent_at')
+    .in('role', ['advisor', 'financial_advisor'])
+    .is('advisor_drip_unsubscribed_at', null)
+    .not('advisor_drip_step_1_sent_at', 'is', null)
+
+  for (const advisor of advisorDripCandidates ?? []) {
+    const step1At = advisor.advisor_drip_step_1_sent_at
+      ? new Date(advisor.advisor_drip_step_1_sent_at)
+      : null
+    const step2At = advisor.advisor_drip_step_2_sent_at
+      ? new Date(advisor.advisor_drip_step_2_sent_at)
+      : null
+    const step3At = advisor.advisor_drip_step_3_sent_at
+      ? new Date(advisor.advisor_drip_step_3_sent_at)
+      : null
+
+    if (!step1At) continue
+
+    if (!step2At && step1At <= threeDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+        },
+        body: JSON.stringify({
+          advisor_id: advisor.id,
+          sequence_step: 2,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
+
+    if (!step3At && step1At <= sevenDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+        },
+        body: JSON.stringify({
+          advisor_id: advisor.id,
+          sequence_step: 3,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
+  }
+
   console.log('[cron:notifications]', results)
   return NextResponse.json({ ok: true, ...results })
 }

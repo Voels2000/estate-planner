@@ -12,11 +12,18 @@ import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import { loadRosterNetWorthByOwner } from '@/lib/advisor/rosterNetWorth'
 import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
 import AdvisorClient from './_advisor-client-wrapper'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureAdvisorActivationDripStep1 } from '@/lib/advisor/sendAdvisorDripStep'
 
 export default async function AdvisorPage() {
   const access = await getAccessContext()
   if (!access.user) redirect('/login')
   const user = { id: access.user.id, email: access.user.email }
+
+  void ensureAdvisorActivationDripStep1(createAdminClient(), user.id).catch((err) => {
+    console.error('advisor drip step 1 on portal visit:', err)
+  })
+
   const supabase = await createClient()
   const isFirmOwner = access.isFirmOwner
   const firm_name = access.firm_name

@@ -11,10 +11,20 @@ export async function GET(req: NextRequest) {
 
   try {
     const admin = createAdminClient()
-    await admin
-      .from('email_captures')
-      .update({ unsubscribed_at: new Date().toISOString() })
-      .eq('email', email.trim().toLowerCase())
+    const normalized = email.trim().toLowerCase()
+    const type = req.nextUrl.searchParams.get('type')
+
+    if (type === 'advisor') {
+      await admin
+        .from('profiles')
+        .update({ advisor_drip_unsubscribed_at: new Date().toISOString() })
+        .eq('email', normalized)
+    } else {
+      await admin
+        .from('email_captures')
+        .update({ unsubscribed_at: new Date().toISOString() })
+        .eq('email', normalized)
+    }
   } catch {
     // fail silently
   }
