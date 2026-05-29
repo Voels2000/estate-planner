@@ -7,6 +7,7 @@ import { getAppUrl } from '@/lib/app-url'
 import { pickConnectionLifeEvent } from '@/lib/life-events/connectionContext'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
+import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,28 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  // Check advisor tier client limit before accepting
-  const { data: currentClients } = await admin
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', user.id)
-    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-
-  const { data: advisorProfile } = await admin
-    .from('profiles')
-    .select('subscription_status')
-    .eq('id', user.id)
-    .single()
-
-  // Tier limits — same as invite flow
-  const tierLimits: Record<string, number> = {
-    advisor_starter: 10,
-    advisor_pro: 50,
-    advisor_enterprise: 9999,
-  }
-  const tierName = advisorProfile?.subscription_status ?? 'advisor_starter'
-  const maxClients = tierLimits[tierName] ?? 10
-  const currentCount = currentClients?.length ?? 0
+  const { currentCount, maxClients, tierName } = await getAdvisorClientCapacity(admin, user.id)
 
   if (currentCount >= maxClients) {
     return NextResponse.json({

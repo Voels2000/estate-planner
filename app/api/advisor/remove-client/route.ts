@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { restoreConsumerBillingOnDisconnect } from '@/lib/advisor/restoreConsumerBillingOnDisconnect'
 
 export async function DELETE(req: NextRequest) {
   const { user, isSuperuser, isAdvisor } = await getAccessContext()
@@ -30,14 +31,6 @@ export async function DELETE(req: NextRequest) {
     }, { status: 404 })
   }
 
-  if (record.billing_transferred && record.client_id) {
-    await admin
-      .from('profiles')
-      .update({ consumer_tier: record.previous_consumer_tier ?? 1 })
-      .eq('id', record.client_id)
-  }
-
-  // Revoke all active beneficiary access grants for this household
   if (record.client_id) {
     const { data: household } = await admin
       .from('households')
@@ -71,21 +64,12 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (record.client_id) {
-    ;(async () => {
-      try {
-        await admin.rpc('create_notification', {
-          p_user_id: record.client_id,
-          p_type: 'advisor_viewed',
-          p_title: 'Advisor connection ended',
-          p_body: 'Your advisor has removed you from their practice. Your subscription has been reverted.',
-          p_delivery: 'both',
-          p_metadata: { advisor_id: user.id },
-          p_cooldown: '1 hour',
-        })
-      } catch (err) {
-        console.error('remove-client notification:', err)
-      }
-    })()
+    await restoreConsumerBillingOnDisconnect(admin, {
+      clientId: record.client_id,
+      advisorClientRowId: record.id,
+      advisorId: user.id,
+      sendEmail: true,
+    })
   }
 
   if (isSuperuser) {

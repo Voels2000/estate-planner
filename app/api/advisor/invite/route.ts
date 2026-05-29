@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
+import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
 
 
 export async function POST(request: Request) {
@@ -29,6 +30,18 @@ export async function POST(request: Request) {
 
     if (!advisor || (!isSuperuser && advisor.role !== 'advisor' && advisor.role !== 'financial_advisor')) {
       return NextResponse.json({ error: 'Only advisors can send invites' }, { status: 403 })
+    }
+
+    const admin = createAdminClient()
+    const { currentCount, maxClients, tierName } = await getAdvisorClientCapacity(admin, user.id)
+
+    if (currentCount >= maxClients) {
+      return NextResponse.json({
+        error: 'tier_limit_reached',
+        current_count: currentCount,
+        max_clients: maxClients,
+        tier_name: tierName,
+      }, { status: 403 })
     }
 
     // Check for existing pending invite

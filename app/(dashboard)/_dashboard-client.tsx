@@ -42,6 +42,7 @@ import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionSce
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
+import { AdvisorConnectedBanner } from '@/components/dashboard/AdvisorConnectedBanner'
 import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
 // ---------------------------------------------------------------------------
 // Types
@@ -129,6 +130,11 @@ type Props = {
   loggedLifeEvents?: LoggedLifeEvent[]
   lifeEventRelevance?: RelevanceHousehold
   hasAdvisorConnection?: boolean
+  advisorConnectionSummary?: {
+    id: string
+    advisorName: string
+    connectedAt: string
+  } | null
   successionGap?: boolean
   personaAlerts?: {
     businessThreshold: '5m' | '10m' | null
@@ -194,6 +200,7 @@ export function DashboardClient(props: Props) {
     loggedLifeEvents = [],
     lifeEventRelevance,
     hasAdvisorConnection = false,
+    advisorConnectionSummary = null,
     successionGap = false,
     personaAlerts = null,
     wizardComplete = false,
@@ -314,6 +321,16 @@ export function DashboardClient(props: Props) {
 
       {!isAdvisor && (
         <TermsBackfillBanner initialTermsAcceptedAt={termsAcceptedAt} />
+      )}
+
+      {!isAdvisor && advisorConnectionSummary && (
+        <div className="mt-4">
+          <AdvisorConnectedBanner
+            connectionId={advisorConnectionSummary.id}
+            advisorName={advisorConnectionSummary.advisorName}
+            connectedAt={advisorConnectionSummary.connectedAt}
+          />
+        </div>
       )}
 
       <DashboardIntroSection

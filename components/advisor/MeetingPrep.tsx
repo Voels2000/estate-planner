@@ -353,6 +353,8 @@ export default function MeetingPrep({
     return mergeHorizonBrief(buildBriefFromSeed(clientName, initialBriefSeed), advisorHorizons)
   })
   const [loading, setLoading] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const [shareMessage, setShareMessage] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
 
   const buildBriefFromProps = () =>
@@ -418,6 +420,25 @@ export default function MeetingPrep({
 
   const handlePrint = () => window.print()
 
+  const handleShareWithClient = async () => {
+    setSharing(true)
+    setShareMessage(null)
+    try {
+      const res = await fetch('/api/advisor/share-meeting-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: clientId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to send')
+      setShareMessage('Brief sent to your client by email.')
+    } catch (err) {
+      setShareMessage(err instanceof Error ? err.message : 'Failed to send brief.')
+    } finally {
+      setSharing(false)
+    }
+  }
+
   const hasCurrentData = brief &&
     (brief.current_gross_estate !== null ||
       brief.current_taxable_estate !== null ||
@@ -442,7 +463,20 @@ export default function MeetingPrep({
             Refresh from latest data
           </button>
         )}
+        {brief && (
+          <button
+            type="button"
+            onClick={() => void handleShareWithClient()}
+            disabled={sharing}
+            className="px-3 py-1.5 text-sm text-[color:var(--mwm-navy)] border border-[color:var(--mwm-border)] rounded-lg hover:bg-[var(--mwm-gold-pale)] font-medium transition disabled:opacity-50"
+          >
+            {sharing ? 'Sending…' : 'Email brief to client'}
+          </button>
+        )}
       </div>
+      {shareMessage && (
+        <p className="text-sm text-neutral-600 mt-2">{shareMessage}</p>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 p-4 md:p-8 overflow-y-auto print:inset-0 print:bg-white print:p-0">
@@ -462,6 +496,14 @@ export default function MeetingPrep({
                 <button type="button" onClick={handlePrint}
                   className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded-lg hover:bg-neutral-800">
                   Print / PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleShareWithClient()}
+                  disabled={sharing}
+                  className="px-3 py-1.5 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  {sharing ? 'Sending…' : 'Email to client'}
                 </button>
                 <button type="button" onClick={() => setOpen(false)}
                   className="text-neutral-400 hover:text-neutral-600 text-xl leading-none px-2">

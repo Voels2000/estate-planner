@@ -12,6 +12,8 @@
 
 **Consumer-initiated connect:** `POST /api/consumer/invite-advisor` replaces mailto on onboarding and `/my-advisor`. Registered advisors get `consumer_requested` + in-app notification; unregistered advisors get Resend email with `/signup?role=advisor&connect={token}` → `/advisor/connect/[token]`. Migration `20260527140000` allows nullable `advisor_id` for pre-registration invites.
 
+**P1 (2026-05-27):** `restoreConsumerBillingOnDisconnect` on consumer disconnect + advisor remove-client; seat limits via `advisorClientLimits.ts`; advisor empty-state + first-connection playbook; consumer `AdvisorConnectedBanner`; meeting prep email via `POST /api/advisor/share-meeting-prep`. Stripe firm products still manual — see LAUNCH_CHECKLIST § Stripe Advisor & B2B2C.
+
 ---
 
 ## Advisor Billing — Deferred to post-launch (2026-05-28)

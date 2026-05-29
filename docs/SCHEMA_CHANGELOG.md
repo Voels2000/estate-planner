@@ -920,6 +920,13 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **Application:** `lib/dashboard/personaAlerts.ts` — business $5M/$10M + multi-state RE (≥2 distinct `situs_state`).
 - **Application:** `lib/planning/planningEmptyState.ts` — `TIER2` vs `TIER3` empty-state CTAs.
 
+## Advisor P1 — disconnect, limits, activation UX (May 2026)
+
+- **No schema change.**
+- **Application:** `lib/advisor/restoreConsumerBillingOnDisconnect.ts`, `lib/advisor/advisorClientLimits.ts`
+- **Routes:** `POST /api/consumer/disconnect-advisor`, `POST /api/advisor/share-meeting-prep`
+- **UI:** `AdvisorEmptyStateCta`, `AdvisorFirstConnectionPlaybook`, `AdvisorConnectedBanner`
+
 ## Advisor P0 — nullable advisor_id + billing handoff (May 2026)
 
 - **Migration:** `20260527140000_advisor_clients_nullable_advisor_id.sql` — `advisor_clients.advisor_id` nullable for consumer-initiated pre-registration invites (`consumer_requested` + `invite_token`).

@@ -50,18 +50,18 @@
 
 ### Post-launch — Advisor adoption package (Month 2) `[ ]`
 
-**Goal:** Automate advisor billing; deepen advisor onboarding UX.
+**Goal:** Automate advisor **firm** billing; deepen advisor onboarding UX.
 
 **Billing automation (deferred from launch)**
-- `[ ]` Stripe products: Advisor Starter ($149/mo, 10 clients), Advisor Growth ($349/mo, 50 clients)
-- `[ ]` Auto-pause consumer subscription on advisor connection
-- `[ ]` Auto-resume / resubscribe prompt on advisor disconnect
-- `[ ]` Seat count enforcement (`advisor_clients` count vs plan limit)
-- `[ ]` Advisor billing portal (Stripe Customer Portal)
+- `[ ]` Stripe products: Advisor Starter ($149/mo, 10 clients), Advisor Growth ($349/mo, 50 clients) — see [LAUNCH_CHECKLIST § Stripe Advisor & B2B2C](./LAUNCH_CHECKLIST.md#stripe--advisor--b2b2c-billing-prior-to-go-live)
+- `[x]` Auto-pause consumer subscription on advisor connection (`applyAdvisorConnectionBilling`)
+- `[x]` Auto-resume / resubscribe prompt on advisor disconnect (`restoreConsumerBillingOnDisconnect`)
+- `[x]` Seat count enforcement on invite + accept (`advisorClientLimits.ts`) — app-side; not yet gated on firm Stripe sub
+- `[ ]` Advisor billing portal (Stripe Customer Portal for firm subscription)
 
 **Adoption UX**
-- `[ ]` Advisor onboarding tour (3-step: connect client, model strategy, send recommendation)
-- `[ ]` "Invite your first client" as primary advisor CTA on empty portal
+- `[x]` "Invite your first client" primary CTA on empty advisor portal (`AdvisorEmptyStateCta`)
+- `[x]` First-connection playbook (Overview → Strategy → Meeting prep)
 - `[ ]` Competitive positioning copy in advisor portal (why this vs eMoney client portal)
 - `[ ]` Advisor-specific email sequence (activation + client milestone alerts)
 

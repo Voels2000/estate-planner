@@ -283,29 +283,65 @@ npx tsx scripts/seed-test-consumer-estate.ts
 - [x] Dashboard tier split fixed — `_dashboard-body` uses `access.tier` not `profile.consumer_tier`
 - [x] `subscription_status = 'advisor_managed'` treated as Tier 3
 - [x] **Advisor P0 bundle (2026-05-27):** unified billing handoff via `lib/advisor/applyAdvisorConnectionBilling.ts` on invite accept, link-pending, and accept-request; signup/email callback preserves `next=/invite/{token}`; dashboard calls `POST /api/advisor/link-pending` on load; consumer email invite via `POST /api/consumer/invite-advisor` (replaces mailto on `/onboarding/invite-advisor` and `/my-advisor`); `/invite/expired` page; advisor pre-registration claim at `/advisor/connect/[token]`
+- [x] **Advisor P1 bundle (2026-05-27):** disconnect/resubscribe via `restoreConsumerBillingOnDisconnect` (`POST /api/consumer/disconnect-advisor`, `DELETE /api/advisor/remove-client`); seat limits on invite + accept (`lib/advisor/advisorClientLimits.ts`); advisor empty-state CTA + first-connection playbook; consumer `AdvisorConnectedBanner` on dashboard; meeting prep email deliverable (`POST /api/advisor/share-meeting-prep`)
 
 ### Manual process for first advisors
 - [ ] Advisor account setup: set `profiles.role = 'advisor'` in Supabase (or advisor self-signup via consumer invite deep link)
-- [ ] Advisor billing: invoice directly until post-launch Stripe automation (see ROADMAP Advisor adoption package)
-- [ ] When advisor takes on consumer client with active subscription — **automated on connect** when Stripe API key present (sets `advisor_managed`, Tier 3, `cancel_at_period_end`); manual Stripe Dashboard pause still available as fallback
-- [ ] When advisor connection ends:
-  1. Prompt consumer to resubscribe (manual email at launch)
-  2. Set `profiles.subscription_status = NULL` in Supabase
-  3. Resume Stripe subscription if paused
+- [ ] **Advisor firm billing:** invoice directly until Stripe firm products are live (see [§ Stripe — Advisor & B2B2C](#stripe--advisor--b2b2c-billing-prior-to-go-live) below)
+- [x] When advisor takes on consumer client with active subscription — **automated on connect** when `STRIPE_SECRET_KEY` present (sets `advisor_managed`, Tier 3, `cancel_at_period_end`)
+- [x] When advisor connection ends — **automated in app** (`restoreConsumerBillingOnDisconnect`: restore tier, clear `advisor_managed`, resume Stripe if paused, resubscribe email when needed)
 
 ### Verify before first advisor onboarding
 - [ ] Advisor-connected consumer sees Stage 3 dashboard (not Stage 1)
 - [ ] Advisor-connected consumer sees "View Estate Tax Snapshot →" (not upgrade CTA) on `EstateCalloutCard`
 - [ ] Advisor portal fully functional for connected advisor
-- [ ] Consumer can disconnect advisor from `/my-advisor`
-- [ ] After disconnect: consumer reverts to DB column tier
+- [ ] Consumer can disconnect advisor from `/my-advisor` → tier restored + resubscribe email when applicable
+- [ ] After disconnect: consumer reverts to `previous_consumer_tier` (or Tier 1 if advisor-managed)
+- [ ] Advisor invite blocked at client limit (same as accept-request)
+- [ ] Meeting prep → “Email brief to client” delivers Resend email + in-app notification
 
-### Post-launch automation (Advisor adoption package)
-- Stripe products for advisor tiers ($149/mo starter, $349/mo growth)
-- Automated subscription pause on advisor connection
-- Automated consumer resubscribe prompt on advisor disconnect
-- Seat count enforcement
-- Advisor billing portal
+### Post-launch automation (Advisor adoption package — still Stripe Dashboard)
+- [ ] Stripe products for advisor firm tiers ($149/mo starter, $349/mo growth) — **code references test IDs in `lib/tiers.ts`; create live products on go-live day**
+- [x] Automated subscription pause on advisor connection (app + Stripe API)
+- [x] Automated consumer resubscribe prompt on advisor disconnect (email + notification)
+- [x] Seat count enforcement on invite + accept (app-side; not yet tied to paid firm subscription)
+- [ ] Advisor billing portal tied to firm subscription (Stripe Customer Portal for advisor/firm customer)
+
+---
+
+### Stripe — Advisor & B2B2C billing (prior to go-live)
+
+**No new consumer Stripe products are required** for advisor-managed clients — connected consumers get Tier 3 via `subscription_status = 'advisor_managed'` (not a separate Stripe price).
+
+**Required before advisor B2B2C flows in production:**
+
+| Item | Stripe Dashboard action | App dependency |
+|------|-------------------------|----------------|
+| Consumer checkout (existing) | 6 consumer prices (Phase 1/2 below) | Connect + disconnect pause/resume use `STRIPE_SECRET_KEY` |
+| Webhook `customer.subscription.updated` | Must be enabled | Webhook **skips** `advisor_managed` profiles (no overwrite) |
+| API access | Live/test secret key in env | `applyAdvisorConnectionBilling`, `restoreConsumerBillingOnDisconnect` |
+| Customer Portal | Cancel + update payment method enabled | Consumer self-serve after disconnect if subscription lapsed |
+
+**Create before billing advisor firms (Month 2 / when invoicing stops):**
+
+| Product | Suggested price | Code reference |
+|---------|-----------------|----------------|
+| Advisor Firm — Starter | $149/mo | `ADVISOR_FIRM_PRICE_IDS.starter` in `lib/tiers.ts` |
+| Advisor Firm — Growth | $349/mo | `ADVISOR_FIRM_PRICE_IDS.growth` |
+| Advisor Firm — Enterprise | Custom / seat | `ADVISOR_FIRM_PRICE_IDS.enterprise` |
+
+- [ ] Create **3 advisor firm products** in Stripe test mode (then live on go-live day)
+- [ ] Record test `price_…` IDs → update env or replace test IDs in `lib/tiers.ts` before production
+- [ ] Verify `POST /api/stripe/firm-checkout` with test advisor account
+- [ ] **Manual at launch:** invoice first advisors until firm checkout is verified end-to-end
+- [ ] **Not required at launch:** separate Stripe product for “advisor-managed consumer” (handled in app DB)
+
+**B2B2C verification (test mode, after consumer Phase 1):**
+
+- [ ] Consumer on paid Estate plan → advisor accepts invite → Stripe sub shows `cancel_at_period_end=true`; profile `advisor_managed` + Tier 3
+- [ ] Consumer disconnects → tier restored; if sub was paused, `cancel_at_period_end=false` OR resubscribe email to `/billing?plan=estate`
+- [ ] Consumer on free Tier 1 → advisor connect → Tier 3, no Stripe change
+- [ ] Webhook: subscription events do **not** downgrade `advisor_managed` consumers
 
 ---
 

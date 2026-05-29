@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { InviteAdvisorByEmailForm } from '@/components/consumer/InviteAdvisorByEmailForm'
 
@@ -83,19 +82,17 @@ export default function MyAdvisorClient({
 
     setIsRevoking(true)
     setError(null)
-    const supabase = createClient()
-    const { error: err } = await supabase
-      .from('advisor_clients')
-      .update({ status: 'revoked' })
-      .eq('id', connection.id)
-
-    if (err) {
-      setError('Failed to disconnect advisor. Please try again.')
+    try {
+      const res = await fetch('/api/consumer/disconnect-advisor', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to disconnect advisor')
+      }
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to disconnect advisor. Please try again.')
       setIsRevoking(false)
-      return
     }
-
-    router.refresh()
   }
 
   async function handleCancel(requestId: string) {

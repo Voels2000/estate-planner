@@ -154,7 +154,14 @@ export async function DashboardBody({
       .limit(10),
     supabase
       .from('advisor_clients')
-      .select('id')
+      .select(`
+        id,
+        accepted_at,
+        profiles!advisor_clients_advisor_id_fkey (
+          full_name,
+          email
+        )
+      `)
       .eq('client_id', user!.id)
       .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
       .maybeSingle(),
@@ -163,6 +170,20 @@ export async function DashboardBody({
   const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
   const loggedLifeEvents = (loggedLifeEventsData ?? []) as LoggedLifeEvent[]
   const hasAdvisorConnection = !!advisorConnection
+  const advisorProfile = advisorConnection?.profiles
+    ? Array.isArray(advisorConnection.profiles)
+      ? advisorConnection.profiles[0] ?? null
+      : advisorConnection.profiles
+    : null
+  const advisorConnectionSummary =
+    advisorConnection && advisorConnection.accepted_at
+      ? {
+          id: advisorConnection.id,
+          advisorName:
+            advisorProfile?.full_name?.trim() || advisorProfile?.email || 'Your advisor',
+          connectedAt: advisorConnection.accepted_at,
+        }
+      : null
   const hasBusinessInterests =
     (businesses?.length ?? 0) > 0 || (businessInterests?.length ?? 0) > 0
   const hasRealEstate = (realEstate?.length ?? 0) > 0
@@ -537,6 +558,7 @@ export async function DashboardBody({
         primaryAge,
       }}
       hasAdvisorConnection={hasAdvisorConnection}
+      advisorConnectionSummary={advisorConnectionSummary}
       successionGap={successionGap}
       personaAlerts={personaAlerts}
       initialAssessmentResults={initialAssessmentResults}
