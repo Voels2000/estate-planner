@@ -1,23 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
-import { Button, ButtonLink } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-
-type Plan = {
-  priceId: string
-  name: string
-  description: string
-  features: string[]
-  amount: number
-  currency: string
-  interval: string
-  highlighted: boolean
-}
+import { BillingPeriodToggle } from '@/components/billing/BillingPeriodToggle'
+import {
+  getConsumerPlansForPeriod,
+  formatPlanPriceDisplay,
+  type ConsumerPlanForCheckout,
+} from '@/lib/billing/consumerPlanCatalog'
+import type { BillingPeriod } from '@/lib/billing/stripePrices'
 
 type Props = {
-  plans: Plan[]
   currentPlan: string | null
   subscriptionStatus: string | null
   subscriptionPeriodEnd: string | null
@@ -25,26 +20,32 @@ type Props = {
 }
 
 export function BillingClient({
-  plans,
   currentPlan,
   subscriptionStatus,
   subscriptionPeriodEnd,
   isAdvisorClient,
 }: Props) {
+  const [period, setPeriod] = useState<BillingPeriod>('monthly')
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cancelMessage, setCancelMessage] = useState<string | null>(null)
 
-  async function handleSubscribe(priceId: string) {
+  const plans = useMemo(() => getConsumerPlansForPeriod(period), [period])
+
+  async function handleSubscribe(plan: ConsumerPlanForCheckout) {
     setError(null)
-    setLoadingPriceId(priceId)
+    setLoadingPriceId(plan.priceId)
     try {
       const params = new URLSearchParams(window.location.search)
       const returnTo = params.get('returnTo') ?? undefined
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, ...(returnTo ? { returnTo } : {}) }),
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          period: plan.period,
+          ...(returnTo ? { returnTo } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -110,16 +111,6 @@ export function BillingClient({
     }
   }
 
-  function formatPrice(amount: number, currency: string, interval: string) {
-    const formatted = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount / 100)
-    return { price: formatted, period: `per ${interval}` }
-  }
-
   function formatRenewalDate(iso: string | null) {
     if (!iso) return null
     return new Date(iso).toLocaleDateString('en-US', {
@@ -151,115 +142,170 @@ export function BillingClient({
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="text-center mb-10">
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <div className="mb-10 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Choose your plan</h1>
-        <p className="mt-3 text-neutral-600">Start planning your estate and retirement today.</p>
+        <p className="mt-3 text-neutral-600">
+          Professional planning infrastructure at a fraction of attorney fees.
+        </p>
+        <p className="mt-1 text-sm text-[color:var(--mwm-text-muted)]">
+          Starting at $29/month · Estate plan includes a 14-day free trial
+        </p>
         {isActive && activePlan && (
-          <p className="mt-2 text-sm text-green-600 font-medium">
+          <p className="mt-2 text-sm font-medium text-green-600">
             You are currently on the {activePlan.name} plan
           </p>
         )}
       </div>
 
+      <BillingPeriodToggle period={period} onChange={setPeriod} />
+
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 text-center">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
           {error}
         </div>
       )}
 
       {cancelMessage && (
-        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 text-center">
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center text-sm text-green-800">
           {cancelMessage}
         </div>
       )}
 
       {isActive && activePlan && activeRenewalDate && (
-        <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 text-center">
+        <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-center text-sm text-neutral-800">
           {BILLING_DISCLOSURES.activeSubscription(
             activePlan.name,
-            formatPrice(activePlan.amount, activePlan.currency, activePlan.interval).price,
+            `$${activePlan.displayPrice}`,
             activeRenewalDate,
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {plans.map((plan) => {
-          const { price, period } = formatPrice(plan.amount, plan.currency, plan.interval)
+          const { main, sub } = formatPlanPriceDisplay(plan)
           const isCurrentPlan = currentPlan === plan.priceId
-          const interval = plan.interval === 'year' ? 'year' : 'month'
           const showCheckout = !(isCurrentPlan && isActive)
+          const isEstate = plan.tier === 3
+          const highlighted = isEstate
+
           return (
             <Card
-              key={plan.priceId}
-              hover={!plan.highlighted}
+              key={`${plan.tier}-${period}`}
+              hover={!highlighted}
               className={`relative rounded-2xl p-8 shadow-md ring-1 ${
-                plan.highlighted
-                  ? 'border-neutral-900 bg-neutral-900 ring-neutral-900'
+                highlighted
+                  ? 'border-[color:var(--mwm-navy)] bg-[color:var(--mwm-navy)] ring-[color:var(--mwm-navy)]'
                   : 'ring-neutral-200'
               }`}
             >
-              {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--mwm-navy)] px-3 py-1 text-xs font-medium text-white">
-                  Most Popular
+              {plan.badge && (
+                <span
+                  className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
+                    highlighted
+                      ? 'bg-[var(--mwm-gold)] text-[color:var(--mwm-navy)]'
+                      : 'bg-[color:var(--mwm-navy)] text-white'
+                  }`}
+                >
+                  {plan.badge}
                 </span>
               )}
               {isCurrentPlan && isActive && (
-                <span className="absolute -top-3 right-6 rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white">
+                <span className="absolute -top-3 right-4 rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white">
                   Current Plan
                 </span>
               )}
-              <h2 className={`text-lg font-semibold ${plan.highlighted ? 'text-white' : 'text-neutral-900'}`}>
+              <h2
+                className={`text-lg font-semibold ${highlighted ? 'text-white' : 'text-neutral-900'}`}
+              >
                 {plan.name}
               </h2>
-              <p className={`mt-1 text-sm ${plan.highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}>
+              <p
+                className={`mt-1 text-sm ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
+              >
                 {plan.description}
               </p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-neutral-900'}`}>
-                  {price}
+              <div className="mt-4 flex flex-wrap items-baseline gap-1">
+                <span
+                  className={`text-4xl font-bold ${highlighted ? 'text-white' : 'text-neutral-900'}`}
+                >
+                  {main}
                 </span>
-                <span className={`text-sm ${plan.highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  {period}
-                </span>
+                {sub && (
+                  <span
+                    className={`text-sm ${highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}
+                  >
+                    {sub}
+                  </span>
+                )}
               </div>
-              {plan.features.length > 0 && (
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm">
-                      <span className={`text-lg leading-none ${plan.highlighted ? 'text-[color:var(--mwm-text-muted)]' : 'text-[color:var(--mwm-navy)]'}`}>✓</span>
-                      <span className={plan.highlighted ? 'text-neutral-300' : 'text-neutral-600'}>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+              {period === 'annual' && plan.annualTotal && (
+                <p
+                  className={`mt-1 text-xs ${highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}
+                >
+                  Billed ${plan.annualTotal.toLocaleString()} annually
+                </p>
               )}
+              <ul className="mt-6 space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2 text-sm">
+                    <span
+                      className={`text-lg leading-none ${highlighted ? 'text-[var(--mwm-gold)]' : 'text-[color:var(--mwm-navy)]'}`}
+                    >
+                      ✓
+                    </span>
+                    <span className={highlighted ? 'text-neutral-200' : 'text-neutral-600'}>
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
               {showCheckout && (
                 <p
                   className={`mt-6 text-sm leading-relaxed ${
-                    plan.highlighted ? 'text-neutral-200' : 'text-neutral-700'
+                    highlighted ? 'text-neutral-200' : 'text-neutral-700'
                   }`}
                 >
-                  {BILLING_DISCLOSURES.preCheckout(plan.name, price, interval)}
+                  {plan.trialDays > 0
+                    ? `14-day free trial, then ${plan.priceLabel}/${plan.intervalLabel}. Cancel anytime.`
+                    : BILLING_DISCLOSURES.preCheckout(
+                        plan.name,
+                        plan.period === 'annual' && plan.annualTotal
+                          ? `$${plan.annualTotal}`
+                          : plan.priceLabel,
+                        plan.intervalLabel,
+                      )}
                 </p>
               )}
               <Button
                 type="button"
-                onClick={() => handleSubscribe(plan.priceId)}
+                onClick={() => void handleSubscribe(plan)}
                 disabled={loadingPriceId === plan.priceId || (isCurrentPlan && isActive)}
-                variant={plan.highlighted ? 'primary' : 'dark'}
+                variant={highlighted ? 'primary' : 'dark'}
                 className="mt-4 w-full rounded-lg py-2.5 text-sm font-medium"
               >
                 {isCurrentPlan && isActive
                   ? 'Current Plan'
                   : loadingPriceId === plan.priceId
                     ? 'Redirecting...'
-                    : 'Get started'}
+                    : plan.cta}
               </Button>
             </Card>
           )
         })}
       </div>
+
+      {plans.some((p) => p.tier === 3) && (
+        <p className="mx-auto mt-6 max-w-md text-center text-xs text-[color:var(--mwm-text-muted)]">
+          A single estate planning attorney consultation often costs $3,000–$5,000. My Wealth Maps
+          prepares you to make every minute count.
+        </p>
+      )}
+
+      <p className="mt-6 text-center text-xs text-[color:var(--mwm-text-muted)]">
+        {BILLING_DISCLOSURES.pricingPageNotice}
+      </p>
 
       <div className="mt-8 flex flex-col items-center gap-3 text-center">
         {isActive && subscriptionStatus !== 'canceling' && (
@@ -267,7 +313,7 @@ export function BillingClient({
             type="button"
             onClick={() => void handleCancelSubscription()}
             disabled={loadingPriceId === 'cancel'}
-            className="text-sm font-medium text-neutral-800 hover:text-neutral-950 underline-offset-4 hover:underline disabled:opacity-50"
+            className="text-sm font-medium text-neutral-800 underline-offset-4 hover:text-neutral-950 hover:underline disabled:opacity-50"
           >
             {loadingPriceId === 'cancel' ? 'Cancelling…' : 'Cancel subscription'}
           </button>
@@ -276,7 +322,7 @@ export function BillingClient({
           type="button"
           onClick={() => void handleManageSubscription()}
           disabled={loadingPriceId === 'portal'}
-          className="text-sm text-neutral-500 hover:text-neutral-700 underline-offset-4 hover:underline disabled:opacity-50"
+          className="text-sm text-neutral-500 underline-offset-4 hover:text-neutral-700 hover:underline disabled:opacity-50"
         >
           {loadingPriceId === 'portal' ? 'Loading...' : 'Manage existing subscription'}
         </button>

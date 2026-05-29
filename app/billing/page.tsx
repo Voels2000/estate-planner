@@ -1,23 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { BillingClient } from './_billing-client'
 import { FirmBillingClient } from './_firm-billing-client'
-import Stripe from 'stripe'
 import { redirect } from 'next/navigation'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import {
-  TIER_FEATURES,
   ADVISOR_FIRM_PRICE_IDS,
   FIRM_PRICE_ID_TO_TIER,
   ADVISOR_FIRM_SEAT_RATES,
 } from '@/lib/tiers'
 import { getAccessContext } from '@/lib/access/getAccessContext'
-
-const CONSUMER_PRICE_IDS = [
-  'price_1TILBRCaljka9gJt6dr44Znq', // Financial $9
-  'price_1TILEXCaljka9gJtrHqnG3bl', // Retirement $19
-  'price_1TILGOCaljka9gJtCDLiKFHp', // Estate $34
-]
 
 export default async function BillingPage() {
   const access = await getAccessContext()
@@ -30,9 +22,9 @@ export default async function BillingPage() {
           <Card className="p-8">
             <div className="mb-4 text-4xl">🏢</div>
             <h1 className="text-2xl font-bold text-neutral-900">Billing</h1>
-            <p className="mt-4 text-neutral-600 leading-relaxed">
-              Your billing is managed by your firm owner. Contact your firm
-              administrator for billing questions.
+            <p className="mt-4 leading-relaxed text-neutral-600">
+              Your billing is managed by your firm owner. Contact your firm administrator for
+              billing questions.
             </p>
             <div className="mt-10">
               <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
@@ -49,12 +41,9 @@ export default async function BillingPage() {
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <Card className="p-8">
             <div className="mb-4 text-4xl">⚠️</div>
-            <h1 className="text-2xl font-bold text-neutral-900">
-              Firm not linked
-            </h1>
+            <h1 className="text-2xl font-bold text-neutral-900">Firm not linked</h1>
             <p className="mt-4 text-neutral-600">
-              Your account is not associated with a firm. Contact support if this
-              is unexpected.
+              Your account is not associated with a firm. Contact support if this is unexpected.
             </p>
             <div className="mt-10">
               <ButtonLink href="/dashboard" variant="link" className="text-sm font-medium">
@@ -108,9 +97,6 @@ export default async function BillingPage() {
   }
 
   const supabase = await createClient()
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24.acacia',
-  })
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -130,15 +116,13 @@ export default async function BillingPage() {
             Your plan is managed by your advisor
           </h2>
           <p className="text-sm text-blue-800">
-            No payment required. Your advisor covers access to MyWealthMaps on
-            your behalf. Contact your advisor if you have billing questions.
+            No payment required. Your advisor covers access to MyWealthMaps on your behalf. Contact
+            your advisor if you have billing questions.
           </p>
         </Card>
       </div>
     )
   }
-
-  const isActive = profile?.subscription_status === 'active'
 
   const { data: clientRow } = await supabase
     .from('advisor_clients')
@@ -148,34 +132,8 @@ export default async function BillingPage() {
     .maybeSingle()
   const isAdvisorClient = !!clientRow
 
-  const priceIdsToShow = CONSUMER_PRICE_IDS
-
-  const plans = await Promise.all(
-    priceIdsToShow.map(async id => {
-      const price = await stripe.prices.retrieve(id, { expand: ['product'] })
-      const product = price.product as Stripe.Product
-      const tierMap: Record<string, 1 | 2 | 3> = {
-        'price_1TILBRCaljka9gJt6dr44Znq': 1,
-        'price_1TILEXCaljka9gJtrHqnG3bl': 2,
-        'price_1TILGOCaljka9gJtCDLiKFHp': 3,
-      }
-      const tier = tierMap[id] ?? 1
-      return {
-        priceId: price.id,
-        name: product.name,
-        description: product.description ?? '',
-        features: TIER_FEATURES[tier] as unknown as string[],
-        amount: price.unit_amount ?? 0,
-        currency: price.currency,
-        interval: price.recurring?.interval ?? 'month',
-        highlighted: tier === 2,
-      }
-    })
-  )
-
   return (
     <BillingClient
-      plans={plans}
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
       subscriptionPeriodEnd={profile?.subscription_period_end ?? null}

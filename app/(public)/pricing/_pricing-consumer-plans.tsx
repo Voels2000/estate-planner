@@ -1,0 +1,287 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
+import { BillingPeriodToggle } from '@/components/billing/BillingPeriodToggle'
+import {
+  formatPlanPriceDisplay,
+  getConsumerPlansForPeriod,
+  type ConsumerPlanForCheckout,
+} from '@/lib/billing/consumerPlanCatalog'
+import type { BillingPeriod } from '@/lib/billing/stripePrices'
+
+type Props = {
+  isLoggedIn: boolean
+  signupHref: string
+}
+
+export function PricingConsumerPlans({ isLoggedIn, signupHref }: Props) {
+  const [period, setPeriod] = useState<BillingPeriod>('monthly')
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
+  const plans = useMemo(() => getConsumerPlansForPeriod(period), [period])
+
+  async function handleCheckout(plan: ConsumerPlanForCheckout) {
+    setLoadingPriceId(plan.priceId)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: plan.priceId, period: plan.period }),
+      })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        window.location.assign(data.url)
+      }
+    } finally {
+      setLoadingPriceId(null)
+    }
+  }
+
+  return (
+    <>
+      <BillingPeriodToggle period={period} onChange={setPeriod} />
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 20,
+        }}
+      >
+        {plans.map((plan) => {
+          const { main, sub } = formatPlanPriceDisplay(plan)
+          const isEstate = plan.tier === 3
+          const highlighted = isEstate
+
+          return (
+            <div
+              key={`${plan.id}-${period}`}
+              style={{
+                background: 'white',
+                border: highlighted ? `2px solid ${plan.accent}` : '1px solid #e2e8f0',
+                borderRadius: 16,
+                padding: '32px 28px',
+                position: 'relative',
+                boxShadow: highlighted
+                  ? '0 8px 40px rgba(15,31,61,0.12)'
+                  : '0 4px 20px rgba(15,31,61,0.08)',
+                overflow: 'visible',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  background: plan.accent,
+                  borderRadius: '16px 16px 0 0',
+                }}
+              />
+
+              {plan.badge && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -14,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: plan.accent,
+                    color: plan.accent === '#c9a84c' ? '#0f1f3d' : 'white',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '4px 16px',
+                    borderRadius: 40,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {plan.badge}
+                </div>
+              )}
+
+              <div style={{ marginBottom: 24, marginTop: 8 }}>
+                <div
+                  style={{
+                    display: 'inline-block',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    padding: '3px 10px',
+                    borderRadius: 40,
+                    background:
+                      plan.accent === '#0f1f3d'
+                        ? '#e6edf8'
+                        : plan.accent === '#c9a84c'
+                          ? '#fdf6e3'
+                          : '#eef6f4',
+                    color:
+                      plan.accent === '#0f1f3d'
+                        ? '#0f1f3d'
+                        : plan.accent === '#c9a84c'
+                          ? '#7a5a00'
+                          : '#2d6a4f',
+                    marginBottom: 12,
+                  }}
+                >
+                  {plan.name}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 4,
+                    marginBottom: 6,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'Playfair Display, Georgia, serif',
+                      fontSize: 42,
+                      fontWeight: 500,
+                      color: '#0f1f3d',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {main}
+                  </span>
+                  {sub && <span style={{ fontSize: 13, color: '#718096' }}>{sub}</span>}
+                </div>
+                {period === 'annual' && plan.annualTotal && (
+                  <p style={{ fontSize: 12, color: '#718096', marginBottom: 4 }}>
+                    Billed ${plan.annualTotal.toLocaleString()} annually · 2 months free
+                  </p>
+                )}
+                {isEstate && period === 'annual' && (
+                  <p style={{ fontSize: 12, color: '#4a7c6f', fontWeight: 500 }}>
+                    Or $1,490/year (save $298 vs monthly)
+                  </p>
+                )}
+                <p style={{ fontSize: 13, color: '#718096', lineHeight: 1.5 }}>{plan.description}</p>
+              </div>
+
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: 24 }}>
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature}
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      padding: '6px 0',
+                      fontSize: 13,
+                      color: '#4a5568',
+                      borderBottom: '1px solid #f7f8fa',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: plan.accent,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        marginTop: 1,
+                      }}
+                    >
+                      ✓
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              {isLoggedIn ? (
+                <>
+                  <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.6, marginBottom: 12 }}>
+                    {plan.trialDays > 0
+                      ? `14-day free trial, then ${plan.priceLabel}/${plan.intervalLabel}. Cancel anytime.`
+                      : BILLING_DISCLOSURES.preCheckout(
+                          plan.name,
+                          plan.period === 'annual' && plan.annualTotal
+                            ? `$${plan.annualTotal}`
+                            : plan.priceLabel,
+                          plan.intervalLabel,
+                        )}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={loadingPriceId === plan.priceId}
+                    onClick={() => void handleCheckout(plan)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: plan.accent,
+                      color: plan.accent === '#c9a84c' ? '#0f1f3d' : 'white',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: loadingPriceId === plan.priceId ? 'wait' : 'pointer',
+                      fontFamily: 'DM Sans, system-ui, sans-serif',
+                      opacity: loadingPriceId === plan.priceId ? 0.7 : 1,
+                    }}
+                  >
+                    {loadingPriceId === plan.priceId ? 'Redirecting…' : plan.cta}
+                  </button>
+                </>
+              ) : (
+                <a
+                  href={signupHref}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 8,
+                    background: plan.accent,
+                    color: plan.accent === '#c9a84c' ? '#0f1f3d' : 'white',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'DM Sans, system-ui, sans-serif',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {isEstate ? 'Start free trial' : plan.cta}
+                </a>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <p
+        style={{
+          fontSize: 12,
+          color: '#718096',
+          textAlign: 'center',
+          marginTop: 12,
+          lineHeight: 1.6,
+          maxWidth: 420,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        A single estate planning attorney consultation often costs $3,000–$5,000. My Wealth Maps
+        prepares you to make every minute count.
+      </p>
+
+      <p
+        style={{
+          fontSize: 13,
+          color: '#718096',
+          textAlign: 'center',
+          marginTop: 16,
+          lineHeight: 1.6,
+          maxWidth: 640,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        {BILLING_DISCLOSURES.pricingPageNotice}
+      </p>
+    </>
+  )
+}
