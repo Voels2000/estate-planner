@@ -6,7 +6,7 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O on `main`. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O + **19a** (`b7a15dd`) on `main`. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -48,13 +48,65 @@
 
 ---
 
-## Sprint K — consumer flow consistency ✅ (2026-05-28)
+## Sprint K — consumer flow consistency ✅ (2026-05-28, `90d167a`)
 
 | Task | Status |
 |------|--------|
 | Remove `window.location.reload` (P&C, my-estate-strategy, advisor/attorney invite, Strategy base-case) | ✅ |
 | Trust-strategy `ConsumerStrategyPanel` server hydrate | ✅ |
 | Charitable donations → `/api/consumer/charitable-donations` | ✅ |
+
+---
+
+## Sprint L — bundle + duplicate fetch ✅ (2026-05-28, `5da71b0`)
+
+| Task | Status |
+|------|--------|
+| Recharts via `dynamic()` in `MonteCarloCharts.tsx` | ✅ |
+| Lazy `@react-pdf/renderer` in `ExportPDFButton` | ✅ |
+| Delete dead `projections/_projections-view.tsx` | ✅ |
+| `loadEstatePlanningDashboard` + prefetch (my-estate-strategy, attorney client) | ✅ |
+
+---
+
+## Sprint M — dashboard Suspense streaming ✅ (2026-05-28, `c5186ca`)
+
+| Task | Status |
+|------|--------|
+| Thin `dashboard/page.tsx` + `DashboardBody` in `<Suspense>` | ✅ |
+
+---
+
+## Sprint N — advisor tab perf ✅ (2026-05-28, `615d496`)
+
+| Task | Status |
+|------|--------|
+| Roster `alertCountsMap` batch load | ✅ |
+| `AdvisorAlertBadge` prefetch | ✅ |
+| Strategy tab server hydrate gate | ✅ |
+
+**Deferred:** advisor `?tab=` still full server navigation — Parallel Routes sprint post–go-live.
+
+---
+
+## Sprint O — shells + composition cache ✅ (2026-05-28, `3524581`)
+
+| Task | Status |
+|------|--------|
+| `loading.tsx` / `error.tsx` on assets, titling, advisor, my-estate-strategy | ✅ |
+| `revalidateTag(household-composition-{id})` after household writes | ✅ |
+
+---
+
+## Sprint 19a — deferred review fixes ✅ (2026-05-28, `b7a15dd`)
+
+| Task | Status |
+|------|--------|
+| Allocation save → `router.refresh()` only (no extra `/api/asset-allocation`) | ✅ |
+| `loadAssessmentHistory` + `AssessmentHistoryWidget` server prefetch on dashboard | ✅ |
+| Meeting Prep instant brief + “Refresh from latest data” | ✅ |
+
+**Deferred:** Meeting Prep full server dedupe of all `generateMeetingBrief` queries; advisor tab full-reload architecture.
 
 ---
 

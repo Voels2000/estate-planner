@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-28 (Sprints K–O flow & perf program closed)
+# Last updated: 2026-05-28 (Sprints K–O + 19a closed; Sprint 19 go-live hardening)
 
 ---
 
@@ -21,20 +21,29 @@
 
 ## Current sprint
 
-### Sprint 18 — Planning shell completion + go-live hardening **← CURRENT**
+### Sprint 19 — Go-live hardening **← CURRENT**
 
-**Goal:** Finish route-level loading/error shells on remaining heavy planning pages; keep Sprint 17 legal/ops blockers on track for flip.
+**Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke.
+
+| Item | Status |
+|------|--------|
+| Manual RLS isolation smoke | `[ ]` |
+| LEGAL_TODO counsel handoff | `[ ]` |
+| Stripe Dashboard config | `[ ]` |
+| Go-live smoke (fresh email) | `[ ]` |
+
+**Engineering (closed):** Sprint 18 shells (J) + flow/perf program K–O + 19a on `main`.
+
+---
+
+### Sprint 18 — Planning shell completion ✅ (2026-05-27)
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Complete + estate-tax loading/error** | `[x]` | Sprint J — `loading.tsx` + `error.tsx` on `/complete`, `/estate-tax` |
-| **RouteErrorFallback adoption** | `[x]` | Dashboard + trust-strategy `error.tsx` → shared component |
-| **Manual RLS isolation smoke** | `[ ]` | Pre-launch — two-household advisor/consumer spot check ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)) |
-| **LEGAL_TODO counsel handoff** | `[ ]` | Sprint 17 blocker — §10/§11/§13, one redline batch |
-| **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts |
-| **Go-live smoke (fresh email)** | `[ ]` | Core §1–3 after `PUBLIC_SIGNUP_OPEN=true` |
-
-**Depends on:** Post-launch perf program (Sprints B–J) ✅ closed on `main`.
+| Complete + estate-tax loading/error | `[x]` | Sprint J — `e93f9a0` |
+| RouteErrorFallback adoption | `[x]` | Dashboard + trust-strategy |
+| Manual RLS isolation smoke | `[ ]` | → Sprint 19 |
+| LEGAL_TODO / Stripe / go-live smoke | `[ ]` | → Sprint 19 |
 
 ---
 
@@ -55,30 +64,18 @@ Engineering perf/correctness sprints shipped on `main` (`88cc63d`–`a4d2e38`, S
 | **I** | `error.tsx` + `RouteErrorFallback` | `a4d2e38` |
 | **J** | Complete + estate-tax loading/error | `e93f9a0` |
 
-### Flow & perf program (Sprints K–O) — 2026-05-28
+### Flow & perf program (Sprints K–19a) — 2026-05-28 ✅ CLOSED
 
-| Sprint | Theme | Status |
+| Sprint | Theme | Commit |
 |--------|--------|--------|
-| **K** | Consumer flow consistency (reload → refresh, strategy hydrate, charitable API) | ✅ |
-| **L** | Bundle + duplicate fetch | ✅ `5da71b0` |
-| **M** | Dashboard Suspense streaming | ✅ `c5186ca` |
-| **N** | Advisor tab perf | ✅ |
-| **O** | Shells + composition cache tags | ✅ |
+| **K** | Consumer flow consistency | `90d167a` |
+| **L** | Bundle + duplicate fetch | `5da71b0` |
+| **M** | Dashboard Suspense streaming | `c5186ca` |
+| **N** | Advisor tab perf (roster alerts, Strategy hydrate) | `615d496` |
+| **O** | Shells + composition cache tags | `3524581` |
+| **19a** | Deferred review fixes (allocation, assessments, Meeting Prep) | `b7a15dd` |
 
-Detail: [NEXT_SESSION.md § Flow & perf K–O](./NEXT_SESSION.md)
-
----
-
-### Sprint 19 — Go-live hardening **← CURRENT**
-
-**Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke.
-
-| Item | Status |
-|------|--------|
-| Manual RLS isolation smoke | `[ ]` |
-| LEGAL_TODO counsel handoff | `[ ]` |
-| Stripe Dashboard config | `[ ]` |
-| Go-live smoke (fresh email) | `[ ]` |
+Detail: [NEXT_SESSION.md](./NEXT_SESSION.md)
 
 ---
 

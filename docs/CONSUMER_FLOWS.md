@@ -36,7 +36,7 @@ flowchart LR
 - **`lib/consumer/afterHouseholdWrite.ts`** — `touchHousehold` + non-blocking `triggerEstateHealthRecompute`.
 - **Estate composition** — `classifyEstateAssets` → Postgres RPC `calculate_estate_composition` (server render or `POST /api/estate-composition`).
 - **Horizons** — `buildStrategyHorizons` in `lib/my-estate-strategy/horizonSnapshots.ts` (fed by `strategy_line_items` + base-case projection).
-- **Client refresh** — typically `router.refresh()` after save; composition/strategy totals may lag recompute by a few seconds (see e2e polls in `consumer-strategy-writes.spec.ts`).
+- **Client refresh** — typically `router.refresh()` after save; composition/strategy totals may lag recompute by a few seconds (see e2e polls in `consumer-strategy-writes.spec.ts`). **`/allocation`** (19a): after `PATCH` allocation targets, refresh only — no redundant `GET /api/asset-allocation`.
 
 ---
 
@@ -267,6 +267,19 @@ Three related routes share projection engines but answer different questions. **
 | `/projections` | 1 | `loadProjectionData` | `loading.tsx` + `error.tsx` (H/I) |
 | `/complete` | 2 | `loadProjectionData` | `loading.tsx` + `error.tsx` (J) |
 | `/estate-tax` | 2 | composition + household | `loading.tsx` + `error.tsx` (J) |
+
+### Estate & data entry — shells (Sprint O)
+
+| Route | Loading / error |
+|-------|-----------------|
+| `/assets`, `/titling`, `/my-estate-strategy`, `/advisor` | `loading.tsx` + `error.tsx` (O) |
+
+### Dashboard streaming + assessments (Sprints M, 19a)
+
+| Piece | Pattern |
+|-------|---------|
+| `/dashboard` body | `DashboardBody` in `<Suspense>` (M) — page shell renders while heavy widgets stream |
+| Assessment history | `loadAssessmentHistory` on server; widget skips client fetch when hydrated (19a) |
 
 ### Dashboard mobile shell (Sprint 12)
 

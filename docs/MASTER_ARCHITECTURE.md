@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-27 (Sprint J route shells; post-launch perf B–J closed)
+# Last updated: 2026-05-28 (Sprints K–O + 19a; Sprint 19 go-live hardening)
 
 ---
 
@@ -511,6 +511,8 @@ Runtime behavior:
 - As of **2026-05-27 (pre-launch consistency)**, `FEATURE_TIERS` values follow **page gates as authority** (`real-estate`, `allocation`, `digital-assets` → tier 2; `business-succession` → tier 3; `my-estate-strategy` / `my-estate-trust-strategy` keys added). Sidebar and all gated pages use `hasFeatureAccess(feature, tier, isAdvisor, isTrial)` from `lib/tiers.ts`; `UpgradeBanner` uses `featureUpgradeTier(feature)`. Layout passes `isTrial` to sidebar for trial unlock parity.
 - As of **2026-05-27 (Sprint A):** tab includes aligned for estate/tax/domicile/meeting-prep horizons; Meeting Prep uses server `estateComposition`; `loadTrustWillGuidance` accepts preloaded composition on trust-strategy page.
 - As of **2026-05-27 (Sprint D):** all advisor client tabs code-split via `next/dynamic` in `_client-view-shell.tsx`; `DomicileTab` no longer refetches `/api/domicile-analysis` on mount (uses server `domicileAnalysis` prop).
+- As of **2026-05-28 (Sprints K–O):** consumer saves prefer `router.refresh()` over `window.location.reload` on P&C, my-estate-strategy, advisor invite, Strategy base-case; Recharts/PDF lazy-loaded; `/dashboard` streams via `<Suspense>` + `DashboardBody`; advisor roster alert counts batched (`rosterAlertCounts.ts`); `afterHouseholdWrite` revalidates `household-composition-{id}` tag; `loading.tsx`/`error.tsx` on `/assets`, `/titling`, `/advisor`, `/my-estate-strategy`.
+- As of **2026-05-28 (Sprint 19a):** allocation target save uses PATCH + `router.refresh()` only (no follow-up GET); dashboard `loadAssessmentHistory` hydrates `AssessmentHistoryWidget`; Meeting Prep renders server-seeded brief with explicit “Refresh from latest data” for regen.
 - As of **2026-05-27**, consumer accept/decline on advisor recommendations (`my-estate-trust-strategy/_client.tsx`) checks `res.ok` before optimistic UI update; errors surface inline (matches `StrategySandboxSection` pattern).
 - As of **2026-05-27**, `/digital-assets` missing-household redirect is `/profile?required=true` (not `/onboarding`); auth redirect uses `/login`.
 - As of Session 116 (Phase A½ trust merge), full Trust & Will UI lives on **Gifting, Strategies & Trusts** → **Trusts & Documents** tab (`/my-estate-trust-strategy?tab=trusts`). Shared `components/consumer/TrustDocumentsPanel.tsx` + `lib/trusts/loadTrustWillGuidance.ts`; `/trust-will` redirects to that tab (no separate sidebar link). Sidebar **Gifting, Strategies & Trusts** opens `?tab=trusts`; tab clicks sync URL via `router.replace`.

@@ -1,6 +1,30 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf program closed)
+# Last updated: 2026-05-28 (Sprints K–O + 19a closed; Sprint 19 go-live hardening)
+
+## Flow & perf program K–O — closed (2026-05-28)
+
+**Decision:** Ship consumer/advisor flow consistency, bundle splits, dashboard Suspense, advisor roster alert batching, route shells, and composition `revalidateTag` on `main` before go-live flip.
+
+**Commit anchors:** K `90d167a` · L `5da71b0` · M `c5186ca` · N `615d496` · O `3524581`.
+
+**Deferred:** Advisor `?tab=` URL still triggers full server page load — Parallel Routes / per-tab cache is a post–go-live sprint, not a launch blocker.
+
+---
+
+## Sprint 19a — deferred review fixes (2026-05-28)
+
+**Decision:** Three quick wins from codebase review without advisor tab architecture change.
+
+| Fix | Approach |
+|-----|----------|
+| Allocation save | `router.refresh()` after PATCH; drop redundant GET `/api/asset-allocation` |
+| Assessment history | `loadAssessmentHistory` on dashboard server; widget skips client fetch when hydrated |
+| Meeting Prep | Seed brief from server props; “Refresh from latest data” for explicit regen |
+
+**Commit:** `b7a15dd`. Full Meeting Prep query dedupe remains deferred.
+
+---
 
 ## Post-launch perf program — closed (2026-05-27)
 
