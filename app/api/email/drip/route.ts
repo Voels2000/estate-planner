@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getDripSequence, buildDripEmailHtml } from '@/lib/emails/drip-templates'
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 
 const BASE_URL = 'https://mywealthmaps.com'
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
           ? sequence.email2
           : sequence.email3
 
-    const unsubscribeUrl = `${BASE_URL}/api/email/unsubscribe?email=${encodeURIComponent(normalizedEmail)}`
+    const unsubscribeUrl = buildUnsubscribeUrl(BASE_URL, normalizedEmail)
 
     const html = buildDripEmailHtml({
       email: emailData,

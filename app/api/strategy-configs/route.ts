@@ -1,5 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+
+async function requireHouseholdAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, householdId: string) {
+  const access = await assertHouseholdAccess(supabase, userId, householdId)
+  if (!access.ok) {
+    return NextResponse.json(
+      { error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
+      { status: access.reason === 'not_found' ? 404 : 403 },
+    )
+  }
+  return null
+}
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -8,6 +20,9 @@ export async function GET(request: NextRequest) {
 
   const householdId = request.nextUrl.searchParams.get('householdId')
   if (!householdId) return NextResponse.json({ error: 'householdId required' }, { status: 400 })
+
+  const denied = await requireHouseholdAccess(supabase, user.id, householdId)
+  if (denied) return denied
 
   const { data, error } = await supabase
     .from('strategy_configs')
@@ -29,6 +44,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'householdId and strategyType required' }, { status: 400 })
   }
 
+  const denied = await requireHouseholdAccess(supabase, user.id, householdId)
+  if (denied) return denied
+
   const { error } = await supabase
     .from('strategy_configs')
     .upsert(
@@ -49,6 +67,9 @@ export async function DELETE(request: NextRequest) {
   if (!householdId || !strategyType) {
     return NextResponse.json({ error: 'householdId and strategyType required' }, { status: 400 })
   }
+
+  const denied = await requireHouseholdAccess(supabase, user.id, householdId)
+  if (denied) return denied
 
   const { error } = await supabase
     .from('strategy_configs')

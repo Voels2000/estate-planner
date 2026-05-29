@@ -5,6 +5,7 @@ import {
   getAttorneyDripSequence,
   buildAttorneyDripEmailHtml,
 } from '@/lib/emails/attorney-drip-templates'
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 
 const DRIP_SENT_COLUMNS = {
   1: 'attorney_drip_step_1_sent_at',
@@ -54,7 +55,7 @@ export async function sendAttorneyDripStep(
 
   const normalizedEmail = profile.email.trim().toLowerCase()
   const appUrl = getAppUrl()
-  const unsubscribeUrl = `${appUrl}/api/email/unsubscribe?email=${encodeURIComponent(normalizedEmail)}&type=attorney`
+  const unsubscribeUrl = buildUnsubscribeUrl(appUrl, normalizedEmail, 'attorney')
 
   const html = buildAttorneyDripEmailHtml({
     email: emailData,

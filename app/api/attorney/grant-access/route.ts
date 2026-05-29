@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
+import { internalApiHeaders } from '@/lib/api/internalApiAuth'
 import {
   countActiveAttorneyClients,
   FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
         // Existing attorney — notification only, login CTA
         await fetch(`${appUrl}/api/email/attorney-notify`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: internalApiHeaders(),
           body: JSON.stringify({
             email: attorneyListing.email,
             attorneyName: attorneyListing.contact_name ?? null,
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
 
         await fetch(`${appUrl}/api/email/attorney-invite`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: internalApiHeaders(),
           body: JSON.stringify({
             email: attorneyListing.email,
             attorneyName: attorneyListing.contact_name ?? null,

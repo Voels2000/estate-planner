@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
+import { escapeHtml } from '@/lib/api/escapeHtml'
+import { requireInternalApi } from '@/lib/api/internalApiAuth'
 
 export async function POST(req: Request) {
+  const denied = requireInternalApi(req)
+  if (denied) return denied
+
   try {
     const { email, advisorName, subject, message, bcc } = await req.json()
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 })
     }
+
+    const safeName = escapeHtml(String(advisorName ?? 'there'))
+    const safeMessage = escapeHtml(String(message ?? ''))
 
     const { error: emailError } = await resend.emails.send({
       from: 'MyWealthMaps <hello@mywealthmaps.com>',
@@ -20,10 +28,10 @@ export async function POST(req: Request) {
           <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
           <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
             <p style="color:#374151;font-size:16px;line-height:1.6">
-              Hello ${advisorName || 'there'},
+              Hello ${safeName},
             </p>
             <p style="color:#374151;font-size:16px;line-height:1.6">
-              ${message}
+              ${safeMessage}
             </p>
             <div style="text-align:center;margin:32px 0">
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/login"
@@ -42,7 +50,7 @@ export async function POST(req: Request) {
             Questions? Reply to this email and we will get back to you.
           </p>
         </div>
-      `
+      `,
     })
 
     if (emailError) {

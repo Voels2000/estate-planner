@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
+import { internalApiHeaders } from '@/lib/api/internalApiAuth'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     await fetch(`${appUrl}/api/email/attorney-invite`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: internalApiHeaders(),
       body: JSON.stringify({
         email: emailLower,
         attorneyName: contact_name.trim(),

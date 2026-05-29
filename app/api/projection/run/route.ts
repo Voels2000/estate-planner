@@ -158,7 +158,10 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const isServiceToken = !!serviceKey && token === serviceKey
+    const isInternalService =
+      !!process.env.INTERNAL_API_KEY &&
+      req.headers.get('x-internal-key') === process.env.INTERNAL_API_KEY
+    const isServiceToken = isInternalService && !!serviceKey && token === serviceKey
 
     let userId: string | null = null
     if (!isServiceToken) {

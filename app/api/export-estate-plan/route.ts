@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
+import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
 
 export const runtime = 'nodejs'
 
@@ -63,6 +64,15 @@ export async function GET(request: NextRequest) {
     const isAdvisor = profile.role === 'advisor'
     const variant = searchParams.get('variant') ?? null
     const isAttorneyVariant = variant === 'attorney'
+
+    const access = await assertHouseholdAccess(supabase, user.id, householdId)
+    if (!access.ok) {
+      return NextResponse.json(
+        { error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
+        { status: access.reason === 'not_found' ? 404 : 403 },
+      )
+    }
+
     // Client Summary + attorney intake PDFs need household profile figures (tax + assets).
     const includeFinancialProfile =
       isAdvisor || isAttorneyVariant || profile.role === 'consumer'

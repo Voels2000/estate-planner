@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyUnsubscribeToken } from '@/lib/email/unsubscribeToken'
 
-const BASE_URL = 'https://mywealthmaps.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
 
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email')
+  const token = req.nextUrl.searchParams.get('token')
+  const type = req.nextUrl.searchParams.get('type') as 'advisor' | 'attorney' | null
+
   if (!email) {
     return new NextResponse('Invalid unsubscribe link', { status: 400 })
+  }
+
+  if (!verifyUnsubscribeToken(email, token, type)) {
+    return new NextResponse('Invalid or expired unsubscribe link', { status: 403 })
   }
 
   try {
     const admin = createAdminClient()
     const normalized = email.trim().toLowerCase()
-    const type = req.nextUrl.searchParams.get('type')
 
     if (type === 'advisor') {
       await admin
@@ -48,6 +55,6 @@ export async function GET(req: NextRequest) {
       </div>
     </body>
     </html>`,
-    { status: 200, headers: { 'Content-Type': 'text/html' } }
+    { status: 200, headers: { 'Content-Type': 'text/html' } },
   )
 }

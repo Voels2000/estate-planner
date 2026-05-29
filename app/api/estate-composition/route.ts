@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
+import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
 
 export async function POST(request: Request) {
   try {
@@ -31,6 +32,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 },
+      )
+    }
+
+    const access = await assertHouseholdAccess(supabase, user.id, householdId)
+    if (!access.ok) {
+      return NextResponse.json(
+        { success: false, error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
+        { status: access.reason === 'not_found' ? 404 : 403 },
       )
     }
 

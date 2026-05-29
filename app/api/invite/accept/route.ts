@@ -33,6 +33,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invite has expired' }, { status: 410 })
   }
 
+  const userEmail = user.email?.trim().toLowerCase()
+  const invitedEmail = invite.invited_email?.trim().toLowerCase()
+  if (userEmail && invitedEmail && userEmail !== invitedEmail) {
+    return NextResponse.json(
+      { error: 'This invite was sent to a different email address. Sign in with the invited email to accept.' },
+      { status: 403 },
+    )
+  }
+
   const { error: acceptError } = await admin
     .from('advisor_clients')
     .update({

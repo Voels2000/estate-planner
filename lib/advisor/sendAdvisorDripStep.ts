@@ -6,6 +6,7 @@ import {
   buildAdvisorDripEmailHtml,
 } from '@/lib/emails/advisor-drip-templates'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 
 const DRIP_SENT_COLUMNS = {
   1: 'advisor_drip_step_1_sent_at',
@@ -65,7 +66,7 @@ export async function sendAdvisorDripStep(
 
   const normalizedEmail = profile.email.trim().toLowerCase()
   const appUrl = getAppUrl()
-  const unsubscribeUrl = `${appUrl}/api/email/unsubscribe?email=${encodeURIComponent(normalizedEmail)}&type=advisor`
+  const unsubscribeUrl = buildUnsubscribeUrl(appUrl, normalizedEmail, 'advisor')
 
   const html = buildAdvisorDripEmailHtml({
     email: emailData,
