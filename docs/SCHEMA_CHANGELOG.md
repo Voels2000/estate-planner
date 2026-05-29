@@ -10,6 +10,28 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+---
+
+## Sprint 4 — consumer pricing (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Price ID config + tier mapping | `lib/billing/stripePrices.ts` |
+| Plan display catalog | `lib/billing/consumerPlanCatalog.ts` |
+| Upgrade banner pricing lines | `lib/billing/upgradePricingCopy.ts` |
+| Tier prices 29/79/149 | `lib/tiers.ts` (`TIER_PRICES`, `CONSUMER_PRICE_IDS` from env) |
+| Checkout — period + 14-day Estate trial | `app/api/stripe/checkout/route.ts` |
+| Webhook — tier from price ID, trialing status | `app/api/stripe/webhook/route.ts` |
+| Billing UI — monthly/annual toggle | `app/billing/_billing-client.tsx`, `components/billing/BillingPeriodToggle.tsx` |
+| Public pricing — toggle + new copy | `app/(public)/pricing/page.tsx`, `_pricing-consumer-plans.tsx` |
+| Upgrade gates — new price copy | `app/(dashboard)/_components/UpgradeBanner.tsx` |
+
+**Pricing:** Financial $29/mo ($290/yr) · Retirement $79/mo ($790/yr) · Estate $149/mo ($1,490/yr) · 14-day trial on Estate only. Price IDs from env (`STRIPE_PRICE_*`); legacy monthly IDs as dev fallback.
+
+**No schema migration.**
+
+---
+
 ## Golden Path — guided dashboard (2026-05-29, code only)
 
 | Change | Files |

@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Golden Path guided dashboard; go-live hardening)
+# Updated: 2026-05-28 (Sprint 4 pricing; Golden Path; go-live hardening)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Flow & perf (closed):** Sprints K–O + **19a** on `main`. **Golden Path (shipped):** `determinePlanStage` + `PlanProgressBar` + stage-based dashboard sections + `npm run test:e2e:golden-path`. **Estate checklist:** apply migration `20260528120000_estate_checklist_items.sql` if missing. **Sprint 17 blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Next:** manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Sprint 4 pricing (shipped):** $29/$79/$149 monthly + annual (2 months free); 14-day Estate trial; `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook wired. **Manual before flip:** create 6 Stripe prices + env vars — [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue). **Golden Path (shipped):** `determinePlanStage` + `PlanProgressBar` + stage-based dashboard + `npm run test:e2e:golden-path`. **Estate checklist:** apply migration `20260528120000_estate_checklist_items.sql` if missing. **Sprint 17 blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard functional verify; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke. **Next:** staging checkout smoke with test keys; manual RLS isolation smoke per [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -95,6 +95,28 @@
 |------|--------|
 | `loading.tsx` / `error.tsx` on assets, titling, advisor, my-estate-strategy | ✅ |
 | `revalidateTag(household-composition-{id})` after household writes | ✅ |
+
+---
+
+## Sprint 4 — consumer pricing & Stripe integration ✅ (2026-05-28)
+
+| Task | Status |
+|------|--------|
+| `lib/billing/stripePrices.ts` — env price IDs, `getPriceConfig`, `getTierFromPriceId` | ✅ |
+| `lib/billing/consumerPlanCatalog.ts` — shared plan cards | ✅ |
+| Checkout — tier + period, 14-day Estate trial via `subscription_data` | ✅ |
+| Webhook — `getTierFromPriceId`, `subscription_status` from Stripe (`trialing` on trial) | ✅ |
+| Billing page — monthly/annual toggle, new prices, trial copy | ✅ |
+| `/pricing` — period toggle, $29/$79/$149, value anchor, FAQ | ✅ |
+| `UpgradeBanner` — new price/trial lines | ✅ |
+| `docs/LAUNCH_CHECKLIST.md` Stripe setup section | ✅ |
+| `docs/DECISION_LOG.md` pricing rationale | ✅ |
+
+**Commits (3):** `feat(billing): stripePrices` · `feat(billing): annual toggle billing + pricing` · `docs: Stripe setup + master docs`
+
+**Manual (before production):** Create 6 prices in Stripe Dashboard; set `STRIPE_PRICE_*_MONTHLY/ANNUAL` env vars; run functional verification checklist in [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+
+**Smoke:** logged-in user → `/billing` → toggle annual → Estate checkout redirects to Stripe with 14-day trial.
 
 ---
 

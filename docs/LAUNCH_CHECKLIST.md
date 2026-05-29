@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-28 (Sprints K–O + 19a closed; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Sprint 4 consumer pricing; Golden Path; Sprint 19 go-live hardening)
 
 ---
 
@@ -276,6 +276,65 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ---
 
+## Stripe Setup (required before `PUBLIC_SIGNUP_OPEN=true`)
+
+### Dashboard configuration (manual — Stripe Dashboard)
+- [ ] Create 3 products: Financial, Retirement, Estate
+- [ ] Create 6 prices (3 tiers × monthly/annual) with lookup keys
+  - financial_monthly: $29/mo
+  - financial_annual: $290/yr
+  - retirement_monthly: $79/mo
+  - retirement_annual: $790/yr
+  - estate_monthly: $149/mo (14-day trial)
+  - estate_annual: $1,490/yr (14-day trial)
+- [ ] Configure Customer Portal:
+  - Cancel subscriptions enabled
+  - Switch plans enabled
+  - Update payment method enabled
+  - Cancellation collects reason
+- [ ] Configure webhook endpoint:
+  - URL: `https://mywealthmaps.com/api/stripe/webhook`
+  - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.upcoming`
+- [ ] Copy webhook signing secret → `STRIPE_WEBHOOK_SECRET` in production
+
+### Environment variables (production)
+- [ ] `STRIPE_SECRET_KEY` (live key, starts with `sk_live_`)
+- [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (live key, starts with `pk_live_`)
+- [ ] `STRIPE_WEBHOOK_SECRET`
+- [ ] `STRIPE_PRICE_FINANCIAL_MONTHLY`
+- [ ] `STRIPE_PRICE_FINANCIAL_ANNUAL`
+- [ ] `STRIPE_PRICE_RETIREMENT_MONTHLY`
+- [ ] `STRIPE_PRICE_RETIREMENT_ANNUAL`
+- [ ] `STRIPE_PRICE_ESTATE_MONTHLY`
+- [ ] `STRIPE_PRICE_ESTATE_ANNUAL`
+- [ ] `STRIPE_CUSTOMER_PORTAL_URL`
+
+### Code verification (before deploy)
+- [x] `lib/billing/stripePrices.ts` — six price configs; env-driven IDs
+- [x] Checkout session uses `getPriceConfig()` / `getTierFromPriceId()` (not hardcoded consumer IDs)
+- [x] Webhook uses `getTierFromPriceId()` to set `consumer_tier`
+- [x] Estate trial (14 days) wired in checkout `subscription_data.trial_period_days`
+- [x] Billing page shows monthly/annual toggle
+- [x] Pricing page shows new prices ($29/$79/$149) + annual toggle
+- [x] `UpgradeBanner` shows new prices and trial language
+
+### Functional verification (after deploy to staging with test keys)
+- [ ] Subscribe to Financial ($29/mo test) → tier 1 set correctly
+- [ ] Subscribe to Estate ($149/mo test) → 14-day trial starts, tier 3 set, `subscription_status` = `trialing`
+- [ ] Trial ends → billing begins → tier 3 maintained
+- [ ] Cancel subscription → tier returns to 1 (not deleted)
+- [ ] Customer portal link works → can update payment method
+- [ ] `invoice.payment_failed` → user notified (check email/in-app)
+- [ ] Webhook signature verification passes (not just parsing)
+
+### Go/no-go
+- [ ] All environment variables set in Vercel production
+- [ ] Webhook verified in Stripe Dashboard (green check)
+- [ ] One complete subscription flow tested end-to-end with test keys
+- [ ] Switch to live keys — DO NOT test with live keys until all above pass
+
+---
+
 ## Production state (current — post Sprint 15 cutover, compliance code complete)
 
 | Area | Status | Blocks open signups? |
@@ -313,6 +372,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-28 | Sprint 4 consumer pricing | **Code complete** — $29/$79/$149 + annual; Estate 14-day trial; `stripePrices.ts`; billing + pricing toggle; LAUNCH_CHECKLIST Stripe section |
 | May 2026 | Sprint 8 | Attorney referral migration applied; trigger confirmed |
 | May 2026 | Sprint 9 | Signup referral attribution — profiles + funnel_events |
 | May 2026 | Sprint 9 | Drip — all 24 event slugs; RMD cohorts; life-event-on-connect; Digital Assets tier 2; getAppUrl audit |

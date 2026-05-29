@@ -1,6 +1,27 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Golden Path guided dashboard; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Sprint 4 pricing; Golden Path)
+
+## Pricing — Sprint 4 (2026-05-28)
+
+**Decision:** $29/$79/$149/mo (monthly) with $290/$790/$1,490/yr (annual, 2 months free). 14-day free trial on Estate tier (Tier 3) only.
+
+**Context:** Pricing was never live — clean slate, no grandfathering needed.
+
+**Rationale:**
+- Previous $9/$19/$34 signaled consumer budgeting app, not professional planning infrastructure. Target segment ($2M–$30M) pays $5K–$50K/yr in attorney fees.
+- $149/mo annual cost ($1,788) = 3–6% of a single estate attorney engagement. This is a price point the segment can justify and that signals professional value.
+- Trial on Tier 3 only: the estate tax snapshot and execution checklist are the product's core value proof. 14 days is enough to see a personalized tax number and complete 2–3 checklist items. Tier 1 at $29 is low enough friction that a trial adds complexity without benefit.
+- Annual option: 2 months free (16.7% discount). Improves cash flow, reduces monthly churn, gives a pricing anchor for the monthly option.
+
+**Alternatives considered:**
+- $49/$99/$199: Higher signal but may reduce trial conversion from life-event funnel
+- Keep $9/$19/$34: Confirmed wrong for segment positioning
+- Usage-based: Too complex for this stage
+
+**Revisit:** After 90 days of live data — conversion rate by tier, trial-to-paid conversion, churn by tier.
+
+---
 
 ## Golden Path — unified progress model (2026-05-29)
 

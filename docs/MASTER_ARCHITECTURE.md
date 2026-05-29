@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-29 (Golden Path guided dashboard; Sprint 19 go-live hardening)
+# Last updated: 2026-05-28 (Sprint 4 consumer pricing; Golden Path; Sprint 19 go-live hardening)
 
 ---
 
@@ -683,7 +683,13 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Current (as built):**
 
-- Consumer billing page now shows all consumer subscription tiers at initial purchase entry:
+- Consumer pricing (Sprint 4, 2026-05-28): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **14-day free trial on Estate tier only.**
+- Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
+- Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts`.
+- Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`).
+- Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
+- Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
+- Consumer billing page shows all three subscription tiers at initial purchase entry:
   - Financial
   - Retirement
   - Estate
@@ -1170,6 +1176,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 **Sprint C-3 (closed 2026-06-02):** RLS policy fixes — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`). Auth callback, confirm-email, MFA middleware, security headers, PII logging (`56a4407`). Advisor-scoped policies use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) via `lib/advisor/clientConnectionStatus.ts`. Critical fix: `businesses` advisor SELECT no longer uses `auth.uid() IS NOT NULL`.
 
 **Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
+
+**Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; 14-day Estate trial; `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 **Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql).
 
