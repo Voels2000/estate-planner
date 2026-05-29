@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-28 (Advisor dashboard tier fix; Sprint 4 pricing; Golden Path)
+# Last updated: 2026-05-27 (Friction reduction sprint)
+
+## Import at Tier 1 — intentional (2026-05-27)
+
+**Decision:** Lower `FEATURE_TIERS.import` from **2 → 1** so all Financial-tier consumers can upload and commit CSV/XLSX without upgrading. Import **job history** UI remains Tier 2+ (`showImportHistory` on `/import`).
+
+**Reasoning:** Spreadsheet import is the fastest onboarding path for HNW users (business owners, executives). Gating upload behind Tier 2 added friction without protecting revenue — import depth is a retention feature, not a paywall. Prior onboarding-only bypass (`allowOnboardingImport`) was inconsistent with `POST /api/ingest` tier checks.
+
+**Audit trail:** `lib/tiers.ts` (inline comment), `tests/e2e/consumer/consumer-import-access.spec.ts`, `docs/CONSUMER_NAV_MAP.md`, `docs/SPRINT_FRICTION_REDUCTION.md`.
+
+---
 
 ## Advisor billing handoff — automated on connect (2026-05-27)
 

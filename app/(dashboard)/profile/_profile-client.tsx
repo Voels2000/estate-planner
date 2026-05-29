@@ -115,15 +115,11 @@ export function ProfileClient({
     const errors: string[] = []
     if (!person1Name.trim()) errors.push('Your name is required')
     if (!person1BirthYear) errors.push('Your birth year is required')
-    if (!person1RetirementAge) errors.push('Your retirement age is required')
-    if (!person1SSClaimingAge) errors.push('Your Social Security claiming age is required')
-    if (!person1LongevityAge) errors.push('Your longevity age is required')
+    if (!statePrimary.trim()) errors.push('Primary state is required')
+    if (!filingStatus.trim()) errors.push('Filing status is required')
     if (hasSpouse) {
       if (!person2Name.trim()) errors.push('Spouse name is required')
       if (!person2BirthYear) errors.push('Spouse birth year is required')
-      if (!person2RetirementAge) errors.push('Spouse retirement age is required')
-      if (!person2SSClaimingAge) errors.push('Spouse Social Security claiming age is required')
-      if (!person2LongevityAge) errors.push('Spouse longevity age is required')
     }
     if (errors.length > 0) {
       setValidationErrors(errors)
@@ -184,6 +180,7 @@ export function ProfileClient({
       setIsSubmitting(false)
 
       const gateHousehold: ProfileGateHousehold = {
+        person1_name: person1Name || null,
         state_primary: statePrimary || null,
         filing_status: filingStatus || null,
         person1_birth_year: person1BirthYear ? Number(person1BirthYear) : null,
@@ -255,6 +252,7 @@ export function ProfileClient({
           missingFromUrl={missingFields}
           householdSnapshot={{
             ...householdSnapshot,
+            person1_name: person1Name || null,
             state_primary: statePrimary || null,
             filing_status: filingStatus || null,
             person1_birth_year: person1BirthYear ? Number(person1BirthYear) : null,
@@ -264,7 +262,7 @@ export function ProfileClient({
       <div className="mb-8">
         <h1 className="mb-1 text-2xl font-bold text-[#0F1B3C]">Your Profile</h1>
         <p className="text-sm text-gray-500">
-          Complete your household information for accurate projections.
+          A few essentials to personalize your dashboard — you can add planning details later.
         </p>
       </div>
 
@@ -346,6 +344,7 @@ export function ProfileClient({
               <div className="space-y-4">
                 <Field label="Your Name" required>
                   <input
+                    id="profile-field-person1-name"
                     type="text"
                     required
                     value={person1Name}
@@ -354,77 +353,19 @@ export function ProfileClient({
                     placeholder="Jane"
                   />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Birth Year" required>
-                    <input
-                      id="profile-field-person1-birth-year"
-                      type="number"
-                      min="1920"
-                      max="2005"
-                      required
-                      value={person1BirthYear}
-                      onChange={(e) => setPerson1BirthYear(e.target.value)}
-                      className={inputClass}
-                      placeholder="1970"
-                    />
-                  </Field>
-                  <Field label="Retirement Age">
-                    <input
-                      type="number"
-                      min="50"
-                      max="80"
-                      value={person1RetirementAge}
-                      onChange={(e) => setPerson1RetirementAge(e.target.value)}
-                      className={inputClass}
-                      placeholder="65"
-                    />
-                  </Field>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Social Security Claiming Age">
-                    <input
-                      type="number"
-                      min="62"
-                      max="70"
-                      value={person1SSClaimingAge}
-                      onChange={(e) => setPerson1SSClaimingAge(e.target.value)}
-                      className={inputClass}
-                      placeholder="67"
-                    />
-                  </Field>
-                  <Field label="Longevity Age (life expectancy)">
-                    <input
-                      type="number"
-                      min="70"
-                      max="110"
-                      value={person1LongevityAge}
-                      onChange={(e) => setPerson1LongevityAge(e.target.value)}
-                      className={inputClass}
-                      placeholder="90"
-                    />
-                  </Field>
-                </div>
-                <div>
-                  <label className={`${formLabelClass} mb-1 block`}>
-                    Your Monthly SS Benefit at Full Retirement Age (PIA)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={person1SSPia}
-                      onChange={(e) => setPerson1SSPia(e.target.value)}
-                      className={`${formControlClass} pl-7`}
-                      placeholder="e.g. 2400"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-neutral-400">
-                    Enter your PIA — the monthly amount you&apos;d receive if you claim at your Full
-                    Retirement Age. Find this on your Social Security statement at ssa.gov/myaccount.
-                    The projection adjusts this amount based on your chosen claiming age.
-                  </p>
-                </div>
+                <Field label="Birth Year" required>
+                  <input
+                    id="profile-field-person1-birth-year"
+                    type="number"
+                    min="1920"
+                    max="2005"
+                    required
+                    value={person1BirthYear}
+                    onChange={(e) => setPerson1BirthYear(e.target.value)}
+                    className={inputClass}
+                    placeholder="1970"
+                  />
+                </Field>
               </div>
             </div>
 
@@ -434,82 +375,28 @@ export function ProfileClient({
                   {person2Name.trim() || 'Spouse / Partner'}
                 </ProfileSectionHeader>
                 <div className="space-y-4">
-                  <Field label="Spouse Name">
+                  <Field label="Spouse Name" required>
                     <input
                       type="text"
+                      required
                       value={person2Name}
                       onChange={(e) => setPerson2Name(e.target.value)}
                       className={inputClass}
                       placeholder="John"
                     />
                   </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Spouse Birth Year">
-                      <input
-                        type="number"
-                        min="1920"
-                        max="2005"
-                        value={person2BirthYear}
-                        onChange={(e) => setPerson2BirthYear(e.target.value)}
-                        className={inputClass}
-                        placeholder="1968"
-                      />
-                    </Field>
-                    <Field label="Spouse Retirement Age">
-                      <input
-                        type="number"
-                        min="50"
-                        max="80"
-                        value={person2RetirementAge}
-                        onChange={(e) => setPerson2RetirementAge(e.target.value)}
-                        className={inputClass}
-                        placeholder="65"
-                      />
-                    </Field>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Spouse SS Claiming Age">
-                      <input
-                        type="number"
-                        min="62"
-                        max="70"
-                        value={person2SSClaimingAge}
-                        onChange={(e) => setPerson2SSClaimingAge(e.target.value)}
-                        className={inputClass}
-                        placeholder="67"
-                      />
-                    </Field>
-                    <Field label="Spouse Longevity Age">
-                      <input
-                        type="number"
-                        min="70"
-                        max="110"
-                        value={person2LongevityAge}
-                        onChange={(e) => setPerson2LongevityAge(e.target.value)}
-                        className={inputClass}
-                        placeholder="88"
-                      />
-                    </Field>
-                  </div>
-                  <div>
-                    <label className={`${formLabelClass} mb-1 block`}>
-                      Spouse Monthly SS Benefit at Full Retirement Age (PIA)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-neutral-400">$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={person2SSPia}
-                        onChange={(e) => setPerson2SSPia(e.target.value)}
-                        className={`${formControlClass} pl-7`}
-                        placeholder="e.g. 1800"
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-neutral-400">
-                      Spouse&apos;s PIA — the monthly amount at their Full Retirement Age.
-                    </p>
-                  </div>
+                  <Field label="Spouse Birth Year" required>
+                    <input
+                      type="number"
+                      min="1920"
+                      max="2005"
+                      required
+                      value={person2BirthYear}
+                      onChange={(e) => setPerson2BirthYear(e.target.value)}
+                      className={inputClass}
+                      placeholder="1968"
+                    />
+                  </Field>
                 </div>
               </div>
             )}
@@ -533,9 +420,10 @@ export function ProfileClient({
           <ProfileSectionHeader>Household Planning</ProfileSectionHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Filing Status">
+              <Field label="Filing Status" required>
                 <select
                   id="profile-field-filing-status"
+                  required
                   value={filingStatus}
                   onChange={(e) => setFilingStatus(e.target.value)}
                   className={inputClass}
@@ -547,9 +435,10 @@ export function ProfileClient({
                   ))}
                 </select>
               </Field>
-              <Field label="Primary State">
+              <Field label="Primary State" required>
                 <select
                   id="profile-field-state-primary"
+                  required
                   value={statePrimary}
                   onChange={(e) => setStatePrimary(e.target.value)}
                   className={inputClass}
@@ -563,40 +452,6 @@ export function ProfileClient({
                 </select>
               </Field>
             </div>
-
-            <Field label="Tax Deduction Method">
-              <div className="mt-1 flex gap-2">
-                {(['standard', 'custom', 'none'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setDeductionMode(mode)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium capitalize transition ${
-                      deductionMode === mode
-                        ? 'bg-[var(--mwm-navy)] text-white shadow-sm'
-                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            {deductionMode === 'custom' && (
-              <Field label="Custom Deduction Amount ($)">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={customDeductionAmount}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '')
-                    setCustomDeductionAmount(val)
-                  }}
-                  className={inputClass}
-                  placeholder="e.g. 25000"
-                />
-              </Field>
-            )}
 
             <div className="rounded-lg border border-gray-100 bg-gray-50/60 px-4 py-3">
               <p className="mb-2 text-xs font-semibold text-gray-600">

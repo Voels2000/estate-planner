@@ -9,6 +9,7 @@ type Props = {
   progress: SetupProgressCounts
   wizardComplete: boolean
   onImport: () => void
+  onQuickAddAsset?: () => void
 }
 
 const SECTIONS = [
@@ -44,7 +45,7 @@ const SECTIONS = [
   },
 ] as const
 
-export function SetupProgressCard({ progress, wizardComplete, onImport }: Props) {
+export function SetupProgressCard({ progress, wizardComplete, onImport, onQuickAddAsset }: Props) {
   const sections = SECTIONS.map((section) => ({
     ...section,
     count: progress[section.key],
@@ -126,12 +127,29 @@ export function SetupProgressCard({ progress, wizardComplete, onImport }: Props)
                   <p className="text-xs text-[color:var(--mwm-text-muted)]">{section.description}</p>
                 </div>
               </div>
-              <Link
-                href={section.href}
-                className="shrink-0 whitespace-nowrap text-xs text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
-              >
-                {section.count > 0 ? 'Add more →' : 'Add →'}
-              </Link>
+              {section.count > 0 ? (
+                <Link
+                  href={section.href}
+                  className="shrink-0 whitespace-nowrap text-xs text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
+                >
+                  Add more →
+                </Link>
+              ) : section.key === 'assets' && onQuickAddAsset ? (
+                <button
+                  type="button"
+                  onClick={onQuickAddAsset}
+                  className="shrink-0 whitespace-nowrap text-xs text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
+                >
+                  Add →
+                </button>
+              ) : (
+                <Link
+                  href={section.href}
+                  className="shrink-0 whitespace-nowrap text-xs text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-navy-light)]"
+                >
+                  Add →
+                </Link>
+              )}
             </div>
           ))}
         </div>

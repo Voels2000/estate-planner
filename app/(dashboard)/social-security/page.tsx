@@ -11,7 +11,10 @@ import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { SSClient } from './_ss-client'
 import { loadSocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
-import { requireHouseholdRecord } from '@/lib/estate/requireMinimumProfile'
+import { profileRequiredUrl } from '@/lib/estate/requireMinimumProfile'
+import { ProfileInlinePromptSection } from '@/components/profile/ProfileInlinePromptSection'
+import { buildProfileInlinePayload } from '@/lib/profile/buildProfileInlinePayload'
+import { socialSecurityInlineFields } from '@/lib/profile/profileInlinePrompts'
 
 export default async function SocialSecurityPage() {
   const access = await getUserAccess()
@@ -43,12 +46,22 @@ export default async function SocialSecurityPage() {
 
   const { data: household } = await supabase
     .from('households')
-    .select('id')
+    .select('*')
     .eq('owner_id', user.id)
     .single()
-  requireHouseholdRecord(household, '/social-security')
+  if (!household) {
+    redirect(profileRequiredUrl('/social-security', ['state_primary', 'filing_status', 'date_of_birth_1']))
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .single()
 
   const ssData = await loadSocialSecurityData(supabase, user.id)
+  const inlineFields = socialSecurityInlineFields(household)
+  const basePayload = buildProfileInlinePayload(household, profile ?? {})
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8'>
@@ -58,6 +71,12 @@ export default async function SocialSecurityPage() {
           Break-even claiming analysis and spousal coordination scenarios
         </p>
       </div>
+      <ProfileInlinePromptSection
+        title="Add Social Security details"
+        description="These fields power your claiming analysis. You can find your PIA on your statement at ssa.gov/myaccount."
+        fields={inlineFields}
+        basePayload={basePayload}
+      />
       <SSClient data={ssData} />
     </div>
   )

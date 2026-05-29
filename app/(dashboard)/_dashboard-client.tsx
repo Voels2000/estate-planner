@@ -41,6 +41,7 @@ import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBa
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
+import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
 import { AdvisorConnectedBanner } from '@/components/dashboard/AdvisorConnectedBanner'
 import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
@@ -156,6 +157,10 @@ type Props = {
   executionChecklist?: EstateExecutionItem[]
   planStage: PlanStageResult
   termsAcceptedAt?: string | null
+  assetTypes?: Array<{ value: string; label: string }>
+  person1Name?: string
+  person2Name?: string
+  hasSpouse?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +215,10 @@ export function DashboardClient(props: Props) {
     executionChecklist: initialExecutionChecklist = [],
     planStage,
     termsAcceptedAt = null,
+    assetTypes = [],
+    person1Name = 'Person 1',
+    person2Name = 'Person 2',
+    hasSpouse = false,
   } = props
 
   const searchParams = useSearchParams()
@@ -239,6 +248,7 @@ export function DashboardClient(props: Props) {
   }
 
   const router = useRouter()
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(
     initialSetupProgress ?? null,
   )
@@ -299,7 +309,24 @@ export function DashboardClient(props: Props) {
     )
   }
 
+  const showQuickAddAsset =
+    !isAdvisor &&
+    planStage.stage === 1 &&
+    (setupProgress?.assets ?? 0) === 0 &&
+    assetTypes.length > 0
+
   return (
+    <>
+      {!isAdvisor && (
+        <QuickAddAssetModal
+          open={quickAddOpen}
+          onClose={() => setQuickAddOpen(false)}
+          assetTypes={assetTypes}
+          person1Name={person1Name}
+          person2Name={person2Name}
+          hasSpouse={hasSpouse}
+        />
+      )}
     <div className="mx-auto max-w-7xl px-4 py-12">
       {checkoutSuccess && !checkoutBannerDismissed && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900 dark:bg-green-950/40">
@@ -355,6 +382,8 @@ export function DashboardClient(props: Props) {
             planStage={planStage}
             showAllTools={showAllTools}
             onShowAllTools={() => setShowAllTools((prev) => !prev)}
+            onQuickAddAsset={() => setQuickAddOpen(true)}
+            useQuickAddForNextAction={showQuickAddAsset}
           />
         </div>
       )}
@@ -539,6 +568,7 @@ export function DashboardClient(props: Props) {
               progress={setupProgress}
               wizardComplete={wizardComplete}
               onImport={() => router.push('/import')}
+              onQuickAddAsset={showQuickAddAsset ? () => setQuickAddOpen(true) : undefined}
             />
           )}
         </div>
@@ -632,5 +662,6 @@ export function DashboardClient(props: Props) {
       <FeedbackButton userId={userId} />
       <div className="mt-8"><DisclaimerBanner /></div>
     </div>
+    </>
   )
 }

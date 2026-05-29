@@ -8,6 +8,9 @@ import { createClient } from '@/lib/supabase/server'
 import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { summarizeScenario } from '@/lib/scenarios/summarizeScenario'
 import ScenariosClient from './_scenarios-client'
+import { ProfileInlinePromptSection } from '@/components/profile/ProfileInlinePromptSection'
+import { buildProfileInlinePayload } from '@/lib/profile/buildProfileInlinePayload'
+import { scenariosInlineFields } from '@/lib/profile/profileInlinePrompts'
 
 export default async function ScenariosPage() {
   const supabase = await createClient()
@@ -15,6 +18,12 @@ export default async function ScenariosPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .single()
 
   const { data: household } = await supabase
     .from('households')
@@ -42,11 +51,23 @@ export default async function ScenariosPage() {
   }
 
   return (
-    <ScenariosClient
+    <>
+      {household && (
+        <div className="mx-auto max-w-7xl px-4 pt-8">
+          <ProfileInlinePromptSection
+            title="Complete planning assumptions"
+            description="Retirement age and longevity feed your lifetime projections. Add them here when you're ready to refine scenarios."
+            fields={scenariosInlineFields(household)}
+            basePayload={buildProfileInlinePayload(household, profile ?? {})}
+          />
+        </div>
+      )}
+      <ScenariosClient
       initialHousehold={household}
       initialResultA={initialResultA}
       hasRealEstate={hasRealEstate}
       hasBusiness={hasBusiness}
     />
+    </>
   )
 }

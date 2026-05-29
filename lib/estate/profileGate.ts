@@ -1,7 +1,12 @@
-export type ProfileGateMissingField = 'state_primary' | 'filing_status' | 'date_of_birth_1'
+export type ProfileGateMissingField =
+  | 'state_primary'
+  | 'filing_status'
+  | 'date_of_birth_1'
+  | 'person1_name'
 
 export type ProfileGateHousehold = {
   id?: string
+  person1_name?: string | null
   state_primary?: string | null
   filing_status?: string | null
   /** Primary person birth year (profile “Birth Year” field). */
@@ -29,6 +34,7 @@ function hasPrimaryDateOfBirth(household: ProfileGateHousehold): boolean {
 
 export function isMinimumViableProfile(household: ProfileGateHousehold): ProfileGateResult {
   const missing: ProfileGateMissingField[] = []
+  if (!household.person1_name?.trim()) missing.push('person1_name')
   if (!household.state_primary?.trim()) missing.push('state_primary')
   if (!household.filing_status?.trim()) missing.push('filing_status')
   if (!hasPrimaryDateOfBirth(household)) missing.push('date_of_birth_1')

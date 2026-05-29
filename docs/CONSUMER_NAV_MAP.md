@@ -159,7 +159,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 |-------|------------|------|--------|
 | `/trust-will` | — | 3 | Redirects to `/my-estate-trust-strategy?tab=trusts` (trust list, recommendations, checklist) |
 | `/health-check` | Estate Health Check | — | Linked from dashboard / onboarding |
-| `/import` | Import Data | 2 | CSV/XLSX bulk import; sidebar under Financial Planning; F-2: preamble/header detection, multi-sheet Excel picker, inline review edit, duplicate skip/import-all, `ingestion_job_id` traceability; `POST /api/ingest` → review → `POST /api/import/commit`; `DELETE /api/import/jobs/[id]`; templates in `public/templates/` |
+| `/import` | Import Data | 1 | CSV/XLSX bulk import (Tier 1 upload + commit; job history Tier 2+); sidebar under Financial Planning; F-2: preamble/header detection, multi-sheet Excel picker, inline review edit, duplicate skip/import-all, `ingestion_job_id` traceability; `POST /api/ingest` → review → `POST /api/import/commit`; `DELETE /api/import/jobs/[id]`; templates in `public/templates/` |
 | `/print` | Export Estate Plan (full + attorney summary modes, tier 3+) | — | |
 | `/my-advisor` | My Advisor | — | Connection UI; not tier-gated (sidebar link for `role === 'consumer'`) |
 | `/my-advisor-directory` | Find a Financial Advisor | — | |

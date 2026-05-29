@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { captureFunnelEvent } from '@/lib/analytics/useFunnelEvent'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -73,7 +74,10 @@ export function OnboardingWizardClient({
   inviteMailto,
 }: Props) {
   const router = useRouter()
+  const wizardCompletedRef = useRef(false)
+  const stepRef = useRef<1 | 2 | 3>(1)
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  stepRef.current = step
   const [progress, setProgress] = useState<SetupProgressCounts | null>(null)
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [advisorStepDone, setAdvisorStepDone] = useState(false)
@@ -96,6 +100,17 @@ export function OnboardingWizardClient({
       setStep(firstIncompleteStep(data))
     })()
   }, [refreshProgress, router])
+
+  useEffect(() => {
+    return () => {
+      if (!wizardCompletedRef.current) {
+        captureFunnelEvent({
+          event_name: 'wizard_abandoned',
+          properties: { step: stepRef.current, reason: 'navigate_away' },
+        })
+      }
+    }
+  }, [])
 
   const sortedAssetTypes = [...assetTypes].sort((a, b) => a.label.localeCompare(b.label))
   const sortedIncomeTypes = [...incomeTypes].sort((a, b) => a.label.localeCompare(b.label))
@@ -132,6 +147,11 @@ export function OnboardingWizardClient({
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to complete setup')
       }
+      wizardCompletedRef.current = true
+      captureFunnelEvent({
+        event_name: 'wizard_completed',
+        properties: { step },
+      })
       setAdvisorStepDone(true)
       router.push('/dashboard')
       router.refresh()
@@ -230,7 +250,14 @@ export function OnboardingWizardClient({
           <div className="flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => {
+                captureFunnelEvent({
+                  event_name: 'wizard_abandoned',
+                  properties: { step, reason: 'back_to_dashboard' },
+                })
+                wizardCompletedRef.current = true
+                router.push('/dashboard')
+              }}
               className="text-xs text-[color:var(--mwm-text-muted)] underline-offset-2 hover:text-[color:var(--mwm-navy)] hover:underline"
             >
               ← Back to dashboard
@@ -327,7 +354,13 @@ export function OnboardingWizardClient({
                   <button
                     type="button"
                     className="text-sm text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:underline"
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      captureFunnelEvent({
+                        event_name: 'wizard_abandoned',
+                        properties: { step: 1, reason: 'skip' },
+                      })
+                      setStep(2)
+                    }}
                   >
                     Skip this step →
                   </button>
@@ -396,7 +429,13 @@ export function OnboardingWizardClient({
                   <button
                     type="button"
                     className="text-sm text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:underline"
-                    onClick={() => setStep(3)}
+                    onClick={() => {
+                      captureFunnelEvent({
+                        event_name: 'wizard_abandoned',
+                        properties: { step: 2, reason: 'skip' },
+                      })
+                      setStep(3)
+                    }}
                   >
                     Skip this step →
                   </button>

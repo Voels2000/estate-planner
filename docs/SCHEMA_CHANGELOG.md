@@ -25,6 +25,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Friction reduction sprint (2026-05-27) — code only
+
+| Change | Files |
+|--------|-------|
+| Import feature tier 1 (`FEATURE_TIERS.import = 1`); history UI Tier 2+ | `lib/tiers.ts`, `app/(dashboard)/import/page.tsx` |
+| Slim profile minimum-complete (name, birth year, state, filing; spouse if applicable) | `lib/profile/buildHouseholdPayload.ts`, `lib/estate/profileGate.ts`, `app/(dashboard)/profile/_profile-client.tsx` |
+| Inline profile prompts on `/social-security`, `/scenarios` | `components/profile/ProfileIncompleteInlinePrompt.tsx`, `lib/profile/profileInlinePrompts.ts` |
+| Dashboard quick-add asset modal | `components/dashboard/QuickAddAssetModal.tsx`, `app/(dashboard)/_dashboard-client.tsx` |
+| Wizard funnel instrumentation (`wizard_completed`, `wizard_abandoned`) | `app/(dashboard)/onboarding/wizard/_wizard-client.tsx`, `app/admin/funnel-tab.tsx` |
+
+**No migration.** Wizard gate behavior unchanged (instrumentation only).
+
+---
+
 | Change | Files |
 |--------|-------|
 | Canonical ToS from code (`TERMS_OF_SERVICE_VERSION` `2026-06-02`) | `lib/legal/terms-of-service-sections.ts`, `lib/terms/getCanonicalTerms.ts`, `lib/terms/flattenLegalSections.ts` |

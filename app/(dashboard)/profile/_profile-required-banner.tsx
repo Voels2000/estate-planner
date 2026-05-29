@@ -10,9 +10,11 @@ const FIELD_META: Record<
   state_primary: { label: 'State of residence', anchorId: 'profile-field-state-primary' },
   filing_status: { label: 'Filing status', anchorId: 'profile-field-filing-status' },
   date_of_birth_1: { label: 'Date of birth', anchorId: 'profile-field-person1-birth-year' },
+  person1_name: { label: 'Your name', anchorId: 'profile-field-person1-name' },
 }
 
 const ALL_FIELDS: ProfileGateMissingField[] = [
+  'person1_name',
   'state_primary',
   'filing_status',
   'date_of_birth_1',

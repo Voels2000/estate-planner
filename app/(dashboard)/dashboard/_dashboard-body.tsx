@@ -499,6 +499,12 @@ export async function DashboardBody({
     hasAdvisor: hasAdvisorConnection,
   })
 
+  const { data: assetTypes } = await supabase
+    .from('asset_types')
+    .select('value, label')
+    .eq('is_active', true)
+    .order('sort_order')
+
   return (
     <DashboardClient
       planStage={planStage}
@@ -563,6 +569,10 @@ export async function DashboardBody({
       personaAlerts={personaAlerts}
       initialAssessmentResults={initialAssessmentResults}
       statePrimary={household?.state_primary ?? null}
+      assetTypes={assetTypes ?? []}
+      person1Name={household?.person1_name ?? 'Person 1'}
+      person2Name={household?.person2_name ?? 'Person 2'}
+      hasSpouse={household?.has_spouse === true}
     />
   )
 }

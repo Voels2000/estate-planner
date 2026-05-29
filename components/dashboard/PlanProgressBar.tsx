@@ -7,12 +7,16 @@ interface PlanProgressBarProps {
   planStage: PlanStageResult
   showAllTools: boolean
   onShowAllTools: () => void
+  onQuickAddAsset?: () => void
+  useQuickAddForNextAction?: boolean
 }
 
 export function PlanProgressBar({
   planStage,
   showAllTools,
   onShowAllTools,
+  onQuickAddAsset,
+  useQuickAddForNextAction = false,
 }: PlanProgressBarProps) {
   const { stage, stageLabel, nextActionLabel, nextActionHref, progressPct, detailLabel } =
     planStage
@@ -69,12 +73,22 @@ export function PlanProgressBar({
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-[color:var(--mwm-text-muted)]">{detailLabel}</p>
         {!isComplete && (
-          <Link
-            href={nextActionHref}
-            className="shrink-0 text-xs font-semibold text-[color:var(--mwm-navy)] transition-colors hover:text-[color:var(--mwm-gold)]"
-          >
-            {nextActionLabel} →
-          </Link>
+          useQuickAddForNextAction && onQuickAddAsset ? (
+            <button
+              type="button"
+              onClick={onQuickAddAsset}
+              className="shrink-0 text-xs font-semibold text-[color:var(--mwm-navy)] transition-colors hover:text-[color:var(--mwm-gold)]"
+            >
+              {nextActionLabel} →
+            </button>
+          ) : (
+            <Link
+              href={nextActionHref}
+              className="shrink-0 text-xs font-semibold text-[color:var(--mwm-navy)] transition-colors hover:text-[color:var(--mwm-gold)]"
+            >
+              {nextActionLabel} →
+            </Link>
+          )
         )}
       </div>
     </div>

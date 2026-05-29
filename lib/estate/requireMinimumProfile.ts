@@ -6,6 +6,7 @@ import {
 } from '@/lib/estate/profileGate'
 
 const ALL_MISSING: ProfileGateMissingField[] = [
+  'person1_name',
   'state_primary',
   'filing_status',
   'date_of_birth_1',

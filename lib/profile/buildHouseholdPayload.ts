@@ -55,15 +55,11 @@ export function validateProfileSavePayload(payload: ProfileSavePayload): string[
   const errors: string[] = []
   if (!payload.person1Name?.trim()) errors.push('Your name is required')
   if (!payload.person1BirthYear) errors.push('Your birth year is required')
-  if (!payload.person1RetirementAge) errors.push('Your retirement age is required')
-  if (!payload.person1SSClaimingAge) errors.push('Your Social Security claiming age is required')
-  if (!payload.person1LongevityAge) errors.push('Your longevity age is required')
+  if (!payload.statePrimary?.trim()) errors.push('Primary state is required')
+  if (!payload.filingStatus?.trim()) errors.push('Filing status is required')
   if (payload.hasSpouse) {
     if (!payload.person2Name?.trim()) errors.push('Spouse name is required')
     if (!payload.person2BirthYear) errors.push('Spouse birth year is required')
-    if (!payload.person2RetirementAge) errors.push('Spouse retirement age is required')
-    if (!payload.person2SSClaimingAge) errors.push('Spouse Social Security claiming age is required')
-    if (!payload.person2LongevityAge) errors.push('Spouse longevity age is required')
   }
   return errors
 }

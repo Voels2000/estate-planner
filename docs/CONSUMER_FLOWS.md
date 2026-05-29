@@ -106,7 +106,8 @@ Each feature section below uses this shape:
 | **Tier / gate** | Tier 1; **not** profile-gated (this is where users complete the gate) |
 | **Server** | `app/(dashboard)/profile/page.tsx` — loads `profiles` + `households`; passes `?required=true&missing=…&from=…` to client |
 | **Client** | `app/(dashboard)/profile/_profile-client.tsx`, `profile/_profile-required-banner.tsx` |
-| **Layout (2026-05-27)** | `max-w-2xl`; `ProfileSectionHeader` (gold left border). **Household** card (identity). **People:** side-by-side columns when `hasSpouse` (`sm:grid-cols-2`); column headers live from `person1Name` / `person2Name`; spouse checkbox below grid. **Household Planning:** filing + state, deduction, unified callout to Scenarios + Allocation. Welcome banner, required banner, wizard cards unchanged. |
+| **Layout (2026-05-27)** | `max-w-2xl`; essentials-only form: name, birth year, spouse toggle, filing + state. Retirement age, SS claiming age, longevity, PIA, and tax deduction **deferred** — inline prompts on `/social-security` and `/scenarios` (`ProfileIncompleteInlinePrompt`). Wizard onboarding cards unchanged when `showWizardFields`. |
+| **Minimum complete** | `person1_name`, `person1_birth_year`, `state_primary`, `filing_status` (+ spouse name/birth year if `has_spouse`) |
 | **Write APIs** | `PATCH /api/consumer/profile` |
 | **After save** | `afterHouseholdWrite`; redirect: if `required=true` and minimum profile complete → `from` param; if MVP complete and wizard not done → `/onboarding/wizard`; if MVP complete and wizard done → `/onboarding/invite-advisor`; else `/dashboard` or `/health-check` |
 | **Extended fields (OB-1)** | When `onboarding_wizard_completed_at` is null: `person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests` |
@@ -201,7 +202,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `components/dashboard/PlanProgressBar.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
+| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`QuickAddAssetModal`** (stage 1, zero assets — inline first asset without leaving dashboard); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
@@ -219,14 +220,14 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** writes `illustrative` `roth` line item then navigates to `?tab=strategies&openPanel=roth` | Tier 2 |
-| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 2; CSV/XLSX; upload → map/edit → commit; F-2: preamble headers, sheet picker, duplicates, traceability |
+| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; import **history** Tier 2+; CSV/XLSX; upload → map/edit → commit; F-2: preamble headers, sheet picker, duplicates, traceability |
 
 ### Bulk import — `/import` (Sprint F-1 + F-2)
 
 | | |
 |--|--|
 | **User goal** | Import assets, liabilities, income, or expenses from a spreadsheet |
-| **Tier / gate** | Tier 2 for import **history/management**; **upload + commit unlocked for Tier 1 during onboarding** (`!onboarding_wizard_completed_at`) — UI gate only, imported rows are never deleted by tier checks |
+| **Tier / gate** | Tier 1 upload + commit (`FEATURE_TIERS.import = 1`, was 2 until friction-reduction sprint 2026-05-27); import **job history** Tier 2+ only — see `DECISION_LOG.md` |
 | **Server** | `app/(dashboard)/import/page.tsx` — loads `ingestion_jobs` when Tier 2+; onboarding banner for Tier 1 |
 | **Client** | `_import-client.tsx` — drop zone; field mapping review; inline cell edit + per-row delete; duplicate dialog; history table hidden until Tier 2+; import CTA on `/assets` and `/income` during onboarding |
 | **Write APIs** | `POST /api/ingest` (parse; optional `sheet_name`); `POST /api/import/commit` (`skip_duplicates`, `force_all`); `DELETE /api/import/jobs/[id]` (cancel pending) |
@@ -526,7 +527,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-billing-route.spec.ts` | `/billing` + sidebar link |
 | `tests/e2e/consumer/consumer-digital-assets.spec.ts` | Digital assets route + API |
 | `tests/e2e/consumer/consumer-life-events.spec.ts` | Life events API |
-| `tests/e2e/consumer/consumer-import-access.spec.ts` | Import page for tier 2+ fixture |
+| `tests/e2e/consumer/consumer-import-access.spec.ts` | Import page for tier 1+ fixture |
 | `tests/e2e/consumer/consumer-strategy-recommendation-ui.spec.ts` | Dashboard advisor recommendation panel (smoke §9) |
 | `tests/e2e/consumer/terms-accept-flow.spec.ts` | `/terms/accept` + `POST /api/terms/accept` |
 | `tests/e2e/consumer/consumer-tier1-gates.spec.ts` | Upgrade banners (optional tier-1 project) |

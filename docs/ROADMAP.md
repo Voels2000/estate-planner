@@ -21,6 +21,22 @@
 
 ## Current sprint
 
+### Sprint — Friction reduction (2026-05-27) **← shipped**
+
+**Goal:** Reduce time-to-first-value without Plaid, schema changes, or wizard gate changes.
+
+| Item | Status |
+|------|--------|
+| Import tier gate → Tier 1 (history Tier 2+) | `[x]` |
+| Slim profile (essentials only; deferred fields → inline prompts) | `[x]` |
+| Quick-add asset modal on dashboard | `[x]` |
+| Wizard drop-off instrumentation (`wizard_completed` / `wizard_abandoned`) | `[x]` |
+| Assessment restore smoke test doc | `[x]` |
+
+See [SPRINT_FRICTION_REDUCTION.md](./SPRINT_FRICTION_REDUCTION.md).
+
+---
+
 ### Sprint 19 — Go-live hardening **← CURRENT**
 
 **Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke.

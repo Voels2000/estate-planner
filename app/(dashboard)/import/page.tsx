@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
-import { isWizardComplete } from '@/lib/estate/profileGate'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { ImportClient } from './_import-client'
 
@@ -15,17 +14,11 @@ export default async function ImportPage() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('onboarding_wizard_completed_at')
-    .eq('id', user.id)
-    .single()
-
-  const wizardComplete = isWizardComplete(profile)
   const hasImportFeature = hasFeatureAccess('import', access.tier, access.isAdvisor, access.isTrial)
-  const allowOnboardingImport = !wizardComplete && access.tier < 2 && !access.isAdvisor
+  // Job history table is Tier 2+ only; upload/commit uses FEATURE_TIERS.import (Tier 1 since 2026-05-27).
+  const showImportHistory = access.tier >= 2 && !access.isAdvisor
 
-  if (!hasImportFeature && !allowOnboardingImport) {
+  if (!hasImportFeature) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Import Data</h1>
@@ -48,8 +41,8 @@ export default async function ImportPage() {
   return (
     <ImportClient
       jobs={jobs ?? []}
-      showImportHistory={hasImportFeature}
-      showOnboardingBanner={allowOnboardingImport}
+      showImportHistory={showImportHistory}
+      showOnboardingBanner={false}
       consumerTier={access.tier}
     />
   )

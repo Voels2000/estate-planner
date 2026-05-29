@@ -50,6 +50,19 @@ test.describe('Consumer dashboard', () => {
 
     expect(hasEstate || hasFinancial, 'Expected at least one planning section to be visible').toBe(true)
   })
+
+  test('quick-add asset CTA opens modal without navigation', async ({ page }) => {
+    const quickAdd = page.getByRole('button', { name: /Add →/i }).first()
+    const hasQuickAdd = await quickAdd.isVisible().catch(() => false)
+    if (!hasQuickAdd) {
+      test.skip(true, 'Account already has assets — quick-add not shown')
+    }
+
+    await quickAdd.click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Add your first asset/i })).toBeVisible()
+    await expect(page).toHaveURL(/\/dashboard/)
+  })
 })
 
 test.describe('Consumer navigation', () => {

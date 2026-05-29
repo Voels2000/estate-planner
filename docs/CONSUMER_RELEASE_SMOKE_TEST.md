@@ -258,6 +258,16 @@ Open while logged out or in a private window unless noted:
 | Step | URL | Expected | Pass? |
 |------|-----|----------|-------|
 | P.1 | `/assess` | Assessment loads; shared public top nav; no app sidebar | ☐ |
+
+### Assessment restore (friction sprint smoke)
+
+1. Complete `/assess` while logged out (answer all questions, receive score)
+2. Click **Create account** from the gated gap report
+3. Complete signup
+4. Confirm: assessment results are restored and displayed (not a blank state)
+5. Confirm: gap report / next steps visible immediately after auth
+
+| P.1b | Assessment restore after signup (steps above) | Results + gap report visible | ☐ |
 | P.2 | `/find-advisor` | Directory loads; public top nav | ☐ |
 | P.3 | `/find-attorney` | Directory loads; public top nav | ☐ |
 | P.4 | `/education` (logged in or out) | Education header only — **no** marketing `PublicNav`; no app sidebar | ☐ |

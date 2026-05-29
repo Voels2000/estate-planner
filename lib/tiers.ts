@@ -33,6 +33,7 @@ export const TIER_FEATURES = {
     'Simple tax estimate',
     'Net worth dashboard',
     'Insurance gap analysis',
+    'Data import (CSV/Excel)',
   ],
   2: [
     'Everything in Financial',
@@ -40,7 +41,6 @@ export const TIER_FEATURES = {
     'Roth Conversion',
     'Monte Carlo simulations',
     'Lifetime financial snapshot',
-    'Data import (CSV/Excel)',
   ],
   3: [
     'Everything in Retirement',
@@ -73,7 +73,9 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   rmd:                   2,
   roth:                  2,
   'monte-carlo':         2,
-  import:                2,
+  // Friction-reduction sprint (2026-05-27): was 2 — Tier 1 upload+commit intentional for
+  // spreadsheet-first onboarding. Import job *history* UI stays Tier 2+ (import/page.tsx).
+  import:                1,
   insurance:             1,
   // Tier 3 — Estate Planning
   'estate-tax':          3,

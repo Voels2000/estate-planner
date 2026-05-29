@@ -39,7 +39,10 @@ export function determinePlanStage(input: DetermineStageInput): PlanStageResult 
     return {
       stage: 1,
       stageLabel: 'Financial Foundation',
-      nextActionLabel: 'Complete your financial picture',
+      nextActionLabel:
+        financialSectionsComplete === 0
+          ? 'Add your first asset'
+          : 'Complete your financial picture',
       nextActionHref:
         financialSectionsComplete === 0
           ? '/assets'
