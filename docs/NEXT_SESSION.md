@@ -34,7 +34,11 @@
 | Monte Carlo edge | JWT validation + household access before service-role insert |
 | Rate limits | `simpleRateLimit.ts`; referral 60/min; telemetry 120/min + auth |
 
-**Prod deploy pending:** `supabase db push` · `supabase functions deploy estate-monte-carlo`
+**Prod deploy (2026-05-29):** Migrations applied + edge function deployed on `fnzvlmrqwcqwiqueevux`. SQL verify script: `scripts/verify-security-sprint-20260629.sql`. **Cron note:** `app/api/cron/README.md`.
+
+**Browser smoke still manual:** advisor Monte Carlo; referral/telemetry HTTP checks (production may return 307 at CDN without session — use browser Network tab).
+
+**Go-live:** Last structural security requirement before `PUBLIC_SIGNUP_OPEN=true`.
 
 ---
 

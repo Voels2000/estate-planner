@@ -19,7 +19,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | `attorney_clients` RLS | `attorney_id` → `attorney_listings.id`; consumer `client_id` → `households.id` |
 | `legal_documents` / `document_download_log` | Attorney policies join via `attorney_listings.profile_id = auth.uid()` |
 
-**Apply on remote:** both migrations + `supabase functions deploy estate-monte-carlo`.
+**Apply on remote:** both migrations + `supabase functions deploy estate-monte-carlo`. **Prod applied 2026-05-29** on `fnzvlmrqwcqwiqueevux`; verify via `scripts/verify-security-sprint-20260629.sql`.
 
 ---
 

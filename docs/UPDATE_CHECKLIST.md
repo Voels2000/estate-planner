@@ -500,7 +500,9 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Monte Carlo edge JWT auth — `supabase/functions/estate-monte-carlo/index.ts`
 - [x] Rate limits — `lib/api/simpleRateLimit.ts`; referral 60/min; telemetry 120/min + auth
 - [x] Unit test `simpleRateLimit.spec.ts` — **39/39** in `npm run test:unit`
-- [ ] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo`
+- [x] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo` — applied 2026-05-29 on `fnzvlmrqwcqwiqueevux`
+- [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
+- [ ] **Prod live smoke:** advisor Monte Carlo (browser); referral 429 + telemetry 401 curls (may 307 at CDN — run from browser Network tab or authenticated session)
 
 ## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
 
