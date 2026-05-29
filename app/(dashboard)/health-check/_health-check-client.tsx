@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { HealthScoreBadge } from '@/components/shared/HealthScoreBadge'
+import { scoreContextSentence } from '@/lib/estate-health-score'
 
 type Answer = 'yes' | 'no' | null
 
@@ -64,6 +66,7 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
   )
   const [current, setCurrent] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [completionScore, setCompletionScore] = useState<number | null>(null)
 
   function answer(val: Answer) {
     const q = QUESTIONS[current]
@@ -85,8 +88,44 @@ export function HealthCheckClient({ householdId, initialAnswers }: HealthCheckCl
     })
     setSaving(false)
     if (!res.ok) return
+    const data = (await res.json()) as { score?: number }
+    if (typeof data.score === 'number') {
+      setCompletionScore(data.score)
+      return
+    }
     router.push('/dashboard')
     router.refresh()
+  }
+
+  if (completionScore != null) {
+    return (
+      <div className="min-h-screen bg-[var(--mwm-off-white)] flex items-center justify-center px-4">
+        <div className="w-full max-w-lg">
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-4 text-center">
+            <div className="text-4xl mb-4">✓</div>
+            <h2 className="text-xl font-bold text-neutral-900 mb-2">Your Estate Readiness Score</h2>
+            <p className="text-sm text-neutral-500 mb-6">
+              Based on your health check answers and profile data.
+            </p>
+            <HealthScoreBadge size="hero" score={completionScore} className="text-left" />
+            <p className="text-sm text-neutral-600 mt-4 text-left">
+              {scoreContextSentence(completionScore)}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/dashboard')
+                router.refresh()
+              }}
+              className="mt-6 w-full rounded-xl bg-[color:var(--mwm-navy)] px-6 py-4 text-sm font-semibold text-white hover:bg-[color:var(--mwm-navy-light)] transition"
+            >
+              Go to dashboard →
+            </button>
+          </div>
+          <DisclaimerBanner context="estate health check" />
+        </div>
+      </div>
+    )
   }
 
   const q = QUESTIONS[current]

@@ -8,6 +8,8 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
+import { HealthScoreBadge } from '@/components/shared/HealthScoreBadge'
+import { scoreContextSentenceForAdvisor } from '@/lib/estate-health-score'
 import {
   meetingPrepBriefFromHorizons,
   type MeetingPrepHorizonColumn,
@@ -523,22 +525,23 @@ export default function MeetingPrep({
               <div className="p-6 space-y-4">
                 {/* Health score */}
                 <BriefSection title="Estate Readiness Score">
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-neutral-900">
-                        {brief.health_score_today ?? '—'}
-                      </div>
-                      <div className="text-xs text-neutral-400 mt-0.5">Today</div>
-                    </div>
-                    {brief.health_score_delta !== null && (
-                      <div className="text-center">
-                        <div className={`text-2xl font-bold ${brief.health_score_delta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {brief.health_score_delta >= 0 ? '+' : ''}{brief.health_score_delta}
-                        </div>
-                        <div className="text-xs text-neutral-400 mt-0.5">vs last meeting</div>
-                      </div>
-                    )}
-                  </div>
+                  {brief.health_score_today != null ? (
+                    <>
+                      <HealthScoreBadge
+                        size="card"
+                        score={brief.health_score_today}
+                        showDelta
+                        delta={brief.health_score_delta}
+                      />
+                      <p className="text-sm text-neutral-600 mt-2">
+                        {scoreContextSentenceForAdvisor(brief.health_score_today, brief.client_name)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-neutral-500">
+                      Health score not yet calculated for this client.
+                    </p>
+                  )}
                 </BriefSection>
 
                 {/* Top alerts */}

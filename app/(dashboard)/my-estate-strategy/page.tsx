@@ -215,6 +215,7 @@ export default async function MyEstateStrategyPage() {
     { data: realEstate },
     { data: stateBracketRows },
     { data: mcAssumptionRows },
+    { data: healthScoreRow },
   ] = await Promise.all([
     household.base_case_scenario_id
       ? admin
@@ -241,6 +242,11 @@ export default async function MyEstateStrategyPage() {
       .eq('client_household_id', household.id)
       .or('accepted_by_client.eq.true,shared_at.not.is.null')
       .order('accepted_at', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('estate_health_scores')
+      .select('score, computed_at')
+      .eq('household_id', household.id)
+      .maybeSingle(),
   ])
 
   const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
@@ -374,6 +380,8 @@ export default async function MyEstateStrategyPage() {
     <div className="min-h-screen">
       <MyEstateStrategyClient
         householdId={household.id}
+        healthScore={healthScoreRow?.score ?? null}
+        healthScoreComputedAt={healthScoreRow?.computed_at ?? null}
         acceptedMCScenario={acceptedMCScenario}
         latestSharedMCScenario={latestSharedMCScenario}
         scenarioId={household.base_case_scenario_id}

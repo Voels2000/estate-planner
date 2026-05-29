@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { afterHouseholdWrite, resolveOwnedHouseholdId } from '@/lib/consumer/afterHouseholdWrite'
+import { computeEstateHealthScore } from '@/lib/estate-health-score'
 
 const ANSWER_KEYS = [
   'has_will',
@@ -72,6 +74,22 @@ export async function PUT(request: NextRequest) {
   }
 
   await afterHouseholdWrite(supabase, ownedId)
+
+  const admin = createAdminClient()
+  const { data: household } = await admin
+    .from('households')
+    .select('owner_id')
+    .eq('id', ownedId)
+    .single()
+
+  if (household?.owner_id) {
+    const result = await computeEstateHealthScore(ownedId, household.owner_id)
+    return NextResponse.json({
+      success: true,
+      score: result.score,
+      computedAt: result.computedAt,
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

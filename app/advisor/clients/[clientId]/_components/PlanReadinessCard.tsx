@@ -1,21 +1,9 @@
+import { scoreBg, scoreColor, scoreContextSentenceForAdvisor, scoreLabel } from '@/lib/estate-health-score'
+
 type Props = {
   score: number | null
   computedAt: string | null
   clientName: string | null
-}
-
-const LEVEL_CONFIG = {
-  strong: { label: 'Strong', color: '#4a7c6f', bg: '#eef6f4', border: '#a8d5c8', min: 80 },
-  developing: { label: 'Developing', color: '#ba7517', bg: '#faeeda', border: '#f5cc7a', min: 60 },
-  attention: { label: 'Needs Attention', color: '#c9a84c', bg: '#fdf6e3', border: '#e8c97a', min: 40 },
-  action: { label: 'Action Required', color: '#d85a30', bg: '#fef3ee', border: '#f9c5a1', min: 0 },
-}
-
-function getLevel(score: number) {
-  if (score >= 80) return LEVEL_CONFIG.strong
-  if (score >= 60) return LEVEL_CONFIG.developing
-  if (score >= 40) return LEVEL_CONFIG.attention
-  return LEVEL_CONFIG.action
 }
 
 export function PlanReadinessCard({ score, computedAt, clientName }: Props) {
@@ -34,18 +22,14 @@ export function PlanReadinessCard({ score, computedAt, clientName }: Props) {
     )
   }
 
-  const level = getLevel(score)
+  const color = scoreColor(score)
+  const bg = scoreBg(score)
+  const label = scoreLabel(score)
 
   return (
-    <div
-      className="rounded-xl border p-5"
-      style={{ background: level.bg, borderColor: level.border }}
-    >
+    <div className={`rounded-xl border p-5 ${bg}`}>
       <div className="flex items-center justify-between mb-3">
-        <p
-          className="text-xs font-semibold uppercase tracking-wide"
-          style={{ color: level.color }}
-        >
+        <p className={`text-xs font-semibold uppercase tracking-wide ${color}`}>
           Plan Readiness Score
         </p>
         {computedAt && (
@@ -60,42 +44,22 @@ export function PlanReadinessCard({ score, computedAt, clientName }: Props) {
       </div>
 
       <div className="flex items-end gap-3 mb-3">
-        <span className="text-4xl font-bold" style={{ color: level.color }}>
-          {score}
-        </span>
-        <span className="text-sm mb-1" style={{ color: level.color }}>
-          / 100
-        </span>
-        <span
-          className="mb-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-          style={{
-            background: 'white',
-            color: level.color,
-            border: `1px solid ${level.border}`,
-          }}
-        >
-          {level.label}
+        <span className={`text-4xl font-bold tabular-nums ${color}`}>{score}</span>
+        <span className={`text-sm mb-1 ${color}`}>/ 100</span>
+        <span className="mb-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/80 border border-neutral-200/80">
+          {label}
         </span>
       </div>
 
       <div className="h-2 rounded-full bg-white/60 overflow-hidden mb-3">
         <div
-          className="h-full rounded-full transition-all"
-          style={{
-            width: `${score}%`,
-            background: level.color,
-          }}
+          className={`h-full rounded-full transition-all ${score >= 75 ? 'bg-[color:var(--mwm-sage)]' : score >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+          style={{ width: `${score}%` }}
         />
       </div>
 
-      <p className="text-xs leading-relaxed" style={{ color: level.color }}>
-        {score >= 80
-          ? `${clientName ?? 'Client'}'s plan is well-organized. Review for any remaining gaps before your next meeting.`
-          : score >= 60
-            ? `${clientName ?? 'Client'}'s plan has room to improve. Use your next meeting to address the open items.`
-            : score >= 40
-              ? `${clientName ?? 'Client'}'s plan needs attention. Several key planning areas are incomplete.`
-              : `${clientName ?? 'Client'}'s plan has significant gaps. Prioritize a planning review meeting.`}
+      <p className="text-xs leading-relaxed text-neutral-600">
+        {scoreContextSentenceForAdvisor(score, clientName)}
       </p>
     </div>
   )

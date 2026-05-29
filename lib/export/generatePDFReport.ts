@@ -13,6 +13,8 @@
 //
 // Page is CONDITIONAL — only included if relevant data exists
 
+import { scoreLabel } from '@/lib/estate-health-score'
+
 export interface PDFReportData {
   // Household
   householdId: string
@@ -176,7 +178,7 @@ export function generatePDFHTML(data: PDFReportData): string {
         <div class="metric-card">
           <div class="metric-label">Plan Health Score</div>
           <div class="metric-value">${data.healthScore}/100</div>
-          <div class="metric-sub">${data.healthScore >= 75 ? 'Good' : data.healthScore >= 50 ? 'Fair' : 'Needs Attention'}</div>
+          <div class="metric-sub">${scoreLabel(data.healthScore)}</div>
         </div>
         <div class="metric-card">
           <div class="metric-label">Est. Estate Tax</div>

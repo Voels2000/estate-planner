@@ -296,3 +296,30 @@ export function scoreLabel(score: number): string {
   if (score >= 50) return 'Needs Attention'
   return 'At Risk'
 }
+
+export function scoreContextSentence(score: number): string {
+  if (score >= 75) {
+    return 'Your estate plan covers the key areas. Keep documents current and review after major life events.'
+  }
+  if (score >= 50) {
+    return 'Your plan has meaningful gaps. Addressing the items below will significantly improve your estate readiness.'
+  }
+  return 'Your estate has significant unaddressed risks. Start with the highest-priority items below.'
+}
+
+export function scoreContextSentenceForAdvisor(score: number, clientName?: string | null): string {
+  const who = clientName?.trim() || 'Client'
+  if (score >= 75) {
+    return `${who}'s plan covers the key areas. Review for any remaining gaps before your next meeting.`
+  }
+  if (score >= 50) {
+    return `${who}'s plan has meaningful gaps. Addressing open items will improve estate readiness.`
+  }
+  return `${who}'s plan has significant unaddressed risks — review before the meeting.`
+}
+
+export function isScoreStale(computedAt: string | null | undefined): boolean {
+  if (!computedAt) return false
+  const days = (Date.now() - new Date(computedAt).getTime()) / (1000 * 60 * 60 * 24)
+  return days > 30
+}

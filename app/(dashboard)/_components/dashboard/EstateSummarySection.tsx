@@ -4,7 +4,10 @@ import { CollapsibleSection } from '@/components/CollapsibleSection'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import type { EstateComposition } from '@/lib/estate/types'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
-import { scoreBg, scoreColor, scoreLabel } from '@/lib/estate-health-score'
+import {
+  EstateHealthScoreBlock,
+  EstateHealthScoreHeaderBadge,
+} from '@/components/shared/EstateHealthScoreBlock'
 import { fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { PlanningGapsSection } from '@/app/(dashboard)/_components/dashboard/PlanningGapsSection'
 import { hasEstateData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
@@ -73,9 +76,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
       }
       badge={
         props.estateHealthScore ? (
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${scoreColor(props.estateHealthScore.score)} bg-neutral-100`}>
-            {props.estateHealthScore.score}/100
-          </span>
+          <EstateHealthScoreHeaderBadge score={props.estateHealthScore.score} />
         ) : undefined
       }
       defaultOpen={false}
@@ -87,46 +88,37 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
     >
       <div className="space-y-6">
         {props.estateHealthScore && (
-          <div className={`rounded-xl border p-5 ${scoreBg(props.estateHealthScore.score)}`}>
-            <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">Estate Readiness Score</p>
-                <div className="flex items-end gap-3">
-                  <span className={`text-5xl font-bold ${scoreColor(props.estateHealthScore.score)}`}>{props.estateHealthScore.score}</span>
-                  <span className="text-neutral-400 text-base mb-1">/ 100</span>
-                  <span className={`mb-1 text-sm font-semibold ${scoreColor(props.estateHealthScore.score)}`}>{scoreLabel(props.estateHealthScore.score)}</span>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">Based on documents, beneficiaries, titling, domicile, and estate tax awareness</p>
-                <p className="text-xs text-neutral-400 mt-2 max-w-xl">{DISCLAIMER_STRINGS.dashboard}</p>
-              </div>
-              <Link href="/health-check" className="shrink-0 rounded-lg bg-white border border-neutral-200 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition shadow-sm">
-                Update health check →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {props.estateHealthScore.components.map((component) => (
-                <TierAwareEstateLink
-                  key={component.key}
-                  href={component.actionHref}
-                  consumerTier={consumerTier}
-                  className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition block"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-neutral-600 truncate">{component.label}</span>
-                    <span className={`text-xs font-bold ml-2 shrink-0 ${component.status === 'good' ? 'text-[color:var(--mwm-sage)]' : component.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
-                      {component.score}/{component.maxScore}
-                    </span>
-                  </div>
-                  <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                    <div
-                      className={`h-1.5 rounded-full ${component.status === 'good' ? 'bg-[var(--mwm-sage)]' : component.status === 'warning' ? 'bg-amber-400' : 'bg-red-400'}`}
-                      style={{ width: `${Math.round((component.score / component.maxScore) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-neutral-400 mt-1.5 truncate">{component.actionLabel}</p>
-                </TierAwareEstateLink>
-              ))}
-            </div>
+          <div className={`rounded-xl border p-5 ${props.estateHealthScore.score >= 75 ? 'bg-[var(--mwm-sage-pale)] border-[color:var(--mwm-sage-pale)]' : props.estateHealthScore.score >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+            <EstateHealthScoreBlock
+              estateHealthScore={props.estateHealthScore}
+              componentsGrid={
+                <>
+                  {props.estateHealthScore.components.map((component) => (
+                    <TierAwareEstateLink
+                      key={component.key}
+                      href={component.actionHref}
+                      consumerTier={consumerTier}
+                      className="bg-white rounded-xl border border-neutral-200 px-3 py-3 hover:shadow-sm transition block"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-neutral-600 truncate">{component.label}</span>
+                        <span className={`text-xs font-bold ml-2 shrink-0 ${component.status === 'good' ? 'text-[color:var(--mwm-sage)]' : component.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
+                          {component.score}/{component.maxScore}
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-100 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full ${component.status === 'good' ? 'bg-[var(--mwm-sage)]' : component.status === 'warning' ? 'bg-amber-400' : 'bg-red-400'}`}
+                          style={{ width: `${Math.round((component.score / component.maxScore) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-neutral-400 mt-1.5 truncate">{component.actionLabel}</p>
+                    </TierAwareEstateLink>
+                  ))}
+                </>
+              }
+            />
+            <p className="text-xs text-neutral-400 mt-4 max-w-xl">{DISCLAIMER_STRINGS.dashboard}</p>
           </div>
         )}
 

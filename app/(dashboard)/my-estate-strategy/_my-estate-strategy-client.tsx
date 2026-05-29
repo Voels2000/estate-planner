@@ -22,6 +22,7 @@ import {
 } from '@/lib/estate/exemptionLabels'
 import { formatDollars } from '@/lib/utils/formatCurrency'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { MyEstateStrategyHealthScore } from '@/components/shared/MyEstateStrategyHealthScore'
 
 type Horizons = MyEstateStrategyHorizonsResult
 
@@ -45,6 +46,8 @@ const ConsumerEstateFlowView = dynamic(
 
 type Props = {
   householdId: string
+  healthScore?: number | null
+  healthScoreComputedAt?: string | null
   scenarioId: string | null
   scenarioMeta: {
     calculatedAt: string | null
@@ -73,6 +76,8 @@ type Props = {
 
 export default function MyEstateStrategyClient({
   householdId,
+  healthScore = null,
+  healthScoreComputedAt = null,
   scenarioId,
   scenarioMeta,
   horizons,
@@ -174,6 +179,8 @@ export default function MyEstateStrategyClient({
           />
         </div>
       )}
+
+      <MyEstateStrategyHealthScore score={healthScore} computedAt={healthScoreComputedAt} />
 
       <CollapsibleSection
         title="Estate value & tax horizons"

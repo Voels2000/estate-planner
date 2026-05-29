@@ -1,3 +1,7 @@
+'use client'
+
+import { scoreColor, scoreLabel } from '@/lib/estate-health-score'
+
 type PlanStatus = 'critical' | 'needs-attention' | 'on-track'
 
 type Props = {
@@ -55,9 +59,14 @@ export function PlanStatusCard({
             Plan Readiness Score
             {clientName ? ` · ${clientName}` : ''}
           </p>
-          <div className="flex items-baseline gap-2">
-            <span className={`text-5xl font-bold ${statusStyles.score}`}>{displayScore}</span>
-            {typeof score === 'number' && <span className="text-lg text-gray-400">/100</span>}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className={`text-5xl font-bold tabular-nums ${statusStyles.score}`}>{displayScore}</span>
+            {typeof score === 'number' && (
+              <>
+                <span className="text-lg text-gray-400">/100</span>
+                <span className={`text-sm font-semibold ${scoreColor(score)}`}>{scoreLabel(score)}</span>
+              </>
+            )}
           </div>
           {lastUpdated && (
             <p className="text-sm text-gray-600 mt-1">Updated {lastUpdated}</p>
