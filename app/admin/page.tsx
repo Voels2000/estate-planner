@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
 import { AdminClient } from './_admin-client'
 
 export default async function AdminPage() {
@@ -30,14 +31,8 @@ export default async function AdminPage() {
     .select('*')
     .order('key')
 
-  // T&C content
-  const termsVersionRow  = appConfig?.find(r => r.key === 'terms_version')
-  const termsSectionsRow = appConfig?.find(r => r.key === 'terms_sections')
-
-  const termsVersion  = termsVersionRow?.value  ?? '2026-03-31'
-  const termsSections = (() => {
-    try { return JSON.parse(termsSectionsRow?.value ?? '[]') } catch { return [] }
-  })()
+  // T&C content — canonical source: lib/legal/terms-of-service-sections.ts
+  const { version: termsVersion, sections: termsSections } = getCanonicalTerms()
 
   const { data: advisorTiers } = await supabase
     .from('advisor_tiers')

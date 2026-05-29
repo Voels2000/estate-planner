@@ -88,9 +88,10 @@ export default function TermsTab({ initialVersion, initialSections }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-900">Terms & Conditions</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">Terms of Service</h2>
           <p className="text-sm text-neutral-500 mt-0.5">
-            Edit content and version. Saving will re-gate all users who accepted a prior version.
+            Canonical source: <code className="text-xs">lib/legal/terms-of-service-sections.ts</code>.
+            Publish here updates the app_config mirror and can re-gate users; deploy code changes for public /terms.
           </p>
         </div>
         <button

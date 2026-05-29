@@ -120,7 +120,7 @@ export async function seedE2eConsumerHousehold(
       is_superuser: false,
       role: 'consumer',
       terms_accepted_at: now,
-      terms_version: '2026-03-31',
+      terms_version: '2026-06-02',
       onboarding_wizard_completed_at: now,
       onboarding_invite_advisor_completed_at: now,
       updated_at: now,

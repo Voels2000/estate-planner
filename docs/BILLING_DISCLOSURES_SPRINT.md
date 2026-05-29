@@ -98,7 +98,7 @@ Run once on **production** (or production Stripe keys on preview) with this doc 
 
 ## ToS / Privacy Policy — Sprint C-5 shipped (legal review required)
 
-Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sections.ts`, `lib/legal/terms-of-service-sections.ts`). Post-checkout dynamic accept remains at `/terms/accept` (`app_config.terms_sections`).
+Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sections.ts`, `lib/legal/terms-of-service-sections.ts`). Post-checkout accept at `/terms/accept` serves the same canonical ToS via `GET /api/terms/content` (`getCanonicalTerms()` → `TERMS_OF_SERVICE_VERSION` `2026-06-02`).
 
 | Required topic | Status | Notes |
 |----------------|--------|-------|

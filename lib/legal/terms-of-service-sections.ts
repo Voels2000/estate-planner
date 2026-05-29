@@ -3,6 +3,9 @@ import type { LegalSection } from '@/components/legal/LegalDocumentLayout'
 const COMPANY = 'TODO: [COMPANY LEGAL NAME]'
 const ADDRESS = 'TODO: [COMPANY ADDRESS]'
 
+/** ISO date — stored on profiles.terms_version and app_config.terms_version */
+export const TERMS_OF_SERVICE_VERSION = '2026-06-02'
+
 export const TERMS_OF_SERVICE_LAST_UPDATED = 'June 2, 2026'
 
 export const termsOfServiceSections: LegalSection[] = [

@@ -191,7 +191,7 @@ Negative Option Rule (2024).
   13 (arbitration clause and class action waiver)
 - Legal review of Privacy Policy Sections 4 (WCPA legal basis) and
   10 (breach notification timeline)
-- Sync `app_config.terms_sections` with `/terms` after counsel sign-off
+- Sync `app_config.terms_sections` with `/terms` after counsel sign-off — **done 2026-05-27** (code is canonical; migration `20260527120000_sync_terms_app_config_mwm.sql` mirrors to DB)
 
 ---
 

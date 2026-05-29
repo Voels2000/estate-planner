@@ -14,7 +14,7 @@ When you send the Terms of Service to counsel:
 3. **Batch the code changes in one final pre-go-live commit:**
    - Apply counsel's redlines to `lib/legal/terms-of-service-sections.ts` (and Privacy Policy if included in the same review).
    - Replace the three TODO placeholders (`[COMPANY LEGAL NAME]`, `[COMPANY ADDRESS]`, `[REGISTERED AGENT NAME AND ADDRESS]`) in `/privacy` and `/terms` — a ~5-minute find-and-replace once your entity name is confirmed. **Do not** do placeholders in a separate commit before counsel returns; drop them in with the redlines.
-   - Sync `app_config.terms_sections` in Supabase for `/terms/accept` in the same commit.
+   - Sync `app_config.terms_sections` in Supabase for `/terms/accept` in the same commit (done 2026-05-27 — canonical source is `lib/legal/terms-of-service-sections.ts`; migration `20260527120000_sync_terms_app_config_mwm.sql`).
 
 **Source files:** `lib/legal/terms-of-service-sections.ts`, `lib/legal/privacy-policy-sections.ts`
 
@@ -37,7 +37,7 @@ When you send the Terms of Service to counsel:
 - [x] Create privacy@mywealthmaps.com email address (or alias) — Resend verified 2026-05-25
 - [ ] Create security@mywealthmaps.com email address (or alias)
 - [ ] Create legal@mywealthmaps.com email address (or alias)
-- [ ] Update app_config.terms_sections in Supabase with final ToS content
+- [x] Update app_config.terms_sections in Supabase with My Wealth Maps ToS content (2026-05-27; version `2026-06-02` — apply migration `20260527120000_sync_terms_app_config_mwm.sql` on remote)
   (in-app accept at `/terms/accept` — include in the same commit as counsel redlines + placeholders)
 - [ ] Confirm refund policy with counsel (Section 5.4 currently says no refunds)
 - [ ] Privacy Policy and ToS links verified in footer on both public and dashboard layouts

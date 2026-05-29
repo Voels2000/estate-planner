@@ -1,14 +1,8 @@
+import { TERMS_OF_SERVICE_VERSION } from '@/lib/legal/terms-of-service-sections'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function getTermsVersion(): Promise<string> {
-  const admin = createAdminClient()
-  const { data: versionRow } = await admin
-    .from('app_config')
-    .select('value')
-    .eq('key', 'terms_version')
-    .maybeSingle()
-
-  return versionRow?.value ?? '2026-03-31'
+export function getTermsVersion(): string {
+  return TERMS_OF_SERVICE_VERSION
 }
 
 export async function recordTermsAcceptance(
@@ -16,7 +10,7 @@ export async function recordTermsAcceptance(
   acceptedAt?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const admin = createAdminClient()
-  const termsVersion = await getTermsVersion()
+  const termsVersion = getTermsVersion()
   const payload = {
     terms_accepted_at: acceptedAt ?? new Date().toISOString(),
     terms_version: termsVersion,

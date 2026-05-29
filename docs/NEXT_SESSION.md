@@ -1015,4 +1015,4 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 ### Legal pages vs in-app terms accept
 
 - **Public ToS:** `/terms` — full Terms of Service (Sprint C-5)
-- **Post-checkout accept:** `/terms/accept` — dynamic `app_config.terms_sections` + accept button (sync with `/terms` after legal review per [LEGAL_TODO.md](./LEGAL_TODO.md))
+- **Post-checkout accept:** `/terms/accept` — same My Wealth Maps ToS as `/terms` via `getCanonicalTerms()` (version `2026-06-02`). Apply migration `20260527120000_sync_terms_app_config_mwm.sql` on remote Supabase to sync `app_config` mirror.

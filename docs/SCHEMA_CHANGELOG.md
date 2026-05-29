@@ -14,6 +14,18 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## ToS single source + app_config sync (2026-05-27)
+
+| Change | Files |
+|--------|-------|
+| Canonical ToS from code (`TERMS_OF_SERVICE_VERSION` `2026-06-02`) | `lib/legal/terms-of-service-sections.ts`, `lib/terms/getCanonicalTerms.ts`, `lib/terms/flattenLegalSections.ts` |
+| `/api/terms/content`, `recordTermsAcceptance` use canonical terms | `app/api/terms/content/route.ts`, `lib/terms/recordTermsAcceptance.ts` |
+| Sync legacy Estate Planner seed → My Wealth Maps in `app_config` | `supabase/migrations/20260527120000_sync_terms_app_config_mwm.sql` |
+
+**Apply on remote:** `20260527120000_sync_terms_app_config_mwm.sql`
+
+---
+
 ## TERMS-2/3/5 — billing checkout fixes (2026-05-29, code only)
 
 | Change | Files |

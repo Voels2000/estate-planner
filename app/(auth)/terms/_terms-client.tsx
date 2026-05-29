@@ -60,7 +60,7 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
     <div className="min-h-screen bg-neutral-50 px-4 py-12">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-neutral-900">Terms & Conditions</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Terms of Service</h1>
           <p className="mt-1 text-sm text-neutral-500">
             Version {version} · Please read carefully before continuing
           </p>
@@ -92,8 +92,8 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
 
           <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-5">
             <p className="mb-4 text-xs text-neutral-500">
-              By clicking Accept, you agree to the Estate Planner Terms & Conditions
-              version {version}. The date and version of your acceptance will
+              By clicking Accept, you agree to the My Wealth Maps Terms of Service
+              (version {version}). The date and version of your acceptance will
               be recorded on your account.
             </p>
             {error && (
