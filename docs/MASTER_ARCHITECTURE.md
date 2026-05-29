@@ -1034,7 +1034,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Charitable consumer form: `components/consumer/CharitableStrategyForm.tsx` (DAF panel; `daf` or `charitable` source).
 - Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
 - Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
-- **Financial data import (Sprint F-1 + F-2 + expansion 2026-05-29):** `app/(dashboard)/import/`; `lib/import/type-normalizer.ts`, `multiSheet.ts`, `reviewTypeHelpers.ts`; `POST /api/ingest`, `POST /api/import/commit`; persona XLSX templates; tests: `tests/unit/import-type-normalizer.spec.ts`, `import-parse.spec.ts`. **Attorney portal (expansion):** `profiles.attorney_tier`; `legal_documents.doc_status`; `document_gap_dismissals`; `/attorney/billing`; vault status/gaps; doc health dashboard — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+- **Financial data import (Sprint F-1 + F-2 + expansion 2026-05-29):** `app/(dashboard)/import/`; `lib/import/type-normalizer.ts`, `multiSheet.ts`, `reviewTypeHelpers.ts`; `POST /api/ingest`, `POST /api/import/commit`; persona XLSX templates; tests: `tests/unit/import-type-normalizer.spec.ts`, `import-parse.spec.ts`. **Attorney portal (expansion + monetization 2026-05-29):** `profiles.attorney_tier`; `legal_documents.doc_status`; `document_gap_dismissals`; `/attorney/billing` + `POST /api/stripe/attorney-checkout`; `AttorneyUpgradePrompt`; attorney drip — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Projections readiness (2026-05-29):** `lib/planning/projectionReadiness.ts`; inline prompts on `/projections`.
 
 ---
 
@@ -1052,12 +1052,41 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - **Onboarding fork:** Wizard step 1 — Upload spreadsheet (primary) vs Add manually → `/import?onboarding=true`.
 - **Parse API:** `POST /api/ingest` — multipart `file`; optional `sheet_name` or `single_sheet=true`; header row scan; alias `field_map`; persists `ingestion_jobs`.
 - **Commit API:** `POST /api/import/commit` — normalizes `type` / `property_type`; duplicate 409; `ingestion_job_id` traceability.
-- **Migrations:** F-1 `20260602140000`; F-2 `20260602150000`; attorney/doc columns `20260527120000_sprint_import_attorney.sql` (apply before attorney portal features).
-- **Automated verification:** `npm run test:import:unit` (**19 tests** — parse, type-normalizer, wizard gate); `npm run test:import:api` (`.env.test`, tier 2+).
+- **Migrations:** F-1 `20260602140000`; F-2 `20260602150000`; attorney/doc columns `20260529120000_sprint_import_attorney.sql`; attorney drip `20260529130000_attorney_drip_columns.sql` (apply before drip + after import-attorney migration).
+- **Automated verification:** `npm run test:import:unit` (**24 tests** — parse, type-normalizer, wizard gate, projectionReadiness); `npm run test:import:api` (`.env.test`, tier 2+).
 
 **Post-launch backlog:** PDF/DOCX extraction; update/merge re-import mode; advisor bulk client import.
 
 **Sprint doc:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+
+---
+
+## Projections readiness (2026-05-29)
+
+**Route:** `/projections` — server computes `checkProjectionReadiness()` from household birth year, retirement age, and asset/income totals.
+
+| Readiness | UI |
+|-----------|-----|
+| Missing financial data | Targeted `ProjectionEmptyState` (lists missing fields; links to profile, income, assets) |
+| Financial data + missing age fields | Chart output + `ProfileFieldPrompt` (`buildProjectionPlanningFields`) |
+| All required fields | Full projection output |
+
+**Shared lib:** `lib/planning/projectionReadiness.ts`. **Tests:** `tests/unit/projectionReadiness.spec.ts`. **`/complete`:** unchanged — still uses legacy TIER2 empty CTAs.
+
+---
+
+## Attorney monetization (2026-05-29)
+
+| Surface | Implementation |
+|---------|----------------|
+| Checkout | `POST /api/stripe/attorney-checkout` — `ATTORNEY_PLAN_PRICE_IDS` in `lib/tiers.ts`; 503 if `TODO_*` placeholders |
+| Webhook | `checkout.session.completed` / `subscription.updated` / `subscription.deleted` → `profiles.attorney_tier` via `getAttorneyTierFromPriceId()` |
+| Billing UI | `app/(attorney)/attorney/billing/_attorney-billing-client.tsx` |
+| Upgrade prompts | `components/attorney/AttorneyUpgradePrompt.tsx` — client cap, PDF export, doc dashboard blur |
+| Cap enforcement | `lib/attorney/attorneyClientCap.ts`; 403 on `grant-access` + `accept-request` |
+| Drip | `lib/attorney/sendAttorneyDripStep.ts`; step 1 on signup/claim/portal; steps 2–3 in cron |
+
+**Manual before go-live:** Create Stripe products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY`, `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 
 ---
 
@@ -1101,7 +1130,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
-**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d).
+**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
 **GitHub Actions:** `.github/workflows/cron-notifications.yml` — **manual only** (`workflow_dispatch`). Schedule removed to avoid duplicating or racing Vercel cron. Production URL: `https://estate-planner-gules.vercel.app/api/cron/notifications`. Requires `CRON_SECRET` in GitHub repo secrets.
 
@@ -1201,7 +1230,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
 
-**Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`).
+**Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`). **Updated 2026-05-29:** `/projections` uses `checkProjectionReadiness()` + inline prompts; TIER2 adds `/scenarios` link.
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business
 succession, invite-advisor onboarding, A/B criteria in DECISION_LOG. See [ROADMAP.md](./ROADMAP.md).
 

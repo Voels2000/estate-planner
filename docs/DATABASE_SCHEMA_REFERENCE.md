@@ -437,7 +437,8 @@ After each schema-affecting session:
 - `20260521000000_create_life_events.sql` — `life_events` for in-app logging and age triggers
 - `20260522000000_advisor_referrals.sql` — `advisor_directory.referral_code`, `referral_clicks`
 - `20260528000000_attorney_referrals.sql` — `attorney_listings.referral_code`, attorney columns on `referral_clicks`
-- `20260529000000_profiles_referral_attribution.sql` — `profiles.referral_code`, `profiles.attorney_referral_code`
+- `20260529120000_sprint_import_attorney.sql` — `legal_documents.doc_status`; `document_gap_dismissals`; `profiles.attorney_tier`
+- `20260529130000_attorney_drip_columns.sql` — `profiles.attorney_drip_step_1_sent_at` … `_3_sent_at`
 - `20260526000000_onboarding_wizard_fields.sql` — `households.person1_first_name`, `person2_first_name`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`; `profiles.onboarding_wizard_completed_at`
 - `20260526000001_handle_new_user_trigger.sql` — `handle_new_user()` + `on_auth_user_created` on `auth.users` (inserts `profiles` with `trial_started_at`; supersedes older trigger migrations that used `trial_ends_at`)
 - `20260530000000_sprint9_10_gates.sql` — `profiles.onboarding_invite_advisor_completed_at`; `advisor_clients.connection_life_event_*`; `households.succession_*`

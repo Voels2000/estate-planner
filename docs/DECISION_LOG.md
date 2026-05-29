@@ -1,20 +1,49 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Import expansion + attorney workflow sprint)
+# Last updated: 2026-05-29 (Attorney monetization + projections readiness)
+
+## Attorney Stripe checkout + upgrade prompts + drip (2026-05-29)
+
+**Decision:** Wire attorney monetization in three layers: (1) `POST /api/stripe/attorney-checkout` + webhook `attorney_tier` from price ID; (2) `AttorneyUpgradePrompt` at client cap, PDF export, and doc-health dashboard gates; (3) 3-step attorney onboarding drip mirroring advisor activation pattern.
+
+**Stripe:** Checkout route returns **503** when `STRIPE_PRICE_ATTORNEY_*` env vars are unset (`TODO_*` placeholders). **Products/prices still created manually** in Stripe Dashboard before go-live.
+
+**Gating UX:**
+- Free tier at **3 active clients** → upgrade prompt on dashboard; **403** from `grant-access` and `accept-request` when at cap.
+- Tier 0 → blurred doc-health preview + upgrade overlay (not hidden entirely).
+- PDF export → `AttorneyUpgradePrompt` instead of plain text link.
+
+**Drip:** Step 1 on attorney signup callback, claim-listing, and portal page visit; steps 2–3 via `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Columns: `attorney_drip_step_*_sent_at` on `profiles`. BCC `avoels@comcast.net` on sends (matches attorney-notify).
+
+**Docs:** migration `20260529130000_attorney_drip_columns.sql`; `lib/tiers.ts` → `ATTORNEY_PLAN_PRICE_IDS`, `getAttorneyTierFromPriceId()`.
+
+---
+
+## Projections readiness vs inline profile prompts (2026-05-29)
+
+**Decision:** Replace binary `projections.length === 0` empty state with `checkProjectionReadiness()` — requires birth year, retirement age, and (assets **or** income). When financial data exists but age fields are missing, show **`ProfileFieldPrompt`** above chart output (partial view), not a blocking empty state.
+
+**Reasoning:** Users who filled retirement/longevity via `/scenarios` prompts still hit generic “Complete your profile” on `/projections`. Readiness is server-computed on each render; scenarios PATCH persists to DB — the bug was the empty-state condition, not cache staleness.
+
+**`/complete` unchanged:** Still uses legacy TIER2 empty CTAs; projections-only fix in this sprint.
+
+**Tests:** `tests/unit/projectionReadiness.spec.ts` (5 cases); `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` adds `/scenarios` link (profile + scenarios, not merged with TIER3).
+
+---
 
 ## Attorney tier model — B2B2C (2026-05-29)
 
 **Decision:** Add `profiles.attorney_tier` (0 = free read-only, 1 = Attorney Starter, 2 = Attorney Growth). Same adoption pattern as advisor B2B2C: free tier for trial access, paid tiers for practice-level features.
 
 **Gating:**
-- **Tier 0 (free):** Up to **3 client households** visible; document vault read/upload; **no** intake summary PDF export; **no** multi-client doc health dashboard.
+- **Tier 0 (free):** Up to **3 client households** visible; document vault read/upload; **no** intake summary PDF export; **no** multi-client doc health dashboard (blurred preview + upgrade prompt as of monetization sprint).
 - **Tier 1+:** Intake summary PDF (`ExportPDFButton` attorney variant); Document Gaps card; multi-client doc health table on attorney home; higher client caps (15 / 50 per `lib/attorney/attorneyTierLimits.ts`).
 
-**Stripe:** No products created in sprint — `/attorney/billing` shows plan comparison with TODO env vars `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` and `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+**Stripe:** Checkout wired (`/api/stripe/attorney-checkout`); webhook sets `attorney_tier`. **Manual step:** create products/prices and set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY` in Vercel.
 
 **Connection lookup fix:** `attorney_clients.attorney_id` stores `attorney_listings.id` (not `auth.uid()`). Portal APIs and client detail page updated to resolve listing by `profile_id` first.
 
-**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), migration `20260527120000_sprint_import_attorney.sql`.
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), migrations `20260529120000_sprint_import_attorney.sql`, `20260529130000_attorney_drip_columns.sql`.
 
 ---
 

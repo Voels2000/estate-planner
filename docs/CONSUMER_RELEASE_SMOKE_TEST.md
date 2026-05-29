@@ -459,7 +459,7 @@ Open each URL while logged in; expect a real page (not 404), main heading visibl
 | Income | `/income` | ☐ |
 | Expenses | `/expenses` | ☐ |
 | Real estate | `/real-estate` | ☐ |
-| Projections | `/projections` | ☐ |
+| Projections | `/projections` | Readiness empty state vs partial chart + inline prompts after scenarios-only profile fill (2026-05-29) | ☐ |
 | Profile | `/profile` | ☐ |
 | Scenarios | `/scenarios` | ☐ |
 | Titling | `/titling` | ☐ |

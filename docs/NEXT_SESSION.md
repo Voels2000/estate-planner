@@ -1,12 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Import expansion + attorney workflow sprint shipped)
+# Updated: 2026-05-29 (Attorney monetization + projections readiness shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork; attorney doc status, gaps, intake PDF, doc health dashboard, `attorney_tier` model — see [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Before deploy:** apply `20260527120000_sprint_import_attorney.sql`; create Stripe attorney price env vars.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork; attorney doc status, gaps, intake PDF, doc health dashboard, `attorney_tier` model — see [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization (shipped 2026-05-29):** Stripe checkout route, upgrade prompts, client cap 403, 3-step drip — checkout returns 503 until Stripe products created. **Projections readiness (shipped 2026-05-29):** `checkProjectionReadiness()` + inline prompts on `/projections`.
+>
+> **Before deploy:** apply `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; create Stripe attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 >
 > **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
@@ -14,9 +16,7 @@
 >
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
-> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (19 tests). Optional staging: `npm run test:import:api`.
->
-> **Deferred follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — revisit after ~1 week funnel data on scenarios inline-prompt path. **Attorney Stripe checkout** — wire `STRIPE_PRICE_ATTORNEY_*` when products created.
+> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). Projections readiness: `npx playwright test tests/unit/projectionReadiness.spec.ts --project=import-unit`. Optional staging: `npm run test:import:api`.
 
 ---
 
@@ -32,12 +32,36 @@
 | Attorney doc status lifecycle + gap dismissals migration | ✅ |
 | Document vault status/filter/gaps + intake PDF (tier ≥ 1) | ✅ |
 | Multi-client doc health dashboard (tier ≥ 1) | ✅ |
-| Attorney tier model + `/attorney/billing` (Stripe TODOs) | ✅ |
+| Attorney tier model + `/attorney/billing` (checkout wired; 503 until Stripe prices) | ✅ |
 | Fix attorney connection lookup (`attorney_listings.id`) | ✅ |
 
 See [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 
-**Before deploy:** apply `supabase/migrations/20260527120000_sprint_import_attorney.sql`; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+**Before deploy:** apply `supabase/migrations/20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; create Stripe attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+
+---
+
+## Attorney monetization ✅ (2026-05-29)
+
+| Task | Status |
+|------|--------|
+| `POST /api/stripe/attorney-checkout` + webhook `attorney_tier` | ✅ |
+| `/attorney/billing` Subscribe + `?checkout=success` banner | ✅ |
+| `AttorneyUpgradePrompt` — client cap, PDF export, doc dashboard blur | ✅ |
+| Client cap 403 — `grant-access`, `accept-request` | ✅ |
+| Attorney drip steps 1–3 + `attorney_drip_step_*` columns | ✅ |
+| Stripe products + env vars | ⏳ manual |
+
+---
+
+## Projections empty state fix ✅ (2026-05-29)
+
+| Task | Status |
+|------|--------|
+| `checkProjectionReadiness()` — birth year, retirement age, assets/income | ✅ |
+| Targeted empty state + partial view with inline prompts | ✅ |
+| `buildProjectionPlanningFields()` | ✅ |
+| Unit tests — `projectionReadiness.spec.ts` (5 cases) | ✅ |
 
 ---
 
@@ -1048,7 +1072,7 @@ Statuses: `active`, `accepted`. Do not hardcode status strings.
 
 ### Planning empty-state CTAs (do not regress)
 
-- **`/projections`, `/complete`:** `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` only
+- **`/projections`:** `checkProjectionReadiness()` — targeted empty state or partial chart + `ProfileFieldPrompt`; TIER2 CTAs include `/profile` + `/scenarios`. **`/complete`:** legacy TIER2 profile-only CTAs unchanged.
 - **`/my-estate-strategy` (tier 3):** `POST /api/consumer/generate-base-case`
 - Do **not** merge TIER2 and TIER3 lists — `lib/planning/planningEmptyState.ts`
 

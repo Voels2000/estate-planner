@@ -8,6 +8,36 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Attorney monetization — checkout + drip (2026-05-29)
+
+**Migration:** `20260529130000_attorney_drip_columns.sql`
+
+| Change | Detail |
+|--------|--------|
+| `profiles.attorney_drip_step_1_sent_at` | Timestamptz — welcome email on attorney activation |
+| `profiles.attorney_drip_step_2_sent_at` | Timestamptz — day-3 intake workflow email (cron) |
+| `profiles.attorney_drip_step_3_sent_at` | Timestamptz — day-7 upgrade prompt email (cron) |
+
+**Code (no new tables):** `POST /api/stripe/attorney-checkout`; webhook sets `profiles.attorney_tier` from Stripe price ID; `POST /api/email/attorney-drip`; `lib/attorney/sendAttorneyDripStep.ts`; `components/attorney/AttorneyUpgradePrompt.tsx`; client cap enforcement in `grant-access` + `accept-request`.
+
+**Apply on remote:** `20260529130000_attorney_drip_columns.sql` (after `20260529120000_sprint_import_attorney.sql`).
+
+---
+
+## Projections empty state fix (2026-05-29) — code only
+
+| Change | Files |
+|--------|-------|
+| Shared readiness check (birth year, retirement age, assets/income) | `lib/planning/projectionReadiness.ts` |
+| Targeted empty state + inline `ProfileFieldPrompt` on partial data | `app/(dashboard)/projections/page.tsx`, `_projections-client.tsx`, `_components/ProjectionEmptyState.tsx` |
+| Projection-only inline prompts (birth year + retirement age) | `lib/profile/profileFieldPromptDefs.ts` → `buildProjectionPlanningFields()` |
+| TIER2 CTA adds `/scenarios` link | `lib/planning/planningEmptyState.ts` |
+| Unit tests (5 cases) | `tests/unit/projectionReadiness.spec.ts` |
+
+**No migration.** Fixes gap where users who filled deferred fields via `/scenarios` prompts still saw generic “Complete your profile” on `/projections`.
+
+---
+
 ---
 
 ---
@@ -683,7 +713,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ## Import expansion + attorney workflow (2026-05-29)
 
-**Migration:** `20260527120000_sprint_import_attorney.sql`
+**Migration:** `20260529120000_sprint_import_attorney.sql`
 
 | Change | Detail |
 |--------|--------|

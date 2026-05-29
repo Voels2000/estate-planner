@@ -20,6 +20,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) | **Complete Playwright suite** — commands, env, seeds |
 | [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) | **Pre-flip automated gate** — profile + inline prompt commands |
 | [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) | Import expansion + attorney workflow (2026-05-29) |
+| [SPRINT_IMPORT_EXPANSION.md](./SPRINT_IMPORT_EXPANSION.md) | Import Phases 1–5 acceptance criteria & reference |
 | [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md) | Inline profile prompts sprint |
 | [.env.test.example](../.env.test.example) | Template after `seed:e2e` |
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
@@ -192,10 +193,28 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Onboarding fork — wizard step 1 + `?onboarding=true`
 - [x] Persona templates — `public/templates/template-*.xlsx`
 - [x] Real estate import target
-- [x] Attorney doc status + gaps + tier model + billing page
-- [ ] **Deploy:** apply `20260527120000_sprint_import_attorney.sql`
-- [ ] **Stripe:** `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`
+- [x] Attorney doc status + gaps + tier model + billing checkout
+- [ ] **Deploy:** apply `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`
+- [ ] **Stripe:** create attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`
 - [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · SPRINT_IMPORT_ATTORNEY
+
+## Attorney monetization (2026-05-29) — shipped
+
+- [x] `POST /api/stripe/attorney-checkout` + webhook `attorney_tier`
+- [x] `/attorney/billing` Subscribe + success banner
+- [x] `AttorneyUpgradePrompt` — client cap, PDF export, doc dashboard blur
+- [x] Client cap 403 — `grant-access`, `accept-request`
+- [x] Attorney drip — `sendAttorneyDripStep`, cron steps 2–3, migration `20260529130000_attorney_drip_columns.sql`
+- [ ] **Stripe products** — manual creation in Dashboard
+- [x] Master docs sync (this pass)
+
+## Projections empty state fix (2026-05-29) — shipped
+
+- [x] `lib/planning/projectionReadiness.ts` + `buildProjectionPlanningFields()`
+- [x] Targeted empty state + partial view with `ProfileFieldPrompt` on `/projections`
+- [x] `tests/unit/projectionReadiness.spec.ts` (5 cases; import-unit project)
+- [x] `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` adds `/scenarios`
+- [x] Master docs sync (this pass)
 
 ## Inline profile prompts E2E (2026-05-27) — shipped
 

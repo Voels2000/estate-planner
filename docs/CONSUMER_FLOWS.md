@@ -233,7 +233,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Onboarding** | Wizard step 1: Upload spreadsheet (primary) vs Add manually |
 | **Write APIs** | `POST /api/ingest` (multi-sheet); `POST /api/import/commit` (type/property normalization); `DELETE /api/import/jobs/[id]` |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
-| **Migrations** | F-1/F-2 as before; **apply** `20260527120000_sprint_import_attorney.sql` for attorney doc columns (separate from import tables) |
+| **Migrations** | F-1/F-2 as before; **apply** `20260529120000_sprint_import_attorney.sql` for attorney doc columns (separate from import tables) |
 | **Tests** | `npm run test:import:unit` (**19**); `npm run test:import:api` — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
@@ -252,7 +252,7 @@ Three related routes share projection engines but answer different questions. **
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|
-| `/projections` | `loadProjectionData` → `ProjectionsClient` | Cache-first when fresh (`outputs_s1_first`); full compute when stale. Read-only `ProjectionAssumptions` links to `/scenarios`. `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` — profile only |
+| `/projections` | `loadProjectionData` → readiness check → `ProjectionsClient` | Cache-first when fresh; `checkProjectionReadiness()` drives empty vs partial vs full view. Inline `ProfileFieldPrompt` for missing birth year / retirement age when assets or income exist. TIER2 CTAs: `/profile` + `/scenarios` |
 | `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale |
 | `/scenarios` | `loadProjectionData` + client variant query strings | Base Case server-prefetched; B/C lazy until user edits (or localStorage overrides on return) |
 
@@ -266,7 +266,7 @@ Three related routes share projection engines but answer different questions. **
 | `/allocation` | 2 | `loadAssetAllocationData` (B) | `loading.tsx` + `error.tsx` (H/I) |
 | `/scenarios` | 1 | Base Case only; B/C lazy (C) | `loading.tsx` + `error.tsx` (H/I) |
 | `/social-security` | 2 | `loadSocialSecurityData`; **`ProfileFieldPrompt`** for SS claiming age + PIA when unset | `loading.tsx` + `error.tsx` (H/I) |
-| `/projections` | 1 | `loadProjectionData` | `loading.tsx` + `error.tsx` (H/I) |
+| `/projections` | 1 | `loadProjectionData` + `checkProjectionReadiness`; inline prompts when partial | `loading.tsx` + `error.tsx` (H/I) |
 | `/complete` | 2 | `loadProjectionData` | `loading.tsx` + `error.tsx` (J) |
 | `/estate-tax` | 2 | composition + household | `loading.tsx` + `error.tsx` (J) |
 

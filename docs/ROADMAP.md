@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (TERMS-2/3/5 billing; Stripe go-live; Sprint 19)
+# Last updated: 2026-05-29 (Attorney monetization + projections readiness)
 
 ---
 
@@ -32,7 +32,34 @@
 | E2E partial-payload + UI prompt smoke | `[x]` |
 | Go-live pre-flight script + doc | `[x]` |
 
-See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up:** `/projections` `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` may need update once users fill fields via scenarios prompts.
+See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up (2026-05-29):** `/projections` readiness fix shipped — `checkProjectionReadiness()` + inline prompts; see DECISION_LOG.
+
+---
+
+### Sprint — Projections empty state fix (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `lib/planning/projectionReadiness.ts` | `[x]` |
+| Targeted empty state (missing field labels) | `[x]` |
+| Partial view + `ProfileFieldPrompt` when assets/income exist | `[x]` |
+| `buildProjectionPlanningFields()` | `[x]` |
+| Unit tests — `projectionReadiness.spec.ts` (5 cases) | `[x]` |
+
+---
+
+### Sprint — Attorney monetization (2026-05-29) **← shipped (Stripe products manual)**
+
+| Item | Status |
+|------|--------|
+| `POST /api/stripe/attorney-checkout` + webhook `attorney_tier` | `[x]` |
+| `/attorney/billing` Subscribe buttons + success banner | `[x]` |
+| `AttorneyUpgradePrompt` — client cap, PDF, doc dashboard | `[x]` |
+| Server-side client cap (403 on grant/accept) | `[x]` |
+| Attorney drip steps 1–3 + migration | `[x]` |
+| Create Stripe attorney products + set env vars | `[ ]` **manual** |
+
+**Before deploy:** apply `20260529130000_attorney_drip_columns.sql`; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 
 ---
 
@@ -742,13 +769,14 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 - `[x]` Unit tests — `import-type-normalizer.spec.ts` (19 import-unit tests total)
 
 **Attorney (Phases 6–7):**
-- `[x]` Migration `20260527120000_sprint_import_attorney.sql` — doc status lifecycle + gap dismissals + `attorney_tier`
+- `[x]` Migration `20260529120000_sprint_import_attorney.sql` — doc status lifecycle + gap dismissals + `attorney_tier`
 - `[x]` Document vault — status dropdown, type filter, Document Gaps card
 - `[x]` Intake summary PDF (tier ≥ 1); multi-client doc health dashboard (tier ≥ 1)
-- `[x]` `/attorney/billing` plan UI; Stripe price TODOs (no products yet)
+- `[x]` `/attorney/billing` — Stripe checkout wired (`/api/stripe/attorney-checkout`); 503 until price env vars set
+- `[x]` Attorney upgrade prompts + client cap enforcement + onboarding drip
 - `[x]` Fix attorney connection lookup (`attorney_listings.id`)
 
-**Before deploy:** apply migration; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+**Before deploy:** apply `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY` (create products in Stripe first).
 
 ---
 
