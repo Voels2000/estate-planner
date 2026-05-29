@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -111,5 +112,11 @@ export default async function ClaimListingPage({ params }: Props) {
   })()
 
   // 10. Redirect to the appropriate portal
+  if (isAttorney) {
+    void ensureAttorneyActivationDripStep1(admin, user.id).catch((err) => {
+      console.error('attorney drip step 1 (claim-listing):', err instanceof Error ? err.message : err)
+    })
+  }
+
   redirect(isAttorney ? '/attorney?claimed=true' : '/advisor?claimed=true')
 }

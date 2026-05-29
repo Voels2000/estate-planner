@@ -433,6 +433,61 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── 9. Attorney activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  const { data: attorneyDripCandidates } = await supabase
+    .from('profiles')
+    .select(
+      'id, email, created_at, role, is_attorney, attorney_drip_step_1_sent_at, attorney_drip_step_2_sent_at, attorney_drip_step_3_sent_at',
+    )
+    .not('attorney_drip_step_1_sent_at', 'is', null)
+
+  for (const attorney of attorneyDripCandidates ?? []) {
+    const isAttorney = attorney.role === 'attorney' || attorney.is_attorney === true
+    if (!isAttorney) continue
+
+    const step1At = attorney.attorney_drip_step_1_sent_at
+      ? new Date(attorney.attorney_drip_step_1_sent_at)
+      : null
+    const step2At = attorney.attorney_drip_step_2_sent_at
+      ? new Date(attorney.attorney_drip_step_2_sent_at)
+      : null
+    const step3At = attorney.attorney_drip_step_3_sent_at
+      ? new Date(attorney.attorney_drip_step_3_sent_at)
+      : null
+
+    if (!step1At) continue
+
+    if (!step2At && step1At <= threeDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+        },
+        body: JSON.stringify({
+          attorney_id: attorney.id,
+          sequence_step: 2,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
+
+    if (!step3At && step1At <= sevenDaysAgo) {
+      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+        },
+        body: JSON.stringify({
+          attorney_id: attorney.id,
+          sequence_step: 3,
+        }),
+      }).catch(() => {})
+      results.sent++
+    }
+  }
+
   console.log('[cron:notifications]', results)
   return NextResponse.json({ ok: true, ...results })
 }

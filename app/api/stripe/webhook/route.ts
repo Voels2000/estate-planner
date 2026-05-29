@@ -3,7 +3,7 @@ import { sendRenewalReminderEmail } from '@/lib/email/renewalReminderEmail'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
-import { FIRM_PRICE_ID_TO_TIER } from '@/lib/tiers'
+import { FIRM_PRICE_ID_TO_TIER, getAttorneyTierFromPriceId } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
 import {
   cancelPendingDeletionOnReactivation,
@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
             priceId = sub.items.data[0]?.price.id ?? null
             consumerTier = priceId ? getTierFromPriceId(priceId) : null
           }
+          const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
           const { error } = await supabase
             .from('profiles')
             .update({
@@ -175,6 +176,7 @@ export async function POST(req: NextRequest) {
               stripe_subscription_id: subId,
               subscription_plan: priceId,
               ...(consumerTier ? { consumer_tier: consumerTier } : {}),
+              ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
               ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
             })
             .eq('id', userId)
@@ -220,9 +222,17 @@ export async function POST(req: NextRequest) {
           break
         }
         const customerId = subscription.customer as string
+        const cancelledPriceId = subscription.items.data[0]?.price.id ?? null
+        const attorneyTierCancelled = cancelledPriceId
+          ? getAttorneyTierFromPriceId(cancelledPriceId)
+          : 0
+
         await supabase
           .from('profiles')
-          .update({ subscription_status: 'canceled' })
+          .update({
+            subscription_status: 'canceled',
+            ...(attorneyTierCancelled > 0 ? { attorney_tier: 0 } : {}),
+          })
           .eq('stripe_customer_id', customerId)
         console.log('customer.subscription.deleted — consumer subscription canceled')
 
@@ -288,6 +298,7 @@ export async function POST(req: NextRequest) {
         ).toISOString()
         const priceId = subscription.items.data[0]?.price.id ?? null
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
+        const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
         await supabase
           .from('profiles')
           .update({
@@ -295,6 +306,7 @@ export async function POST(req: NextRequest) {
             subscription_period_end: renewalIso,
             ...(priceId ? { subscription_plan: priceId } : {}),
             ...(consumerTier ? { consumer_tier: consumerTier } : {}),
+            ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
           })
           .eq('stripe_customer_id', customerId)
         console.log('customer.subscription.updated — consumer subscription updated')

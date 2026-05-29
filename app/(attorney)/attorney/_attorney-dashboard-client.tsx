@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
 
 type ClientCard = {
   connection_id: string
@@ -106,6 +107,46 @@ export function AttorneyDashboardClient({
     c.state.toLowerCase().includes(search.toLowerCase())
   )
 
+  const FREE_TIER_CAP = 3
+  const atCap = attorneyTier === 0 && totalClients >= FREE_TIER_CAP
+
+  function DocHealthTable({ rows }: { rows: ClientCard[] }) {
+    return (
+      <table className="min-w-full text-sm">
+        <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Client</th>
+            <th className="px-4 py-3 text-left">Estate Value</th>
+            <th className="px-4 py-3 text-left">Docs on File</th>
+            <th className="px-4 py-3 text-left">Missing</th>
+            <th className="px-4 py-3 text-left">Last Updated</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-neutral-100">
+          {rows.map((client) => (
+            <tr key={client.connection_id} className="hover:bg-neutral-50">
+              <td className="px-4 py-3 font-medium text-neutral-900">{client.full_name}</td>
+              <td className="px-4 py-3 text-neutral-600">
+                {client.estate_value != null && client.estate_value > 0
+                  ? `$${(client.estate_value / 1_000_000).toFixed(1)}M`
+                  : '—'}
+              </td>
+              <td className="px-4 py-3 text-neutral-600">
+                {client.docs_on_file ?? 0} / {client.docs_total ?? 5}
+              </td>
+              <td className="px-4 py-3 text-xs text-amber-700">{client.missing_docs ?? '—'}</td>
+              <td className="px-4 py-3 text-xs text-neutral-400">
+                {client.last_updated
+                  ? new Date(client.last_updated).toLocaleDateString()
+                  : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -127,41 +168,27 @@ export function AttorneyDashboardClient({
         </p>
       </div>
 
-      {showDocHealth && clients.length > 0 && (
-        <div className="mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
-              <tr>
-                <th className="px-4 py-3 text-left">Client</th>
-                <th className="px-4 py-3 text-left">Estate Value</th>
-                <th className="px-4 py-3 text-left">Docs on File</th>
-                <th className="px-4 py-3 text-left">Missing</th>
-                <th className="px-4 py-3 text-left">Last Updated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {filtered.map((client) => (
-                <tr key={client.connection_id} className="hover:bg-neutral-50">
-                  <td className="px-4 py-3 font-medium text-neutral-900">{client.full_name}</td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {client.estate_value != null && client.estate_value > 0
-                      ? `$${(client.estate_value / 1_000_000).toFixed(1)}M`
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {client.docs_on_file ?? 0} / {client.docs_total ?? 5}
-                  </td>
-                  <td className="px-4 py-3 text-amber-700 text-xs">{client.missing_docs ?? '—'}</td>
-                  <td className="px-4 py-3 text-neutral-400 text-xs">
-                    {client.last_updated
-                      ? new Date(client.last_updated).toLocaleDateString()
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {atCap && (
+        <div className="mb-6">
+          <AttorneyUpgradePrompt feature="client_cap" currentClientCount={totalClients} />
         </div>
+      )}
+
+      {showDocHealth && clients.length > 0 && (
+        attorneyTier >= 1 ? (
+          <div className="mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+            <DocHealthTable rows={filtered} />
+          </div>
+        ) : (
+          <div className="relative mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+            <div className="pointer-events-none select-none opacity-40 blur-sm">
+              <DocHealthTable rows={clients.slice(0, 2)} />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <AttorneyUpgradePrompt feature="doc_dashboard" />
+            </div>
+          </div>
+        )
       )}
 
       {referralCode && eventReferralUrls && (() => {

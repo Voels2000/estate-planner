@@ -730,3 +730,6 @@ export function buildDripEmailHtml(params: {
 </body>
 </html>`
 }
+
+/** Attorney drip sequence — see lib/emails/attorney-drip-templates.ts (profiles.attorney_drip_step_* columns). */
+export { getAttorneyDripSequence } from '@/lib/emails/attorney-drip-templates'

@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
+import {
+  countActiveAttorneyClients,
+  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  isAtAttorneyClientCap,
+} from '@/lib/attorney/attorneyClientCap'
 
 export async function POST(req: NextRequest) {
   const { user, isSuperuser, isConsumer } = await getAccessContext()
@@ -62,6 +67,19 @@ export async function POST(req: NextRequest) {
       { error: 'An active or pending connection already exists with this attorney' },
       { status: 409 }
     )
+  }
+
+  if (attorneyListing.profile_id) {
+    const { data: attorneyProfile } = await supabase
+      .from('profiles')
+      .select('attorney_tier')
+      .eq('id', attorneyListing.profile_id)
+      .single()
+
+    const activeCount = await countActiveAttorneyClients(supabase, attorney_id)
+    if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
+      return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+    }
   }
 
   // ── 6. Write the connection ─────────────────────────────────

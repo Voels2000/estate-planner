@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton'
+import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
 import {
   DOC_STATUS_OPTIONS,
   DOC_STATUS_STYLES,
@@ -188,12 +189,7 @@ export function AttorneyClientVault({
             {canExportIntake ? (
               <ExportPDFButton householdId={householdId} role="advisor" variant="attorney" />
             ) : (
-              <p className="text-xs text-neutral-500 max-w-[200px]">
-                Intake summary PDF export requires Attorney Starter.{' '}
-                <a href="/attorney/billing" className="text-blue-600 hover:underline">
-                  Upgrade →
-                </a>
-              </p>
+              <AttorneyUpgradePrompt feature="pdf_export" />
             )}
             <p className="text-[10px] text-neutral-400 mt-1 max-w-xs">
               Prepared by the client using My Wealth Maps for attorney reference only — not legal

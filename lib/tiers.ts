@@ -149,3 +149,30 @@ export const ADVISOR_FIRM_SEAT_RATES: Record<string, number> = {
   growth:     99,
   enterprise: 75,
 }
+
+// Attorney plan price IDs — set in Vercel before go-live:
+//   STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY
+//   STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY
+export const ATTORNEY_PLAN_PRICE_IDS = {
+  starter: process.env.STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY ?? 'TODO_ATTORNEY_STARTER',
+  growth: process.env.STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY ?? 'TODO_ATTORNEY_GROWTH',
+} as const
+
+export type AttorneyPlanKey = keyof typeof ATTORNEY_PLAN_PRICE_IDS
+
+export const ATTORNEY_PLAN_NAMES: Record<AttorneyPlanKey, string> = {
+  starter: 'Attorney Starter',
+  growth: 'Attorney Growth',
+}
+
+export const ATTORNEY_PLAN_LIMITS: Record<AttorneyPlanKey, { clientCap: number; priceMonthly: number }> = {
+  starter: { clientCap: 15, priceMonthly: 99 },
+  growth: { clientCap: 50, priceMonthly: 249 },
+}
+
+/** Map Stripe price ID → profiles.attorney_tier (1 = Starter, 2 = Growth). */
+export function getAttorneyTierFromPriceId(priceId: string): number {
+  if (priceId === ATTORNEY_PLAN_PRICE_IDS.starter) return 1
+  if (priceId === ATTORNEY_PLAN_PRICE_IDS.growth) return 2
+  return 0
+}

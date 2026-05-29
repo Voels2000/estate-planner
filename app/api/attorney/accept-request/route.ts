@@ -4,6 +4,12 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { resend } from '@/lib/resend'
+import {
+  countActiveAttorneyClients,
+  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyListingIdForUser,
+  isAtAttorneyClientCap,
+} from '@/lib/attorney/attorneyClientCap'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,9 +27,19 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, attorney_tier')
     .eq('id', user.id)
     .single()
+
+  const attorneyListingId = await getAttorneyListingIdForUser(supabase, user.id)
+  if (!attorneyListingId) {
+    return NextResponse.json({ error: 'Attorney listing not found' }, { status: 404 })
+  }
+
+  const activeCount = await countActiveAttorneyClients(admin, attorneyListingId)
+  if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
+    return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+  }
 
   // Parse body
   const { attorney_client_id } = await request.json()
@@ -36,7 +52,7 @@ export async function POST(request: Request) {
     .from('attorney_clients')
     .select('id, client_id, status')
     .eq('id', attorney_client_id)
-    .eq('attorney_id', user.id)
+    .eq('attorney_id', attorneyListingId)
     .eq('status', 'consumer_requested')
     .single()
 

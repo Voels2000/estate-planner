@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { recordTermsAcceptance } from '@/lib/terms/recordTermsAcceptance'
 import { ensureAdvisorActivationDripStep1 } from '@/lib/advisor/sendAdvisorDripStep'
+import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { sendWelcomeEmail } from '@/lib/email/welcomeEmail'
 
 export async function GET(request: NextRequest) {
@@ -57,16 +58,22 @@ export async function GET(request: NextRequest) {
           const adminForEmail = createAdminClient()
           const { data: roleProfile } = await adminForEmail
             .from('profiles')
-            .select('role, full_name')
+            .select('role, full_name, is_attorney')
             .eq('id', user.id)
             .maybeSingle()
 
           const isAdvisor =
             roleProfile?.role === 'advisor' || roleProfile?.role === 'financial_advisor'
+          const isAttorney =
+            roleProfile?.role === 'attorney' || roleProfile?.is_attorney === true
 
           if (isAdvisor) {
             void ensureAdvisorActivationDripStep1(adminForEmail, user.id).catch((err) => {
               console.error('advisor drip step 1:', err instanceof Error ? err.message : err)
+            })
+          } else if (isAttorney) {
+            void ensureAttorneyActivationDripStep1(adminForEmail, user.id).catch((err) => {
+              console.error('attorney drip step 1:', err instanceof Error ? err.message : err)
             })
           } else {
             const fullName =

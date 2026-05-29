@@ -460,8 +460,9 @@ assertBool('24 life event slugs', EVENT_SLUGS.length === 24, true)
 console.log('\n── Planning empty-state CTAs (Sprint 12) ──')
 assertBool(
   'tier 2 actions = profile only',
-  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2.length === 1 &&
-    PLANNING_MISSING_PROJECTION_ACTIONS_TIER2[0].href === '/profile',
+  PLANNING_MISSING_PROJECTION_ACTIONS_TIER2.length === 2 &&
+    PLANNING_MISSING_PROJECTION_ACTIONS_TIER2[0].href === '/profile' &&
+    PLANNING_MISSING_PROJECTION_ACTIONS_TIER2[1].href === '/scenarios',
   true,
 )
 assertBool(

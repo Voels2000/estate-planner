@@ -1,18 +1,23 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ATTORNEY_TIER_LIMITS } from '@/lib/attorney/attorneyTierLimits'
+import { AttorneyBillingClient } from './_attorney-billing-client'
 
-export default async function AttorneyBillingPage() {
+export default async function AttorneyBillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string; canceled?: string }>
+}) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const sp = await searchParams
+
   const { data: profile } = await supabase
     .from('profiles')
-    .select('attorney_tier, full_name')
+    .select('attorney_tier')
     .eq('id', user.id)
     .single()
 
@@ -31,6 +36,7 @@ export default async function AttorneyBillingPage() {
     },
     {
       id: 1,
+      planKey: 'starter' as const,
       name: 'Attorney Starter',
       price: '$99/mo',
       features: [
@@ -43,6 +49,7 @@ export default async function AttorneyBillingPage() {
     },
     {
       id: 2,
+      planKey: 'growth' as const,
       name: 'Attorney Growth',
       price: '$249/mo',
       features: [
@@ -56,39 +63,11 @@ export default async function AttorneyBillingPage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Link href="/attorney" className="text-sm text-neutral-400 hover:text-neutral-600">
-        ← Back to portal
-      </Link>
-      <h1 className="text-2xl font-semibold text-neutral-900 mt-4">Attorney Plans</h1>
-      <p className="text-sm text-neutral-500 mt-1">
-        Current plan:{' '}
-        <strong>{ATTORNEY_TIER_LIMITS[tier]?.label ?? 'Free'}</strong>
-      </p>
-
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`rounded-xl border p-5 ${
-              tier === plan.id ? 'border-blue-400 bg-blue-50/50' : 'border-neutral-200 bg-white'
-            }`}
-          >
-            <h2 className="font-semibold text-neutral-900">{plan.name}</h2>
-            <p className="text-lg font-bold text-neutral-800 mt-1">{plan.price}</p>
-            <ul className="mt-4 space-y-2 text-xs text-neutral-600">
-              {plan.features.map((f) => (
-                <li key={f}>• {f}</li>
-              ))}
-            </ul>
-            {plan.id > tier && plan.envKey && (
-              <p className="mt-4 text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1">
-                TODO: Set {plan.envKey} in Stripe — contact support to activate checkout.
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+    <AttorneyBillingClient
+      currentTier={tier}
+      plans={plans}
+      checkoutSuccess={sp.checkout === 'success'}
+      canceled={sp.canceled === 'true'}
+    />
   )
 }

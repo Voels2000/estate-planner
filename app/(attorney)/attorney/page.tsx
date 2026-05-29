@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { AttorneyDashboardClient } from './_attorney-dashboard-client'
 import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
 import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
+import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
 
 export default async function AttorneyDashboardPage() {
@@ -10,6 +12,10 @@ export default async function AttorneyDashboardPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  void ensureAttorneyActivationDripStep1(createAdminClient(), user.id).catch((err) => {
+    console.error('attorney drip step 1:', err instanceof Error ? err.message : err)
+  })
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -132,7 +138,7 @@ export default async function AttorneyDashboardPage() {
       clients={clientCards}
       referralCode={referralCode}
       eventReferralUrls={eventReferralUrls}
-      showDocHealth={tierFeatures.multiClientDocDashboard}
+      showDocHealth={clientCards.length > 0}
       attorneyTier={profile?.attorney_tier ?? 0}
       clientLimit={tierFeatures.maxClients}
       totalClients={(clients ?? []).length}
