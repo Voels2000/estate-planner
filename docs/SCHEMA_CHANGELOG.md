@@ -10,6 +10,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint J — complete + estate-tax shells (2026-05-27, code only)
+
+| Route | Files |
+|-------|-------|
+| `/complete` | `loading.tsx`, `error.tsx` |
+| `/estate-tax` | `loading.tsx`, `error.tsx` |
+
+---
+
 ## Post-launch perf Sprint I — error boundaries (2026-05-27, code only)
 
 | Area | Change |

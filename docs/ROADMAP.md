@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-31 (strategy reversal lifecycle; gifting plan + delete warning)
+# Last updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf B–J closed)
 
 ---
 
@@ -21,48 +21,51 @@
 
 ## Current sprint
 
-### Security — migration template + audits (2026-05-27) ✅
+### Sprint 18 — Planning shell completion + go-live hardening **← CURRENT**
 
-- `[x]` `supabase/MIGRATION_TEMPLATE.sql` + grant/RLS audit scripts + prod baselines
-- `[x]` Pre-launch RLS household scope — `20260527150000` on prod (`1f41ce1`, `7cab1be`, `35b0738`)
-- `[x]` Prod verify — `verify-loose-rls-policies.sql` zero rows; `rls-policies-post-fix-2026-05-27.csv`
-- `[ ]` Manual isolation smoke (pre-launch)
+**Goal:** Finish route-level loading/error shells on remaining heavy planning pages; keep Sprint 17 legal/ops blockers on track for flip.
 
-### Profile cleanup PROF-1/2 (2026-05-27) ✅
+| Item | Status | Notes |
+|------|--------|-------|
+| **Complete + estate-tax loading/error** | `[x]` | Sprint J — `loading.tsx` + `error.tsx` on `/complete`, `/estate-tax` |
+| **RouteErrorFallback adoption** | `[x]` | Dashboard + trust-strategy `error.tsx` → shared component |
+| **Manual RLS isolation smoke** | `[ ]` | Pre-launch — two-household advisor/consumer spot check ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)) |
+| **LEGAL_TODO counsel handoff** | `[ ]` | Sprint 17 blocker — §10/§11/§13, one redline batch |
+| **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts |
+| **Go-live smoke (fresh email)** | `[ ]` | Core §1–3 after `PUBLIC_SIGNUP_OPEN=true` |
 
-- `[x]` PROF-1 — Growth rates removed from Profile; Scenarios cross-link; pass-through on profile save
-- `[x]` PROF-2 — Risk tolerance on Asset Allocation; inflation on Scenarios; APIs extended
-- `[x]` PROF-3 — Outdated engine copy (Complete footer, ProjectionAssumptions)
-- `[x]` DOC-1 — Projection Engine Assumption Reference in master docs
+**Depends on:** Post-launch perf program (Sprints B–J) ✅ closed on `main`.
 
-### Profile layout — two-column people (2026-05-27) ✅
+---
 
-- `[x]` `refactor(profile)` — `_profile-client.tsx` layout: `max-w-2xl`, `ProfileSectionHeader`, Household / People / Household Planning sections
-- `[x]` Live column headers from `person1Name` / `person2Name`; spouse toggle below grid; merged planning callout
-- `[x]` No field, validation, save path, or API changes
-- `[x]` E2E — `consumer-profile-spouse-layout.spec.ts` (4 tests); `consumer-growth-assumptions-api.spec.ts` (PATCH contract)
+### Post-launch perf program (2026-05-27) ✅ CLOSED
 
-### Strategy sandbox → actuals (2026-05-27) ✅
+Engineering perf/correctness sprints shipped on `main` (`88cc63d`–`a4d2e38`, Sprint J in this session):
 
-- `[x]` SLAT/ILIT (and charitable/modeled chips) write `illustrative` first — explicit **Add to plan** promotes to `probable`
-- `[x]` Transfer Strategies **Strategy Sandbox** / **In My Plan** UI + `promoteConfidence` PATCH
-- `[x]` Roth optimizer **Use in Transfer Strategies →** + `openPanel=roth`
-- `[x]` Docs — CONSUMER_FLOWS, MASTER_ARCHITECTURE, DATABASE_SCHEMA_REFERENCE, SCHEMA_CHANGELOG, DECISION_LOG, smoke §10c
-- `[ ]` Playwright promote flow (optional)
+| Sprint | Theme | Commit anchor |
+|--------|--------|---------------|
+| **A** | Advisor tab loader alignment, Meeting Prep, composition dedupe | `ead0fac` |
+| **B** | Monte Carlo + Allocation server prefetch | `f0a279f` |
+| **C** | Scenarios lazy B/C projection fetch | `88cc63d` |
+| **D** | Advisor tab `dynamic()` + domicile mount dedupe | `7ac9475` |
+| **E** | Insurance/businesses `router.refresh()` | `35f02b1` |
+| **F** | Profile gate consistency (`requireHouseholdRecord`) | `35f02b1` |
+| **G** | Sidebar tier-locked → billing links | `f0f004d` |
+| **H** | `loading.tsx` on hot prefetch routes | `b1f995f` |
+| **I** | `error.tsx` + `RouteErrorFallback` | `a4d2e38` |
+| **J** | Complete + estate-tax loading/error | (this commit) |
 
-### Strategy reversal lifecycle (2026-05-31) ✅
+Detail: [NEXT_SESSION.md § Post-launch perf](./NEXT_SESSION.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md).
 
-- `[x]` Migration `20260531120000` — reversal audit columns on `strategy_line_items`
-- `[x]` `PATCH` actions: promote, return_to_sandbox, withdraw, demote (consumer-owned only)
-- `[x]` In My Plan reversal UI + Strategy history; gifting plan card + gift-delete warning
-- `[x]` Advisor Step 3 **Withdrawn by Client** with reversal reason
-- `[x]` Docs — MASTER_ARCHITECTURE, CONSUMER_FLOWS, DATABASE_SCHEMA, SCHEMA_CHANGELOG
+---
 
 ## ⚠️ Go-live gate
 
 **No public go-live until all LAUNCH_CHECKLIST Section 1 gates are checked AND
 CONSUMER_RELEASE_SMOKE_TEST manual pass completes.** Section 2 (domain, DNS, Resend,
-Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verified.
+Search Console) is ops-only and runs after Section 1 is fully verified.
+
+---
 
 ### Sprint 12 — Conversion decisions & responsive UX (Weeks 43–46) ✅
 
@@ -103,9 +106,11 @@ Search Console) is ops-only and runs in Sprint 15 after Section 1 is fully verif
 
 ---
 
-### Sprint 17 — Go-live prep (Weeks 63–66) **← CURRENT**
+### Sprint 17 — Go-live prep (Weeks 63–66) **← BLOCKERS REMAIN**
 
 **Goal:** Legal review + Stripe/Supabase Dashboard config → flip `PUBLIC_SIGNUP_OPEN` → production smoke with fresh email.
+
+**Engineering note:** Post-launch perf (Sprints B–J) closed; remaining Sprint 17 work is **legal/ops**, not code, except RLS isolation smoke.
 
 **Compliance code (C-2b through C-5):** ✅ All closed on `main` — see commit log below.
 

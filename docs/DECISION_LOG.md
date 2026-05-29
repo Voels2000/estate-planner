@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint I — error boundaries on hot routes)
+# Last updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf program closed)
+
+## Post-launch perf program — closed (2026-05-27)
+
+**Decision:** Close engineering perf sprints B–J on `main`. Sprint 18 shifts focus to remaining planning route shells (J), manual RLS isolation smoke, and Sprint 17 legal/ops go-live blockers.
+
+**Sprint summary:** B prefetch → C lazy scenarios → D advisor code-split → E/F form refresh + profile gates → G billing links → H/I loading/error on five hot routes → J complete/estate-tax shells.
+
+---
 
 ## Post-launch perf — error boundaries on hot routes (2026-05-27)
 

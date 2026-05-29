@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
-# Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Sprint I error boundaries; Sprint H loading skeletons; Sprint 17 go-live prep)
+# Sprint 18 — Session Start Document
+# Updated: 2026-05-27 (Sprint 18 kickoff; post-launch perf B–J closed; Sprint 17 go-live blockers remain)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** … sidebar billing links (G); loading.tsx (H); **error boundaries (I)** on monte-carlo, allocation, scenarios, social-security, projections. **Apply migration:** `20260527180000_estate_composition_cache.sql`.
+> My Wealth Maps — **Sprint 18 (planning shell completion + go-live hardening).** **Post-launch perf (closed):** Sprints B–I on `main`; Sprint J adds `/complete` + `/estate-tax` loading/error shells. **Sprint 17 blockers (ops/legal):** [LEGAL_TODO.md](./LEGAL_TODO.md) counsel handoff; Stripe Dashboard config; `PUBLIC_SIGNUP_OPEN` flip; go-live smoke with fresh email. **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next engineering:** RLS manual isolation smoke; optional RouteErrorFallback on dashboard/trust-strategy errors.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
@@ -45,6 +45,29 @@
 | ENG-2D — income growth rate | ✅ | `9101ac5` |
 | ENG-2E — MC alignment surfacing | ✅ | `8e90fa4` |
 | Strategy reversal lifecycle | ✅ | 4 commits: DB audit columns · reversal API/UI · gifting delete warning · advisor withdrawn |
+
+---
+
+## Sprint 18 — planning shell completion (2026-05-27)
+
+| Task | Status |
+|------|--------|
+| `/complete` + `/estate-tax` loading + error | ✅ Sprint J |
+| Manual RLS isolation smoke | `[ ]` |
+| Dashboard/trust-strategy → `RouteErrorFallback` | ✅ |
+
+**Sprint 17 ops blockers unchanged:** legal counsel, Stripe Dashboard, signup flip, production smoke.
+
+---
+
+## Post-launch perf program — CLOSED (Sprints B–J)
+
+### Sprint J — complete + estate-tax shells ✅ (2026-05-27)
+
+| Route | Files |
+|-------|-------|
+| `/complete` | `loading.tsx`, `error.tsx` |
+| `/estate-tax` | `loading.tsx`, `error.tsx` |
 
 ---
 

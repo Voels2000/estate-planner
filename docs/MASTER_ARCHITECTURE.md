@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-25 (OB-3 setup progress; AF-1; OB-1/OB-2; Sprint 17 go-live prep)
+# Last updated: 2026-05-27 (Sprint J route shells; post-launch perf B–J closed)
 
 ---
 
@@ -460,6 +460,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - As of Session 98, `MonteCarloScenarioBanner` on `/dashboard` and `/my-estate-strategy` shows pending shared scenarios (side-by-side vs `MONTE_CARLO_SYSTEM_DEFAULTS`), accept/revert actions, and active-scenario badge; server pages pre-fetch rows via `lib/monte-carlo/consumerAssumptionScenarios.ts`.
 - Consumer UI (`/monte-carlo`) applies accepted advisor assumptions to page-level assumption inputs (inflation and simulation count).
 - As of **2026-05-27 (Sprint B)**, `/monte-carlo` server page prefetches prefill, run history, and advisor assumptions via `loadMonteCarloPrefill` / `loadMonteCarloHistory` / `loadMonteCarloAdvisorAssumptions`; `MonteCarloClient` hydrates from props and skips mount fetches when hydrated. API routes are thin wrappers over the same loaders.
+- As of **2026-05-27 (Sprints H–J)**, heavy planning routes use Next.js `loading.tsx` skeletons and `error.tsx` boundaries. Shared client fallback: `app/(dashboard)/_components/RouteErrorFallback.tsx`. Routes: `/monte-carlo`, `/allocation`, `/scenarios`, `/social-security`, `/projections` (H/I), `/complete`, `/estate-tax` (J), `/dashboard`, `/my-estate-trust-strategy` (Sprint 18).
 - `StrategyOverlay` already writes advisor recommendations via `/api/advisor/strategy-recommendation` (`useRecommendStrategy`); no `strategy_configs` path.
 
 ### Target

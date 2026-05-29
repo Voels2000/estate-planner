@@ -2,7 +2,7 @@
 
 import { RouteErrorFallback } from '@/app/(dashboard)/_components/RouteErrorFallback'
 
-export default function DashboardError({
+export default function CompleteError({
   error,
   reset,
 }: {
@@ -10,5 +10,5 @@ export default function DashboardError({
   reset: () => void
 }) {
   void error
-  return <RouteErrorFallback title="Unable to load your dashboard" reset={reset} />
+  return <RouteErrorFallback title="Unable to load Lifetime Snapshot" reset={reset} />
 }

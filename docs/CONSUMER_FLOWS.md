@@ -256,14 +256,17 @@ Three related routes share projection engines but answer different questions. **
 
 **Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
 
-### Retirement modeling — Monte Carlo + Allocation (Sprint B prefetch)
+### Retirement modeling — prefetch + route shells (Sprints B–J)
 
-| Route | Tier | Server prefetch | Client fallback |
+| Route | Tier | Server prefetch | Loading / error |
 |-------|------|-----------------|-----------------|
-| `/monte-carlo` | 3 | `loadMonteCarloPrefill` + `loadMonteCarloHistory` + `loadMonteCarloAdvisorAssumptions` | Fetch APIs only when corresponding prop is null |
-| `/allocation` | 2 | `loadAssetAllocationData` (+ household targets/risk) | `GET /api/asset-allocation` when `initialAllocationData` is null |
-| `/scenarios` | 1 | `loadProjectionData` (Base Case only) | B/C `/api/projection` only after user edits or stored overrides |
-| `/social-security` | 2 | `loadSocialSecurityData` | `GET /api/social-security` when `data` prop is null |
+| `/monte-carlo` | 3 | MC loaders (B) | `loading.tsx` + `error.tsx` (H/I) |
+| `/allocation` | 2 | `loadAssetAllocationData` (B) | `loading.tsx` + `error.tsx` (H/I) |
+| `/scenarios` | 1 | Base Case only; B/C lazy (C) | `loading.tsx` + `error.tsx` (H/I) |
+| `/social-security` | 2 | `loadSocialSecurityData` | `loading.tsx` + `error.tsx` (H/I) |
+| `/projections` | 1 | `loadProjectionData` | `loading.tsx` + `error.tsx` (H/I) |
+| `/complete` | 2 | `loadProjectionData` | `loading.tsx` + `error.tsx` (J) |
+| `/estate-tax` | 2 | composition + household | `loading.tsx` + `error.tsx` (J) |
 
 ### Dashboard mobile shell (Sprint 12)
 
