@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { pdf } from '@react-pdf/renderer'
-import { AdvisorEstatePlanPDF, ConsumerEstatePlanPDF, AttorneyEstatePlanPDF } from './EstatePlanPDF'
 import { Button } from '@/components/ui/Button'
 import { formErrorClass } from '@/components/ui/form'
 
@@ -50,6 +48,11 @@ export function ExportPDFButton({ householdId, role, variant, className }: Expor
       }
 
       const data = await res.json()
+
+      const { pdf } = await import('@react-pdf/renderer')
+      const { AdvisorEstatePlanPDF, ConsumerEstatePlanPDF, AttorneyEstatePlanPDF } = await import(
+        './EstatePlanPDF'
+      )
 
       const doc =
         variant === 'attorney' ? (

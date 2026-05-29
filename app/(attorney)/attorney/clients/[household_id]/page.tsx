@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import EstateTaxClient, { type EstateTaxTrustRow } from '@/app/(dashboard)/estate-tax/_estate-tax-client'
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { AttorneyClientVault } from '../../_attorney-client-vault'
+import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
 
 export default async function AttorneyClientPage({
   params,
@@ -80,6 +81,8 @@ export default async function AttorneyClientPage({
     .eq('id', ownerId)
     .single()
 
+  const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household_id)
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -105,6 +108,8 @@ export default async function AttorneyClientPage({
           householdId={household.id}
           userRole="advisor"
           consumerTier={3}
+          initialRecommendations={estatePlanningDashboard.recommendations}
+          initialCompleteness={estatePlanningDashboard.completeness}
         />
       )}
 

@@ -19,6 +19,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint L — bundle + duplicate fetch (2026-05-28, code only)
+
+| Change | Files |
+|--------|-------|
+| Recharts lazy-loaded on Monte Carlo | `MonteCarloCharts.tsx`, `_monte-carlo-client.tsx` |
+| PDF renderer lazy on export click | `ExportPDFButton.tsx` |
+| Dead `ProjectionsView` removed | deleted `_projections-view.tsx` |
+| Estate planning dashboard server prefetch | `loadEstatePlanningDashboard.ts`, `EstatePlanningDashboard.tsx` |
+
+---
+
 ## Post-launch perf Sprint K — consumer flow consistency (2026-05-28, code only)
 
 | Change | Files |

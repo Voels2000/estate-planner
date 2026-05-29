@@ -19,6 +19,7 @@ import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 
 export default async function MyEstateStrategyPage() {
@@ -367,6 +368,8 @@ export default async function MyEstateStrategyPage() {
     longevityAge,
   })
 
+  const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household.id)
+
   return (
     <div className="min-h-screen">
       <MyEstateStrategyClient
@@ -397,6 +400,8 @@ export default async function MyEstateStrategyPage() {
             consumerTier={access.tier}
             showHeader={false}
             embedded
+            initialRecommendations={estatePlanningDashboard.recommendations}
+            initialCompleteness={estatePlanningDashboard.completeness}
           />
         }
       />

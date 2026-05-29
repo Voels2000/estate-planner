@@ -1,57 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { PlanningTopicsList } from '@/app/(dashboard)/_components/dashboard/PlanningTopicsList';
+import type {
+  EstatePlanningCompleteness,
+  EstatePlanningRecommendations,
+} from '@/lib/estate/loadEstatePlanningDashboard';
 import type { ReactNode } from 'react';
-
-interface Recommendation {
-  branch: string;
-  priority: 'high' | 'moderate' | 'low';
-  reason: string;
-}
-
-interface RecommendationsResult {
-  success: boolean;
-  tax_year: number;
-  gross_estate: number;
-  federal_estate_tax: number;
-  state_estate_tax: number;
-  total_tax_exposure: number;
-  complexity_score: number;
-  complexity_flag: string;
-  needs_will: boolean;
-  needs_trust: boolean;
-  needs_pour_over_will: boolean;
-  needs_dpoa: boolean;
-  needs_healthcare_directive: boolean;
-  needs_ilit: boolean;
-  needs_bypass_trust: boolean;
-  needs_gifting_strategy: boolean;
-  recommendations: Recommendation[];
-}
-
-interface CompletenessResult {
-  success: boolean;
-  completeness_score: number;
-  completeness_pct: number;
-  grade: string;
-  attorney_cta_triggered: boolean;
-  breakdown: {
-    has_will_or_trust: boolean;
-    has_dpoa: boolean;
-    has_healthcare_directive: boolean;
-    has_beneficiaries: boolean;
-    has_tax_strategy: boolean;
-    will_or_trust_points: number;
-    dpoa_points: number;
-    healthcare_points: number;
-    beneficiary_points: number;
-    tax_strategy_points: number;
-  };
-}
 
 interface EstatePlanningDashboardProps {
   householdId: string;
@@ -64,6 +21,9 @@ interface EstatePlanningDashboardProps {
   showGaps?: boolean;
   embedded?: boolean;
   afterHeaderContent?: ReactNode;
+  /** Server-prefetched — skips mount RPC when provided */
+  initialRecommendations?: EstatePlanningRecommendations | null;
+  initialCompleteness?: EstatePlanningCompleteness | null;
 }
 
 const formatCurrency = (n: number) =>
@@ -86,41 +46,49 @@ export default function EstatePlanningDashboard({
   showGaps = true,
   embedded = false,
   afterHeaderContent,
+  initialRecommendations,
+  initialCompleteness,
 }: EstatePlanningDashboardProps) {
-  const [recommendations, setRecommendations] = useState<RecommendationsResult | null>(null);
-  const [completeness, setCompleteness] = useState<CompletenessResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const hasInitial =
+    initialRecommendations !== undefined && initialCompleteness !== undefined
+  const [recommendations, setRecommendations] = useState<EstatePlanningRecommendations | null>(
+    hasInitial ? initialRecommendations : null,
+  );
+  const [completeness, setCompleteness] = useState<EstatePlanningCompleteness | null>(
+    hasInitial ? initialCompleteness : null,
+  );
+  const [loading, setLoading] = useState(!hasInitial);
   const [error, setError] = useState<string | null>(null);
   const isAdvisor = userRole === 'advisor';
   const isConsumerT3 = userRole === 'consumer' && consumerTier >= 3;
 
   useEffect(() => {
+    if (initialRecommendations !== undefined) {
+      setRecommendations(initialRecommendations)
+      setCompleteness(initialCompleteness ?? null)
+      setLoading(false)
+      return
+    }
     async function loadDashboard() {
       try {
         setLoading(true);
+        const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient();
-
-        const { data: recData, error: recError } = await supabase.rpc(
-          'generate_estate_recommendations',
-          { p_household_id: householdId }
-        );
-        if (recError) throw recError;
-        setRecommendations(recData);
-
-        const { data: compData, error: compError } = await supabase.rpc(
-          'calculate_estate_completeness',
-          { p_household_id: householdId }
-        );
-        if (compError) throw compError;
-        setCompleteness(compData);
+        const { loadEstatePlanningDashboard } = await import(
+          '@/lib/estate/loadEstatePlanningDashboard'
+        )
+        const result = await loadEstatePlanningDashboard(supabase, householdId)
+        if (result.error) throw new Error(result.error)
+        setRecommendations(result.recommendations);
+        setCompleteness(result.completeness);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to load estate planning data.');
       } finally {
         setLoading(false);
       }
     }
-    loadDashboard();
-  }, [householdId]);
+    void loadDashboard();
+  }, [householdId, initialRecommendations, initialCompleteness]);
 
   if (loading) return (
     <div className="flex items-center justify-center p-12">
