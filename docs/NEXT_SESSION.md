@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 17 — Session Start Document
-# Updated: 2026-05-27 (Sprint F profile gates + Sprint E form refresh; Sprint D advisor code-split; Sprint 17 go-live prep)
+# Updated: 2026-05-27 (Sprint G sidebar billing links; Sprint F profile gates; Sprint E form refresh; Sprint 17 go-live prep)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** … Monte Carlo + Allocation (B); Scenarios lazy B/C (C); advisor tab code-split + domicile dedupe (D); **insurance/businesses router.refresh (E); profile gate consistency (F).** **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next perf:** sidebar tier-locked billing links; more `loading.tsx` on hot routes.
+> My Wealth Maps — **Sprint 17 (go-live prep).** **Post-launch perf (shipped):** Monte Carlo + Allocation (B); Scenarios lazy B/C (C); advisor tab code-split + domicile dedupe (D); insurance/businesses router.refresh (E); profile gate consistency (F); **sidebar tier-locked billing links (G).** **Apply migration:** `20260527180000_estate_composition_cache.sql`. **Next perf:** more `loading.tsx` on hot routes.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — send ToS to counsel with §10/§11/§13 flagged; one consolidated redline; batch placeholder find-and-replace with redlines in one commit; email aliases; Stripe Dashboard (invoice.upcoming, portal cancel, receipts).
 >
