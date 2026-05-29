@@ -122,6 +122,7 @@ export default function AdvisorClientPage({
   netWorthMap,
   healthScoreMap = {},
   householdIdMap = {},
+  alertCountsMap = {},
   advisorId,
   isFirmOwner,
   firm_name,
