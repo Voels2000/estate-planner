@@ -23,8 +23,13 @@ const projects: Project[] = [
     name: 'consumer',
     dependencies: ['consumer-setup'],
     testMatch: /consumer\/.*\.spec\.ts/,
-    testIgnore: /consumer-tier1-gates\.spec\.ts/,
+    testIgnore: /consumer-tier1-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts/,
     use: { storageState: '.auth/consumer.json' },
+  },
+  {
+    name: 'golden-path',
+    testMatch: /golden-path-show-all-tools\.spec\.ts/,
+    use: { storageState: { cookies: [], origins: [] } },
   },
   {
     name: 'attorney',

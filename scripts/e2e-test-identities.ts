@@ -25,6 +25,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Consumer Tier1',
     householdName: 'E2E Tier1 Household',
   },
+  /** Stage 1 golden-path smoke — wizard done, 1 of 5 financial sections, tier 1 */
+  goldenPathStage1: {
+    email: 'e2e-golden-path@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Golden Path',
+    householdName: 'E2E Golden Path Household',
+  },
   advisor: {
     email: 'e2e-advisor@mywealthmaps.test',
     password: E2E_TEST_PASSWORD,

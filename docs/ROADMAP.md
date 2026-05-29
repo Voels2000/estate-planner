@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-28 (Estate execution checklist shipped; Sprint 19 go-live hardening)
+# Last updated: 2026-05-29 (Golden Path guided dashboard; Sprint 19 go-live hardening)
 
 ---
 
@@ -34,7 +34,9 @@
 
 **Engineering (closed):** Sprint 18 shells (J) + flow/perf program K–O + 19a on `main`.
 
-**Consumer estate UX (2026-05-28, 4 commits):** Estate preview (callout position, tier CTAs, upgrade wall) + unified execution checklist (`estate_checklist_items`, `buildEstateExecutionChecklist`, dashboard + trust tab persistence). **Apply migration:** `20260528120000_estate_checklist_items.sql`.
+**Consumer estate UX (2026-05-28):** Estate preview + execution checklist (`estate_checklist_items`). **Apply migration:** `20260528120000_estate_checklist_items.sql`.
+
+**Golden Path / guided mode (2026-05-29, 4 commits):** `determinePlanStage`, `PlanProgressBar`, stage-gated dashboard sections, localStorage `mwm_show_all_tools`. E2E: `npm run test:e2e:golden-path`. Wizard / unlock-estate / tier gates unchanged.
 
 ---
 

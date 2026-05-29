@@ -8,9 +8,7 @@ import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
 type Props = {
   progress: SetupProgressCounts
   wizardComplete: boolean
-  onContinueWizard: () => void
   onImport: () => void
-  consumerTier: number
 }
 
 const SECTIONS = [
@@ -46,12 +44,7 @@ const SECTIONS = [
   },
 ] as const
 
-export function SetupProgressCard({
-  progress,
-  wizardComplete,
-  onContinueWizard,
-  onImport,
-}: Props) {
+export function SetupProgressCard({ progress, wizardComplete, onImport }: Props) {
   const sections = SECTIONS.map((section) => ({
     ...section,
     count: progress[section.key],
@@ -143,23 +136,7 @@ export function SetupProgressCard({
           ))}
         </div>
 
-        <div className="mb-5 border-t border-[color:var(--mwm-border)] pt-4">
-          <div className="mb-2 flex items-center gap-2 text-xs text-[color:var(--mwm-text-muted)]">
-            <span aria-hidden>🔒</span>
-            <span>Retirement Planning — upgrade to unlock</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-[color:var(--mwm-text-muted)]">
-            <span aria-hidden>🔒</span>
-            <span>Estate Planning — upgrade to unlock</span>
-          </div>
-        </div>
-
         <div className="flex flex-wrap gap-3">
-          {!wizardComplete && (
-            <Button variant="gold" size="sm" onClick={onContinueWizard}>
-              Guided setup →
-            </Button>
-          )}
           <Button variant="outline" size="sm" onClick={onImport}>
             Import from spreadsheet
           </Button>

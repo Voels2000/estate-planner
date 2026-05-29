@@ -199,9 +199,9 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Write APIs** | `PATCH /api/consumer/estate-checklist` (checklist toggles only) |
 | **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
-| **Key lib** | `lib/dashboard/*`, `components/dashboard/SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
+| **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `components/dashboard/PlanProgressBar.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Greeting + setup progress (`DashboardIntroSection`); **`EstateCalloutCard`** (position 2 — gross estate, headroom, est. tax, tier-aware CTA); **`EstateExecutionChecklist`** when `totalAssets > 0` (progress bar, auto-detect + `PATCH /api/consumer/estate-checklist`); **`LifeEventBanner`**; conflict severity chips + dismissible banner (tier-aware links); `AssessmentHistoryWidget`; Financial Summary / Net Worth; `StrategyRecommendationPanel`; `MonteCarloScenarioBanner` |
+| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 

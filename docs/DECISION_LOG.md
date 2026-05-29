@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-28 (Estate execution checklist + estate preview UX; Sprint 19 go-live hardening)
+# Last updated: 2026-05-29 (Golden Path guided dashboard; Sprint 19 go-live hardening)
+
+## Golden Path — unified progress model (2026-05-29)
+
+**Decision:** Replace buried `SetupProgressCard` as the primary progress UX with `PlanProgressBar` driven by `determinePlanStage()` — four stages (Financial Foundation → Retirement & Estate Setup → Estate Planning → Plan Complete). One `progressPct`, one `nextActionHref`. Dashboard sections gated by stage; conflicts and life events always visible.
+
+**Show all tools:** Client toggle persists `mwm_show_all_tools` in `localStorage` (default expanded for stage 3+). Power users bypass stage gating without changing tier gates.
+
+**Deleted:** `lib/dashboard/setupProgress.ts` (`buildDashboardSetupProgress` had zero callers; superseded by `determinePlanStage` + existing `setupProgressCounts`).
+
+**Unchanged:** `/onboarding/wizard`, `WizardOnboardingGate`, `/unlock-estate`, `getCompletionScore`, tier gates, `EstateExecutionChecklist` (Sprint 2).
+
+---
 
 ## Estate execution checklist — persisted consumer tasks (2026-05-28)
 

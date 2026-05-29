@@ -277,27 +277,39 @@ function billingHrefForNavItem(href: string): string {
               {isOpen && (
                 <div className="mt-1 ml-2 space-y-0.5">
                   {groupIsLocked && (
-                    <div className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-lg mb-1">
-                      {group.label === 'Retirement Planning' ? (
-                        <Link
-                          href={billingHrefForNavItem('/social-security')}
-                          className="flex items-center justify-between hover:underline"
-                        >
-                          <span>{`Upgrade to the ${TIER_NAMES[2]} plan to unlock`}</span>
-                          <span className="ml-1 shrink-0">→</span>
-                        </Link>
-                      ) : tier < 2 ? (
-                        <span>{`Upgrade to the ${TIER_NAMES[2]} plan first`}</span>
-                      ) : (
-                        <Link
-                          href="/unlock-estate"
-                          className="flex items-center justify-between hover:underline"
-                        >
-                          <span>Complete Retirement Planning steps to unlock</span>
-                          <span className="ml-1 shrink-0">→</span>
-                        </Link>
+                    <>
+                      <div className="mb-1 rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">
+                        {group.label === 'Retirement Planning' ? (
+                          <Link
+                            href={billingHrefForNavItem('/social-security')}
+                            className="flex items-center justify-between hover:underline"
+                          >
+                            <span>{`Upgrade to the ${TIER_NAMES[2]} plan to unlock`}</span>
+                            <span className="ml-1 shrink-0">→</span>
+                          </Link>
+                        ) : tier < 2 ? (
+                          <span>{`Upgrade to the ${TIER_NAMES[2]} plan first`}</span>
+                        ) : (
+                          <Link
+                            href="/unlock-estate"
+                            className="flex items-center justify-between hover:underline"
+                          >
+                            <span>Complete Retirement Planning steps to unlock</span>
+                            <span className="ml-1 shrink-0">→</span>
+                          </Link>
+                        )}
+                      </div>
+                      {group.label === 'Retirement Planning' && tier < 2 && (
+                        <p className="px-3 pb-2 text-[11px] text-[color:var(--mwm-text-muted)]">
+                          Complete financial setup to unlock →
+                        </p>
                       )}
-                    </div>
+                      {group.label === 'Estate Planning' && tier < 3 && (
+                        <p className="px-3 pb-2 text-[11px] text-[color:var(--mwm-text-muted)]">
+                          Complete retirement planning to unlock →
+                        </p>
+                      )}
+                    </>
                   )}
                   {group.items.map((item) => {
                     if (item.consumerOnly && role !== 'consumer' && !isSuperuser) {

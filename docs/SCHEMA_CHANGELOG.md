@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Golden Path — guided dashboard (2026-05-29, code only)
+
+| Change | Files |
+|--------|-------|
+| Unified plan stages 1–4 | `lib/dashboard/determinePlanStage.ts` |
+| Hero progress + next action | `components/dashboard/PlanProgressBar.tsx` |
+| Stage-based section visibility | `_dashboard-client.tsx`, `_dashboard-body.tsx` |
+| SetupProgressCard demoted | `SetupProgressCard.tsx` (detail in stage 1) |
+| Removed unused 6-step builder | deleted `lib/dashboard/setupProgress.ts` |
+| E2E smoke | `golden-path-show-all-tools.spec.ts`, `seed-golden-path-stage1.ts` |
+
+**No schema migration.** `localStorage` key: `mwm_show_all_tools`.
+
+---
+
 ## Estate execution checklist — Sprint 2 (2026-05-28)
 
 | Change | Files |

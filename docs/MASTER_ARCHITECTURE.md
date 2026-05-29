@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-28 (Estate execution checklist + preview UX; Sprint 19 go-live hardening)
+# Last updated: 2026-05-29 (Golden Path guided dashboard; Sprint 19 go-live hardening)
 
 ---
 
@@ -134,6 +134,27 @@ Unified consumer checklist on `/dashboard` (`EstateExecutionChecklist`, below `E
 ### Completion = auto-detected OR consumer-checked
 
 Auto-detection uses existing data; consumer checkbox is an override that persists even when auto-detection cannot confirm. Builder: `lib/dashboard/buildEstateExecutionChecklist.ts`. API: `GET` / `PATCH` `/api/consumer/estate-checklist`. Checklist hidden when household has no assets (`totalAssets === 0`).
+
+---
+
+## Golden Path (guided dashboard)
+
+**2026-05-29:** Consumer `/dashboard` uses a single progress thread from wizard completion through estate plan complete.
+
+| Component | Role |
+|-----------|------|
+| `determinePlanStage()` | Server-side stages 1–4 from `setupProgressCounts`, `consumer_tier`, checklist %, advisor connection |
+| `PlanProgressBar` | Hero bar below intro — stage label, `progressPct`, next action link, **Show all tools** / **Guided view** |
+| `SetupProgressCard` | Detail view only — stage 1 or when show-all; no longer primary progress |
+| Stage gating | `_dashboard-client.tsx` `sectionVisible(minStage)` — estate/retirement sections hidden in guided stage 1 |
+
+**Stage inputs (no new fetches):** five financial section counts, `onboarding_wizard_completed_at`, tier, `executionChecklist` completion %, `hasAdvisorConnection`.
+
+**Persistence:** `localStorage` `mwm_show_all_tools` (client); optional brief flash on reload before `useEffect` applies stored value.
+
+**E2E:** `npm run seed:golden-path` · `npm run test:e2e:golden-path` (Playwright project `golden-path`).
+
+**Not changed:** wizard, wizard gate, unlock-estate, tier gates, sidebar tier locks (hints added under locked groups).
 
 ---
 

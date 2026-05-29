@@ -40,6 +40,8 @@ import StrategyRecommendationPanel, {
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
+import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
+import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -145,6 +147,7 @@ type Props = {
   }>
   statePrimary?: string | null
   executionChecklist?: EstateExecutionItem[]
+  planStage: PlanStageResult
 }
 
 // ---------------------------------------------------------------------------
@@ -196,11 +199,30 @@ export function DashboardClient(props: Props) {
     initialAssessmentResults,
     statePrimary,
     executionChecklist: initialExecutionChecklist = [],
+    planStage,
   } = props
 
   const tier = consumerTier ?? 1
   const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
   const conflictDetailsHref = estateDetailsHref(tier)
+
+  const [showAllTools, setShowAllTools] = useState(planStage.stage >= 3)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('mwm_show_all_tools')
+    if (stored !== null) {
+      setShowAllTools(stored === 'true')
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('mwm_show_all_tools', String(showAllTools))
+  }, [showAllTools])
+
+  function sectionVisible(minStage: 1 | 2 | 3 | 4): boolean {
+    if (showAllTools) return true
+    return planStage.stage >= minStage
+  }
 
   const router = useRouter()
   const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(
@@ -281,7 +303,17 @@ export function DashboardClient(props: Props) {
         }
       />
 
-      {estateCallout && (
+      {!isAdvisor && (
+        <div className="mt-4">
+          <PlanProgressBar
+            planStage={planStage}
+            showAllTools={showAllTools}
+            onShowAllTools={() => setShowAllTools((prev) => !prev)}
+          />
+        </div>
+      )}
+
+      {sectionVisible(2) && estateCallout && (
         <div className="mt-4">
           <EstateCalloutCard
             {...estateCallout}
@@ -291,7 +323,7 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {executionChecklist.length > 0 && (
+      {sectionVisible(3) && executionChecklist.length > 0 && (
         <div className="mt-4">
           <EstateExecutionChecklist
             items={executionChecklist}
@@ -372,7 +404,7 @@ export function DashboardClient(props: Props) {
           </div>
         )}
 
-      {successionGap && (
+      {sectionVisible(2) && successionGap && (
         <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">Business succession plan missing</p>
           <p className="mt-1 text-xs text-amber-800">
@@ -388,7 +420,7 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {personaAlerts?.businessThreshold && (
+      {sectionVisible(2) && personaAlerts?.businessThreshold && (
         <div className="mt-4 mb-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
           <p className="text-sm font-semibold text-blue-900">
             {personaAlerts.businessThreshold === '10m'
@@ -409,7 +441,7 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {personaAlerts?.multiStateRealEstate && (
+      {sectionVisible(2) && personaAlerts?.multiStateRealEstate && (
         <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">Multi-state real estate on file</p>
           <p className="mt-1 text-xs text-amber-800">
@@ -433,13 +465,13 @@ export function DashboardClient(props: Props) {
         hasAdvisorConnection={hasAdvisorConnection}
       />
 
-      {householdId && advisorStrategyItems.length > 0 && (
+      {sectionVisible(2) && householdId && advisorStrategyItems.length > 0 && (
         <div className="mt-6">
           <StrategyRecommendationPanel householdId={householdId} items={advisorStrategyItems} />
         </div>
       )}
 
-      {(acceptedMCScenario || latestSharedMCScenario) && (
+      {sectionVisible(3) && (acceptedMCScenario || latestSharedMCScenario) && (
         <div className="mt-4">
           <MonteCarloScenarioBanner
             acceptedScenario={acceptedMCScenario}
@@ -448,9 +480,11 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+      {sectionVisible(2) && (
+        <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+      )}
 
-      {!isAdvisor && (
+      {!isAdvisor && (planStage.stage === 1 || showAllTools) && (
         <div className="mt-4">
           {setupProgressLoading || !setupProgress ? (
             <SetupProgressCardSkeleton />
@@ -458,11 +492,45 @@ export function DashboardClient(props: Props) {
             <SetupProgressCard
               progress={setupProgress}
               wizardComplete={wizardComplete}
-              consumerTier={tier}
-              onContinueWizard={() => router.push('/onboarding/wizard')}
               onImport={() => router.push('/import')}
             />
           )}
+        </div>
+      )}
+
+      {planStage.stage === 1 && !showAllTools && (
+        <div className="mt-4 rounded-xl border border-[color:var(--mwm-border)] bg-white p-5 shadow-sm">
+          <p className="mb-3 text-sm font-semibold text-[color:var(--mwm-navy)]">What comes next</p>
+          <div className="space-y-2">
+            {[
+              {
+                label: 'Retirement Planning',
+                description: 'Social Security, RMDs, and lifetime projections',
+                tier: 2,
+              },
+              {
+                label: 'Estate Tax Snapshot',
+                description: 'See your tax exposure and model strategies',
+                tier: 3,
+              },
+              {
+                label: 'Estate Execution Checklist',
+                description: 'Will, POA, beneficiaries, trust funding',
+                tier: 3,
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between border-b border-neutral-50 py-2 last:border-0"
+              >
+                <div>
+                  <p className="text-sm font-medium text-neutral-700">{item.label}</p>
+                  <p className="text-xs text-[color:var(--mwm-text-muted)]">{item.description}</p>
+                </div>
+                <span className="text-xs font-medium text-neutral-300">Tier {item.tier}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -486,33 +554,34 @@ export function DashboardClient(props: Props) {
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* Retirement Summary                                                  */}
       {/* ══════════════════════════════════════════════════════════════════ */}
-      <RetirementSummarySection
-        storageKey={SECTION_KEYS.retirement}
-        retirementSnapshot={retirementSnapshot}
-        retirementAccountsTotal={retirementAccountsTotal}
-        currentYearNet={currentYearNet}
-        annualSSFromPIA={annualSSFromPIA}
-        totalIncome={totalIncome}
-        totalExpenses={totalExpenses}
-        rmdStatus={rmdStatus}
-      />
-
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* SECTION 3 — Estate Summary                                        */}
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      <div id={tier >= 3 ? 'estate-conflicts' : undefined}>
-        <EstateSummarySection
-          storageKey={SECTION_KEYS.estate}
-          totalAssets={totalAssets}
-          netWorth={netWorth}
-          estateHealthScore={estateHealthScore}
-          conflictReport={conflictReport}
-          composition={composition}
-          householdId={householdId}
-          initialRecommendations={initialRecommendations}
-          consumerTier={tier}
+      {sectionVisible(2) && (
+        <RetirementSummarySection
+          storageKey={SECTION_KEYS.retirement}
+          retirementSnapshot={retirementSnapshot}
+          retirementAccountsTotal={retirementAccountsTotal}
+          currentYearNet={currentYearNet}
+          annualSSFromPIA={annualSSFromPIA}
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          rmdStatus={rmdStatus}
         />
-      </div>
+      )}
+
+      {sectionVisible(3) && (
+        <div id={tier >= 3 ? 'estate-conflicts' : undefined}>
+          <EstateSummarySection
+            storageKey={SECTION_KEYS.estate}
+            totalAssets={totalAssets}
+            netWorth={netWorth}
+            estateHealthScore={estateHealthScore}
+            conflictReport={conflictReport}
+            composition={composition}
+            householdId={householdId}
+            initialRecommendations={initialRecommendations}
+            consumerTier={tier}
+          />
+        </div>
+      )}
 
       <FeedbackButton userId={userId} />
       <div className="mt-8"><DisclaimerBanner /></div>

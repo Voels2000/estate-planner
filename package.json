@@ -15,6 +15,8 @@
     "test:e2e:complete": "dotenv -e .env.test -- npx playwright test --project=consumer-setup --project=consumer --project=advisor-setup --project=advisor --project=attorney-setup --project=attorney --project=public",
     "test:e2e:nightly": "dotenv -e .env.test -- npx playwright test --project=public",
     "test:e2e:regression": "dotenv -e .env.test -- npx playwright test tests/e2e/advisor/regression.spec.ts",
+    "test:e2e:golden-path": "dotenv -e .env.local -e .env.test -- npx playwright test --project=golden-path",
+    "seed:golden-path": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-golden-path-stage1.ts",
     "test:e2e:report": "npx playwright show-report",
     "test:import:unit": "npx playwright test --project=import-unit",
     "test:import:api": "dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1",
