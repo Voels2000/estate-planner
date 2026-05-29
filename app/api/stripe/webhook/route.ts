@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendRenewalReminderEmail } from '@/lib/email/renewalReminderEmail'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { FIRM_PRICE_ID_TO_TIER, PRICE_ID_TO_TIER } from '@/lib/tiers'
+import { getTierFromPriceId } from '@/lib/billing/stripePrices'
+import { FIRM_PRICE_ID_TO_TIER } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
 import {
   cancelPendingDeletionOnReactivation,
@@ -158,16 +159,18 @@ export async function POST(req: NextRequest) {
           let renewalIso: string | null = null
           let priceId: string | null = null
           let consumerTier: number | null = null
+          let subscriptionStatus: Stripe.Subscription.Status = 'active'
           if (subId) {
             const sub = await stripe.subscriptions.retrieve(subId)
+            subscriptionStatus = sub.status
             renewalIso = new Date(sub.current_period_end * 1000).toISOString()
             priceId = sub.items.data[0]?.price.id ?? null
-            consumerTier = priceId ? (PRICE_ID_TO_TIER[priceId] ?? null) : null
+            consumerTier = priceId ? getTierFromPriceId(priceId) : null
           }
           const { error } = await supabase
             .from('profiles')
             .update({
-              subscription_status: 'active',
+              subscription_status: subscriptionStatus,
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: subId,
               subscription_plan: priceId,
@@ -283,11 +286,15 @@ export async function POST(req: NextRequest) {
         const renewalIso = new Date(
           subscription.current_period_end * 1000
         ).toISOString()
+        const priceId = subscription.items.data[0]?.price.id ?? null
+        const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         await supabase
           .from('profiles')
           .update({
             subscription_status: subscription.status,
             subscription_period_end: renewalIso,
+            ...(priceId ? { subscription_plan: priceId } : {}),
+            ...(consumerTier ? { consumer_tier: consumerTier } : {}),
           })
           .eq('stripe_customer_id', customerId)
         console.log('customer.subscription.updated — consumer subscription updated')

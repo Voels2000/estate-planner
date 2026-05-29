@@ -1,9 +1,11 @@
 // lib/tiers.ts
 // Single source of truth for consumer tier definitions and feature gating
+import { buildPriceIdToTierMap, getPriceConfig } from '@/lib/billing/stripePrices'
+
 export const CONSUMER_PRICE_IDS = {
-  starter:    'price_1TILBRCaljka9gJt6dr44Znq',
-  retirement: 'price_1TILEXCaljka9gJtrHqnG3bl',
-  estate:     'price_1TILGOCaljka9gJtCDLiKFHp',
+  starter: getPriceConfig(1, 'monthly').priceId,
+  retirement: getPriceConfig(2, 'monthly').priceId,
+  estate: getPriceConfig(3, 'monthly').priceId,
 } as const
 // Legacy $19 price maps to tier 2
 export const LEGACY_PRICE_ID = 'price_1TAlJjCaljka9gJthGTMogQb'
@@ -13,9 +15,9 @@ export const TIER_NAMES = {
   3: 'Estate',
 } as const
 export const TIER_PRICES = {
-  1: 9,
-  2: 19,
-  3: 34,
+  1: 29,
+  2: 79,
+  3: 149,
 } as const
 export const TIER_DESCRIPTIONS = {
   1: 'Get organized and see your full financial picture',
@@ -125,12 +127,8 @@ export function featureUpgradeTier(feature: string): 2 | 3 {
   return required >= 3 ? 3 : 2
 }
 
-// Price ID → tier number map — used in webhook and terms page
-export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = {
-  'price_1TILBRCaljka9gJt6dr44Znq': 1,
-  'price_1TILEXCaljka9gJtrHqnG3bl': 2,
-  'price_1TILGOCaljka9gJtCDLiKFHp': 3,
-}
+// Price ID → tier number map — used in webhook and terms page (includes annual prices)
+export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = buildPriceIdToTierMap()
 
 export const ADVISOR_FIRM_PRICE_IDS = {
   starter:    'price_1TIW5xCaljka9gJtTw9uF5E5',
