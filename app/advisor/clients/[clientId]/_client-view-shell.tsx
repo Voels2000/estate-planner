@@ -1,8 +1,7 @@
 'use client'
 
 /**
- * Advisor client tab shell: routing, lazy-loaded tabs (strategy/domicile/documents),
- * export wiring, and shared props for Overview/Estate/Retirement/Tax/Notes.
+ * Advisor client tab shell: routing, lazy-loaded tabs, export wiring, and shared props.
  */
 
 import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
@@ -25,13 +24,23 @@ import dynamic from 'next/dynamic'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
 import { TabSkeleton, StrategyTabSkeleton, DomicileTabSkeleton } from '@/components/ui/TabSkeleton'
-import OverviewTab from './_tabs/OverviewTab'
-import EstateTab from './_tabs/EstateTab'
-import RetirementTab from './_tabs/RetirementTab'
-import TaxTab from './_tabs/TaxTab'
-import NotesTab from './_tabs/NotesTab'
 import { getComplexityStyle, getAge } from './_utils'
 
+const OverviewTab = dynamic(() => import('./_tabs/OverviewTab'), {
+  loading: () => <TabSkeleton rows={3} />,
+})
+const EstateTab = dynamic(() => import('./_tabs/EstateTab'), {
+  loading: () => <TabSkeleton rows={4} />,
+})
+const RetirementTab = dynamic(() => import('./_tabs/RetirementTab'), {
+  loading: () => <TabSkeleton rows={3} />,
+})
+const TaxTab = dynamic(() => import('./_tabs/TaxTab'), {
+  loading: () => <TabSkeleton rows={3} />,
+})
+const NotesTab = dynamic(() => import('./_tabs/NotesTab'), {
+  loading: () => <TabSkeleton rows={2} showHeader={false} />,
+})
 const StrategyTab = dynamic(() => import('./_tabs/StrategyTab'), {
   loading: () => <StrategyTabSkeleton />,
 })
@@ -196,11 +205,14 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
       {/* ── Tab content ── */}
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {navigatingTo === 'overview' && <TabSkeleton rows={3} />}
         {navigatingTo === 'strategy' && <StrategyTabSkeleton />}
         {navigatingTo === 'domicile' && <DomicileTabSkeleton />}
         {navigatingTo === 'tax' && <TabSkeleton rows={3} />}
         {navigatingTo === 'estate' && <TabSkeleton rows={4} />}
         {navigatingTo === 'retirement' && <TabSkeleton rows={3} />}
+        {navigatingTo === 'notes' && <TabSkeleton rows={2} showHeader={false} />}
+        {navigatingTo === 'documents' && <TabSkeleton rows={3} />}
         {navigatingTo === 'meeting-prep' && <TabSkeleton rows={2} showHeader={false} />}
 
         {!navigatingTo && (

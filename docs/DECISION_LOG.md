@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Sprint C — Scenarios lazy B/C projection fetch)
+# Last updated: 2026-05-27 (Sprint D — advisor tab code-split + domicile dedupe)
+
+## Post-launch perf — advisor tab code-split + domicile dedupe (2026-05-27)
+
+**Decision:** Lazy-load all advisor client workspace tabs via `next/dynamic` in `_client-view-shell.tsx` (Overview, Estate, Retirement, Tax, Notes join existing Strategy/Domicile/Documents/Meeting Prep splits). Remove `DomicileTab` mount refetch of `/api/domicile-analysis` — server page already passes `domicileAnalysis` from loaders.
+
+**Reasoning:** Static imports pulled every tab bundle into the client shell chunk; domicile tab duplicated data the server already fetched on tab navigation.
+
+**Docs:** [app/advisor/clients/[clientId]/_client-view-shell.tsx](../app/advisor/clients/[clientId]/_client-view-shell.tsx), [MASTER_ARCHITECTURE.md § Advisor portal](./MASTER_ARCHITECTURE.md).
+
+---
 
 ## Post-launch perf — Scenarios lazy B/C projection fetch (2026-05-27)
 

@@ -58,33 +58,14 @@ export default function DomicileTab({
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [isBreakevenOpen, setIsBreakevenOpen] = useState(false)
 
+  useEffect(() => {
+    setLiveAnalysis(domicileAnalysis)
+  }, [domicileAnalysis])
+
   const collapseStoragePrefix = `advisor:domicile:${COLLAPSE_STATE_VERSION}:${clientId ?? household?.id ?? 'unknown'}`
   const inheritanceKey = `${collapseStoragePrefix}:inheritance-open`
   const scheduleKey = `${collapseStoragePrefix}:schedule-open`
   const breakevenKey = `${collapseStoragePrefix}:breakeven-open`
-
-  useEffect(() => {
-    let cancelled = false
-    async function loadLatest() {
-      if (!clientId) return
-      try {
-        const res = await fetch(`/api/domicile-analysis?client_id=${encodeURIComponent(clientId)}`, {
-          cache: 'no-store',
-        })
-        if (!res.ok) return
-        const payload = (await res.json()) as { analysis?: DomicileAnalysisRow | null }
-        if (!cancelled && payload.analysis) {
-          setLiveAnalysis(payload.analysis)
-        }
-      } catch {
-        // Keep server-provided analysis as fallback.
-      }
-    }
-    void loadLatest()
-    return () => {
-      cancelled = true
-    }
-  }, [clientId])
 
   useEffect(() => {
     if (typeof window === 'undefined') return

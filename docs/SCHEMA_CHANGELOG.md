@@ -10,6 +10,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Post-launch perf Sprint D — advisor tab code-split + domicile dedupe (2026-05-27, code only)
+
+| Area | Change |
+|------|--------|
+| **ClientViewShell** | `dynamic()` for Overview, Estate, Retirement, Tax, Notes; nav skeletons for all tabs |
+| **DomicileTab** | Sync `domicileAnalysis` from props; removed mount `/api/domicile-analysis` fetch |
+
+**Docs:** [MASTER_ARCHITECTURE.md § Advisor portal](./MASTER_ARCHITECTURE.md), [DECISION_LOG.md](./DECISION_LOG.md).
+
+---
+
 ## Post-launch perf Sprint C — Scenarios lazy B/C fetch (2026-05-27, code only)
 
 | Area | Change |
