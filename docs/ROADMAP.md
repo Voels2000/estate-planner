@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (Prospect Mode + Mobile Review Mode shipped)
+# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook shipped)
 
 ---
 
@@ -20,6 +20,24 @@
 ---
 
 ## Current sprint
+
+### Sprint — Health Score Narrative + Advisor First-Client Playbook (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `HealthScoreBadge` — hero/card/badge, null-safe | `[x]` |
+| `scoreContextSentence()` + `isScoreStale()` | `[x]` |
+| Surfaces: dashboard, my-estate-strategy, health-check, advisor list, meeting prep | `[x]` |
+| PlanReadinessCard + PlanStatusCard canonical labels | `[x]` |
+| Advisor empty state — intake / invite / prospect | `[x]` |
+| `AdvisorFirstClientPlaybook` + localStorage auto-complete | `[x]` |
+| `first_client_connected` notification | `[x]` |
+| "Clients needing attention" panel | `[x]` |
+| Manual smoke (18 steps) | `[ ]` |
+
+**Commits:** `feat(health-score)` · `feat(advisor)` · Manual smoke: playbook script + [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#health-score--advisor-playbook-manual-smoke-2026-05-29)
+
+---
 
 ### Sprint — Prospect Mode + Mobile Review (2026-05-29) **← shipped**
 

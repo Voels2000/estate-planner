@@ -493,6 +493,15 @@ Verified in **Vercel → Production**:
 
 Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 
+## Sprint — Health Score + Advisor Playbook ✅ closed 2026-05-29
+
+- [x] `HealthScoreBadge`, `EstateHealthScoreBlock`, `MyEstateStrategyHealthScore`
+- [x] `scoreContextSentence()`, `scoreContextSentenceForAdvisor()`, `isScoreStale()`
+- [x] Advisor empty state, `AdvisorFirstClientPlaybook`, needs-attention panel
+- [x] Migration renames: `20260530100000_onboarding_persona.sql`, `20260530110000_attorney_intake_requests.sql`
+- [x] Master docs: ROADMAP · LAUNCH_CHECKLIST · MASTER_ARCHITECTURE · DECISION_LOG · NEXT_SESSION · UPDATE_CHECKLIST
+- [ ] Manual smoke Tracks 1–2 (18 steps) — [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#health-score--advisor-playbook-manual-smoke-2026-05-29)
+
 ## Verification pass
 
 Use this for **all** merges. For **tax/engine** changes, also run the extra spot-checks in [MASTER_ARCHITECTURE.md → Release verification](./MASTER_ARCHITECTURE.md#release-verification).

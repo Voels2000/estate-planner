@@ -12,7 +12,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 import { AdvisorEmptyStateCta } from '@/components/advisor/AdvisorEmptyStateCta'
-import { AdvisorFirstConnectionPlaybook } from '@/components/advisor/AdvisorFirstConnectionPlaybook'
+import { AdvisorFirstClientPlaybook } from '@/components/advisor/AdvisorFirstClientPlaybook'
+import { ClientAttentionRow } from '@/components/advisor/ClientAttentionRow'
+import { HealthScoreBadge } from '@/components/shared/HealthScoreBadge'
 import { AdvisorValuePropBanner } from '@/components/advisor/AdvisorValuePropBanner'
 import { ReferralImpactPanel } from '@/components/advisor/ReferralImpactPanel'
 
@@ -134,7 +136,6 @@ export default function AdvisorClientPage({
   referralCode,
   eventReferralUrls,
 }: Props) {
-  void advisorId
   const router = useRouter()
   const [clients, setClients] = useState(advisorClients)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
@@ -149,6 +150,7 @@ export default function AdvisorClientPage({
   type ActiveTab = 'clients' | 'invite' | 'find-attorney' | 'list-practice'
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('clients')
+  const [showIntakeModal, setShowIntakeModal] = useState(false)
   const [tierLimitModal, setTierLimitModal] = useState<{
     current_count: number
     max_clients: number
@@ -288,6 +290,13 @@ export default function AdvisorClientPage({
   const acceptedClients = clients.filter(c => c.accepted_at && c.status !== 'consumer_requested')
   const pendingClients = clients.filter(c => !c.accepted_at && c.status !== 'consumer_requested')
   const listedClients = clients.filter(c => c.status !== 'consumer_requested')
+
+  const needsAttention = acceptedClients.filter((c) => {
+    if (!c.client_id) return false
+    const score = healthScoreMap[c.client_id]
+    const alerts = alertCountsMap[householdIdMap[c.client_id] ?? '']
+    return (score != null && score < 50) || (alerts?.high ?? 0) > 0
+  })
 
   const showFirmBanner = firm_id != null && firm_id !== ''
 
@@ -609,7 +618,8 @@ Ref: ${referralCode}`
             </div>
           )}
           {acceptedClients.length === 1 && acceptedClients[0]?.client_id && (
-            <AdvisorFirstConnectionPlaybook
+            <AdvisorFirstClientPlaybook
+              advisorId={advisorId}
               clientId={acceptedClients[0].client_id}
               clientName={
                 acceptedClients[0].profiles?.full_name?.trim() ||
@@ -618,8 +628,36 @@ Ref: ${referralCode}`
               }
             />
           )}
+          {needsAttention.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wide mb-3">
+                Needs attention ({needsAttention.length})
+              </h3>
+              <div className="space-y-2">
+                {needsAttention.map((c) => {
+                  const clientId = c.client_id!
+                  const householdId = householdIdMap[clientId]
+                  const alerts = householdId ? alertCountsMap[householdId] : undefined
+                  return (
+                    <ClientAttentionRow
+                      key={c.id}
+                      clientId={clientId}
+                      clientName={c.profiles?.full_name?.trim() || c.invited_email || 'Client'}
+                      healthScore={healthScoreMap[clientId] ?? null}
+                      criticalAlertCount={alerts?.high ?? 0}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {clients.length === 0 ? (
-            <AdvisorEmptyStateCta onInviteClick={() => setActiveTab('invite')} />
+            <AdvisorEmptyStateCta
+              onInviteClick={() => setActiveTab('invite')}
+              showIntakeModal={showIntakeModal}
+              onOpenIntakeModal={() => setShowIntakeModal(true)}
+              onCloseIntakeModal={() => setShowIntakeModal(false)}
+            />
           ) : listedClients.length > 0 ? (
             <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
               <table className="min-w-full text-sm">
@@ -657,17 +695,13 @@ Ref: ${referralCode}`
                         <td className="px-6 py-4">
                           {isPending ? (
                             '—'
-                          ) : (() => {
-                            const score = healthScoreMap[c.client_id ?? '']
-                            if (score == null) return <span className="text-xs text-neutral-400">Not computed</span>
-                            const color = score >= 75 ? 'text-[color:var(--mwm-sage)]' : score >= 50 ? 'text-amber-600' : 'text-red-600'
-                            const bg = score >= 75 ? 'bg-[var(--mwm-sage-pale)]' : score >= 50 ? 'bg-amber-50' : 'bg-red-50'
-                            return (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${color} ${bg}`}>
-                                {score}/100
-                              </span>
-                            )
-                          })()}
+                          ) : (
+                            <HealthScoreBadge
+                              score={healthScoreMap[c.client_id ?? ''] ?? null}
+                              size="badge"
+                              showLabel={false}
+                            />
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           {isPending || !c.client_id || !householdIdMap[c.client_id] ? (

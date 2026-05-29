@@ -27,6 +27,7 @@ import {
 import type { StrategyLineItem, EstateComposition } from '@/lib/estate/types'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
+import { AdvisorPlaybookTracker, markPlaybookRecommendationSent } from '@/components/advisor/AdvisorPlaybookTracker'
 
 export default function StrategyTab({
   household,
@@ -43,6 +44,7 @@ export default function StrategyTab({
   initialConsumerLineItems = [],
   initialStrategyConfigs = [],
   initialGiftingActuals,
+  advisorId,
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -256,10 +258,11 @@ export default function StrategyTab({
   ])
 
   const handleInlineRecommend = useCallback(async () => {
+    markPlaybookRecommendationSent(advisorId)
     await loadConsumerData(true)
     router.refresh()
     setInlineStrategyId(null)
-  }, [loadConsumerData, router])
+  }, [advisorId, loadConsumerData, router])
 
   function handleInlineExpand(catalogId: string) {
     setInlineStrategyId((prev) => (prev === catalogId ? null : catalogId))
@@ -440,6 +443,7 @@ export default function StrategyTab({
 
   return (
     <div className="space-y-10">
+      <AdvisorPlaybookTracker advisorId={advisorId} step={2} />
       {!hasHorizonTodayInputs && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Today&apos;s horizon tax inputs are missing, so advisor strategy tax metrics are temporarily unavailable.

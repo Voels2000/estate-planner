@@ -77,6 +77,30 @@
 
 ---
 
+## Post-ship ops
+
+### Attorney drip — verify cron steps 2 & 3
+
+After the first **real** attorney registers, check ~**3 days** later that step 2 populated (step 3 ~7 days after step 1).
+
+```sql
+SELECT email,
+       created_at,
+       attorney_drip_step_1_sent_at,
+       attorney_drip_step_2_sent_at,
+       attorney_drip_step_3_sent_at
+FROM profiles
+WHERE role = 'attorney' OR is_attorney = true
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+- **Step 1** should be non-null soon after activation.
+- **Steps 2 & 3** depend on `GET /api/cron/notifications` (14:00 UTC) and elapsed time since **step 1 sent** (not account `created_at`).
+- If step 2 is null after day 3: inspect cron logs, `CRON_SECRET`, and `role` / `is_attorney` filter in `app/api/cron/notifications/route.ts`.
+
+---
+
 ## Verification
 
 ```bash

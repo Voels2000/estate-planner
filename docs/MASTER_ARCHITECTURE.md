@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-29 (TERMS-2/3/5 billing; Stripe go-live guide; Sprint 19)
+# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook; Sprint 19)
 
 ---
 
@@ -953,6 +953,10 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 - `lib/prospect/getProspectTaxConfig.ts` — `federal_tax_config` read for prospect tool (fallback to OBBBA / TCJA sunset)
 - `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
+- `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
+- `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
+- `lib/advisor/advisorPlaybookStorage.ts` — first-client playbook state in `localStorage` (`mwm_advisor_playbook_${advisorId}`)
+- `lib/advisor/notifyFirstClientConnected.ts` — `first_client_connected` via `create_notification` RPC
 - `lib/calculations/stateEstateTax.ts`
 - `lib/calculations/stateIncomeTax.ts` (shared income tax engine)
 - `lib/calculations/projection-complete.ts`

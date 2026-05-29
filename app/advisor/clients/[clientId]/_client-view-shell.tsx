@@ -24,6 +24,7 @@ import dynamic from 'next/dynamic'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
 import { TabSkeleton, StrategyTabSkeleton, DomicileTabSkeleton } from '@/components/ui/TabSkeleton'
+import { AdvisorPlaybookTracker } from '@/components/advisor/AdvisorPlaybookTracker'
 import { getComplexityStyle, getAge } from './_utils'
 
 const OverviewTab = dynamic(() => import('./_tabs/OverviewTab'), {
@@ -121,6 +122,7 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <AdvisorPlaybookTracker advisorId={props.advisorId} step={1} />
 
       {/* ── Back nav ── */}
       <div className="bg-white border-b border-slate-200 px-6 py-3">

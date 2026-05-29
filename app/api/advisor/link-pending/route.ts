@@ -2,6 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
+import { notifyAdvisorFirstClientConnected } from '@/lib/advisor/notifyFirstClientConnected'
 
 export async function POST() {
   try {
@@ -64,6 +65,18 @@ export async function POST() {
             p_delivery: 'both',
             p_metadata: { client_id: clientId },
             p_cooldown: '1 hour',
+          })
+
+          const { data: clientProfile } = await adminAfter
+            .from('profiles')
+            .select('full_name')
+            .eq('id', clientId)
+            .maybeSingle()
+
+          await notifyAdvisorFirstClientConnected(adminAfter, {
+            advisorId,
+            clientId,
+            clientName: clientProfile?.full_name ?? null,
           })
         } catch (err) {
           console.error('link-pending after():', err)

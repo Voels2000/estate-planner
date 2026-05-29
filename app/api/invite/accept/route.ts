@@ -2,6 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
+import { notifyAdvisorFirstClientConnected } from '@/lib/advisor/notifyFirstClientConnected'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -85,6 +86,18 @@ export async function POST(request: Request) {
             p_cooldown: '1 hour',
           })
         }
+
+        const { data: clientProfile } = await adminAfter
+          .from('profiles')
+          .select('full_name')
+          .eq('id', clientId)
+          .maybeSingle()
+
+        await notifyAdvisorFirstClientConnected(adminAfter, {
+          advisorId,
+          clientId,
+          clientName: clientProfile?.full_name ?? null,
+        })
       } catch (err) {
         console.error('invite after(): error', err)
       }

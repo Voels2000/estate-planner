@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Professional Acquisition & Activation)
+# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook)
+
+## Health score narrative + advisor first-client playbook (2026-05-29)
+
+**Decision:** Unify health score display language across consumer and advisor surfaces; add in-product first-client activation without new DB tables.
+
+**Track 1 — Score narrative:** `HealthScoreBadge` is the single display component. Canonical labels: Strong (75+) / Needs Attention (50–74) / At Risk (0–49). `scoreContextSentence()` on consumer surfaces; `scoreContextSentenceForAdvisor()` on advisor surfaces. Stale indicator when `computed_at` > 30 days. **Score calculation in `computeEstateHealthScore` unchanged.**
+
+**Track 2 — Advisor playbook:** Empty state offers intake, invite, prospect (lowest friction first). First-client 3-step panel persisted in `localStorage` keyed by advisor ID — not a compliance record. Steps auto-complete on client view mount, strategy tab mount, and recommendation send. `first_client_connected` notification via existing `create_notification` RPC when advisor has exactly one active client. "Needs attention" uses existing `healthScoreMap` and `alertCountsMap` — no new queries.
+
+---
 
 ## Professional Acquisition & Activation — intake, referral impact, meeting prep (2026-05-29)
 

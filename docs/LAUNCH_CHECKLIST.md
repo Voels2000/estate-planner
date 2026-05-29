@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-29 (Prospect Mode + Mobile Review Mode shipped)
+# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook shipped)
 
 ---
 
@@ -37,6 +37,8 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; migration `20260530100000_onboarding_persona.sql`
 - [x] **Prospect Mode polish (2026-05-29)** — `/prospect` DB tax config, PDF export, intake CTA; advisor role on send-intake-request
 - [x] **Mobile review mode (2026-05-29)** — alert banner, stacked rec buttons, table scroll wrappers
+- [x] **Health score narrative (2026-05-29)** — `HealthScoreBadge` on dashboard, my-estate-strategy, health-check completion, advisor client list, meeting prep; canonical labels; stale recalculate prompt
+- [x] **Advisor first-client playbook (2026-05-29)** — 3-option empty state, 3-step localStorage playbook, needs-attention panel, `first_client_connected` notification
 - [ ] **Acquisition sprint migration (2026-05-29)** — apply `20260530110000_attorney_intake_requests.sql`; run Tracks 1–3 manual smoke (see NEXT_SESSION)
 
 ### Email drip
@@ -114,11 +116,20 @@ These must be complete before launch. Update status as sprints close them.
 - [ ] **Attorney referral production test** — run `npm run seed:e2e` (or register manually); confirm `referral_code` on listing; sign in as `e2e-attorney@mywealthmaps.test` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **Attorney billing (2026-05-29)** — apply `20260529130000_attorney_drip_columns.sql`; create Stripe Attorney Starter/Growth prices; set `STRIPE_PRICE_ATTORNEY_*`; test `/attorney/billing` checkout in test mode; confirm webhook sets `attorney_tier`; smoke free-tier upgrade prompts (client cap, PDF, doc dashboard blur)
 - [ ] **Persona onboarding migration (2026-05-29)** — apply `20260530100000_onboarding_persona.sql`; smoke fresh signup → profile → persona screen → wizard (persona headline) → dashboard insight card
+- [ ] **Health Score + Advisor Playbook manual smoke (2026-05-29)** — [18-step checklist below](#health-score--advisor-playbook-manual-smoke-2026-05-29)
 - [ ] **Prospect + Mobile manual smoke (2026-05-29)** — [19-step checklist below](#prospect--mobile-review-mode-manual-smoke-2026-05-29); Track 1 (prospect/PDF/intake) before Track 2 (mobile)
 - [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: run SQL in [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops); confirm `attorney_drip_step_2_sent_at` populates; step 3 by day 7 after step 1
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
 **Sprint 14 manual smoke (2026-05-23):** Core §1–3, estate §4–7, §8, §11 **passed** on staging; §9 skipped (needs linked advisor); §10 E2E 19/19; bugs fixed `f4e9160`. See CONSUMER_RELEASE_SMOKE_TEST.md sign-off block.
+
+### Health Score + Advisor Playbook manual smoke (2026-05-29)
+
+**Track 1 — Health score narrative (steps 1–8):** dashboard score + context; `/my-estate-strategy` badge; health-check completion labels; advisor client list badge; meeting prep delta + context; stale indicator (set `computed_at` 31 days ago in SQL, confirm recalculate prompt).
+
+**Track 2 — Advisor activation (steps 9–18):** fresh advisor with 0 clients → 3-option empty state; connect first client → playbook panel + `first_client_connected` notification; auto-complete steps 1–3 (client view, strategy tab, recommendation send); needs-attention panel when score &lt; 50 or high alerts.
+
+See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ### Prospect + Mobile Review Mode manual smoke (2026-05-29)
 
@@ -662,6 +673,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-29 | Health Score + Advisor Playbook | **Closed** — `feat(health-score)` unified badge + context; `feat(advisor)` first-client playbook + needs-attention; migration timestamp renames |
 | 2026-05-29 | Prospect + Mobile Review | **Closed** — `feat(prospect)` DB tax config, PDF, intake CTA; `feat(mobile)` review banner, rec cards, table scroll; manual smoke checklist added |
 | 2026-05-29 | TERMS-2/3/5 billing fixes | Trial checkout access; direct post-Stripe redirect; `repair-orphaned-user` script (`48e7326`) |
 | 2026-05-28 | Stripe go-live docs + annual toggle guard | LAUNCH_CHECKLIST Phase 1/2 sandbox→production; `isAnnualBillingConfigured()` hides toggle |

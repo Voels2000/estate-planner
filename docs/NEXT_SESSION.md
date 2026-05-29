@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Prospect Mode Polish + Mobile Review Mode shipped)
+# Updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Prospect Mode + Mobile Review (shipped 2026-05-29):** `/prospect` DB-backed tax config, print PDF, intake CTA; mobile review banner + table scroll wrappers — commits `feat(prospect)` + `feat(mobile)`. **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake, referral impact, meeting prep — migrations `20260530100000_onboarding_persona.sql` + `20260530110000_attorney_intake_requests.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Health Score + Advisor Playbook (shipped 2026-05-29):** unified `HealthScoreBadge` across dashboard, my-estate-strategy, health-check completion, advisor client list, meeting prep; advisor first-client 3-option empty state, 3-step playbook (localStorage), needs-attention panel, `first_client_connected` notification — commits `feat(health-score)` + `feat(advisor)`. **Prospect Mode + Mobile Review (shipped 2026-05-29):** `/prospect` DB-backed tax config, print PDF, intake CTA; mobile review banner + table scroll wrappers — commits `feat(prospect)` + `feat(mobile)`. **Professional Acquisition & Activation (shipped 2026-05-29):** attorney intake, referral impact, meeting prep — migrations `20260530100000_onboarding_persona.sql` + `20260530110000_attorney_intake_requests.sql`. **Import expansion + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 >
 > **Before deploy:** migrations applied on prod (persona + intake renamed timestamps); attorney Stripe products if billing sprint pending.
 >
@@ -17,6 +17,36 @@
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). **Prospect/mobile manual smoke:** [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
+
+---
+
+## Health Score Narrative + Advisor First-Client Playbook ✅ (2026-05-29)
+
+**Sprint: Health Score Narrative + Advisor First-Client Playbook — COMPLETE**
+
+**Commits:** `feat(health-score): unified narrative badge across surfaces` · `feat(advisor): first-client activation playbook + attention panel`
+
+### Track 1 — Health score narrative
+| Item | Notes |
+|------|-------|
+| `components/shared/HealthScoreBadge.tsx` | hero/card/badge sizes, null-safe |
+| `lib/estate-health-score.ts` | `scoreContextSentence()`, `scoreContextSentenceForAdvisor()`, `isScoreStale()` |
+| Surfaces | Dashboard `EstateSummarySection`, `/my-estate-strategy`, health-check completion, advisor client list, Meeting Prep |
+| Labels | **Strong** (75+) · **Needs Attention** (50–74) · **At Risk** (0–49) |
+| Stale | Recalculate prompt when `computed_at` > 30 days |
+
+### Track 2 — Advisor first-client activation
+| Item | Notes |
+|------|-------|
+| Empty state | 3 options: intake request, invite, prospect mode |
+| `AdvisorFirstClientPlaybook` | 3-step panel, localStorage `mwm_advisor_playbook_${advisorId}` |
+| Auto-complete | Step 1 client view · Step 2 strategy tab · Step 3 recommendation send |
+| Notification | `first_client_connected` via `create_notification` RPC on first active client |
+| Needs attention | Clients with score < 50 or high-severity alerts |
+
+**Locked decisions:** Score calculation unchanged; playbook state localStorage only; needs-attention uses existing `healthScoreMap` / `alertCountsMap`.
+
+**Manual smoke:** 18-step checklist in playbook script — **not run in CI**.
 
 ---
 
