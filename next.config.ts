@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         destination: "/incapacity-planning",
         permanent: true,
       },
+      {
+        source: "/advisor/prospect",
+        destination: "/prospect",
+        permanent: true,
+      },
     ];
   },
   async headers() {
