@@ -23,7 +23,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | Stripe success → dashboard/profile | `app/api/stripe/checkout/route.ts` |
 | Orphan auth → profiles repair script | `scripts/repair-orphaned-auth-user.ts`, `npm run repair:orphaned-user` |
 
-**Post-launch:** TERMS-1 signup checkbox; Section F backfill banner (soft, non-blocking).
+**Shipped (2026-05-27):** TERMS-1 signup checkbox; Section F backfill banner (soft, non-blocking).
 
 **No schema migration** (`terms_accepted_at` already in `20260331000001_profiles_terms.sql`).
 

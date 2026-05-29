@@ -1,38 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { recordTermsAcceptance } from '@/lib/terms/recordTermsAcceptance'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
   const supabase = await createClient()
-  const admin = createAdminClient()
 
-  // 1. Auth check
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: versionRow } = await admin
-    .from('app_config')
-    .select('value')
-    .eq('key', 'terms_version')
-    .maybeSingle()
-
-  const termsVersion = versionRow?.value ?? '2026-03-31'
-
-  // 2. Write acceptance to profiles
-  const { error: updateError } = await admin
-    .from('profiles')
-    .update({
-      terms_accepted_at: new Date().toISOString(),
-      terms_version: termsVersion,
-    })
-    .eq('id', user.id)
-
-  if (updateError) {
-    console.error('terms accept error:', updateError)
+  const result = await recordTermsAcceptance(user.id)
+  if (!result.ok) {
     return NextResponse.json({ error: 'Failed to record acceptance' }, { status: 500 })
   }
 

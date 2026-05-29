@@ -519,7 +519,8 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 - [x] TERMS-2: trial checkout `no_payment_required` on `/terms/accept` fallback
 - [x] TERMS-3: `trialing` in dashboard `hasAccess`
 - [x] TERMS-5: Stripe success URL → dashboard/profile (not `/terms/accept`)
-- [ ] TERMS-1: signup T&C checkbox before `PUBLIC_SIGNUP_OPEN=true` (legal)
+- [x] TERMS-1: signup T&C checkbox before `PUBLIC_SIGNUP_OPEN=true` (legal)
+- [x] Section F: soft backfill banner for users without `terms_accepted_at`
 
 ### Go/no-go (Stripe)
 

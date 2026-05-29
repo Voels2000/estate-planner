@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { sendWelcomeEmail } from '@/lib/email/welcomeEmail'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { recordTermsAcceptance } from '@/lib/terms/recordTermsAcceptance'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -32,15 +34,34 @@ export async function GET(request: NextRequest) {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (user?.email) {
-        const fullName =
-          typeof user.user_metadata?.full_name === 'string'
-            ? user.user_metadata.full_name
-            : ''
-        const firstName = fullName.split(' ')[0] || 'there'
-        void sendWelcomeEmail(user.email, firstName).catch((err) => {
-          console.error('Welcome email error:', err instanceof Error ? err.message : err)
-        })
+      if (user) {
+        const termsAcceptedAt = user.user_metadata?.terms_accepted_at
+        if (typeof termsAcceptedAt === 'string' && termsAcceptedAt) {
+          const admin = createAdminClient()
+          const { data: profile } = await admin
+            .from('profiles')
+            .select('terms_accepted_at')
+            .eq('id', user.id)
+            .maybeSingle()
+
+          if (!profile?.terms_accepted_at) {
+            const result = await recordTermsAcceptance(user.id, termsAcceptedAt)
+            if (!result.ok) {
+              console.error('terms sync from signup metadata:', result.error)
+            }
+          }
+        }
+
+        if (user.email) {
+          const fullName =
+            typeof user.user_metadata?.full_name === 'string'
+              ? user.user_metadata.full_name
+              : ''
+          const firstName = fullName.split(' ')[0] || 'there'
+          void sendWelcomeEmail(user.email, firstName).catch((err) => {
+            console.error('Welcome email error:', err instanceof Error ? err.message : err)
+          })
+        }
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

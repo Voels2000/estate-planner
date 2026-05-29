@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (TERMS-2/3/5 billing fixes; Stripe go-live guide)
+# Updated: 2026-05-27 (TERMS-1 signup checkbox + backfill banner)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Billing (shipped):** TERMS-2/3/5 — Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard` (not `/terms/accept`). **Before public signups:** TERMS-1 signup checkbox (legal). **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview: create 6 test prices, set all `STRIPE_PRICE_*` + test keys, webhook, portal — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + live env vars + one real-card smoke → `PUBLIC_SIGNUP_OPEN=true`.
 >
@@ -105,10 +105,8 @@
 | TERMS-2: `/terms/accept` accepts `no_payment_required`; `subscription_status` from Stripe | ✅ |
 | TERMS-3: `layout.tsx` `hasAccess` includes `trialing` | ✅ |
 | TERMS-5: Checkout success → `/dashboard` or `/profile` (not `/terms/accept`) | ✅ |
-
-**Post-launch (not blockers):**
-- **TERMS-1** — T&C checkbox at signup (record `terms_accepted_at` before any access)
-- **Section F** — Soft backfill banner for users without `terms_accepted_at`
+| TERMS-1: Signup T&C checkbox → `terms_accepted_at` at signup | ✅ |
+| Section F: Soft backfill banner on dashboard for legacy users | ✅ |
 
 **Ops:** `npm run repair:orphaned-user -- <email>` — missing `profiles` row + optional Stripe sync.
 

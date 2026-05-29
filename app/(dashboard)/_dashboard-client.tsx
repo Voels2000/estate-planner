@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   SetupProgressCard,
   SetupProgressCardSkeleton,
@@ -41,6 +41,7 @@ import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBa
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
+import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
 import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
 // ---------------------------------------------------------------------------
 // Types
@@ -148,6 +149,7 @@ type Props = {
   statePrimary?: string | null
   executionChecklist?: EstateExecutionItem[]
   planStage: PlanStageResult
+  termsAcceptedAt?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -200,7 +202,12 @@ export function DashboardClient(props: Props) {
     statePrimary,
     executionChecklist: initialExecutionChecklist = [],
     planStage,
+    termsAcceptedAt = null,
   } = props
+
+  const searchParams = useSearchParams()
+  const checkoutSuccess = searchParams.get('checkout') === 'success'
+  const [checkoutBannerDismissed, setCheckoutBannerDismissed] = useState(false)
 
   const tier = consumerTier ?? 1
   const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
@@ -287,6 +294,28 @@ export function DashboardClient(props: Props) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
+      {checkoutSuccess && !checkoutBannerDismissed && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900 dark:bg-green-950/40">
+          <p className="text-sm font-medium text-green-700 dark:text-green-300">
+            Your subscription is active. Welcome to My Wealth Maps!
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setCheckoutBannerDismissed(true)
+              router.replace('/dashboard')
+            }}
+            className="ml-4 flex-shrink-0 text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {!isAdvisor && (
+        <TermsBackfillBanner initialTermsAcceptedAt={termsAcceptedAt} />
+      )}
+
       <DashboardIntroSection
         greeting={greeting}
         firstName={fn}

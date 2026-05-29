@@ -30,6 +30,8 @@ export function SignupForm() {
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [termsError, setTermsError] = useState(false)
 
   async function handleSubmit() {
     setError(null)
@@ -41,11 +43,16 @@ export function SignupForm() {
       setError('Password must be at least 6 characters.')
       return
     }
+    if (!termsAccepted) {
+      setTermsError(true)
+      return
+    }
     setIsSubmitting(true)
 
     try {
       const supabase = createClient()
       const effectiveRole: Role = hasAdvisorInvite ? 'consumer' : role
+      const termsAcceptedAt = new Date().toISOString()
 
       const callbackUrl =
         typeof window !== 'undefined'
@@ -60,7 +67,11 @@ export function SignupForm() {
         email,
         password,
         options: {
-          data: { full_name: fullName, role: effectiveRole },
+          data: {
+            full_name: fullName,
+            role: effectiveRole,
+            terms_accepted_at: termsAcceptedAt,
+          },
           emailRedirectTo: callbackUrl,
         },
       })
@@ -79,6 +90,12 @@ export function SignupForm() {
       }
 
       const sessionFromSignUp = data.session
+
+      if (sessionFromSignUp) {
+        void fetch('/api/terms/accept', { method: 'POST' }).catch((err) => {
+          console.error('terms accept after signup:', err)
+        })
+      }
 
       if (sessionFromSignUp && effectiveRole === 'advisor' && data.user && !hasFirmInvite) {
         try {
@@ -335,10 +352,52 @@ export function SignupForm() {
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => {
+                  setTermsAccepted(e.target.checked)
+                  if (e.target.checked) setTermsError(false)
+                }}
+                className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-neutral-300 accent-[color:var(--mwm-navy)]"
+              />
+              <span className="text-sm text-neutral-600 dark:text-zinc-400">
+                I agree to the{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-gold)] dark:text-indigo-300"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[color:var(--mwm-navy)] underline underline-offset-2 hover:text-[color:var(--mwm-gold)] dark:text-indigo-300"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+            {termsError && (
+              <p className="ml-7 text-xs text-red-600 dark:text-red-400">
+                You must accept the Terms of Service to create an account.
+              </p>
+            )}
+          </div>
+
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !termsAccepted}
             variant="primary"
             className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium shadow-sm"
           >

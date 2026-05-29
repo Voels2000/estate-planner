@@ -481,6 +481,7 @@ export async function DashboardBody({
   return (
     <DashboardClient
       planStage={planStage}
+      termsAcceptedAt={profile?.terms_accepted_at ?? null}
       wizardComplete={wizardComplete}
       initialSetupProgress={setupProgress}
       composition={composition}
