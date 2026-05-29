@@ -1,6 +1,26 @@
 -- Signup defaults: free Tier 1 access (subscription_status = 'none').
 -- Estate trial (14 days) is granted only via Stripe checkout → subscription_status = 'trialing'.
 
+-- Remote may have an older profiles_subscription_status_check without 'none'.
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_subscription_status_check;
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_subscription_status_check
+  CHECK (
+    subscription_status IS NULL
+    OR subscription_status IN (
+      'none',
+      'active',
+      'canceled',
+      'past_due',
+      'trialing',
+      'unpaid',
+      'canceling',
+      'advisor_managed'
+    )
+  );
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -60,8 +80,8 @@ BEGIN
 END;
 $function$;
 
--- Existing signup-time "trialing" rows without a Stripe subscription were not real trials.
--- Remote DBs may lack stripe_subscription_id (20250313120000 not applied) — branch on column presence.
+-- Reset signup-time "trialing" only when there is no Stripe plan on the profile.
+-- Keeps real Stripe trials (subscription_plan set) unchanged.
 DO $$
 BEGIN
   IF EXISTS (
@@ -77,13 +97,15 @@ BEGIN
       trial_started_at = null
     WHERE role = 'consumer'
       AND subscription_status = 'trialing'
-      AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '');
+      AND (subscription_plan IS NULL OR btrim(subscription_plan) = '')
+      AND (stripe_subscription_id IS NULL OR btrim(stripe_subscription_id) = '');
   ELSE
     UPDATE public.profiles
     SET
       subscription_status = 'none',
       trial_started_at = null
     WHERE role = 'consumer'
-      AND subscription_status = 'trialing';
+      AND subscription_status = 'trialing'
+      AND (subscription_plan IS NULL OR btrim(subscription_plan) = '');
   END IF;
 END $$;
