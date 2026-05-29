@@ -50,6 +50,7 @@ import { isWizardComplete } from '@/lib/estate/profileGate'
 import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import { determinePlanStage } from '@/lib/dashboard/determinePlanStage'
+import { getUserAccess } from '@/lib/get-user-access'
 
 type HouseholdRow = Record<string, unknown> & {
   id: string
@@ -85,6 +86,7 @@ export async function DashboardBody({
   const supabase = await createClient()
   const user = { id: userId, email: userEmail }
   const admin = createAdminClient()
+  const access = await getUserAccess()
 
   // Background staleness check for base-case projection:
   // regenerate asynchronously when user inputs or tax brackets are newer than the last run.
@@ -223,7 +225,7 @@ export async function DashboardBody({
   })
 
   // ── Tier / completion + gift-aware estate composition ───────────────────
-  const isConsumerTier2 = profile?.role === 'consumer' && (profile?.consumer_tier ?? 1) === 2
+  const isConsumerTier2 = profile?.role === 'consumer' && access.tier === 2
 
   const giftingSummary = household?.id
     ? await supabase.rpc('calculate_gifting_summary', {
@@ -431,7 +433,7 @@ export async function DashboardBody({
     loadAssessmentHistory(supabase, user!.id),
   ])
 
-  const consumerTier = profile?.consumer_tier ?? 1
+  const consumerTier = access.tier
   const conflictCount = conflictReport?.conflicts.length ?? 0
 
   let executionChecklist: EstateExecutionItem[] = []
