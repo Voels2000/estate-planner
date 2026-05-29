@@ -24,6 +24,7 @@ export function triggerHouseholdRecompute(householdId: string) {
 export async function afterHouseholdWrite(supabase: ServerSupabase, householdId: string) {
   await touchHousehold(supabase, householdId)
   revalidateTag(`household-metrics-${householdId}`, 'max')
+  revalidateTag(`household-composition-${householdId}`, 'max')
   const appUrl = getConsumerAppUrl()
   if (process.env.VERCEL) {
     after(() => {

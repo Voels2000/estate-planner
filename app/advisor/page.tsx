@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import { loadRosterNetWorthByOwner } from '@/lib/advisor/rosterNetWorth'
+import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
 import AdvisorClient from './_advisor-client-wrapper'
 
 export default async function AdvisorPage() {
@@ -81,6 +82,8 @@ export default async function AdvisorPage() {
   // Roster net worth: batched reads (not N× composition RPC). Client workspace uses full RPC.
   const netWorthMap = await loadRosterNetWorthByOwner(supabase, clientIds)
 
+  const alertCountsMap = await loadRosterAlertCounts(supabase, householdIds)
+
   const { data: advisorListing } = await supabase
     .from('advisor_directory')
     .select('referral_code')
@@ -105,6 +108,7 @@ export default async function AdvisorPage() {
       firm_id={firm_id}
       healthScoreMap={healthScoreMap}
       householdIdMap={ownerToHousehold}
+      alertCountsMap={alertCountsMap}
       referralCode={referralCode}
       eventReferralUrls={eventReferralUrls}
     />

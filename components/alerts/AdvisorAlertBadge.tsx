@@ -13,23 +13,29 @@ import { loadHouseholdAlerts, markAlertReviewed } from '@/lib/alerts/evaluateAle
 interface BadgeProps {
   householdId: string
   onClick?: () => void
+  /** Server-prefetched roster counts — skips mount fetch when provided */
+  initialCounts?: { high: number; medium: number } | null
 }
 
-export function AdvisorAlertBadge({ householdId, onClick }: BadgeProps) {
-  const [counts, setCounts] = useState<{ high: number; medium: number } | null>(null)
+export function AdvisorAlertBadge({ householdId, onClick, initialCounts }: BadgeProps) {
+  const [counts, setCounts] = useState<{ high: number; medium: number } | null>(
+    initialCounts ?? null,
+  )
 
   useEffect(() => {
-    console.log('AdvisorAlertBadge loading for householdId:', householdId)
-    loadHouseholdAlerts(householdId).then(alerts => {
-      console.log('AdvisorAlertBadge alerts:', alerts.length, alerts)
+    if (initialCounts !== undefined) {
+      setCounts(initialCounts)
+      return
+    }
+    loadHouseholdAlerts(householdId).then((alerts) => {
       setCounts({
-        high: alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length,
-        medium: alerts.filter(a => a.severity === 'medium' || a.severity === 'warning').length,
+        high: alerts.filter((a) => a.severity === 'high' || a.severity === 'critical').length,
+        medium: alerts.filter((a) => a.severity === 'medium' || a.severity === 'warning').length,
       })
-    }).catch(err => {
-      console.error('AdvisorAlertBadge error:', err)
+    }).catch(() => {
+      setCounts({ high: 0, medium: 0 })
     })
-  }, [householdId])
+  }, [householdId, initialCounts])
 
   if (!counts) return null
   if (counts.high === 0 && counts.medium === 0) return null

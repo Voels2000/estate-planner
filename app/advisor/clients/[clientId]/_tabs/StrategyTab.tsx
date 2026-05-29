@@ -328,8 +328,22 @@ export default function StrategyTab({
   ])
 
   useEffect(() => {
+    if (!householdId) return
+    const needsFetch =
+      initialAdvisorLineItems.length === 0 ||
+      initialConsumerLineItems.length === 0 ||
+      initialStrategyConfigs.length === 0 ||
+      !estateComposition
+    if (!needsFetch) return
     void loadConsumerData(false)
-  }, [householdId, loadConsumerData])
+  }, [
+    householdId,
+    loadConsumerData,
+    initialAdvisorLineItems.length,
+    initialConsumerLineItems.length,
+    initialStrategyConfigs.length,
+    estateComposition,
+  ])
 
   // Auto-generate base case if missing (Session 18 fix)
   const [generating, setGenerating] = useState(false)

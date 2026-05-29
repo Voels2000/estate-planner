@@ -81,6 +81,7 @@ type Props = {
   netWorthMap: Record<string, number>
   healthScoreMap?: Record<string, number>
   householdIdMap?: Record<string, string>
+  alertCountsMap?: Record<string, { high: number; medium: number }>
   advisorId: string
   isFirmOwner?: boolean
   firm_name?: string | null
@@ -663,7 +664,10 @@ Ref: ${referralCode}`
                           {isPending || !c.client_id || !householdIdMap[c.client_id] ? (
                             '—'
                           ) : (
-                            <AdvisorAlertBadge householdId={householdIdMap[c.client_id]} />
+                            <AdvisorAlertBadge
+                              householdId={householdIdMap[c.client_id]}
+                              initialCounts={alertCountsMap[householdIdMap[c.client_id]]}
+                            />
                           )}
                         </td>
                         <td className="px-6 py-4 text-neutral-500">
