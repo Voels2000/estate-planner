@@ -268,6 +268,10 @@ Open while logged out or in a private window unless noted:
 5. Confirm: gap report / next steps visible immediately after auth
 
 | P.1b | Assessment restore after signup (steps above) | Results + gap report visible | ☐ |
+
+**Prerequisite:** `PUBLIC_SIGNUP_OPEN=true` — as of 2026-05-27 deploy, `/signup` redirects to `/waitlist` (307), so steps 2–5 cannot run on production until go-live flip. Code path unchanged: `mwm_pending_assessment` → `assessment_results` insert on `/assess` mount when authed (`_assess-client.tsx`).
+
+**Post-deploy check (2026-05-27, commit `548d42a`):** `/assess` loads (200). Full restore smoke **blocked by waitlist** — record as pre-launch blocker, not a regression from this sprint.
 | P.2 | `/find-advisor` | Directory loads; public top nav | ☐ |
 | P.3 | `/find-attorney` | Directory loads; public top nav | ☐ |
 | P.4 | `/education` (logged in or out) | Education header only — **no** marketing `PublicNav`; no app sidebar | ☐ |

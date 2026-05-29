@@ -31,7 +31,7 @@
 | Slim profile (essentials only; deferred fields → inline prompts) | `[x]` |
 | Quick-add asset modal on dashboard | `[x]` |
 | Wizard drop-off instrumentation (`wizard_completed` / `wizard_abandoned`) | `[x]` |
-| Assessment restore smoke test doc | `[x]` |
+| Assessment restore smoke test doc | `[x]` — run at go-live (`PUBLIC_SIGNUP_OPEN`); blocked by waitlist on prod 2026-05-27 |
 
 See [SPRINT_FRICTION_REDUCTION.md](./SPRINT_FRICTION_REDUCTION.md).
 

@@ -243,8 +243,20 @@ This requires no code change if the restore is working. If it isn't, it's a bug 
 
 Per `UPDATE_CHECKLIST.md`:
 
-- [ ] `CONSUMER_NAV_MAP.md` — update import tier from 2 to 1
-- [ ] `CONSUMER_FLOWS.md` — add quick-add modal to dashboard flow; add inline profile prompt pattern to profile flow
-- [ ] `MASTER_ARCHITECTURE.md` — note slim profile minimum-complete definition change
-- [ ] `ROADMAP.md` — add sprint entry, mark items complete
-- [ ] `SCHEMA_CHANGELOG.md` — session entry for tier gate change
+- [x] `CONSUMER_NAV_MAP.md` — update import tier from 2 to 1
+- [x] `CONSUMER_FLOWS.md` — add quick-add modal to dashboard flow; add inline profile prompt pattern to profile flow
+- [x] `MASTER_ARCHITECTURE.md` — note slim profile minimum-complete definition change
+- [x] `ROADMAP.md` — add sprint entry, mark items complete
+- [x] `SCHEMA_CHANGELOG.md` — session entry for tier gate change
+- [x] `DECISION_LOG.md` — import Tier 1 decision + audit trail
+
+---
+
+## Post-deploy verification (2026-05-27, commit `548d42a`)
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| **Import Tier 1 on deployed build** | ✅ PASS | `consumer-import-access.spec.ts` passed against `estate-planner-gules.vercel.app` (consumer project) |
+| **Admin Funnel — wizard rows** | ✅ PASS (code) | `FUNNEL_STEPS` lists `wizard_completed` and `wizard_abandoned` as **separate** bar-chart rows (`app/admin/funnel-tab.tsx`); counts keyed by `event_name` from `funnel_events`. Eyeball Admin → Funnel after first wizard events land. |
+| **Quick-add modal → net worth refresh** | ⏭ SKIP (seed data) | E2E quick-add test skipped — `e2e-consumer` and `e2e-consumer-tier1` already have assets. `scripts/verify-quick-add-deploy.mjs` ready for fresh stage-1 account. **Manual:** zero-asset account → Add → modal → submit → net worth updates without F5. |
+| **Assessment restore smoke** | ⏸ BLOCKED | `/signup` → 307 `/waitlist` until `PUBLIC_SIGNUP_OPEN=true`. Restore code path not changed this sprint; run P.1b at go-live flip. |
