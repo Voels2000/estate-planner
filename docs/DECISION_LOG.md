@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-27 (Inline profile prompts sprint)
+# Last updated: 2026-05-27 (ProfileFieldPrompt E2E + go-live pre-flight)
 
 ## Partial PATCH merge on profile API (2026-05-27)
 
@@ -10,7 +10,7 @@
 
 **Deduction prompt:** `needsDeductionMode()` is true only when `deduction_mode` is null/unset — explicit `standard` is a user choice and must not re-prompt.
 
-**Verification:** `consumer-profile-save.spec.ts` partial PATCH cases pass locally; re-run against `PLAYWRIGHT_BASE_URL` production after deploy.
+**Verification:** `consumer-profile-save.spec.ts` (3 partial PATCH shapes) + `consumer-profile-field-prompt.spec.ts` (UI save/dismiss/deduction/PIA). Pre-flip bundle: `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md).
 
 ---
 

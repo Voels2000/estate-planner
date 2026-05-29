@@ -46,6 +46,14 @@ This will:
 - Seed attorney listing + portal with `e2eatt01`
 - Print a complete **`.env.test` block** — copy into your local `.env.test`
 
+### 2. Pre-flip automated smoke (after seed)
+
+```bash
+npm run test:e2e:go-live-profile
+```
+
+Profile save, slim-profile layout, inline `ProfileFieldPrompt` UI, and partial PATCH merge — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md).
+
 Faster (skips Johnson client assets):
 
 ```bash
@@ -58,7 +66,7 @@ Partial seed:
 npx dotenv-cli -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --only=consumer,attorney
 ```
 
-### 2. Update `.env.test`
+### 3. Update `.env.test`
 
 Copy the printed block from step 1, or start from [.env.test.example](../.env.test.example) and fill `PLAYWRIGHT_HOUSEHOLD_ID` from seed output. The block must include **`NEXT_PUBLIC_SUPABASE_URL`** (same project as Vercel / `.env.local`).
 
@@ -70,7 +78,7 @@ npm run verify:e2e-auth
 
 Setup projects auto-sync the canonical password (`E2eTest!2026Mwm`) before UI login when `SUPABASE_SERVICE_ROLE_KEY` is present.
 
-### 3. Prune Playwright test debris (optional, before each full run)
+### 4. Prune Playwright test debris (optional, before each full run)
 
 Removes `Playwright*` assets, strategy rows, and family members from the E2E consumer household — does **not** delete users.
 
@@ -78,7 +86,7 @@ Removes `Playwright*` assets, strategy rows, and family members from the E2E con
 npm run prune:e2e
 ```
 
-### 4. Run the suite
+### 5. Run the suite
 
 ```bash
 npm run test:e2e:complete -- --workers=1
@@ -119,5 +127,6 @@ Confirms before delete; logs to `deletion_audit_log`.
 
 ## Related docs
 
+- [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) — pre-flip profile + inline prompt gate
 - [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) — commands and spec index
 - [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) — automated vs manual map

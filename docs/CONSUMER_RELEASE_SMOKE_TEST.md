@@ -504,7 +504,7 @@ npm run test:e2e:complete -- --workers=1   # consumer + advisor + public + attor
 npm run test:e2e:consumer -- --workers=1   # 137 consumer tests alone
 ```
 
-See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) (commands, env, seeds) and [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts) (spec index). **253 automated tests** cover route regression, sidebar contract, profile/asset/health-check UI, estate-tier gates, referral API, all `/event/[slug]` pages, and most consumer write APIs — **not** a substitute for this manual pass on a real account (dollar math, Stripe C-4, drip inbox, full signup→Supabase attribution).
+See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) (commands, env, seeds) and [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts) (spec index). **280 automated tests** cover route regression, profile + inline prompts (`npm run test:e2e:go-live-profile`), sidebar contract, profile/asset/health-check UI, estate-tier gates, referral API, all `/event/[slug]` pages, and most consumer write APIs — **not** a substitute for this manual pass on a real account (dollar math, Stripe C-4, drip inbox, full signup→Supabase attribution).
 
 `consumer-strategy-writes.spec.ts` soft-deletes all Playwright-named `strategy_line_items` in `afterEach` on the fixture household (`PLAYWRIGHT_HOUSEHOLD_ID` / David Chen). The charitable composition case waits 2s after DAF POST then polls `POST /api/estate-composition` for up to 20s (`after > beforeTotal`) so async `afterHouseholdWrite` recompute can complete. If manual testing overlaps those scenario names (`Playwright *`, `daf`/`charitable` at `base`), re-run e2e or delete those rows before relying on estate composition totals.
 

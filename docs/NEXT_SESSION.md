@@ -947,7 +947,7 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 | **§2.4 recompute automated** | consumer-core-recompute.spec.ts (`93aa6f5`) |
 | **Admin Portal bug** | Fixed `f4e9160` |
 | **Asset modal bug** | Fixed `f4e9160` |
-| **E2E complete suite** | **259 tests** in 42 files — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md); staging 2026-05-25: consumer 127 pass / 5 skip, advisor 45 pass, public 57 pass / 2 skip (`--workers=1`); 2026-05-27: profile spouse-layout + growth-assumptions API (+6 tests) |
+| **E2E complete suite** | **280 tests** in 48 files — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · pre-flip [GO_LIVE_E2E.md](./GO_LIVE_E2E.md); staging 2026-05-25: consumer 127 pass / 5 skip; **2026-05-27:** go-live-profile **17 passed** |
 | **Commits** | `93aa6f5`, `1e092d7`, `f4e9160` |
 
 ### Known staging E2E behaviour (do not lose)

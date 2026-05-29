@@ -80,7 +80,7 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 **Recompute on Vercel:** `afterHouseholdWrite` uses Next.js `after()` + immediate trigger (no post-response `setTimeout`) so asset POSTs fire `/api/recompute-estate-health` reliably after deploy.
 
-## Spec inventory (42 files)
+## Spec inventory (42 spec files + setup/helpers; 280 tests total)
 
 **Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, `consumer-tier1-gates` (optional).
 

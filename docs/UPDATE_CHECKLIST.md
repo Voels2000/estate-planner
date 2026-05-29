@@ -190,7 +190,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `consumer-profile-spouse-layout.spec.ts` — slim profile negative assertion
 - [x] `patchHouseholdById` / `restoreHouseholdDeferredFields` in supabase-fixture
 - [x] `npm run test:e2e:go-live-profile` + `test:e2e:partial-patch`
-- [x] [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) + master doc cross-links
+- [x] Master docs: SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · DECISION_LOG · ROADMAP · NEXT_SESSION · CONSUMER_FLOWS · CONSUMER_RELEASE_SMOKE_TEST · E2E_TEST_RESET · PLAYWRIGHT_E2E · E2E_RELEASE_TEST_PLAN · LAUNCH_CHECKLIST · GO_LIVE_E2E
 
 ## Inline profile prompts (2026-05-27) — shipped
 
