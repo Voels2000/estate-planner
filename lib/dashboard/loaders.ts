@@ -129,7 +129,7 @@ export async function loadDashboardCoreInputs(supabase: ServerSupabase, userId: 
     { data: insurance },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase.from('assets').select('value').eq('owner_id', userId),
+    supabase.from('assets').select('value, type').eq('owner_id', userId),
     supabase.from('liabilities').select('balance').eq('owner_id', userId),
     supabase.from('income').select('amount, source, start_year, end_year').eq('owner_id', userId),
     supabase.from('expenses').select('amount').eq('owner_id', userId),

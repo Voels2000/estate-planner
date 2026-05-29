@@ -34,6 +34,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Life event context on advisor connection** — `pickConnectionLifeEvent()` at accept; `advisor_clients.connection_life_event_*`; visible on advisor client Overview (Sprint 9/10)
 - [x] **Ask advisor about strategy (AF-1)** — connected consumer notifies advisor from Transfer Strategies education cards; advisor **Client Strategy Questions** on client Overview (`a255616`)
 - [x] **Setup progress onboarding (OB-3)** — `SetupProgressCard` on dashboard; wizard gate only when no data; Tier 1 import during onboarding
+- [x] **Persona-based onboarding (2026-05-29)** — `/onboarding/persona`; persona-aware wizard step 1; `PersonaInsightCard`; migration `20260530_onboarding_persona.sql`
 
 ### Email drip
 
@@ -109,6 +110,8 @@ These must be complete before launch. Update status as sprints close them.
 
 - [ ] **Attorney referral production test** — run `npm run seed:e2e` (or register manually); confirm `referral_code` on listing; sign in as `e2e-attorney@mywealthmaps.test` → `/attorney` newsletter kit renders; confirm `?aref=` click logs in `referral_clicks`
 - [ ] **Attorney billing (2026-05-29)** — apply `20260529130000_attorney_drip_columns.sql`; create Stripe Attorney Starter/Growth prices; set `STRIPE_PRICE_ATTORNEY_*`; test `/attorney/billing` checkout in test mode; confirm webhook sets `attorney_tier`; smoke free-tier upgrade prompts (client cap, PDF, doc dashboard blur)
+- [ ] **Persona onboarding migration (2026-05-29)** — apply `20260530_onboarding_persona.sql`; smoke fresh signup → profile → persona screen → wizard (persona headline) → dashboard insight card
+- [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: run SQL in [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops); confirm `attorney_drip_step_2_sent_at` populates; step 3 by day 7 after step 1
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
 **Sprint 14 manual smoke (2026-05-23):** Core §1–3, estate §4–7, §8, §11 **passed** on staging; §9 skipped (needs linked advisor); §10 E2E 19/19; bugs fixed `f4e9160`. See CONSUMER_RELEASE_SMOKE_TEST.md sign-off block.

@@ -41,6 +41,9 @@ const FUNNEL_STEPS = [
   { name: 'event_assess_complete',label: 'Assessment Completed', color: '#a855f7' },
   { name: 'email_captured',       label: 'Email Captured',       color: '#c9a84c' },
   { name: 'account_created',      label: 'Account Created',      color: '#10b981' },
+  { name: 'persona_screen_shown', label: 'Persona Screen Shown', color: '#64748b' },
+  { name: 'persona_selected',     label: 'Persona Selected',     color: '#0ea5e9' },
+  { name: 'persona_skipped',      label: 'Persona Skipped',      color: '#94a3b8' },
   // Friction-reduction sprint (2026-05-27): wizard drop-off instrumentation — must match
   // captureFunnelEvent names in onboarding/wizard/_wizard-client.tsx
   { name: 'wizard_completed',     label: 'Wizard Completed',     color: '#059669' },

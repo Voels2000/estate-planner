@@ -1,14 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Attorney monetization + projections readiness shipped)
+# Updated: 2026-05-29 (Persona-based onboarding shipped)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork; attorney doc status, gaps, intake PDF, doc health dashboard, `attorney_tier` model — see [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization (shipped 2026-05-29):** Stripe checkout route, upgrade prompts, client cap 403, 3-step drip — checkout returns 503 until Stripe products created. **Projections readiness (shipped 2026-05-29):** `checkProjectionReadiness()` + inline prompts on `/projections`.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Persona-based onboarding (shipped 2026-05-29):** `/onboarding/persona` after slim profile; persona-aware wizard step 1; `PersonaInsightCard` on dashboard (7-day first-run); funnel events — apply `20260530_onboarding_persona.sql` before deploy. **Import expansion + attorney workflow (shipped 2026-05-29):** type normalization, multi-sheet import, persona templates, RE import, onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Attorney monetization (shipped 2026-05-29):** Stripe checkout route, upgrade prompts, client cap 403, 3-step drip — checkout returns 503 until Stripe products created. **Projections readiness (shipped 2026-05-29):** `checkProjectionReadiness()` + inline prompts on `/projections`.
 >
-> **Before deploy:** apply `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; create Stripe attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+> **Before deploy:** apply `20260530_onboarding_persona.sql` + `20260529120000_sprint_import_attorney.sql` + `20260529130000_attorney_drip_columns.sql`; create Stripe attorney products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY` + `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 >
 > **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
@@ -17,6 +17,23 @@
 > **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Import unit: `npm run test:import:unit` (24 tests). Projections readiness: `npx playwright test tests/unit/projectionReadiness.spec.ts --project=import-unit`. Optional staging: `npm run test:import:api`.
+
+---
+
+## Persona-based onboarding ✅ (2026-05-29)
+
+| Category | Item | Status | Notes |
+|----------|------|--------|-------|
+| DB | `onboarding_persona` + `persona_set_at` on `profiles` | ✅ | Migration `20260530_onboarding_persona.sql` |
+| FEATURE | Persona selection `/onboarding/persona` | ✅ | 4 cards, post-profile redirect, funnel events |
+| FEATURE | Persona-aware wizard step 1 | ✅ | Headline, body, asset type, template per persona |
+| FEATURE | `PersonaInsightCard` on dashboard | ✅ | 4 variants, 7-day window, sessionStorage dismiss |
+| FEATURE | Persona funnel events | ✅ | `persona_selected`, `persona_skipped`, insight shown/clicked/dismissed |
+| CONFIG | `lib/onboarding/personaConfig.ts` | ✅ | Single source of truth for persona content |
+
+**Locked decisions:** Persona set once (`persona_set_at` immutable for analytics); fallback `accumulator` on sidebar skip; persona does not gate features — copy/routing only; insight card is 7-day first-run only.
+
+**Before deploy:** apply `supabase/migrations/20260530_onboarding_persona.sql`. Smoke: fresh signup → profile → persona screen → wizard (persona headline) → dashboard (`PersonaInsightCard`).
 
 ---
 
@@ -62,6 +79,44 @@ See [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 | Targeted empty state + partial view with inline prompts | ✅ |
 | `buildProjectionPlanningFields()` | ✅ |
 | Unit tests — `projectionReadiness.spec.ts` (5 cases) | ✅ |
+
+---
+
+## Queued next (post-ship ops)
+
+### 1. Dashboard `canShowPartial` nudge — low priority
+
+Deferred from projections empty-state sprint (Phase 3). Show a subtle setup card on `/dashboard` when the user has financial data but is missing birth year or retirement age for projections. Revisit after ~2 weeks of traffic — only worth screen real estate if a meaningful share of users hit `canShowPartial` without visiting `/projections` (which already has inline prompts).
+
+### 2. Attorney drip steps 2 & 3 — cron verification
+
+Worth a manual DB check once a **real** attorney has registered (not seed-only).
+
+**Expectations**
+
+| Step | When | Column |
+|------|------|--------|
+| 1 | Immediately on activation (signup callback, claim-listing, or first `/attorney` visit) | `attorney_drip_step_1_sent_at` non-null |
+| 2 | ~3+ days after step 1 sent (`step1At <= threeDaysAgo` in cron) | `attorney_drip_step_2_sent_at` |
+| 3 | ~7+ days after step 1 sent (`step1At <= sevenDaysAgo`) | `attorney_drip_step_3_sent_at` |
+
+Cron: `app/api/cron/notifications/route.ts` § attorney activation drip. Candidates: `profiles` with non-null step 1 and `role = 'attorney'` **or** `is_attorney = true`.
+
+**~3 days after first real attorney signup**, run in Supabase SQL Editor:
+
+```sql
+SELECT email,
+       created_at,
+       attorney_drip_step_1_sent_at,
+       attorney_drip_step_2_sent_at,
+       attorney_drip_step_3_sent_at
+FROM profiles
+WHERE role = 'attorney' OR is_attorney = true
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+**If step 1 is set but step 2 is still null after day 3:** cron may not be matching attorney rows, `CRON_SECRET` / Vercel cron not firing, or day threshold off — debug with the first real `email` from the query above and cron logs (`[cron:notifications]`). Easy fix once you have a real case.
 
 ---
 

@@ -239,6 +239,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | **Tier-aware narrative OB-2** | `[x]` | Profile intro, wizard previews, SetupPromptCard tier copy — `bccef99` |
 | **Advisor flywheel AF-1** | `[x]` | Ask-advisor notification + advisor Strategy Questions card — `a255616` |
 | **Setup progress OB-3** | `[x]` | `SetupProgressCard`, data-inferred wizard, onboarding import bypass — `3376134` |
+| **Persona onboarding** | `[x]` | `/onboarding/persona`, persona-aware wizard, `PersonaInsightCard`, `personaConfig` — 2026-05-29 |
 | **Sidebar unlock OB-3b** | `[x]` | Remove old setup checklist; FP tier 1 + `isLockedUser` exempt; Security/My Advisor/Billing always on; My Advisor onboarding note — `6d2bff3`, `1660f27` |
 | **Superuser sidebar SU-1** | `[x]` | `isSuperuser` prop, staff bypass, Advisor Portal admin check — `3c0d28b` |
 | **Layout household query fix** | `[x]` | Drop invalid `date_of_birth_1` from `getDashboardLayoutContext` (fixes false `hasHousehold`) — `d50a982` |
@@ -813,6 +814,12 @@ The following items are explicitly deferred to post-launch. Each has a DECISION_
 invite-your-advisor Path A onboarding; A/B exit criteria.
 
 **Still backlog:** Blended family as separate slug (optional; `remarriage-blended-family` covers today)
+
+**Queued next (2026-05-29 — post attorney monetization + projections readiness):**
+
+- **Dashboard projection-setup nudge (low priority)** — When `checkProjectionReadiness().canShowPartial` is true (assets/income present but birth year or retirement age missing), show a subtle card on `/dashboard` (“Add your retirement age to see your full timeline” → `/projections` or inline prompt). **Deferred:** add noise before funnel data; revisit after ~2 weeks of real traffic on the scenarios → projections path. Projections page already shows inline `ProfileFieldPrompt` for partial users.
+
+- **Attorney drip cron verification (ops)** — After the first real attorney registers, confirm steps 2–3 fire via daily `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Cron schedules step 2 when `attorney_drip_step_1_sent_at` is ≥3 days ago; step 3 when step 1 is ≥7 days ago (same pattern as advisor drip — **not** `profiles.created_at`). Manual check ~3 days after first signup: SQL + Resend inbox. See [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops), [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 ---
 

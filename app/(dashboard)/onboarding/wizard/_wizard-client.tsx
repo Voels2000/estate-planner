@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
 import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
+import type { PersonaConfig } from '@/lib/onboarding/personaConfig'
 import { cn } from '@/lib/utils'
 
 type RefOption = { value: string; label: string }
@@ -18,6 +19,7 @@ type Props = {
   assetTypes: RefOption[]
   incomeTypes: RefOption[]
   inviteMailto: string
+  personaConfig: PersonaConfig
 }
 
 type WizardStepPreview = {
@@ -72,6 +74,7 @@ export function OnboardingWizardClient({
   assetTypes,
   incomeTypes,
   inviteMailto,
+  personaConfig,
 }: Props) {
   const router = useRouter()
   const wizardCompletedRef = useRef(false)
@@ -113,6 +116,10 @@ export function OnboardingWizardClient({
   }, [])
 
   const sortedAssetTypes = [...assetTypes].sort((a, b) => a.label.localeCompare(b.label))
+  const defaultPersonaAssetType =
+    sortedAssetTypes.find((t) => t.value === personaConfig.firstAssetType)?.value ??
+    sortedAssetTypes[0]?.value ??
+    ''
   const sortedIncomeTypes = [...incomeTypes].sort((a, b) => a.label.localeCompare(b.label))
   const defaultIncomeType =
     sortedIncomeTypes.find((t) => t.value === 'salary')?.value ??
@@ -120,7 +127,7 @@ export function OnboardingWizardClient({
     'salary'
 
   const [assetName, setAssetName] = useState('')
-  const [assetType, setAssetType] = useState(sortedAssetTypes[0]?.value ?? '')
+  const [assetType, setAssetType] = useState(defaultPersonaAssetType)
   const [assetValue, setAssetValue] = useState('')
   const [assetOwner, setAssetOwner] = useState('person1')
   const [step1View, setStep1View] = useState<'fork' | 'manual'>('fork')
@@ -300,10 +307,10 @@ export function OnboardingWizardClient({
               <>
                 <Card.Header>
                   <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
-                    Let&apos;s build your financial picture
+                    {personaConfig.wizardStep1Headline}
                   </h1>
                   <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
-                    Already have your data in Excel or CSV? Import it in one step.
+                    {personaConfig.wizardStep1Body}
                   </p>
                 </Card.Header>
                 <Card.Body className="space-y-6">
@@ -320,6 +327,17 @@ export function OnboardingWizardClient({
                   >
                     Upload a spreadsheet
                   </Button>
+                  <p className="text-center text-xs text-[color:var(--mwm-text-muted)]">
+                    Recommended for you:{' '}
+                    <a
+                      href={`/templates/${personaConfig.importTemplateName}`}
+                      className="font-medium text-[color:var(--mwm-navy)] underline underline-offset-2"
+                      download
+                    >
+                      {personaConfig.importTemplateName}
+                    </a>{' '}
+                    · Download template →
+                  </p>
                   <div className="relative text-center">
                     <span className="bg-white px-3 text-xs text-[color:var(--mwm-text-muted)] relative z-10">
                       or
@@ -334,10 +352,11 @@ export function OnboardingWizardClient({
                         event_name: 'wizard_manual_asset_cta',
                         properties: { step: 1 },
                       })
+                      setAssetType(defaultPersonaAssetType)
                       setStep1View('manual')
                     }}
                   >
-                    Add assets manually
+                    Add {personaConfig.firstAssetLabel.toLowerCase()} →
                   </Button>
                 </Card.Body>
               </>
@@ -347,20 +366,20 @@ export function OnboardingWizardClient({
               <>
                 <Card.Header>
                   <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
-                    What&apos;s your most significant asset?
+                    {personaConfig.wizardStep1Headline}
                   </h1>
                   <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
-                    This gives us your starting net worth and flags any titling gaps.
+                    {personaConfig.wizardStep1Body}
                   </p>
                 </Card.Header>
                 <Card.Body className="space-y-4">
-                  <WizardField label="Asset name">
+                  <WizardField label={personaConfig.firstAssetLabel}>
                     <input
                       type="text"
                       value={assetName}
                       onChange={(e) => setAssetName(e.target.value)}
                       className={formControlClass}
-                      placeholder="Primary home, 401(k)"
+                      placeholder={personaConfig.firstAssetPlaceholder}
                     />
                   </WizardField>
                   <WizardField label="Asset type">

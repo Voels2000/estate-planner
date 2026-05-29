@@ -216,6 +216,22 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` adds `/scenarios`
 - [x] Master docs sync (this pass)
 
+## Persona-based onboarding (2026-05-29) — shipped
+
+- [x] Migration `20260530_onboarding_persona.sql` — `profiles.onboarding_persona`, `persona_set_at`
+- [x] `/onboarding/persona` — 4-card selection, post-profile redirect, sidebar skip → `accumulator`
+- [x] `lib/onboarding/personaConfig.ts` — wizard copy, first asset type, import template per persona
+- [x] Persona-aware wizard step 1 — headline, manual CTA, recommended template link
+- [x] `PersonaInsightCard` — 4 variants, 7-day window, sessionStorage dismiss, above `SetupProgressCard`
+- [x] Funnel events — `persona_screen_shown`, `persona_selected`, `persona_skipped`, `persona_insight_*`
+- [x] Admin funnel tab — `persona_selected`, `persona_skipped`
+- [x] Master docs sync (this pass)
+
+## Queued next (2026-05-29) — not scheduled
+
+- [ ] **Dashboard `canShowPartial` nudge** — low priority; revisit after ~2 weeks traffic ([ROADMAP.md](./ROADMAP.md))
+- [ ] **Attorney drip cron verification** — SQL ~3 days after first real attorney ([SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [NEXT_SESSION.md](./NEXT_SESSION.md#queued-next-post-ship-ops))
+
 ## Inline profile prompts E2E (2026-05-27) — shipped
 
 - [x] `consumer-profile-field-prompt.spec.ts` — Scenarios + SS UI (save, dismiss, deduction, PIA)

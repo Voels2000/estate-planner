@@ -1,6 +1,7 @@
 /** Routes that must not be redirected to /onboarding/wizard while onboarding is in progress. */
 export const WIZARD_GATE_EXEMPT_PREFIXES = [
   '/onboarding/wizard',
+  '/onboarding/persona',
   '/onboarding/invite-advisor',
   '/profile',
   '/billing',

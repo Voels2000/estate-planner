@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { afterHouseholdWrite, resolveOwnedHouseholdId } from '@/lib/consumer/afterHouseholdWrite'
+import { isOnboardingPersona } from '@/lib/onboarding/personaConfig'
 import {
   buildHouseholdRow,
   validateProfileSavePayload,
@@ -16,7 +17,43 @@ export async function PATCH(request: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as Partial<ProfileSavePayload>
+  const body = (await request.json()) as Partial<ProfileSavePayload> & {
+    onboarding_persona?: string
+  }
+
+  if (body.onboarding_persona !== undefined) {
+    if (!isOnboardingPersona(body.onboarding_persona)) {
+      return NextResponse.json({ error: 'Invalid onboarding persona' }, { status: 400 })
+    }
+
+    const { data: existingPersona } = await supabase
+      .from('profiles')
+      .select('persona_set_at')
+      .eq('id', user.id)
+      .single()
+
+    const personaUpdates: Record<string, string> = {
+      onboarding_persona: body.onboarding_persona,
+      updated_at: new Date().toISOString(),
+    }
+    if (!existingPersona?.persona_set_at) {
+      personaUpdates.persona_set_at = new Date().toISOString()
+    }
+
+    const { error: personaError } = await supabase
+      .from('profiles')
+      .update(personaUpdates)
+      .eq('id', user.id)
+
+    if (personaError) {
+      return NextResponse.json({ error: personaError.message }, { status: 500 })
+    }
+
+    const bodyKeys = Object.keys(body)
+    if (bodyKeys.length === 1 && bodyKeys[0] === 'onboarding_persona') {
+      return NextResponse.json({ ok: true })
+    }
+  }
   const existing = await loadProfileSavePayloadForUser(supabase, user.id)
   const payload: ProfileSavePayload = existing
     ? mergeProfilePatch(existing, body)

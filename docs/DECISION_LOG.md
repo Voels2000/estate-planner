@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Attorney monetization + projections readiness)
+# Last updated: 2026-05-29 (Persona-based onboarding)
+
+## Persona-based onboarding — routing only, not feature gates (2026-05-29)
+
+**Decision:** Add a single "What describes you?" screen immediately after slim profile save. Answer stored on `profiles.onboarding_persona` drives first-run copy (wizard step 1, recommended import template, dashboard insight card) — **does not gate features or billing**.
+
+**Four personas:** `business_owner`, `real_estate`, `executive`, `accumulator` — cover $2M–$30M target segment.
+
+**Locked:**
+- `persona_set_at` set once on first answer; immutable even if user changes selection later (analytics anchor).
+- Sidebar navigation away from persona screen → implicit skip sets `accumulator` (most neutral fallback).
+- `PersonaInsightCard` — 7-day first-run only (account `created_at`); dismiss via sessionStorage.
+- Wizard enforces persona before step 1; existing users with NULL persona see screen on next wizard visit.
+
+**Config:** `lib/onboarding/personaConfig.ts` — single source for wizard copy, first asset type, import template, dashboard emphasis.
+
+**Migration:** `20260530_onboarding_persona.sql`.
+
+---
 
 ## Attorney Stripe checkout + upgrade prompts + drip (2026-05-29)
 
@@ -13,9 +31,9 @@
 - Tier 0 → blurred doc-health preview + upgrade overlay (not hidden entirely).
 - PDF export → `AttorneyUpgradePrompt` instead of plain text link.
 
-**Drip:** Step 1 on attorney signup callback, claim-listing, and portal page visit; steps 2–3 via `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Columns: `attorney_drip_step_*_sent_at` on `profiles`. BCC `avoels@comcast.net` on sends (matches attorney-notify).
+**Drip:** Step 1 on attorney signup callback, claim-listing, and portal page visit; steps 2–3 via `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Columns: `attorney_drip_step_*_sent_at` on `profiles`. BCC `avoels@comcast.net` on sends (matches attorney-notify). **Cron timing:** step 2 when step 1 sent ≥3 days ago; step 3 when step 1 sent ≥7 days ago (mirrors advisor drip — not `created_at`). **Post-ship:** manual SQL verification ~3 days after first real attorney — see [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops).
 
-**Docs:** migration `20260529130000_attorney_drip_columns.sql`; `lib/tiers.ts` → `ATTORNEY_PLAN_PRICE_IDS`, `getAttorneyTierFromPriceId()`.
+**Deferred (low priority):** Dashboard nudge when `checkProjectionReadiness().canShowPartial` — revisit after ~2 weeks of traffic ([ROADMAP.md backlog](./ROADMAP.md)).
 
 ---
 
@@ -26,6 +44,8 @@
 **Reasoning:** Users who filled retirement/longevity via `/scenarios` prompts still hit generic “Complete your profile” on `/projections`. Readiness is server-computed on each render; scenarios PATCH persists to DB — the bug was the empty-state condition, not cache staleness.
 
 **`/complete` unchanged:** Still uses legacy TIER2 empty CTAs; projections-only fix in this sprint.
+
+**Deferred:** Dashboard card when `canShowPartial` (user has assets/income but missing age fields) — low priority; see ROADMAP backlog and NEXT_SESSION § Queued next.
 
 **Tests:** `tests/unit/projectionReadiness.spec.ts` (5 cases); `PLANNING_MISSING_PROJECTION_ACTIONS_TIER2` adds `/scenarios` link (profile + scenarios, not merged with TIER3).
 

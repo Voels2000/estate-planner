@@ -42,9 +42,11 @@ import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionSce
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
 import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
+import { PersonaInsightCard } from '@/components/dashboard/PersonaInsightCard'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
 import { AdvisorConnectedBanner } from '@/components/dashboard/AdvisorConnectedBanner'
 import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
+import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -161,6 +163,18 @@ type Props = {
   person1Name?: string
   person2Name?: string
   hasSpouse?: boolean
+  personaInsight?: {
+    persona: OnboardingPersona
+    showCard: boolean
+    totalAssets: number
+    hasBusinessAsset: boolean
+    hasRealEstateAsset: boolean
+    distinctPropertyStates: number
+    estateTaxEstimate: number | null
+    retirementAge: number | null
+    currentAge: number | null
+    yearsToRetirement: number | null
+  } | null
 }
 
 // ---------------------------------------------------------------------------
@@ -219,6 +233,7 @@ export function DashboardClient(props: Props) {
     person1Name = 'Person 1',
     person2Name = 'Person 2',
     hasSpouse = false,
+    personaInsight = null,
   } = props
 
   const searchParams = useSearchParams()
@@ -578,6 +593,10 @@ export function DashboardClient(props: Props) {
 
       {sectionVisible(2) && (
         <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+      )}
+
+      {!isAdvisor && personaInsight && (
+        <PersonaInsightCard {...personaInsight} />
       )}
 
       {!isAdvisor && (planStage.stage === 1 || showAllTools) && (

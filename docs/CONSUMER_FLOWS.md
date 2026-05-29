@@ -125,6 +125,19 @@ Each feature section below uses this shape:
 
 Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?required=true&missing=state_primary,filing_status,…&from=/estate-tax` (`lib/estate/requireMinimumProfile.ts`).
 
+### Persona selection — `/onboarding/persona`
+
+| | |
+|--|--|
+| **User goal** | Choose the persona that best describes their situation so first-run copy is tailored |
+| **Tier / gate** | Tier 1; requires MVP profile; skipped when `onboarding_persona` is set |
+| **Server** | `app/(dashboard)/onboarding/persona/page.tsx` |
+| **Client** | `_persona-client.tsx` — 2×2 card grid; Continue → PATCH persona → wizard |
+| **Write APIs** | `PATCH /api/consumer/profile` with `{ onboarding_persona }` only |
+| **Redirect** | Post-profile save → `/onboarding/persona` (when wizard fields shown and persona NULL) → `/onboarding/wizard` |
+| **Fallback** | Sidebar navigation away without selecting → `accumulator` + `persona_skipped` funnel event |
+| **Migration** | `20260530_onboarding_persona.sql` — `profiles.onboarding_persona`, `persona_set_at` |
+
 ### Onboarding Wizard — `/onboarding/wizard`
 
 | | |
@@ -132,7 +145,7 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | **User goal** | Add first asset + first income + optionally invite advisor |
 | **Tier / gate** | Tier 1; requires MVP profile; blocked when `onboarding_wizard_completed_at` is set |
 | **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
-| **Client** | `_wizard-client.tsx` — 3-step guided flow; step completion inferred from `GET /api/consumer/setup-progress` (data counts, not click-through); **← Back to dashboard** exits without completing; steps navigable freely |
+| **Client** | `_wizard-client.tsx` — 3-step guided flow; **step 1 persona-aware** (headline, first asset type, recommended import template from `personaConfig`); step completion inferred from `GET /api/consumer/setup-progress` (data counts, not click-through); **← Back to dashboard** exits without completing; steps navigable freely |
 | **Write APIs** | `POST /api/consumer/assets` (step 1); `POST /api/consumer/income` (step 2); `POST /api/consumer/onboarding-wizard-complete` (step 3) |
 | **Layout gate** | `WizardOnboardingGate` — redirects only when MVP profile ready, wizard not complete, and **no** assets/income yet (`checkHouseholdHasData`); Financial Planning routes exempt (`wizardGateExemptPrefixes`); users with any data navigate freely with `SetupProgressCard` nudge on dashboard |
 | **Dashboard** | `SetupProgressCard` — section-based progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
@@ -200,9 +213,9 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Write APIs** | `PATCH /api/consumer/estate-checklist` (checklist toggles only) |
 | **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
-| **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `components/dashboard/PlanProgressBar.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
+| **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`QuickAddAssetModal`** (stage 1, zero assets — inline first asset without leaving dashboard); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
+| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`PersonaInsightCard`** (7-day first-run, persona-specific insight above setup card); **`QuickAddAssetModal`** (stage 1, zero assets — inline first asset without leaving dashboard); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 

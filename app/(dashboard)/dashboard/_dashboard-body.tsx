@@ -51,6 +51,7 @@ import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecut
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import { determinePlanStage } from '@/lib/dashboard/determinePlanStage'
 import { getUserAccess } from '@/lib/get-user-access'
+import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 
 type HouseholdRow = Record<string, unknown> & {
   id: string
@@ -505,6 +506,39 @@ export async function DashboardBody({
     .eq('is_active', true)
     .order('sort_order')
 
+  const { data: authUserData } = await admin.auth.admin.getUserById(userId)
+  const accountCreatedAt = authUserData?.user?.created_at
+  const withinFirstWeek =
+    accountCreatedAt != null &&
+    Date.now() - new Date(accountCreatedAt).getTime() <= 7 * 24 * 60 * 60 * 1000
+
+  const onboardingPersona = profile?.onboarding_persona as OnboardingPersona | null | undefined
+  const hasBusinessAssetFromAssets = (assets ?? []).some(
+    (a) => (a as { type?: string }).type === 'business',
+  )
+  const hasBusinessAsset = hasBusinessInterests || hasBusinessAssetFromAssets
+  const hasRealEstateAssetFromAssets = (assets ?? []).some((a) => {
+    const t = String((a as { type?: string }).type ?? '')
+    return t === 'real_estate' || t.includes('real')
+  })
+  const hasRealEstateAsset = hasRealEstate || hasRealEstateAssetFromAssets
+
+  const personaInsight =
+    onboardingPersona && withinFirstWeek
+      ? {
+          persona: onboardingPersona,
+          showCard: true,
+          totalAssets,
+          hasBusinessAsset,
+          hasRealEstateAsset,
+          distinctPropertyStates: personaAlerts.distinctPropertyStates.length,
+          estateTaxEstimate: estateCallout?.estimatedTaxFederal ?? null,
+          retirementAge: p1RetirementAge,
+          currentAge: p1BirthYear != null ? currentYear - p1BirthYear : null,
+          yearsToRetirement,
+        }
+      : null
+
   return (
     <DashboardClient
       planStage={planStage}
@@ -573,6 +607,7 @@ export async function DashboardBody({
       person1Name={household?.person1_name ?? 'Person 1'}
       person2Name={household?.person2_name ?? 'Person 2'}
       hasSpouse={household?.has_spouse === true}
+      personaInsight={personaInsight}
     />
   )
 }

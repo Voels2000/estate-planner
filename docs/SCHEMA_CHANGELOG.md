@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Persona-based onboarding (2026-05-29)
+
+**Migration:** `20260530_onboarding_persona.sql`
+
+| Change | Detail |
+|--------|--------|
+| `profiles.onboarding_persona` | `TEXT` CHECK — `business_owner` \| `real_estate` \| `executive` \| `accumulator`; NULL until answered |
+| `profiles.persona_set_at` | Timestamptz — set once on first persona save; immutable for analytics |
+
+**Code (no new tables):** `/onboarding/persona` selection screen; post-profile redirect; persona-aware wizard step 1 (`lib/onboarding/personaConfig.ts`); `PersonaInsightCard` on dashboard (7-day account age, sessionStorage dismiss); funnel events `persona_*`; `PATCH /api/consumer/profile` accepts persona-only updates; wizard gate exempt `/onboarding/persona`.
+
+**Apply on remote:** `20260530_onboarding_persona.sql`.
+
+---
+
 ## Attorney monetization — checkout + drip (2026-05-29)
 
 **Migration:** `20260529130000_attorney_drip_columns.sql`

@@ -95,6 +95,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor client limits | `lib/advisor/advisorClientLimits.ts` — invite + accept-request |
 | Advisor activation drip | `lib/emails/advisor-drip-templates.ts`, `POST /api/email/advisor-drip`, cron step 8 |
 | Advisor value prop UI | `AdvisorValuePropBanner` on `/advisor` — vs eMoney/PDF portals, B2B2C, workflow |
+| Persona onboarding (2026-05-29) | `/onboarding/persona` after MVP profile; `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator` |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
@@ -1087,6 +1088,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 | Drip | `lib/attorney/sendAttorneyDripStep.ts`; step 1 on signup/claim/portal; steps 2–3 in cron |
 
 **Manual before go-live:** Create Stripe products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY`, `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
+
+**Post-ship ops:** Attorney drip steps 2–3 — manual SQL check ~3 days after first real attorney ([SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops)). Dashboard `canShowPartial` nudge — deferred low priority ([ROADMAP.md](./ROADMAP.md)).
 
 ---
 

@@ -28,7 +28,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   const [{ data: profile }, { data: household }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, email, onboarding_wizard_completed_at')
+      .select('full_name, email, onboarding_wizard_completed_at, onboarding_persona')
       .eq('id', user.id)
       .single(),
     supabase.from('households').select('*').eq('owner_id', user.id).single(),
@@ -45,6 +45,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
       fromParam={from ?? null}
       requiredParam={required === 'true'}
       missingFields={missingFields as ProfileGateMissingField[]}
+      onboardingPersona={profile?.onboarding_persona ?? null}
       householdSnapshot={{
         state_primary: household?.state_primary ?? null,
         filing_status: household?.filing_status ?? null,

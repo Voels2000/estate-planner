@@ -7,6 +7,7 @@ import {
   isWizardReadyProfile,
 } from '@/lib/estate/profileGate'
 import { OnboardingWizardClient } from './_wizard-client'
+import { getPersonaConfig } from '@/lib/onboarding/personaConfig'
 
 export default async function OnboardingWizardPage() {
   const supabase = await createClient()
@@ -19,7 +20,7 @@ export default async function OnboardingWizardPage() {
     await Promise.all([
       supabase
         .from('profiles')
-        .select('full_name, role, onboarding_wizard_completed_at, referral_code')
+        .select('full_name, role, onboarding_wizard_completed_at, referral_code, onboarding_persona')
         .eq('id', user.id)
         .single(),
       supabase.from('households').select('*').eq('owner_id', user.id).maybeSingle(),
@@ -37,6 +38,10 @@ export default async function OnboardingWizardPage() {
 
   if (isWizardComplete(profile)) {
     redirect('/dashboard')
+  }
+
+  if (!profile?.onboarding_persona) {
+    redirect('/onboarding/persona')
   }
 
   if (!isWizardReadyProfile(household)) {
@@ -66,6 +71,8 @@ export default async function OnboardingWizardPage() {
     `I'm using My Wealth Maps to organize my financial and estate planning.\n\nYou can connect with me at: ${findAdvisorUrl}`,
   )
 
+  const personaConfig = getPersonaConfig(profile?.onboarding_persona)
+
   return (
     <OnboardingWizardClient
       person1Label={person1Label}
@@ -74,6 +81,7 @@ export default async function OnboardingWizardPage() {
       assetTypes={assetTypes ?? []}
       incomeTypes={incomeTypes ?? []}
       inviteMailto={`mailto:?subject=${inviteEmailSubject}&body=${inviteEmailBody}`}
+      personaConfig={personaConfig}
     />
   )
 }
