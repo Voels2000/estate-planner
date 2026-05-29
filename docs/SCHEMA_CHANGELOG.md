@@ -14,6 +14,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## TERMS-2/3/5 — billing checkout fixes (2026-05-29, code only)
+
+| Change | Files |
+|--------|-------|
+| Trial checkout `no_payment_required` on terms fallback | `app/(auth)/terms/accept/page.tsx` |
+| `trialing` in dashboard `hasAccess` | `app/(dashboard)/layout.tsx` |
+| Stripe success → dashboard/profile | `app/api/stripe/checkout/route.ts` |
+| Orphan auth → profiles repair script | `scripts/repair-orphaned-auth-user.ts`, `npm run repair:orphaned-user` |
+
+**Post-launch:** TERMS-1 signup checkbox; Section F backfill banner (soft, non-blocking).
+
+**No schema migration** (`terms_accepted_at` already in `20260331000001_profiles_terms.sql`).
+
+---
+
 ## Stripe annual toggle guard (2026-05-28, code only)
 
 | Change | Files |

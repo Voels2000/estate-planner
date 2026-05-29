@@ -26,6 +26,7 @@
     "prune:e2e": "dotenv -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts",
     "verify:drip": "dotenv -e .env.local -- npx tsx scripts/verify-drip-sequence.ts",
     "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
+    "repair:orphaned-user": "dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts",
     "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts"
   },
   "dependencies": {

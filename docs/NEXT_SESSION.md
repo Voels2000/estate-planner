@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; advisor tier fix)
+# Updated: 2026-05-29 (TERMS-2/3/5 billing fixes; Stripe go-live guide)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Stripe:** Complete [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — **Phase 1 test mode** (6 prices + preview env + webhook + C-4 walkthrough) before **Phase 2 live keys** on go-live day. Annual toggle appears only when all three `STRIPE_PRICE_*_ANNUAL` vars are set. **Advisor tier fix (shipped).** **Sprint 4 pricing (shipped):** $29/$79/$149. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Billing (shipped):** TERMS-2/3/5 — Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard` (not `/terms/accept`). **Before public signups:** TERMS-1 signup checkbox (legal). **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
 >
 > **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview: create 6 test prices, set all `STRIPE_PRICE_*` + test keys, webhook, portal — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + live env vars + one real-card smoke → `PUBLIC_SIGNUP_OPEN=true`.
 >
@@ -95,6 +95,22 @@
 |------|--------|
 | `loading.tsx` / `error.tsx` on assets, titling, advisor, my-estate-strategy | ✅ |
 | `revalidateTag(household-composition-{id})` after household writes | ✅ |
+
+---
+
+## TERMS-2/3/5 — billing checkout fixes ✅ (2026-05-29, `48e7326`)
+
+| Fix | Status |
+|-----|--------|
+| TERMS-2: `/terms/accept` accepts `no_payment_required`; `subscription_status` from Stripe | ✅ |
+| TERMS-3: `layout.tsx` `hasAccess` includes `trialing` | ✅ |
+| TERMS-5: Checkout success → `/dashboard` or `/profile` (not `/terms/accept`) | ✅ |
+
+**Post-launch (not blockers):**
+- **TERMS-1** — T&C checkbox at signup (record `terms_accepted_at` before any access)
+- **Section F** — Soft backfill banner for users without `terms_accepted_at`
+
+**Ops:** `npm run repair:orphaned-user -- <email>` — missing `profiles` row + optional Stripe sync.
 
 ---
 

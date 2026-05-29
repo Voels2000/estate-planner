@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-28 (Stripe sandbox→production go-live guide; annual toggle guard)
+# Last updated: 2026-05-29 (TERMS-2/3/5 billing fixes; Stripe go-live guide)
 
 ---
 
@@ -332,6 +332,9 @@ npx tsx scripts/seed-test-consumer-estate.ts
 | Annual prices | **Requires all three** `STRIPE_PRICE_*_ANNUAL` env vars — no legacy fallback |
 | Monthly/annual toggle | Shown on `/billing` and `/pricing` only when `isAnnualBillingConfigured()` is true (server reads env). If annual IDs missing, toggle is **hidden** and monthly plans render (avoids application error) |
 | Tier after payment | Webhook sets `consumer_tier` via `getTierFromPriceId(priceId)`; `subscription_status` mirrors Stripe (`trialing` during Estate trial) |
+| Post-checkout redirect | Consumers → `/dashboard?checkout=success` or `/profile?checkout=success` (not `/terms/accept`) |
+| Dashboard access | `subscription_status = 'trialing'` grants access (Stripe 14-day Estate trial) |
+| Orphan auth users | `npm run repair:orphaned-user -- <email>` if `profiles` row missing |
 
 ---
 
@@ -513,6 +516,10 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 - [x] Billing + pricing: $29/$79/$149; annual toggle when annual env vars set
 - [x] `UpgradeBanner` pricing + trial copy
 - [x] Annual toggle hidden when any `STRIPE_PRICE_*_ANNUAL` missing (no client crash)
+- [x] TERMS-2: trial checkout `no_payment_required` on `/terms/accept` fallback
+- [x] TERMS-3: `trialing` in dashboard `hasAccess`
+- [x] TERMS-5: Stripe success URL → dashboard/profile (not `/terms/accept`)
+- [ ] TERMS-1: signup T&C checkbox before `PUBLIC_SIGNUP_OPEN=true` (legal)
 
 ### Go/no-go (Stripe)
 
@@ -561,6 +568,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-29 | TERMS-2/3/5 billing fixes | Trial checkout access; direct post-Stripe redirect; `repair-orphaned-user` script (`48e7326`) |
 | 2026-05-28 | Stripe go-live docs + annual toggle guard | LAUNCH_CHECKLIST Phase 1/2 sandbox→production; `isAnnualBillingConfigured()` hides toggle |
 | 2026-05-28 | Advisor dashboard tier fix | `_dashboard-body` uses `getUserAccess().tier`; LAUNCH_CHECKLIST advisor manual billing |
 | 2026-05-28 | Sprint 4 consumer pricing | **Code complete** — $29/$79/$149 + annual; Estate 14-day trial; `stripePrices.ts`; billing + pricing toggle; LAUNCH_CHECKLIST Stripe section |

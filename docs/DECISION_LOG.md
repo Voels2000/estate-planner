@@ -59,6 +59,16 @@ First advisor cohort is small and high-touch. Manual billing gives flexibility t
 
 ---
 
+## Terms acceptance + post-checkout flow — TERMS-2/3/5 (2026-05-29)
+
+**Decision:** Stripe success redirects to `/dashboard` or `/profile` (not `/terms/accept`). Estate trial checkouts use `payment_status = no_payment_required`; dashboard grants access for `subscription_status = trialing`.
+
+**Deferred before public signups:** TERMS-1 — record `terms_accepted_at` at signup via checkbox. Section F — soft backfill banner for existing users without acceptance timestamp.
+
+**Ops:** `npm run repair:orphaned-user -- <email>` when auth user exists without `profiles` row (`handle_new_user` missed).
+
+---
+
 ## Golden Path — unified progress model (2026-05-29)
 
 **Decision:** Replace buried `SetupProgressCard` as the primary progress UX with `PlanProgressBar` driven by `determinePlanStage()` — four stages (Financial Foundation → Retirement & Estate Setup → Estate Planning → Plan Complete). One `progressPct`, one `nextActionHref`. Dashboard sections gated by stage; conflicts and life events always visible.

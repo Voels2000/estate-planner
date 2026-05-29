@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; Sprint 19)
+# Last updated: 2026-05-29 (TERMS-2/3/5 billing; Stripe go-live; Sprint 19)
 
 ---
 
@@ -37,6 +37,8 @@
 **Engineering (closed):** Sprint 18 shells (J) + flow/perf program K–O + 19a on `main`.
 
 **Sprint 4 consumer pricing (2026-05-28, 3 commits):** $29/$79/$149 monthly; $290/$790/$1,490 annual (2 months free); 14-day Estate trial only. `lib/billing/stripePrices.ts`, `consumerPlanCatalog`, billing + `/pricing` period toggle, checkout/webhook, `UpgradeBanner` copy. **Code complete** — Stripe Dashboard + env vars remain manual. See [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+
+**TERMS-2/3/5 billing fixes (2026-05-29, `48e7326`):** Estate trial checkout; `trialing` dashboard access; direct post-Stripe redirect. **Before open signups:** TERMS-1 signup T&C checkbox. **Post-launch:** Section F backfill banner. **Ops:** `npm run repair:orphaned-user`.
 
 **Consumer estate UX (2026-05-28):** Estate preview + execution checklist (`estate_checklist_items`). **Apply migration:** `20260528120000_estate_checklist_items.sql`.
 

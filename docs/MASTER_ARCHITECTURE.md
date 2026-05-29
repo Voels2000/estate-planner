@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-28 (Stripe go-live guide; annual toggle guard; Sprint 19)
+# Last updated: 2026-05-29 (TERMS-2/3/5 billing; Stripe go-live guide; Sprint 19)
 
 ---
 
@@ -689,7 +689,9 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
 - **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key.
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
+- **Post-checkout success URL (2026-05-29):** consumers → `/dashboard?checkout=success` or `/profile?checkout=success`; advisors → `/advisor?checkout=success`. `/terms/accept` retained for legacy users without `terms_accepted_at` (TERMS-1 will move acceptance to signup).
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
+- **Dashboard access:** `app/(dashboard)/layout.tsx` `hasAccess` includes `subscription_status === 'trialing'` (Stripe Estate trial), not only `active` and signup `trial_started_at`.
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
 - Consumer billing page shows all three subscription tiers at initial purchase entry:
   - Financial
