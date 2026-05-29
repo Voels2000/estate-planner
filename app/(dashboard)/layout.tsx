@@ -134,6 +134,7 @@ export default async function DashboardLayout({
   const isAdvisorResolved = profileFull?.role === 'advisor'
   const isAttorneyResolved = profileFull?.role === 'attorney' || profileFull?.is_attorney === true
   const isActive = profileFull?.subscription_status === 'active'
+  const isStripeTrial = profileFull?.subscription_status === 'trialing'
   const isAdvisorManaged = profileFull?.subscription_status === 'advisor_managed'
 
   // Check trial status
@@ -163,6 +164,7 @@ export default async function DashboardLayout({
     isAdvisorClient ||
     isAdvisorManaged ||
     isActive ||
+    isStripeTrial ||
     trialActive ||
     isAttorneyResolved
   if (!hasAccess) redirect('/billing')
@@ -178,6 +180,7 @@ export default async function DashboardLayout({
     !isAdvisorClient &&
     !isAdvisorManaged &&
     !isActive &&
+    !isStripeTrial &&
     trialActive
 
   const isTrial =
