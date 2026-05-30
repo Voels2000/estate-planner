@@ -6,7 +6,7 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Estate Tax strategy panel** (`3c9a97a`) · **Dashboard Script A** (`960a414`) · **RMD** · **Social Security** · **Roth** · **Lifetime Snapshot** · **Dashboard cleanup**. Post-deploy visual smokes pending on Alan.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Three-state dashboard** (`b71af63`) · **No allocation card on dashboard** (`7e8bf00`) · **Estate Tax strategy panel** (`3c9a97a`) · **Consolidated alert panel** · **RMD** · **Social Security** · **Roth**. Post-deploy visual smokes pending on Alan + one State 2 household.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -29,20 +29,35 @@
 | Dashboard cleanup | `0aa0cab` + `f200af7` | Planning topics removed · bypass alert · titling badges-only |
 | Dashboard Script A | `960a414` | Readiness pill on intro row · allocation downstream links · conflict banner dedup |
 | Dashboard — no allocation card | `7e8bf00` | **`AssetAllocationSummary`** removed from Financial Summary; **`/allocation`** unchanged |
-| Three-state dashboard | *(this commit)* | State 1 onramp · State 2 net worth hero · State 3 tax hero (Alan unchanged) |
+| Three-state dashboard | `b71af63` | State 1 onramp · State 2 net worth hero · State 3 tax hero (Alan unchanged) |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**
 
 | Route | Confirm |
 |-------|---------|
-| `/dashboard` | Bypass alert **$645,463** between tiles and checklist · intro row **Estate readiness 56/100** · no mid-page conflict banner · Financial Summary has **no** asset allocation card |
+| `/dashboard` (Alan, State 3) | Tax hero · consolidated alerts · readiness strip · checklist/tax snapshot · **no** allocation card in Financial Summary |
+| `/dashboard` (State 2 smoke) | Net worth hero · amber estate-unlock prompt · **no** tax hero / readiness strip |
 | `/estate-tax` | Composition waterfall + strategy toggles (Alan WA tax) · $0-tax user sees waterfall only |
 | `/allocation` | Downstream note to Projections + Monte Carlo after save |
 | `/rmd` | **9 years away** (Alan) · **16 years away** (Cathi); decade nav changes rows |
 | `/social-security` | Survivor **$4,888/mo**; cumulative chart crossover ~age 84; spousal block unchanged |
 
 **Not in this pass:** Monte Carlo, Scenarios, Allocation, Projections UI polish · Roth emerald rows on IRA fixture household · wizard prod smoke · `supabase db push` for state exemption migration on prod if not yet run.
+
+---
+
+## Three-state dashboard ✅ (2026-05-30)
+
+**Commit:** `b71af63` · **Files:** `determinePlanStage.ts` (`getDashboardState`) · `_dashboard-body.tsx` · `_dashboard-client.tsx`
+
+| State | Condition | UI |
+|-------|-----------|-----|
+| 1 | `foundationScore < 60` · wizard incomplete · no data | `DashboardOnramp` early return in `page.tsx` |
+| 2 | Past onramp · taxes $0 · no estate-plan signals | Net worth hero · unlock prompt · `SetupProgressCard` · Financial/Retirement |
+| 3 | Tax &gt; 0 or `hasEstatePlanData` | Full Alan layout — tax hero · alerts · readiness strip · checklist |
+
+**Post-deploy smoke:** Alan → State 3 unchanged · find/create State 2 user ($0 tax, no conflicts) → net worth hero only.
 
 ---
 

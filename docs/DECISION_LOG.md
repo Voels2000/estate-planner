@@ -16,7 +16,7 @@
 
 **Files:** `determinePlanStage.ts` (`getDashboardState`), `dashboard/_dashboard-body.tsx`, `_dashboard-client.tsx`, `DashboardIntroSection.tsx`, `FinancialSummarySection.tsx`
 
-**Verify:** State 2 user — net worth hero, no tax hero, no readiness strip. Alan — State 3 unchanged.
+**Verify:** State 2 user — net worth hero, no tax hero, no readiness strip. Alan — State 3 unchanged. **Commit:** `b71af63`
 
 ---
 

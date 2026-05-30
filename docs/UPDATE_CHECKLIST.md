@@ -584,7 +584,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 
 ## Sprint — Three-state dashboard progression ✅ closed 2026-05-30
 
-**Files:** `determinePlanStage.ts` · `_dashboard-body.tsx` · `_dashboard-client.tsx` · `DashboardIntroSection.tsx` · `FinancialSummarySection.tsx`
+**Commit:** `b71af63` · **Files:** `determinePlanStage.ts` · `_dashboard-body.tsx` · `_dashboard-client.tsx` · `DashboardIntroSection.tsx` · `FinancialSummarySection.tsx`
 
 - [x] `getDashboardState()` — State 1 onramp (`page.tsx`), State 2 financial hero, State 3 full estate layout
 - [x] State 2 — net worth hero, amber unlock prompt, `SetupProgressCard`, Financial/Retirement collapsibles
