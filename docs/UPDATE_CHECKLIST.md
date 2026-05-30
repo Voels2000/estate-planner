@@ -578,13 +578,24 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`
 
 - [x] Stat cards + insight card (rate comparison, triggers)
-- [x] `WhatIfPanel` — slider; break-even `—` when `rateDiff = 0`
+- [x] `WhatIfPanel` — slider; break-even `—` when `rateDiff = 0` (superseded by WhatIfPanel fix below)
 - [x] Balance projection above grouped table; tab UI removed
 - [x] Grouped table by `conversionRationale`; year · age column; sticky headers
 - [x] Transfer Strategies CTA above methodology (when conversions > 0)
 - [x] Master docs — **CONSUMER_FLOWS.md**, **NEXT_SESSION.md**, **UPDATE_CHECKLIST.md**, **ROADMAP.md**
 - [x] **Prod smoke (`e2e-consumer`):** layout, slider, equal-rate break-even, group headers, tabs gone, CTA hidden at $0
 - [ ] **Manual smoke:** household with recommended conversions — emerald rows + CTA → `/my-estate-trust-strategy?tab=strategies&openPanel=roth`
+
+## Sprint — Roth WhatIfPanel fix ✅ (2026-05-30)
+
+**File:** `app/(dashboard)/roth/_roth-client.tsx` — **`WhatIfPanel` only**
+
+- [x] Signed **`lifetimeNetBenefit`** + **Lifetime extra cost** label when delay optimal
+- [x] **"Delay is better"** replaces break-even dash when current rate ≥ projected RMD rate
+- [x] Slider-reactive **`iraBalanceAtRmd`** + conversion delta annotation
+- [x] Panel title **"(delay is optimal)"**; local **`fmtPanel`** for negatives
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Alan `/roth` — slider updates all four WhatIf cells ($50K → $12K tax, −$15K extra cost)
 
 ## Sprint — Lifetime Snapshot polish ✅ closed 2026-05-30
 

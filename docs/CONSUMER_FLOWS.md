@@ -251,9 +251,9 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Render order** | Stat cards → insight (+ what-if) → **balance projection** (always visible) → **grouped table** → Transfer Strategies CTA (if conversions) → methodology |
 | **Grouped table** | Rows grouped by **`conversionRationale`** (`RothYearResult`); section header shows label + year range; emerald rows when `recommendedConversion > 0`; sticky column headers; year · age combined |
 | **Tabs removed** | No `Year-by-year plan` / `Balance projection` tab state — both surfaces always shown |
-| **WhatIfPanel** | Simplified estimates only (`rateDiff`, 15-year horizon); break-even **`—`** when current rate = projected RMD rate |
+| **WhatIfPanel** | Slider-reactive **`lifetimeNetBenefit`** (negative = **Lifetime extra cost**); **"Delay is better"** when current ≥ projected RMD rate; **`iraBalanceAtRmd`** + delta vs no conversion; title **"(delay is optimal)"** when delay wins |
 | **CTA** | **Use in Transfer Strategies →** — visible only when `totalConversions > 0`; sits **above** methodology note; unchanged deep link |
-| **Post-deploy smoke** | Prod 2026-05-30 (`e2e-consumer`): stat cards, insight, slider, break-even `—` at equal rates, balance above grouped table, 7 group headers, tabs gone. **Pending:** emerald conversion rows on household with IRA + rate differential (e.g. Johnson demo) |
+| **Post-deploy smoke** | Alan (24% vs 22%): slider moves all four cells — e.g. $50K/yr → **$12K** tax, **−$15K** extra cost, **Delay is better**, IRA at RMD drops. **Pending:** emerald rows on IRA + rate-spread household |
 
 ### Social Security — `/social-security` (2026-05-30 polish)
 

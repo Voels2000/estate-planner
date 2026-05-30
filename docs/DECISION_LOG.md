@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Estate Tax Snapshot strategy panel)
+# Last updated: 2026-05-30 (Roth WhatIfPanel fix)
+
+## Roth WhatIfPanel — honest cost when delay is optimal (2026-05-30)
+
+**Decision:** When **`projectedRmdPct <= currentRatePct`**, **`WhatIfPanel`** must not show stuck **$0** / **"—"** cells. Use signed **`lifetimeNetBenefit`** (label **Lifetime extra cost** when negative), **"Delay is better"** instead of break-even dash, and slider-reactive **`iraBalanceAtRmd`** via simplified conversion impact. Title: **"(delay is optimal)"**. Local **`fmtPanel`** inside **`WhatIfPanel`** only — top-level **`fmt()`** unchanged.
+
+**Reasoning:** Slider was never broken; **`rateDiff = max(0, …)`** hid the “converting now costs more” message. Alan (24% current vs 22% projected): **$12K** tax at $50K/yr, **−$15K** lifetime extra cost, IRA at RMD drops with slider.
+
+**Files:** `app/(dashboard)/roth/_roth-client.tsx` — **`WhatIfPanel` only**
+
+---
 
 ## Estate Tax Snapshot — interactive strategy panel (2026-05-30)
 
@@ -10,11 +20,11 @@
 
 ---
 
-**Decision:** Surface **`estateHealthScore.score`** as compact pill on the same flex row as conflict pills in **`DashboardIntroSection`** (green ≥80 · amber ≥60 · red &lt;60). Keep full **`EstateHealthScoreBlock`** with component bars in **`EstateSummarySection`**. On **`/allocation`**, add downstream note linking Projections + Monte Carlo after Save Target Mix; clarify risk profile caption.
+## Script A — readiness pill + allocation connections (2026-05-30)
+
+**Decision:** Surface **`estateHealthScore.score`** as compact pill on the same flex row as conflict pills in **`DashboardIntroSection`**. Keep full **`EstateHealthScoreBlock`** in **`EstateSummarySection`**. On **`/allocation`**, downstream note to Projections + Monte Carlo after save.
 
 **Files:** `DashboardIntroSection.tsx`, `_dashboard-client.tsx`, `allocation/_allocation-client.tsx`
-
-**Verify:** Alan — intro row shows conflicts + readiness on one line; estate summary collapsible still has detailed score breakdown.
 
 ---
 

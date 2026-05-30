@@ -95,7 +95,7 @@
 | Grouped table by `conversionRationale` | `[x]` |
 | CTA above methodology → Transfer Strategies | `[x]` |
 
-**Post-ship:** Prod smoke on `/roth` (e2e-consumer) — slider, break-even at equal rates, layout. Manual: emerald rows on IRA + rate-spread household.
+**Post-ship:** Prod smoke on `/roth` — WhatIfPanel all four cells react to slider (Alan: extra cost + **Delay is better**). Manual: emerald rows on IRA + rate-spread household.
 
 ---
 

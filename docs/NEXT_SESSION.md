@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Estate Tax Snapshot strategy panel)
+# Updated: 2026-05-30 (Roth WhatIfPanel fix)
 
 ---
 
@@ -22,7 +22,7 @@
 |------|--------|----------------|
 | Estate summary dashboard | `deb0080` | Tax hero + 4 tiles + checklist/tax snapshot two-col |
 | State exemption wire | `0686f52` | `no_portability` on tax snapshot |
-| Roth Conversion | `839bfbb` | `_roth-client.tsx` |
+| Roth Conversion | `839bfbb` + WhatIfPanel fix | `_roth-client.tsx` |
 | Lifetime Snapshot | `9d103a7` | `_complete-client.tsx` |
 | Social Security | `405d3d0` | `_ss-client.tsx` |
 | RMD Calculator | `b47fed5` | `_rmd-client.tsx` |
@@ -178,9 +178,28 @@
 | CTA | **Use in Transfer Strategies →** when `totalConversions > 0`; **above** methodology; → `?tab=strategies&openPanel=roth` |
 | Imports | `useMemo` / `useState` from `react` (not `React.useMemo`) |
 
-**Post-deploy prod smoke (2026-05-30, `e2e-consumer`):** stat cards · insight · slider updates tax · break-even **`—`** at equal rates · balance above grouped table · 7 group headers · tabs removed · CTA hidden at $0 conversions.
+**Post-deploy prod smoke (2026-05-30, `e2e-consumer`):** stat cards · insight · balance above grouped table · 7 group headers · tabs removed · CTA hidden at $0 conversions. **WhatIfPanel fix:** all four cells react to slider on Alan (extra cost + **Delay is better**).
 
 **Manual follow-up:** Log in as household with **traditional IRA + rate differential** (e.g. Johnson advisor demo) — confirm emerald conversion rows and CTA → Transfer Strategies sandbox.
+
+---
+
+## Roth WhatIfPanel fix ✅ (2026-05-30)
+
+**File:** `app/(dashboard)/roth/_roth-client.tsx` — **`WhatIfPanel` only**
+
+| Item | Notes |
+|------|-------|
+| Root cause | Slider worked; **`rateDiff = max(0, …)`** forced **$0** savings when current rate ≥ projected RMD rate |
+| **`lifetimeNetBenefit`** | Signed; label **Lifetime extra cost** when delay is optimal |
+| Break-even | **"Delay is better"** when converting now costs more (Alan: 24% vs 22%) |
+| **`iraBalanceAtRmd`** | Reacts to slider via `yearsUntilRmd × 1.05` conversion impact + delta annotation |
+| Title | **"(delay is optimal)"** when `projectedRmdPct <= currentRatePct` |
+| **`fmtPanel`** | Local helper inside panel; top-level **`fmt()`** unchanged |
+
+**Alan at $50K/yr:** Tax **$12K** · Lifetime extra cost **−$15K** · Break-even **Delay is better** · IRA at RMD decreases with slider.
+
+**Post-deploy smoke:** `/roth` — move slider; all four WhatIf cells update (especially on Alan / equal-or-inverted rate spread).
 
 ---
 

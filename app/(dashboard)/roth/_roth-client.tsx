@@ -34,26 +34,47 @@ function WhatIfPanel({
 }) {
   const [annualConversion, setAnnualConversion] = useState(50);
 
-  const taxThisYear = Math.round(annualConversion * (currentRatePct / 100));
+  function fmtPanel(n: number): string {
+    const sign = n < 0 ? "-" : "";
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}K`;
+    return `${sign}$${Math.round(abs)}`;
+  }
+
   const rmdRow = rows.find((r) => r.rmdAmount > 0);
   const projectedRmdPct = rmdRow
     ? Math.round((rmdRow.combinedMarginalRate ?? currentRatePct / 100) * 100)
     : currentRatePct;
-  const rateDiff = Math.max(0, projectedRmdPct - currentRatePct);
-  const lifetimeSavings = Math.round(annualConversion * (rateDiff / 100) * 15);
+
+  const conversionIsOptimal = projectedRmdPct > currentRatePct;
+  const rateDiff = projectedRmdPct - currentRatePct;
+  const conversionAmount = annualConversion * 1000;
+
+  const taxThisYear = Math.round(conversionAmount * (currentRatePct / 100));
+  const lifetimeNetBenefit = Math.round(conversionAmount * (rateDiff / 100) * 15);
+
   const breakeven =
-    lifetimeSavings > 0
+    conversionIsOptimal && taxThisYear > 0
       ? new Date().getFullYear() +
-        Math.round(taxThisYear / Math.max(lifetimeSavings / 15, 1))
+        Math.round(taxThisYear / Math.max(Math.abs(lifetimeNetBenefit) / 15, 1))
       : null;
-  const iraBalanceAtRmd = rmdRow
-    ? Math.round((rmdRow.taxDeferredEnd ?? 0) / 1000)
-    : null;
+
+  const currentYear = new Date().getFullYear();
+  const yearsUntilRmd = rmdRow ? Math.max(0, rmdRow.year - currentYear) : 0;
+  const baseIraAtRmd = rmdRow ? (rmdRow.taxDeferredEnd ?? 0) : 0;
+  const conversionImpact = annualConversion * 1000 * yearsUntilRmd * 1.05;
+  const iraBalanceAtRmd =
+    baseIraAtRmd > 0
+      ? Math.max(0, Math.round((baseIraAtRmd - conversionImpact) / 1000))
+      : null;
 
   return (
     <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-4">
       <p className="mb-3 text-xs font-medium text-[color:var(--mwm-navy)]">
-        What if I converted anyway?
+        {conversionIsOptimal
+          ? "What if I converted more?"
+          : "What if I converted anyway? (delay is optimal)"}
       </p>
 
       <div className="mb-3 flex items-center gap-3">
@@ -77,29 +98,48 @@ function WhatIfPanel({
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">Tax this year</p>
-          <p className="text-sm font-medium text-red-700">${taxThisYear}K</p>
+          <p className="text-sm font-medium text-red-700">{fmtPanel(taxThisYear)}</p>
         </div>
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">
-            Lifetime savings
+            {conversionIsOptimal ? "Lifetime savings" : "Lifetime extra cost"}
           </p>
           <p
             className={`text-sm font-medium ${
-              lifetimeSavings > 0 ? "text-emerald-700" : "text-[color:var(--mwm-text-secondary)]"
+              conversionIsOptimal
+                ? "text-emerald-700"
+                : lifetimeNetBenefit < 0
+                  ? "text-red-700"
+                  : "text-[color:var(--mwm-text-secondary)]"
             }`}
           >
-            {lifetimeSavings > 0 ? `$${lifetimeSavings}K` : "$0"}
+            {lifetimeNetBenefit > 0
+              ? `+${fmtPanel(lifetimeNetBenefit)}`
+              : lifetimeNetBenefit < 0
+                ? fmtPanel(lifetimeNetBenefit)
+                : "$0"}
           </p>
         </div>
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">Break-even year</p>
-          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">{breakeven ?? "—"}</p>
+          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+            {conversionIsOptimal && breakeven
+              ? breakeven
+              : conversionIsOptimal
+                ? "—"
+                : "Delay is better"}
+          </p>
         </div>
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">IRA at RMD age</p>
           <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
             {iraBalanceAtRmd != null ? `$${iraBalanceAtRmd}K` : "—"}
           </p>
+          {iraBalanceAtRmd != null && annualConversion > 0 && (
+            <p className="mt-0.5 text-[10px] text-emerald-700">
+              −${Math.round(conversionImpact / 1000)}K vs. no conversion
+            </p>
+          )}
         </div>
       </div>
     </div>
