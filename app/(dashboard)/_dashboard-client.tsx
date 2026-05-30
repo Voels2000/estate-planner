@@ -28,7 +28,8 @@ import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboar
 import { EstateSummarySection } from '@/app/(dashboard)/_components/dashboard/EstateSummarySection'
 import { DashboardIntroSection } from '@/app/(dashboard)/_components/dashboard/DashboardIntroSection'
 import {
-  EstateCalloutCard,
+  EstateSummaryHeroAndMetrics,
+  EstateTaxSnapshotPanel,
   type EstateCalloutCardProps,
 } from '@/components/dashboard/EstateCalloutCard'
 import { EstateExecutionChecklist } from '@/components/consumer/EstateExecutionChecklist'
@@ -408,6 +409,7 @@ export function DashboardClient(props: Props) {
         completionScore={completionScore}
         conflictReport={conflictReport}
         consumerTier={tier}
+        statePrimary={statePrimary}
         estateTaxExposure={
           estateCallout
             ? {
@@ -447,21 +449,35 @@ export function DashboardClient(props: Props) {
 
       {sectionVisible(2) && estateCallout && (
         <div className="mt-4">
-          <EstateCalloutCard
+          <EstateSummaryHeroAndMetrics
             {...estateCallout}
-            userTier={tier}
             statePrimary={statePrimary}
+            userTier={tier}
           />
         </div>
       )}
 
-      {sectionVisible(3) && executionChecklist.length > 0 && (
-        <div className="mt-4">
-          <EstateExecutionChecklist
-            items={executionChecklist}
-            userTier={tier}
-            onToggle={toggleChecklistItem}
-          />
+      {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout) && (
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {executionChecklist.length > 0 && (
+            <EstateExecutionChecklist
+              items={executionChecklist}
+              userTier={tier}
+              onToggle={toggleChecklistItem}
+            />
+          )}
+          {estateCallout && (
+            <EstateTaxSnapshotPanel
+              grossEstate={estateCallout.grossEstate}
+              totalLiabilities={totalLiabilities}
+              taxableEstate={composition?.taxable_estate}
+              federalExemption={composition?.exemption_available}
+              federalTax={estateCallout.estimatedTaxFederal}
+              estateTax={estateCallout.estimatedTaxState}
+              statePrimary={statePrimary}
+              consumerTier={tier}
+            />
+          )}
         </div>
       )}
 

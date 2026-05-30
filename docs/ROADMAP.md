@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Roth Conversion polish)
+# Last updated: 2026-05-30 (Estate summary dashboard consolidate)
 
 ---
 
@@ -20,6 +20,17 @@
 ---
 
 ## Current sprint
+
+### Sprint — Estate summary dashboard consolidate (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Tax hero + four metric tiles | `[x]` |
+| Checklist + tax snapshot two-column grid | `[x]` |
+| Greeting state context + compact alert pills | `[x]` |
+| EstateSummarySection below unchanged | `[x]` |
+
+---
 
 ### Sprint — Roth Conversion polish (2026-05-30) **← shipped**
 

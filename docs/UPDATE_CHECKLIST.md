@@ -505,6 +505,17 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
 - [x] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
 
+## Sprint — Estate summary dashboard consolidate ✅ closed 2026-05-30
+
+**Files:** `_dashboard-client.tsx` · `EstateCalloutCard.tsx` · `DashboardIntroSection.tsx`
+
+- [x] Tax exposure hero — red (`estimatedTaxState > 0`) or amber (federal-only)
+- [x] Four metric tiles; beige card removed
+- [x] Checklist + tax snapshot `sm:grid-cols-2` (stacks mobile)
+- [x] Greeting subtitle + state; compact alert pills
+- [x] EstateSummarySection (readiness, gaps, titling) unchanged below Financial/Retirement
+- [x] Master docs synced
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

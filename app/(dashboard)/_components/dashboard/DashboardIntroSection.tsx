@@ -12,6 +12,7 @@ type DashboardIntroSectionProps = {
     warnings: number
   } | null
   consumerTier?: number
+  statePrimary?: string | null
   estateTaxExposure?: {
     estimatedTaxState: number
     estimatedTaxFederal: number
@@ -19,8 +20,15 @@ type DashboardIntroSectionProps = {
 }
 
 export function DashboardIntroSection(props: DashboardIntroSectionProps) {
-  const { greeting, firstName, completionScore, conflictReport, consumerTier, estateTaxExposure } =
-    props
+  const {
+    greeting,
+    firstName,
+    completionScore,
+    conflictReport,
+    consumerTier,
+    statePrimary,
+    estateTaxExposure,
+  } = props
 
   const totalTax =
     (estateTaxExposure?.estimatedTaxState ?? 0) + (estateTaxExposure?.estimatedTaxFederal ?? 0)
@@ -33,7 +41,10 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
           <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]" suppressHydrationWarning>
             {greeting}, {firstName} 👋
           </h1>
-          <p className="mt-1 text-sm text-neutral-600">Your estate planning dashboard.</p>
+          <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+            Your estate planning dashboard
+            {statePrimary ? ` · ${statePrimary} state` : ''}
+          </p>
         </div>
       </div>
 
@@ -97,9 +108,9 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
             )}
             <a
               href={conflictDetailsHref}
-              className="text-xs text-neutral-400 hover:text-neutral-600 underline-offset-2 hover:underline transition"
+              className="text-xs text-[color:var(--mwm-text-secondary)] underline underline-offset-2"
             >
-              See details
+              See details →
             </a>
           </div>
         )}

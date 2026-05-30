@@ -1,18 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Roth Conversion polish)
+# Updated: 2026-05-30 (Estate summary dashboard consolidate)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Roth polish (2026-05-30, `839bfbb`):** stat cards, insight + WhatIfPanel, balance above grouped table, tabs removed. **Lifetime Snapshot (`9d103a7`):** hero, decade nav, SS/RMD colSpan. **Post-deploy:** `/roth` what-if slider + group headers smoke done; emerald rows pending IRA fixture.
+> My Wealth Maps — **Sprint 19.** **Estate summary consolidate (2026-05-30):** tax hero, 4 tiles, checklist + tax snapshot two-col. **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Estate summary dashboard consolidate ✅ (2026-05-30)
+
+**Files:** `app/(dashboard)/_dashboard-client.tsx` · `components/dashboard/EstateCalloutCard.tsx` · `DashboardIntroSection.tsx`
+
+| Item | Notes |
+|------|-------|
+| Hero | **`EstateSummaryHeroAndMetrics`** — red when `estimatedTaxState > 0` (e.g. WA $937K); amber when federal-only |
+| Metrics | Four tiles — gross, federal headroom (`exemptionRemaining`), est. federal/state tax; compact **`fmt`** |
+| Two-col | **`sm:grid-cols-2`** — `EstateExecutionChecklist` + **`EstateTaxSnapshotPanel`** (stacks on mobile) |
+| Greeting | Subtitle includes `state_primary` · alert pills compact row + **See details →** |
+| Unchanged | `EstateSummarySection` below — readiness score, planning gaps, titling conflicts |
+
+**Variable map:** `estateTax` → `estimatedTaxState` · `federalTax` → `estimatedTaxFederal` · `federalHeadroom` → `exemptionRemaining` · `fmtCurrencyCompact` → existing **`fmt`** in `formatters.ts`
 
 ---
 
