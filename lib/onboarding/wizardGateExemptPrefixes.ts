@@ -8,6 +8,7 @@ export const WIZARD_GATE_EXEMPT_PREFIXES = [
   '/settings',
   '/login',
   '/import',
+  '/dashboard',
   // Financial Planning — always accessible; users build data here
   '/assets',
   '/income',

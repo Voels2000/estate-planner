@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Dashboard onramp; Sprint 19)
+# Last updated: 2026-05-30 (Onramp guide path + wizard gate exemption)
+
+## Onramp guided path and wizard gate exemption (2026-05-30)
+
+**Decision:** (1) `DashboardOnramp` **guided** link uses dynamic `guidedHref`: `/onboarding/persona` when `onboarding_persona` is null, else `/onboarding/wizard` — wizard page redirects to persona if skipped. (2) Add **`/dashboard`** to `wizardGateExemptPrefixes` so `WizardOnboardingGate` does not auto-redirect consumers away from the onramp before they choose Import / Guide / Self.
+
+**Reasoning:** Linking Guide directly to `/onboarding/wizard` bounced users to persona (“What describes you?”) — felt like a loop. Layout client gate also hijacked `/dashboard` to wizard, preventing path choice.
+
+**Manual verify:** Fresh user — Import → `/import`; Guide → persona → wizard; Self → `/assets`.
+
+---
 
 ## Dashboard onramp for incomplete users (2026-05-30)
 

@@ -147,7 +147,7 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
 | **Client** | `_wizard-client.tsx` — 3-step guided flow; **step 1 persona-aware** (headline, first asset type, recommended import template from `personaConfig`); step completion inferred from `GET /api/consumer/setup-progress` (data counts, not click-through); **← Back to dashboard** exits without completing; steps navigable freely |
 | **Write APIs** | `POST /api/consumer/assets` (step 1); `POST /api/consumer/income` (step 2); `POST /api/consumer/onboarding-wizard-complete` (step 3) |
-| **Layout gate** | `WizardOnboardingGate` — redirects only when MVP profile ready, wizard not complete, and **no** assets/income yet (`checkHouseholdHasData`); Financial Planning routes exempt (`wizardGateExemptPrefixes`); users with any data navigate freely with `SetupProgressCard` nudge on dashboard |
+| **Layout gate** | `WizardOnboardingGate` — redirects when wizard incomplete + wizard-ready + no assets/income; exempt prefixes include **`/dashboard`** (onramp path choice), `/onboarding/wizard`, `/onboarding/persona`, financial planning routes (`wizardGateExemptPrefixes.ts`) |
 | **Dashboard** | `SetupProgressCard` — section-based progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
 | **Migration** | `20260526000000_onboarding_wizard_fields.sql` |
 
@@ -215,7 +215,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` · `golden-path-show-all-tools.spec.ts` (requires score ≥ 60 — `ensureMinEstateHealthScore` in seed) |
-| **Key UI sections** | **Onramp (gate fail):** `DashboardOnramp` — import / wizard / assets paths, foundation progress · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, `PersonaInsightCard`, `QuickAddAssetModal`, `EstateCalloutCard`, `EstateExecutionChecklist`, `LifeEventBanner`, `SetupProgressCard`, stage-gated summaries |
+| **Key UI sections** | **Onramp:** Import → `/import`; Guide → `/onboarding/persona` (no persona) or `/onboarding/wizard`; Self → `/assets`; foundation progress bar · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, … |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 

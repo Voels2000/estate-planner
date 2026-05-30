@@ -48,6 +48,10 @@ export default async function DashboardPage() {
     })
 
     if (showOnramp) {
+      const guidedHref = profile.onboarding_persona
+        ? '/onboarding/wizard'
+        : '/onboarding/persona'
+
       return (
         <DashboardOnramp
           foundationScore={healthScore?.score ?? 0}
@@ -55,6 +59,7 @@ export default async function DashboardPage() {
             profile.full_name ?? household.person1_name,
             'there',
           )}
+          guidedHref={guidedHref}
         />
       )
     }

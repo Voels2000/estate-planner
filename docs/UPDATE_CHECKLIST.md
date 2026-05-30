@@ -519,6 +519,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `app/(dashboard)/dashboard/page.tsx` gate before `DashboardBody`
 - [x] Golden-path seed — `ensureMinEstateHealthScore` + recompute 15s timeout
 - [x] `scripts/check-golden-path-onramp-gate.ts`
+- [x] **Path fix:** `guidedHref` persona-first; `/dashboard` wizard gate exempt
+- [ ] **Manual smoke:** fresh user — Import / Guide (persona→wizard) / Self (`/assets`)
 - [x] Master docs synced
 
 ## Sprint — Cross-role E2E + persona Card fix ✅ closed 2026-05-30

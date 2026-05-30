@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Dashboard onramp for incomplete users)
+# Last updated: 2026-05-30 (Onramp guide path + wizard gate fix)
 
 ---
 
@@ -29,9 +29,11 @@
 | `DashboardOnramp` component (import / wizard / self-serve) | `[x]` |
 | Wire gate in `app/(dashboard)/dashboard/page.tsx` | `[x]` |
 | Golden-path E2E score floor (`ensureMinEstateHealthScore`) | `[x]` |
+| Onramp `guidedHref` — persona before wizard | `[x]` |
+| `/dashboard` wizard gate exempt (onramp path choice) | `[x]` |
 | `check-golden-path-onramp-gate.ts` verify script | `[x]` |
 
-**Post-ship:** `npm run test:e2e:golden-path` · tune `ONRAMP_SCORE_THRESHOLD` if needed
+**Post-ship:** `npm run test:e2e:golden-path` · manual onramp paths (Import / Guide / Self) on fresh user
 
 ---
 

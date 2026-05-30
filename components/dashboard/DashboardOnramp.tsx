@@ -5,6 +5,8 @@ import Link from 'next/link'
 interface DashboardOnrampProps {
   foundationScore: number
   firstName: string
+  /** Persona must be set before wizard; link persona first when missing. */
+  guidedHref: string
 }
 
 const PATHS = [
@@ -40,7 +42,7 @@ const PATHS = [
   },
 ] as const
 
-export function DashboardOnramp({ foundationScore, firstName }: DashboardOnrampProps) {
+export function DashboardOnramp({ foundationScore, firstName, guidedHref }: DashboardOnrampProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -71,7 +73,7 @@ export function DashboardOnramp({ foundationScore, firstName }: DashboardOnrampP
           {PATHS.map((path) => (
             <Link
               key={path.key}
-              href={path.href}
+              href={path.key === 'guided' ? guidedHref : path.href}
               className={[
                 'flex flex-col rounded-[var(--mwm-radius)] border p-4 transition-colors hover:border-[color:var(--mwm-navy-light)]',
                 path.featured

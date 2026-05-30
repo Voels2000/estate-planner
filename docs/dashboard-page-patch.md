@@ -28,10 +28,14 @@ After `getDashboardLayoutContext()`:
 
 1. Fetch `estate_health_scores.score` for `householdRow.id`
 2. Call `checkHouseholdHasData()` (not on layout context — dashboard-only)
-3. Early-return `<DashboardOnramp />` for consumers when gate is true
-4. Otherwise render existing `DashboardBody` inside Suspense
+3. Early-return `<DashboardOnramp guidedHref={…} />` for consumers when gate is true
+   - No `onboarding_persona` → `/onboarding/persona`
+   - Persona set → `/onboarding/wizard`
+4. `/dashboard` in `wizardGateExemptPrefixes` — layout gate must not auto-redirect to wizard
+5. Otherwise render `DashboardBody` inside Suspense
 
 ## Verify
 
 - New / sparse user → onramp on `/dashboard`
 - Golden path (wizard done, score ≥ 60, has data) → full dashboard
+- **Manual (fresh user):** Import → `/import` · Guide → persona → wizard · Self → `/assets`

@@ -18,6 +18,7 @@ export type DashboardLayoutProfile = {
   is_attorney: boolean | null
   onboarding_invite_advisor_completed_at: string | null
   onboarding_wizard_completed_at: string | null
+  onboarding_persona: string | null
 }
 
 export type DashboardLayoutContext = {
@@ -51,7 +52,7 @@ export const getDashboardLayoutContext = cache(async (): Promise<DashboardLayout
       supabase
         .from('profiles')
         .select(
-          'role, full_name, is_superuser, subscription_status, consumer_tier, subscription_period_end, terms_accepted_at, terms_version, firm_id, firm_role, trial_started_at, is_admin, is_attorney, onboarding_invite_advisor_completed_at, onboarding_wizard_completed_at',
+          'role, full_name, is_superuser, subscription_status, consumer_tier, subscription_period_end, terms_accepted_at, terms_version, firm_id, firm_role, trial_started_at, is_admin, is_attorney, onboarding_invite_advisor_completed_at, onboarding_wizard_completed_at, onboarding_persona',
         )
         .eq('id', sessionUser.id)
         .single(),

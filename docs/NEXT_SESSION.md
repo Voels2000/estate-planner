@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Dashboard onramp + golden-path gate verify)
+# Updated: 2026-05-30 (Onramp guide path + wizard gate /dashboard exempt)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Dashboard onramp (shipped 2026-05-30):** `/dashboard` shows `DashboardOnramp` when wizard incomplete, `estate_health_scores.score` &lt; 60, or no assets/income — gate in `lib/dashboard/onrampGate.ts`; golden-path seed floors score ≥ 60 (`ensureMinEstateHealthScore`). **Cross-role E2E:** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12). **Persona E2E:** `Card` forwards `aria-pressed`; spec clicks card wrapper + PATCH wait. **Attorney FK:** migration `20260630100000` applied prod. **Security smoke:** `npm run test:e2e:security-smoke` 7/7.
+> My Wealth Maps — **Sprint 19.** **Dashboard onramp (2026-05-30):** `DashboardOnramp` on `/dashboard` when wizard incomplete, score &lt; 60, or no data. **Onramp path fix:** `guidedHref` → `/onboarding/persona` when no persona (wizard requires persona first); `/dashboard` in `wizardGateExemptPrefixes` so `WizardOnboardingGate` does not hijack path choice. **Post-deploy manual:** fresh user — Import → `/import`; Guide → persona → wizard; Self → `/assets`.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -23,10 +23,13 @@
 | Item | Notes |
 |------|-------|
 | Gate | `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`; `ONRAMP_SCORE_THRESHOLD = 60` |
-| UI | `components/dashboard/DashboardOnramp.tsx` — import / wizard / assets paths |
-| Layout | `getDashboardLayoutContext()` + `full_name` on profile select |
-| E2E guard | `e2e-golden-path@` — score 79 prod (2026-05-30); seed floors ≥ 60 via `ensureMinEstateHealthScore` |
+| UI | `components/dashboard/DashboardOnramp.tsx` — import / guided / self paths; **`guidedHref`** persona-first |
+| Layout | `getDashboardLayoutContext()` + `full_name`, `onboarding_persona` on profile select |
+| Wizard gate | `/dashboard` in `wizardGateExemptPrefixes.ts` — onramp stays visible; gate does not auto-push to wizard |
+| E2E guard | `e2e-golden-path@` — score ≥ 60 via `ensureMinEstateHealthScore` |
 | Verify | `npx tsx scripts/check-golden-path-onramp-gate.ts` |
+
+**Manual smoke (fresh user, post-deploy):** Import → `/import` · Guide (no persona) → `/onboarding/persona` → wizard · Self → `/assets`
 
 **Docs:** [dashboard-page-patch.md](./dashboard-page-patch.md)
 
