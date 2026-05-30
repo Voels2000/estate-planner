@@ -988,6 +988,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 - `[x]` Upgrade gates: `householdContext` on `/estate-tax` and `/my-estate-strategy`
 - `[x]` Estate Tax Snapshot — interactive composition waterfall + strategy panel (`3c9a97a`)
 - `[x]` Dashboard Script A — readiness pill, allocation links, conflict dedup (`960a414`)
+- `[x]` Dashboard Financial Summary — remove embedded asset allocation card (`/allocation` unchanged)
 - `[x]` Nav: **Tax Horizons & Strategy** (`/my-estate-strategy`)
 
 **Retrospective:** UI-only sprint; no engine/API/DB changes. Sprint 1 completed nav separation and remaining upgrade-gate personalization.

@@ -1,5 +1,4 @@
 import { CollapsibleSection } from '@/components/CollapsibleSection'
-import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { fmt, fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { NetWorthBar, SummaryCard } from '@/app/(dashboard)/_components/dashboard/ui-primitives'
 import { hasFinancialData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
@@ -20,7 +19,6 @@ type FinancialSummarySectionProps = {
   totalIncome: number
   totalExpenses: number
   savingsRate: number
-  allocationContext: AssetAllocationContext
 }
 
 export function FinancialSummarySection(props: FinancialSummarySectionProps) {
@@ -100,8 +98,6 @@ export function FinancialSummarySection(props: FinancialSummarySectionProps) {
           highlight={props.totalAssets > 0 && debtToAsset < 50 ? 'green' : 'yellow'}
         />
       </div>
-
-      <AssetAllocationSummary context={props.allocationContext} />
     </CollapsibleSection>
   )
 }

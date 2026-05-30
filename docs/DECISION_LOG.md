@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (consolidated dashboard alert panel)
+# Last updated: 2026-05-30 (dashboard — remove asset allocation card)
+
+## Dashboard — remove asset allocation card from Financial Summary (2026-05-30)
+
+**Decision:** Remove **`AssetAllocationSummary`** from the **`FinancialSummarySection`** collapsible on **`/dashboard`**. Full allocation editing, benchmarks, and portfolio breakdown remain on **`/allocation`** via **`loadAssetAllocationData`**. **`buildAllocationContext`** stays in **`lib/dashboard/mappers.ts`** for reuse; dashboard no longer builds or passes allocation context on load.
+
+**Reasoning:** Duplicate surface — users with tier 2+ access use the dedicated Asset Allocation route; the dashboard card added scroll without unique actions.
+
+**Files:** `FinancialSummarySection.tsx`, `_dashboard-client.tsx`, `dashboard/_dashboard-body.tsx`
+
+**Verify:** `/dashboard` Financial Summary shows net worth, by-source bars, income/expense/savings/debt cards only — no allocation donut or target mix.
+
+---
 
 ## Consolidated dashboard alert panel (2026-05-30)
 

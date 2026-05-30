@@ -7,7 +7,7 @@
  * Route: `/dashboard`
  */
 
-import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
+
 import { getCompletionScore } from '@/lib/get-completion-score'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
@@ -28,7 +28,6 @@ import {
 } from '@/lib/dashboard/loaders'
 import { isProjectionStale } from '@/lib/projections/staleness'
 import {
-  buildAllocationContext,
   mapConflictReport,
   mapEstateHealthScore,
 } from '@/lib/dashboard/mappers'
@@ -454,12 +453,6 @@ export async function DashboardBody({
     projectedIncomeGap,
   })
 
-  // ── Allocation context ───────────────────────────────────────────────────
-  const allocationContext: AssetAllocationContext = buildAllocationContext({
-    profile,
-    household,
-  })
-
   const wizardComplete = isWizardComplete(profile)
   const [setupProgress, initialAssessmentResults] = await Promise.all([
     fetchSetupProgressCounts(supabase, user!.id),
@@ -572,7 +565,6 @@ export async function DashboardBody({
       savingsRate={savingsRate}
       currentYearNet={currentYearNet}
       annualSSFromPIA={annualSSFromPIA}
-      allocationContext={allocationContext}
       retirementSnapshot={retirementSnapshot}
       retirementAccountsTotal={retirementAccountsTotal}
       estateHealthScore={estateHealthScore}

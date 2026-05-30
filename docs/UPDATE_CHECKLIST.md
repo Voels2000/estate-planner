@@ -574,6 +574,14 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Consolidated alert panel on dashboard (`ConsolidatedAlertPanel`)
 - [ ] **Post-deploy smoke:** Alan — five alert types in panel · no intro conflict pills · no bypass blue card
 
+## Sprint — Dashboard Financial Summary — no allocation card ✅ closed 2026-05-30
+
+**Files:** `FinancialSummarySection.tsx` · `_dashboard-client.tsx` · `dashboard/_dashboard-body.tsx`
+
+- [x] Remove **`AssetAllocationSummary`** from dashboard Financial Summary collapsible
+- [x] **`/allocation`** + **`loadAssetAllocationData`** + **`buildAllocationContext`** in mappers unchanged
+- [x] Master docs — **DECISION_LOG**, **CONSUMER_FLOWS**, **MASTER_ARCHITECTURE**, **NEXT_SESSION**
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

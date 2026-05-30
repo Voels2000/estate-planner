@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * Consumer dashboard client UI: intro, financial summary, retirement, estate summary,
- * and allocation context. Data is prepared on the server page.
+ * Consumer dashboard client UI: intro, financial summary, retirement, and estate summary.
+ * Data is prepared on the server page.
  *
  * Route: `/dashboard`
  */
@@ -15,7 +15,6 @@ import {
   SetupProgressCardSkeleton,
 } from '@/components/dashboard/SetupProgressCard'
 import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
-import { AssetAllocationSummary, type AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
@@ -86,7 +85,6 @@ type Props = {
   savingsRate: number
   currentYearNet: number       // totalIncome (all sources incl SS) - totalExpenses
   annualSSFromPIA: number      // SS component for display breakdown
-  allocationContext: AssetAllocationContext
   retirementSnapshot: RetirementSnapshot | null
   retirementAccountsTotal?: number
   estateHealthScore?: EstateHealthScore | null
@@ -459,7 +457,7 @@ export function DashboardClient(props: Props) {
   const {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
-    allocationContext, retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, conflictReport,
+    retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, conflictReport,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
@@ -932,7 +930,6 @@ export function DashboardClient(props: Props) {
         totalIncome={totalIncome}
         totalExpenses={totalExpenses}
         savingsRate={savingsRate}
-        allocationContext={allocationContext}
       />
 
       {/* ══════════════════════════════════════════════════════════════════ */}

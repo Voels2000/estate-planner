@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (consolidated dashboard alert panel)
+# Updated: 2026-05-30 (dashboard — remove asset allocation card)
 
 ---
 
@@ -28,13 +28,14 @@
 | RMD Calculator | `b47fed5` | `_rmd-client.tsx` |
 | Dashboard cleanup | `0aa0cab` + `f200af7` | Planning topics removed · bypass alert · titling badges-only |
 | Dashboard Script A | `960a414` | Readiness pill on intro row · allocation downstream links · conflict banner dedup |
+| Dashboard — no allocation card | *(this commit)* | **`AssetAllocationSummary`** removed from Financial Summary; **`/allocation`** unchanged |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**
 
 | Route | Confirm |
 |-------|---------|
-| `/dashboard` | Bypass alert **$645,463** between tiles and checklist · intro row **Estate readiness 56/100** · no mid-page conflict banner |
+| `/dashboard` | Bypass alert **$645,463** between tiles and checklist · intro row **Estate readiness 56/100** · no mid-page conflict banner · Financial Summary has **no** asset allocation card |
 | `/estate-tax` | Composition waterfall + strategy toggles (Alan WA tax) · $0-tax user sees waterfall only |
 | `/allocation` | Downstream note to Projections + Monte Carlo after save |
 | `/rmd` | **9 years away** (Alan) · **16 years away** (Cathi); decade nav changes rows |
