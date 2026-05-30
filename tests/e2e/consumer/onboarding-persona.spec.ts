@@ -37,6 +37,18 @@ async function clearPersonaForTest() {
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId)
+  await admin
+    .from('households')
+    .update({
+      person1_name: 'Golden Path',
+      person1_first_name: 'Golden',
+      person1_last_name: 'Path',
+      state_primary: 'WA',
+      filing_status: 'single',
+      person1_birth_year: 1975,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('owner_id', userId)
 }
 
 test.beforeAll(async () => {

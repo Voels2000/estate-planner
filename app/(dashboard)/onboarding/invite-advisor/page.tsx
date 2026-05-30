@@ -16,11 +16,7 @@ export default async function InviteAdvisorOnboardingPage() {
       .select('full_name, role, onboarding_invite_advisor_completed_at')
       .eq('id', user.id)
       .single(),
-    supabase
-      .from('households')
-      .select('person1_name, state_primary, filing_status, person1_birth_year')
-      .eq('owner_id', user.id)
-      .maybeSingle(),
+    supabase.from('households').select('*').eq('owner_id', user.id).maybeSingle(),
   ])
 
   if (profile?.onboarding_invite_advisor_completed_at) {
