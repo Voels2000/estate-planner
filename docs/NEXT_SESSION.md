@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Script A dashboard polish + conflict banner dedup)
+# Updated: 2026-05-30 (Estate Tax Snapshot strategy panel)
 
 ---
 
@@ -69,7 +69,24 @@
 | Risk caption | Projections growth · Monte Carlo distributions · benchmark comparisons |
 | Scenarios nav | Already under Financial Planning in `sidebar-nav.tsx` — no change |
 
-**Next:** Script B — estate tax page merge.
+**Next:** Script B follow-ups as needed.
+
+---
+
+## Estate Tax Snapshot — strategy panel ✅ (2026-05-30)
+
+**Route:** `/estate-tax` · **Files:** `_estate-tax-client.tsx` · `page.tsx` · `sidebar-nav.tsx`
+
+| Item | Notes |
+|------|-------|
+| Waterfall | Inside/outside breakdown from composition — `inside_financial`, `inside_real_estate`, `inside_business_gross`, `inside_insurance` |
+| Toggle | **Current** / **With strategies** on composition view |
+| Strategy panel | Only when `estimatedTaxState > 0 \|\| estimatedTaxFederal > 0` — Alan always shows |
+| Data | `getCachedComposition` + `strategy_line_items` fetch on entitled path; `noPortability` from state rules |
+| Helpers | `getStrategyDescription` module-level; synthetic bypass / ILIT / gifting when missing |
+| Nav | **Tax Horizons & Strategy** (`/my-estate-strategy`) |
+
+**Post-deploy smoke:** Alan → `/estate-tax` — waterfall + strategy toggles · $0-tax household → waterfall only, no strategy panel.
 
 ---
 

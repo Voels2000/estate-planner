@@ -1,8 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Script A dashboard polish)
+# Last updated: 2026-05-30 (Estate Tax Snapshot strategy panel)
 
-## Script A — readiness pill + allocation connections (2026-05-30)
+## Estate Tax Snapshot — interactive strategy panel (2026-05-30)
+
+**Decision:** Replace static **`EstateCompositionCard`** on **`/estate-tax`** with interactive composition waterfall + toggleable strategy panel. Asset rows use composition fields (`inside_financial`, `inside_real_estate`, `inside_business_gross`, `inside_insurance`). Strategy panel hidden when both state and federal estimated tax are $0. **`getStrategyDescription`** is module-level (not in component). Entitled path: separate **`getCachedComposition`** + **`strategy_line_items`** fetch in `page.tsx`.
+
+**Files:** `_estate-tax-client.tsx`, `estate-tax/page.tsx`, `sidebar-nav.tsx`
+
+---
 
 **Decision:** Surface **`estateHealthScore.score`** as compact pill on the same flex row as conflict pills in **`DashboardIntroSection`** (green ≥80 · amber ≥60 · red &lt;60). Keep full **`EstateHealthScoreBlock`** with component bars in **`EstateSummarySection`**. On **`/allocation`**, add downstream note linking Projections + Monte Carlo after Save Target Mix; clarify risk profile caption.
 

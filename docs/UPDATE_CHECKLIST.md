@@ -567,7 +567,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Alan prod verify: **`by $645,463`** parses to bypassTrustSavings = 645463
 - [x] Remove duplicate mid-page dismissible conflict banner (intro pills only)
 - [x] Readiness score pill on intro row (`estateHealthScore.score`; detailed breakdown stays in estate summary)
-- [x] Allocation downstream note + risk profile caption (`/allocation`)
+- [x] Estate Tax Snapshot — composition waterfall + strategy panel (`/estate-tax`)
+- [x] Nav rename: Tax Horizons & Strategy
 - [x] Master docs synced
 - [ ] **Post-deploy visual smoke (once):** Alan — **$645,463** blue callout between tiles and checklist · titling badges + link only at estate summary bottom · no mid-page conflict banner
 

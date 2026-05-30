@@ -14,6 +14,7 @@
 //   • Federal section shows "no tax" state clearly when under exemption
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   computeFederalEstateTax,
   computeStateInheritanceTaxTotal,
@@ -25,7 +26,6 @@ import {
   calculateStateEstateTax as calculateUnifiedStateEstateTax,
 } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
-import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
 import type { EstateComposition } from '@/lib/estate/types'
 import {
   FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL,
@@ -80,6 +80,30 @@ const BENEFICIARY_CLASS_LABELS: Record<BeneficiaryClass, string> = {
   child: 'Children / Lineal descendants',
   sibling: 'Siblings',
   other: 'Other beneficiaries',
+}
+
+const WA_NO_PORTABILITY_STATES = new Set(['WA', 'MA', 'OR'])
+
+export type EstateTaxStrategyLineItem = {
+  id: string
+  strategy_type: string
+  strategy_label?: string
+  estimated_exclusion?: number
+}
+
+function getStrategyDescription(strategyType: string, state: string | null): string {
+  const descriptions: Record<string, string> = {
+    bypass_trust: `Preserves ${state ?? 'state'} exemption at first death · no portability loss`,
+    cst: `Preserves ${state ?? 'state'} exemption at first death · no portability loss`,
+    credit_shelter_trust: `Preserves ${state ?? 'state'} exemption at first death · no portability loss`,
+    ilit: 'Removes life insurance death benefit from gross estate',
+    annual_gifting: 'Annual exclusion gifts reduce taxable estate over time',
+    gifting: 'Annual exclusion gifts reduce taxable estate over time',
+    slat: 'Spousal Lifetime Access Trust — removes assets while retaining indirect access',
+    grat: 'Grantor Retained Annuity Trust — transfers appreciation out of estate',
+    charitable: 'Charitable remainder trust — reduces estate while generating income',
+  }
+  return descriptions[strategyType] ?? strategyType.replace(/_/g, ' ')
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -148,6 +172,8 @@ export default function EstateTaxClient({
   giftingExcessOverLimit,
   // Pre-fetched from page.tsx via classifyEstateAssets
   composition: compositionProp,
+  strategyLineItems,
+  noPortability = false,
 }: {
   liabilities: Record<string, unknown>[]
   trusts: EstateTaxTrustRow[]
@@ -166,6 +192,8 @@ export default function EstateTaxClient({
   giftingExcessOverLimit?: number | null
   // New — from classifyEstateAssets RPC
   composition?: EstateComposition | null
+  strategyLineItems?: EstateTaxStrategyLineItem[] | null
+  noPortability?: boolean
   // Legacy props kept for backwards compat — no longer used for gross estate
   assets?: Record<string, unknown>[]
   realEstate?: Record<string, unknown>[]
@@ -394,6 +422,136 @@ export default function EstateTaxClient({
   const totalSliderPct =
     inheritShares.spouse + inheritShares.child + inheritShares.sibling + inheritShares.other
 
+  const [showWithStrategies, setShowWithStrategies] = useState(false)
+  const [activeStrategyIds, setActiveStrategyIds] = useState<Set<string>>(new Set())
+
+  function toggleStrategy(id: string) {
+    setActiveStrategyIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const financialAssets = composition?.inside_financial ?? 0
+  const realEstateFmv = composition?.inside_real_estate ?? 0
+  const businessTotal = composition?.inside_business_gross ?? 0
+  const insuranceTotal = composition?.inside_insurance ?? 0
+  const insideBase = composition?.inside_total ?? grossEstate
+  const outsideBase = composition?.outside_strategy_total ?? 0
+
+  const stateExemption = primaryStateExemption
+  const estimatedTaxFederal = federalTaxDisplay
+  const estimatedTaxState =
+    isMFJ && hasSpouse
+      ? engineStateEstateTaxAtSecondDeath
+      : (primaryStateTax?.state_estate_tax ?? engineStateEstateTaxAtSecondDeath ?? 0)
+
+  const availableStrategies = useMemo(() => {
+    const strategies: Array<{
+      id: string
+      label: string
+      description: string
+      taxSaving: number
+      exclusionAmount: number
+    }> = []
+
+    for (const item of strategyLineItems ?? []) {
+      const exclusion = item.estimated_exclusion ?? 0
+      const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
+      strategies.push({
+        id: item.id,
+        label: item.strategy_label ?? item.strategy_type,
+        description: getStrategyDescription(item.strategy_type, statePrimary),
+        taxSaving: Math.round(exclusion * effectiveRate),
+        exclusionAmount: exclusion,
+      })
+    }
+
+    const hasBypass = strategies.some(
+      (s) =>
+        s.label.toLowerCase().includes('bypass') ||
+        s.label.toLowerCase().includes('credit shelter'),
+    )
+    if (!hasBypass && statePrimary && WA_NO_PORTABILITY_STATES.has(statePrimary.toUpperCase())) {
+      const stateExAmt = stateExemption ?? 3_000_000
+      const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
+      strategies.push({
+        id: 'bypass-trust-synthetic',
+        label: 'Bypass trust (credit shelter)',
+        description: `Moves $${(stateExAmt / 1_000_000).toFixed(1)}M outside estate at first death · preserves ${statePrimary} exemption`,
+        taxSaving: Math.round(stateExAmt * effectiveRate),
+        exclusionAmount: stateExAmt,
+      })
+    }
+
+    const hasIlit = strategies.some(
+      (s) =>
+        s.label.toLowerCase().includes('ilit') || s.label.toLowerCase().includes('insurance'),
+    )
+    if (!hasIlit && insuranceTotal > 0) {
+      const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
+      strategies.push({
+        id: 'ilit-synthetic',
+        label: 'ILIT (life insurance trust)',
+        description: `Moves $${Math.round(insuranceTotal / 1000)}K life insurance policy outside estate`,
+        taxSaving: Math.round(insuranceTotal * effectiveRate),
+        exclusionAmount: insuranceTotal,
+      })
+    }
+
+    const hasGifting = strategies.some((s) => s.label.toLowerCase().includes('gift'))
+    const filingStatus = household?.filing_status as string | null | undefined
+    if (!hasGifting && estimatedTaxState > 0) {
+      const annualExclusion =
+        filingStatus === 'mfj' ||
+        filingStatus === 'married_joint' ||
+        filingStatus === 'married_filing_jointly'
+          ? 36_000
+          : 18_000
+      const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
+      strategies.push({
+        id: 'gifting-synthetic',
+        label: 'Annual gifting program',
+        description: `$${(annualExclusion / 1000).toFixed(0)}K/yr exclusion · moves assets out over time`,
+        taxSaving: Math.round(annualExclusion * effectiveRate),
+        exclusionAmount: annualExclusion,
+      })
+    }
+
+    return strategies
+  }, [
+    strategyLineItems,
+    grossEstate,
+    estimatedTaxState,
+    statePrimary,
+    stateExemption,
+    insuranceTotal,
+    household?.filing_status,
+  ])
+
+  const totalStrategySaving = useMemo(
+    () =>
+      availableStrategies
+        .filter((s) => activeStrategyIds.has(s.id))
+        .reduce((sum, s) => sum + s.taxSaving, 0),
+    [availableStrategies, activeStrategyIds],
+  )
+
+  const toggledExclusionTotal = useMemo(
+    () =>
+      availableStrategies
+        .filter((s) => activeStrategyIds.has(s.id))
+        .reduce((sum, s) => sum + s.exclusionAmount, 0),
+    [availableStrategies, activeStrategyIds],
+  )
+
+  const outsideWithStrategies = outsideBase + toggledExclusionTotal
+  const insideWithStrategies = Math.max(0, insideBase - toggledExclusionTotal)
+  const displayInside = showWithStrategies ? insideWithStrategies : insideBase
+  const displayOutside = showWithStrategies ? outsideWithStrategies : outsideBase
+
   // ─────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────
@@ -406,7 +564,7 @@ export default function EstateTaxClient({
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Estate Tax Snapshot</h1>
       </div>
 
-      {/* ── Estate Composition Card ── */}
+      {/* ── Estate composition waterfall ── */}
       {compositionLoading ? (
         <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse mb-6">
           <div className="h-4 bg-gray-100 rounded w-48 mb-4" />
@@ -416,13 +574,268 @@ export default function EstateTaxClient({
           </div>
         </div>
       ) : composition ? (
-        <div className="mb-6">
-          <EstateCompositionCard
-            composition={composition}
-            label="Your Estate"
-            snapshotLabel="Current snapshot"
-          />
-        </div>
+        <>
+          <div className="mb-6 rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-5">
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-sm font-medium text-[color:var(--mwm-navy)]">Estate composition</p>
+                <p className="text-xs text-[color:var(--mwm-text-secondary)] mt-0.5">
+                  What&apos;s inside vs. outside your taxable estate
+                </p>
+              </div>
+              <div className="flex overflow-hidden rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)]">
+                <button
+                  type="button"
+                  onClick={() => setShowWithStrategies(false)}
+                  className={`px-3 py-1.5 text-xs border-r border-[color:var(--mwm-border)] ${
+                    !showWithStrategies
+                      ? 'bg-[var(--mwm-bg-muted)] font-medium text-[color:var(--mwm-navy)]'
+                      : 'text-[color:var(--mwm-text-secondary)]'
+                  }`}
+                >
+                  Current
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowWithStrategies(true)}
+                  className={`px-3 py-1.5 text-xs ${
+                    showWithStrategies
+                      ? 'bg-[var(--mwm-bg-muted)] font-medium text-[color:var(--mwm-navy)]'
+                      : 'text-[color:var(--mwm-text-secondary)]'
+                  }`}
+                >
+                  With strategies
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-0">
+              <div className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-2">
+                <p className="flex-1 text-xs font-medium text-[color:var(--mwm-navy)]">Inside taxable estate</p>
+                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                  <div className="h-full rounded-full bg-red-400" style={{ width: '100%' }} />
+                </div>
+                <p className="w-24 text-right text-xs font-medium text-red-700">
+                  {formatDollars(displayInside)}
+                </p>
+              </div>
+
+              {[
+                { label: 'Financial assets', value: financialAssets },
+                { label: 'Real estate', value: realEstateFmv },
+                { label: 'Business interests', value: businessTotal },
+                { label: 'Life insurance', value: insuranceTotal },
+              ]
+                .filter((r) => r.value > 0)
+                .map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-1.5 pl-4"
+                  >
+                    <p className="flex-1 text-xs text-[color:var(--mwm-text-secondary)]">{row.label}</p>
+                    <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                      <div
+                        className="h-full rounded-full bg-red-200"
+                        style={{
+                          width: `${Math.min(100, Math.round((row.value / Math.max(grossEstate, 1)) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="w-24 text-right text-xs text-[color:var(--mwm-text-secondary)]">
+                      {formatDollars(row.value)}
+                    </p>
+                  </div>
+                ))}
+
+              <div className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-2">
+                <p className="flex-1 text-xs font-medium text-[color:var(--mwm-navy)]">
+                  Outside taxable estate
+                  <span className="ml-2 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium bg-emerald-100 text-emerald-800">
+                    Strategies move assets here
+                  </span>
+                </p>
+                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                  <div
+                    className="h-full rounded-full bg-emerald-500"
+                    style={{
+                      width: `${Math.min(100, Math.round((displayOutside / Math.max(grossEstate, 1)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                <p className="w-24 text-right text-xs font-medium text-emerald-700">
+                  {formatDollars(displayOutside)}
+                </p>
+              </div>
+
+              {showWithStrategies &&
+                availableStrategies
+                  .filter((s) => activeStrategyIds.has(s.id))
+                  .map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-1.5 pl-4"
+                    >
+                      <p className="flex-1 text-xs text-emerald-700">{s.label}</p>
+                      <div className="h-1.5 w-32" />
+                      <p className="w-24 text-right text-xs text-emerald-700">
+                        {formatDollars(s.exclusionAmount)}
+                      </p>
+                    </div>
+                  ))}
+
+              {statePrimary && (
+                <>
+                  <div className="flex items-center gap-3 rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] px-3 py-2 mt-1">
+                    <p className="flex-1 text-xs font-medium text-[color:var(--mwm-navy)]">
+                      {statePrimary} taxable estate
+                    </p>
+                    <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                      <div
+                        className="h-full rounded-full bg-amber-400"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              Math.round(
+                                ((displayInside - stateExemption) / Math.max(grossEstate, 1)) * 100,
+                              ),
+                            ),
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="w-24 text-right text-xs font-medium text-[color:var(--mwm-navy)]">
+                      {formatDollars(Math.max(0, displayInside - stateExemption))}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-1.5 pl-4">
+                    <p className="flex-1 text-xs text-[color:var(--mwm-text-secondary)]">
+                      {statePrimary} exemption
+                      {noPortability && (
+                        <span className="ml-2 text-[9px] text-amber-700">
+                          Individual only · no portability
+                        </span>
+                      )}
+                    </p>
+                    <div className="h-1.5 w-32" />
+                    <p className="w-24 text-right text-xs text-[color:var(--mwm-text-secondary)]">
+                      −{formatDollars(stateExemption)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-[var(--mwm-radius)] bg-red-50 border border-red-200 px-3 py-2 mt-1">
+                    <p className="flex-1 text-xs font-medium text-red-800">
+                      Est. {statePrimary} estate tax
+                    </p>
+                    <div className="h-1.5 w-32" />
+                    <p className="w-24 text-right text-xs font-medium text-red-700">
+                      {formatDollars(estimatedTaxState)}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {(estimatedTaxState > 0 || estimatedTaxFederal > 0) && (
+            <div className="mb-6 rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-5">
+              <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                    Strategies that reduce your estate tax
+                  </p>
+                  <p className="text-xs text-[color:var(--mwm-text-secondary)] mt-0.5">
+                    Toggle to see how each strategy moves assets outside your taxable estate
+                  </p>
+                </div>
+                <Link href="/gifting" className="text-xs text-emerald-700 underline underline-offset-2">
+                  View Gifting & Trusts →
+                </Link>
+              </div>
+
+              <div className="flex flex-col gap-2 mb-4">
+                {availableStrategies.map((strategy) => {
+                  const isActive = activeStrategyIds.has(strategy.id)
+                  return (
+                    <button
+                      key={strategy.id}
+                      type="button"
+                      onClick={() => toggleStrategy(strategy.id)}
+                      className={[
+                        'flex items-center gap-3 rounded-[var(--mwm-radius)] p-3 text-left transition-colors',
+                        isActive
+                          ? 'bg-emerald-50 border border-emerald-200'
+                          : 'bg-[var(--mwm-bg-muted)] border border-transparent',
+                      ].join(' ')}
+                    >
+                      <div
+                        className={[
+                          'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border',
+                          isActive
+                            ? 'border-emerald-500 bg-emerald-500'
+                            : 'border-[color:var(--mwm-border-secondary)]',
+                        ].join(' ')}
+                      >
+                        {isActive && (
+                          <i
+                            className="ti ti-check text-white"
+                            aria-hidden="true"
+                            style={{ fontSize: 10 }}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-[color:var(--mwm-navy)]">{strategy.label}</p>
+                        <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+                          {strategy.description}
+                        </p>
+                      </div>
+                      <p className="text-xs font-medium text-emerald-700 flex-shrink-0">
+                        −{formatDollars(strategy.taxSaving)} tax
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-[color:var(--mwm-border)] pt-4">
+                <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+                  <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-1">Current tax</p>
+                  <p className="text-base font-medium text-red-700">{formatDollars(estimatedTaxState)}</p>
+                </div>
+                <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+                  <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-1">
+                    With selected strategies
+                  </p>
+                  <p
+                    className="text-base font-medium"
+                    style={{
+                      color: activeStrategyIds.size > 0 ? '#854F0B' : 'var(--color-text-primary)',
+                    }}
+                  >
+                    {formatDollars(Math.max(0, estimatedTaxState - totalStrategySaving))}
+                  </p>
+                  {totalStrategySaving > 0 && (
+                    <p className="text-[10px] text-emerald-700 mt-0.5">
+                      −{formatDollars(totalStrategySaving)} saved
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+                  <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-1">Outside estate</p>
+                  <p className="text-base font-medium text-emerald-700">{formatDollars(displayOutside)}</p>
+                  {displayOutside > 0 && (
+                    <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+                      moved by strategies
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       ) : null}
 
       {/* ── Federal Estate Summary ── */}

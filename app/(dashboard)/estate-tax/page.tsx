@@ -7,6 +7,7 @@ import EstateTaxClient, { type EstateTaxTrustRow } from './_estate-tax-client'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { strategyLabel } from '@/lib/strategy/strategyLabels'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -217,6 +218,41 @@ export default async function EstateTaxPage() {
     ? await getCachedComposition(supabase, householdRow.id, 'consumer', lifetimeGiftsUsed)
     : null
 
+  const { data: strategyLineRows } = householdRow?.id
+    ? await supabase
+        .from('strategy_line_items')
+        .select(
+          'id, strategy_source, amount, sign, scenario_name, is_active, consumer_accepted, consumer_rejected, source_role',
+        )
+        .eq('household_id', householdRow.id)
+        .eq('is_active', true)
+        .is('projection_year', null)
+    : { data: null }
+
+  const strategyLineItems = (strategyLineRows ?? [])
+    .filter((row) => !row.consumer_rejected)
+    .filter(
+      (row) =>
+        row.source_role === 'consumer' ||
+        (row.source_role === 'advisor' && row.consumer_accepted),
+    )
+    .map((row) => ({
+      id: String(row.id),
+      strategy_type: String(row.strategy_source ?? 'other'),
+      strategy_label: strategyLabel(String(row.strategy_source ?? 'other'), row.scenario_name),
+      estimated_exclusion: Math.abs(Number(row.amount ?? 0)),
+    }))
+
+  const statePrimaryUpper = String(householdRow?.state_primary ?? '')
+    .trim()
+    .toUpperCase()
+  const noPortability = (stateEstateTaxRows ?? []).some(
+    (row) =>
+      String(row.state ?? '')
+        .trim()
+        .toUpperCase() === statePrimaryUpper && row.no_portability === true,
+  )
+
   return (
     <>
       <EstateTaxClient
@@ -238,6 +274,8 @@ export default async function EstateTaxPage() {
         giftingPerRecipientLimit={perRecipientLimit}
         giftingExcessOverLimit={excessAnnualGifts}
         composition={composition}
+        strategyLineItems={strategyLineItems}
+        noPortability={noPortability}
       />
     </>
   )
