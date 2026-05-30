@@ -2,16 +2,18 @@ import type { NextConfig } from "next";
 
 /** Mirror server-only signup flags into NEXT_PUBLIC_* at build time so client components hydrate. */
 function publicWaitlistMode(): string {
-  if (process.env.NEXT_PUBLIC_WAITLIST_MODE != null) {
-    return process.env.NEXT_PUBLIC_WAITLIST_MODE;
-  }
   if (
     process.env.PUBLIC_SIGNUP_OPEN === "true" ||
-    process.env.WAITLIST_MODE === "false"
+    process.env.NEXT_PUBLIC_SIGNUP_OPEN === "true" ||
+    process.env.WAITLIST_MODE === "false" ||
+    process.env.NEXT_PUBLIC_WAITLIST_MODE === "false"
   ) {
     return "false";
   }
-  if (process.env.WAITLIST_MODE === "true") {
+  if (
+    process.env.WAITLIST_MODE === "true" ||
+    process.env.NEXT_PUBLIC_WAITLIST_MODE === "true"
+  ) {
     return "true";
   }
   return process.env.VERCEL_ENV === "production" ? "true" : "false";

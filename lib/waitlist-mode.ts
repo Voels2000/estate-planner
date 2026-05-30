@@ -55,7 +55,11 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
   if (host && isLocalDevHost(host)) {
     return isExplicitWaitlistEnabled()
   }
-  if (!host && isLocalDevFromAppUrl()) {
+  if (
+    !host &&
+    isLocalDevFromAppUrl() &&
+    process.env.VERCEL_ENV !== 'production'
+  ) {
     return isExplicitWaitlistEnabled()
   }
 
@@ -63,8 +67,17 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
     return true
   }
 
-  // Build-time default via next.config env (mirrors VERCEL_ENV=production pre-launch gate).
-  return process.env.NEXT_PUBLIC_WAITLIST_MODE === 'true'
+  const publicMode = process.env.NEXT_PUBLIC_WAITLIST_MODE
+  if (publicMode === 'true') return true
+  if (publicMode === 'false') return false
+
+  // Server / Edge: Vercel injects VERCEL_ENV at runtime (middleware comment re inlining).
+  // Client: next.config `env` must bake NEXT_PUBLIC_WAITLIST_MODE at build time.
+  if (typeof window === 'undefined') {
+    return process.env.VERCEL_ENV === 'production'
+  }
+
+  return false
 }
 
 /** Invite / token signup flows bypass the waitlist gate. */
