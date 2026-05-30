@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (RPC access guards + attorney RLS + edge auth)
+# Last updated: 2026-05-30 (Prod API route fix + security smoke verified)
+
+## Prod API route slug conflict fix (2026-05-30)
+
+**Decision:** Move household document list from `/api/documents/[household_id]` to `/api/documents/household/[household_id]` so it no longer collides with `/api/documents/[id]/status` at the same dynamic segment depth.
+
+**Reasoning:** Next.js 16 on Vercel silently failed to initialize all App Router route handlers when sibling dynamic segments used different param names (`household_id` vs `id`). Pages (SSR) worked; every existing `/api/*` handler hung with 0 bytes. Build passed with no error; `getSortedRoutes()` catches it locally.
+
+**Also shipped:** `lib/supabase/routeAuth.ts` (`getSession()` for route handlers); `GET /api/health` liveness probe; middleware matcher excludes `/api/` from Edge auth (auth per route handler).
+
+**Commit:** `af12ff0`. **Verify:** `npm run test:e2e:security-smoke` — 7/7 on prod 2026-05-30.
+
+---
 
 ## RPC household access guards + attorney RLS + edge auth (2026-05-29)
 

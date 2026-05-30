@@ -11,6 +11,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | Current sprint handoff — paste block, task list, file paths |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live checklist — SEO, domain, Resend (update at launch, not each sprint) |
+| [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) | Legal/business/ops blockers before `PUBLIC_SIGNUP_OPEN=true` |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
 | [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) · [CURSOR_PROMPT_TEMPLATE.md](../CURSOR_PROMPT_TEMPLATE.md) | Brand tokens, UI primitives, Cursor prompts (Tailwind v4 `color:` prefix) |
@@ -502,7 +503,14 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Unit test `simpleRateLimit.spec.ts` — **39/39** in `npm run test:unit`
 - [x] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo` — applied 2026-05-29 on `fnzvlmrqwcqwiqueevux`
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
-- [ ] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — Monte Carlo, consumer RPC pages, referral 429, telemetry 401
+- [x] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
+
+## Sprint — Prod API route fix ✅ closed 2026-05-30
+
+- [x] Documents slug conflict — `GET /api/documents/household/[household_id]` (was `/api/documents/[household_id]`)
+- [x] `lib/supabase/routeAuth.ts`, `GET /api/health`, advisor preset route runtime flags
+- [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
+- [x] Commit `af12ff0`
 
 ## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
 

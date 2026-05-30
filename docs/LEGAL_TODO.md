@@ -22,6 +22,8 @@ When you send the Terms of Service to counsel:
 
 ## Must complete before PUBLIC_SIGNUP_OPEN=true
 
+See also [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) for the full legal/business/ops gate list.
+
 - [ ] Replace TODO placeholders + apply counsel redlines — **one commit** (see [Counsel handoff](#counsel-handoff--how-to-send-the-tos) above):
   - TODO: [COMPANY LEGAL NAME] in /privacy and /terms
   - TODO: [COMPANY ADDRESS] in /privacy and /terms

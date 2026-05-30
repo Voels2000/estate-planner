@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (RPC access guards + attorney RLS shipped)
+# Last updated: 2026-05-30 (Prod API fix + security smoke verified)
 
 ---
 
@@ -20,6 +20,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — Prod API fix + security smoke verification (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Fix documents API slug conflict (all `/api/*` hung on Vercel) | `[x]` |
+| `getRouteAuth()` + `/api/health` liveness probe | `[x]` |
+| Security smoke on prod (`npm run test:e2e:security-smoke`) | `[x]` 7/7 |
+| [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal/ops go-live blockers | `[x]` doc added |
+
+**Commit:** `af12ff0` — `fix(api): resolve documents slug conflict that hung all Vercel routes`
+
+**Next:** Work [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) 🔴 items before `PUBLIC_SIGNUP_OPEN=true`.
+
+---
 
 ### Sprint — RPC guards + attorney RLS + edge auth (2026-05-29) **← shipped**
 
@@ -290,7 +305,9 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **LEGAL_TODO.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases |
+| **Security post-deploy smoke** | `[x]` | 7/7 on prod 2026-05-30 — [LAUNCH_CHECKLIST § Security](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) |
+| **Prod API routes** | `[x]` | Documents slug conflict fix `af12ff0`; `/api/health` live |
+| **LEGAL_TODO.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases — see [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) |
 | **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |

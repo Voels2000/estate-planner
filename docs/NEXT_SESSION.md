@@ -1,22 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (RPC access guards + attorney RLS shipped)
+# Updated: 2026-05-30 (Prod API fix + security smoke verified)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **RPC guards + attorney RLS (shipped 2026-05-29):** `assert_household_caller_access` on estate/gifting/recommendations RPCs; attorney RLS fixed (`attorney_listings` join); Monte Carlo edge JWT auth; referral/telemetry rate limits — migrations `20260629120000` + `20260629130000`; deploy edge function `estate-monte-carlo`. **Security + CI (shipped 2026-05-29):** email route gates, household API access checks, CI workflow, 39 unit tests, 4 E2E specs. **Health Score + Advisor Playbook (shipped 2026-05-29):** unified `HealthScoreBadge`; first-client playbook + needs-attention panel. **Prospect + Mobile (shipped 2026-05-29):** `/prospect` DB tax config, PDF, intake CTA; mobile review layer. **Import + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Prod API fix (shipped 2026-05-30):** conflicting `/api/documents/[household_id]` vs `/api/documents/[id]/status` slug names hung all Vercel route handlers — moved list to `/api/documents/household/[household_id]`; `getRouteAuth()` + `/api/health` (`af12ff0`). **Security smoke (verified 2026-05-30):** `npm run test:e2e:security-smoke` 7/7 on prod — referral rate limit, telemetry 401, consumer RPC pages, Monte Carlo edge auth. **RPC guards + attorney RLS (shipped 2026-05-29):** migrations `20260629120000` + `20260629130000`; edge function `estate-monte-carlo`. **Import + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
 >
-> **Before deploy:** `supabase db push` (RPC + attorney RLS migrations); `supabase functions deploy estate-monte-carlo`. Resend inbound webhook needs `CRON_SECRET` Bearer or `x-internal-key`.
+> **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
-> **Billing (shipped):** TERMS-1/2/3/5 — signup T&C checkbox, Estate trial checkout, `trialing` dashboard access, Stripe success → `/dashboard`, soft backfill banner for legacy users. **Stripe:** [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) Phase 1 then Phase 2. **Orphan repair:** `npm run repair:orphaned-user -- <email>`. **Blockers:** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Phase 1 verify; `PUBLIC_SIGNUP_OPEN` flip.
+> **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
-> **Before flip:** [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview: create 6 test prices, set all `STRIPE_PRICE_*` + test keys, webhook, portal — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + live env vars + one real-card smoke → `PUBLIC_SIGNUP_OPEN=true`.
->
-> **Go-live day order:** [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Supabase Auth ON → verify `/auth/callback` on staging → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email.
->
-> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). Unit: `npm run test:unit` (39 tests). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md).
+> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Prod API route fix + security smoke ✅ (2026-05-30)
+
+**Commit:** `af12ff0` — `fix(api): resolve documents slug conflict that hung all Vercel routes`
+
+| Item | Notes |
+|------|-------|
+| Root cause | Next.js 16: `[household_id]` and `[id]` at same depth under `/api/documents/` — serverless init silently failed; all route handlers hung |
+| Fix | `GET /api/documents/household/[household_id]`; attorney vault fetch updated |
+| Route auth | `lib/supabase/routeAuth.ts` — `getSession()` in route handlers; `requireAdvisorUser` uses it |
+| Liveness | `GET /api/health` — no auth, returns `{ ok: true }` |
+| Security smoke | **7/7 passed** on `https://www.mywealthmaps.com` — referral `{200:60,429:5}`, telemetry 401, consumer RPC pages, Monte Carlo P10/P50/P90 |
+
+**Pre-launch ops doc:** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal, business formation, email aliases, Supabase auth, Stripe live, go-live day sequence.
 
 ---
 
@@ -36,9 +48,9 @@
 
 **Prod deploy (2026-05-29):** Migrations applied + edge function deployed on `fnzvlmrqwcqwiqueevux`. SQL verify script: `scripts/verify-security-sprint-20260629.sql`. **Cron note:** `app/api/cron/README.md`.
 
-**Browser smoke still manual:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) · automated: `npm run test:e2e:security-smoke`
+**Browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — **passed 7/7 on prod 2026-05-30** (`npm run test:e2e:security-smoke`)
 
-**Go-live:** Last structural security requirement before `PUBLIC_SIGNUP_OPEN=true`.
+**Go-live:** Remaining blockers are legal/ops — [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md).
 
 ---
 

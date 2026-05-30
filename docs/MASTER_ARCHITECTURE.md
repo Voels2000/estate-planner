@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook; Sprint 19)
+# Last updated: 2026-05-30 (Prod API fix + security smoke verified; Sprint 19)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -718,7 +718,8 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Enforcement now wired in:
   - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export.
   - `app/api/documents/download/[document_id]/route.ts` requires paid-active consumer status for document downloads.
-  - `app/api/documents/[household_id]/route.ts` aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
+  - `app/api/documents/household/[household_id]/route.ts` lists household documents; aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
+  - `app/api/documents/[id]/status/route.ts` — attorney PATCH for doc status (must not share dynamic segment name with household list route — see DECISION_LOG 2026-05-30).
 
 ---
 
@@ -789,7 +790,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · **Life Events** · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
 - Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, **`/events`**, event pages. **`/education/*` is excluded** — education layout provides its own header.
 - Root landing `app/(public)/page.tsx` inherits `PublicNav` from `(public)/layout.tsx`; includes social proof section and life-event quick-start (links to `/events`). Homepage copy targets **$2M–$30M** segment.
-- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
+- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. **Matcher excludes `/api/`** — route handlers enforce auth per-route; API must not enter Edge middleware Supabase `getUser()` (2026-05-30). When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
 
 **Life event hub (Sprint UX-1):**
 
@@ -956,6 +957,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
 - `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
+- `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
+- `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
 - `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads (API routes)
 - `lib/api/simpleRateLimit.ts` — IP-based rate limit helper for public POST endpoints
 - `lib/api/escapeHtml.ts` — shared HTML escaping for email templates

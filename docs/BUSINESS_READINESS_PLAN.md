@@ -1,6 +1,6 @@
 # BUSINESS_READINESS_PLAN.md
 # My Wealth Maps — Washington State Business Readiness Plan
-# Last updated: June 2, 2026
+# Last updated: May 30, 2026
 # Status: Pre-open-signup | Waitlist active | mywealthmaps.com live
 
 ---
@@ -14,10 +14,10 @@ completed since launch. This document is the current-state business readiness
 reference — combining technical, legal, regulatory, and operational status in
 one place.
 
-**Overall readiness: 85% complete.**
+**Overall readiness: ~88% complete** (engineering/security smoke verified 2026-05-30).
 Remaining blockers are non-code: legal review of ToS, company entity
 placeholders, Stripe Dashboard configuration, and Supabase auth settings
-to enable on go-live day.
+to enable on go-live day. See [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) for the full 🔴 gate list.
 
 ---
 

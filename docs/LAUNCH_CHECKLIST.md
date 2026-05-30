@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-29 (Health Score Narrative + Advisor First-Client Playbook shipped)
+# Last updated: 2026-05-30 (Prod API fix + security smoke verified)
 
 ---
 
@@ -18,7 +18,7 @@ Two sections:
 
 Do not execute Section 2 until all Section 1 items are checked.
 
-**Related docs:** [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) (WA business + compliance readiness) · [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+**Related docs:** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/business/ops blockers) · [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) (WA business + compliance readiness) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -133,9 +133,9 @@ See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ### Security hardening post-deploy browser smoke (2026-05-29)
 
-**Prod deploy:** migrations `20260629120000` + `20260629130000` applied; `estate-monte-carlo` edge function deployed. SQL verify: `scripts/verify-security-sprint-20260629.sql`.
+**Prod deploy:** migrations `20260629120000` + `20260629130000` applied; `estate-monte-carlo` edge function deployed. SQL verify: `scripts/verify-security-sprint-20260629.sql`. **API routes restored (2026-05-30):** conflicting dynamic segments under `/api/documents/` fixed (`af12ff0`); `/api/health` live.
 
-**Automated (when deployment reachable):**
+**Automated — passed 7/7 on prod 2026-05-30:** `npm run test:e2e:security-smoke`
 
 ```bash
 npx dotenv -o -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
@@ -149,10 +149,10 @@ E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-
 
 | # | Check | Pass |
 |---|--------|------|
-| 1 | **Monte Carlo** — `e2e-advisor@mywealthmaps.test` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [ ] |
-| 2 | **Consumer RPCs** — `e2e-consumer@mywealthmaps.test` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [ ] |
-| 3 | **Referral rate limit** — on `/event/selling-a-business`, DevTools Console (see [GO_LIVE_E2E § Security smoke](./GO_LIVE_E2E.md#security-hardening-post-deploy-smoke-2026-05-29)) → `{ 200: ~60, 429: ~5 }` for fake ref `test123` | [ ] |
-| 4 | **Telemetry auth** — logged out / incognito Console → `POST /api/telemetry/horizon-input-missing` → **401** | [ ] |
+| 1 | **Monte Carlo** — `e2e-advisor@mywealthmaps.test` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [x] |
+| 2 | **Consumer RPCs** — `e2e-consumer@mywealthmaps.test` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [x] |
+| 3 | **Referral rate limit** — on `/event/selling-a-business`, DevTools Console (see [GO_LIVE_E2E § Security smoke](./GO_LIVE_E2E.md#security-hardening-post-deploy-smoke-2026-05-29)) → `{ 200: ~60, 429: ~5 }` for fake ref `test123` | [x] |
+| 4 | **Telemetry auth** — logged out / incognito Console → `POST /api/telemetry/horizon-input-missing` → **401** | [x] |
 
 ### Prospect + Mobile Review Mode manual smoke (2026-05-29)
 
@@ -696,7 +696,8 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
-| 2026-05-29 | RPC guards + attorney RLS + edge auth | **Deployed prod** — migrations + `estate-monte-carlo` on `fnzvlmrqwcqwiqueevux`; SQL verified; browser smoke (Monte Carlo, rate limits) pending |
+| 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added |
+| 2026-05-29 | RPC guards + attorney RLS + edge auth | **Deployed prod** — migrations + `estate-monte-carlo` on `fnzvlmrqwcqwiqueevux`; SQL verified; browser smoke passed 2026-05-30 |
 | 2026-05-29 | Security + CI + dead code | **Closed** — email route gates, household access, CI workflow, 37 unit tests, 4 E2E specs |
 | 2026-05-29 | Health Score + Advisor Playbook | **Closed** — `feat(health-score)` unified badge + context; `feat(advisor)` first-client playbook + needs-attention; migration timestamp renames |
 | 2026-05-29 | Prospect + Mobile Review | **Closed** — `feat(prospect)` DB tax config, PDF, intake CTA; `feat(mobile)` review banner, rec cards, table scroll; manual smoke checklist added |

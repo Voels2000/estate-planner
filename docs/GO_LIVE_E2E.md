@@ -61,14 +61,18 @@ npm run test:import:unit   # 24 tests — projection readiness, wizard gate, imp
 
 ## Security hardening post-deploy smoke (2026-05-29)
 
-Run on **production** (`https://www.mywealthmaps.com`) after `db push` + `estate-monte-carlo` deploy.
+Run on **production** (`https://www.mywealthmaps.com`) after `db push` + `estate-monte-carlo` deploy + API route fix (`af12ff0`).
+
+**Status:** ✅ Passed 7/7 on prod 2026-05-30 — `npm run test:e2e:security-smoke`
 
 ### Automated
 
 ```bash
-npx dotenv -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
-npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
-npx dotenv -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
+npm run test:e2e:security-smoke
+# or individually:
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
 ```
 
 | Spec | Proves |
