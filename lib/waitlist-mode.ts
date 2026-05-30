@@ -8,6 +8,14 @@ export function isLocalDevHost(hostname: string): boolean {
   return false
 }
 
+/** Live marketing domain — waitlist defaults on; only PUBLIC_SIGNUP_OPEN opens signup. */
+export function isProductionMarketingHost(hostname: string | null | undefined): boolean {
+  if (!hostname) return false
+  const host = hostname.split(':')[0].toLowerCase()
+  if (host === 'mywealthmaps.com' || host === 'www.mywealthmaps.com') return true
+  return host.endsWith('.mywealthmaps.com')
+}
+
 function isLocalDevFromAppUrl(): boolean {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').toLowerCase()
   if (!appUrl) return false
@@ -34,13 +42,32 @@ function isExplicitWaitlistEnabled(): boolean {
   )
 }
 
+/** Go-live flip — the only intentional way to open public signup on production. */
+function isSignupExplicitlyOpen(): boolean {
+  if (process.env.PUBLIC_SIGNUP_OPEN === 'true') return true
+  return process.env.NEXT_PUBLIC_SIGNUP_OPEN === 'true'
+}
+
 type WaitlistModeOptions = {
   /** Request hostname from middleware or `headers().get('host')` on the server. */
   hostname?: string | null
 }
 
+function resolveHostname(options?: WaitlistModeOptions): string | null {
+  if (options?.hostname) return options.hostname
+  if (typeof window !== 'undefined') return window.location.hostname
+  return null
+}
+
 /** True when public signup is disabled and visitors are sent to /waitlist instead. */
 export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
+  const host = resolveHostname(options)
+
+  // Production marketing: waitlist on unless PUBLIC_SIGNUP_OPEN (ignore dev WAITLIST_MODE=false on Vercel).
+  if (isProductionMarketingHost(host)) {
+    return !isSignupExplicitlyOpen()
+  }
+
   if (isExplicitWaitlistDisabled()) {
     return false
   }
@@ -51,7 +78,6 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
     }
   }
 
-  const host = options?.hostname ?? null
   if (host && isLocalDevHost(host)) {
     return isExplicitWaitlistEnabled()
   }
@@ -71,8 +97,7 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
   if (publicMode === 'true') return true
   if (publicMode === 'false') return false
 
-  // Server / Edge: Vercel injects VERCEL_ENV at runtime (middleware comment re inlining).
-  // Client: next.config `env` must bake NEXT_PUBLIC_WAITLIST_MODE at build time.
+  // Preview / other Vercel targets: server/edge can use VERCEL_ENV when env inlining is unreliable.
   if (typeof window === 'undefined') {
     return process.env.VERCEL_ENV === 'production'
   }
