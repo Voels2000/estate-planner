@@ -6,7 +6,7 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Dashboard cleanup** · **RMD** · **Social Security** · **Roth** · **Lifetime Snapshot** · **Estate summary dashboard**. Post-deploy visual smokes pending on Alan (`/dashboard`, `/rmd`, `/social-security`).
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Estate Tax strategy panel** (`3c9a97a`) · **Dashboard Script A** (`960a414`) · **RMD** · **Social Security** · **Roth** · **Lifetime Snapshot** · **Dashboard cleanup**. Post-deploy visual smokes pending on Alan.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -26,13 +26,17 @@
 | Lifetime Snapshot | `9d103a7` | `_complete-client.tsx` |
 | Social Security | `405d3d0` | `_ss-client.tsx` |
 | RMD Calculator | `b47fed5` | `_rmd-client.tsx` |
-| Dashboard cleanup | `0aa0cab` + refinements | Planning topics removed · bypass alert · titling badges-only |
+| Dashboard cleanup | `0aa0cab` + `f200af7` | Planning topics removed · bypass alert · titling badges-only |
+| Dashboard Script A | `960a414` | Readiness pill on intro row · allocation downstream links · conflict banner dedup |
+| Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**
 
 | Route | Confirm |
 |-------|---------|
-| `/dashboard` | Bypass alert **"could save $645,463 in WA estate tax"** between metric tiles and checklist grid; estate summary ends at titling badges + link |
+| `/dashboard` | Bypass alert **$645,463** between tiles and checklist · intro row **Estate readiness 56/100** · no mid-page conflict banner |
+| `/estate-tax` | Composition waterfall + strategy toggles (Alan WA tax) · $0-tax user sees waterfall only |
+| `/allocation` | Downstream note to Projections + Monte Carlo after save |
 | `/rmd` | **9 years away** (Alan) · **16 years away** (Cathi); decade nav changes rows |
 | `/social-security` | Survivor **$4,888/mo**; cumulative chart crossover ~age 84; spousal block unchanged |
 

@@ -148,7 +148,7 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Incapacity Planning | `/incapacity-planning` | Incapacity Planning | 3 | `incapacity` |
 | Domicile Analysis | `/domicile-analysis` | Domicile Analysis | 3 | `domicile-analysis` |
 | Estate Tax Snapshot | `/estate-tax` | Estate Tax Snapshot | 3 | `estate-tax` |
-| Estate Value and Tax Horizons | `/my-estate-strategy` | Estate Value and Tax Horizons | 3 | `my-estate-strategy` |
+| Tax Horizons & Strategy | `/my-estate-strategy` | Tax Horizons & Strategy | 3 | `my-estate-strategy` |
 | Gifting, Strategies & Trusts | `/my-estate-trust-strategy?tab=trusts` | Gifting, Strategies & Trusts | 3 | `my-estate-trust-strategy` (tabs via `?tab=`; default sidebar href opens Trusts tab) |
 
 ---

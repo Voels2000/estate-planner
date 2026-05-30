@@ -378,21 +378,22 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 
 | | |
 |--|--|
-| **User goal** | Federal/state estate tax exposure from current balance sheet |
+| **User goal** | Federal/state estate tax exposure; interactive inside/outside composition + strategy what-if |
 | **Tier / gate** | Tier 3; **profile gate** |
-| **Server** | `app/(dashboard)/estate-tax/page.tsx` — assets, RE, liabilities, trusts, brackets; `classifyEstateAssets` |
-| **Client** | `app/(dashboard)/estate-tax/_estate-tax-client.tsx` |
+| **Server** | `app/(dashboard)/estate-tax/page.tsx` — assets, RE, liabilities, trusts, brackets; **`getCachedComposition`** + **`strategy_line_items`** on entitled path; `noPortability` from state rules |
+| **Client** | `app/(dashboard)/estate-tax/_estate-tax-client.tsx` — composition waterfall (Current / With strategies); strategy panel when state or federal tax &gt; 0; **`getStrategyDescription`** module-level |
 | **Write APIs** | Read-heavy; trust edits may use consumer trust API from other flows |
-| **Read APIs / RPCs** | `calculate_estate_composition` via `classifyEstateAssets` |
-| **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts` |
+| **Read APIs / RPCs** | `calculate_estate_composition` via `getCachedComposition` / `classifyEstateAssets`; active `strategy_line_items` |
+| **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts`, `lib/strategy/strategyLabels.ts` |
 | **Compliance** | Inline `DISCLAIMER_STRINGS.estateTax` under Federal Estate Tax card (`_estate-tax-client.tsx`) |
-| **Empty / blocked** | `UpgradeBanner` if `tier < 3`; optional `householdContext` (`grossEstate`, `statePrimary`) for personalized copy when estate ≥ $100K |
+| **Empty / blocked** | `UpgradeBanner` if `tier < 3`; strategy panel hidden when both estimated state and federal tax are $0 |
 
-### Estate Value and Tax Horizons — `/my-estate-strategy`
+### Tax Horizons & Strategy — `/my-estate-strategy`
 
 | | |
 |--|--|
 | **User goal** | Horizon table: today → longevity; federal/state tax bands; strategy line impact |
+| **Nav label** | **Tax Horizons & Strategy** (sidebar; was “Estate Value and Tax Horizons”) |
 | **Tier / gate** | Tier 3; **profile gate**; `UpgradeBanner` + `householdContext` if `tier < 3` |
 | **Server** | `app/(dashboard)/my-estate-strategy/page.tsx` — staleness-based base-case regen; `buildStrategyHorizons`, `classifyEstateAssets` |
 | **Client** | `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx`, `EstatePlanningDashboard` |
