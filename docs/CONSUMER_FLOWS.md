@@ -225,7 +225,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`** + optional **bypass trust alert** (when `bypass_trust` recommendation + no portability) → four compact metric tiles → **`sm:grid-cols-2`** checklist + **`EstateTaxSnapshotPanel`**. **`EstateSummarySection`** (collapsible below Financial/Retirement): readiness score · composition · **titling badges + link only** — planning topics removed (2026-05-30).
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`**: (1) tax exposure hero (~$937K WA) → (2) four compact metric tiles → (3) optional **bypass trust alert** via **`afterMetrics`** when `parseBypassTrustSavings(initialRecommendations)` &gt; 0 (Alan: **$645,463** from RPC reason `by $645,463`) → then **`sm:grid-cols-2`** **`EstateExecutionChecklist`** + **`EstateTaxSnapshotPanel`**. **`EstateSummarySection`** (collapsible below Financial/Retirement): readiness score · composition · **titling badges + link only** — Common Planning Topics removed (2026-05-30). Conflict counts from **`conflictReport.critical` / `.warnings`** unchanged for badge pills.
 
 ### Financial modules (representative)
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { fmt, fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard'
@@ -36,6 +37,7 @@ export function EstateSummaryHeroAndMetrics({
   estimatedTaxState,
   statePrimary,
   userTier,
+  afterMetrics,
 }: Pick<
   EstateCalloutCardProps,
   | 'grossEstate'
@@ -44,7 +46,10 @@ export function EstateSummaryHeroAndMetrics({
   | 'estimatedTaxState'
   | 'statePrimary'
   | 'userTier'
->) {
+> & {
+  /** Rendered after the four metric tiles, still inside the tax exposure block. */
+  afterMetrics?: ReactNode
+}) {
   if (grossEstate <= 0) {
     return (
       <EmptyStateCard
@@ -160,6 +165,8 @@ export function EstateSummaryHeroAndMetrics({
           </div>
         ))}
       </div>
+
+      {afterMetrics}
     </div>
   )
 }

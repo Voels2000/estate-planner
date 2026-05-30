@@ -27,7 +27,8 @@
 |------|--------|
 | Remove Common Planning Topics from estate summary | `[x]` |
 | Titling conflicts — badges + link only | `[x]` |
-| Bypass trust alert near tax hero | `[x]` |
+| Bypass trust alert via `afterMetrics` | `[x]` |
+| `parseBypassTrustSavings` from RPC reason | `[x]` |
 
 **Post-ship:** Alan dashboard — bypass ~$645K alert · no topic list · titling link to `/titling`.
 

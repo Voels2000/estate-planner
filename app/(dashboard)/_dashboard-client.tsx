@@ -200,9 +200,17 @@ function parseBypassTrustSavings(
   const rec = recommendations?.find((r) => r.branch === 'bypass_trust')
   if (!rec) return 0
 
+  // Primary: "reduce Washington estate tax by $645,463 or more"
   const byMatch = rec.reason.match(/by (\$[\d,]+)/i)
   if (byMatch) {
     return parseInt(byMatch[1].replace(/[$,]/g, ''), 10)
+  }
+
+  // Fallback: last dollar figure in the RPC reason string
+  const dollarMatches = rec.reason.match(/\$[\d,]+/g)
+  if (dollarMatches?.length) {
+    const last = dollarMatches[dollarMatches.length - 1]
+    return parseInt(last.replace(/[$,]/g, ''), 10)
   }
 
   if (noPortability && stateExemption && grossEstate && grossEstate > stateExemption) {
@@ -480,37 +488,39 @@ export function DashboardClient(props: Props) {
       )}
 
       {sectionVisible(2) && estateCallout && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4">
           <EstateSummaryHeroAndMetrics
             {...estateCallout}
             statePrimary={statePrimary}
             userTier={tier}
+            afterMetrics={
+              bypassTrustSavings > 0 && statePrimary && stateExemption ? (
+                <div className="flex items-start gap-3 rounded-[var(--mwm-radius)] border border-blue-200 bg-blue-50 px-4 py-3">
+                  <i
+                    className="ti ti-bulb mt-0.5 text-blue-700"
+                    aria-hidden="true"
+                    style={{ fontSize: 16 }}
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-blue-800 mb-1">
+                      Bypass trust could save {fmtExact(bypassTrustSavings)} in {statePrimary} estate tax
+                    </p>
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      {statePrimary} does not allow portability of its state estate tax exemption.
+                      Without a credit shelter trust funded at first death, one {fmtExact(stateExemption)} exemption
+                      is permanently lost. Many attorneys discuss bypass trusts to preserve both exemptions.
+                    </p>
+                    <Link
+                      href="/my-estate-strategy"
+                      className="mt-1.5 block text-xs font-medium text-blue-700 underline underline-offset-2"
+                    >
+                      View trust strategies →
+                    </Link>
+                  </div>
+                </div>
+              ) : null
+            }
           />
-          {bypassTrustSavings > 0 && statePrimary && stateExemption && (
-            <div className="flex items-start gap-3 rounded-[var(--mwm-radius)] border border-blue-200 bg-blue-50 px-4 py-3">
-              <i
-                className="ti ti-bulb mt-0.5 text-blue-700"
-                aria-hidden="true"
-                style={{ fontSize: 16 }}
-              />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-blue-800 mb-1">
-                  Bypass trust could save {fmtExact(bypassTrustSavings)} in {statePrimary} estate tax
-                </p>
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  {statePrimary} does not allow portability of its state estate tax exemption.
-                  Without a credit shelter trust funded at first death, one {fmtExact(stateExemption)} exemption
-                  is permanently lost. Many attorneys discuss bypass trusts to preserve both exemptions.
-                </p>
-                <Link
-                  href="/my-estate-strategy"
-                  className="mt-1.5 block text-xs font-medium text-blue-700 underline underline-offset-2"
-                >
-                  View trust strategies →
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

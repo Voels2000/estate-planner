@@ -561,9 +561,12 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 
 - [x] Remove Common Planning Topics from estate summary collapsible
 - [x] Titling conflicts — badges + link to `/titling` only (no detail list)
-- [x] Bypass trust alert below tax hero (`parseBypassTrustSavings` from recommendations)
+- [x] Bypass trust alert below tax hero (`parseBypassTrustSavings` from recommendations reason string)
+- [x] **`afterMetrics` slot** — alert after four metric tiles, before checklist/tax snapshot grid
+- [x] Conflict badges preserved (`conflictReport.critical` / `.warnings`)
+- [x] Alan prod verify: **`by $645,463`** parses to bypassTrustSavings = 645463
 - [x] Master docs synced
-- [ ] **Post-deploy visual smoke (once):** Alan — bypass alert ~$645K · no topics · titling badges only
+- [ ] **Post-deploy visual smoke (once):** Alan — **$645,463** blue callout between tiles and checklist · titling badges + link only at estate summary bottom
 
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 

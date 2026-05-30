@@ -4,11 +4,11 @@
 
 ## Dashboard cleanup — bypass trust alert (2026-05-30)
 
-**Decision:** Remove **Common Planning Topics** from dashboard estate summary (content lives on trust/strategy and topic-specific pages). **Titling & Beneficiary Conflicts** in estate summary shows badge pills + link to `/titling` only — no inline conflict detail. Surface **bypass trust** dollar savings as blue planning alert below tax hero when `initialRecommendations` includes `bypass_trust` and savings &gt; 0 (parsed from RPC reason or `(grossEstate − stateExemption) × 0.10` for no-portability states).
+**Decision:** Remove **Common Planning Topics** from dashboard estate summary. **Titling & Beneficiary Conflicts** shows badge pills + link to `/titling` only — **`criticalCount` / `warningCount`** from **`conflictReport`** preserved. Surface **bypass trust** savings as blue alert in **`EstateSummaryHeroAndMetrics.afterMetrics`** (after four metric tiles, before checklist/tax snapshot grid). Savings via **`parseBypassTrustSavings`**: primary match `by $…` in `bypass_trust` RPC reason; fallback last `$` in reason; then `(grossEstate − stateExemption) × 0.10`.
 
-**Files:** `_dashboard-client.tsx`, `EstateSummarySection.tsx`
+**Files:** `_dashboard-client.tsx`, `EstateSummarySection.tsx`, `EstateCalloutCard.tsx`
 
-**Verify:** Alan WA household — alert shows ~$645K; estate summary collapsible has no topic groups.
+**Verify:** Alan — reason parses **$645,463**; alert sits between metric tiles and two-column grid.
 
 ---
 

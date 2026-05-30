@@ -55,6 +55,8 @@ function TierAwareEstateLink({
 
 export function EstateSummarySection(props: EstateSummarySectionProps) {
   const { consumerTier } = props
+  const criticalCount = props.conflictReport?.critical ?? 0
+  const warningCount = props.conflictReport?.warnings ?? 0
 
   return (
     <CollapsibleSection
@@ -129,23 +131,22 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
           </div>
         )}
 
-        {props.conflictReport &&
-          (props.conflictReport.critical > 0 || props.conflictReport.warnings > 0) && (
+        {props.conflictReport && (criticalCount > 0 || warningCount > 0) && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">
               Titling & Beneficiary Conflicts
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-1">
-              {props.conflictReport.critical > 0 && (
+              {criticalCount > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-red-100 border border-red-200 px-2.5 py-1 text-xs font-medium text-red-800">
                   <i className="ti ti-alert-circle" aria-hidden="true" style={{ fontSize: 11 }} />
-                  {props.conflictReport.critical} critical
+                  {criticalCount} critical
                 </span>
               )}
-              {props.conflictReport.warnings > 0 && (
+              {warningCount > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-800">
                   <i className="ti ti-alert-triangle" aria-hidden="true" style={{ fontSize: 11 }} />
-                  {props.conflictReport.warnings} warning{props.conflictReport.warnings !== 1 ? 's' : ''}
+                  {warningCount} warning{warningCount !== 1 ? 's' : ''}
                 </span>
               )}
               <Link

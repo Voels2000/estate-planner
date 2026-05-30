@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (dashboard cleanup + RMD years-away verify)
+# Updated: 2026-05-30 (dashboard cleanup refinements + polish pass handoff)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Dashboard cleanup:** planning topics removed · bypass trust alert near tax hero · titling badges-only in estate summary. **RMD (`b47fed5`)** · **Social Security (`405d3d0`)** · **Roth (`839bfbb`)** shipped.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Dashboard cleanup** · **RMD** · **Social Security** · **Roth** · **Lifetime Snapshot** · **Estate summary dashboard**. Post-deploy visual smokes pending on Alan (`/dashboard`, `/rmd`, `/social-security`).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -16,18 +16,43 @@
 
 ---
 
+## Sprint 19 polish pass — session summary (2026-05-30)
+
+| Page | Commit | Client / area |
+|------|--------|----------------|
+| Estate summary dashboard | `deb0080` | Tax hero + 4 tiles + checklist/tax snapshot two-col |
+| State exemption wire | `0686f52` | `no_portability` on tax snapshot |
+| Roth Conversion | `839bfbb` | `_roth-client.tsx` |
+| Lifetime Snapshot | `9d103a7` | `_complete-client.tsx` |
+| Social Security | `405d3d0` | `_ss-client.tsx` |
+| RMD Calculator | `b47fed5` | `_rmd-client.tsx` |
+| Dashboard cleanup | `0aa0cab` + refinements | Planning topics removed · bypass alert · titling badges-only |
+
+**Prod pending (Alan visual smokes, once each):**
+
+| Route | Confirm |
+|-------|---------|
+| `/dashboard` | Bypass alert **"could save $645,463 in WA estate tax"** between metric tiles and checklist grid; estate summary ends at titling badges + link |
+| `/rmd` | **9 years away** (Alan) · **16 years away** (Cathi); decade nav changes rows |
+| `/social-security` | Survivor **$4,888/mo**; cumulative chart crossover ~age 84; spousal block unchanged |
+
+**Not in this pass:** Monte Carlo, Scenarios, Allocation, Projections UI polish · Roth emerald rows on IRA fixture household · wizard prod smoke · `supabase db push` for state exemption migration on prod if not yet run.
+
+---
+
 ## Dashboard cleanup ✅ (2026-05-30)
 
-**Files:** `_dashboard-client.tsx` · `EstateSummarySection.tsx`
+**Files:** `_dashboard-client.tsx` · `EstateSummarySection.tsx` · `EstateCalloutCard.tsx`
 
 | Item | Notes |
 |------|-------|
 | Removed | Common Planning Topics section (`PlanningGapsSection` in estate summary collapsible) |
-| Titling conflicts | Badges only + **Review in Titling & Beneficiaries →** (detail on `/titling`) |
-| Bypass trust alert | Blue card below tax hero when `bypass_trust` rec + `noPortability`; savings parsed from RPC reason or `(gross − exemption) × 10%` |
+| Titling conflicts | **`criticalCount` / `warningCount`** from `conflictReport` — badges only + **Review in Titling & Beneficiaries →** (detail on `/titling`) |
+| Bypass trust alert | **`parseBypassTrustSavings`** — parses **`by $645,463`** from `bypass_trust` RPC reason (Alan prod verified); fallback last `$` in reason, then `(gross − exemption) × 10%` |
+| Placement | **`EstateSummaryHeroAndMetrics.afterMetrics`** — after four metric tiles, before **`sm:grid-cols-2`** checklist + tax snapshot grid |
 | Unchanged | Top conflict dismiss banner · estate readiness score · composition card · execution checklist |
 
-**Post-deploy smoke (once):** Alan → `/dashboard` — bypass alert ~**$645K** WA savings · no planning topics in estate summary · titling badges + link only.
+**Post-deploy smoke (once):** Alan → `/dashboard` — blue callout **$645,463** between tiles and checklist · no planning topics · titling badges + link only at bottom of estate summary collapsible.
 
 ---
 
