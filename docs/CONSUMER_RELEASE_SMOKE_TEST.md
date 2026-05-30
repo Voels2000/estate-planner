@@ -240,7 +240,8 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.11b | **Add to plan** then **Edit** / **Remove** | Promote moves to In My Plan; remove clears row; horizons refresh after promote | ☐ |
 | 10.11c | **Roth Conversion** (`/roth`) | Stat cards + insight + WhatIfPanel; balance projection above grouped table (no tabs); group headers by rationale. When conversions &gt; 0: emerald rows + **Use in Transfer Strategies →** → `?tab=strategies&openPanel=roth`; sandbox row present. **Prod 2026-05-30:** layout + slider + break-even `—` at equal rates passed on `e2e-consumer`; CTA + emerald rows need IRA fixture | ☐ |
 | 10.11d | **Social Security** (`/social-security`) | Hero elected cards + insight (survivor **$4,888/mo** for Alan) · cumulative chart (blue elected crosses gray FRA ~age 84) · claiming tables with bar column · spousal section unchanged below. **Prod 2026-05-30:** programmatic verify on Alan household; visual once post-deploy | ☐ |
-| 10.11e | **RMD Calculator** (`/rmd`) | Hero lifetime + peak · status cards with years-away badges · accounts grid · tax callout · decade navigator changes visible rows · inflection row highlights (P1 start / P2 start / peak) · legend | ☐ |
+| 10.11e | **RMD Calculator** (`/rmd`) | Hero lifetime + peak · status cards **Alan 9 yr / Cathi 16 yr away** · decade navigator · inflection highlights · legend | ☐ |
+| 10.11f | **Dashboard cleanup** | No planning topics in estate summary · bypass trust alert ~$645K below tax hero (Alan WA) · titling badges + link only | ☐ |
 
 #### 10d. Gift History
 
