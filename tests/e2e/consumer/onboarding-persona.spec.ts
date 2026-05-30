@@ -67,7 +67,16 @@ test('persona selection saves business_owner and leaves persona screen', async (
   ).toBeVisible({ timeout: 30_000 })
 
   await page.getByRole('heading', { name: 'I own a business' }).click()
-  await page.getByRole('button', { name: 'Continue →' }).click()
+  await expect(page.locator('[aria-pressed="true"]')).toContainText('I own a business')
+  await expect(page.getByRole('button', { name: 'Continue →' })).toBeEnabled()
+
+  const [saveResponse] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes('/api/consumer/profile') && r.request().method() === 'PATCH',
+    ),
+    page.getByRole('button', { name: 'Continue →' }).click(),
+  ])
+  expect(saveResponse.ok(), await saveResponse.text()).toBeTruthy()
 
   await page.waitForURL((url) => !url.pathname.includes('/onboarding/persona'), {
     timeout: 30_000,
