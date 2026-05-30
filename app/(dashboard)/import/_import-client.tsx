@@ -10,6 +10,7 @@ import {
   typeColumnHeader,
 } from '@/lib/import/reviewTypeHelpers'
 import { CANONICAL_PROPERTY_TYPES } from '@/lib/import/type-normalizer'
+import { SupportedFormats } from './_SupportedFormats'
 
 type IngestionJob = {
   id: string
@@ -441,6 +442,43 @@ export function ImportClient({
 
       {step === 'upload' && (
         <>
+          <SupportedFormats />
+          <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+            <p className="text-xs font-medium text-neutral-600">Start from a template</p>
+            <p className="mt-1 text-xs text-neutral-500">
+              Persona workbooks with example rows — then upload in the drop zone below.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PERSONA_TEMPLATES.map((template) => (
+                <a
+                  key={template.href}
+                  href={template.href}
+                  download
+                  className="rounded-lg border border-[color:var(--mwm-navy)]/20 bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--mwm-navy)] hover:bg-[var(--mwm-gold-pale)]"
+                >
+                  {template.label}
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+            <p className="text-xs font-medium text-neutral-600">Single-table CSV templates</p>
+            <p className="mt-1 text-xs text-neutral-500">
+              Download a starter CSV with common column headers for each table type.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {IMPORT_TEMPLATES.map((template) => (
+                <a
+                  key={template.href}
+                  href={template.href}
+                  download
+                  className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] underline-offset-2 hover:underline"
+                >
+                  {template.label}
+                </a>
+              ))}
+            </div>
+          </div>
           <div
             onDragOver={(e) => {
               e.preventDefault()
@@ -487,42 +525,6 @@ export function ImportClient({
                 />
               </div>
             )}
-          </div>
-          <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-            <p className="text-xs font-medium text-neutral-600">Start from a template</p>
-            <p className="mt-1 text-xs text-neutral-500">
-              Persona workbooks with example rows — or upload your own file below.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PERSONA_TEMPLATES.map((template) => (
-                <a
-                  key={template.href}
-                  href={template.href}
-                  download
-                  className="rounded-lg border border-[color:var(--mwm-navy)]/20 bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--mwm-navy)] hover:bg-[var(--mwm-gold-pale)]"
-                >
-                  {template.label}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-            <p className="text-xs font-medium text-neutral-600">Single-table CSV templates</p>
-            <p className="mt-1 text-xs text-neutral-500">
-              Download a starter CSV with common column headers for each table type.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              {IMPORT_TEMPLATES.map((template) => (
-                <a
-                  key={template.href}
-                  href={template.href}
-                  download
-                  className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy)] underline-offset-2 hover:underline"
-                >
-                  {template.label}
-                </a>
-              ))}
-            </div>
           </div>
         </>
       )}

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Onramp guide path + wizard gate fix)
+# Last updated: 2026-05-29 (Import format surfacing + upload page reorder)
 
 ---
 
@@ -20,6 +20,19 @@
 ---
 
 ## Current sprint
+
+### Sprint — Import format surfacing (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `SupportedFormats` component — broker CSV, multi-sheet Excel, single CSV | `[x]` |
+| Upload step order: formats → persona templates → CSV templates → drop zone | `[x]` |
+| `DashboardOnramp` import card copy + format hint line | `[x]` |
+| Helper text aligned to new layout | `[x]` |
+
+**Post-ship:** Manual smoke on `/import` — formats + templates visible before drop zone; onramp import card copy
+
+---
 
 ### Sprint — Dashboard onramp (2026-05-30) **← shipped**
 

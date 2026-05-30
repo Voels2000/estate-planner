@@ -1,18 +1,32 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Onramp guide path + wizard gate /dashboard exempt)
+# Updated: 2026-05-29 (Import format surfacing + upload page reorder)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Dashboard onramp (2026-05-30):** `DashboardOnramp` on `/dashboard` when wizard incomplete, score &lt; 60, or no data. **Onramp path fix:** `guidedHref` → `/onboarding/persona` when no persona (wizard requires persona first); `/dashboard` in `wizardGateExemptPrefixes` so `WizardOnboardingGate` does not hijack path choice. **Post-deploy manual:** fresh user — Import → `/import`; Guide → persona → wizard; Self → `/assets`.
+> My Wealth Maps — **Sprint 19.** **Import format surfacing (2026-05-29):** `/import` upload step — `SupportedFormats` + persona/CSV templates **above** drop zone; onramp import card names broker/Excel/CSV. **Dashboard onramp (2026-05-30):** `DashboardOnramp` when wizard incomplete, score &lt; 60, or no data; `guidedHref` persona-first; `/dashboard` wizard-gate exempt. **Post-deploy manual:** `/import` formats visible without scroll; fresh user onramp paths (Import / Guide / Self).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Import format surfacing ✅ (2026-05-29)
+
+**Upload step order:** `SupportedFormats` → persona XLSX templates → single-table CSV templates → drop zone.
+
+| Item | Notes |
+|------|-------|
+| Component | `app/(dashboard)/import/_SupportedFormats.tsx` — broker CSV, multi-sheet Excel, single CSV |
+| Client | `app/(dashboard)/import/_import-client.tsx` — reordered upload step; helper text points to templates below / drop zone below |
+| Onramp | `components/dashboard/DashboardOnramp.tsx` — import desc + `Broker CSV · Multi-sheet Excel · Single-table CSV` hint |
+
+**Manual smoke:** `/import` — no scroll needed to see supported formats and template downloads; broker users can drop export immediately after reading formats block.
 
 ---
 

@@ -16,9 +16,10 @@ const PATHS = [
     icon: '↑',
     label: 'Import my data',
     time: '~2 min',
-    desc: 'Connect accounts or upload a file. We map everything automatically.',
+    desc: 'Upload a broker export (Schwab, Fidelity, Vanguard), Excel workbook, or CSV. We map it automatically.',
     featured: true,
     badge: 'Fastest',
+    hints: ['Broker CSV · Multi-sheet Excel · Single-table CSV'],
   },
   {
     key: 'guided',
@@ -29,6 +30,7 @@ const PATHS = [
     desc: 'Step-by-step walkthrough. We ask the questions, you fill in the answers.',
     featured: false,
     badge: null,
+    hints: [] as string[],
   },
   {
     key: 'self',
@@ -39,6 +41,7 @@ const PATHS = [
     desc: 'Go section by section on your own schedule.',
     featured: false,
     badge: null,
+    hints: [] as string[],
   },
 ] as const
 
@@ -64,7 +67,7 @@ export function DashboardOnramp({ foundationScore, firstName, guidedHref }: Dash
               How do you want to get started?
             </p>
             <p className="text-xs text-[color:var(--mwm-text-secondary)]">
-              Choose the path that fits your style. You can always switch later.
+              Choose the path that fits your style. You can switch any time.
             </p>
           </div>
         </div>
@@ -94,6 +97,11 @@ export function DashboardOnramp({ foundationScore, firstName, guidedHref }: Dash
               <p className="mt-2 text-xs leading-relaxed text-[color:var(--mwm-text-secondary)]">
                 {path.desc}
               </p>
+              {path.hints.length > 0 && (
+                <p className="mt-2 text-[10px] text-[color:var(--mwm-text-secondary)] opacity-75">
+                  {path.hints[0]}
+                </p>
+              )}
             </Link>
           ))}
         </div>

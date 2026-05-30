@@ -15,7 +15,7 @@
 | FEATURE | Asset & liability type normalization | COMPLETE | `lib/import/type-normalizer.ts` — 30+ aliases for asset types, liability types, property types. Custodian labels (Fidelity/Schwab/Vanguard) mapped to canonical slugs. Amber badge + override dropdown in review UI. |
 | FEATURE | Multi-sheet workbook import | COMPLETE | `lib/import/multiSheet.ts` — sheet-name heuristics + CSV `record_type` split. Per-sheet tabs, Commit All with progress, batch summary. |
 | FEATURE | Import-first onboarding fork | COMPLETE | Wizard step 1: Upload spreadsheet (primary) vs Add manually. `?onboarding=true` → redirects to `/dashboard?setup=imported` after commit. |
-| FEATURE | Persona import templates | COMPLETE | `public/templates/template-business-owner.xlsx`, `template-real-estate.xlsx`, `template-executive.xlsx`. Template picker on import page. |
+| FEATURE | Persona import templates | COMPLETE | `public/templates/template-*.xlsx` + CSV samples. Upload step: `_SupportedFormats` → persona + CSV template blocks → drop zone (2026-05-29). |
 | FEATURE | Real estate import table | COMPLETE | `real_estate` added to import targets. Property type normalization. Uses existing `real_estate` schema (`name`, `property_type`, `current_value`, `situs_state`, …). |
 | TEST | Type normalizer unit tests | COMPLETE | `tests/unit/import-type-normalizer.spec.ts` — included in `npm run test:import:unit` (19 tests total). |
 
@@ -26,7 +26,7 @@
 | Normalization | `lib/import/type-normalizer.ts`, `lib/import/reviewTypeHelpers.ts` |
 | Multi-sheet | `lib/import/multiSheet.ts`, `app/api/ingest/route.ts` |
 | Commit | `app/api/import/commit/route.ts`, `lib/import/ingestConfig.ts` |
-| UI | `app/(dashboard)/import/_import-client.tsx`, `app/(dashboard)/onboarding/wizard/_wizard-client.tsx` |
+| UI | `app/(dashboard)/import/_import-client.tsx`, `_SupportedFormats.tsx`, `app/(dashboard)/onboarding/wizard/_wizard-client.tsx` |
 | Templates | `scripts/generate-persona-import-templates.ts`, `public/templates/template-*.xlsx` |
 
 ---

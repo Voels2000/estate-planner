@@ -512,6 +512,13 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
 - [x] Commit `af12ff0`
 
+## Sprint — Import format surfacing ✅ closed 2026-05-29
+
+- [x] `_SupportedFormats.tsx` — broker CSV, multi-sheet Excel, single-table CSV
+- [x] Upload step reorder — templates above drop zone in `_import-client.tsx`
+- [x] `DashboardOnramp` import card copy + format hint line
+- [x] Master docs synced (ROADMAP · NEXT_SESSION · DECISION_LOG · MASTER_ARCHITECTURE · CONSUMER_FLOWS · CONSUMER_NAV_MAP · CONSUMER_RELEASE_SMOKE_TEST · SPRINT_IMPORT_ATTORNEY)
+
 ## Sprint — Dashboard onramp ✅ closed 2026-05-30
 
 - [x] `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`, `ONRAMP_SCORE_THRESHOLD = 60`

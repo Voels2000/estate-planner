@@ -318,7 +318,7 @@ Migration `20260602140000_sprint_f1_ingestion_jobs.sql` applied; schema cleanup 
 | Step | Action | Expected | Pass? |
 |------|--------|----------|-------|
 | I.1 | `/import` (tier 1 account) | Upgrade banner; tier 2 required | ☐ |
-| I.2 | `/import` (tier 2+ account) | Drop zone; CSV/XLSX only; four template download links | ☐ |
+| I.2 | `/import` (tier 2+ account) | **SupportedFormats** (broker CSV, multi-sheet Excel, single CSV) visible first; persona + CSV template downloads above drop zone; CSV/XLSX drop zone | ☐ |
 | I.3 | Upload `public/templates/import-sample.csv` | Parse succeeds; review step shows headers + auto field map; target table `assets` | ☐ |
 | I.4 | Commit import | Success message; rows appear in `assets`; job history shows `committed` | ☐ |
 

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-30 (Dashboard onramp; Sprint 19)
+# Last updated: 2026-05-29 (Import format surfacing; Sprint 19)
 
 ---
 
@@ -98,7 +98,8 @@ Consumers and advisors share one **household** data model but operate in separat
 | Persona onboarding (2026-05-29) | `/onboarding/persona` after wizard-ready profile (`isWizardReadyProfile`); `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator`; selectable tiles use `<Card aria-pressed>` (root div receives prop via `Card` `{...rest}`); E2E: `onboarding-persona.spec.ts` clicks `[aria-pressed]` card wrapper |
 | Acquisition & activation (2026-05-29) | **`attorney_intake_requests`** + `/intake/[token]` + send-intake modal; **`ReferralImpactPanel`** + referral-impact API; **`GET /api/advisor/meeting-prep-pdf/[clientId]`** print one-pager; advisor referral signup notify |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
-| Dashboard onramp (2026-05-30) | `/dashboard` — `shouldShowOnramp()`; `DashboardOnramp` before `DashboardBody`; **`guidedHref`** persona-first; **`/dashboard`** wizard-gate exempt (`wizardGateExemptPrefixes.ts`) |
+| Dashboard onramp (2026-05-30) | `/dashboard` — `shouldShowOnramp()`; `DashboardOnramp` before `DashboardBody`; **`guidedHref`** persona-first; import card names broker/Excel/CSV + format hint; **`/dashboard`** wizard-gate exempt (`wizardGateExemptPrefixes.ts`) |
+| Import upload UX (2026-05-29) | `/import` upload step — `_SupportedFormats.tsx` → persona XLSX + CSV template blocks → drop zone (`_import-client.tsx`) |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
@@ -1065,7 +1066,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Route: `/import` — tier **1+** upload + commit (`FEATURE_TIERS.import = 1`; import **job history** Tier 2+ only). Onboarding: `?onboarding=true` redirects to dashboard after commit.
 - **Supported formats:** CSV (`.csv`), Excel (`.xlsx`, `.xls`) only. PDF/DOCX deferred post-launch.
 - **Target tables:** `assets`, `liabilities`, `income`, `expenses`, **`real_estate`** (expansion sprint).
-- **Three-step UX:** upload → review (field mapping + inline row edit + type normalization badges) → commit confirmation. **Multi-sheet:** per-sheet tabs + **Commit All** with batch summary when workbook has multiple data sheets or CSV has `record_type`/`table`/`category` column.
+- **Three-step UX:** upload → review (field mapping + inline row edit + type normalization badges) → commit confirmation. **Upload step order (2026-05-29):** `SupportedFormats` (broker CSV, multi-sheet Excel, single CSV) → persona XLSX + single-table CSV template downloads → drop zone. **Multi-sheet:** per-sheet tabs + **Commit All** with batch summary when workbook has multiple data sheets or CSV has `record_type`/`table`/`category` column.
 - **Type normalization:** `lib/import/type-normalizer.ts` — 30+ aliases (custodian labels, 401(k), property types); applied at commit + review UI override dropdowns (`lib/import/reviewTypeHelpers.ts`).
 - **Multi-sheet:** `lib/import/multiSheet.ts` — sheet-name heuristics; `POST /api/ingest` returns `multi_sheet` + `sheets[]` when detected.
 - **Persona templates:** `public/templates/template-business-owner.xlsx`, `template-real-estate.xlsx`, `template-executive.xlsx` (+ existing CSV samples). Regenerate via `scripts/generate-persona-import-templates.ts`.

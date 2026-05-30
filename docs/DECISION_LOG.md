@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Onramp guide path + wizard gate exemption)
+# Last updated: 2026-05-29 (Import format surfacing + upload page reorder)
+
+## Import upload page — formats first, templates above drop zone (2026-05-29)
+
+**Decision:** On `/import` upload step, show **`SupportedFormats`** (broker CSV, multi-sheet Excel, single-table CSV) first, then persona + single-table CSV template download blocks, then the drop zone. **`DashboardOnramp`** import card copy names broker exports, Excel, and CSV explicitly; format hint line under the card.
+
+**Reasoning:** Drop zone first implied users must already have a file. Broker-export users never saw that they can upload Schwab/Fidelity/Vanguard CSV as-is; template seekers scrolled past the drop zone to find downloads.
+
+**Files:** `app/(dashboard)/import/_SupportedFormats.tsx`, `_import-client.tsx`, `components/dashboard/DashboardOnramp.tsx`
+
+**Manual verify:** `/import` — SupportedFormats visible without scroll; templates above drop zone; onramp import card shows format hint.
+
+---
 
 ## Onramp guided path and wizard gate exemption (2026-05-30)
 
