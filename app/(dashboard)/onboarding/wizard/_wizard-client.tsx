@@ -11,6 +11,9 @@ import type { PersonaConfig } from '@/lib/onboarding/personaConfig'
 import { cn } from '@/lib/utils'
 
 type RefOption = { value: string; label: string }
+type WizardStep = 1 | 2 | 3 | 4 | 5 | 6
+
+const WIZARD_STEPS: WizardStep[] = [1, 2, 3, 4, 5, 6]
 
 type Props = {
   person1Label: string
@@ -28,7 +31,7 @@ type WizardStepPreview = {
   footer: string
 }
 
-const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
+const PREVIEW_BY_STEP: Record<WizardStep, WizardStepPreview> = {
   1: {
     title: 'What adding your first asset unlocks',
     items: [
@@ -50,21 +53,54 @@ const PREVIEW_BY_STEP: Record<1 | 2 | 3, WizardStepPreview> = {
       "A financial advisor or CPA can validate your assumptions and help you act on what you're seeing.",
   },
   3: {
-    title: 'Why connecting your advisor matters',
+    title: 'What adding liabilities unlocks',
     items: [
-      'Live plan access — your advisor sees your current estate health score',
-      'Strategy recommendations — they can propose actions you accept or reject',
-      'Better conversations — arrive at every meeting with your data organized',
+      'True net worth — assets minus what you owe',
+      'Accurate estate tax calculations',
+      'Debt-to-asset ratio for advisor conversations',
     ],
     footer:
-      'At the $2M–$30M level, a coordinated advisor relationship is one of the highest-value planning decisions you can make.',
+      'Most estates have mortgages, business loans, or personal debt — including them gives you the real picture.',
+  },
+  4: {
+    title: 'What adding expenses unlocks',
+    items: [
+      'Cash flow projection — income vs. spending over time',
+      'Retirement runway — how long your money lasts',
+      'Gap analysis for estate and retirement planning',
+    ],
+    footer:
+      'Expenses are the missing half of the income picture. Your advisor needs both to model your retirement accurately.',
+  },
+  5: {
+    title: 'What adding insurance unlocks',
+    items: [
+      'Estate liquidity analysis — can your heirs cover taxes and costs?',
+      'Coverage gap detection — under- or over-insured alerts',
+      'Life insurance in your estate tax calculation',
+    ],
+    footer:
+      'Life insurance is often the largest non-investment asset in an estate. It changes the tax picture significantly.',
+  },
+  6: {
+    title: 'Why connecting your advisor matters',
+    items: [
+      'Live access to your complete financial picture',
+      'Strategy recommendations based on your actual data',
+      'Better, faster conversations — no more re-explaining',
+    ],
+    footer:
+      'At the $2M–$30M level, a coordinated advisor relationship is the single highest-ROI estate planning decision.',
   },
 }
 
-function firstIncompleteStep(progress: SetupProgressCounts): 1 | 2 | 3 {
+function firstIncompleteStep(progress: SetupProgressCounts): WizardStep {
   if (progress.assets <= 0) return 1
   if (progress.income <= 0) return 2
-  return 3
+  if (progress.liabilities <= 0) return 3
+  if (progress.expenses <= 0) return 4
+  if (progress.insurance <= 0) return 5
+  return 6
 }
 
 export function OnboardingWizardClient({
@@ -78,8 +114,8 @@ export function OnboardingWizardClient({
 }: Props) {
   const router = useRouter()
   const wizardCompletedRef = useRef(false)
-  const stepRef = useRef<1 | 2 | 3>(1)
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const stepRef = useRef<WizardStep>(1)
+  const [step, setStep] = useState<WizardStep>(1)
   stepRef.current = step
   const [progress, setProgress] = useState<SetupProgressCounts | null>(null)
   const [progressLoaded, setProgressLoaded] = useState(false)
@@ -137,12 +173,26 @@ export function OnboardingWizardClient({
   const [incomeAmount, setIncomeAmount] = useState('')
   const [incomeOwner, setIncomeOwner] = useState('person1')
 
+  const [liabilityName, setLiabilityName] = useState('')
+  const [liabilityType, setLiabilityType] = useState('mortgage')
+  const [liabilityBalance, setLiabilityBalance] = useState('')
+
+  const [expenseCategory, setExpenseCategory] = useState('housing')
+  const [expenseAmount, setExpenseAmount] = useState('')
+
+  const [insuranceType, setInsuranceType] = useState('term_life')
+  const [insuranceDeathBenefit, setInsuranceDeathBenefit] = useState('')
+  const [insuranceAnnualPremium, setInsuranceAnnualPremium] = useState('')
+
   const currentYear = new Date().getFullYear()
 
-  const stepComplete = (n: 1 | 2 | 3) => {
+  const stepComplete = (n: WizardStep) => {
     if (!progress) return false
     if (n === 1) return progress.assets > 0
     if (n === 2) return progress.income > 0
+    if (n === 3) return progress.liabilities > 0
+    if (n === 4) return progress.expenses > 0
+    if (n === 5) return progress.insurance > 0
     return advisorStepDone
   }
 
@@ -232,9 +282,111 @@ export function OnboardingWizardClient({
     }
   }
 
+  async function saveLiability() {
+    if (!liabilityType || !liabilityBalance) {
+      setError('Type and outstanding balance are required.')
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/consumer/liabilities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: liabilityType,
+          name: liabilityName.trim() || null,
+          balance: Number(liabilityBalance),
+          owner: 'person1',
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save liability')
+      }
+      await refreshProgress()
+      setStep(4)
+      setSubmitting(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save liability')
+      setSubmitting(false)
+    }
+  }
+
+  async function saveExpense() {
+    if (!expenseCategory || !expenseAmount) {
+      setError('Category and annual amount are required.')
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/consumer/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: expenseCategory,
+          amount: Number(expenseAmount),
+          start_year: currentYear,
+          owner: 'person1',
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save expense')
+      }
+      await refreshProgress()
+      setStep(5)
+      setSubmitting(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save expense')
+      setSubmitting(false)
+    }
+  }
+
+  async function saveInsurance() {
+    if (!insuranceType || !insuranceDeathBenefit) {
+      setError('Policy type and death benefit are required.')
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/insurance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          insurance_type: insuranceType,
+          death_benefit: Number(insuranceDeathBenefit),
+          annual_premium: insuranceAnnualPremium ? Number(insuranceAnnualPremium) : null,
+          owner: 'person1',
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to save insurance policy')
+      }
+      await refreshProgress()
+      setStep(6)
+      setSubmitting(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save insurance policy')
+      setSubmitting(false)
+    }
+  }
+
   function handleInviteAdvisor() {
     window.location.href = inviteMailto
     void completeWizard()
+  }
+
+  function skipOptionalStep(next: WizardStep) {
+    captureFunnelEvent({
+      event_name: 'wizard_abandoned',
+      properties: { step, reason: 'skip' },
+    })
+    setError(null)
+    setStep(next)
   }
 
   const ownerOptions = [
@@ -272,14 +424,14 @@ export function OnboardingWizardClient({
             </button>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-2">
-            {([1, 2, 3] as const).map((n) => (
-              <div key={n} className="flex items-center gap-2">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+            {WIZARD_STEPS.map((n) => (
+              <div key={n} className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setStep(n)}
                   className={cn(
-                    'flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors',
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium transition-colors',
                     stepComplete(n)
                       ? 'bg-[var(--mwm-sage)] text-white'
                       : step === n
@@ -290,10 +442,10 @@ export function OnboardingWizardClient({
                 >
                   {stepComplete(n) ? '✓' : n}
                 </button>
-                {n < 3 && (
+                {n < 6 && (
                   <div
                     className={cn(
-                      'h-px w-8',
+                      'h-px w-4 sm:w-6',
                       stepComplete(n) ? 'bg-[var(--mwm-sage)]' : 'bg-[var(--mwm-border)]',
                     )}
                   />
@@ -418,19 +570,6 @@ export function OnboardingWizardClient({
                       ))}
                     </select>
                   </WizardField>
-                  <button
-                    type="button"
-                    className="text-sm text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:underline"
-                    onClick={() => {
-                      captureFunnelEvent({
-                        event_name: 'wizard_abandoned',
-                        properties: { step: 1, reason: 'skip' },
-                      })
-                      setStep(2)
-                    }}
-                  >
-                    Skip this step →
-                  </button>
                 </Card.Body>
               </>
             )}
@@ -493,24 +632,175 @@ export function OnboardingWizardClient({
                         ))}
                     </select>
                   </WizardField>
-                  <button
-                    type="button"
-                    className="text-sm text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:underline"
-                    onClick={() => {
-                      captureFunnelEvent({
-                        event_name: 'wizard_abandoned',
-                        properties: { step: 2, reason: 'skip' },
-                      })
-                      setStep(3)
-                    }}
-                  >
-                    Skip this step →
-                  </button>
                 </Card.Body>
               </>
             )}
 
             {step === 3 && (
+              <>
+                <Card.Header>
+                  <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
+                    What do you owe?
+                  </h1>
+                  <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+                    Add your largest liability first — a mortgage, business loan, or line of credit.
+                  </p>
+                </Card.Header>
+                <Card.Body className="space-y-4">
+                  <WizardField label="Name">
+                    <input
+                      type="text"
+                      value={liabilityName}
+                      onChange={(e) => setLiabilityName(e.target.value)}
+                      className={formControlClass}
+                      placeholder="Primary mortgage"
+                    />
+                  </WizardField>
+                  <WizardField label="Type">
+                    <select
+                      value={liabilityType}
+                      onChange={(e) => setLiabilityType(e.target.value)}
+                      className={formControlClass}
+                    >
+                      <option value="mortgage">Mortgage</option>
+                      <option value="auto_loan">Auto loan</option>
+                      <option value="student_loan">Student loan</option>
+                      <option value="business_loan">Business loan</option>
+                      <option value="line_of_credit">Line of credit</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </WizardField>
+                  <WizardField label="Outstanding balance">
+                    <input
+                      type="number"
+                      min="0"
+                      value={liabilityBalance}
+                      onChange={(e) => setLiabilityBalance(e.target.value)}
+                      className={formControlClass}
+                      placeholder="0"
+                    />
+                  </WizardField>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-xs text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:text-[color:var(--mwm-navy)] hover:underline"
+                      onClick={() => skipOptionalStep(4)}
+                    >
+                      Skip for now
+                    </button>
+                  </div>
+                </Card.Body>
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                <Card.Header>
+                  <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
+                    What are your largest expenses?
+                  </h1>
+                  <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+                    Add your largest monthly expense category — housing is a good starting point.
+                  </p>
+                </Card.Header>
+                <Card.Body className="space-y-4">
+                  <WizardField label="Category">
+                    <select
+                      value={expenseCategory}
+                      onChange={(e) => setExpenseCategory(e.target.value)}
+                      className={formControlClass}
+                    >
+                      <option value="housing">Housing</option>
+                      <option value="transportation">Transportation</option>
+                      <option value="food">Food &amp; dining</option>
+                      <option value="healthcare">Healthcare</option>
+                      <option value="insurance">Insurance premiums</option>
+                      <option value="education">Education</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </WizardField>
+                  <WizardField label="Annual amount">
+                    <input
+                      type="number"
+                      min="0"
+                      value={expenseAmount}
+                      onChange={(e) => setExpenseAmount(e.target.value)}
+                      className={formControlClass}
+                      placeholder="0"
+                    />
+                  </WizardField>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-xs text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:text-[color:var(--mwm-navy)] hover:underline"
+                      onClick={() => skipOptionalStep(5)}
+                    >
+                      Skip for now
+                    </button>
+                  </div>
+                </Card.Body>
+              </>
+            )}
+
+            {step === 5 && (
+              <>
+                <Card.Header>
+                  <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
+                    Life insurance
+                  </h1>
+                  <p className="mt-1 text-sm text-[color:var(--mwm-text-secondary)]">
+                    Add your primary life insurance policy. This changes your estate picture
+                    significantly.
+                  </p>
+                </Card.Header>
+                <Card.Body className="space-y-4">
+                  <WizardField label="Policy type">
+                    <select
+                      value={insuranceType}
+                      onChange={(e) => setInsuranceType(e.target.value)}
+                      className={formControlClass}
+                    >
+                      <option value="term_life">Term life</option>
+                      <option value="whole_life">Whole life</option>
+                      <option value="universal_life">Universal life</option>
+                      <option value="variable_life">Variable life</option>
+                    </select>
+                  </WizardField>
+                  <WizardField label="Death benefit">
+                    <input
+                      type="number"
+                      min="0"
+                      value={insuranceDeathBenefit}
+                      onChange={(e) => setInsuranceDeathBenefit(e.target.value)}
+                      className={formControlClass}
+                      placeholder="0"
+                    />
+                  </WizardField>
+                  <WizardField label="Annual premium">
+                    <input
+                      type="number"
+                      min="0"
+                      value={insuranceAnnualPremium}
+                      onChange={(e) => setInsuranceAnnualPremium(e.target.value)}
+                      className={formControlClass}
+                      placeholder="0"
+                    />
+                  </WizardField>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-xs text-[color:var(--mwm-text-secondary)] underline-offset-2 hover:text-[color:var(--mwm-navy)] hover:underline"
+                      onClick={() => skipOptionalStep(6)}
+                    >
+                      Skip for now
+                    </button>
+                  </div>
+                </Card.Body>
+              </>
+            )}
+
+            {step === 6 && (
               <>
                 <Card.Header>
                   <h1 className="font-[family-name:var(--font-display)] text-xl text-[color:var(--mwm-navy)]">
@@ -546,23 +836,28 @@ export function OnboardingWizardClient({
 
             {error && <p className="px-6 pb-4 text-sm text-red-600">{error}</p>}
 
-            {step < 3 && (
+            {step < 6 && (
               <div className="flex items-center justify-between border-t border-[color:var(--mwm-border)] px-6 py-4">
                 <Button
                   type="button"
                   variant="ghost"
                   disabled={submitting}
-                  onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
+                  onClick={() =>
+                    setStep((s) => (s > 1 ? ((s - 1) as WizardStep) : s))
+                  }
                 >
                   Back
                 </Button>
                 <Button
                   type="button"
                   variant="primary"
-                  disabled={submitting}
+                  disabled={submitting || (step === 1 && step1View === 'fork')}
                   onClick={() => {
                     if (step === 1) void saveAsset()
                     else if (step === 2) void saveIncome()
+                    else if (step === 3) void saveLiability()
+                    else if (step === 4) void saveExpense()
+                    else if (step === 5) void saveInsurance()
                   }}
                 >
                   {submitting ? 'Saving…' : 'Save & continue'}

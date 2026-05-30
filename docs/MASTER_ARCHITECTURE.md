@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-29 (Onramp guided path bounce fix; Sprint 19)
+# Last updated: 2026-05-29 (6-step onboarding wizard; Sprint 19)
 
 ---
 
@@ -99,7 +99,8 @@ Consumers and advisors share one **household** data model but operate in separat
 | Acquisition & activation (2026-05-29) | **`attorney_intake_requests`** + `/intake/[token]` + send-intake modal; **`ReferralImpactPanel`** + referral-impact API; **`GET /api/advisor/meeting-prep-pdf/[clientId]`** print one-pager; advisor referral signup notify |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
 | Dashboard onramp (2026-05-30) | `/dashboard` — `shouldShowOnramp()`; `DashboardOnramp` before `DashboardBody`; **`guidedHref`** via `resolveGuidedOnboardingHref()` (setup-progress-aware); import card names broker/Excel/CSV + format hint; **`/dashboard`** wizard-gate exempt (`wizardGateExemptPrefixes.ts`) |
-| Guided onboarding href (2026-05-29) | `lib/dashboard/guidedOnboardingHref.ts` — resume wizard when backfill flag set but assets/income incomplete; wizard page redirect only when both present; profile gates pass `from=` |
+| Guided onboarding href (2026-05-29) | `lib/dashboard/guidedOnboardingHref.ts` — resume wizard when any section empty; dashboard when all 5 data sections have rows |
+| Onboarding wizard (2026-05-29) | `/onboarding/wizard` — **6 steps**: assets → income → liabilities → expenses → insurance → advisor; skip 3–5; `POST /api/insurance` step 5 |
 | Import upload UX (2026-05-29) | `/import` upload step — `_SupportedFormats.tsx` → persona XLSX + CSV template blocks → drop zone (`_import-client.tsx`) |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |

@@ -142,11 +142,11 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 
 | | |
 |--|--|
-| **User goal** | Add first asset + first income + optionally invite advisor |
-| **Tier / gate** | Tier 1; requires MVP profile; blocked when `onboarding_wizard_completed_at` is set |
+| **User goal** | Build financial picture: assets, income, liabilities, expenses, insurance; optionally invite advisor |
+| **Tier / gate** | Tier 1; requires MVP profile; wizard page redirect when complete **and** all five sections have data |
 | **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
-| **Client** | `_wizard-client.tsx` — 3-step guided flow; **step 1 persona-aware** (headline, first asset type, recommended import template from `personaConfig`); step completion inferred from `GET /api/consumer/setup-progress` (data counts, not click-through); **← Back to dashboard** exits without completing; steps navigable freely |
-| **Write APIs** | `POST /api/consumer/assets` (step 1); `POST /api/consumer/income` (step 2); `POST /api/consumer/onboarding-wizard-complete` (step 3) |
+| **Client** | `_wizard-client.tsx` — **6-step** guided flow (steps 1–2 required; **Skip for now** on 3–5; step 6 advisor); step 1 persona-aware; progress from `GET /api/consumer/setup-progress`; 6-step indicator |
+| **Write APIs** | `POST /api/consumer/assets` (1); `POST /api/consumer/income` (2); `POST /api/consumer/liabilities` (3); `POST /api/consumer/expenses` (4); **`POST /api/insurance`** (5); `POST /api/consumer/onboarding-wizard-complete` (6) |
 | **Layout gate** | `WizardOnboardingGate` — redirects when wizard incomplete + wizard-ready + no assets/income; exempt prefixes include **`/dashboard`** (onramp path choice), `/onboarding/wizard`, `/onboarding/persona`, financial planning routes (`wizardGateExemptPrefixes.ts`) |
 | **Dashboard** | `SetupProgressCard` — section-based progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
 | **Migration** | `20260526000000_onboarding_wizard_fields.sql` |

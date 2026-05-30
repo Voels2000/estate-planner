@@ -512,6 +512,13 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
 - [x] Commit `af12ff0`
 
+## Sprint — 6-step onboarding wizard ✅ closed 2026-05-29
+
+- [x] `_wizard-client.tsx` — 6 steps; skip 3–5; `POST /api/insurance` step 5
+- [x] `guidedOnboardingHref.ts` — all 5 sections for core complete
+- [x] `guided-onboarding-href.spec.ts` — 11 unit tests
+- [x] Master docs synced
+
 ## Sprint — Onramp guided path bounce fix ✅ closed 2026-05-29
 
 - [x] `lib/dashboard/guidedOnboardingHref.ts` — `resolveGuidedOnboardingHref()`, `shouldRedirectCompletedWizardToDashboard()`

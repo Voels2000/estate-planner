@@ -33,7 +33,7 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run test:e2e:cross-role` | advisor sync, persona onboarding, attorney documents, cross-household (subset) |
 | `npm run test:e2e:complete` | consumer + advisor + attorney + public |
 | `npm run test:e2e:nightly` | public (attribution sessionStorage) |
-| `npm run test:import:unit` | import-unit (parse, type-normalizer, wizard gate, guided href, projectionReadiness, …) |
+| `npm run test:import:unit` | import-unit (incl. `guided-onboarding-href.spec.ts` — 11 cases) |
 | `npm run test:import:api` | consumer import API (local base URL) |
 
 ## Required env (`.env.test`)

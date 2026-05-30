@@ -32,10 +32,10 @@ After `getDashboardLayoutContext()`:
    - `resolveGuidedOnboardingHref()` in `lib/dashboard/guidedOnboardingHref.ts`:
      - No persona + wizard incomplete → `/onboarding/persona`
      - Persona set + wizard incomplete → `/onboarding/wizard`
-     - Wizard flag set but assets or income missing (import backfill) → `/onboarding/wizard`
-     - Core steps done → first empty section (`/expenses`, `/liabilities`, `/insurance`) or `/assets`
+     - Wizard flag set but any section empty → `/onboarding/wizard`
+     - All five sections have rows → `/dashboard`
 4. `/dashboard` in `wizardGateExemptPrefixes` — layout gate must not auto-redirect to wizard
-5. Wizard page redirects to `/dashboard` only when wizard complete **and** assets **and** income present
+5. Wizard page redirects to `/dashboard` only when wizard complete **and** all five data sections have rows
 6. Otherwise render `DashboardBody` inside Suspense
 
 ## Verify

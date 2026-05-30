@@ -27,12 +27,48 @@ const importedProgress: SetupProgressCounts = {
   hasAnyData: true,
 }
 
-const coreCompleteProgress: SetupProgressCounts = {
+const assetsIncomeOnly: SetupProgressCounts = {
   assets: 1,
   income: 1,
   expenses: 0,
   liabilities: 0,
   insurance: 0,
+  hasAnyData: true,
+}
+
+const missingLiabilities: SetupProgressCounts = {
+  assets: 1,
+  income: 1,
+  expenses: 1,
+  liabilities: 0,
+  insurance: 1,
+  hasAnyData: true,
+}
+
+const missingExpenses: SetupProgressCounts = {
+  assets: 1,
+  income: 1,
+  expenses: 0,
+  liabilities: 1,
+  insurance: 1,
+  hasAnyData: true,
+}
+
+const missingInsurance: SetupProgressCounts = {
+  assets: 1,
+  income: 1,
+  expenses: 1,
+  liabilities: 1,
+  insurance: 0,
+  hasAnyData: true,
+}
+
+const allSectionsComplete: SetupProgressCounts = {
+  assets: 1,
+  income: 1,
+  expenses: 1,
+  liabilities: 1,
+  insurance: 1,
   hasAnyData: true,
 }
 
@@ -57,7 +93,7 @@ test.describe('resolveGuidedOnboardingHref', () => {
     ).toBe('/onboarding/wizard')
   })
 
-  test('wizard backfilled with assets only → resume wizard (not dashboard bounce)', () => {
+  test('wizard backfilled with assets only → resume wizard', () => {
     expect(
       resolveGuidedOnboardingHref({
         onboardingPersona: 'accumulator',
@@ -67,14 +103,44 @@ test.describe('resolveGuidedOnboardingHref', () => {
     ).toBe('/onboarding/wizard')
   })
 
-  test('wizard done, core steps complete → first missing section', () => {
+  test('wizard done, liabilities missing → wizard', () => {
     expect(
       resolveGuidedOnboardingHref({
         onboardingPersona: 'accumulator',
         wizardCompletedAt: '2026-05-29T00:00:00.000Z',
-        progress: coreCompleteProgress,
+        progress: assetsIncomeOnly,
       }),
-    ).toBe('/expenses')
+    ).toBe('/onboarding/wizard')
+  })
+
+  test('wizard done, expenses missing → wizard', () => {
+    expect(
+      resolveGuidedOnboardingHref({
+        onboardingPersona: 'accumulator',
+        wizardCompletedAt: '2026-05-29T00:00:00.000Z',
+        progress: missingExpenses,
+      }),
+    ).toBe('/onboarding/wizard')
+  })
+
+  test('wizard done, insurance missing → wizard', () => {
+    expect(
+      resolveGuidedOnboardingHref({
+        onboardingPersona: 'accumulator',
+        wizardCompletedAt: '2026-05-29T00:00:00.000Z',
+        progress: missingInsurance,
+      }),
+    ).toBe('/onboarding/wizard')
+  })
+
+  test('all five sections complete → dashboard', () => {
+    expect(
+      resolveGuidedOnboardingHref({
+        onboardingPersona: 'accumulator',
+        wizardCompletedAt: '2026-05-29T00:00:00.000Z',
+        progress: allSectionsComplete,
+      }),
+    ).toBe('/dashboard')
   })
 })
 
@@ -88,11 +154,29 @@ test.describe('shouldRedirectCompletedWizardToDashboard', () => {
     ).toBe(false)
   })
 
-  test('true when assets and income both present', () => {
+  test('false when assets and income only', () => {
     expect(
       shouldRedirectCompletedWizardToDashboard({
         wizardCompletedAt: '2026-05-29T00:00:00.000Z',
-        progress: coreCompleteProgress,
+        progress: assetsIncomeOnly,
+      }),
+    ).toBe(false)
+  })
+
+  test('false when liabilities missing', () => {
+    expect(
+      shouldRedirectCompletedWizardToDashboard({
+        wizardCompletedAt: '2026-05-29T00:00:00.000Z',
+        progress: missingLiabilities,
+      }),
+    ).toBe(false)
+  })
+
+  test('true when all five sections have data', () => {
+    expect(
+      shouldRedirectCompletedWizardToDashboard({
+        wizardCompletedAt: '2026-05-29T00:00:00.000Z',
+        progress: allSectionsComplete,
       }),
     ).toBe(true)
   })

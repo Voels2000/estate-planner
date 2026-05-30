@@ -1,10 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Onramp guided path bounce fix)
+# Last updated: 2026-05-29 (6-step onboarding wizard)
+
+## Onboarding wizard — 6 steps (2026-05-29)
+
+**Decision:** Expand `/onboarding/wizard` from 3 to **6 steps**: assets → income → liabilities → expenses → insurance → advisor invite. Steps 3–5 optional (**Skip for now**); steps 1–2 required (no skip). Insurance saves via **`POST /api/insurance`** (not under `/api/consumer/`). **`guidedOnboardingHref`** — core complete = all five data sections have rows; wizard page redirect uses same gate.
+
+**Files:** `_wizard-client.tsx`, `guidedOnboardingHref.ts`, `guided-onboarding-href.spec.ts` (11 tests)
+
+**Verify:** Fresh user — 6 step indicator; skip on 3–5 only; step 5 hits `/api/insurance`
+
+---
 
 ## Onramp guided path — wizard backfill bounce fix (2026-05-29)
 
-**Decision:** (1) **`resolveGuidedOnboardingHref()`** — onramp "Guide me through it" considers setup progress, not just persona/wizard flags: wizard incomplete → persona/wizard; wizard flag set but assets or income missing (e.g. **`ensureWizardBackfill`** after import) → resume `/onboarding/wizard`; core steps done → first empty section (`/expenses`, etc.). (2) **Wizard page** redirects to `/dashboard` only when wizard complete **and** both assets and income exist — not on backfill flag alone. (3) Persona/wizard profile gates pass **`from=/onboarding/persona`** or **`from=/onboarding/wizard`** so profile save returns to the guided flow.
+**Decision:** (1) **`resolveGuidedOnboardingHref()`** — resume wizard when any of assets/income/liabilities/expenses/insurance missing after backfill; all five present → `/dashboard`. (2) **Wizard page** redirects only when wizard complete **and** all five sections have data. (3) Persona/wizard profile gates pass **`from=`** on required profile redirect.
 
 **Reasoning:** Onramp stays visible when score &lt; 60 even after `onboarding_wizard_completed_at` is set (import backfill). Old logic linked Guide → `/onboarding/wizard` → instant redirect to `/dashboard` — felt broken.
 

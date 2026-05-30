@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (Onramp guided path bounce fix)
+# Last updated: 2026-05-29 (6-step onboarding wizard)
 
 ---
 
@@ -20,6 +20,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — 6-step onboarding wizard (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Steps 3–5: liabilities → expenses → insurance | `[x]` |
+| Advisor invite → step 6; skip on 3–5 only | `[x]` |
+| `saveLiability` / `saveExpense` / `saveInsurance`; `POST /api/insurance` | `[x]` |
+| `guidedOnboardingHref` — core complete = all 5 sections | `[x]` |
+| Unit tests — `guided-onboarding-href.spec.ts` (11 cases) | `[x]` |
+
+**Post-ship:** Visual check — 6 step dots; skip absent on steps 1, 2, 6
+
+---
 
 ### Sprint — Onramp guided path bounce fix (2026-05-29) **← shipped**
 

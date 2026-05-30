@@ -1,18 +1,31 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Onramp guided path bounce fix)
+# Updated: 2026-05-29 (6-step onboarding wizard)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Onramp guided path fix (2026-05-29):** `resolveGuidedOnboardingHref()` — Guide link setup-progress-aware; wizard page no longer bounces import/backfill users to dashboard; profile gates pass `from=` back to persona/wizard. **Import format surfacing:** `/import` — `SupportedFormats` + templates above drop zone. **Dashboard onramp:** score &lt; 60 or incomplete wizard/data; `/dashboard` wizard-gate exempt. **Post-deploy manual:** import → Guide resumes wizard; fresh user Import / Guide / Self paths.
+> My Wealth Maps — **Sprint 19.** **6-step wizard (2026-05-29):** assets → income → liabilities → expenses → insurance → advisor; skip on 3–5 only; insurance via `POST /api/insurance`. **Onramp:** `resolveGuidedOnboardingHref()` — all 5 sections before dashboard. **Import:** `/import` SupportedFormats + templates above drop zone. **Post-deploy:** fresh user — 6 step dots; `npm run test:import:unit` (11 guided-href cases).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## 6-step onboarding wizard ✅ (2026-05-29)
+
+**Steps:** 1 assets · 2 income · 3 liabilities · 4 expenses · 5 insurance · 6 advisor
+
+| Item | Notes |
+|------|-------|
+| Client | `app/(dashboard)/onboarding/wizard/_wizard-client.tsx` — 6 step indicator; **Skip for now** on 3–5 only |
+| APIs | assets/income/liabilities/expenses → `/api/consumer/*`; insurance → **`POST /api/insurance`** |
+| Gate | `lib/dashboard/guidedOnboardingHref.ts` — all 5 sections for core complete |
+| Tests | `tests/unit/guided-onboarding-href.spec.ts` — 11 cases |
 
 ---
 
