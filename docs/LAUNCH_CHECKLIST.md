@@ -138,19 +138,19 @@ See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 **Automated (when deployment reachable):**
 
 ```bash
-npx dotenv -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
-npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
-npx dotenv -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public --workers=1
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/consumer/security-sprint-rpc-pages.spec.ts --project=consumer --workers=1
+npx dotenv -o -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=advisor --workers=1
 ```
 
 E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-consumer@mywealthmaps.test` for RPC pages.
 
-#### Manual checks (rolobe or production accounts)
+#### Manual checks (`@mywealthmaps.test` or production accounts)
 
 | # | Check | Pass |
 |---|--------|------|
-| 1 | **Monte Carlo** — `advisor2@rolobe.resend.app` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [ ] |
-| 2 | **Consumer RPCs** — `david@rolobe.resend.app` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [ ] |
+| 1 | **Monte Carlo** — `e2e-advisor@mywealthmaps.test` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [ ] |
+| 2 | **Consumer RPCs** — `e2e-consumer@mywealthmaps.test` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [ ] |
 | 3 | **Referral rate limit** — on `/event/selling-a-business`, DevTools Console (see [GO_LIVE_E2E § Security smoke](./GO_LIVE_E2E.md#security-hardening-post-deploy-smoke-2026-05-29)) → `{ 200: ~60, 429: ~5 }` for fake ref `test123` | [ ] |
 | 4 | **Telemetry auth** — logged out / incognito Console → `POST /api/telemetry/horizon-input-missing` → **401** | [ ] |
 
@@ -158,13 +158,13 @@ E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-
 
 **Automated pre-check (CI/local):** `npm run test:import:unit` (24/24); ESLint on sprint files; TypeScript (excluding pre-existing `consumer-import.spec.ts`).
 
-**Not automated** — requires advisor2 login, Resend inbox, DevTools 390px. Run **Track 1 first** (more moving parts).
+**Not automated** — requires advisor login, Resend inbox, DevTools 390px. Run **Track 1 first** (more moving parts).
 
 #### Track 1 — Prospect mode
 
 | # | Step | Pass |
 |---|------|------|
-| 1 | Log in as `advisor2@rolobe.resend.app` | [ ] |
+| 1 | Log in as `e2e-advisor@mywealthmaps.test` | [ ] |
 | 2 | Navigate to `/prospect` (or Prospect Mode tab) | [ ] |
 | 3 | Fill: California, $5M–$15M, Married, Business owner, Age 58, Name "Test Prospect" | [ ] |
 | 4 | Submit — tax figures render; **sunset delta** visible (CA has no state estate tax — card should not appear) | [ ] |
@@ -173,7 +173,7 @@ E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-
 | 6 | Click "Download opportunity summary" — print dialog after ~500ms | [ ] |
 | 7 | PDF header shows "Prepared by [advisor name]" | [ ] |
 | 8 | Sunset delta banner appears in PDF | [ ] |
-| 9 | Enter `consumer1@rolobe.resend.app` → Send intake invitation | [ ] |
+| 9 | Enter `e2e-consumer-tier1@mywealthmaps.test` → Send intake invitation | [ ] |
 | 10 | Email arrives at `avoels@comcast.net` (BCC) | [ ] |
 | 11 | `/advisor/prospect` redirects cleanly to `/prospect` | [ ] |
 

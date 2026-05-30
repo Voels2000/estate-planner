@@ -14,6 +14,36 @@ const CANONICAL_BY_EMAIL = new Map<string, string>([
   [E2E_IDENTITIES.attorneyPortal.email, E2E_IDENTITIES.attorneyPortal.password],
 ].map(([email, password]) => [email.toLowerCase(), password] as const))
 
+/** Retired @rolobe.resend.app → canonical @mywealthmaps.test (shell env may still export old values). */
+const LEGACY_ROLOBE_EMAIL_MAP = new Map<string, string>([
+  ['david@rolobe.resend.app', E2E_IDENTITIES.consumer.email],
+  ['advisor2@rolobe.resend.app', E2E_IDENTITIES.advisor.email],
+  ['consumer1@rolobe.resend.app', E2E_IDENTITIES.consumerTier1.email],
+  ['advisor@rolobe.resend.app', E2E_IDENTITIES.advisor.email],
+  ['test-attorney-portal@rolobe.resend.app', E2E_IDENTITIES.attorneyPortal.email],
+])
+
+/** Prefer canonical identity; ignore retired rolobe addresses from stale shell exports. */
+export function resolveE2eEmail(
+  envEmail: string | undefined,
+  canonicalEmail: string,
+): string {
+  const trimmed = envEmail?.trim()
+  if (!trimmed) return canonicalEmail
+
+  const mapped = LEGACY_ROLOBE_EMAIL_MAP.get(trimmed.toLowerCase())
+  if (mapped) return mapped
+
+  if (trimmed.toLowerCase().endsWith('@rolobe.resend.app')) {
+    console.warn(
+      `[e2e] Ignoring retired rolobe email ${trimmed}; using ${canonicalEmail}`,
+    )
+    return canonicalEmail
+  }
+
+  return trimmed
+}
+
 /** Canonical password for known e2e emails; otherwise env or default. */
 export function resolveE2ePassword(email: string, envPassword?: string): string {
   return CANONICAL_BY_EMAIL.get(email.toLowerCase()) ?? envPassword ?? E2E_TEST_PASSWORD

@@ -1,6 +1,6 @@
 /**
  * Consumer RPC guard smoke — household-scoped pages load without 403.
- * Manual equivalent: david@rolobe.resend.app → /estate-tax, /gifting
+ * Manual equivalent: e2e-consumer@mywealthmaps.test → /estate-tax, /gifting
  */
 import { test, expect } from '@playwright/test'
 

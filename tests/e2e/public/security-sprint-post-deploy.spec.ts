@@ -1,6 +1,6 @@
 /**
  * Post-deploy security sprint smoke — public API checks.
- * Manual rolobe equivalents: DevTools on /event/* and logged-out tab.
+ * Manual equivalents: DevTools on /event/* and logged-out tab (no login required).
  *
  * Run: npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts --project=public
  */

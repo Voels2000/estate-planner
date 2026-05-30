@@ -1,9 +1,12 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
-import { resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
+import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
 setup('authenticate consumer', async ({ page }) => {
-  const email = process.env.PLAYWRIGHT_CONSUMER_EMAIL ?? E2E_IDENTITIES.consumer.email
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+    E2E_IDENTITIES.consumer.email,
+  )
   const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_CONSUMER_PASSWORD)
 
   await syncE2ePasswordForEmail(email, password)

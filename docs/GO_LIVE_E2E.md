@@ -77,7 +77,7 @@ npx dotenv -e .env.test -- npx playwright test tests/e2e/advisor/security-sprint
 | `security-sprint-rpc-pages.spec.ts` | Consumer `/estate-tax` + gifting tab load (RPC guards) |
 | `security-sprint-monte-carlo.spec.ts` | Advisor Monte Carlo edge returns P10/P50/P90 (JWT auth) |
 
-### Manual — DevTools Console (rolobe accounts)
+### Manual — DevTools Console (no login required for API checks)
 
 **Referral rate limit** — open `/event/selling-a-business`, paste:
 
@@ -110,9 +110,9 @@ fetch('/api/telemetry/horizon-input-missing', {
 
 Expected: **401**
 
-**Monte Carlo:** `advisor2@rolobe.resend.app` → Johnson → Strategy → Run Monte Carlo — P10/P50/P90 in UI; Network: no 401/403 on edge function.
+**Monte Carlo:** `e2e-advisor@mywealthmaps.test` → Johnson → Strategy → Run Monte Carlo — P10/P50/P90 in UI; Network: no 401/403 on edge function.
 
-**Consumer RPCs:** `david@rolobe.resend.app` → `/estate-tax`, `/my-estate-trust-strategy?tab=gifting` — data visible, no 403.
+**Consumer RPCs:** `e2e-consumer@mywealthmaps.test` → `/estate-tax`, `/my-estate-trust-strategy?tab=gifting` — data visible, no 403.
 
 Checklist: [LAUNCH_CHECKLIST § Security hardening post-deploy browser smoke](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29).
 

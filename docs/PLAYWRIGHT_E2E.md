@@ -35,6 +35,15 @@ Template: [.env.test.example](../.env.test.example)
 
 ## Required env (`.env.test`)
 
+All `npm run test:e2e*` scripts use `dotenv -o -e .env.test` so **`.env.test` overrides stale shell exports**. If you previously exported `PLAYWRIGHT_*=...@rolobe.resend.app`, remove them:
+
+```bash
+unset PLAYWRIGHT_CONSUMER_EMAIL PLAYWRIGHT_ADVISOR_EMAIL PLAYWRIGHT_CONSUMER_TIER1_EMAIL
+grep -n 'PLAYWRIGHT_\|rolobe' ~/.zprofile ~/.zshrc 2>/dev/null
+```
+
+Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthmaps.test` via `resolveE2eEmail()` in `tests/e2e/helpers/e2e-auth.ts`.
+
 | Variable | Purpose |
 |----------|---------|
 | `PLAYWRIGHT_BASE_URL` | Target deployment |

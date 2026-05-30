@@ -1,6 +1,6 @@
 /**
  * Monte Carlo edge function JWT smoke — advisor on Johnson household.
- * Manual equivalent: advisor2@rolobe.resend.app → Johnson → Strategy → Run Monte Carlo
+ * Manual equivalent: e2e-advisor@mywealthmaps.test → Johnson → Strategy → Run Monte Carlo
  */
 import { test, expect } from '@playwright/test'
 import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
