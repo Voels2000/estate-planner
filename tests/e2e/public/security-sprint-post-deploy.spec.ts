@@ -27,7 +27,28 @@ async function postPublicApi(
   })
 }
 
+async function getPublicApi(
+  request: APIRequestContext,
+  path: string,
+): Promise<Awaited<ReturnType<APIRequestContext['get']>>> {
+  const url = `${PUBLIC_API_BASE_URL.replace(/\/$/, '')}${path}`
+  return request.get(url, { timeout: API_REQUEST_TIMEOUT_MS })
+}
+
 test.describe('Security sprint — public API smoke', () => {
+  test('/api/health returns ok', async ({ request }) => {
+    let res: Awaited<ReturnType<APIRequestContext['get']>>
+    try {
+      res = await getPublicApi(request, '/api/health')
+    } catch {
+      test.skip(true, `API unreachable at ${PUBLIC_API_BASE_URL}`)
+      return
+    }
+    expect(res.ok(), await res.text()).toBeTruthy()
+    const body = await res.json()
+    expect(body.ok).toBe(true)
+  })
+
   test('referral track rate-limits after ~60 requests', async ({ request }) => {
     test.setTimeout(180_000)
 

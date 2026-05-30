@@ -37,5 +37,8 @@ jobs:
       - name: Event upgrade copy verify
         run: npx tsx scripts/verify-event-upgrade-copy.ts
 
+      - name: App route slug validation
+        run: npx tsx scripts/verify-app-route-slugs.ts
+
       - name: Unit tests (import-unit project)
         run: npm run test:unit

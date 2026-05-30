@@ -13,18 +13,36 @@ const projects: Project[] = [
   { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
   { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
   { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
+  { name: 'johnson-setup', testMatch: /helpers\/johnson-client\.setup\.ts/, timeout: setupTimeout },
+  {
+    name: 'security',
+    dependencies: ['consumer-setup', 'advisor-setup'],
+    testMatch: /security\/.*\.spec\.ts/,
+  },
   {
     name: 'advisor',
     dependencies: ['advisor-setup'],
     testMatch: /advisor\/.*\.spec\.ts/,
+    testIgnore: /advisor-consumer-sync\.spec\.ts/,
+    use: { storageState: '.auth/advisor.json' },
+  },
+  {
+    name: 'advisor-sync',
+    dependencies: ['advisor-setup', 'johnson-setup'],
+    testMatch: /advisor\/advisor-consumer-sync\.spec\.ts/,
     use: { storageState: '.auth/advisor.json' },
   },
   {
     name: 'consumer',
     dependencies: ['consumer-setup'],
     testMatch: /consumer\/.*\.spec\.ts/,
-    testIgnore: /consumer-tier1-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts/,
+    testIgnore: /consumer-tier1-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts/,
     use: { storageState: '.auth/consumer.json' },
+  },
+  {
+    name: 'consumer-onboarding',
+    testMatch: /consumer\/onboarding-persona\.spec\.ts/,
+    use: { storageState: { cookies: [], origins: [] } },
   },
   {
     name: 'golden-path',

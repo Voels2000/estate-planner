@@ -18,7 +18,7 @@ export default async function PersonaOnboardingPage() {
       .single(),
     supabase
       .from('households')
-      .select('state_primary, filing_status, person1_birth_year')
+      .select('person1_name, state_primary, filing_status, person1_birth_year')
       .eq('owner_id', user.id)
       .maybeSingle(),
   ])

@@ -56,6 +56,7 @@ export async function seedGoldenPathStage1(): Promise<{ userId: string; househol
       terms_version: '2026-06-02',
       onboarding_wizard_completed_at: now,
       onboarding_invite_advisor_completed_at: now,
+      onboarding_persona: null,
       updated_at: now,
     })
     .eq('id', userId)
