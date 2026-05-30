@@ -18,6 +18,7 @@ import { writeFileSync } from 'fs'
 import { join } from 'path'
 import {
   buildEnvTestFileLines,
+  E2E_DEFAULT_BASE_URL,
   E2E_IDENTITIES,
   E2E_REFERRAL_CODES,
 } from './e2e-test-identities'
@@ -50,8 +51,7 @@ async function main() {
   const only = parseOnlyFlag()
   const skipJohnson = process.argv.includes('--skip-johnson')
   const writeExample = process.argv.includes('--write-example')
-  const baseUrl =
-    process.env.PLAYWRIGHT_BASE_URL ?? 'https://estate-planner-gules.vercel.app'
+  const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
 
   const run = (name: string) => !only || only.has(name)
 
@@ -166,7 +166,7 @@ async function main() {
   if (writeExample) {
     const examplePath = join(process.cwd(), '.env.test.example')
     const sanitized = buildEnvTestFileLines({
-      baseUrl: 'https://estate-planner-gules.vercel.app',
+      baseUrl: E2E_DEFAULT_BASE_URL,
       householdId: '<run seed-e2e-fixtures.ts>',
     })
     writeFileSync(examplePath, sanitized, 'utf8')

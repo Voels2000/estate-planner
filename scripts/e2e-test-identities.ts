@@ -9,6 +9,9 @@
 
 export const E2E_TEST_PASSWORD = 'E2eTest!2026Mwm'
 
+/** Default Playwright target — production (preview vercel.app POST /api/* may hang). */
+export const E2E_DEFAULT_BASE_URL = 'https://www.mywealthmaps.com'
+
 /** Drip smoke — capture via /assess or homepage; verify with verify-drip-sequence.ts */
 export const DRIP_SMOKE_EMAIL = 'e2e-drip@mywealthmaps.test'
 

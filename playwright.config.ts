@@ -1,7 +1,7 @@
 import { defineConfig, devices, type Project } from '@playwright/test'
+import { E2E_DEFAULT_BASE_URL } from './scripts/e2e-test-identities'
 
-const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL ?? 'https://estate-planner-gules.vercel.app'
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
 
 const hasTier1Consumer =
   Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL) &&

@@ -46,8 +46,8 @@ Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthma
 
 | Variable | Purpose |
 |----------|---------|
-| `PLAYWRIGHT_BASE_URL` | Target deployment |
-| `PLAYWRIGHT_PUBLIC_API_BASE_URL` | Optional — public API smoke (`security-sprint-post-deploy.spec.ts`) defaults to `https://www.mywealthmaps.com` because preview `vercel.app` POST `/api/*` may hang |
+| `PLAYWRIGHT_BASE_URL` | Target deployment — default **`https://www.mywealthmaps.com`**. Preview `*.vercel.app` serves pages but **`/api/*` routes may hang**; use production for API-heavy specs (presets, import, strategy writes). After changing base URL, re-run setup: `rm -rf .auth && npm run test:e2e:complete -- --project=advisor-setup --project=consumer-setup --project=attorney-setup` |
+| `PLAYWRIGHT_PUBLIC_API_BASE_URL` | Optional — public API smoke defaults to `https://www.mywealthmaps.com` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Must match the Supabase project your `PLAYWRIGHT_BASE_URL` app uses (from `seed:e2e` output) |
 | `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Estate-tier consumer (`e2e-consumer@mywealthmaps.test`; password defaults to `E2eTest!2026Mwm` from `e2e-test-identities.ts`) |
 | `PLAYWRIGHT_ADVISOR_EMAIL` / `PASSWORD` | Advisor portal |

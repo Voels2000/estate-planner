@@ -1,5 +1,6 @@
 import { createAdminClient } from '../lib/supabase/admin'
 import {
+  E2E_DEFAULT_BASE_URL,
   E2E_IDENTITIES,
   E2E_REFERRAL_CODES,
   E2E_TEST_PASSWORD,
@@ -186,7 +187,7 @@ function getSeedAppUrl(): string {
   return (
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.PLAYWRIGHT_BASE_URL ??
-    'https://estate-planner-gules.vercel.app'
+    E2E_DEFAULT_BASE_URL
   ).replace(/\/$/, '')
 }
 

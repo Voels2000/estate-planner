@@ -196,9 +196,9 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Skip middleware for static assets and crawlable infra (also listed in
-     * INFRA_BYPASS_PATHS as a runtime fallback if the matcher changes).
+     * Skip middleware for API route handlers, static assets, and crawlable infra.
+     * API routes must not enter Edge middleware — auth is enforced per route handler.
      */
-    '/((?!_next/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/|api/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }

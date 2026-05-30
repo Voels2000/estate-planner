@@ -1,6 +1,6 @@
 # Go-live E2E pre-flight
 
-Run these against **production** (`PLAYWRIGHT_BASE_URL` in `.env.test`, default `estate-planner-gules.vercel.app`) **after every deploy** that touches profile, inline prompts, or planning surfaces — and as the final automated gate before `PUBLIC_SIGNUP_OPEN=true`.
+Run these against **production** (`PLAYWRIGHT_BASE_URL` in `.env.test`, default `https://www.mywealthmaps.com`) **after every deploy** that touches profile, inline prompts, or planning surfaces — and as the final automated gate before `PUBLIC_SIGNUP_OPEN=true`.
 
 **Prerequisites:** `npm run seed:e2e` on the target environment; copy printed block to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)). Requires `PLAYWRIGHT_HOUSEHOLD_ID` + `SUPABASE_SERVICE_ROLE_KEY`.
 
