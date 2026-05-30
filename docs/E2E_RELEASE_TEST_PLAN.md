@@ -14,6 +14,9 @@ Maps [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) to Playw
 **Run automated:**
 ```bash
 npm run test:e2e:complete -- --workers=1
+npm run test:e2e:security-isolation   # IDOR matrix (10 tests)
+npm run test:e2e:cross-role           # advisor sync + persona + attorney docs (12 tests)
+npm run test:e2e:security-smoke       # public API + RPC pages + Monte Carlo (7 tests)
 # Or per project:
 npm run test:e2e:consumer -- --workers=1
 npm run test:e2e:advisor -- --workers=1
@@ -180,7 +183,7 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 - Empty-state CTA lists (TIER2 vs TIER3) — snapshot tests possible but brittle
 - Marketing **copy** accuracy (e.g. RMD 72–75 range on event page)
 - Drip emails 2–3 schedule and inbox content
-- Cross-role flows (consumer connects → advisor sees life event)
+- Cross-role flows (consumer connects → advisor sees life event) — **partially automated:** `advisor-consumer-sync.spec.ts` (Johnson asset sync); attorney grant-access via `test:e2e:cross-role`
 
 ---
 

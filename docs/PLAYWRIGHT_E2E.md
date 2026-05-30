@@ -28,6 +28,9 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run test:e2e:advisor` | advisor-setup + advisor |
 | `npm run test:e2e:attorney` | attorney-setup + attorney |
 | `npm run test:e2e:public` | public |
+| `npm run test:e2e:security-smoke` | public health/referral/telemetry + consumer RPC pages + advisor Monte Carlo |
+| `npm run test:e2e:security-isolation` | consumer-setup + advisor-setup + cross-household IDOR matrix |
+| `npm run test:e2e:cross-role` | advisor sync, persona onboarding, attorney documents, cross-household (subset) |
 | `npm run test:e2e:complete` | consumer + advisor + attorney + public |
 | `npm run test:e2e:nightly` | public (attribution sessionStorage) |
 | `npm run test:import:unit` | import-unit |
@@ -53,6 +56,7 @@ Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthma
 | `PLAYWRIGHT_ADVISOR_EMAIL` / `PASSWORD` | Advisor portal |
 | `PLAYWRIGHT_HOUSEHOLD_ID` | Strategy + recompute + titling tests — from `seed:e2e` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `seed:e2e` + setup projects sync Auth password before login; do not use in browser polls |
+| `RECOMPUTE_SECRET` | Optional — golden-path seed triggers `/api/recompute-estate-health`; copy from `.env.local` |
 
 ## Optional env
 
@@ -83,6 +87,9 @@ Prefer `npm run seed:e2e`. Old scripts remain for reference:
 | 2026-05-27 | Staging | `consumer-profile-spouse-layout` + `consumer-growth-assumptions-api` | **5 passed**, 1 skipped (round-trip needs `PLAYWRIGHT_HOUSEHOLD_ID` in `.env.test`) |
 | 2026-05-27 | Production | `consumer-profile-save` partial PATCH (SS + retirement/longevity, run separately) | **2 passed** each (merge API) |
 | 2026-05-27 | Production | `test:e2e:go-live-profile` (profile + inline prompts) | Run before go-live — see [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) |
+| 2026-05-30 | Production | `test:e2e:security-isolation` | **10/10** — IDOR matrix |
+| 2026-05-30 | Production | `test:e2e:cross-role` | **12/12** after deploy `12734a3` — persona + attorney + advisor sync |
+| 2026-05-30 | Production | `test:e2e:security-smoke` | **7/7** incl. `/api/health` |
 
 Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) under parallel load.
 
@@ -92,7 +99,9 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 ## Spec inventory (42 spec files + setup/helpers; 280 tests total)
 
-**Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, `consumer-tier1-gates` (optional).
+**Security / cross-role (2026-05-30):** `tests/e2e/security/cross-household-isolation.spec.ts` — consumer + advisor IDOR matrix (403/404 deny). `tests/e2e/advisor/advisor-consumer-sync.spec.ts` — Johnson asset POST → advisor estate-composition. `tests/e2e/attorney/attorney-documents-gaps.spec.ts` — documents list, gap-dismissals, attorney dashboard link. `tests/e2e/consumer/onboarding-persona.spec.ts` — golden-path persona selection. Commands: `npm run test:e2e:security-isolation`, `npm run test:e2e:cross-role`.
+
+**Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, **`onboarding-persona`**, `consumer-tier1-gates` (optional).
 
 **Go-live:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) — `npm run test:e2e:go-live-profile` before flip.
 
@@ -100,9 +109,11 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 **Public:** `public`, `public-routes`, `public-referral-track`, `auth-signup-attribution`.
 
-**Advisor:** existing specs + `advisor-retirement-rmd-copy`, `advisor-newsletter-kit`.
+**Attorney:** `attorney-portal`, **`attorney-documents-gaps`**.
 
-**Attorney:** `attorney-portal`.
+**Security:** `cross-household-isolation`, `security-sprint-post-deploy` (incl. `/api/health`), `security-sprint-rpc-pages`, `security-sprint-monte-carlo`.
+
+**Advisor:** existing specs + `advisor-retirement-rmd-copy`, `advisor-newsletter-kit`, **`advisor-consumer-sync`**.
 
 See [CONSUMER_FLOWS.md §7](./CONSUMER_FLOWS.md#7-e2e-map-living-contracts) for smoke-section mapping.
 

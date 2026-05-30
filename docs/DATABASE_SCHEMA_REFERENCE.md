@@ -135,8 +135,9 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 ### `attorney_clients`
 
-- **Key columns:** `attorney_id`, `client_id` (household id), `status`, `granted_at`, `advisor_pdf_access`
+- **Key columns:** `attorney_id` (→ `attorney_listings.id`), `client_id` (→ `households.id`), `status`, `granted_at`, `advisor_pdf_access`
 - **Purpose:** attorney access to household estate plan; distinct from `connection_requests` pending/claim flow.
+- **FK migration:** `20260630100000_attorney_clients_fk_listing_household.sql` — aligns prod legacy FKs; adds `households_attorney_select` RLS.
 - **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; revoke via `/api/attorney/revoke-access`.
 
 ### `firms`

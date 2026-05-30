@@ -130,7 +130,7 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | | |
 |--|--|
 | **User goal** | Choose the persona that best describes their situation so first-run copy is tailored |
-| **Tier / gate** | Tier 1; requires MVP profile; skipped when `onboarding_persona` is set |
+| **Tier / gate** | Tier 1; requires wizard-ready profile (`isWizardReadyProfile`: state, filing, birth year); skipped when `onboarding_persona` is set |
 | **Server** | `app/(dashboard)/onboarding/persona/page.tsx` |
 | **Client** | `_persona-client.tsx` — 2×2 card grid; Continue → PATCH persona → wizard |
 | **Write APIs** | `PATCH /api/consumer/profile` with `{ onboarding_persona }` only |

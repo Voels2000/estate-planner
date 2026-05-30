@@ -8,6 +8,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Attorney clients FK alignment + households attorney SELECT (2026-05-30)
+
+**Migration:** `20260630100000_attorney_clients_fk_listing_household.sql`
+
+| Change | Detail |
+|--------|--------|
+| `attorney_clients.attorney_id` | FK → `attorney_listings.id` (legacy prod had `profiles.id`) |
+| `attorney_clients.client_id` | FK → `households.id` (backfill from owner auth id where needed) |
+| `households_attorney_select` | Attorney SELECT on connected client households (vault detail page) |
+
+**Apply on remote:** `supabase db push` — **prod applied 2026-05-30**.
+
+---
+
 ## RPC household access guards + attorney RLS (2026-05-29)
 
 **Migrations:** `20260629120000_rpc_household_access_guards.sql` · `20260629130000_attorney_rls_policy_fix.sql`

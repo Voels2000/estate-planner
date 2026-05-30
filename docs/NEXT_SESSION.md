@@ -1,18 +1,39 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Prod API fix + security smoke verified)
+# Updated: 2026-05-30 (Cross-role E2E + persona gate fix + attorney FK migration)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Prod API fix (shipped 2026-05-30):** conflicting `/api/documents/[household_id]` vs `/api/documents/[id]/status` slug names hung all Vercel route handlers — moved list to `/api/documents/household/[household_id]`; `getRouteAuth()` + `/api/health` (`af12ff0`). **Security smoke (verified 2026-05-30):** `npm run test:e2e:security-smoke` 7/7 on prod — referral rate limit, telemetry 401, consumer RPC pages, Monte Carlo edge auth. **RPC guards + attorney RLS (shipped 2026-05-29):** migrations `20260629120000` + `20260629130000`; edge function `estate-monte-carlo`. **Import + attorney workflow:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Cross-role E2E (shipped 2026-05-30):** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12 after deploy) — household IDOR matrix, advisor–Johnson sync, attorney document/gap APIs, persona onboarding. **CI:** `scripts/verify-app-route-slugs.ts` on every push. **Persona gate (shipped 2026-05-30):** `/onboarding/persona` uses `isWizardReadyProfile` + full household SELECT (`12734a3`). **Attorney FK (applied 2026-05-30):** migration `20260630100000` — `attorney_clients.attorney_id` → `attorney_listings.id`, `client_id` → `households.id`, `households_attorney_select` RLS. **Prod API fix (shipped 2026-05-30):** documents list at `/api/documents/household/[household_id]` (`af12ff0`). **Security smoke:** `npm run test:e2e:security-smoke` 7/7 on prod.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
-> **Post-deploy:** `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+> **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Cross-role E2E + CI route validator ✅ (2026-05-30)
+
+**Commits:** `510ac8a` · `cfe5f88` · `12734a3` · (build fix) Playwright fixture type in `e2e-households.ts`
+
+| Item | Notes |
+|------|-------|
+| `test:e2e:security-isolation` | Consumer + advisor IDOR matrix — gifting, estate-composition, export, documents; **403 or 404** both deny access |
+| `test:e2e:cross-role` | Johnson advisor sync, persona onboarding, attorney documents/gap-dismissals, cross-household specs |
+| New specs | `tests/e2e/security/cross-household-isolation.spec.ts`, `advisor/advisor-consumer-sync.spec.ts`, `attorney/attorney-documents-gaps.spec.ts`, `consumer/onboarding-persona.spec.ts` |
+| Helpers | `tests/e2e/helpers/e2e-households.ts`, `johnson-client.setup.ts` |
+| CI | `npx tsx scripts/verify-app-route-slugs.ts` — fails build on conflicting App Router dynamic segments |
+| `/api/health` | Added to `security-sprint-post-deploy.spec.ts` |
+
+**Persona gate fix:** `/onboarding/persona` gate is `isWizardReadyProfile` (state, filing, birth year) — not full MVI with `person1_name`. Partial household SELECT caused false `/profile?required=true` redirects on prod.
+
+**Attorney DB:** `supabase db push` migration `20260630100000_attorney_clients_fk_listing_household.sql` — aligns FKs with app code; attorney grant-access + vault RLS.
+
+**Env:** Add `RECOMPUTE_SECRET` from `.env.local` to `.env.test` for golden-path seed recompute (optional — onboarding spec does not require it).
 
 ---
 

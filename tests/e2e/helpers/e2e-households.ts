@@ -1,3 +1,4 @@
+import type { APIRequestContext } from '@playwright/test'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
@@ -80,9 +81,18 @@ export async function ensureAttorneyClientLink(householdId: string): Promise<boo
   return false
 }
 
+type PlaywrightRequestFixture = {
+  request: {
+    newContext(options: {
+      storageState: string
+      baseURL: string
+    }): Promise<APIRequestContext>
+  }
+}
+
 /** Link attorney via consumer grant-access API (requires .auth/consumer.json). */
 export async function grantAttorneyAccessViaConsumerApi(
-  playwright: import('@playwright/test').Playwright,
+  playwright: PlaywrightRequestFixture,
   baseURL: string,
 ): Promise<boolean> {
   const listingId = await fetchAttorneyListingId()

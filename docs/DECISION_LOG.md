@@ -1312,6 +1312,36 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### May 2026 — Persona onboarding gate uses wizard-ready profile
+
+**Decision:** `/onboarding/persona` server gate uses `isWizardReadyProfile` (state, filing status, birth year) — not full `isMinimumViableProfile` (which also requires `person1_name`).
+
+**Reasoning:** Persona selection follows demographics capture; a partial household SELECT on the persona page caused false redirects to `/profile?required=true` when `person1_name` was omitted from the query object even though the DB row was complete.
+
+**Implication:** Estate planning pages and `requireMinimumViableProfile` still require name; persona/wizard funnel uses wizard-ready checks. E2E: `tests/e2e/consumer/onboarding-persona.spec.ts`.
+
+---
+
+### May 2026 — Cross-household isolation tests accept 403 or 404
+
+**Decision:** Playwright IDOR matrix specs treat **403 Forbidden** and **404 Not Found** as successful denial for foreign household reads (`gifting-summary`, `estate-composition`, `export-estate-plan`).
+
+**Reasoning:** API routes return 404 when `access.reason === 'not_found'` to avoid leaking household existence; 403 when explicitly forbidden.
+
+**Implication:** Do not treat prod 404s on these routes during isolation test runs as broken routes. Spec: `tests/e2e/security/cross-household-isolation.spec.ts`.
+
+---
+
+### May 2026 — App Router slug conflict CI guard
+
+**Decision:** CI runs `npx tsx scripts/verify-app-route-slugs.ts` on every push; fails if conflicting dynamic segments exist at the same path depth (Next.js 16 may build while Vercel silently hangs all `/api/*` handlers).
+
+**Reasoning:** Root cause of May 2026 prod outage — `[household_id]` vs `[id]` under `/api/documents/`.
+
+**Implication:** New API routes must not introduce sibling dynamic param names at the same depth.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

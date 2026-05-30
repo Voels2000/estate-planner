@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Prod API fix + security smoke verified)
+# Last updated: 2026-05-30 (Cross-role E2E + persona gate + attorney FK)
 
 ---
 
@@ -20,6 +20,24 @@
 ---
 
 ## Current sprint
+
+### Sprint — Cross-role E2E + persona gate + attorney FK (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Cross-household IDOR matrix (`test:e2e:security-isolation`) | `[x]` 10/10 |
+| Advisor–consumer sync (Johnson asset → advisor estate-composition) | `[x]` |
+| Attorney documents + gap-dismissals API smoke | `[x]` |
+| Persona onboarding E2E (`e2e-golden-path@`) | `[x]` after deploy `12734a3` |
+| App route slug CI validator | `[x]` |
+| Persona page gate → `isWizardReadyProfile` | `[x]` |
+| Attorney FK migration `20260630100000` | `[x]` applied prod |
+
+**Commits:** `510ac8a` · `cfe5f88` · `12734a3`
+
+**Post-deploy:** `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation`
+
+---
 
 ### Sprint — Prod API fix + security smoke verification (2026-05-30) **← shipped**
 

@@ -95,7 +95,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor client limits | `lib/advisor/advisorClientLimits.ts` — invite + accept-request |
 | Advisor activation drip | `lib/emails/advisor-drip-templates.ts`, `POST /api/email/advisor-drip`, cron step 8 |
 | Advisor value prop UI | `AdvisorValuePropBanner` on `/advisor` — vs eMoney/PDF portals, B2B2C, workflow |
-| Persona onboarding (2026-05-29) | `/onboarding/persona` after MVP profile; `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator` |
+| Persona onboarding (2026-05-29) | `/onboarding/persona` after wizard-ready profile (`isWizardReadyProfile`); `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator`; E2E: `onboarding-persona.spec.ts` |
 | Acquisition & activation (2026-05-29) | **`attorney_intake_requests`** + `/intake/[token]` + send-intake modal; **`ReferralImpactPanel`** + referral-impact API; **`GET /api/advisor/meeting-prep-pdf/[clientId]`** print one-pager; advisor referral signup notify |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
@@ -959,6 +959,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
+- `scripts/verify-app-route-slugs.ts` — CI guard against conflicting App Router dynamic segments (`.github/workflows/ci.yml`)
 - `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads (API routes)
 - `lib/api/simpleRateLimit.ts` — IP-based rate limit helper for public POST endpoints
 - `lib/api/escapeHtml.ts` — shared HTML escaping for email templates
