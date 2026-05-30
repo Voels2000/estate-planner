@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   SetupProgressCard,
@@ -22,7 +23,7 @@ import { FeedbackButton } from './_components/feedback-button'
 import { LifeEventBanner, type LifeEvent, type LoggedLifeEvent } from './_components/LifeEventBanner'
 import type { RelevanceHousehold } from '@/lib/events/catalog'
 import type { EstateComposition } from '@/lib/estate/types'
-import { firstName, fmt } from '@/app/(dashboard)/_components/dashboard/formatters'
+import { firstName, fmt, fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard/FinancialSummarySection'
 import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboard/RetirementSummarySection'
 import { EstateSummarySection } from '@/app/(dashboard)/_components/dashboard/EstateSummarySection'
@@ -190,6 +191,26 @@ const SECTION_KEYS = {
   estate: 'dashboard_section_estate',
 } as const
 
+function parseBypassTrustSavings(
+  recommendations: Props['initialRecommendations'],
+  grossEstate: number | undefined,
+  stateExemption: number | null,
+  noPortability: boolean,
+): number {
+  const rec = recommendations?.find((r) => r.branch === 'bypass_trust')
+  if (!rec) return 0
+
+  const byMatch = rec.reason.match(/by (\$[\d,]+)/i)
+  if (byMatch) {
+    return parseInt(byMatch[1].replace(/[$,]/g, ''), 10)
+  }
+
+  if (noPortability && stateExemption && grossEstate && grossEstate > stateExemption) {
+    return Math.round(Math.max(0, (grossEstate - stateExemption) * 0.10))
+  }
+  return 0
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -344,6 +365,13 @@ export function DashboardClient(props: Props) {
   const openAlertsCount =
     (conflictReport?.critical ?? 0) + (conflictReport?.warnings ?? 0)
 
+  const bypassTrustSavings = parseBypassTrustSavings(
+    initialRecommendations,
+    estateCallout?.grossEstate,
+    stateExemption,
+    noPortability,
+  )
+
   return (
     <>
       {!isAdvisor && (
@@ -452,12 +480,37 @@ export function DashboardClient(props: Props) {
       )}
 
       {sectionVisible(2) && estateCallout && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <EstateSummaryHeroAndMetrics
             {...estateCallout}
             statePrimary={statePrimary}
             userTier={tier}
           />
+          {bypassTrustSavings > 0 && statePrimary && stateExemption && (
+            <div className="flex items-start gap-3 rounded-[var(--mwm-radius)] border border-blue-200 bg-blue-50 px-4 py-3">
+              <i
+                className="ti ti-bulb mt-0.5 text-blue-700"
+                aria-hidden="true"
+                style={{ fontSize: 16 }}
+              />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-blue-800 mb-1">
+                  Bypass trust could save {fmtExact(bypassTrustSavings)} in {statePrimary} estate tax
+                </p>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  {statePrimary} does not allow portability of its state estate tax exemption.
+                  Without a credit shelter trust funded at first death, one {fmtExact(stateExemption)} exemption
+                  is permanently lost. Many attorneys discuss bypass trusts to preserve both exemptions.
+                </p>
+                <Link
+                  href="/my-estate-strategy"
+                  className="mt-1.5 block text-xs font-medium text-blue-700 underline underline-offset-2"
+                >
+                  View trust strategies →
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -735,8 +788,6 @@ export function DashboardClient(props: Props) {
             estateHealthScore={estateHealthScore}
             conflictReport={conflictReport}
             composition={composition}
-            householdId={householdId}
-            initialRecommendations={initialRecommendations}
             consumerTier={tier}
           />
         </div>

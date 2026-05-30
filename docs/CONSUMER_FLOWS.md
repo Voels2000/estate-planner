@@ -225,7 +225,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`** (red hero when `estimatedTaxState > 0`, amber when federal-only) → four compact metric tiles (`fmt`) → **`sm:grid-cols-2`** checklist + **`EstateTaxSnapshotPanel`** (state exemption from `state_estate_tax_rules` + `no_portability`; state taxable = gross − exemption). Readiness score, planning gaps, titling conflicts remain in **`EstateSummarySection`** below Financial/Retirement (unchanged).
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`** + optional **bypass trust alert** (when `bypass_trust` recommendation + no portability) → four compact metric tiles → **`sm:grid-cols-2`** checklist + **`EstateTaxSnapshotPanel`**. **`EstateSummarySection`** (collapsible below Financial/Retirement): readiness score · composition · **titling badges + link only** — planning topics removed (2026-05-30).
 
 ### Financial modules (representative)
 
@@ -267,6 +267,16 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Post-deploy smoke** | Alan household: survivor **$4,888/mo** in insight card; elected–FRA crossover visible on chart (~age 84 at 2.5% COLA) |
 
 ### RMD Calculator — `/rmd` (2026-05-30 polish)
+
+| | |
+|--|--|
+| **Client** | `_rmd-client.tsx` — full projection in **`rows`**, paginated to **`visibleRows`** via **`periodOffset`** |
+| **Render order** | Hero lifetime + peak → status cards (years-away badges) → accounts grid → tax callout → projection table → legend |
+| **Decade nav** | Segment buttons call **`goToPage(i)`** (same as Prev/Next); active when `i === periodOffset` |
+| **Inflection rows** | Blue P1 first RMD · emerald P2 first RMD · amber peak year (from full `rows`, not visible slice) |
+| **Tax callout** | Peak RMD × **28%** blended — no marginal rate in page props |
+| **Single user** | 2 status cards; no P2 table columns or legend entry when `has_spouse === false` |
+| **Years-away badges** | `p1RmdStartYear = rows.find(r => r.p1_rmd > 0)?.year`; Alan **9** yr / Cathi **16** yr (2026 base) |
 
 | | |
 |--|--|

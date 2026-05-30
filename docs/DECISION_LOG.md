@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (RMD Calculator page polish)
+# Last updated: 2026-05-30 (dashboard cleanup)
+
+## Dashboard cleanup — bypass trust alert (2026-05-30)
+
+**Decision:** Remove **Common Planning Topics** from dashboard estate summary (content lives on trust/strategy and topic-specific pages). **Titling & Beneficiary Conflicts** in estate summary shows badge pills + link to `/titling` only — no inline conflict detail. Surface **bypass trust** dollar savings as blue planning alert below tax hero when `initialRecommendations` includes `bypass_trust` and savings &gt; 0 (parsed from RPC reason or `(grossEstate − stateExemption) × 0.10` for no-portability states).
+
+**Files:** `_dashboard-client.tsx`, `EstateSummarySection.tsx`
+
+**Verify:** Alan WA household — alert shows ~$645K; estate summary collapsible has no topic groups.
+
+---
 
 ## RMD Calculator page polish (2026-05-30)
 

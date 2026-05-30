@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (RMD Calculator page polish)
+# Last updated: 2026-05-30 (dashboard cleanup)
 
 ---
 
@@ -20,6 +20,18 @@
 ---
 
 ## Current sprint
+
+### Sprint — Dashboard cleanup (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Remove Common Planning Topics from estate summary | `[x]` |
+| Titling conflicts — badges + link only | `[x]` |
+| Bypass trust alert near tax hero | `[x]` |
+
+**Post-ship:** Alan dashboard — bypass ~$645K alert · no topic list · titling link to `/titling`.
+
+---
 
 ### Sprint — RMD Calculator page polish (2026-05-30) **← shipped**
 

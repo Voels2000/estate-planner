@@ -9,9 +9,7 @@ import {
   EstateHealthScoreHeaderBadge,
 } from '@/components/shared/EstateHealthScoreBlock'
 import { fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
-import { PlanningGapsSection } from '@/app/(dashboard)/_components/dashboard/PlanningGapsSection'
 import { hasEstateData } from '@/app/(dashboard)/_components/dashboard/state-helpers'
-import { softenEducationalCopy } from '@/lib/estate/planningTopicPresentation'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { resolveEstateActionHref } from '@/lib/dashboard/estateUpgradeHref'
 
@@ -33,12 +31,6 @@ type EstateSummarySectionProps = {
   estateHealthScore?: EstateHealthScore | null
   conflictReport?: ConflictReport
   composition?: EstateComposition | null
-  householdId?: string | null
-  initialRecommendations?: Array<{
-    branch: string
-    priority: 'high' | 'moderate' | 'low'
-    reason: string
-  }> | null
   consumerTier?: number
 }
 
@@ -82,7 +74,7 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
       defaultOpen={false}
       storageKey={props.storageKey}
       locked={!hasEstateData({ totalAssets: props.totalAssets })}
-      lockedMessage="Add your assets to see your estate readiness score, common planning topics, and tax exposure."
+      lockedMessage="Add your assets to see your estate readiness score and tax exposure."
       lockedHref="/assets"
       lockedHrefLabel="Add assets"
     >
@@ -137,68 +129,31 @@ export function EstateSummarySection(props: EstateSummarySectionProps) {
           </div>
         )}
 
-        {props.householdId && (
+        {props.conflictReport &&
+          (props.conflictReport.critical > 0 || props.conflictReport.warnings > 0) && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Common planning topics</p>
-            <PlanningGapsSection householdId={props.householdId} initialRecommendations={props.initialRecommendations} />
-          </div>
-        )}
-
-        {props.conflictReport && props.conflictReport.conflicts.length > 0 && (
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Titling & Beneficiary Conflicts</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">
+              Titling & Beneficiary Conflicts
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               {props.conflictReport.critical > 0 && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-100 border border-red-200 px-2.5 py-1 text-xs font-medium text-red-800">
+                  <i className="ti ti-alert-circle" aria-hidden="true" style={{ fontSize: 11 }} />
                   {props.conflictReport.critical} critical
                 </span>
               )}
               {props.conflictReport.warnings > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-800">
+                  <i className="ti ti-alert-triangle" aria-hidden="true" style={{ fontSize: 11 }} />
                   {props.conflictReport.warnings} warning{props.conflictReport.warnings !== 1 ? 's' : ''}
                 </span>
               )}
-            </div>
-            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-              <div className="divide-y divide-neutral-50">
-                {props.conflictReport.conflicts.slice(0, 4).map((conflict, i) => (
-                  <div key={i} className="px-4 py-3 flex items-start gap-3">
-                    <span
-                      className={`mt-0.5 shrink-0 ${
-                        conflict.severity === 'critical'
-                          ? 'text-red-500'
-                          : conflict.severity === 'warning'
-                            ? 'text-amber-500'
-                            : 'text-blue-400'
-                      }`}
-                    >
-                      {conflict.severity === 'critical' ? '⚠' : conflict.severity === 'warning' ? '○' : 'ℹ'}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm text-neutral-800">{conflict.description}</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        {softenEducationalCopy(conflict.recommended_action)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {props.conflictReport.conflicts.length > 4 && (
-                <div className="px-4 py-3 border-t border-neutral-100 text-center">
-                  {consumerTier && consumerTier < 3 ? (
-                    <Link
-                      href="/estate-tax"
-                      className="text-xs text-[color:var(--mwm-navy)] hover:underline"
-                    >
-                      Upgrade to address these gaps →
-                    </Link>
-                  ) : (
-                    <Link href="/titling" className="text-xs text-[color:var(--mwm-navy)] hover:underline">
-                      View all {props.conflictReport.conflicts.length} items →
-                    </Link>
-                  )}
-                </div>
-              )}
+              <Link
+                href="/titling"
+                className="text-xs text-emerald-700 underline underline-offset-2"
+              >
+                Review in Titling & Beneficiaries →
+              </Link>
             </div>
           </div>
         )}

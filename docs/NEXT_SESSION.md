@@ -1,18 +1,33 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (RMD Calculator page polish)
+# Updated: 2026-05-30 (dashboard cleanup + RMD years-away verify)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **RMD polish:** hero lifetime/peak stats · status cards with years-away badges · accounts grid · tax callout · decade navigator + inflection rows. **Social Security (`405d3d0`)** · **Dashboard estate summary (`deb0080`)** · **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
+> My Wealth Maps — **Sprint 19.** **Dashboard cleanup:** planning topics removed · bypass trust alert near tax hero · titling badges-only in estate summary. **RMD (`b47fed5`)** · **Social Security (`405d3d0`)** · **Roth (`839bfbb`)** shipped.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Dashboard cleanup ✅ (2026-05-30)
+
+**Files:** `_dashboard-client.tsx` · `EstateSummarySection.tsx`
+
+| Item | Notes |
+|------|-------|
+| Removed | Common Planning Topics section (`PlanningGapsSection` in estate summary collapsible) |
+| Titling conflicts | Badges only + **Review in Titling & Beneficiaries →** (detail on `/titling`) |
+| Bypass trust alert | Blue card below tax hero when `bypass_trust` rec + `noPortability`; savings parsed from RPC reason or `(gross − exemption) × 10%` |
+| Unchanged | Top conflict dismiss banner · estate readiness score · composition card · execution checklist |
+
+**Post-deploy smoke (once):** Alan → `/dashboard` — bypass alert ~**$645K** WA savings · no planning topics in estate summary · titling badges + link only.
 
 ---
 
@@ -31,6 +46,8 @@
 | Single user | No P2 status cards, legend entry, or table columns (`has_spouse` gates) |
 
 **Post-deploy smoke (once):** Alan → `/rmd` — hero totals · years-away badges · decade buttons change visible rows · peak/first-RMD row highlights.
+
+**Years-away verify (Alan household, programmatic 2026-05-30):** `rows.find(r => r.p1_rmd > 0)?.year` → **2035** → **9 years away** (Alan); P2 → **2042** → **16 years away** (Cathi). Matches `birthYear + getRmdStartAge()`.
 
 ---
 

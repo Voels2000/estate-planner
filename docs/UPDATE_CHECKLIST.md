@@ -552,7 +552,18 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Decade navigator → `goToPage(i)` / `setPeriodOffset`; inflection highlights + legend
 - [x] Single-user gates via `household.has_spouse`
 - [x] Master docs synced
-- [ ] **Post-deploy visual smoke (once):** `/rmd` — decade nav · row highlights · years-away badges
+- [x] **Years-away verify (Alan, programmatic):** Alan **9** yr (2035) · Cathi **16** yr (2042) from `rows.find(r => r.p*_rmd > 0)`
+- [ ] **Post-deploy visual smoke (once):** `/rmd` — decade nav · row highlights · years-away badges on status cards
+
+## Sprint — Dashboard cleanup ✅ closed 2026-05-30
+
+**Files:** `_dashboard-client.tsx` · `EstateSummarySection.tsx`
+
+- [x] Remove Common Planning Topics from estate summary collapsible
+- [x] Titling conflicts — badges + link to `/titling` only (no detail list)
+- [x] Bypass trust alert below tax hero (`parseBypassTrustSavings` from recommendations)
+- [x] Master docs synced
+- [ ] **Post-deploy visual smoke (once):** Alan — bypass alert ~$645K · no topics · titling badges only
 
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 

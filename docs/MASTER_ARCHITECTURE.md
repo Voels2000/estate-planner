@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-30 (RMD Calculator page polish; Sprint 19)
+# Last updated: 2026-05-30 (dashboard cleanup; Sprint 19)
 
 ---
 
@@ -518,6 +518,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - As of **2026-05-27 (Sprints H–J)**, heavy planning routes use Next.js `loading.tsx` skeletons and `error.tsx` boundaries. Shared client fallback: `app/(dashboard)/_components/RouteErrorFallback.tsx`. Routes: `/monte-carlo`, `/allocation`, `/scenarios`, `/social-security`, `/projections` (H/I), `/complete`, `/estate-tax` (J), `/dashboard`, `/my-estate-trust-strategy` (Sprint 18).
 - As of **2026-05-30**, `/social-security` client (`_ss-client.tsx`) — hero elected cards, insight card, cumulative **SVG** chart (elected / FRA / age 62 from `loadSocialSecurityData` → `scenario.cumulativeByAge`), claiming tables with relative bar column; breakeven age computed client-side (elected vs FRA cumulative at matching calendar ages). Spousal & Survivor Strategy block unchanged below tables.
 - As of **2026-05-30**, `/rmd` client (`_rmd-client.tsx`) — hero lifetime/peak stats; status cards with years-away badges; accounts grid (`grid-cols-1 sm:grid-cols-3`); tax callout (28% blended on peak RMD); decade navigator + inflection row highlights on full **`rows`** array paginated via **`periodOffset`**. Single-user layout when `has_spouse === false`.
+- As of **2026-05-30**, consumer **`/dashboard`** estate summary collapsible: **no** Common Planning Topics list; titling conflicts show badge pills + link to `/titling` only. Bypass trust savings surfaced as blue alert below **`EstateSummaryHeroAndMetrics`** when cached recommendations include `bypass_trust` (savings from RPC reason or gross − state exemption formula).
 - `StrategyOverlay` already writes advisor recommendations via `/api/advisor/strategy-recommendation` (`useRecommendStrategy`); no `strategy_configs` path.
 
 ### Target
