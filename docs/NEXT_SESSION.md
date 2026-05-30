@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Estate summary dashboard consolidate)
+# Updated: 2026-05-30 (dashboard estate summary + state exemption wire)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Estate summary consolidate (2026-05-30):** tax hero, 4 tiles, checklist + tax snapshot two-col. **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
+> My Wealth Maps — **Sprint 19.** **Dashboard estate summary (`deb0080`):** tax hero, 4 tiles, checklist + tax snapshot two-col. **State exemption wire (`0686f52`):** `state_estate_tax_rules` + `no_portability` in tax snapshot — **`supabase db push`** before deploy. **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -16,9 +16,25 @@
 
 ---
 
+## State exemption dashboard wire ✅ (2026-05-30)
+
+**Commit:** `0686f52` · **Migration:** `20260630110000_state_estate_tax_rules_no_portability.sql`
+
+| Item | Notes |
+|------|-------|
+| Schema | **`no_portability`** on `state_estate_tax_rules`; WA/MA/OR `true`; WA 2025+ exemption **$3M** |
+| Fetch | `dashboard/_dashboard-body.tsx` — inside existing **`Promise.all`** (not sequential) |
+| Props | `stateExemption`, `noPortability` → `EstateTaxSnapshotPanel` |
+| Panel rows | `{state} exemption` · portability note · `{state} taxable estate` (gross − exemption) · `{state} estate tax` |
+| Alan (WA) | Exemption $3M · taxable ~$6.45M · state tax ~$937K visible in snapshot |
+
+**Prod:** Run `supabase db push` before deploy (column required for select).
+
+---
+
 ## Estate summary dashboard consolidate ✅ (2026-05-30)
 
-**Files:** `app/(dashboard)/_dashboard-client.tsx` · `components/dashboard/EstateCalloutCard.tsx` · `DashboardIntroSection.tsx`
+**Commit:** `deb0080` · **Files:** `_dashboard-client.tsx` · `EstateCalloutCard.tsx` · `DashboardIntroSection.tsx`
 
 | Item | Notes |
 |------|-------|

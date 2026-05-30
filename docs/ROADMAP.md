@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Estate summary dashboard consolidate)
+# Last updated: 2026-05-30 (dashboard estate summary + state exemption wire)
 
 ---
 
@@ -20,6 +20,18 @@
 ---
 
 ## Current sprint
+
+### Sprint — State exemption dashboard wire (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Migration `no_portability` + WA 2025+ $3M | `[x]` |
+| Fetch in `_dashboard-body` Promise.all | `[x]` |
+| Tax snapshot: exemption, note, taxable, state tax | `[x]` |
+
+**Post-ship:** `supabase db push` on prod before deploy
+
+---
 
 ### Sprint — Estate summary dashboard consolidate (2026-05-30) **← shipped**
 

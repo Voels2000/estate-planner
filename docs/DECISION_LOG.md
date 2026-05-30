@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (6-step onboarding wizard)
+# Last updated: 2026-05-30 (dashboard estate summary + state exemption wire)
+
+## Dashboard estate summary consolidate (2026-05-30)
+
+**Decision:** Replace beige `EstateCalloutCard` with **`EstateSummaryHeroAndMetrics`** (full-width tax hero + four metric tiles) and **`EstateTaxSnapshotPanel`** in a **`sm:grid-cols-2`** grid beside **`EstateExecutionChecklist`**. Hero is **red** when `estimatedTaxState > 0`, **amber** when federal-only. Greeting subtitle includes `state_primary`; alert pills stay compact. **`EstateSummarySection`** (readiness, planning gaps, titling) unchanged below Financial/Retirement.
+
+**Files:** `_dashboard-client.tsx`, `EstateCalloutCard.tsx`, `DashboardIntroSection.tsx` · **Commit:** `deb0080`
+
+---
+
+## State exemption on dashboard tax snapshot (2026-05-30)
+
+**Decision:** Fetch `state_estate_tax_rules` (current year + `state_primary`) in **`dashboard/_dashboard-body.tsx`** inside existing **`Promise.all`** — not a sequential query. Add **`no_portability`** column on `state_estate_tax_rules` (WA/MA/OR true); dashboard shows exemption, portability note, state taxable estate (gross − exemption), state tax. WA 2025+ exemption data corrected to **$3M** in migration.
+
+**Migration:** `20260630110000_state_estate_tax_rules_no_portability.sql` · **Commit:** `0686f52` · **Prod:** `supabase db push` before deploy
+
+---
 
 ## Onboarding wizard — 6 steps (2026-05-29)
 

@@ -379,7 +379,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Verify before first advisor onboarding
 - [ ] Advisor-connected consumer sees Stage 3 dashboard (not Stage 1)
-- [ ] Advisor-connected consumer sees "View Estate Tax Snapshot →" (not upgrade CTA) on `EstateCalloutCard`
+- [ ] Tier 3 consumer on `/dashboard` — tax snapshot shows state exemption + portability note (WA: $3M, "Individual only · no portability"); hero **View strategies →** / **View tax snapshot** links work (`EstateSummaryHeroAndMetrics`, not legacy beige card)
 - [ ] Advisor portal fully functional for connected advisor
 - [ ] Consumer can disconnect advisor from `/my-advisor` → tier restored + resubscribe email when applicable
 - [ ] After disconnect: consumer reverts to `previous_consumer_tier` (or Tier 1 if advisor-managed)

@@ -38,6 +38,19 @@ After `getDashboardLayoutContext()`:
 5. Wizard page redirects to `/dashboard` only when wizard complete **and** all five data sections have rows
 6. Otherwise render `DashboardBody` inside Suspense
 
+## Estate summary strip (2026-05-30)
+
+**Commits:** `deb0080` (layout) · `0686f52` (state exemption)
+
+| Layer | Detail |
+|-------|--------|
+| Server | `dashboard/_dashboard-body.tsx` — composition → `estateCallout`; **`state_estate_tax_rules`** in existing `Promise.all` |
+| Client | `_dashboard-client.tsx` — hero + tiles → two-col checklist + **`EstateTaxSnapshotPanel`** |
+| Components | `EstateCalloutCard.tsx` — `EstateSummaryHeroAndMetrics`, `EstateTaxSnapshotPanel` |
+| Unchanged | `EstateSummarySection` below Financial/Retirement |
+
+**Prod:** `supabase db push` for `no_portability` column before deploy.
+
 ## Verify
 
 - New / sparse user → onramp on `/dashboard`

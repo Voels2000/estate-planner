@@ -8,6 +8,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Dashboard estate summary + state exemption (2026-05-30)
+
+**Migrations:** `20260630110000_state_estate_tax_rules_no_portability.sql`
+
+| Change | Detail |
+|--------|--------|
+| `state_estate_tax_rules.no_portability` | `boolean NOT NULL DEFAULT false`; `true` for WA, MA, OR |
+| WA exemption data | Rows with `tax_year >= 2025` updated to **$3,000,000** where below $3M |
+| Dashboard fetch | `dashboard/_dashboard-body.tsx` — `state_estate_tax_rules` in existing `Promise.all` |
+| UI | `EstateTaxSnapshotPanel` — exemption, portability note, state taxable, state tax |
+
+**Commits:** `deb0080` (layout consolidate) · `0686f52` (exemption wire)
+
+**Apply on remote:** `supabase db push` before deploy that reads `no_portability`.
+
+---
+
 ## Attorney clients FK alignment + households attorney SELECT (2026-05-30)
 
 **Migration:** `20260630100000_attorney_clients_fk_listing_household.sql`
