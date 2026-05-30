@@ -218,6 +218,231 @@ function parseBypassTrustSavings(
   return 0
 }
 
+const WA_NO_PORTABILITY_STATES = new Set(['WA', 'MA', 'OR'])
+
+const BENEFICIARY_CONFLICT_TYPES = new Set([
+  'no_primary_beneficiary',
+  'no_contingent_beneficiary',
+  'allocation_not_100',
+])
+
+type ConsolidatedAlert = {
+  severity: 'critical' | 'warning' | 'info'
+  title: string
+  description: string
+  link: string
+  linkLabel: string
+}
+
+function ConsolidatedAlertPanel({
+  conflictReport,
+  estateHealthScore,
+  bypassTrustSavings,
+  statePrimary,
+  stateExemption,
+  successionGap,
+  estimatedTaxState,
+}: {
+  conflictReport: Props['conflictReport']
+  estateHealthScore?: EstateHealthScore | null
+  bypassTrustSavings: number
+  statePrimary: string | null | undefined
+  stateExemption: number | null
+  successionGap: boolean
+  estimatedTaxState: number
+}) {
+  const alerts: ConsolidatedAlert[] = []
+
+  const beneficiaryConflicts = (conflictReport?.conflicts ?? []).filter(
+    (c) =>
+      BENEFICIARY_CONFLICT_TYPES.has(c.conflict_type) ||
+      /beneficiar/i.test(c.description),
+  )
+  const beneficiariesComponent = estateHealthScore?.components.find((c) => c.key === 'beneficiaries')
+
+  if (
+    beneficiaryConflicts.length > 0 ||
+    (beneficiariesComponent && beneficiariesComponent.score < beneficiariesComponent.maxScore)
+  ) {
+    const exemplar =
+      beneficiaryConflicts.find((c) => c.severity === 'critical') ?? beneficiaryConflicts[0]
+    const title =
+      exemplar?.conflict_type === 'allocation_not_100'
+        ? 'Beneficiary allocations need review'
+        : exemplar?.conflict_type === 'no_contingent_beneficiary'
+          ? 'Accounts missing contingent beneficiary on file'
+          : 'Accounts have no primary beneficiary on file'
+
+    alerts.push({
+      severity:
+        exemplar?.severity === 'critical' || (conflictReport?.critical ?? 0) > 0
+          ? 'critical'
+          : 'warning',
+      title,
+      description:
+        exemplar?.description ??
+        'One or more accounts have beneficiary designations that may need review. Accounts without complete beneficiary information typically pass through the estate — your attorney can advise on the implications for your plan.',
+      link: '/titling',
+      linkLabel: 'Review in Titling & Beneficiaries →',
+    })
+  }
+
+  const documentsComponent = estateHealthScore?.components.find((c) => c.key === 'documents')
+  const trustConflict = (conflictReport?.conflicts ?? []).find(
+    (c) => c.conflict_type === 'large_estate_no_trust',
+  )
+
+  if (
+    (documentsComponent && documentsComponent.score < documentsComponent.maxScore) ||
+    trustConflict
+  ) {
+    alerts.push({
+      severity:
+        trustConflict?.severity === 'critical' ||
+        (documentsComponent?.status === 'critical' && !trustConflict)
+          ? 'critical'
+          : 'warning',
+      title: 'No will, trust, or estate documents recorded',
+      description:
+        trustConflict?.description ??
+        'No will, trust, power of attorney, or healthcare directive has been entered in your profile. These are common foundational documents in estate plans — your attorney can confirm what is currently in place and what may be needed.',
+      link: '/my-estate-trust-strategy?tab=trusts',
+      linkLabel: 'Record documents in Trusts & Documents →',
+    })
+  }
+
+  const incapacityComponent = estateHealthScore?.components.find((c) => c.key === 'incapacity')
+
+  if (incapacityComponent && incapacityComponent.score < incapacityComponent.maxScore) {
+    alerts.push({
+      severity: incapacityComponent.status === 'critical' ? 'critical' : 'warning',
+      title: 'No incapacity planning documents recorded',
+      description:
+        'No durable power of attorney or healthcare directive has been entered. Attorneys commonly address financial and medical decision-making authority as part of incapacity planning — review your current documents with counsel.',
+      link: '/incapacity-planning',
+      linkLabel: 'Record documents in Incapacity Planning →',
+    })
+  }
+
+  if (successionGap) {
+    alerts.push({
+      severity: 'warning',
+      title: 'Business interests on file — no succession plan recorded',
+      description:
+        'Your profile includes business interests but no succession plan has been entered. Many estate plans for business owners address continuity and ownership transfer — your advisor or attorney can review what documentation exists.',
+      link: '/business-succession',
+      linkLabel: 'Record succession information →',
+    })
+  }
+
+  if (
+    bypassTrustSavings > 0 &&
+    statePrimary &&
+    WA_NO_PORTABILITY_STATES.has(statePrimary.toUpperCase())
+  ) {
+    alerts.push({
+      severity: 'info',
+      title: `${statePrimary} does not allow portability of its state estate tax exemption`,
+      description: `Based on your ${statePrimary} domicile and estate size, the estimated ${statePrimary} estate tax is ${fmtExact(estimatedTaxState)}. ${statePrimary}'s ${fmtExact(stateExemption ?? 3_000_000)} individual exemption is not portable between spouses — attorneys commonly discuss credit shelter trust structures in this situation. Review with your estate attorney.`,
+      link: '/my-estate-strategy',
+      linkLabel: 'View estate tax strategies →',
+    })
+  }
+
+  if (alerts.length === 0) return null
+
+  const severityOrder = { critical: 0, warning: 1, info: 2 } as const
+  alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+
+  const criticalCount = alerts.filter((a) => a.severity === 'critical').length
+  const warningCount = alerts.filter((a) => a.severity === 'warning').length
+  const infoCount = alerts.filter((a) => a.severity === 'info').length
+
+  const dotColor = {
+    critical: 'bg-red-500',
+    warning: 'bg-amber-400',
+    info: 'bg-blue-400',
+  }
+
+  const severityLabel = {
+    critical: 'Critical',
+    warning: 'Incomplete',
+    info: 'For review',
+  }
+
+  const severityStyle = {
+    critical: 'bg-red-50 text-red-800',
+    warning: 'bg-amber-50 text-amber-800',
+    info: 'bg-blue-50 text-blue-800',
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white">
+      <div className="flex items-center justify-between border-b border-[color:var(--mwm-border)] bg-[var(--mwm-bg-muted)] px-4 py-3 gap-3 flex-wrap">
+        <div>
+          <p className="text-xs font-medium text-[color:var(--mwm-navy)]">
+            Items for review with your advisor or attorney
+          </p>
+          <p className="mt-0.5 text-[10px] text-[color:var(--mwm-text-secondary)]">
+            Based on information you&apos;ve entered · not financial, tax, or legal advice
+          </p>
+        </div>
+        <div className="flex flex-shrink-0 gap-2">
+          {criticalCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-800">
+              {criticalCount} critical
+            </span>
+          )}
+          {warningCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+              {warningCount} incomplete
+            </span>
+          )}
+          {infoCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-800">
+              {infoCount} for review
+            </span>
+          )}
+        </div>
+      </div>
+
+      {alerts.map((alert) => (
+        <div
+          key={`${alert.severity}-${alert.title}`}
+          className="flex items-start gap-3 border-b border-[color:var(--mwm-border)] px-4 py-3 last:border-b-0"
+        >
+          <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${dotColor[alert.severity]}`} />
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-xs font-medium text-[color:var(--mwm-navy)]">{alert.title}</p>
+            <p className="text-[11px] leading-relaxed text-[color:var(--mwm-text-secondary)]">
+              {alert.description}
+            </p>
+            <Link
+              href={alert.link}
+              className="mt-1.5 inline-block text-[11px] text-emerald-700 underline underline-offset-2"
+            >
+              {alert.linkLabel}
+            </Link>
+          </div>
+          <span
+            className={`mt-0.5 flex-shrink-0 self-start rounded px-1.5 py-0.5 text-[9px] font-medium ${severityStyle[alert.severity]}`}
+          >
+            {severityLabel[alert.severity]}
+          </span>
+        </div>
+      ))}
+
+      <div className="border-t border-[color:var(--mwm-border)] bg-[var(--mwm-bg-muted)] px-4 py-2">
+        <p className="text-[10px] leading-relaxed text-[color:var(--mwm-text-secondary)]">
+          This summary reflects information you&apos;ve entered. It is for planning preparation purposes only —
+          not financial, tax, or legal advice. Consult your financial advisor, CPA, or estate attorney before
+          taking action.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -443,9 +668,7 @@ export function DashboardClient(props: Props) {
         greeting={greeting}
         firstName={fn}
         completionScore={completionScore}
-        conflictReport={conflictReport}
         estateHealthScore={estateHealthScore}
-        consumerTier={tier}
         statePrimary={statePrimary}
         estateTaxExposure={
           estateCallout
@@ -490,78 +713,91 @@ export function DashboardClient(props: Props) {
             {...estateCallout}
             statePrimary={statePrimary}
             userTier={tier}
-            afterMetrics={
-              bypassTrustSavings > 0 && statePrimary && stateExemption ? (
-                <div className="flex items-start gap-3 rounded-[var(--mwm-radius)] border border-blue-200 bg-blue-50 px-4 py-3">
-                  <i
-                    className="ti ti-bulb mt-0.5 text-blue-700"
-                    aria-hidden="true"
-                    style={{ fontSize: 16 }}
-                  />
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-blue-800 mb-1">
-                      Bypass trust could save {fmtExact(bypassTrustSavings)} in {statePrimary} estate tax
-                    </p>
-                    <p className="text-xs text-blue-700 leading-relaxed">
-                      {statePrimary} does not allow portability of its state estate tax exemption.
-                      Without a credit shelter trust funded at first death, one {fmtExact(stateExemption)} exemption
-                      is permanently lost. Many attorneys discuss bypass trusts to preserve both exemptions.
-                    </p>
-                    <Link
-                      href="/my-estate-strategy"
-                      className="mt-1.5 block text-xs font-medium text-blue-700 underline underline-offset-2"
-                    >
-                      View trust strategies →
-                    </Link>
-                  </div>
-                </div>
-              ) : null
-            }
           />
         </div>
       )}
 
-      {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout) && (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {executionChecklist.length > 0 && (
-            <EstateExecutionChecklist
-              items={executionChecklist}
-              userTier={tier}
-              onToggle={toggleChecklistItem}
-            />
+      {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout || estateHealthScore) && (
+        <div className="mt-4 space-y-4">
+          <ConsolidatedAlertPanel
+            conflictReport={conflictReport}
+            estateHealthScore={estateHealthScore}
+            bypassTrustSavings={bypassTrustSavings}
+            statePrimary={statePrimary}
+            stateExemption={stateExemption}
+            successionGap={successionGap}
+            estimatedTaxState={estateCallout?.estimatedTaxState ?? composition?.estimated_tax_state ?? 0}
+          />
+
+          {estateHealthScore && estateHealthScore.components.length > 0 && (
+            <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-4 py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)]">
+                  Estate readiness · {estateHealthScore.score}/100
+                </p>
+                <Link
+                  href="/titling"
+                  className="text-[11px] text-emerald-700 underline underline-offset-2"
+                >
+                  Update health check →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {estateHealthScore.components.map((comp) => {
+                  const pct = Math.round((comp.score / comp.maxScore) * 100)
+                  const color = pct === 100 ? '#1D9E75' : pct >= 60 ? '#EF9F27' : '#E24B4A'
+                  const textColor = pct === 100 ? '#0F6E56' : pct >= 60 ? '#854F0B' : '#A32D2D'
+                  return (
+                    <div key={comp.key} className="flex flex-col gap-1">
+                      <p className="truncate text-[10px] text-[color:var(--mwm-text-secondary)]">
+                        {comp.label}
+                      </p>
+                      <div className="h-1 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${pct}%`, background: color }}
+                        />
+                      </div>
+                      <p className="text-[10px] font-medium" style={{ color: textColor }}>
+                        {comp.score}/{comp.maxScore}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
-          {estateCallout && (
-            <EstateTaxSnapshotPanel
-              grossEstate={estateCallout.grossEstate}
-              totalLiabilities={totalLiabilities}
-              taxableEstate={composition?.taxable_estate}
-              federalExemption={composition?.exemption_available}
-              federalTax={estateCallout.estimatedTaxFederal}
-              estateTax={estateCallout.estimatedTaxState}
-              statePrimary={statePrimary}
-              stateExemption={stateExemption}
-              noPortability={noPortability}
-              consumerTier={tier}
-            />
+
+          {(executionChecklist.length > 0 || estateCallout) && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {executionChecklist.length > 0 && (
+                <EstateExecutionChecklist
+                  items={executionChecklist}
+                  userTier={tier}
+                  onToggle={toggleChecklistItem}
+                  deemphasizeFlagged
+                />
+              )}
+              {estateCallout && (
+                <EstateTaxSnapshotPanel
+                  grossEstate={estateCallout.grossEstate}
+                  totalLiabilities={totalLiabilities}
+                  taxableEstate={composition?.taxable_estate}
+                  federalExemption={composition?.exemption_available}
+                  federalTax={estateCallout.estimatedTaxFederal}
+                  estateTax={estateCallout.estimatedTaxState}
+                  statePrimary={statePrimary}
+                  stateExemption={stateExemption}
+                  noPortability={noPortability}
+                  consumerTier={tier}
+                />
+              )}
+            </div>
           )}
         </div>
       )}
 
-      {sectionVisible(2) && successionGap && (
-        <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-semibold text-amber-900">Business succession plan missing</p>
-          <p className="mt-1 text-xs text-amber-800">
-            You have business interests on file but no documented succession plan. Complete the quick
-            intake to flag continuity risks on your estate summary.
-          </p>
-          <a
-            href="/business-succession"
-            className="mt-2 inline-block text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
-          >
-            Document succession planning →
-          </a>
-        </div>
-      )}
+      {/* successionGap banner removed — covered by ConsolidatedAlertPanel */}
 
       {sectionVisible(2) && personaAlerts?.businessThreshold && (
         <div className="mt-4 mb-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">

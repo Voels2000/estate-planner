@@ -571,7 +571,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Nav rename: Tax Horizons & Strategy
 - [ ] **Post-deploy visual smoke (once):** Alan `/estate-tax` — waterfall + strategy toggles · $0-tax household — waterfall only
 - [x] Master docs synced
-- [ ] **Post-deploy visual smoke (once):** Alan — **$645,463** blue callout between tiles and checklist · titling badges + link only at estate summary bottom · no mid-page conflict banner
+- [x] Consolidated alert panel on dashboard (`ConsolidatedAlertPanel`)
+- [ ] **Post-deploy smoke:** Alan — five alert types in panel · no intro conflict pills · no bypass blue card
 
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 

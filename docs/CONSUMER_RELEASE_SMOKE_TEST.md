@@ -241,7 +241,7 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.11c | **Roth Conversion** (`/roth`) | Stat cards + insight + **WhatIfPanel** (all four cells react to slider; Alan: **−$15K** lifetime extra cost at $50K/yr, **Delay is better**, IRA at RMD drops). Balance above grouped table. Emerald rows + CTA when conversions &gt; 0 | ☐ |
 | 10.11d | **Social Security** (`/social-security`) | Hero elected cards + insight (survivor **$4,888/mo** for Alan) · cumulative chart (blue elected crosses gray FRA ~age 84) · claiming tables with bar column · spousal section unchanged below. **Prod 2026-05-30:** programmatic verify on Alan household; visual once post-deploy | ☐ |
 | 10.11e | **RMD Calculator** (`/rmd`) | Hero lifetime + peak · status cards **Alan 9 yr / Cathi 16 yr away** · decade navigator · inflection highlights · legend | ☐ |
-| 10.11f | **Dashboard cleanup + Script A** | Bypass alert **$645,463** between tiles and checklist · intro **Estate readiness** pill · no mid-page conflict banner · allocation downstream note | ☐ |
+| 10.11f | **Dashboard consolidated alerts** | **`ConsolidatedAlertPanel`** ranked rows · readiness six-bar strip · no intro pills · no bypass blue card · checklist deemphasized flags | ☐ |
 | 10.11g | **Estate Tax Snapshot** (`/estate-tax`) | Composition waterfall · Current/With strategies toggle · strategy panel (Alan WA) · $0-tax user — waterfall only, no panel | ☐ |
 
 #### 10d. Gift History

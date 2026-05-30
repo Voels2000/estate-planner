@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Roth WhatIfPanel fix)
+# Updated: 2026-05-30 (consolidated dashboard alert panel)
 
 ---
 
@@ -184,7 +184,21 @@
 
 ---
 
-## Roth WhatIfPanel fix ✅ (2026-05-30)
+## Consolidated dashboard alert panel ✅ (2026-05-30)
+
+**Files:** `_dashboard-client.tsx` · `DashboardIntroSection.tsx` · `EstateExecutionChecklist.tsx`
+
+| Item | Notes |
+|------|-------|
+| **`ConsolidatedAlertPanel`** | Ranked alerts: beneficiary · documents · incapacity · business succession · WA portability |
+| Detection | **`conflict_type`** + **`estateHealthScore.components`** (not description substring alone) · **`successionGap`** for business |
+| Removed | Intro conflict pills · bypass blue **`afterMetrics`** card · succession gap banner |
+| Added | Six-bar readiness strip (`estateHealthScore.components`) · checklist **`deemphasizeFlagged`** |
+| Compliance | Persistent disclaimer footer outside alert **`map`** |
+
+**Alan post-deploy:** Panel shows beneficiary + documents + incapacity + business (if `successionGap`) + WA bypass info row.
+
+---
 
 **File:** `app/(dashboard)/roth/_roth-client.tsx` — **`WhatIfPanel` only**
 

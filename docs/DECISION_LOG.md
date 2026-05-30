@@ -1,8 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Roth WhatIfPanel fix)
+# Last updated: 2026-05-30 (consolidated dashboard alert panel)
 
-## Roth WhatIfPanel — honest cost when delay is optimal (2026-05-30)
+## Consolidated dashboard alert panel (2026-05-30)
+
+**Decision:** Replace scattered dashboard alerts (intro pills, bypass blue card, succession banner, checklist red flags) with one **`ConsolidatedAlertPanel`**. Alert detection uses **`conflict_type`**, **`estateHealthScore.components`** keys (`documents`, `incapacity`, `beneficiaries`), and **`successionGap`** — not fragile description substring matching alone. Compliant copy defers to advisors/attorneys; disclaimer renders **after** all alert rows.
+
+**Files:** `_dashboard-client.tsx`, `DashboardIntroSection.tsx`, `EstateExecutionChecklist.tsx` (`deemphasizeFlagged`)
+
+---
 
 **Decision:** When **`projectedRmdPct <= currentRatePct`**, **`WhatIfPanel`** must not show stuck **$0** / **"—"** cells. Use signed **`lifetimeNetBenefit`** (label **Lifetime extra cost** when negative), **"Delay is better"** instead of break-even dash, and slider-reactive **`iraBalanceAtRmd`** via simplified conversion impact. Title: **"(delay is optimal)"**. Local **`fmtPanel`** inside **`WhatIfPanel`** only — top-level **`fmt()`** unchanged.
 

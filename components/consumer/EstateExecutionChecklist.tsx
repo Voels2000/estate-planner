@@ -8,11 +8,14 @@ interface EstateExecutionChecklistProps {
   items: EstateExecutionItem[]
   userTier: number
   onToggle?: (taskKey: string, completed: boolean) => Promise<void>
+  /** When true, flagged items use neutral styling (urgency shown elsewhere). */
+  deemphasizeFlagged?: boolean
 }
 
 export function EstateExecutionChecklist({
   items,
   onToggle,
+  deemphasizeFlagged = false,
 }: EstateExecutionChecklistProps) {
   const [toggling, setToggling] = useState<string | null>(null)
 
@@ -73,7 +76,8 @@ export function EstateExecutionChecklist({
       <div className="space-y-3">
         {items.map((item) => {
           const isDone = item.status === 'complete' || item.consumerChecked
-          const isFlagged = item.status === 'flagged' && !isDone
+          const isFlagged = item.status === 'flagged' && !isDone && !deemphasizeFlagged
+          const showFlaggedHint = item.status === 'flagged' && !isDone && deemphasizeFlagged
           const isToggling = toggling === item.task_key
 
           return (
@@ -82,9 +86,11 @@ export function EstateExecutionChecklist({
               className={`flex items-start gap-3 rounded-lg px-3 py-3 ${
                 isFlagged
                   ? 'border border-red-100 bg-red-50/60'
-                  : isDone
-                    ? 'bg-green-50/40'
-                    : 'bg-neutral-50/60'
+                  : showFlaggedHint
+                    ? 'border border-[color:var(--mwm-border)] bg-neutral-50/60'
+                    : isDone
+                      ? 'bg-green-50/40'
+                      : 'bg-neutral-50/60'
               }`}
             >
               <button
@@ -96,7 +102,9 @@ export function EstateExecutionChecklist({
                     ? 'border-[color:var(--mwm-sage)] bg-[color:var(--mwm-sage)] text-white'
                     : isFlagged
                       ? 'border-red-400'
-                      : 'border-neutral-300 hover:border-[color:var(--mwm-navy)]'
+                      : showFlaggedHint
+                        ? 'border-amber-300'
+                        : 'border-neutral-300 hover:border-[color:var(--mwm-navy)]'
                 } ${isToggling ? 'opacity-50' : ''}`}
                 aria-label={`Mark ${item.label} as ${isDone ? 'incomplete' : 'complete'}`}
               >
@@ -115,6 +123,9 @@ export function EstateExecutionChecklist({
                 {isFlagged && !isDone && (
                   <span className="text-xs font-bold text-red-500">!</span>
                 )}
+                {showFlaggedHint && !isDone && (
+                  <span className="text-xs font-bold text-amber-500">!</span>
+                )}
               </button>
 
               <div className="min-w-0 flex-1">
@@ -124,7 +135,9 @@ export function EstateExecutionChecklist({
                       ? 'text-neutral-400 line-through'
                       : isFlagged
                         ? 'text-red-700'
-                        : 'text-neutral-900'
+                        : showFlaggedHint
+                          ? 'text-neutral-900'
+                          : 'text-neutral-900'
                   }`}
                 >
                   {item.label}
