@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (dashboard — remove asset allocation card)
+# Updated: 2026-05-30 (three-state dashboard progression)
 
 ---
 
@@ -28,7 +28,8 @@
 | RMD Calculator | `b47fed5` | `_rmd-client.tsx` |
 | Dashboard cleanup | `0aa0cab` + `f200af7` | Planning topics removed · bypass alert · titling badges-only |
 | Dashboard Script A | `960a414` | Readiness pill on intro row · allocation downstream links · conflict banner dedup |
-| Dashboard — no allocation card | *(this commit)* | **`AssetAllocationSummary`** removed from Financial Summary; **`/allocation`** unchanged |
+| Dashboard — no allocation card | `7e8bf00` | **`AssetAllocationSummary`** removed from Financial Summary; **`/allocation`** unchanged |
+| Three-state dashboard | *(this commit)* | State 1 onramp · State 2 net worth hero · State 3 tax hero (Alan unchanged) |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**

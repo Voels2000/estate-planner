@@ -225,7 +225,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting + **readiness pill only** in **`DashboardIntroSection`** (conflict pills removed 2026-05-30) → tax exposure hero + four metric tiles (no bypass **`afterMetrics`** card) → **`ConsolidatedAlertPanel`** + compact six-bar readiness strip + checklist/tax snapshot grid. Detection via **`conflict_type`**, **`estateHealthScore.components`**, **`successionGap`**. Collapsible **`EstateSummarySection`** below Financial/Retirement unchanged.
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** **`getDashboardState()`** — **State 1** onramp in `page.tsx`; **State 2** net worth hero + estate-unlock prompt (no tax hero / readiness strip); **State 3** tax exposure hero → **`ConsolidatedAlertPanel`** + six-bar readiness strip + checklist/tax snapshot grid. Collapsible **`EstateSummarySection`** below Financial/Retirement (State 3 only).
 
 ### Financial modules (representative)
 

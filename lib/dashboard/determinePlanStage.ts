@@ -1,6 +1,8 @@
 // Single source of truth for what stage a user is in.
 // Stage determines what the dashboard shows and what the next action is.
 
+export type DashboardState = 1 | 2 | 3
+
 export type PlanStage = 1 | 2 | 3 | 4
 
 export interface PlanStageResult {
@@ -21,6 +23,37 @@ export interface DetermineStageInput {
   checklistTotalCount: number
   hasEstateData: boolean
   hasAdvisor: boolean
+}
+
+export interface DashboardStateInput {
+  foundationScore: number | null
+  wizardCompletedAt: string | null
+  hasAnyHouseholdData: boolean
+  estimatedTaxState: number
+  estimatedTaxFederal: number
+  hasEstatePlanData: boolean
+}
+
+/** Display state for `/dashboard` — State 1 is handled by `page.tsx` onramp early return. */
+export function getDashboardState(input: DashboardStateInput): DashboardState {
+  const {
+    foundationScore,
+    wizardCompletedAt,
+    hasAnyHouseholdData,
+    estimatedTaxState,
+    estimatedTaxFederal,
+    hasEstatePlanData,
+  } = input
+
+  if (!wizardCompletedAt || (foundationScore ?? 0) < 60 || !hasAnyHouseholdData) {
+    return 1
+  }
+
+  if (estimatedTaxState > 0 || estimatedTaxFederal > 0 || hasEstatePlanData) {
+    return 3
+  }
+
+  return 2
 }
 
 export function determinePlanStage(input: DetermineStageInput): PlanStageResult {

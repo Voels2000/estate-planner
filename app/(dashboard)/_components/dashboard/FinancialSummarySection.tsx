@@ -19,6 +19,7 @@ type FinancialSummarySectionProps = {
   totalIncome: number
   totalExpenses: number
   savingsRate: number
+  defaultOpen?: boolean
 }
 
 export function FinancialSummarySection(props: FinancialSummarySectionProps) {
@@ -31,7 +32,7 @@ export function FinancialSummarySection(props: FinancialSummarySectionProps) {
     <CollapsibleSection
       title="Financial Summary"
       subtitle={hasData ? `Net worth ${fmtExact(props.netWorth)}` : 'Add assets and income to see your summary'}
-      defaultOpen={true}
+      defaultOpen={props.defaultOpen ?? true}
       storageKey={props.storageKey}
       locked={!hasData}
       lockedMessage="Add your assets, liabilities, income, and expenses to see your full financial summary."

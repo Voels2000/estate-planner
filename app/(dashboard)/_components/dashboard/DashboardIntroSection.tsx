@@ -14,6 +14,7 @@ type DashboardIntroSectionProps = {
     estimatedTaxState: number
     estimatedTaxFederal: number
   } | null
+  showReadinessPill?: boolean
 }
 
 export function DashboardIntroSection(props: DashboardIntroSectionProps) {
@@ -24,6 +25,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
     estateHealthScore,
     statePrimary,
     estateTaxExposure,
+    showReadinessPill = true,
   } = props
 
   const totalTax =
@@ -83,7 +85,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
         </div>
       )}
 
-      {readinessScore != null && (
+      {showReadinessPill && readinessScore != null && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           <span
             className={[

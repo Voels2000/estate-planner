@@ -582,6 +582,15 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **`/allocation`** + **`loadAssetAllocationData`** + **`buildAllocationContext`** in mappers unchanged
 - [x] Master docs — **DECISION_LOG**, **CONSUMER_FLOWS**, **MASTER_ARCHITECTURE**, **NEXT_SESSION**
 
+## Sprint — Three-state dashboard progression ✅ closed 2026-05-30
+
+**Files:** `determinePlanStage.ts` · `_dashboard-body.tsx` · `_dashboard-client.tsx` · `DashboardIntroSection.tsx` · `FinancialSummarySection.tsx`
+
+- [x] `getDashboardState()` — State 1 onramp (`page.tsx`), State 2 financial hero, State 3 full estate layout
+- [x] State 2 — net worth hero, amber unlock prompt, `SetupProgressCard`, Financial/Retirement collapsibles
+- [x] State 3 — Alan layout unchanged (tax hero, alerts, readiness strip, checklist)
+- [x] Master docs synced
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

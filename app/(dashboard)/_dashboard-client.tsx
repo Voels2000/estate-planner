@@ -45,7 +45,7 @@ import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
 import { PersonaInsightCard } from '@/components/dashboard/PersonaInsightCard'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
 import { AdvisorConnectedBanner } from '@/components/dashboard/AdvisorConnectedBanner'
-import type { PlanStageResult } from '@/lib/dashboard/determinePlanStage'
+import type { PlanStageResult, DashboardState } from '@/lib/dashboard/determinePlanStage'
 import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 // ---------------------------------------------------------------------------
 // Types
@@ -176,6 +176,8 @@ type Props = {
     currentAge: number | null
     yearsToRetirement: number | null
   } | null
+  dashboardState: DashboardState
+  foundationScore: number
 }
 
 // ---------------------------------------------------------------------------
@@ -442,6 +444,104 @@ function ConsolidatedAlertPanel({
 }
 
 // ---------------------------------------------------------------------------
+// State 2 — financial hero (net worth focus, estate not yet unlocked)
+// ---------------------------------------------------------------------------
+
+function State2NetWorthHero({
+  netWorth,
+  netWorthBySource,
+  totalLiabilities,
+  totalIncome,
+  totalExpenses,
+  savingsRate,
+  foundationScore,
+}: {
+  netWorth: number
+  netWorthBySource: Props['netWorthBySource']
+  totalLiabilities: number
+  totalIncome: number
+  totalExpenses: number
+  savingsRate: number
+  foundationScore: number
+}) {
+  const rows = [
+    { label: 'Financial assets', value: netWorthBySource.financial, color: '#185FA5' },
+    { label: 'Real estate (FMV)', value: netWorthBySource.realEstateEquity, color: '#1D9E75' },
+    { label: 'Business interests', value: netWorthBySource.business, color: '#888780' },
+    { label: 'Liabilities', value: -totalLiabilities, color: '#F09595' },
+  ].filter((r) => r.value !== 0)
+
+  const maxVal = Math.max(
+    netWorthBySource.financial,
+    netWorthBySource.realEstateEquity,
+    netWorthBySource.business,
+    totalLiabilities,
+    1,
+  )
+
+  return (
+    <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-5">
+      <p className="mb-1 text-3xl font-medium text-[color:var(--mwm-navy)]">{fmtExact(netWorth)}</p>
+      <p className="mb-4 text-xs text-[color:var(--mwm-text-secondary)]">
+        Net worth · assets minus liabilities
+      </p>
+
+      {rows.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {rows.map((row) => {
+            const barPct = Math.round((Math.abs(row.value) / maxVal) * 100)
+            return (
+              <div key={row.label} className="flex items-center gap-3 text-xs">
+                <span className="w-28 shrink-0 text-[color:var(--mwm-text-secondary)]">{row.label}</span>
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${barPct}%`, background: row.color }}
+                  />
+                </div>
+                <span
+                  className={`min-w-[50px] text-right font-medium ${row.value < 0 ? 'text-red-700' : 'text-[color:var(--mwm-navy)]'}`}
+                >
+                  {row.value < 0 ? `−${fmt(Math.abs(row.value))}` : fmt(row.value)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'Annual income', value: fmt(totalIncome) },
+          { label: 'Annual expenses', value: fmt(totalExpenses) },
+          {
+            label: 'Savings rate',
+            value: `${savingsRate}%`,
+            green: savingsRate >= 20,
+          },
+          {
+            label: 'Foundation',
+            value: `${foundationScore}%`,
+            amber: true,
+          },
+        ].map((tile) => (
+          <div key={tile.label} className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-2.5">
+            <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">{tile.label}</p>
+            <p
+              className={`text-sm font-medium ${
+                tile.green ? 'text-emerald-700' : tile.amber ? 'text-amber-700' : 'text-[color:var(--mwm-navy)]'
+              }`}
+            >
+              {tile.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -490,6 +590,8 @@ export function DashboardClient(props: Props) {
     person2Name = 'Person 2',
     hasSpouse = false,
     personaInsight = null,
+    dashboardState,
+    foundationScore,
   } = props
 
   const searchParams = useSearchParams()
@@ -662,6 +764,116 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
+      {dashboardState === 2 && (
+        <div className="space-y-4">
+          <DashboardIntroSection
+            greeting={greeting}
+            firstName={fn}
+            completionScore={completionScore}
+            estateHealthScore={estateHealthScore}
+            statePrimary={statePrimary}
+            showReadinessPill={false}
+            estateTaxExposure={null}
+          />
+
+          <State2NetWorthHero
+            netWorth={netWorth}
+            netWorthBySource={netWorthBySource}
+            totalLiabilities={totalLiabilities}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            savingsRate={savingsRate}
+            foundationScore={foundationScore}
+          />
+
+          <div className="flex flex-col gap-3 rounded-[var(--mwm-radius)] border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium text-amber-800">
+                Complete your estate picture to see tax exposure and estate readiness
+              </p>
+              <p className="mt-0.5 text-[10px] text-amber-700">
+                Add documents, beneficiaries, and incapacity planning to unlock your full estate dashboard
+              </p>
+            </div>
+            <Link
+              href="/my-estate-strategy"
+              className="shrink-0 rounded-full bg-amber-800 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-amber-900"
+            >
+              Continue setup →
+            </Link>
+          </div>
+
+          {!isAdvisor && (
+            <div>
+              <PlanProgressBar
+                planStage={planStage}
+                showAllTools={showAllTools}
+                onShowAllTools={() => setShowAllTools((prev) => !prev)}
+                onQuickAddAsset={() => setQuickAddOpen(true)}
+                useQuickAddForNextAction={showQuickAddAsset}
+              />
+            </div>
+          )}
+
+          {!isAdvisor && (
+            <div>
+              {setupProgressLoading || !setupProgress ? (
+                <SetupProgressCardSkeleton />
+              ) : (
+                <SetupProgressCard
+                  progress={setupProgress}
+                  wizardComplete={wizardComplete}
+                  onImport={() => router.push('/import')}
+                  onQuickAddAsset={showQuickAddAsset ? () => setQuickAddOpen(true) : undefined}
+                />
+              )}
+            </div>
+          )}
+
+          <LifeEventBanner
+            pendingEvents={pendingLifeEvents}
+            loggedEvents={loggedLifeEvents}
+            relevanceHousehold={lifeEventRelevance}
+            hasAdvisorConnection={hasAdvisorConnection}
+          />
+
+          {sectionVisible(2) && (
+            <AssessmentHistoryWidget initialResults={props.initialAssessmentResults} />
+          )}
+
+          {!isAdvisor && personaInsight && <PersonaInsightCard {...personaInsight} />}
+
+          <FinancialSummarySection
+            storageKey={SECTION_KEYS.financial}
+            totalAssets={totalAssets}
+            totalLiabilities={totalLiabilities}
+            netWorth={netWorth}
+            netWorthBySource={netWorthBySource}
+            mortgageBalance={mortgageBalance}
+            otherLiabilities={otherLiabilities}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            savingsRate={savingsRate}
+            defaultOpen={true}
+          />
+
+          {sectionVisible(2) && (
+            <RetirementSummarySection
+              storageKey={SECTION_KEYS.retirement}
+              retirementSnapshot={retirementSnapshot}
+              retirementAccountsTotal={retirementAccountsTotal}
+              currentYearNet={currentYearNet}
+              annualSSFromPIA={annualSSFromPIA}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              rmdStatus={rmdStatus}
+            />
+          )}
+        </div>
+      )}
+
+      {dashboardState !== 2 && (
+        <>
       <DashboardIntroSection
         greeting={greeting}
         firstName={fn}
@@ -960,6 +1172,8 @@ export function DashboardClient(props: Props) {
             consumerTier={tier}
           />
         </div>
+      )}
+        </>
       )}
 
       <FeedbackButton userId={userId} />

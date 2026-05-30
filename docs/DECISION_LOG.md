@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (dashboard — remove asset allocation card)
+# Last updated: 2026-05-30 (three-state dashboard progression)
+
+## Three-state dashboard progression (2026-05-30)
+
+**Decision:** Three display states on **`/dashboard`**, driven by data completeness:
+
+| State | Condition | Hero |
+|-------|-----------|------|
+| 1 | `foundationScore < 60` OR wizard incomplete OR no household data | **`DashboardOnramp`** (early return in `page.tsx`) |
+| 2 | Past onramp AND both taxes $0 AND no estate-plan signals | Net worth hero + financial metrics + amber estate-unlock prompt |
+| 3 | Past onramp AND (`estimatedTaxState/Federal > 0` OR `hasEstatePlanData`) | Tax exposure hero + consolidated alerts + readiness strip (Alan layout unchanged) |
+
+**`hasEstatePlanData`:** beneficiary conflicts, any health-score component score &gt; 0, or execution checklist rows.
+
+**Files:** `determinePlanStage.ts` (`getDashboardState`), `dashboard/_dashboard-body.tsx`, `_dashboard-client.tsx`, `DashboardIntroSection.tsx`, `FinancialSummarySection.tsx`
+
+**Verify:** State 2 user — net worth hero, no tax hero, no readiness strip. Alan — State 3 unchanged.
+
+---
 
 ## Dashboard — remove asset allocation card from Financial Summary (2026-05-30)
 

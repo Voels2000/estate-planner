@@ -48,7 +48,7 @@ import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
-import { determinePlanStage } from '@/lib/dashboard/determinePlanStage'
+import { determinePlanStage, getDashboardState } from '@/lib/dashboard/determinePlanStage'
 import { getUserAccess } from '@/lib/get-user-access'
 import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 
@@ -504,6 +504,20 @@ export async function DashboardBody({
     hasAdvisor: hasAdvisorConnection,
   })
 
+  const hasEstatePlanData =
+    (conflictReport?.conflicts?.length ?? 0) > 0 ||
+    (estateHealthScore?.components?.some((c) => c.score > 0) ?? false) ||
+    executionChecklist.length > 0
+
+  const dashboardState = getDashboardState({
+    foundationScore: estateHealthScore?.score ?? null,
+    wizardCompletedAt: profile?.onboarding_wizard_completed_at ?? null,
+    estimatedTaxState: estateCallout?.estimatedTaxState ?? 0,
+    estimatedTaxFederal: estateCallout?.estimatedTaxFederal ?? 0,
+    hasAnyHouseholdData: totalAssets > 0,
+    hasEstatePlanData,
+  })
+
   const { data: assetTypes } = await supabase
     .from('asset_types')
     .select('value, label')
@@ -545,6 +559,8 @@ export async function DashboardBody({
 
   return (
     <DashboardClient
+      dashboardState={dashboardState}
+      foundationScore={estateHealthScore?.score ?? 0}
       planStage={planStage}
       termsAcceptedAt={profile?.terms_accepted_at ?? null}
       wizardComplete={wizardComplete}
