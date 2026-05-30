@@ -1,18 +1,37 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Lifetime Snapshot polish)
+# Updated: 2026-05-30 (Roth Conversion polish)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Lifetime Snapshot polish (2026-05-30):** hero Funds outlast card, decade timeline nav, inflection highlights + badges, sparklines, dynamic SS/RMD columns, sticky Year. **6-step wizard (`385dd4b`):** skip 3–5 only; `POST /api/insurance`. **Post-deploy:** `/complete` visual smoke (hero, decade jump, 2033/2035 amber + SS badges, SS/RMD hide page 1 / show page 2).
+> My Wealth Maps — **Sprint 19.** **Roth polish (2026-05-30, `839bfbb`):** stat cards, insight + WhatIfPanel, balance above grouped table, tabs removed. **Lifetime Snapshot (`9d103a7`):** hero, decade nav, SS/RMD colSpan. **Post-deploy:** `/roth` what-if slider + group headers smoke done; emerald rows pending IRA fixture.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Roth Conversion polish ✅ (2026-05-30)
+
+**Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`
+
+| Item | Notes |
+|------|-------|
+| Stat cards | Total conversions + lifetime tax savings (compact `fmt`) |
+| Insight card | Rate comparison (`=` / `<`); triggers when no conversion; **`WhatIfPanel`** slider |
+| Balance projection | Always visible **above** grouped table; legend; tabs removed |
+| Grouped table | **`conversionRationale`** section headers + year ranges; emerald rows on conversion years |
+| CTA | **Use in Transfer Strategies →** when `totalConversions > 0`; **above** methodology; → `?tab=strategies&openPanel=roth` |
+| Imports | `useMemo` / `useState` from `react` (not `React.useMemo`) |
+
+**Post-deploy prod smoke (2026-05-30, `e2e-consumer`):** stat cards · insight · slider updates tax · break-even **`—`** at equal rates · balance above grouped table · 7 group headers · tabs removed · CTA hidden at $0 conversions.
+
+**Manual follow-up:** Log in as household with **traditional IRA + rate differential** (e.g. Johnson advisor demo) — confirm emerald conversion rows and CTA → Transfer Strategies sandbox.
 
 ---
 

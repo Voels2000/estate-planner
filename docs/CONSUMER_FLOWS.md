@@ -238,8 +238,20 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/businesses` | `_business-form-client.tsx` | `/api/businesses`, `/api/businesses/[id]` | Legacy top-level routes; `afterHouseholdWriteForOwner` |
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
-| `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** writes `illustrative` `roth` line item then navigates to `?tab=strategies&openPanel=roth` | Tier 2 |
+| `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** (when `totalConversions > 0`) writes `illustrative` `roth` line item → `/my-estate-trust-strategy?tab=strategies&openPanel=roth` | Tier 2; **UI polish 2026-05-30** — see § below |
 | `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; **real_estate** target; multi-sheet + type normalization; persona templates; onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
+
+### Roth Conversion — `/roth` (2026-05-30 polish)
+
+| | |
+|--|--|
+| **Client** | `_roth-client.tsx` — stat cards · insight card (rate comparison + triggers) · **`WhatIfPanel`** slider · balance projection table · grouped year table |
+| **Render order** | Stat cards → insight (+ what-if) → **balance projection** (always visible) → **grouped table** → Transfer Strategies CTA (if conversions) → methodology |
+| **Grouped table** | Rows grouped by **`conversionRationale`** (`RothYearResult`); section header shows label + year range; emerald rows when `recommendedConversion > 0`; sticky column headers; year · age combined |
+| **Tabs removed** | No `Year-by-year plan` / `Balance projection` tab state — both surfaces always shown |
+| **WhatIfPanel** | Simplified estimates only (`rateDiff`, 15-year horizon); break-even **`—`** when current rate = projected RMD rate |
+| **CTA** | **Use in Transfer Strategies →** — visible only when `totalConversions > 0`; sits **above** methodology note; unchanged deep link |
+| **Post-deploy smoke** | Prod 2026-05-30 (`e2e-consumer`): stat cards, insight, slider, break-even `—` at equal rates, balance above grouped table, 7 group headers, tabs gone. **Pending:** emerald conversion rows on household with IRA + rate differential (e.g. Johnson demo) |
 
 ### Bulk import — `/import` (Sprint F-1 + F-2 + expansion 2026-05-29)
 

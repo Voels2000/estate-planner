@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Lifetime Snapshot polish)
+# Last updated: 2026-05-30 (Roth Conversion polish)
 
 ---
 
@@ -20,6 +20,19 @@
 ---
 
 ## Current sprint
+
+### Sprint — Roth Conversion polish (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Stat cards + insight + WhatIfPanel | `[x]` |
+| Balance projection above grouped table; tabs removed | `[x]` |
+| Grouped table by `conversionRationale` | `[x]` |
+| CTA above methodology → Transfer Strategies | `[x]` |
+
+**Post-ship:** Prod smoke on `/roth` (e2e-consumer) — slider, break-even at equal rates, layout. Manual: emerald rows on IRA + rate-spread household.
+
+---
 
 ### Sprint — Lifetime Snapshot polish (2026-05-30) **← shipped**
 

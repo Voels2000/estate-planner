@@ -505,6 +505,19 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
 - [x] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
 
+## Sprint — Roth Conversion polish ✅ closed 2026-05-30
+
+**Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`
+
+- [x] Stat cards + insight card (rate comparison, triggers)
+- [x] `WhatIfPanel` — slider; break-even `—` when `rateDiff = 0`
+- [x] Balance projection above grouped table; tab UI removed
+- [x] Grouped table by `conversionRationale`; year · age column; sticky headers
+- [x] Transfer Strategies CTA above methodology (when conversions > 0)
+- [x] Master docs — **CONSUMER_FLOWS.md**, **NEXT_SESSION.md**, **UPDATE_CHECKLIST.md**, **ROADMAP.md**
+- [x] **Prod smoke (`e2e-consumer`):** layout, slider, equal-rate break-even, group headers, tabs gone, CTA hidden at $0
+- [ ] **Manual smoke:** household with recommended conversions — emerald rows + CTA → `/my-estate-trust-strategy?tab=strategies&openPanel=roth`
+
 ## Sprint — Lifetime Snapshot polish ✅ closed 2026-05-30
 
 **Client:** `app/(dashboard)/complete/_complete-client.tsx`

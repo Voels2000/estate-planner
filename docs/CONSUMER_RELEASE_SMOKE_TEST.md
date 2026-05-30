@@ -238,7 +238,7 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.9c | **Remove from plan** | Row cleared; no console errors | ☐ |
 | 10.11 | **Transfer Strategies** → **DAF** | Save DAF or direct charitable amount; appears in **Strategy Sandbox** first | ☐ |
 | 10.11b | **Add to plan** then **Edit** / **Remove** | Promote moves to In My Plan; remove clears row; horizons refresh after promote | ☐ |
-| 10.11c | **Roth Conversion** (`/roth`) | When conversions &gt; 0: **Use in Transfer Strategies →** opens strategies tab with Roth panel; sandbox row present | ☐ |
+| 10.11c | **Roth Conversion** (`/roth`) | Stat cards + insight + WhatIfPanel; balance projection above grouped table (no tabs); group headers by rationale. When conversions &gt; 0: emerald rows + **Use in Transfer Strategies →** → `?tab=strategies&openPanel=roth`; sandbox row present. **Prod 2026-05-30:** layout + slider + break-even `—` at equal rates passed on `e2e-consumer`; CTA + emerald rows need IRA fixture | ☐ |
 
 #### 10d. Gift History
 
