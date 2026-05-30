@@ -32,12 +32,7 @@
 | Table UX | **Sticky Year** column on horizontal scroll; SS/RMD sub-columns **auto-hide** when all zero on current page |
 | colSpan | `personColumnCount()` — group header colSpan must match visible SS/RMD/expand columns per page (layout bug watch) |
 
-**Post-deploy visual smoke (production, once):** Log in as household with SS in projection (e.g. golden-path / e2e-consumer) → `/complete`.
-
-1. Green **Funds outlast** hero visually dominant on load  
-2. Click a decade segment → table jumps to correct year range (footer label updates)  
-3. Navigate to page with SS start years — amber rows + **SS begins** badges (e.g. 2033 / 2035 on Johnson fixture)  
-4. **Page 1:** no SS/RMD sub-column headers when all zero · **Page 2:** SS columns appear when SS kicks in — verify header colSpan aligns (no table shift)
+**Post-deploy visual smoke (production, once):** Log in as household with SS in projection (e.g. golden-path / e2e-consumer) → `/complete`. **Passed prod 2026-05-30** (`e2e-consumer`) — hero · decade jump · SS badges · page 1/2 column hide/show · colSpan 14=14.
 
 ---
 

@@ -517,7 +517,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Legend above expand toggles; sticky Year column on horizontal scroll
 - [x] SS/RMD sub-columns auto-hide when all zero on current page (`personColumnCount` colSpan)
 - [x] Master docs — **CONSUMER_FLOWS.md**, **NEXT_SESSION.md**, **UPDATE_CHECKLIST.md**, **ROADMAP.md**
-- [ ] **Post-deploy visual smoke (once):** `/complete` — hero dominant · decade jump · 2033/2035 amber + SS badges · SS/RMD hidden page 1 / visible page 2 · colSpan alignment
+- [x] **Post-deploy visual smoke (once):** `/complete` on prod 2026-05-30 — hero · decade jump · SS badges + amber rows · SS hidden page 1 / visible page 2 · **14=14 colSpan alignment** (`e2e-consumer@mywealthmaps.test`)
 
 ## Sprint — Prod API route fix ✅ closed 2026-05-30
 
