@@ -505,6 +505,20 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
 - [x] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
 
+## Sprint — Lifetime Snapshot polish ✅ closed 2026-05-30
+
+**Client:** `app/(dashboard)/complete/_complete-client.tsx`
+
+- [x] Hero **Funds outlast lifetime** — full-height green/red card + four stat cards
+- [x] Decade timeline navigator — `activePage` only; derived `pageStart` (no separate useState)
+- [x] Inflection rows — amber highlight + badges (SS begins, RMD begins, peak net worth)
+- [x] Net CF — emerald/red with consistent `+` prefix on positive
+- [x] Sparkline **Trend** column after ages
+- [x] Legend above expand toggles; sticky Year column on horizontal scroll
+- [x] SS/RMD sub-columns auto-hide when all zero on current page (`personColumnCount` colSpan)
+- [x] Master docs — **CONSUMER_FLOWS.md**, **NEXT_SESSION.md**, **UPDATE_CHECKLIST.md**, **ROADMAP.md**
+- [ ] **Post-deploy visual smoke (once):** `/complete` — hero dominant · decade jump · 2033/2035 amber + SS badges · SS/RMD hidden page 1 / visible page 2 · colSpan alignment
+
 ## Sprint — Prod API route fix ✅ closed 2026-05-30
 
 - [x] Documents slug conflict — `GET /api/documents/household/[household_id]` (was `/api/documents/[household_id]`)

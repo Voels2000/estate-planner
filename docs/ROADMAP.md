@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (6-step onboarding wizard)
+# Last updated: 2026-05-30 (Lifetime Snapshot polish)
 
 ---
 
@@ -20,6 +20,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — Lifetime Snapshot polish (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Hero Funds outlast card + stat row | `[x]` |
+| Decade timeline navigator (`activePage` → derived `pageStart`) | `[x]` |
+| Inflection highlights + badges (SS / RMD / peak) | `[x]` |
+| Sparkline Trend · legend · sticky Year · Net CF `+` prefix | `[x]` |
+| SS/RMD columns auto-hide per page (`personColumnCount` colSpan) | `[x]` |
+
+**Post-ship:** Visual smoke on `/complete` — hero · decade jump · inflection rows · SS/RMD column show/hide by page
+
+---
 
 ### Sprint — 6-step onboarding wizard (2026-05-29) **← shipped**
 

@@ -1,18 +1,43 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (6-step onboarding wizard)
+# Updated: 2026-05-30 (Lifetime Snapshot polish)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **6-step wizard (2026-05-29, `385dd4b`):** assets → income → liabilities → expenses → insurance → advisor; skip on 3–5 only; insurance via `POST /api/insurance`. **Onramp:** `resolveGuidedOnboardingHref()` — core complete = all 5 data sections. **Import:** `/import` SupportedFormats + templates above drop zone. **Post-deploy (once on prod):** fresh test user — 6-dot indicator + E2E saves all steps; then `npm run test:import:unit` (11 guided-href cases).
+> My Wealth Maps — **Sprint 19.** **Lifetime Snapshot polish (2026-05-30):** hero Funds outlast card, decade timeline nav, inflection highlights + badges, sparklines, dynamic SS/RMD columns, sticky Year. **6-step wizard (`385dd4b`):** skip 3–5 only; `POST /api/insurance`. **Post-deploy:** `/complete` visual smoke (hero, decade jump, 2033/2035 amber + SS badges, SS/RMD hide page 1 / show page 2).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Lifetime Snapshot polish ✅ (2026-05-30)
+
+**Route:** `/complete` · **Client:** `app/(dashboard)/complete/_complete-client.tsx`
+
+| Item | Notes |
+|------|-------|
+| Hero | **Funds outlast lifetime** — full-height green/red hero card (`lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]`) |
+| Stats | Start · End · Peak net worth · Peak estate value — four `SummaryCard`s beside hero |
+| Navigation | **Decade timeline** — spatial segment buttons replace Prev/Next; `activePage` state only (`pageStart = activePage * PAGE_SIZE`, derived) |
+| Inflection rows | Amber highlight + inline badges: **SS begins**, **RMD begins**, **Peak net worth** (first year each event + peak row) |
+| Net CF | Emerald/red with **`+` prefix** on positive values |
+| Trend | **Sparkline** column after age columns (net worth vs min/max across full projection) |
+| Legend | Inflection · decade boundary · positive/negative CF — above expand toggles |
+| Table UX | **Sticky Year** column on horizontal scroll; SS/RMD sub-columns **auto-hide** when all zero on current page |
+| colSpan | `personColumnCount()` — group header colSpan must match visible SS/RMD/expand columns per page (layout bug watch) |
+
+**Post-deploy visual smoke (production, once):** Log in as household with SS in projection (e.g. golden-path / e2e-consumer) → `/complete`.
+
+1. Green **Funds outlast** hero visually dominant on load  
+2. Click a decade segment → table jumps to correct year range (footer label updates)  
+3. Navigate to page with SS start years — amber rows + **SS begins** badges (e.g. 2033 / 2035 on Johnson fixture)  
+4. **Page 1:** no SS/RMD sub-column headers when all zero · **Page 2:** SS columns appear when SS kicks in — verify header colSpan aligns (no table shift)
 
 ---
 

@@ -266,13 +266,13 @@ Three related routes share projection engines but answer different questions. **
 | Route | Tier | Role | Discoverability |
 |-------|------|------|-----------------|
 | `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
-| `/complete` | 2 | Full year-by-year `YearRow` table (expandable column groups) | Nav pills → projections / scenarios |
+| `/complete` | 2 | Full year-by-year `YearRow` table — hero **Funds outlast** card, decade timeline nav, inflection row highlights + badges, sparkline Trend column, dynamic SS/RMD sub-columns, sticky Year column | Nav pills → projections / scenarios |
 | `/scenarios` | 1 | Side-by-side what-if (base + B + C); **`ProfileFieldPrompt`** for deferred retirement/longevity/deduction fields (partial PATCH); planning assumptions via `PATCH /api/consumer/growth-assumptions` | Nav pills → projections / lifetime |
 
 | Route | Data load | Empty state CTA |
 |-------|-----------|-----------------|
 | `/projections` | `loadProjectionData` → readiness check → `ProjectionsClient` | Cache-first when fresh; `checkProjectionReadiness()` drives empty vs partial vs full view. Inline `ProfileFieldPrompt` for missing birth year / retirement age when assets or income exist. TIER2 CTAs: `/profile` + `/scenarios` |
-| `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale |
+| `/complete` | `loadProjectionData` → `CompleteClient` | Same cache-first path; full compute when stale. **UI (2026-05-30):** hero + stat cards; decade navigator; inflection badges; sparklines; SS/RMD auto-hide per page |
 | `/scenarios` | `loadProjectionData` + client variant query strings | Base Case server-prefetched; B/C lazy until user edits (or localStorage overrides on return) |
 
 **Generate base case** (`POST /api/consumer/generate-base-case`) is for tier-3 **`/my-estate-strategy`** horizons (`projection_scenarios`), not for populating `/projections` or `/complete`.
