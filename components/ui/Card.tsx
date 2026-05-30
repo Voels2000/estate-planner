@@ -1,16 +1,14 @@
-import type { ReactNode } from 'react'
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-interface CardProps {
+interface CardProps extends ComponentPropsWithoutRef<'div'> {
   children: ReactNode
-  className?: string
   /** Subtle hover lift for interactive tiles (e.g. links). */
   hover?: boolean
   /** Alias for `hover` — gold border + lift on hover */
   hoverable?: boolean
   /** Adds a top gold accent stripe */
   accent?: boolean
-  onClick?: () => void
 }
 
 export function Card({
@@ -20,6 +18,7 @@ export function Card({
   hoverable,
   accent = false,
   onClick,
+  ...rest
 }: CardProps) {
   const isHoverable = hoverable ?? hover
 
@@ -35,6 +34,7 @@ export function Card({
           'cursor-pointer hover:border-[var(--mwm-gold)] hover:shadow-[var(--mwm-shadow-lg)] hover:-translate-y-0.5',
         className,
       )}
+      {...rest}
     >
       {children}
     </div>

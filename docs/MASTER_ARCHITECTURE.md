@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-30 (Prod API fix + security smoke verified; Sprint 19)
+# Last updated: 2026-05-30 (Card aria-pressed + persona E2E fix; Sprint 19)
 
 ---
 
@@ -95,7 +95,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Advisor client limits | `lib/advisor/advisorClientLimits.ts` — invite + accept-request |
 | Advisor activation drip | `lib/emails/advisor-drip-templates.ts`, `POST /api/email/advisor-drip`, cron step 8 |
 | Advisor value prop UI | `AdvisorValuePropBanner` on `/advisor` — vs eMoney/PDF portals, B2B2C, workflow |
-| Persona onboarding (2026-05-29) | `/onboarding/persona` after wizard-ready profile (`isWizardReadyProfile`); `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator`; E2E: `onboarding-persona.spec.ts` |
+| Persona onboarding (2026-05-29) | `/onboarding/persona` after wizard-ready profile (`isWizardReadyProfile`); `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator`; selectable tiles use `<Card aria-pressed>` (root div receives prop via `Card` `{...rest}`); E2E: `onboarding-persona.spec.ts` clicks `[aria-pressed]` card wrapper |
 | Acquisition & activation (2026-05-29) | **`attorney_intake_requests`** + `/intake/[token]` + send-intake modal; **`ReferralImpactPanel`** + referral-impact API; **`GET /api/advisor/meeting-prep-pdf/[clientId]`** print one-pager; advisor referral signup notify |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
@@ -864,7 +864,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 - **Canonical tokens:** `app/globals.css` — `--mwm-*` brand variables + short aliases (`--navy`, `--gold`, …).
 - **Docs & Cursor prompts:** `DESIGN_SYSTEM.md` (My Wealth Maps), `CURSOR_PROMPT_TEMPLATE.md` (§22 pointer + Phase 3 sweep).
-- **Shared primitives:** `components/ui/Button`, `Card`, `SectionHeader`; `components/ui/form.ts` / `lib/ui/form.ts`; `lib/utils.ts` (`cn`).
+- **Shared primitives:** `components/ui/Button`, `Card` (extends `ComponentPropsWithoutRef<'div'>` — spreads `aria-pressed` and other div attrs onto root), `SectionHeader`; `components/ui/form.ts` / `lib/ui/form.ts`; `lib/utils.ts` (`cn`).
 - **Authenticated chrome:** `app/(dashboard)/_components/sidebar-nav.tsx` (navy active fill, gold left accent, gold “M” logo), `dashboard-shell.tsx` (off-white page shell), `LifeEventBanner.tsx` (gold action links).
 - **Tailwind v4 rule:** arbitrary colors in class names need the `color:` prefix (e.g. `text-[color:var(--mwm-gold)]`) or styles fail silently. Required for Phase 3 indigo sweep across planning pages.
 - **Commits:** `d173b00` (tokens + primitives), `249bf85` / `7a1a121` (sidebar + banner), Phase 2d shell audit in follow-up commits.

@@ -66,8 +66,9 @@ test('persona selection saves business_owner and leaves persona screen', async (
     page.getByRole('heading', { level: 1, name: 'What describes you?' }),
   ).toBeVisible({ timeout: 30_000 })
 
-  await page.getByRole('heading', { name: 'I own a business' }).click()
-  await expect(page.locator('[aria-pressed="true"]')).toContainText('I own a business')
+  const businessCard = page.locator('[aria-pressed]').filter({ hasText: 'I own a business' })
+  await businessCard.click()
+  await expect(businessCard).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Continue →' })).toBeEnabled()
 
   const [saveResponse] = await Promise.all([

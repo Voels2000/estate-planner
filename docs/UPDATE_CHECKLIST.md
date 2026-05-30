@@ -512,6 +512,16 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
 - [x] Commit `af12ff0`
 
+## Sprint — Cross-role E2E + persona Card fix ✅ closed 2026-05-30
+
+- [x] Cross-household IDOR matrix — `test:e2e:security-isolation` 10/10
+- [x] Advisor sync, attorney docs/gaps, persona onboarding specs
+- [x] Persona gate → `isWizardReadyProfile` + full household SELECT
+- [x] `Card.tsx` — `ComponentPropsWithoutRef<'div'>` + `{...rest}` so `aria-pressed` renders on clickable root
+- [x] `onboarding-persona.spec.ts` — card-wrapper click + PATCH wait
+- [x] Attorney FK migration `20260630100000` applied prod
+- [x] Master docs synced (ROADMAP · NEXT_SESSION · DECISION_LOG · MASTER_ARCHITECTURE · PLAYWRIGHT_E2E · CONSUMER_FLOWS)
+
 ## Sprint — Security + CI + dead code cleanup ✅ closed 2026-05-29
 
 - [x] `fix(security)` — internal email gates, household access, signed unsubscribe, webhook auth

@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Prod API route fix + security smoke verified)
+# Last updated: 2026-05-30 (Card aria-pressed + persona E2E fix)
+
+## Card component forwards div props for interactive tiles (2026-05-30)
+
+**Decision:** Extend `components/ui/Card.tsx` with `ComponentPropsWithoutRef<'div'>` and spread `{...rest}` onto the root `<div>` so callers can pass `aria-pressed`, `role`, `tabIndex`, and other native div attributes.
+
+**Reasoning:** Persona onboarding (`_persona-client.tsx`) sets `aria-pressed={isSelected}` on `<Card>` for toggle semantics, but the previous `Card` implementation dropped unknown props — `aria-pressed` never reached the DOM. Playwright could not assert selection state; clicking the inner `h2` was unreliable for tests targeting the interactive wrapper.
+
+**Also shipped:** `onboarding-persona.spec.ts` clicks `page.locator('[aria-pressed]').filter({ hasText: … })`, asserts `aria-pressed="true"`, waits for `PATCH /api/consumer/profile` before navigation.
+
+**Verify:** `npm run test:e2e:cross-role` — persona spec in bundle (12 tests).
+
+---
 
 ## Prod API route slug conflict fix (2026-05-30)
 

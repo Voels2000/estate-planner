@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Cross-role E2E + persona gate fix + attorney FK migration)
+# Updated: 2026-05-30 (Persona E2E Card fix + aria-pressed forwarding)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Cross-role E2E (shipped 2026-05-30):** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12 after deploy) — household IDOR matrix, advisor–Johnson sync, attorney document/gap APIs, persona onboarding. **CI:** `scripts/verify-app-route-slugs.ts` on every push. **Persona gate (shipped 2026-05-30):** `/onboarding/persona` uses `isWizardReadyProfile` + full household SELECT (`12734a3`). **Attorney FK (applied 2026-05-30):** migration `20260630100000` — `attorney_clients.attorney_id` → `attorney_listings.id`, `client_id` → `households.id`, `households_attorney_select` RLS. **Prod API fix (shipped 2026-05-30):** documents list at `/api/documents/household/[household_id]` (`af12ff0`). **Security smoke:** `npm run test:e2e:security-smoke` 7/7 on prod.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Cross-role E2E (shipped 2026-05-30):** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12 after deploy) — household IDOR matrix, advisor–Johnson sync, attorney document/gap APIs, persona onboarding. **CI:** `scripts/verify-app-route-slugs.ts` on every push. **Persona gate (shipped 2026-05-30):** `/onboarding/persona` uses `isWizardReadyProfile` + full household SELECT (`12734a3`). **Persona E2E fix (shipped 2026-05-30):** `Card` forwards `aria-pressed` to DOM; spec clicks `[aria-pressed]` card wrapper (not inner `h2`) + waits for PATCH (`3c63648` + follow-up). **Attorney FK (applied 2026-05-30):** migration `20260630100000` — `attorney_clients.attorney_id` → `attorney_listings.id`, `client_id` → `households.id`, `households_attorney_select` RLS. **Prod API fix (shipped 2026-05-30):** documents list at `/api/documents/household/[household_id]` (`af12ff0`). **Security smoke:** `npm run test:e2e:security-smoke` 7/7 on prod.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -18,7 +18,7 @@
 
 ## Cross-role E2E + CI route validator ✅ (2026-05-30)
 
-**Commits:** `510ac8a` · `cfe5f88` · `12734a3` · (build fix) Playwright fixture type in `e2e-households.ts`
+**Commits:** `510ac8a` · `cfe5f88` · `12734a3` · `3e8525c` · `3c63648` · (Card + persona E2E) `aria-pressed` on `Card` root div
 
 | Item | Notes |
 |------|-------|
@@ -30,6 +30,8 @@
 | `/api/health` | Added to `security-sprint-post-deploy.spec.ts` |
 
 **Persona gate fix:** `/onboarding/persona` gate is `isWizardReadyProfile` (state, filing, birth year) — not full MVI with `person1_name`. Partial household SELECT caused false `/profile?required=true` redirects on prod.
+
+**Persona E2E + Card fix:** `_persona-client.tsx` sets `aria-pressed` on `<Card>`; `components/ui/Card.tsx` now spreads div props (`ComponentPropsWithoutRef<'div'>`) so `aria-pressed` renders on the clickable root. E2E clicks `page.locator('[aria-pressed]').filter({ hasText: '…' })` — not the inner `h2`. Continue flow waits for `PATCH /api/consumer/profile` before navigation assert.
 
 **Attorney DB:** `supabase db push` migration `20260630100000_attorney_clients_fk_listing_household.sql` — aligns FKs with app code; attorney grant-access + vault RLS.
 

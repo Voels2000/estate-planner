@@ -132,7 +132,7 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 | **User goal** | Choose the persona that best describes their situation so first-run copy is tailored |
 | **Tier / gate** | Tier 1; requires wizard-ready profile (`isWizardReadyProfile`: state, filing, birth year); skipped when `onboarding_persona` is set |
 | **Server** | `app/(dashboard)/onboarding/persona/page.tsx` |
-| **Client** | `_persona-client.tsx` — 2×2 card grid; Continue → PATCH persona → wizard |
+| **Client** | `_persona-client.tsx` — 2×2 `<Card hoverable onClick aria-pressed>` grid; Continue → PATCH persona → wizard |
 | **Write APIs** | `PATCH /api/consumer/profile` with `{ onboarding_persona }` only |
 | **Redirect** | Post-profile save → `/onboarding/persona` (when wizard fields shown and persona NULL) → `/onboarding/wizard` |
 | **Fallback** | Sidebar navigation away without selecting → `accumulator` + `persona_skipped` funnel event |

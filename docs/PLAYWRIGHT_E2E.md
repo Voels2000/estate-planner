@@ -99,13 +99,15 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 ## Spec inventory (42 spec files + setup/helpers; 280 tests total)
 
-**Security / cross-role (2026-05-30):** `tests/e2e/security/cross-household-isolation.spec.ts` — consumer + advisor IDOR matrix (403/404 deny). `tests/e2e/advisor/advisor-consumer-sync.spec.ts` — Johnson asset POST → advisor estate-composition. `tests/e2e/attorney/attorney-documents-gaps.spec.ts` — documents list, gap-dismissals, attorney dashboard link. `tests/e2e/consumer/onboarding-persona.spec.ts` — golden-path persona selection. Commands: `npm run test:e2e:security-isolation`, `npm run test:e2e:cross-role`.
+**Security / cross-role (2026-05-30):** `tests/e2e/security/cross-household-isolation.spec.ts` — consumer + advisor IDOR matrix (403/404 deny). `tests/e2e/advisor/advisor-consumer-sync.spec.ts` — Johnson asset POST → advisor estate-composition. `tests/e2e/attorney/attorney-documents-gaps.spec.ts` — documents list, gap-dismissals, attorney dashboard link. `tests/e2e/consumer/onboarding-persona.spec.ts` — golden-path persona selection (click `[aria-pressed]` card wrapper; wait for PATCH). Commands: `npm run test:e2e:security-isolation`, `npm run test:e2e:cross-role`.
 
 **Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, **`onboarding-persona`**, `consumer-tier1-gates` (optional).
 
 **Go-live:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) — `npm run test:e2e:go-live-profile` before flip.
 
 **Selector note (profile layout):** use `getByRole('textbox', { name: 'Jane', exact: true })` for the person-1 name field — `getByPlaceholder('Jane')` also matches Full Name (`Jane Doe`).
+
+**Selector note (persona onboarding):** click the card wrapper `page.locator('[aria-pressed]').filter({ hasText: 'I own a business' })` — not the inner `h2`. Requires `Card` to forward `aria-pressed` to its root `<div>`.
 
 **Public:** `public`, `public-routes`, `public-referral-track`, `auth-signup-attribution`.
 
