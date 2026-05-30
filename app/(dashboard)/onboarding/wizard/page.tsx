@@ -8,6 +8,8 @@ import {
 } from '@/lib/estate/profileGate'
 import { OnboardingWizardClient } from './_wizard-client'
 import { getPersonaConfig } from '@/lib/onboarding/personaConfig'
+import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
+import { shouldRedirectCompletedWizardToDashboard } from '@/lib/dashboard/guidedOnboardingHref'
 
 export default async function OnboardingWizardPage() {
   const supabase = await createClient()
@@ -37,7 +39,13 @@ export default async function OnboardingWizardPage() {
     ])
 
   if (isWizardComplete(profile)) {
-    redirect('/dashboard')
+    const progress = await fetchSetupProgressCounts(supabase, user.id)
+    if (shouldRedirectCompletedWizardToDashboard({
+      wizardCompletedAt: profile?.onboarding_wizard_completed_at ?? null,
+      progress,
+    })) {
+      redirect('/dashboard')
+    }
   }
 
   if (!profile?.onboarding_persona) {
@@ -46,7 +54,7 @@ export default async function OnboardingWizardPage() {
 
   if (!isWizardReadyProfile(household)) {
     const gate = isMinimumViableProfile(household ?? {})
-    redirect(gate.complete ? '/dashboard' : '/profile?required=true')
+    redirect(gate.complete ? '/dashboard' : '/profile?required=true&from=%2Fonboarding%2Fwizard')
   }
 
   if (profile?.role && profile.role !== 'consumer') {

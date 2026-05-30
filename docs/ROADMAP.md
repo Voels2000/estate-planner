@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (Import format surfacing + upload page reorder)
+# Last updated: 2026-05-29 (Onramp guided path bounce fix)
 
 ---
 
@@ -20,6 +20,19 @@
 ---
 
 ## Current sprint
+
+### Sprint — Onramp guided path bounce fix (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `resolveGuidedOnboardingHref()` — setup-progress-aware Guide target | `[x]` |
+| Wizard page — redirect only when assets **and** income present | `[x]` |
+| Profile gates — `from=/onboarding/persona` and `from=/onboarding/wizard` | `[x]` |
+| Unit tests — `guided-onboarding-href.spec.ts` (6 cases) | `[x]` |
+
+**Post-ship:** Import data → onramp → Guide resumes wizard (not dashboard bounce)
+
+---
 
 ### Sprint — Import format surfacing (2026-05-29) **← shipped**
 

@@ -1,18 +1,35 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (Import format surfacing + upload page reorder)
+# Updated: 2026-05-29 (Onramp guided path bounce fix)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Import format surfacing (2026-05-29):** `/import` upload step — `SupportedFormats` + persona/CSV templates **above** drop zone; onramp import card names broker/Excel/CSV. **Dashboard onramp (2026-05-30):** `DashboardOnramp` when wizard incomplete, score &lt; 60, or no data; `guidedHref` persona-first; `/dashboard` wizard-gate exempt. **Post-deploy manual:** `/import` formats visible without scroll; fresh user onramp paths (Import / Guide / Self).
+> My Wealth Maps — **Sprint 19.** **Onramp guided path fix (2026-05-29):** `resolveGuidedOnboardingHref()` — Guide link setup-progress-aware; wizard page no longer bounces import/backfill users to dashboard; profile gates pass `from=` back to persona/wizard. **Import format surfacing:** `/import` — `SupportedFormats` + templates above drop zone. **Dashboard onramp:** score &lt; 60 or incomplete wizard/data; `/dashboard` wizard-gate exempt. **Post-deploy manual:** import → Guide resumes wizard; fresh user Import / Guide / Self paths.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Onramp guided path bounce fix ✅ (2026-05-29)
+
+**Symptom:** "Guide me through it" on onramp → instant return to `/dashboard` after import or wizard backfill.
+
+| Item | Notes |
+|------|-------|
+| Root cause | Onramp (score &lt; 60) vs wizard page (`onboarding_wizard_completed_at` set by `ensureWizardBackfill`) used different "done" criteria |
+| Fix | `lib/dashboard/guidedOnboardingHref.ts` — `resolveGuidedOnboardingHref()` + `shouldRedirectCompletedWizardToDashboard()` |
+| Dashboard | `dashboard/page.tsx` — Guide target from setup progress |
+| Wizard | `onboarding/wizard/page.tsx` — redirect only when assets **and** income present |
+| Profile | `persona/page.tsx`, `wizard/page.tsx` — `from=` on required profile redirect |
+| Tests | `tests/unit/guided-onboarding-href.spec.ts` — 6 cases in `import-unit` |
+
+**Manual smoke:** Import CSV → onramp → Guide → wizard step 2 (income), not dashboard bounce.
 
 ---
 
@@ -37,7 +54,7 @@
 | Item | Notes |
 |------|-------|
 | Gate | `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`; `ONRAMP_SCORE_THRESHOLD = 60` |
-| UI | `components/dashboard/DashboardOnramp.tsx` — import / guided / self paths; **`guidedHref`** persona-first |
+| UI | `components/dashboard/DashboardOnramp.tsx` — import / guided / self paths; **`guidedHref`** from `resolveGuidedOnboardingHref()` |
 | Layout | `getDashboardLayoutContext()` + `full_name`, `onboarding_persona` on profile select |
 | Wizard gate | `/dashboard` in `wizardGateExemptPrefixes.ts` — onramp stays visible; gate does not auto-push to wizard |
 | E2E guard | `e2e-golden-path@` — score ≥ 60 via `ensureMinEstateHealthScore` |

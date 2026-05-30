@@ -14,6 +14,8 @@ import { DashboardOnramp } from '@/components/dashboard/DashboardOnramp'
 import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
+import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
+import { resolveGuidedOnboardingHref } from '@/lib/dashboard/guidedOnboardingHref'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
 import { DashboardBody } from './_dashboard-body'
 import DashboardLoading from './loading'
@@ -48,9 +50,12 @@ export default async function DashboardPage() {
     })
 
     if (showOnramp) {
-      const guidedHref = profile.onboarding_persona
-        ? '/onboarding/wizard'
-        : '/onboarding/persona'
+      const setupProgress = await fetchSetupProgressCounts(supabase, sessionUser.id)
+      const guidedHref = resolveGuidedOnboardingHref({
+        onboardingPersona: profile.onboarding_persona ?? null,
+        wizardCompletedAt: profile.onboarding_wizard_completed_at ?? null,
+        progress: setupProgress,
+      })
 
       return (
         <DashboardOnramp

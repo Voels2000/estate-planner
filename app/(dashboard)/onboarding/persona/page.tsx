@@ -24,7 +24,7 @@ export default async function PersonaOnboardingPage() {
   }
 
   if (!isWizardReadyProfile(household)) {
-    redirect('/profile?required=true')
+    redirect('/profile?required=true&from=%2Fonboarding%2Fpersona')
   }
 
   if (profile?.role && profile.role !== 'consumer') {

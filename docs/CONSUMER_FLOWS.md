@@ -215,7 +215,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` · `golden-path-show-all-tools.spec.ts` (requires score ≥ 60 — `ensureMinEstateHealthScore` in seed) |
-| **Key UI sections** | **Onramp:** Import → `/import` (card copy: broker export, Excel, CSV + format hint); Guide → `/onboarding/persona` (no persona) or `/onboarding/wizard`; Self → `/assets`; foundation progress bar · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, … |
+| **Key UI sections** | **Onramp:** Import → `/import` · Guide → `resolveGuidedOnboardingHref()` (persona/wizard/resume wizard/first empty section) · Self → `/assets`; foundation progress bar · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, … |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 

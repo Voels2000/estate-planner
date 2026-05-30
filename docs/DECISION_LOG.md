@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (Import format surfacing + upload page reorder)
+# Last updated: 2026-05-29 (Onramp guided path bounce fix)
+
+## Onramp guided path — wizard backfill bounce fix (2026-05-29)
+
+**Decision:** (1) **`resolveGuidedOnboardingHref()`** — onramp "Guide me through it" considers setup progress, not just persona/wizard flags: wizard incomplete → persona/wizard; wizard flag set but assets or income missing (e.g. **`ensureWizardBackfill`** after import) → resume `/onboarding/wizard`; core steps done → first empty section (`/expenses`, etc.). (2) **Wizard page** redirects to `/dashboard` only when wizard complete **and** both assets and income exist — not on backfill flag alone. (3) Persona/wizard profile gates pass **`from=/onboarding/persona`** or **`from=/onboarding/wizard`** so profile save returns to the guided flow.
+
+**Reasoning:** Onramp stays visible when score &lt; 60 even after `onboarding_wizard_completed_at` is set (import backfill). Old logic linked Guide → `/onboarding/wizard` → instant redirect to `/dashboard` — felt broken.
+
+**Files:** `lib/dashboard/guidedOnboardingHref.ts`, `app/(dashboard)/dashboard/page.tsx`, `onboarding/wizard/page.tsx`, `onboarding/persona/page.tsx`, `tests/unit/guided-onboarding-href.spec.ts`
+
+**Verify:** `npx playwright test tests/unit/guided-onboarding-href.spec.ts --project=import-unit` · import then Guide → wizard step 2 (income), not dashboard bounce
+
+---
 
 ## Import upload page — formats first, templates above drop zone (2026-05-29)
 

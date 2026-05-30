@@ -512,6 +512,15 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
 - [x] Commit `af12ff0`
 
+## Sprint — Onramp guided path bounce fix ✅ closed 2026-05-29
+
+- [x] `lib/dashboard/guidedOnboardingHref.ts` — `resolveGuidedOnboardingHref()`, `shouldRedirectCompletedWizardToDashboard()`
+- [x] `dashboard/page.tsx` — setup-progress-aware `guidedHref`
+- [x] `onboarding/wizard/page.tsx` — conditional redirect; profile `from=` param
+- [x] `onboarding/persona/page.tsx` — profile `from=` param
+- [x] `tests/unit/guided-onboarding-href.spec.ts` — 6 cases in `import-unit`
+- [x] Master docs synced
+
 ## Sprint — Import format surfacing ✅ closed 2026-05-29
 
 - [x] `_SupportedFormats.tsx` — broker CSV, multi-sheet Excel, single-table CSV
