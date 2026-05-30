@@ -7,7 +7,7 @@
  * Run: npm run test:import:api
  */
 import { test, expect, type APIRequestContext } from '@playwright/test'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
 
@@ -62,7 +62,7 @@ async function commitJob(
 }
 
 async function resolveConsumerOwnerId(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   email: string,
 ): Promise<string | null> {
   const { data, error } = await admin.auth.admin.listUsers({ perPage: 500 })
