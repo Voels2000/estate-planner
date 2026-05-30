@@ -528,6 +528,19 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] EstateSummarySection (readiness, gaps, titling) unchanged below Financial/Retirement
 - [x] Master docs synced
 
+## Sprint — Social Security page polish ✅ closed 2026-05-30
+
+**Client:** `app/(dashboard)/social-security/_ss-client.tsx`
+
+- [x] Hero elected cards (blue/emerald 2px border) + muted FRA reference tiles
+- [x] Insight card — `deltaVsFRA`, combined monthly, `person2.survivorBenefit`, breakeven age
+- [x] Cumulative SVG chart — elected / FRA / age 62 via `cumulativeByAge`
+- [x] Claiming tables — relative bar, FRA badge, elected highlight, breakeven note (P1 blue, P2 emerald)
+- [x] Recommendation paragraph removed; spousal section below unchanged
+- [x] Master docs synced
+- [x] **Prod data verify (Alan, programmatic):** survivor $4,888/mo · crossover elected vs FRA age 84
+- [ ] **Post-deploy visual smoke (once):** Alan → `/social-security` — insight survivor card · chart crossover · spousal block unchanged
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

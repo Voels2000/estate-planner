@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-29 (6-step onboarding wizard; Sprint 19)
+# Last updated: 2026-05-30 (Social Security page polish; Sprint 19)
 
 ---
 
@@ -516,6 +516,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - Consumer UI (`/monte-carlo`) applies accepted advisor assumptions to page-level assumption inputs (inflation and simulation count).
 - As of **2026-05-27 (Sprint B)**, `/monte-carlo` server page prefetches prefill, run history, and advisor assumptions via `loadMonteCarloPrefill` / `loadMonteCarloHistory` / `loadMonteCarloAdvisorAssumptions`; `MonteCarloClient` hydrates from props and skips mount fetches when hydrated. API routes are thin wrappers over the same loaders.
 - As of **2026-05-27 (Sprints H–J)**, heavy planning routes use Next.js `loading.tsx` skeletons and `error.tsx` boundaries. Shared client fallback: `app/(dashboard)/_components/RouteErrorFallback.tsx`. Routes: `/monte-carlo`, `/allocation`, `/scenarios`, `/social-security`, `/projections` (H/I), `/complete`, `/estate-tax` (J), `/dashboard`, `/my-estate-trust-strategy` (Sprint 18).
+- As of **2026-05-30**, `/social-security` client (`_ss-client.tsx`) — hero elected cards, insight card, cumulative **SVG** chart (elected / FRA / age 62 from `loadSocialSecurityData` → `scenario.cumulativeByAge`), claiming tables with relative bar column; breakeven age computed client-side (elected vs FRA cumulative at matching calendar ages). Spousal & Survivor Strategy block unchanged below tables.
 - `StrategyOverlay` already writes advisor recommendations via `/api/advisor/strategy-recommendation` (`useRecommendStrategy`); no `strategy_configs` path.
 
 ### Target

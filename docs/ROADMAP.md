@@ -44,6 +44,20 @@
 
 ---
 
+### Sprint — Social Security page polish (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Hero elected cards + muted FRA reference | `[x]` |
+| Insight card (gain, combined monthly, survivor, breakeven) | `[x]` |
+| Cumulative SVG chart (elected / FRA / age 62) | `[x]` |
+| Claiming tables — bar column, FRA badge, elected highlight | `[x]` |
+| Spousal section unchanged below tables | `[x]` |
+
+**Post-ship:** Visual smoke on `/social-security` (Alan) — survivor $4,888/mo in insight card · elected–FRA crossover visible on chart (~age 84).
+
+---
+
 ### Sprint — Roth Conversion polish (2026-05-30) **← shipped**
 
 | Item | Status |

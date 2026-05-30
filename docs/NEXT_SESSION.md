@@ -1,18 +1,37 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (dashboard estate summary + state exemption wire)
+# Updated: 2026-05-30 (Social Security page polish)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Dashboard estate summary (`deb0080`):** tax hero, 4 tiles, checklist + tax snapshot two-col. **State exemption wire (`0686f52`):** `state_estate_tax_rules` + `no_portability` in tax snapshot — **`supabase db push`** before deploy. **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
+> My Wealth Maps — **Sprint 19.** **Social Security polish:** hero elected cards · insight card · cumulative SVG chart · claiming tables with bar column. **Dashboard estate summary (`deb0080`)** · **State exemption wire (`0686f52`)** · **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Social Security page polish ✅ (2026-05-30)
+
+**Route:** `/social-security` · **Client:** `app/(dashboard)/social-security/_ss-client.tsx`
+
+| Item | Notes |
+|------|-------|
+| Hero cards | 2× elected (blue/emerald, 2px border) + 2× FRA reference (muted); inline `gridTemplateColumns: 2fr 2fr 1fr 1fr` |
+| Insight card | Lifetime gain (`deltaVsFRA`) · combined monthly · survivor (`person2.survivorBenefit`) · breakeven age |
+| Chart | SVG cumulative line — elected / FRA / age 62; uses `cumulativeByAge` (calendar age, no offset padding) |
+| Tables | Relative lifetime bar · FRA badge · elected row highlight · breakeven note (blue P1, emerald P2) |
+| Removed | Projected summary paragraph · duplicate per-person breakeven sections |
+| Unchanged | Spousal & Survivor Strategy section below tables (coordinator copy + restricted application) |
+
+**Prod data verify (Alan household, programmatic):** elected age 70 · survivor **$4,888/mo** · at age 70 cumulative order age-62 > FRA > elected · elected crosses FRA at **age 84** (2.5% COLA, longevity 90) · FRA crosses age-62 at 81.
+
+**Post-deploy visual smoke (once):** Log in as Alan → `/social-security` — insight survivor card **$4,888/mo** · cumulative chart shows blue elected line crossing gray FRA line (~age 84 on x-axis) · spousal section unchanged below tables.
 
 ---
 

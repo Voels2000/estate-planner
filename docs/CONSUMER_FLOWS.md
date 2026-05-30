@@ -255,6 +255,17 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **CTA** | **Use in Transfer Strategies →** — visible only when `totalConversions > 0`; sits **above** methodology note; unchanged deep link |
 | **Post-deploy smoke** | Prod 2026-05-30 (`e2e-consumer`): stat cards, insight, slider, break-even `—` at equal rates, balance above grouped table, 7 group headers, tabs gone. **Pending:** emerald conversion rows on household with IRA + rate differential (e.g. Johnson demo) |
 
+### Social Security — `/social-security` (2026-05-30 polish)
+
+| | |
+|--|--|
+| **Client** | `_ss-client.tsx` — hero elected cards · insight card · cumulative SVG chart · claiming scenario tables |
+| **Render order** | Hero cards (2 elected + 2 FRA reference) → insight card → cumulative chart (person1) → P1 table + breakeven note → P2 table + breakeven note → Spousal & Survivor Strategy (unchanged) |
+| **Chart** | Three lines: elected (blue), FRA (gray dashed), age 62 (red dashed); data from `scenario.cumulativeByAge` keyed by calendar age |
+| **Breakeven** | Computed client-side: first age where elected cumulative > FRA cumulative; fallback `electedAge + 12` |
+| **Insight survivor** | `person2.survivorBenefit` (max of elected monthly benefits) |
+| **Post-deploy smoke** | Alan household: survivor **$4,888/mo** in insight card; elected–FRA crossover visible on chart (~age 84 at 2.5% COLA) |
+
 ### Bulk import — `/import` (Sprint F-1 + F-2 + expansion 2026-05-29)
 
 | | |
@@ -298,7 +309,7 @@ Three related routes share projection engines but answer different questions. **
 | `/monte-carlo` | 3 | MC loaders (B) | `loading.tsx` + `error.tsx` (H/I) |
 | `/allocation` | 2 | `loadAssetAllocationData` (B) | `loading.tsx` + `error.tsx` (H/I) |
 | `/scenarios` | 1 | Base Case only; B/C lazy (C) | `loading.tsx` + `error.tsx` (H/I) |
-| `/social-security` | 2 | `loadSocialSecurityData`; **`ProfileFieldPrompt`** for SS claiming age + PIA when unset | `loading.tsx` + `error.tsx` (H/I) |
+| `/social-security` | 2 | `loadSocialSecurityData`; **`ProfileFieldPrompt`** for SS claiming age + PIA when unset | `loading.tsx` + `error.tsx` (H/I) · **UI polish 2026-05-30** — see § below |
 | `/projections` | 1 | `loadProjectionData` + `checkProjectionReadiness`; inline prompts when partial | `loading.tsx` + `error.tsx` (H/I) |
 | `/complete` | 2 | `loadProjectionData` | `loading.tsx` + `error.tsx` (J) |
 | `/estate-tax` | 2 | composition + household | `loading.tsx` + `error.tsx` (J) |

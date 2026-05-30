@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (dashboard estate summary + state exemption wire)
+# Last updated: 2026-05-30 (Social Security page polish)
+
+## Social Security page polish — SVG cumulative chart (2026-05-30)
+
+**Decision:** Polish `/social-security` client UI only (`_ss-client.tsx`): hero elected cards, insight card (replaces recommendation paragraph), cumulative **SVG** line chart (3 scenarios), claiming tables with relative bar column. Chart uses existing `cumulativeByAge: { age, cumulative }[]` from `loadSocialSecurityData` — calendar-age lookup, not `cumulative_by_year` index padding. Breakeven age computed by comparing elected vs FRA cumulative at matching ages. Spousal & Survivor Strategy section below tables unchanged.
+
+**Reasoning:** No Chart.js in project; `cumulativeByAge` already aligns scenarios on calendar age (age-62 line highest early, FRA crosses later, elected crosses FRA when delay pays off). Insight survivor stat reads `person2.survivorBenefit` (not a separate spousal object).
+
+**Files:** `app/(dashboard)/social-security/_ss-client.tsx`
+
+**Verify:** Alan household — survivor $4,888/mo; elected vs FRA breakeven age 84 at 2.5% COLA / longevity 90.
+
+---
 
 ## Dashboard estate summary consolidate (2026-05-30)
 
