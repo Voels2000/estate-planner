@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { isMinimumViableProfile } from '@/lib/estate/profileGate'
+import { isWizardReadyProfile } from '@/lib/estate/profileGate'
 import { PersonaOnboardingClient } from './_persona-client'
 
 export default async function PersonaOnboardingPage() {
@@ -23,8 +23,7 @@ export default async function PersonaOnboardingPage() {
     redirect('/onboarding/wizard')
   }
 
-  const gate = isMinimumViableProfile(household ?? {})
-  if (!gate.complete) {
+  if (!isWizardReadyProfile(household)) {
     redirect('/profile?required=true')
   }
 
