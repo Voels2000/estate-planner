@@ -6,7 +6,7 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **6-step wizard (2026-05-29):** assets → income → liabilities → expenses → insurance → advisor; skip on 3–5 only; insurance via `POST /api/insurance`. **Onramp:** `resolveGuidedOnboardingHref()` — all 5 sections before dashboard. **Import:** `/import` SupportedFormats + templates above drop zone. **Post-deploy:** fresh user — 6 step dots; `npm run test:import:unit` (11 guided-href cases).
+> My Wealth Maps — **Sprint 19.** **6-step wizard (2026-05-29, `385dd4b`):** assets → income → liabilities → expenses → insurance → advisor; skip on 3–5 only; insurance via `POST /api/insurance`. **Onramp:** `resolveGuidedOnboardingHref()` — core complete = all 5 data sections. **Import:** `/import` SupportedFormats + templates above drop zone. **Post-deploy (once on prod):** fresh test user — 6-dot indicator + E2E saves all steps; then `npm run test:import:unit` (11 guided-href cases).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -18,14 +18,20 @@
 
 ## 6-step onboarding wizard ✅ (2026-05-29)
 
-**Steps:** 1 assets · 2 income · 3 liabilities · 4 expenses · 5 insurance · 6 advisor
+**Commit:** `385dd4b` · **Steps:** 1 assets · 2 income · 3 liabilities · 4 expenses · 5 insurance · 6 advisor (invite unchanged)
 
 | Item | Notes |
 |------|-------|
-| Client | `app/(dashboard)/onboarding/wizard/_wizard-client.tsx` — 6 step indicator; **Skip for now** on 3–5 only |
-| APIs | assets/income/liabilities/expenses → `/api/consumer/*`; insurance → **`POST /api/insurance`** |
-| Gate | `lib/dashboard/guidedOnboardingHref.ts` — all 5 sections for core complete |
-| Tests | `tests/unit/guided-onboarding-href.spec.ts` — 11 cases |
+| Client | `app/(dashboard)/onboarding/wizard/_wizard-client.tsx` — expanded from 3 → **6 steps**; **6-dot** step indicator |
+| Skip UX | **Skip for now** on steps **3–5 only** (liabilities, expenses, insurance); removed from steps 1–2 |
+| Save handlers | `saveAsset()`, `saveIncome()`, **`saveLiability()`**, **`saveExpense()`**, **`saveInsurance()`** — one handler per data step |
+| Resume logic | **`firstIncompleteStep()`** + **`stepComplete()`** cover all **6** steps (not just assets/income) |
+| Step previews | **`PREVIEW_BY_STEP`** — value-focused copy for all 6 steps |
+| Write APIs | Steps 1–4 → `/api/consumer/assets`, `/income`, `/liabilities`, `/expenses`; step 5 → **`POST /api/insurance`** (correct path); step 6 → onboarding-wizard-complete + optional invite |
+| Guided href | `lib/dashboard/guidedOnboardingHref.ts` — **core complete** = all **5** data sections have data |
+| Tests | `tests/unit/guided-onboarding-href.spec.ts` — **11** unit cases for new step logic |
+
+**Post-deploy manual smoke (production, once):** Sign up a **fresh test user** → profile → (persona if prompted) → wizard. Confirm **6 step dots** render. Save on each step (1–5) and verify rows persist; step 5 hits **`/api/insurance`**. Step 6 skip or invite. Re-open dashboard → **Guide me through it** resumes at first incomplete step, not a bounce to dashboard.
 
 ---
 
@@ -38,9 +44,9 @@
 | Root cause | Onramp (score &lt; 60) vs wizard page (`onboarding_wizard_completed_at` set by `ensureWizardBackfill`) used different "done" criteria |
 | Fix | `lib/dashboard/guidedOnboardingHref.ts` — `resolveGuidedOnboardingHref()` + `shouldRedirectCompletedWizardToDashboard()` |
 | Dashboard | `dashboard/page.tsx` — Guide target from setup progress |
-| Wizard | `onboarding/wizard/page.tsx` — redirect only when assets **and** income present |
+| Wizard | `onboarding/wizard/page.tsx` — redirect only when wizard complete **and** all **5** sections have data |
 | Profile | `persona/page.tsx`, `wizard/page.tsx` — `from=` on required profile redirect |
-| Tests | `tests/unit/guided-onboarding-href.spec.ts` — 6 cases in `import-unit` |
+| Tests | `tests/unit/guided-onboarding-href.spec.ts` — 11 cases in `import-unit` |
 
 **Manual smoke:** Import CSV → onramp → Guide → wizard step 2 (income), not dashboard bounce.
 

@@ -514,10 +514,19 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 
 ## Sprint — 6-step onboarding wizard ✅ closed 2026-05-29
 
-- [x] `_wizard-client.tsx` — 6 steps; skip 3–5; `POST /api/insurance` step 5
-- [x] `guidedOnboardingHref.ts` — all 5 sections for core complete
-- [x] `guided-onboarding-href.spec.ts` — 11 unit tests
-- [x] Master docs synced
+**Commit:** `385dd4b` · Expand wizard from 3 → 6 steps
+
+- [x] Steps 1–2 unchanged (assets, income) — **no** Skip for now on required steps
+- [x] Steps 3–5 added: liabilities → expenses → insurance — **Skip for now** on 3–5 only
+- [x] Step 6 advisor invite — unchanged from prior flow
+- [x] `_wizard-client.tsx` — **6-dot** indicator; `saveLiability()`, `saveExpense()`, `saveInsurance()` handlers
+- [x] `firstIncompleteStep()` + `stepComplete()` — all **6** steps
+- [x] `PREVIEW_BY_STEP` — value-focused copy for all 6 steps
+- [x] Step 5 write → **`POST /api/insurance`** (not `/api/consumer/insurance`)
+- [x] `guidedOnboardingHref.ts` — core complete = all **5** data sections
+- [x] `guided-onboarding-href.spec.ts` — **11** unit tests
+- [x] Master docs — wizard section rewritten in **CONSUMER_FLOWS.md**, **NEXT_SESSION.md**, **UPDATE_CHECKLIST.md**
+- [ ] **Post-deploy prod smoke (once):** fresh test user on production — **6 step dots** render; walk steps 1–6; confirm each save persists end to end (insurance via `/api/insurance`); Guide resumes correctly after partial progress
 
 ## Sprint — Onramp guided path bounce fix ✅ closed 2026-05-29
 

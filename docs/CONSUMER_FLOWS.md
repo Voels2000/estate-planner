@@ -142,14 +142,20 @@ Server redirect when incomplete: `requireMinimumViableProfile` → `/profile?req
 
 | | |
 |--|--|
-| **User goal** | Build financial picture: assets, income, liabilities, expenses, insurance; optionally invite advisor |
-| **Tier / gate** | Tier 1; requires MVP profile; wizard page redirect when complete **and** all five sections have data |
-| **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` |
-| **Client** | `_wizard-client.tsx` — **6-step** guided flow (steps 1–2 required; **Skip for now** on 3–5; step 6 advisor); step 1 persona-aware; progress from `GET /api/consumer/setup-progress`; 6-step indicator |
-| **Write APIs** | `POST /api/consumer/assets` (1); `POST /api/consumer/income` (2); `POST /api/consumer/liabilities` (3); `POST /api/consumer/expenses` (4); **`POST /api/insurance`** (5); `POST /api/consumer/onboarding-wizard-complete` (6) |
-| **Layout gate** | `WizardOnboardingGate` — redirects when wizard incomplete + wizard-ready + no assets/income; exempt prefixes include **`/dashboard`** (onramp path choice), `/onboarding/wizard`, `/onboarding/persona`, financial planning routes (`wizardGateExemptPrefixes.ts`) |
-| **Dashboard** | `SetupProgressCard` — section-based progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
+| **User goal** | Build a complete financial picture in order: assets → income → liabilities → expenses → insurance; optionally invite an advisor on the final step |
+| **Tier / gate** | Tier 1; requires MVP profile (`isWizardReadyProfile`); server redirect when wizard is marked complete **and** all five data sections have rows (see `shouldRedirectCompletedWizardToDashboard()` in `guidedOnboardingHref.ts`) |
+| **Server** | `app/(dashboard)/onboarding/wizard/page.tsx` — loads setup progress; honors `from=` on profile redirect |
+| **Client** | `_wizard-client.tsx` — **6-step** flow with **6-dot** step indicator; resume via `firstIncompleteStep()` + per-step `stepComplete()` (all 6 steps); value-focused **`PREVIEW_BY_STEP`** copy for each step; step 1 persona-aware (headline, asset type, template from `personaConfig.ts`) |
+| **Steps** | **1** Assets (required, no skip) · **2** Income (required, no skip) · **3** Liabilities (**Skip for now**) · **4** Expenses (**Skip for now**) · **5** Insurance (**Skip for now**) · **6** Invite advisor (unchanged from prior 3-step flow; skip = complete wizard without invite) |
+| **Save handlers** | `saveAsset()` → step 1 · `saveIncome()` → step 2 · `saveLiability()` → step 3 · `saveExpense()` → step 4 · `saveInsurance()` → step 5 · step 6 → `POST /api/consumer/onboarding-wizard-complete` and/or invite flow |
+| **Write APIs** | `POST /api/consumer/assets` (1) · `POST /api/consumer/income` (2) · `POST /api/consumer/liabilities` (3) · `POST /api/consumer/expenses` (4) · **`POST /api/insurance`** (5 — correct path, not under `/api/consumer/`) · `POST /api/consumer/onboarding-wizard-complete` (6) |
+| **Read APIs** | `GET /api/consumer/setup-progress` — section counts drive resume step and dashboard `SetupProgressCard` |
+| **Guided entry** | Dashboard onramp **Guide me through it** → `resolveGuidedOnboardingHref()` — persona first if unset, else resume wizard at `firstIncompleteStep()`, else first section missing among all five |
+| **Layout gate** | `WizardOnboardingGate` — auto-redirect to wizard when incomplete + wizard-ready + no assets/income; exempt prefixes include **`/dashboard`** (onramp path choice), `/onboarding/wizard`, `/onboarding/persona`, financial planning routes (`wizardGateExemptPrefixes.ts`) |
+| **Dashboard** | `SetupProgressCard` — five-section progress from setup-progress API; collapses to one line when all 5 sections started + wizard complete |
 | **Migration** | `20260526000000_onboarding_wizard_fields.sql` |
+| **Tests** | `tests/unit/guided-onboarding-href.spec.ts` — 11 cases (6-step resume, core complete = all 5 sections) |
+| **Post-deploy smoke** | Once on **production** with a **fresh test user**: confirm **6 step dots** render; walk steps 1–6 and verify each save persists (including insurance via `/api/insurance`); onramp **Guide** resumes at correct step after partial progress |
 
 ### Invite your advisor — `/onboarding/invite-advisor`
 
@@ -215,7 +221,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` · `golden-path-show-all-tools.spec.ts` (requires score ≥ 60 — `ensureMinEstateHealthScore` in seed) |
-| **Key UI sections** | **Onramp:** Import → `/import` · Guide → `resolveGuidedOnboardingHref()` (persona/wizard/resume wizard/first empty section) · Self → `/assets`; foundation progress bar · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, … |
+| **Key UI sections** | **Onramp:** Import → `/import` · Guide → `resolveGuidedOnboardingHref()` (persona → wizard resume → first of 5 missing sections) · Self → `/assets`; foundation progress bar · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, … |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
