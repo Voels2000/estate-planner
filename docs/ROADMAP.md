@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (dashboard estate summary + state exemption wire)
+# Last updated: 2026-05-30 (RMD Calculator page polish)
 
 ---
 
@@ -20,6 +20,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — RMD Calculator page polish (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Hero lifetime + peak stats | `[x]` |
+| Status cards with years-away badges | `[x]` |
+| Accounts 3-col grid + per-person totals | `[x]` |
+| Tax impact callout (28% blended) | `[x]` |
+| Decade navigator + inflection row highlights + legend | `[x]` |
+| Single-user layout (`has_spouse` gates) | `[x]` |
+
+**Post-ship:** Visual smoke on `/rmd` — decade nav changes page · peak/first-RMD highlights · years-away badges.
+
+---
 
 ### Sprint — State exemption dashboard wire (2026-05-30) **← shipped**
 

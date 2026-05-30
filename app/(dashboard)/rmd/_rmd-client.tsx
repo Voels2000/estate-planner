@@ -58,6 +58,7 @@ type RmdYearRow = {
 }
 
 const ROWS_PER_PAGE = 10
+const PEAK_RMD_TAX_RATE = 0.28
 
 const uniformFactors: Record<number, number> = {
   72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9,
@@ -146,7 +147,6 @@ export function RmdClient({ household, assets }: { household: Household | null; 
     })
     const timeoutId = window.setTimeout(() => {
       setRows(combined)
-      // Reset to first page when data reloads — find page that contains current year
       const currentYear = new Date().getFullYear()
       const currentYearIdx = combined.findIndex(r => r.year === currentYear)
       if (currentYearIdx >= 0) {
@@ -188,16 +188,38 @@ export function RmdClient({ household, assets }: { household: Household | null; 
   const currentRow = rows.find(r => r.year === currentYear)
   const p1TotalLifetime = rows.reduce((s, r) => s + r.p1_rmd, 0)
   const p2TotalLifetime = rows.reduce((s, r) => s + r.p2_rmd, 0)
-  const peakTotal = rows.length > 0 ? Math.max(...rows.map(r => r.total_rmd)) : 0
   const p1Assets = assets.filter(a => { const o = a.owner?.trim().toLowerCase() ?? ''; return o === 'person1' || o === p1Name.toLowerCase() || o === household.person1_name?.trim().toLowerCase() })
   const p2Assets = household.has_spouse ? assets.filter(a => { const o = a.owner?.trim().toLowerCase() ?? ''; return o === 'person2' || o === p2Name?.toLowerCase() || o === household.person2_name?.trim().toLowerCase() }) : []
   const pooledAssets = assets.filter(a => !p1Assets.includes(a) && !p2Assets.includes(a))
 
-  // Pagination
   const totalPages = Math.ceil(rows.length / ROWS_PER_PAGE)
   const visibleRows = rows.slice(periodOffset * ROWS_PER_PAGE, (periodOffset + 1) * ROWS_PER_PAGE)
   const periodStartYear = visibleRows[0]?.year ?? currentYear
   const periodEndYear = visibleRows[visibleRows.length - 1]?.year ?? currentYear
+
+  const peakRow = rows.length > 0
+    ? rows.reduce((best, r) => (r.total_rmd > best.total_rmd ? r : best), rows[0])
+    : null
+  const peakYear = peakRow?.year ?? null
+  const peakRmd = peakRow?.total_rmd ?? 0
+  const peakP1Age = peakRow?.p1_age ?? null
+  const combinedLifetime = p1TotalLifetime + (household.has_spouse ? p2TotalLifetime : 0)
+
+  const p1RmdStartYear = rows.find(r => r.p1_rmd > 0)?.year ?? null
+  const p2RmdStartYear = household.has_spouse
+    ? (rows.find(r => r.p2_rmd > 0)?.year ?? null)
+    : null
+  const p1YearsAway = p1RmdStartYear != null ? p1RmdStartYear - currentYear : null
+  const p2YearsAway = p2RmdStartYear != null ? p2RmdStartYear - currentYear : null
+
+  const p1FirstRmdYear = p1RmdStartYear
+  const p2FirstRmdYear = p2RmdStartYear
+  const peakRmdYear = peakYear
+
+  const goToPage = (pageIndex: number) => {
+    setPeriodOffset(pageIndex)
+    setExpandedYear(null)
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -206,56 +228,253 @@ export function RmdClient({ household, assets }: { household: Household | null; 
         <p className="mt-1 text-sm text-neutral-600">Required Minimum Distributions using IRS Uniform Lifetime Table (2022 regulations, SECURE Act 2.0).</p>
       </div>
 
-      <div className={`grid grid-cols-2 ${household.has_spouse ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4 mb-4`}>
-        <SummaryCard label={`${p1Name} RMD Start`} value={String(p1StartAge)} sub={household.person1_birth_year >= 1960 ? 'Born 1960+ (SECURE 2.0)' : 'Born 1951-1959'} color="blue" />
-        <SummaryCard label={`${p1Name} ${currentYear} RMD`} value={currentRow ? formatDollars(currentRow.p1_rmd) : 'Not yet required'} sub={currentRow?.p1_age ? `Age ${currentRow.p1_age}` : ''} highlight={currentRow && currentRow.p1_rmd > 0 ? 'amber' : undefined} color="blue" />
-        {household.has_spouse && p2Name && p2StartAge && <>
-          <SummaryCard label={`${p2Name} RMD Start`} value={String(p2StartAge)} sub={household.person2_birth_year && household.person2_birth_year >= 1960 ? 'Born 1960+ (SECURE 2.0)' : 'Born 1951-1959'} color="violet" />
-          <SummaryCard label={`${p2Name} ${currentYear} RMD`} value={currentRow ? formatDollars(currentRow.p2_rmd) : 'Not yet required'} sub={currentRow?.p2_age ? `Age ${currentRow.p2_age}` : ''} highlight={currentRow && currentRow.p2_rmd > 0 ? 'amber' : undefined} color="violet" />
-        </>}
+      {/* Hero stats */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-4">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)] mb-1">
+            Lifetime RMDs — {household.has_spouse ? 'combined' : 'total'}
+          </p>
+          <p className="text-3xl font-medium text-[color:var(--mwm-navy)] leading-none mb-1">
+            {formatDollars(combinedLifetime)}
+          </p>
+          <p className="text-xs text-[color:var(--mwm-text-secondary)]">
+            {household.has_spouse && p2Name
+              ? `${p1Name} ${formatDollars(p1TotalLifetime)} · ${p2Name} ${formatDollars(p2TotalLifetime)} · through longevity`
+              : `${p1Name} · through longevity`}
+          </p>
+        </div>
+        <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-4">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)] mb-1">
+            Peak annual RMD
+          </p>
+          <p className="text-3xl font-medium text-[color:var(--mwm-navy)] leading-none mb-1">
+            {peakRmd > 0 ? formatDollars(peakRmd) : '—'}
+          </p>
+          <p className="text-xs text-[color:var(--mwm-text-secondary)]">
+            {peakYear != null && peakP1Age != null
+              ? `Highest single year · ${peakYear} · ${p1Name} age ${peakP1Age}`
+              : 'Highest combined single year'}
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <SummaryCard label="Peak Annual RMD" value={peakTotal > 0 ? formatDollars(peakTotal) : '—'} sub="Highest single-year combined" />
-        <SummaryCard label="Lifetime RMDs" value={formatDollars(p1TotalLifetime + p2TotalLifetime)} sub={`${p1Name}: ${formatDollars(p1TotalLifetime)}${p2Name ? ' · ' + p2Name + ': ' + formatDollars(p2TotalLifetime) : ''}`} />
+      {/* Status cards */}
+      <div className={`grid gap-2 mb-3 ${household.has_spouse ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'}`}>
+        <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+          <p className="text-[10px] uppercase tracking-wide text-[color:var(--mwm-text-secondary)] mb-1">
+            {p1Name} RMD start
+          </p>
+          <p className="text-base font-medium text-[color:var(--mwm-navy)]">Age {p1StartAge}</p>
+          <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+            {p1RmdStartYear ? `Year ${p1RmdStartYear}` : 'Calculating...'}
+          </p>
+          {p1YearsAway != null && p1YearsAway > 0 && (
+            <span className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+              {p1YearsAway} years away
+            </span>
+          )}
+          {p1YearsAway != null && p1YearsAway <= 0 && (
+            <span className="mt-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+              Active
+            </span>
+          )}
+        </div>
+
+        <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+          <p className="text-[10px] uppercase tracking-wide text-[color:var(--mwm-text-secondary)] mb-1">
+            {p1Name} {currentYear} RMD
+          </p>
+          <p className="text-base font-medium text-[color:var(--mwm-navy)]">
+            {currentRow && currentRow.p1_rmd > 0
+              ? formatDollars(currentRow.p1_rmd)
+              : '$0'}
+          </p>
+          <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+            {p1YearsAway != null && p1YearsAway > 0 ? 'Not yet required' : 'Required this year'}
+          </p>
+          {p1RmdStartYear != null && p1YearsAway != null && p1YearsAway > 0 && (
+            <span className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+              Starts {p1RmdStartYear}
+            </span>
+          )}
+        </div>
+
+        {household.has_spouse && p2Name && (
+          <>
+            <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+              <p className="text-[10px] uppercase tracking-wide text-[color:var(--mwm-text-secondary)] mb-1">
+                {p2Name} RMD start
+              </p>
+              <p className="text-base font-medium text-[color:var(--mwm-navy)]">
+                Age {p2StartAge ?? '—'}
+              </p>
+              <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+                {p2RmdStartYear ? `Year ${p2RmdStartYear}` : 'Calculating...'}
+              </p>
+              {p2YearsAway != null && p2YearsAway > 0 && (
+                <span className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                  {p2YearsAway} years away
+                </span>
+              )}
+              {p2YearsAway != null && p2YearsAway <= 0 && (
+                <span className="mt-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3">
+              <p className="text-[10px] uppercase tracking-wide text-[color:var(--mwm-text-secondary)] mb-1">
+                {p2Name} {currentYear} RMD
+              </p>
+              <p className="text-base font-medium text-[color:var(--mwm-navy)]">
+                {currentRow && currentRow.p2_rmd > 0
+                  ? formatDollars(currentRow.p2_rmd)
+                  : '$0'}
+              </p>
+              <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-0.5">
+                {p2YearsAway != null && p2YearsAway > 0 ? 'Not yet required' : 'Required this year'}
+              </p>
+              {p2RmdStartYear != null && p2YearsAway != null && p2YearsAway > 0 && (
+                <span className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                  Starts {p2RmdStartYear}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-3">RMD-Eligible Accounts</h2>
-        <div className="space-y-4">
-          {[
-            { name: p1Name, accts: p1Assets, color: 'border-blue-200 bg-blue-50/30' },
-            ...(household.has_spouse && p2Name ? [{ name: p2Name, accts: p2Assets, color: 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]/30' }] : []),
-            ...(pooledAssets.length > 0 ? [{ name: 'Joint / Unassigned', accts: pooledAssets, color: 'border-neutral-200 bg-white' }] : []),
-          ].map(group => group.accts.length > 0 && (
-            <div key={group.name}>
-              <p className="text-xs font-semibold text-neutral-500 mb-2">{group.name}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {group.accts.map(a => (
-                  <div key={a.id} className={`rounded-xl border px-4 py-3 flex items-center justify-between ${group.color}`}>
-                    <div>
-                      <p className="text-sm font-medium text-neutral-900">{a.name}</p>
-                      <p className="text-xs text-neutral-400 mt-0.5 capitalize">{a.type.replace(/_/g, ' ')}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-neutral-900">{formatDollars(Number(a.value))}</p>
+      {/* Accounts */}
+      <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-4 mb-3">
+        {p1Assets.length > 0 && (
+          <div className={household.has_spouse && p2Assets.length > 0 ? 'mb-4' : ''}>
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)]">
+                {p1Name}
+              </p>
+              <p className="text-xs font-medium text-[color:var(--mwm-navy)] text-right">
+                {formatDollars(p1Assets.reduce((s, a) => s + Number(a.value), 0))} total tax-deferred
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {p1Assets.map(a => (
+                <div key={a.id} className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] px-3 py-2">
+                  <p className="text-xs font-medium text-[color:var(--mwm-navy)] mb-0.5">{a.name}</p>
+                  <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-2 capitalize">
+                    {a.type.replace(/_/g, ' ')}
+                  </p>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                    {formatDollars(Number(a.value))}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {household.has_spouse && p1Assets.length > 0 && p2Assets.length > 0 && (
+          <hr className="border-[color:var(--mwm-border)] mb-4" />
+        )}
+
+        {household.has_spouse && p2Name && p2Assets.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)]">
+                {p2Name}
+              </p>
+              <p className="text-xs font-medium text-[color:var(--mwm-navy)] text-right">
+                {formatDollars(p2Assets.reduce((s, a) => s + Number(a.value), 0))} total tax-deferred
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {p2Assets.map(a => (
+                <div key={a.id} className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] px-3 py-2">
+                  <p className="text-xs font-medium text-[color:var(--mwm-navy)] mb-0.5">{a.name}</p>
+                  <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-2 capitalize">
+                    {a.type.replace(/_/g, ' ')}
+                  </p>
+                  <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                    {formatDollars(Number(a.value))}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pooledAssets.length > 0 && (
+          <>
+            <hr className="border-[color:var(--mwm-border)] my-4" />
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)] mb-2">
+                Joint / unassigned
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {pooledAssets.map(a => (
+                  <div key={a.id} className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] px-3 py-2">
+                    <p className="text-xs font-medium text-[color:var(--mwm-navy)] mb-0.5">{a.name}</p>
+                    <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mb-2 capitalize">
+                      {a.type.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                      {formatDollars(Number(a.value))}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+      {/* Tax impact callout */}
+      {peakRmd > 0 && (
+        <div className="flex items-start gap-3 rounded-[var(--mwm-radius)] border border-amber-200 bg-amber-50 px-4 py-3 mb-3">
+          <i className="ti ti-alert-triangle mt-0.5 text-amber-700" aria-hidden="true" style={{ fontSize: 16 }} />
+          <div>
+            <p className="text-xs font-medium text-amber-800 mb-1">
+              RMDs are fully taxable income
+            </p>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              At peak RMD of {formatDollars(peakRmd)}, estimated federal tax is ~{formatDollars(Math.round(peakRmd * PEAK_RMD_TAX_RATE))} ({Math.round(PEAK_RMD_TAX_RATE * 100)}% blended rate).
+              Combined with Social Security income this may trigger Medicare IRMAA surcharges.
+              Roth conversions now can reduce future RMD exposure.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden mb-2">
+        <div className="px-6 py-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-neutral-900">Year-by-Year RMD Projection</h2>
             <p className="text-xs text-neutral-400 mt-0.5">Click a row to see per-account breakdown</p>
           </div>
-          {/* Period label */}
-          <span className="text-sm text-neutral-500 font-medium">
-            {periodStartYear} – {periodEndYear}
-          </span>
+          {rows.length > 0 && (
+            <div className="flex overflow-hidden rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)]">
+              {Array.from({ length: totalPages }, (_, i) => {
+                const startY = rows[i * ROWS_PER_PAGE]?.year
+                const endY = rows[Math.min((i + 1) * ROWS_PER_PAGE - 1, rows.length - 1)]?.year
+                if (startY == null) return null
+                const isActive = i === periodOffset
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => goToPage(i)}
+                    className={[
+                      'px-3 py-1.5 text-xs border-r border-[color:var(--mwm-border)] last:border-r-0',
+                      isActive
+                        ? 'bg-[var(--mwm-bg-muted)] font-medium text-[color:var(--mwm-navy)]'
+                        : 'text-[color:var(--mwm-text-secondary)] hover:bg-neutral-50',
+                    ].join(' ')}
+                  >
+                    {startY}–{endY}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <div className="overflow-auto">
@@ -274,14 +493,43 @@ export function RmdClient({ household, assets }: { household: Household | null; 
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {visibleRows.map(r => (
+              {visibleRows.map(r => {
+                const isP1FirstRmd = p1FirstRmdYear != null && r.year === p1FirstRmdYear
+                const isP2FirstRmd = p2FirstRmdYear != null && r.year === p2FirstRmdYear
+                const isPeakYear = peakRmdYear != null && r.year === peakRmdYear
+                const rowClass = [
+                  'cursor-pointer hover:bg-neutral-50 transition-colors',
+                  isPeakYear ? 'bg-amber-50' : isP1FirstRmd ? 'bg-blue-50' : isP2FirstRmd ? 'bg-emerald-50' : '',
+                ].join(' ')
+
+                return (
                 <Fragment key={r.year}>
-                  <tr onClick={() => setExpandedYear(expandedYear === r.year ? null : r.year)} className={`cursor-pointer hover:bg-neutral-50 transition-colors ${r.year === currentYear ? 'bg-blue-50/50' : ''}`}>
-                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">
+                  <tr
+                    onClick={() => setExpandedYear(expandedYear === r.year ? null : r.year)}
+                    className={rowClass}
+                  >
+                    <td className="px-4 py-2 font-medium text-[color:var(--mwm-navy)]">
                       {r.year}
-                      {r.year === currentYear && <span className="ml-2 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">Now</span>}
-                      {r.is_first_year_p1 && <span className="ml-2 text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">{p1Name} 1st</span>}
-                      {r.is_first_year_p2 && <span className="ml-2 text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] rounded-full px-2 py-0.5">{p2Name} 1st</span>}
+                      {r.year === currentYear && (
+                        <span className="ml-1.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium bg-neutral-100 text-neutral-700">
+                          Now
+                        </span>
+                      )}
+                      {isP1FirstRmd && (
+                        <span className="ml-1.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium bg-blue-100 text-blue-800">
+                          {p1Name} starts
+                        </span>
+                      )}
+                      {isP2FirstRmd && p2Name && (
+                        <span className="ml-1.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium bg-emerald-100 text-emerald-800">
+                          {p2Name} starts
+                        </span>
+                      )}
+                      {isPeakYear && (
+                        <span className="ml-1.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-800">
+                          Peak
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-blue-600">{r.p1_age ?? '—'}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-blue-700">{r.p1_rmd > 0 ? formatDollars(r.p1_rmd) : '—'}</td>
@@ -316,7 +564,7 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                               </div>
                             </div>
                           )}
-                          {r.p2_accounts.length > 0 && (
+                          {r.p2_accounts.length > 0 && p2Name && (
                             <div>
                               <p className="text-xs font-semibold text-violet-600 mb-2">{p2Name}</p>
                               <div className="space-y-2">
@@ -341,20 +589,17 @@ export function RmdClient({ household, assets }: { household: Household | null; 
                     </tr>
                   )}
                 </Fragment>
-              ))}
+                )
+              })}
             </tbody>
           </table>
           </div>
         </div>
 
-        {/* ── Pagination controls ── */}
         <div className="px-6 py-4 border-t border-neutral-100 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              setPeriodOffset(p => Math.max(0, p - 1))
-              setExpandedYear(null)
-            }}
+            onClick={() => goToPage(Math.max(0, periodOffset - 1))}
             disabled={periodOffset === 0}
             className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
@@ -362,15 +607,12 @@ export function RmdClient({ household, assets }: { household: Household | null; 
           </button>
 
           <span className="text-xs text-neutral-400">
-            Period {periodOffset + 1} of {totalPages}
+            {periodStartYear} – {periodEndYear} · Period {periodOffset + 1} of {totalPages}
           </span>
 
           <button
             type="button"
-            onClick={() => {
-              setPeriodOffset(p => Math.min(totalPages - 1, p + 1))
-              setExpandedYear(null)
-            }}
+            onClick={() => goToPage(Math.min(totalPages - 1, periodOffset + 1))}
             disabled={periodOffset >= totalPages - 1}
             className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
@@ -379,23 +621,26 @@ export function RmdClient({ household, assets }: { household: Household | null; 
         </div>
       </div>
 
+      <div className="mt-2 mb-4 flex flex-wrap gap-3">
+        {[
+          { bg: 'bg-blue-50', border: 'border-blue-200', label: `${p1Name} RMD starts` },
+          ...(household.has_spouse && p2Name
+            ? [{ bg: 'bg-emerald-50', border: 'border-emerald-200', label: `${p2Name} RMD starts` }]
+            : []),
+          { bg: 'bg-amber-50', border: 'border-amber-200', label: 'Peak RMD year' },
+        ].map(item => (
+          <span key={item.label} className="flex items-center gap-1.5 text-xs text-[color:var(--mwm-text-secondary)]">
+            <span className={`w-3 h-3 rounded-sm ${item.bg} border ${item.border} inline-block`} />
+            {item.label}
+          </span>
+        ))}
+      </div>
+
       <p className="mt-4 text-xs text-neutral-400">
         * RMD calculations use the IRS Uniform Lifetime Table (2022 final regulations).
         Balances shown are projections at {household.growth_rate_retirement ?? 5}% annual growth.
         Your advisor can help coordinate RMD timing with your broader income and tax strategy.
       </p>
-    </div>
-  )
-}
-
-function SummaryCard({ label, value, sub, highlight, color }: {
-  label: string; value: string; sub: string; highlight?: 'amber'; color?: 'blue' | 'violet'
-}) {
-  return (
-    <div className={`rounded-xl border px-4 py-4 shadow-sm ${color === 'blue' ? 'border-blue-200 bg-blue-50/30' : color === 'violet' ? 'border-[color:var(--mwm-sage-pale)] bg-[var(--mwm-sage-pale)]/30' : 'border-neutral-200 bg-white'}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${highlight === 'amber' ? 'text-amber-600' : color === 'blue' ? 'text-blue-700' : color === 'violet' ? 'text-violet-700' : 'text-neutral-900'}`}>{value}</p>
-      <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
     </div>
   )
 }

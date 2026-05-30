@@ -541,6 +541,19 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **Prod data verify (Alan, programmatic):** survivor $4,888/mo · crossover elected vs FRA age 84
 - [ ] **Post-deploy visual smoke (once):** Alan → `/social-security` — insight survivor card · chart crossover · spousal block unchanged
 
+## Sprint — RMD Calculator page polish ✅ closed 2026-05-30
+
+**Client:** `app/(dashboard)/rmd/_rmd-client.tsx`
+
+- [x] Hero lifetime + peak stats (from full `rows` array)
+- [x] Status cards — years-away / Active badges; 2-col single / 4-col married
+- [x] Accounts — per-person total; `grid-cols-1 sm:grid-cols-3`; joint/unassigned
+- [x] Tax callout — 28% blended (no marginal rate in page props)
+- [x] Decade navigator → `goToPage(i)` / `setPeriodOffset`; inflection highlights + legend
+- [x] Single-user gates via `household.has_spouse`
+- [x] Master docs synced
+- [ ] **Post-deploy visual smoke (once):** `/rmd` — decade nav · row highlights · years-away badges
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

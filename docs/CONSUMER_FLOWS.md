@@ -239,7 +239,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/digital-assets` | `DigitalAssetIntakeForm` | `/api/consumer/digital-assets` | Tier 2; `FEATURE_TIERS['digital-assets']`; `UpgradeBanner` when below tier |
 | `/businesses` | `_business-form-client.tsx` | `/api/businesses`, `/api/businesses/[id]` | Legacy top-level routes; `afterHouseholdWriteForOwner` |
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
-| `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 |
+| `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 · **UI polish 2026-05-30** — see § below |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** (when `totalConversions > 0`) writes `illustrative` `roth` line item → `/my-estate-trust-strategy?tab=strategies&openPanel=roth` | Tier 2; **UI polish 2026-05-30** — see § below |
 | `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; **real_estate** target; multi-sheet + type normalization; persona templates; onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
 
@@ -265,6 +265,17 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Breakeven** | Computed client-side: first age where elected cumulative > FRA cumulative; fallback `electedAge + 12` |
 | **Insight survivor** | `person2.survivorBenefit` (max of elected monthly benefits) |
 | **Post-deploy smoke** | Alan household: survivor **$4,888/mo** in insight card; elected–FRA crossover visible on chart (~age 84 at 2.5% COLA) |
+
+### RMD Calculator — `/rmd` (2026-05-30 polish)
+
+| | |
+|--|--|
+| **Client** | `_rmd-client.tsx` — full projection in **`rows`**, paginated to **`visibleRows`** via **`periodOffset`** |
+| **Render order** | Hero lifetime + peak → status cards (years-away badges) → accounts grid → tax callout → projection table → legend |
+| **Decade nav** | Segment buttons call **`goToPage(i)`** (same as Prev/Next); active when `i === periodOffset` |
+| **Inflection rows** | Blue P1 first RMD · emerald P2 first RMD · amber peak year (from full `rows`, not visible slice) |
+| **Tax callout** | Peak RMD × **28%** blended — no marginal rate in page props |
+| **Single user** | 2 status cards; no P2 table columns or legend entry when `has_spouse === false` |
 
 ### Bulk import — `/import` (Sprint F-1 + F-2 + expansion 2026-05-29)
 

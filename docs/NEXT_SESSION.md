@@ -1,18 +1,36 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Social Security page polish)
+# Updated: 2026-05-30 (RMD Calculator page polish)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19.** **Social Security polish:** hero elected cards · insight card · cumulative SVG chart · claiming tables with bar column. **Dashboard estate summary (`deb0080`)** · **State exemption wire (`0686f52`)** · **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
+> My Wealth Maps — **Sprint 19.** **RMD polish:** hero lifetime/peak stats · status cards with years-away badges · accounts grid · tax callout · decade navigator + inflection rows. **Social Security (`405d3d0`)** · **Dashboard estate summary (`deb0080`)** · **Roth (`839bfbb`)** · **Lifetime Snapshot (`9d103a7`)** shipped.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## RMD Calculator page polish ✅ (2026-05-30)
+
+**Route:** `/rmd` · **Client:** `app/(dashboard)/rmd/_rmd-client.tsx`
+
+| Item | Notes |
+|------|-------|
+| Hero stats | Combined lifetime + peak annual RMD (from full **`rows`** array, not paginated slice) |
+| Status cards | RMD start + current-year RMD per person; **X years away** / **Active** badges; 2-col single / 4-col married |
+| Accounts | Per-person total tax-deferred; **`grid-cols-1 sm:grid-cols-3`**; joint/unassigned section |
+| Tax callout | Peak RMD × **28%** blended rate (no marginal rate in household props) |
+| Table | Decade navigator → **`goToPage(i)`** / `setPeriodOffset`; inflection rows (blue P1 start, emerald P2 start, amber peak) |
+| Legend | Row color key below table |
+| Single user | No P2 status cards, legend entry, or table columns (`has_spouse` gates) |
+
+**Post-deploy smoke (once):** Alan → `/rmd` — hero totals · years-away badges · decade buttons change visible rows · peak/first-RMD row highlights.
 
 ---
 

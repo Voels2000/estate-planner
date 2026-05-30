@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Social Security page polish)
+# Last updated: 2026-05-30 (RMD Calculator page polish)
+
+## RMD Calculator page polish (2026-05-30)
+
+**Decision:** Polish `/rmd` client UI only (`_rmd-client.tsx`): hero lifetime/peak stats above status cards; status cards with years-away/active badges; standardized accounts grid with per-person totals; tax impact callout; decade navigator wired to existing **`periodOffset`** pagination; inflection row highlights (P1 start blue, P2 start emerald, peak amber) + legend. Full projection array is **`rows`** (sliced to `visibleRows`); peak/first-RMD years computed from `rows`, not the visible page.
+
+**Reasoning:** No marginal rate in RMD page props — tax callout uses **28% blended** estimate. Account grids use **`grid-cols-1 sm:grid-cols-3`** for long account names on mobile. Decade buttons call same **`goToPage(i)`** as Prev/Next.
+
+**Files:** `app/(dashboard)/rmd/_rmd-client.tsx`
+
+**Verify:** Decade navigator active state `i === periodOffset`; clicking segment updates visible rows.
+
+---
 
 ## Social Security page polish — SVG cumulative chart (2026-05-30)
 
