@@ -91,7 +91,7 @@ export function AttorneyClientVault({
         setUploadError(data.error ?? 'Upload failed.')
       } else {
         setUploadSuccess(`${file.name} uploaded successfully.`)
-        const updated = await fetch(`/api/documents/${householdId}`)
+        const updated = await fetch(`/api/documents/household/${householdId}`)
         const updatedData = await updated.json()
         if (updatedData.documents) setDocs(updatedData.documents)
         if (fileRef.current) fileRef.current.value = ''

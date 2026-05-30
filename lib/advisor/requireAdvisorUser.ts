@@ -1,13 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { getRouteAuth } from '@/lib/supabase/routeAuth'
 
 export async function requireAdvisorUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteAuth()
 
-  if (authError || !user) {
+  if (!user) {
     return { supabase, user: null, error: 'Unauthorized' as const, status: 401 as const }
   }
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { existsSync } from 'fs'
 import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
 
 const API_TIMEOUT_MS = 30_000
@@ -113,6 +114,10 @@ test.describe('Advisor preset APIs', () => {
 })
 
 test.describe('Advisor preset APIs — consumer forbidden', () => {
+  test.skip(
+    !existsSync('.auth/consumer.json'),
+    'Run consumer-setup first (npm run test:e2e:consumer -- --project=consumer-setup)',
+  )
   test.use({ storageState: '.auth/consumer.json' })
 
   test('GET presets returns 403 for consumer', async ({ request }) => {

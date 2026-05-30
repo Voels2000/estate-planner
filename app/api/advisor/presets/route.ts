@@ -10,6 +10,9 @@ import {
 } from '@/lib/advisor/advisorPresetAssumptions'
 import { requireAdvisorUser } from '@/lib/advisor/requireAdvisorUser'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function GET() {
   const auth = await requireAdvisorUser()
   if (!auth.user) {
