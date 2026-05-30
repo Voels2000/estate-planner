@@ -200,6 +200,8 @@
 
 ---
 
+## Roth WhatIfPanel fix ✅ (2026-05-30)
+
 **File:** `app/(dashboard)/roth/_roth-client.tsx` — **`WhatIfPanel` only**
 
 | Item | Notes |
