@@ -225,7 +225,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`** (red hero when `estimatedTaxState > 0`, amber when federal-only) → four compact metric tiles (`fmt`) → **`sm:grid-cols-2`** checklist + **`EstateTaxSnapshotPanel`**. Readiness score, planning gaps, titling conflicts remain in **`EstateSummarySection`** below Financial/Retirement (unchanged).
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** Render order — greeting (`state_primary` in subtitle) → alert pills → **`EstateSummaryHeroAndMetrics`** (red hero when `estimatedTaxState > 0`, amber when federal-only) → four compact metric tiles (`fmt`) → **`sm:grid-cols-2`** checklist + **`EstateTaxSnapshotPanel`** (state exemption from `state_estate_tax_rules` + `no_portability`; state taxable = gross − exemption). Readiness score, planning gaps, titling conflicts remain in **`EstateSummarySection`** below Financial/Retirement (unchanged).
 
 ### Financial modules (representative)
 

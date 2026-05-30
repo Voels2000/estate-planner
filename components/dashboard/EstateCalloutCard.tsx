@@ -23,8 +23,8 @@ export type EstateTaxSnapshotPanelProps = {
   federalTax: number
   estateTax: number
   statePrimary?: string | null
-  /** // TODO: wire state exemption from composition when RPC exposes it */
   stateExemption?: number | null
+  noPortability?: boolean
   consumerTier?: number
 }
 
@@ -174,12 +174,13 @@ export function EstateTaxSnapshotPanel({
   estateTax,
   statePrimary,
   stateExemption,
+  noPortability = false,
   consumerTier,
 }: EstateTaxSnapshotPanelProps) {
   const taxable = taxableEstate ?? grossEstate
   const strategyHref = resolveEstateActionHref('/my-estate-strategy', consumerTier)
 
-  const rows = [
+  const federalRows = [
     { label: 'Gross estate', value: fmtExact(grossEstate), color: '' },
     { label: 'Debts & liabilities', value: fmtExact(totalLiabilities), color: '' },
     { label: 'Taxable estate', value: fmtExact(taxable), color: '' },
@@ -193,21 +194,7 @@ export function EstateTaxSnapshotPanel({
       value: fmtExact(federalTax),
       color: federalTax > 0 ? 'text-red-700' : 'text-emerald-700',
     },
-    statePrimary
-      ? {
-          label: `${statePrimary} exemption`,
-          value: fmtExact(stateExemption ?? 0),
-          color: '',
-        }
-      : null,
-    statePrimary
-      ? {
-          label: `${statePrimary} estate tax`,
-          value: fmtExact(estateTax),
-          color: estateTax > 0 ? 'text-red-700' : 'text-emerald-700',
-        }
-      : null,
-  ].filter(Boolean) as Array<{ label: string; value: string; color: string }>
+  ]
 
   return (
     <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-4">
@@ -220,10 +207,10 @@ export function EstateTaxSnapshotPanel({
         </Link>
       </div>
 
-      {rows.map((row) => (
+      {federalRows.map((row) => (
         <div
           key={row.label}
-          className="flex items-center justify-between border-b border-[color:var(--mwm-border)] py-1.5 text-xs last:border-b-0"
+          className="flex items-center justify-between border-b border-[color:var(--mwm-border)] py-1.5 text-xs"
         >
           <span className="text-[color:var(--mwm-text-secondary)]">{row.label}</span>
           <span className={`font-medium ${row.color || 'text-[color:var(--mwm-navy)]'}`}>
@@ -231,6 +218,50 @@ export function EstateTaxSnapshotPanel({
           </span>
         </div>
       ))}
+
+      {statePrimary && (
+        <div className="flex flex-col border-b border-[color:var(--mwm-border)] py-1.5 last:border-b-0">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[color:var(--mwm-text-secondary)]">
+              {statePrimary} exemption
+            </span>
+            <span className="font-medium text-[color:var(--mwm-navy)]">
+              {stateExemption != null ? fmtExact(stateExemption) : '—'}
+            </span>
+          </div>
+          {noPortability && (
+            <p className="mt-0.5 text-[10px] text-amber-700">
+              Individual only · no portability
+            </p>
+          )}
+        </div>
+      )}
+
+      {statePrimary && stateExemption != null && (
+        <div className="flex items-center justify-between border-b border-[color:var(--mwm-border)] py-1.5 text-xs">
+          <span className="text-[color:var(--mwm-text-secondary)]">
+            {statePrimary} taxable estate
+          </span>
+          <span className="font-medium text-[color:var(--mwm-navy)]">
+            {fmtExact(Math.max(0, grossEstate - stateExemption))}
+          </span>
+        </div>
+      )}
+
+      {statePrimary && (
+        <div className="flex items-center justify-between border-b border-[color:var(--mwm-border)] py-1.5 text-xs last:border-b-0">
+          <span className="text-[color:var(--mwm-text-secondary)]">
+            {statePrimary} estate tax
+          </span>
+          <span
+            className={`font-medium ${
+              estateTax > 0 ? 'text-red-700' : 'text-emerald-700'
+            }`}
+          >
+            {fmtExact(estateTax)}
+          </span>
+        </div>
+      )}
 
       <Link href={strategyHref} className="mt-3 block text-right text-xs text-emerald-700">
         View gifting & trust strategies →

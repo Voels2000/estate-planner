@@ -306,7 +306,7 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 ### `state_estate_tax_rules`
 
-- **Key columns:** `state`, `tax_year`, `min_amount`, `max_amount`, `rate_pct`, `exemption_amount`
+- **Key columns:** `state`, `tax_year`, `min_amount`, `max_amount`, `rate_pct`, `exemption_amount`, **`no_portability`** (2026-06-30 — WA/MA/OR true)
 - **Purpose:** progressive state estate transfer tax brackets.
 
 ### `state_income_tax_brackets`

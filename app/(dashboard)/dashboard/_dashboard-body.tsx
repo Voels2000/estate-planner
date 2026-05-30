@@ -322,6 +322,7 @@ export async function DashboardBody({
     { data: healthScoreRow },
     { data: conflictRows },
     { taxDeferredAssets, currentYearWithdrawals },
+    { data: stateExemptionRow },
   ] = await Promise.all([
     household?.id
       ? supabase
@@ -355,6 +356,16 @@ export async function DashboardBody({
           .eq('household_id', household.id)
       : Promise.resolve({ data: null }),
     loadDashboardRmdInputs(supabase, user!.id),
+    household?.state_primary
+      ? supabase
+          .from('state_estate_tax_rules')
+          .select('exemption_amount, no_portability')
+          .eq('state', String(household.state_primary).toUpperCase())
+          .eq('tax_year', new Date().getFullYear())
+          .order('min_amount', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
@@ -603,6 +614,8 @@ export async function DashboardBody({
       personaAlerts={personaAlerts}
       initialAssessmentResults={initialAssessmentResults}
       statePrimary={household?.state_primary ?? null}
+      stateExemption={stateExemptionRow?.exemption_amount ?? null}
+      noPortability={stateExemptionRow?.no_portability ?? false}
       assetTypes={assetTypes ?? []}
       person1Name={household?.person1_name ?? 'Person 1'}
       person2Name={household?.person2_name ?? 'Person 2'}

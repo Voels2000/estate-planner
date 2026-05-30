@@ -157,6 +157,8 @@ type Props = {
     estate_pct: number
   }>
   statePrimary?: string | null
+  stateExemption?: number | null
+  noPortability?: boolean
   executionChecklist?: EstateExecutionItem[]
   planStage: PlanStageResult
   termsAcceptedAt?: string | null
@@ -227,6 +229,8 @@ export function DashboardClient(props: Props) {
     initialSetupProgress,
     initialAssessmentResults,
     statePrimary,
+    stateExemption = null,
+    noPortability = false,
     executionChecklist: initialExecutionChecklist = [],
     planStage,
     termsAcceptedAt = null,
@@ -475,6 +479,8 @@ export function DashboardClient(props: Props) {
               federalTax={estateCallout.estimatedTaxFederal}
               estateTax={estateCallout.estimatedTaxState}
               statePrimary={statePrimary}
+              stateExemption={stateExemption}
+              noPortability={noPortability}
               consumerTier={tier}
             />
           )}
