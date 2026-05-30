@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { CompletionScore } from '@/lib/get-completion-score'
+import type { EstateHealthScore } from '@/lib/estate-health-score'
 import { formatDollars } from '@/lib/utils/formatCurrency'
 import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 
@@ -11,6 +12,7 @@ type DashboardIntroSectionProps = {
     critical: number
     warnings: number
   } | null
+  estateHealthScore?: EstateHealthScore | null
   consumerTier?: number
   statePrimary?: string | null
   estateTaxExposure?: {
@@ -25,6 +27,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
     firstName,
     completionScore,
     conflictReport,
+    estateHealthScore,
     consumerTier,
     statePrimary,
     estateTaxExposure,
@@ -33,6 +36,9 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
   const totalTax =
     (estateTaxExposure?.estimatedTaxState ?? 0) + (estateTaxExposure?.estimatedTaxFederal ?? 0)
   const conflictDetailsHref = estateDetailsHref(consumerTier)
+  const readinessScore = estateHealthScore?.score ?? null
+  const hasConflicts =
+    (conflictReport?.critical ?? 0) > 0 || (conflictReport?.warnings ?? 0) > 0
 
   return (
     <>
@@ -87,33 +93,54 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
         </div>
       )}
 
-      {conflictReport &&
-        (conflictReport.critical > 0 || conflictReport.warnings > 0) && (
-          <div className="mb-4 flex items-center gap-2">
-            {conflictReport.critical > 0 && (
-              <a
-                href={conflictDetailsHref}
-                className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
-              >
-                🚨 {conflictReport.critical} critical
-              </a>
-            )}
-            {conflictReport.warnings > 0 && (
-              <a
-                href={conflictDetailsHref}
-                className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition"
-              >
-                ⚠️ {conflictReport.warnings} warnings
-              </a>
-            )}
+      {(hasConflicts || readinessScore != null) && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          {conflictReport && conflictReport.critical > 0 && (
+            <a
+              href={conflictDetailsHref}
+              className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
+            >
+              🚨 {conflictReport.critical} critical
+            </a>
+          )}
+          {conflictReport && conflictReport.warnings > 0 && (
+            <a
+              href={conflictDetailsHref}
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition"
+            >
+              ⚠️ {conflictReport.warnings} warnings
+            </a>
+          )}
+          {hasConflicts && (
             <a
               href={conflictDetailsHref}
               className="text-xs text-[color:var(--mwm-text-secondary)] underline underline-offset-2"
             >
               See details →
             </a>
-          </div>
-        )}
+          )}
+          {readinessScore != null && (
+            <>
+              {hasConflicts && (
+                <span className="text-[color:var(--mwm-border-secondary)] mx-1">·</span>
+              )}
+              <span
+                className={[
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium',
+                  readinessScore >= 80
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : readinessScore >= 60
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : 'border-red-200 bg-red-50 text-red-800',
+                ].join(' ')}
+              >
+                <i className="ti ti-shield-check" aria-hidden="true" style={{ fontSize: 11 }} />
+                Estate readiness {readinessScore}/100
+              </span>
+            </>
+          )}
+        </div>
+      )}
     </>
   )
 }

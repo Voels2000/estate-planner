@@ -302,8 +302,9 @@ export default function AllocationClient({
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">
-            Affects industry benchmark mix and Monte Carlo return suggestions.
+          <p className="text-[10px] text-[color:var(--mwm-text-secondary)] mt-1">
+            Affects Projections growth assumptions, Monte Carlo return distributions,
+            and industry benchmark comparisons below.
           </p>
           {riskSaveError && (
             <p className="text-xs text-red-600 mt-2">{riskSaveError}</p>
@@ -389,6 +390,24 @@ export default function AllocationClient({
           </button>
           {saveError && <p className="text-xs text-red-600">{saveError}</p>}
         </div>
+
+        <p className="text-xs text-[color:var(--mwm-text-secondary)] leading-relaxed">
+          Your risk profile and target mix affect{' '}
+          <a
+            href="/projections"
+            className="text-[color:var(--mwm-navy)] underline underline-offset-2"
+          >
+            Projections
+          </a>
+          {' '}and{' '}
+          <a
+            href="/monte-carlo"
+            className="text-[color:var(--mwm-navy)] underline underline-offset-2"
+          >
+            Monte Carlo
+          </a>
+          {' '}simulations. Changes here update your retirement analysis automatically.
+        </p>
 
         {/* Quick-set from benchmarks */}
         {data?.benchmarks && (

@@ -979,8 +979,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 **Goal:** Surface the most valuable content already built. No new infrastructure required.
 
 **Dashboard fixes**
-- `[x]` Add conflict alert banner above the fold — dismissible; links to `#estate-conflicts`
-- `[x]` Add severity chips — critical/warnings in `DashboardIntroSection` (links to conflicts)
+- `[x]` Conflict alerts above the fold — severity chips in `DashboardIntroSection` only (mid-page dismissible banner removed 2026-05-30)
 - `[x]` Move advisor links to sidebar footer — **My Advisor** + **Manage Subscription** in footer
 - `[x]` Horizons page: comparison table + hero tax-liability summary cards
 - `[x]` Horizons page: tier gate on `/my-estate-strategy`

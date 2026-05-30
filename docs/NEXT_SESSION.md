@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (dashboard cleanup refinements + polish pass handoff)
+# Updated: 2026-05-30 (Script A dashboard polish + conflict banner dedup)
 
 ---
 
@@ -50,9 +50,26 @@
 | Titling conflicts | **`criticalCount` / `warningCount`** from `conflictReport` — badges only + **Review in Titling & Beneficiaries →** (detail on `/titling`) |
 | Bypass trust alert | **`parseBypassTrustSavings`** — parses **`by $645,463`** from `bypass_trust` RPC reason (Alan prod verified); fallback last `$` in reason, then `(gross − exemption) × 10%` |
 | Placement | **`EstateSummaryHeroAndMetrics.afterMetrics`** — after four metric tiles, before **`sm:grid-cols-2`** checklist + tax snapshot grid |
-| Unchanged | Top conflict dismiss banner · estate readiness score · composition card · execution checklist |
+| Removed | Middle dismissible conflict banner (duplicate of intro pills) |
+| Unchanged | Intro conflict pills in **`DashboardIntroSection`** · estate readiness score · composition card · execution checklist · titling badges in estate summary |
 
-**Post-deploy smoke (once):** Alan → `/dashboard` — blue callout **$645,463** between tiles and checklist · no planning topics · titling badges + link only at bottom of estate summary collapsible.
+**Post-deploy smoke (once):** Alan → `/dashboard` — blue callout **$645,463** between tiles and checklist · no planning topics · titling badges + link only at bottom of estate summary collapsible · **no mid-page conflict banner** · intro row shows conflict pills + **Estate readiness 56/100** pill on same line.
+
+---
+
+## Script A — Dashboard polish ✅ (2026-05-30)
+
+**Files:** `DashboardIntroSection.tsx` · `_dashboard-client.tsx` · `allocation/_allocation-client.tsx`
+
+| Item | Notes |
+|------|-------|
+| Readiness pill | **`estateHealthScore.score`** on same flex row as conflict pills — green ≥80 · amber ≥60 · red &lt;60 |
+| Detailed score | **`EstateSummarySection`** unchanged — component bars + "Needs Attention" + health check link |
+| Allocation | Downstream note after Save Target Mix → `/projections` + `/monte-carlo` |
+| Risk caption | Projections growth · Monte Carlo distributions · benchmark comparisons |
+| Scenarios nav | Already under Financial Planning in `sidebar-nav.tsx` — no change |
+
+**Next:** Script B — estate tax page merge.
 
 ---
 

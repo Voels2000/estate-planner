@@ -41,7 +41,6 @@ import StrategyRecommendationPanel, {
 } from '@/components/consumer/StrategyRecommendationPanel'
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
-import { estateDetailsHref } from '@/lib/dashboard/estateUpgradeHref'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
 import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
 import { PersonaInsightCard } from '@/components/dashboard/PersonaInsightCard'
@@ -279,7 +278,6 @@ export function DashboardClient(props: Props) {
 
   const tier = consumerTier ?? 1
   const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
-  const conflictDetailsHref = estateDetailsHref(tier)
 
   const [showAllTools, setShowAllTools] = useState(planStage.stage >= 3)
 
@@ -335,8 +333,6 @@ export function DashboardClient(props: Props) {
     const h = new Date().getHours()
     return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
   })
-  const [conflictDismissed, setConflictDismissed] = useState(false)
-
   useEffect(() => {
     setExecutionChecklist(initialExecutionChecklist)
   }, [initialExecutionChecklist])
@@ -448,6 +444,7 @@ export function DashboardClient(props: Props) {
         firstName={fn}
         completionScore={completionScore}
         conflictReport={conflictReport}
+        estateHealthScore={estateHealthScore}
         consumerTier={tier}
         statePrimary={statePrimary}
         estateTaxExposure={
@@ -549,77 +546,6 @@ export function DashboardClient(props: Props) {
           )}
         </div>
       )}
-
-      {conflictReport &&
-        (conflictReport.critical > 0 || conflictReport.warnings > 0) &&
-        !conflictDismissed && (
-          <div
-            className={`mt-4 mb-2 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 ${
-              conflictReport.critical > 0
-                ? 'border-red-200 bg-red-50'
-                : 'border-amber-200 bg-amber-50'
-            }`}
-          >
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="mt-0.5 shrink-0 text-base">
-                {conflictReport.critical > 0 ? '🚨' : '⚠️'}
-              </span>
-              <div className="min-w-0">
-                <p
-                  className={`text-sm font-semibold ${
-                    conflictReport.critical > 0 ? 'text-red-800' : 'text-amber-800'
-                  }`}
-                >
-                  {conflictReport.critical > 0 && (
-                    <span>
-                      {conflictReport.critical} critical issue
-                      {conflictReport.critical > 1 ? 's' : ''}
-                      {conflictReport.warnings > 0 ? ' · ' : ''}
-                    </span>
-                  )}
-                  {conflictReport.warnings > 0 && (
-                    <span>
-                      {conflictReport.warnings} warning
-                      {conflictReport.warnings > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {' '}found in your plan
-                </p>
-                {conflictReport.conflicts[0] && (
-                  <p
-                    className={`mt-0.5 text-xs leading-relaxed line-clamp-2 sm:line-clamp-none sm:truncate ${
-                      conflictReport.critical > 0 ? 'text-red-600' : 'text-amber-600'
-                    }`}
-                  >
-                    {conflictReport.conflicts[0].description}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <a
-                href={conflictDetailsHref}
-                className={`inline-flex items-center min-h-[44px] py-2 text-xs font-medium underline-offset-2 hover:underline ${
-                  conflictReport.critical > 0 ? 'text-red-700' : 'text-amber-700'
-                }`}
-              >
-                See details ↓
-              </a>
-              <button
-                type="button"
-                onClick={() => setConflictDismissed(true)}
-                className={`inline-flex items-center justify-center min-h-[44px] min-w-[44px] text-xs leading-none ${
-                  conflictReport.critical > 0
-                    ? 'text-red-400 hover:text-red-600'
-                    : 'text-amber-400 hover:text-amber-600'
-                }`}
-                aria-label="Dismiss"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
 
       {sectionVisible(2) && successionGap && (
         <div className="mt-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

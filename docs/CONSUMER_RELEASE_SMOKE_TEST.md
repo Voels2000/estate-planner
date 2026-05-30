@@ -96,7 +96,7 @@ For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./
 |------|--------|----------|-------|
 | 1.1 | Go to `/login`, sign in | Redirects to `/dashboard` | ☐ |
 | 1.2 | Dashboard loads | Greeting (“Good morning/afternoon/evening”), **Estate Readiness Score** shows a number 0–100 | ☐ |
-| 1.2b | If household has conflicts | Dismissible **conflict banner** below greeting (before scrolling); severity chips under intro; **See details ↓** jumps to estate conflicts | ☐ |
+| 1.2b | If household has conflicts | Severity pill chips under greeting in **`DashboardIntroSection`** (🚨 critical / ⚠️ warnings + **See details →**); no duplicate mid-page banner; titling badges in estate summary collapsible | ☐ |
 | 1.3 | Scroll dashboard | **Tax exposure hero** (red/amber) + **four metric tiles** + checklist and **tax snapshot** two-col (WA: exemption $3M, portability note, state taxable, state tax); Financial/Retirement/Estate Summary collapsibles below; disclaimer at bottom | ☐ |
 | 1.4 | Sidebar footer | **My Advisor**, **My Attorney** (tier 2+), and **Manage Subscription** in footer (not main Overview list) | ☐ |
 | 1.4b | Sidebar Overview | Only **Profile** and **Estate Summary** — no Education / Assessment / Find Advisor / Find Attorney | ☐ |

@@ -1,6 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (dashboard cleanup)
+# Last updated: 2026-05-30 (Script A dashboard polish)
+
+## Script A — readiness pill + allocation connections (2026-05-30)
+
+**Decision:** Surface **`estateHealthScore.score`** as compact pill on the same flex row as conflict pills in **`DashboardIntroSection`** (green ≥80 · amber ≥60 · red &lt;60). Keep full **`EstateHealthScoreBlock`** with component bars in **`EstateSummarySection`**. On **`/allocation`**, add downstream note linking Projections + Monte Carlo after Save Target Mix; clarify risk profile caption.
+
+**Files:** `DashboardIntroSection.tsx`, `_dashboard-client.tsx`, `allocation/_allocation-client.tsx`
+
+**Verify:** Alan — intro row shows conflicts + readiness on one line; estate summary collapsible still has detailed score breakdown.
+
+---
+
+## Dashboard — single conflict alert location (2026-05-30)
+
+**Decision:** Remove the **middle dismissible conflict banner** from `_dashboard-client.tsx` (full-width red/amber block with description + “See details ↓” between checklist grid and persona alerts). Keep **one** above-the-fold surface: severity pill chips in **`DashboardIntroSection`** (🚨 critical / ⚠️ warnings + “See details →”). Titling badges in **`EstateSummarySection`** collapsible unchanged.
+
+**Reasoning:** Duplicate critical/warning messaging in intro pills and mid-page banner added noise without new information.
+
+**Files:** `_dashboard-client.tsx`
+
+**Verify:** Household with conflicts — pills under greeting only; no second banner mid-page.
+
+---
 
 ## Dashboard cleanup — bypass trust alert (2026-05-30)
 
@@ -1106,7 +1128,7 @@ Pass = at least one row with referral code matching a test signup.
 
 ### May 2026 — Dashboard conflict alerts must be above the fold
 
-**Decision:** The "1 critical · 3 warnings" conflict alert system (which names specific accounts with specific problems) must be visible on the dashboard without scrolling. A compact alert banner below the greeting and a severity chip row on the Planning Readiness Score card are the minimum. The full detail section can remain where it is.
+**Decision:** The "1 critical · 3 warnings" conflict alert system must be visible on the dashboard without scrolling. **Current (2026-05-30):** severity pill chips in **`DashboardIntroSection`** under the greeting — single above-the-fold surface; mid-page dismissible banner removed as duplicate. Titling badges in **`EstateSummarySection`** collapsible link to `/titling` for detail.
 
 **Reasoning:** The named conflict alerts ("4 accounts missing beneficiaries: Yukon Denali 2019, Kubota Tractor and Accessories…") are the most valuable content on the dashboard and in the product. They demonstrate immediately that the tool understands the user's specific situation. Currently they require 3–4 scrolls to reach, which means most users never see them. No new feature is needed — just surfacing.
 
