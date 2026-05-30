@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js'
 
 export type DashboardLayoutProfile = {
   role: string
+  full_name: string | null
   is_superuser: boolean
   subscription_status: string | null
   consumer_tier: number | null
@@ -50,7 +51,7 @@ export const getDashboardLayoutContext = cache(async (): Promise<DashboardLayout
       supabase
         .from('profiles')
         .select(
-          'role, is_superuser, subscription_status, consumer_tier, subscription_period_end, terms_accepted_at, terms_version, firm_id, firm_role, trial_started_at, is_admin, is_attorney, onboarding_invite_advisor_completed_at, onboarding_wizard_completed_at',
+          'role, full_name, is_superuser, subscription_status, consumer_tier, subscription_period_end, terms_accepted_at, terms_version, firm_id, firm_role, trial_started_at, is_admin, is_attorney, onboarding_invite_advisor_completed_at, onboarding_wizard_completed_at',
         )
         .eq('id', sessionUser.id)
         .single(),

@@ -1,18 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Persona E2E Card fix + aria-pressed forwarding)
+# Updated: 2026-05-30 (Dashboard onramp + golden-path gate verify)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 (go-live hardening).** **Cross-role E2E (shipped 2026-05-30):** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12 after deploy) — household IDOR matrix, advisor–Johnson sync, attorney document/gap APIs, persona onboarding. **CI:** `scripts/verify-app-route-slugs.ts` on every push. **Persona gate (shipped 2026-05-30):** `/onboarding/persona` uses `isWizardReadyProfile` + full household SELECT (`12734a3`). **Persona E2E fix (shipped 2026-05-30):** `Card` forwards `aria-pressed` to DOM; spec clicks `[aria-pressed]` card wrapper (not inner `h2`) + waits for PATCH (`3c63648` + follow-up). **Attorney FK (applied 2026-05-30):** migration `20260630100000` — `attorney_clients.attorney_id` → `attorney_listings.id`, `client_id` → `households.id`, `households_attorney_select` RLS. **Prod API fix (shipped 2026-05-30):** documents list at `/api/documents/household/[household_id]` (`af12ff0`). **Security smoke:** `npm run test:e2e:security-smoke` 7/7 on prod.
+> My Wealth Maps — **Sprint 19 (go-live hardening).** **Dashboard onramp (shipped 2026-05-30):** `/dashboard` shows `DashboardOnramp` when wizard incomplete, `estate_health_scores.score` &lt; 60, or no assets/income — gate in `lib/dashboard/onrampGate.ts`; golden-path seed floors score ≥ 60 (`ensureMinEstateHealthScore`). **Cross-role E2E:** `npm run test:e2e:security-isolation` (10/10) · `npm run test:e2e:cross-role` (12/12). **Persona E2E:** `Card` forwards `aria-pressed`; spec clicks card wrapper + PATCH wait. **Attorney FK:** migration `20260630100000` applied prod. **Security smoke:** `npm run test:e2e:security-smoke` 7/7.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## Dashboard onramp ✅ (2026-05-30)
+
+**Route:** `app/(dashboard)/dashboard/page.tsx` — early return before `DashboardBody`.
+
+| Item | Notes |
+|------|-------|
+| Gate | `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`; `ONRAMP_SCORE_THRESHOLD = 60` |
+| UI | `components/dashboard/DashboardOnramp.tsx` — import / wizard / assets paths |
+| Layout | `getDashboardLayoutContext()` + `full_name` on profile select |
+| E2E guard | `e2e-golden-path@` — score 79 prod (2026-05-30); seed floors ≥ 60 via `ensureMinEstateHealthScore` |
+| Verify | `npx tsx scripts/check-golden-path-onramp-gate.ts` |
+
+**Docs:** [dashboard-page-patch.md](./dashboard-page-patch.md)
 
 ---
 

@@ -207,15 +207,15 @@ Consumers build the household balance sheet and cash flows before estate surface
 | | |
 |--|--|
 | **User goal** | Net worth, retirement snapshot, estate readiness, advisor recommendations, setup progress |
-| **Tier / gate** | Tier 1; **no** profile gate; shows `DashboardEmptyState` if no household |
-| **Server** | `app/(dashboard)/dashboard/page.tsx` — loaders in `lib/dashboard/loaders.ts`; may trigger async base-case regen when projection stale |
-| **Client** | `app/(dashboard)/_dashboard-client.tsx`, `dashboard/_components/*` |
+| **Tier / gate** | Tier 1; **no** profile gate; shows `DashboardEmptyState` if no household; **`DashboardOnramp`** when wizard incomplete, health score &lt; 60, or no assets/income (`lib/dashboard/onrampGate.ts`) |
+| **Server** | `app/(dashboard)/dashboard/page.tsx` — onramp early return or `DashboardBody` via Suspense; loaders in `lib/dashboard/loaders.ts` |
+| **Client** | `components/dashboard/DashboardOnramp.tsx` (onramp) · `app/(dashboard)/_dashboard-client.tsx`, `dashboard/_components/*` (full dashboard) |
 | **Write APIs** | `PATCH /api/consumer/estate-checklist` (checklist toggles only) |
 | **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
-| **E2E** | `tests/e2e/consumer/dashboard.spec.ts` |
-| **Key UI sections** | Greeting (`DashboardIntroSection`); **`PlanProgressBar`** (stage label, % complete, next action, Show all tools); **`PersonaInsightCard`** (7-day first-run, persona-specific insight above setup card); **`QuickAddAssetModal`** (stage 1, zero assets — inline first asset without leaving dashboard); **`EstateCalloutCard`** (stage 2+ or show-all); **`EstateExecutionChecklist`** (stage 3+ or show-all); conflicts + **`LifeEventBanner`** (always); **`SetupProgressCard`** (stage 1 detail); stage 1 **What comes next** preview; Financial / Retirement / Estate summaries (gated by `determinePlanStage` unless show-all) |
+| **E2E** | `tests/e2e/consumer/dashboard.spec.ts` · `golden-path-show-all-tools.spec.ts` (requires score ≥ 60 — `ensureMinEstateHealthScore` in seed) |
+| **Key UI sections** | **Onramp (gate fail):** `DashboardOnramp` — import / wizard / assets paths, foundation progress · **Full dashboard:** `DashboardIntroSection`, `PlanProgressBar`, `PersonaInsightCard`, `QuickAddAssetModal`, `EstateCalloutCard`, `EstateExecutionChecklist`, `LifeEventBanner`, `SetupProgressCard`, stage-gated summaries |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 

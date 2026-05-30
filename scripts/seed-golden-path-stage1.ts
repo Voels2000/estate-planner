@@ -10,10 +10,12 @@
 import { E2E_IDENTITIES, E2E_TEST_PASSWORD } from './e2e-test-identities'
 import {
   ensureAuthUser,
+  ensureMinEstateHealthScore,
   initSupabaseEnv,
   seedE2eEstateHealthForHousehold,
 } from './seed-e2e-lib'
 import { createAdminClient } from '../lib/supabase/admin'
+import { ONRAMP_SCORE_THRESHOLD } from '../lib/dashboard/onrampGate'
 
 const ID = E2E_IDENTITIES.goldenPathStage1
 
@@ -106,6 +108,7 @@ export async function seedGoldenPathStage1(): Promise<{ userId: string; househol
   if (assetErr) throw new Error(`asset insert: ${assetErr.message}`)
 
   await seedE2eEstateHealthForHousehold(householdId)
+  await ensureMinEstateHealthScore(householdId, ONRAMP_SCORE_THRESHOLD)
 
   return { userId, householdId }
 }

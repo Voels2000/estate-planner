@@ -204,6 +204,7 @@ export async function triggerE2eRecompute(householdId: string): Promise<void> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-recompute-secret': secret },
       body: JSON.stringify({ householdId }),
+      signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) {
       console.warn(`  recompute: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`)
@@ -213,6 +214,38 @@ export async function triggerE2eRecompute(householdId: string): Promise<void> {
   } catch (err) {
     console.warn('  recompute:', err instanceof Error ? err.message : String(err))
   }
+}
+
+/** Floor estate_health_scores so dashboard onramp gate (≥60) does not catch E2E users. */
+export async function ensureMinEstateHealthScore(
+  householdId: string,
+  minScore: number,
+): Promise<void> {
+  const admin = createAdminClient()
+  const now = new Date().toISOString()
+  const { data: row } = await admin
+    .from('estate_health_scores')
+    .select('score')
+    .eq('household_id', householdId)
+    .maybeSingle()
+
+  const current = row?.score ?? 0
+  if (current >= minScore) {
+    console.log(`  estate_health_scores: ${current} (≥ ${minScore}, ok)`)
+    return
+  }
+
+  const { error } = await admin.from('estate_health_scores').upsert(
+    {
+      household_id: householdId,
+      score: minScore,
+      computed_at: now,
+      updated_at: now,
+    },
+    { onConflict: 'household_id' },
+  )
+  if (error) console.warn('  estate_health_scores floor:', error.message)
+  else console.log(`  estate_health_scores: raised ${current} → ${minScore} (onramp gate)`)
 }
 
 /** Health check answers + baseline score so dashboard and recompute polls have a row. */

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-30 (Card aria-pressed + persona E2E fix; Sprint 19)
+# Last updated: 2026-05-30 (Dashboard onramp; Sprint 19)
 
 ---
 
@@ -98,6 +98,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Persona onboarding (2026-05-29) | `/onboarding/persona` after wizard-ready profile (`isWizardReadyProfile`); `profiles.onboarding_persona` + `persona_set_at`; `lib/onboarding/personaConfig.ts`; persona-aware wizard step 1; **`PersonaInsightCard`** (7-day first-run, above `SetupProgressCard`); funnel events `persona_*`; sidebar skip → `accumulator`; selectable tiles use `<Card aria-pressed>` (root div receives prop via `Card` `{...rest}`); E2E: `onboarding-persona.spec.ts` clicks `[aria-pressed]` card wrapper |
 | Acquisition & activation (2026-05-29) | **`attorney_intake_requests`** + `/intake/[token]` + send-intake modal; **`ReferralImpactPanel`** + referral-impact API; **`GET /api/advisor/meeting-prep-pdf/[clientId]`** print one-pager; advisor referral signup notify |
 | Setup progress (OB-3) | `SetupProgressCard` + `GET /api/consumer/setup-progress`; wizard gate via `shouldRequireWizardOnboarding` + `checkHouseholdHasData`; exempt routes in `wizardGateExemptPrefixes.ts`; **Tier 1 import** upload + commit (`FEATURE_TIERS.import = 1`); job history Tier 2+; **`QuickAddAssetModal`** on dashboard stage 1 |
+| Dashboard onramp (2026-05-30) | `/dashboard` — `shouldShowOnramp()` in `lib/dashboard/onrampGate.ts`; `DashboardOnramp` (import / wizard / assets) before `DashboardBody`; threshold `estate_health_scores.score` ≥ 60 + wizard complete + has assets or income |
 | Sidebar unlock (OB-3b) | Financial Planning tier 1 + exempt from `isLockedUser`; Security / My Advisor / Billing always on; old dashboard setup checklist removed; My Advisor onboarding contextual note |
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |

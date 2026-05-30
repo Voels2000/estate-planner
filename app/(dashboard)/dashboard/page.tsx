@@ -1,42 +1,71 @@
 /**
  * Consumer dashboard (server shell).
  *
- * Resolves household + auth, then streams the heavy dashboard body via Suspense.
- *
  * Route: `/dashboard`
+ *
+ * Gate: `shouldShowOnramp()` → lightweight onramp, else stream full body via Suspense.
+ * See `docs/dashboard-page-patch.md` for integration notes.
  */
 
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
+import { DashboardOnramp } from '@/components/dashboard/DashboardOnramp'
+import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
+import { displayPersonFirstName } from '@/lib/display-person-name'
+import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
 import { DashboardBody } from './_dashboard-body'
 import DashboardLoading from './loading'
 
 export default async function DashboardPage() {
+  const layoutContext = await getDashboardLayoutContext()
+  if (!layoutContext) return <DashboardEmptyState />
+
+  const { sessionUser, profile, householdRow } = layoutContext
+  if (!householdRow) return <DashboardEmptyState />
+
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return <DashboardEmptyState />
 
-  const { data: household, error: householdError } = await supabase
-    .from('households')
-    .select('*')
-    .eq('owner_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const [{ data: household, error: householdError }, { data: healthScore }, hasAnyHouseholdData] =
+    await Promise.all([
+      supabase.from('households').select('*').eq('id', householdRow.id).single(),
+      supabase
+        .from('estate_health_scores')
+        .select('score')
+        .eq('household_id', householdRow.id)
+        .maybeSingle(),
+      checkHouseholdHasData(supabase, sessionUser.id),
+    ])
 
-  if (!household || householdError) {
-    return <DashboardEmptyState />
+  if (!household || householdError) return <DashboardEmptyState />
+
+  if (profile?.role === 'consumer') {
+    const showOnramp = shouldShowOnramp({
+      wizardCompletedAt: profile.onboarding_wizard_completed_at ?? null,
+      foundationScore: healthScore?.score ?? null,
+      hasAnyHouseholdData,
+    })
+
+    if (showOnramp) {
+      return (
+        <DashboardOnramp
+          foundationScore={healthScore?.score ?? 0}
+          firstName={displayPersonFirstName(
+            profile.full_name ?? household.person1_name,
+            'there',
+          )}
+        />
+      )
+    }
   }
 
   return (
     <Suspense fallback={<DashboardLoading />}>
       <DashboardBody
         household={household}
-        userId={user.id}
-        userEmail={user.email ?? ''}
+        userId={sessionUser.id}
+        userEmail={sessionUser.email ?? ''}
       />
     </Suspense>
   )

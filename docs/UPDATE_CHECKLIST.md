@@ -512,6 +512,15 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
 - [x] Commit `af12ff0`
 
+## Sprint — Dashboard onramp ✅ closed 2026-05-30
+
+- [x] `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`, `ONRAMP_SCORE_THRESHOLD = 60`
+- [x] `components/dashboard/DashboardOnramp.tsx`
+- [x] `app/(dashboard)/dashboard/page.tsx` gate before `DashboardBody`
+- [x] Golden-path seed — `ensureMinEstateHealthScore` + recompute 15s timeout
+- [x] `scripts/check-golden-path-onramp-gate.ts`
+- [x] Master docs synced
+
 ## Sprint — Cross-role E2E + persona Card fix ✅ closed 2026-05-30
 
 - [x] Cross-household IDOR matrix — `test:e2e:security-isolation` 10/10

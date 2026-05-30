@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Card aria-pressed + persona E2E fix)
+# Last updated: 2026-05-30 (Dashboard onramp; Sprint 19)
+
+## Dashboard onramp for incomplete users (2026-05-30)
+
+**Decision:** Show a lightweight `/dashboard` onramp (`DashboardOnramp`) instead of the full dashboard body when any gate fails: wizard not complete, `estate_health_scores.score` &lt; 60, or no assets/income.
+
+**Reasoning:** Full dashboard SSR is heavy and shows empty/misleading estate figures for sparse accounts. Onramp offers three entry paths (import, wizard, manual assets) without loading `DashboardBody`.
+
+**Gate:** `lib/dashboard/onrampGate.ts` — `ONRAMP_SCORE_THRESHOLD = 60` (single knob). **E2E:** golden-path seed calls `ensureMinEstateHealthScore(householdId, 60)` so `npm run test:e2e:golden-path` still sees `PlanProgressBar`, not onramp.
+
+**Verify:** `npx tsx scripts/check-golden-path-onramp-gate.ts`
+
+---
 
 ## Card component forwards div props for interactive tiles (2026-05-30)
 

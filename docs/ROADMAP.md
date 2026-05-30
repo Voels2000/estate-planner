@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (Persona E2E Card fix + aria-pressed forwarding)
+# Last updated: 2026-05-30 (Dashboard onramp for incomplete users)
 
 ---
 
@@ -20,6 +20,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — Dashboard onramp (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `shouldShowOnramp()` gate (wizard + score ≥ 60 + hasData) | `[x]` |
+| `DashboardOnramp` component (import / wizard / self-serve) | `[x]` |
+| Wire gate in `app/(dashboard)/dashboard/page.tsx` | `[x]` |
+| Golden-path E2E score floor (`ensureMinEstateHealthScore`) | `[x]` |
+| `check-golden-path-onramp-gate.ts` verify script | `[x]` |
+
+**Post-ship:** `npm run test:e2e:golden-path` · tune `ONRAMP_SCORE_THRESHOLD` if needed
+
+---
 
 ### Sprint — Cross-role E2E + persona gate + attorney FK (2026-05-30) **← shipped**
 

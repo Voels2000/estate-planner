@@ -93,7 +93,7 @@ Prefer `npm run seed:e2e`. Old scripts remain for reference:
 
 Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) under parallel load.
 
-**Seed fixture:** `npm run seed:e2e` sets `onboarding_invite_advisor_completed_at`, completed health check, and stale `estate_health_scores.computed_at` so dashboard smoke is not blocked by the invite-advisor gate.
+**Golden path:** `npm run seed:golden-path` · `npm run test:e2e:golden-path` — verify onramp gate: `npx tsx scripts/check-golden-path-onramp-gate.ts` (score ≥ 60, wizard complete, has data).
 
 **Recompute on Vercel:** `afterHouseholdWrite` uses Next.js `after()` + immediate trigger (no post-response `setTimeout`) so asset POSTs fire `/api/recompute-estate-health` reliably after deploy.
 
