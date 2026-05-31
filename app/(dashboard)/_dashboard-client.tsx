@@ -17,7 +17,7 @@ import {
 import type { SetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
 import type { CompletionScore } from '@/lib/get-completion-score'
-import type { EstateHealthScore } from '@/lib/estate-health-score'
+import { ESTATE_READINESS_LABEL, type EstateHealthScore } from '@/lib/estate-health-score'
 import { FeedbackButton } from './_components/feedback-button'
 import { LifeEventBanner, type LifeEvent, type LoggedLifeEvent } from './_components/LifeEventBanner'
 import type { RelevanceHousehold } from '@/lib/events/catalog'
@@ -520,8 +520,8 @@ function State2NetWorthHero({
             green: savingsRate >= 20,
           },
           {
-            label: 'Foundation',
-            value: `${foundationScore}%`,
+            label: ESTATE_READINESS_LABEL,
+            value: `${foundationScore}/100`,
             amber: true,
           },
         ].map((tile) => (

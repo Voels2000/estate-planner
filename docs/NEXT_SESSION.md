@@ -26,6 +26,28 @@
 
 ---
 
+## Sprint A — Score rationalization ✅ (2026-05-29)
+
+**Goal:** One consumer label (`ESTATE_READINESS_LABEL` = "Estate readiness"), retire completeness grade from consumer surfaces.
+
+| Change | Detail |
+|--------|--------|
+| Label | "Foundation" / "plan health score" → **Estate readiness** (`{n}/100`) on dashboard, onramp, PDF narrative |
+| Constant | `ESTATE_READINESS_LABEL` in `lib/estate-health-score.ts` |
+| Consumer PDF | Uses `estate_health_scores.score` — not `calculate_estate_completeness` grade/% |
+| Gates | Unlock + execution checklist → "X of Y steps/items complete" (no threshold % or score label) |
+| Advisor | `EstatePlanningDashboard` grade retained — attorney portal only (no `showGrade` prop needed) |
+| Governance | [SCORE_TAXONOMY.md](./SCORE_TAXONOMY.md) |
+
+**Sprint B blocked until A merges** — B assumes canonical "Estate readiness" string and `ESTATE_READINESS_LABEL`.
+
+### Sprint B follow-up (not started)
+
+- Score hero UI with benchmark bands (`NAT_AVG_PCT = 28`, `MWM_AVG_PCT = 63` are hardcoded estimates)
+- **Future sprint:** When enough users exist, compute real platform averages from `estate_health_scores` → config table, refresh monthly (see SCORE_TAXONOMY.md)
+
+---
+
 ## State tax unification ✅ (2026-05-29)
 
 **Sprint:** [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) — Phases 0–8 complete
@@ -38,7 +60,26 @@
 | `hasBypassTrust` | Threaded through `computeColumnTaxes` / `buildStrategyHorizons`; consumer = accepted line items only |
 | Governance | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) + regression greps in standing rules |
 
-**Post-deploy smoke:** Voels MFJ WA ~$9.3M — PDF cover + page 3 state tax ~$231K (engine B); page 3 shows with/without bypass trust table when `cstBenefit > 0`.
+**Post-deploy smoke:** Voels MFJ WA ~$9.3M — PDF cover + page 3 state tax (engine B); bypass trust scenario table when `cstBenefit > 0`.
+
+**Open post-deploy checks (Voels smoke 2026-05-29):**
+
+| Check | Expected | Commit |
+|-------|----------|--------|
+| Action items — trust alert | **Documents & trust structure**; enriched impact + next step | `0f9305e` dedupe prefers enriched row |
+| Cover — state tax phrasing | **"…exposure without a bypass trust"** when MFJ + no CST + portability gap | `0f9305e` |
+
+---
+
+## PDF narrative polish — dedupe + worst-case copy ✅ (2026-05-29)
+
+| Fix | Detail |
+|-----|--------|
+| Dedupe priority | `dedupeActionItems()` keeps **enriched** duplicate (theme + impact/next step), drops raw `general` row |
+| Trust enrich | Matches **"without trust"** (no `a`) — e.g. "Large estate without trust" |
+| Cover copy | Worst-case state tax labeled **without a bypass trust** in no-portability MFJ states |
+
+**Commit:** `0f9305e`
 
 ---
 
@@ -47,7 +88,7 @@
 | Fix | Detail |
 |-----|--------|
 | Page 3 exemption | `currentFederalExemption()` — MFJ **$27.98M** (was per-person $15M from `assumption_snapshot`) |
-| Dedupe | `dedupeActionItems()` — first 20 chars of normalized title |
+| Dedupe | `dedupeActionItems()` — title prefix; **enriched row wins** (`0f9305e`) |
 
 **Smoke:** Voels MFJ PDF — cover and page 3 exemption match; trust alert appears once under Documents only.
 

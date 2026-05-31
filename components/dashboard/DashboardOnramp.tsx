@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { ESTATE_READINESS_LABEL } from '@/lib/estate-health-score'
 
 interface DashboardOnrampProps {
   foundationScore: number
@@ -108,7 +109,7 @@ export function DashboardOnramp({ foundationScore, firstName, guidedHref }: Dash
 
         <div className="mt-4 flex items-center gap-3 border-t border-[color:var(--mwm-border)] pt-4">
           <p className="whitespace-nowrap text-xs text-[color:var(--mwm-text-secondary)]">
-            Financial foundation
+            {ESTATE_READINESS_LABEL}
           </p>
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
             <div
@@ -117,7 +118,7 @@ export function DashboardOnramp({ foundationScore, firstName, guidedHref }: Dash
             />
           </div>
           <p className="whitespace-nowrap text-xs font-medium text-[color:var(--mwm-sage)]">
-            {foundationScore}%
+            {foundationScore}/100
           </p>
         </div>
       </div>

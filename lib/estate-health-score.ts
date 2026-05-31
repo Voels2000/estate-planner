@@ -1,5 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
+/** The single canonical consumer-facing label for the 0–100 score. */
+export const ESTATE_READINESS_LABEL = 'Estate readiness'
+
 export type HealthScoreComponent = {
   key: string
   label: string

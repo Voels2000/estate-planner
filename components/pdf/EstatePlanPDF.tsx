@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { ESTATE_READINESS_LABEL } from '@/lib/estate-health-score'
 
 const PDF_DOCUMENT_TITLE = 'Estate Planning Preparation Report'
 
@@ -536,6 +537,7 @@ type EstatePlanPdfData = {
   prepared_by_name?: string | null
   role?: 'advisor' | 'consumer' | string
   generated_at: string
+  estate_readiness_score?: number | null
   completeness?: {
     completeness_pct?: number | null
     completeness_score?: number | null
@@ -1109,28 +1111,28 @@ const ConsumerPurposeBanner = () => (
 
 // --- Consumer readiness (no letter grade) ---
 const ConsumerCompletenessSection = ({ data }: { data: EstatePlanPdfData }) => {
+  const readinessScore = data.estate_readiness_score
+  if (readinessScore == null) return null
+  const stage = readinessStageLabel(readinessScore)
   const c = data.completeness
-  if (!c) return null
-  const pct = Math.round(c.completeness_pct ?? c.completeness_score ?? 0)
-  const stage = readinessStageLabel(pct)
 
   return (
-    <Section title="Estate Plan Readiness">
+    <Section title={ESTATE_READINESS_LABEL}>
       <View style={s.scoreRow}>
         <View style={s.scoreDetails}>
-          <Text style={s.scoreLabel}>ESTATE PLAN READINESS</Text>
+          <Text style={s.scoreLabel}>{ESTATE_READINESS_LABEL.toUpperCase()}</Text>
           <Text style={s.scoreValue}>
-            {pct} / 100 — {stage}
+            {readinessScore} / 100 — {stage}
           </Text>
           <View style={s.progressBarOuter}>
-            <View style={[s.progressBarInner, { width: Math.max(0, Math.min(370, (pct / 100) * 370)) }]} />
+            <View style={[s.progressBarInner, { width: Math.max(0, Math.min(370, (readinessScore / 100) * 370)) }]} />
           </View>
           <Text style={s.scoreSubtext}>
             Will/Trust · DPOA · Healthcare Directive · Beneficiaries · Tax Strategy
           </Text>
         </View>
       </View>
-      {c.attorney_cta_triggered && (
+      {c?.attorney_cta_triggered && (
         <View style={s.ctaBanner}>
           <Text style={s.ctaBannerText}>
             This household has significant planning gaps. An estate planning attorney consultation

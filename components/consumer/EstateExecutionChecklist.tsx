@@ -24,7 +24,8 @@ export function EstateExecutionChecklist({
     (i) => i.status === 'complete' || i.consumerChecked,
   ).length
   const totalCount = activeItems.length
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  const progressWidth =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   const handleToggle = async (item: EstateExecutionItem) => {
     if (!onToggle) return
@@ -38,38 +39,25 @@ export function EstateExecutionChecklist({
 
   return (
     <section className="rounded-xl border border-[color:var(--mwm-border)] bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-[color:var(--mwm-navy)]">
-            Estate Plan Checklist
-          </h2>
-          <p className="mt-0.5 text-xs text-[color:var(--mwm-text-muted)]">
-            {completedCount} of {totalCount} items complete
-          </p>
-        </div>
-        <p
-          className={`text-2xl font-bold ${
-            pct === 100
-              ? 'text-[color:var(--mwm-sage)]'
-              : pct >= 50
-                ? 'text-[color:var(--mwm-navy)]'
-                : 'text-amber-600'
-          }`}
-        >
-          {pct}%
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-[color:var(--mwm-navy)]">
+          Estate Plan Checklist
+        </h2>
+        <p className="mt-0.5 text-xs text-[color:var(--mwm-text-muted)]">
+          {completedCount} of {totalCount} items complete
         </p>
       </div>
 
       <div className="mb-5 h-1.5 rounded-full bg-neutral-100">
         <div
           className={`h-1.5 rounded-full transition-all ${
-            pct === 100
+            progressWidth === 100
               ? 'bg-[color:var(--mwm-sage)]'
-              : pct >= 50
+              : progressWidth >= 50
                 ? 'bg-[color:var(--mwm-navy)]'
                 : 'bg-amber-500'
           }`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${progressWidth}%` }}
         />
       </div>
 
@@ -166,7 +154,7 @@ export function EstateExecutionChecklist({
         })}
       </div>
 
-      {pct === 100 && totalCount > 0 && (
+      {progressWidth === 100 && totalCount > 0 && (
         <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center">
           <p className="text-sm font-semibold text-green-700">Estate plan checklist complete</p>
           <p className="mt-0.5 text-xs text-green-600">

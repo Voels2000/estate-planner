@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
     const [
       householdResult,
       completenessResult,
+      estateReadinessResult,
       recommendationsResult,
       incapacityResult,
       estateTaxResult,
@@ -104,8 +105,15 @@ export async function GET(request: NextRequest) {
         .eq('id', householdId)
         .single(),
 
-      // 2. Completeness score
+      // 2. Completeness score (advisor / attorney intake)
       supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
+
+      // 2b. Estate readiness (consumer-facing 0–100)
+      supabase
+        .from('estate_health_scores')
+        .select('score')
+        .eq('household_id', householdId)
+        .maybeSingle(),
 
       // 3. Estate recommendations
       supabase
@@ -186,6 +194,7 @@ export async function GET(request: NextRequest) {
       variant: variant ?? null,
       household: householdResult.data,
       completeness: completenessResult.data,
+      estate_readiness_score: estateReadinessResult.data?.score ?? null,
       recommendations: recommendationsResult.data ?? null,
       incapacity: incapacityResult.data,
       federal_estate_tax: includeFinancialProfile ? estateTaxResult.data : null,

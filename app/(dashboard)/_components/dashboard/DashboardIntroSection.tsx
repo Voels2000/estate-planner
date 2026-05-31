@@ -54,7 +54,7 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
               <p className="text-xs text-neutral-500 mt-0.5">
                 {totalTax > 0
                   ? `Your estate has ${formatDollars(totalTax)} in estimated tax exposure. Upgrade to model strategies to reduce it.`
-                  : `Complete ${completionScore.threshold} of ${completionScore.total} Retirement Planning steps`}
+                  : 'Complete your Retirement Planning checklist to unlock Estate Planning'}
               </p>
             </div>
             <Link
@@ -72,15 +72,11 @@ export function DashboardIntroSection(props: DashboardIntroSectionProps) {
           </div>
           <div className="flex items-center justify-between text-xs text-amber-700">
             <span>
-              {completionScore.completed} of {completionScore.total} complete
+              {completionScore.completed} of {completionScore.total} steps complete
             </span>
-            <span>
-              {completionScore.threshold - completionScore.completed > 0
-                ? `${completionScore.threshold - completionScore.completed} more step${
-                    completionScore.threshold - completionScore.completed === 1 ? '' : 's'
-                  } to unlock`
-                : '🎉 Ready to unlock!'}
-            </span>
+            {completionScore.unlocked && (
+              <span>Ready to unlock</span>
+            )}
           </div>
         </div>
       )}

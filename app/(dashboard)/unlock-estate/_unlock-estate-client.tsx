@@ -10,7 +10,6 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const pct = Math.round((score.completed / score.total) * 100)
   const canUnlock = score.unlocked
 
   async function handleUnlock() {
@@ -40,7 +39,8 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
     }
   }
 
-  const remaining = Math.max(0, score.threshold - score.completed)
+  const progressWidth =
+    score.total > 0 ? Math.round((score.completed / score.total) * 100) : 0
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -50,20 +50,15 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
           Unlock Estate Planning
         </h1>
         <p className="mt-2 text-neutral-500">
-          Complete {score.threshold} of {score.total} Retirement Planning steps to unlock Estate Planning features.
+          Complete your Retirement Planning checklist to unlock Estate Planning features.
         </p>
       </div>
 
       {/* Progress bar */}
       <div className="mb-8 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
           <span className="text-sm font-medium text-neutral-700">
-            {score.completed} of {score.total} complete
-          </span>
-          <span
-            className={`text-sm font-semibold ${canUnlock ? 'text-green-600' : 'text-[color:var(--mwm-navy)]'}`}
-          >
-            {pct}%
+            {score.completed} of {score.total} steps complete
           </span>
         </div>
         <div className="h-3 w-full overflow-hidden rounded-full bg-neutral-100">
@@ -71,12 +66,12 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
             className={`h-full rounded-full transition-all duration-500 ${
               canUnlock ? 'bg-green-500' : 'bg-[var(--mwm-navy)]'
             }`}
-            style={{ width: `${pct}%` }}
+            style={{ width: `${progressWidth}%` }}
           />
         </div>
         {canUnlock && (
           <p className="mt-3 text-sm font-medium text-green-600">
-            You&apos;ve met the threshold — Estate Planning is ready to unlock!
+            Checklist complete — Estate Planning is ready to unlock.
           </p>
         )}
       </div>
@@ -143,7 +138,7 @@ export function UnlockEstateClient({ score }: { score: CompletionScore }) {
           ? 'Unlocking…'
           : canUnlock
             ? 'Unlock Estate Planning'
-            : `Complete ${remaining} more step${remaining === 1 ? '' : 's'} to unlock`}
+            : 'Complete checklist to unlock'}
       </button>
     </div>
   )

@@ -140,7 +140,7 @@ export function generateExecutiveSummary(data: PDFReportData): string {
     s += hasTrust
       ? `Your trust structure provides a strong foundation for probate avoidance. `
       : `Establishing a revocable trust is the highest-priority action to avoid probate. `
-    s += `Your plan health score of ${healthScore}/100 is ${sl} — `
+    s += `Your estate readiness score of ${healthScore}/100 is ${sl} — `
     s += healthScore < 60
       ? `key gaps in beneficiary designations or document completeness are driving the score down.`
       : `continued attention to document currency will keep it there.`
