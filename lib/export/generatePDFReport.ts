@@ -16,6 +16,7 @@
 import type { ActionItem } from '@/lib/export-wiring'
 import {
   calcStateTax,
+  dedupeActionItems,
   enrichActionItems,
   generateExecutiveSummary,
   generateGiftingSummary,
@@ -141,7 +142,7 @@ export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
   const taxCallout = generateTaxCallout(data)
   const healthTrend = generateHealthTrend(data)
-  const enrichedActions = enrichActionItems(data.actionItems, data)
+  const enrichedActions = dedupeActionItems(enrichActionItems(data.actionItems, data))
   const giftingSummary = generateGiftingSummary(data)
   const actionGroups = groupActionItems(enrichedActions)
 

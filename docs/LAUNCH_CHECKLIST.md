@@ -145,8 +145,8 @@ See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 | 5 | **Cover — executive summary** — plain-English paragraph | [ ] |
 | 6 | **Cover — tax callout** — styled block (`clear`, `sunset_risk`, or `exposed`) | [ ] |
 | 7 | **Cover — gifting bar** — when gross estate ≥ $1M | [ ] |
-| 8 | **Action items page** — grouped by theme with impact + next step | [ ] |
-| 9 | **In-tab Prepare for Meeting → Print/PDF** — modal brief only (not full narrative — expected) | [ ] |
+| 8 | **Action items page** — grouped by theme; no duplicate trust alert | [ ] |
+| 9 | **Page 3 federal exemption** — ~$28M MFJ (matches cover, not $15M per-person) | [ ] |
 
 ### Security hardening post-deploy browser smoke (2026-05-29)
 
@@ -713,6 +713,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-30 | PDF exemption + alert dedupe | **Closed** — page 3 uses `currentFederalExemption()`; `dedupeActionItems()` for duplicate alerts |
 | 2026-05-30 | PDF export path wiring | **Closed** — shared `loadAdvisorExportWiring`; API `?type=report`; header Export estate report + Meeting brief split |
 | 2026-05-30 | PDF narrative engine | **Closed** — rule-based cover + action items; `fetchNarrativePdfFields` parallel fetch; Meeting Prep top alerts; manual smoke checklist added |
 | 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added |

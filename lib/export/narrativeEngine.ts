@@ -35,8 +35,12 @@ function fmtFull(n: number): string {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-function federalExemption(filingStatus: string): number {
+export function currentFederalExemption(filingStatus: string): number {
   return filingStatus === 'mfj' ? 27_980_000 : 13_990_000
+}
+
+function federalExemption(filingStatus: string): number {
+  return currentFederalExemption(filingStatus)
 }
 
 function sunsetExemption(filingStatus: string): number {
@@ -316,6 +320,22 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
     }
 
     return { ...item, theme: 'general' as const, owner: 'advisor' as const }
+  })
+}
+
+/** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps first match. */
+export function dedupeActionItems(items: ActionItem[]): ActionItem[] {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const key = (item.title ?? item.message ?? '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 20)
+    if (!key) return true
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
   })
 }
 

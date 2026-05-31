@@ -5,6 +5,8 @@ import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor
 import type { ActionItem, MonteCarloSummary, ScenarioVersion } from '@/lib/export-wiring'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
+import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import { currentFederalExemption } from '@/lib/export/narrativeEngine'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
   return rows.map((r) => ({
@@ -68,7 +70,7 @@ export function buildAdvisorExportPayloads(params: {
   const stTaxExport = Number(
     params.latestOutput?.estate_tax_state ?? params.latestOutput?.state_tax ?? params.latestOutput?.state_estate_tax ?? 0,
   )
-  const exemptionExport = Number(params.assumptionSnapshot.estate_exemption_individual ?? 15_000_000)
+  const exemptionExport = currentFederalExemption(normalizePdfFilingStatus(household.filing_status))
   const lawScenarioExport = params.scenarioForStrategy?.law_scenario ?? 'current_law'
 
   const projectionRowsForExcel: Array<Record<string, number | string>> = params.scenarioOutputs.map((row) => {

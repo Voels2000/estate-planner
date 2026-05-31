@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (PDF export path wiring)
+# Last updated: 2026-05-30 (PDF exemption + action-item dedupe)
+
+## PDF tax page exemption aligned with narrative engine (2026-05-30)
+
+**Problem:** PDF page 3 (Tax Analysis) showed **$15M** federal exemption for MFJ households while the cover narrative correctly referenced **~$28M**. Root cause: `exportMappers.ts` read `assumption_snapshot.estate_exemption_individual` (per-person OBBBA $15M) without applying filing status.
+
+**Decision:** `PDFReportData.federalExemption` now uses **`currentFederalExemption(normalizePdfFilingStatus(...))`** — same source as cover copy in `narrativeEngine.ts` ($27.98M MFJ / $13.99M single). Projection tax **amounts** on page 3 still come from scenario `latestOutput`; only the exemption **display** label is unified.
+
+**Duplicate action items:** `dedupeActionItems()` drops second alerts whose normalized title matches the first 20 characters of an earlier item (e.g. duplicate "Large estate without trust" rows in Documents vs Additional recommendations).
+
+---
 
 ## PDF export paths unified — narrative engine on all estate reports (2026-05-30)
 

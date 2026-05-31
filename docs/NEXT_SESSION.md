@@ -1,18 +1,29 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (PDF export path wiring)
+# Updated: 2026-05-30 (PDF exemption + action-item dedupe)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF export path wiring** (this commit) · **PDF narrative engine** (`efbafba`) · **Advisor Retirement tab** (`3e010bc`) · **Advisor strategy + Estate tabs** (`7a8d10c`). Post-deploy: test **Export estate report** from header or Meeting Prep tab.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF exemption + alert dedupe** (this commit) · **PDF export path wiring** (`a6c7e18`) · **PDF narrative engine** (`efbafba`). Post-deploy: re-export Voels — page 3 exemption ~$28M MFJ; no duplicate trust alerts.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## PDF exemption + action-item dedupe ✅ (2026-05-30)
+
+| Fix | Detail |
+|-----|--------|
+| Page 3 exemption | `currentFederalExemption()` — MFJ **$27.98M** (was per-person $15M from `assumption_snapshot`) |
+| Dedupe | `dedupeActionItems()` — first 20 chars of normalized title |
+
+**Smoke:** Voels MFJ PDF — cover and page 3 exemption match; trust alert appears once under Documents only.
 
 ---
 

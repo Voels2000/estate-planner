@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (PDF export path wiring)
+# Last updated: 2026-05-30 (PDF exemption + alert dedupe)
 
 ---
 
@@ -18,6 +18,16 @@
 ---
 
 ## Current sprint
+
+### Sprint — PDF exemption + action-item dedupe (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Page 3 federal exemption → `currentFederalExemption()` | `[x]` |
+| `dedupeActionItems()` for duplicate household_alerts | `[x]` |
+| Voels smoke — exemption + single trust alert | `[ ]` |
+
+---
 
 ### Sprint — PDF export path wiring (2026-05-30) **← shipped**
 

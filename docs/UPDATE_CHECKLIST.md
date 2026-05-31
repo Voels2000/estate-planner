@@ -637,6 +637,13 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Retirement tab on Alan — readiness hero · survivor benefit · Roth window · RMD ages (1960+ → 75)
 
+## PDF exemption + action-item dedupe ✅ closed 2026-05-30
+
+- [x] Page 3 `federalExemption` → `currentFederalExemption()` (not raw `estate_exemption_individual`)
+- [x] `dedupeActionItems()` — duplicate household_alerts by title prefix
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once
+
 ## PDF export path wiring ✅ closed 2026-05-30
 
 - [x] `lib/advisor/loadAdvisorExportWiring.ts` — shared server loader for export payloads
