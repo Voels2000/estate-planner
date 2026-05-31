@@ -485,18 +485,68 @@ export function RothClient({ result, householdId }: Props) {
       )}
 
       {/* Methodology note */}
-      <div className="space-y-1 rounded-lg border border-border/50 bg-muted/30 p-4 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">How this works</p>
+      <div className="space-y-2 rounded-lg border border-border/50 bg-muted/30 p-4 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground">How this calculation works</p>
         <p>
-          The model compares your current marginal tax rate to the rate projected when RMDs begin.
-          It illustrates conversion amounts up to the top of your current bracket when that rate is
-          lower than your projected RMD rate—one approach many families discuss with a tax advisor.
+          Year-by-year income, Social Security, and RMDs come from your Lifetime Snapshot
+          projection. Federal and state bracket tables and your profile deduction setting are
+          applied on top of those rows.
         </p>
+        <ol className="list-decimal space-y-1.5 pl-4">
+          <li>
+            <span className="font-medium text-foreground">Projected RMD rate — </span>
+            On the first projection year when the primary owner reaches RMD age and RMD income
+            appears, we compute a combined federal + state marginal rate. That becomes the
+            &ldquo;projected RMD rate&rdquo; in the insight card.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">When we recommend a conversion — </span>
+            Each year, both spouses must be at least age 60 (a simplified stand-in for 59½). The
+            year&apos;s combined marginal rate must be below the projected RMD rate, and you must
+            still have tax-deferred balance remaining.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">How much — </span>
+            We estimate federal bracket headroom: room to add conversion income before reaching the
+            bracket targeted at RMD age. When the projected RMD federal rate is 24% or higher, we
+            fill through the top of the 22% bracket (just under the 24% threshold). The
+            recommendation is the smaller of that headroom, your combined traditional IRA/401(k)
+            balance, and $500,000 per year.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Tax cost on each row — </span>
+            Federal cost uses the row&apos;s marginal rate × conversion amount. State cost uses
+            bracket rules when your state taxes ordinary income. Lifetime savings in the table is a
+            simplified illustration (future RMD reduction vs. conversion tax), not a full tax return.
+          </li>
+        </ol>
+        <p className="font-medium text-foreground">What this model does not include</p>
+        <ul className="list-disc space-y-1 pl-4">
+          <li>
+            Per-account rules — amounts use your <em>combined</em> traditional IRA and 401(k)
+            balances. Employer 401(k) plans you cannot convert yet, or a spouse&apos;s separate
+            accounts, are not split out. Legally you can convert your own IRA at 59½ even if your
+            spouse is younger; this tool waits until both spouses are 60+ before recommending any
+            household conversion.
+          </li>
+          <li>
+            Social Security taxation — bracket headroom uses projected income minus your deduction,
+            not the full provisional-income formula used on a tax return, so gap-year rates and
+            amounts can differ slightly from a CPA worksheet.
+          </li>
+          <li>
+            IRMAA, Roth five-year clocks, paying conversion tax from IRA vs. taxable, and
+            account-specific eligibility.
+          </li>
+          <li>
+            The &ldquo;What if I converted&rdquo; slider uses a separate simplified formula; only
+            the year-by-year table reflects the full engine above.
+          </li>
+        </ul>
         <p>
-          Tax calculations use federal and state income tax bracket tables from admin-managed rules.
-          Income, Social Security, and RMDs are sourced from your full household projection — the
-          same data used in your Lifetime Snapshot. Your advisor can model the tax impact of
-          specific conversion amounts with you.
+          The insight card &ldquo;current rate&rdquo; uses the first recommended conversion year
+          (or your lowest pre-RMD rate), not necessarily this calendar year if you are still
+          working or below the age gate.
         </p>
         <p className="mt-1 border-t border-border/40 pt-1">
           <span className="font-medium text-foreground">5-year rule & qualified withdrawals: </span>
