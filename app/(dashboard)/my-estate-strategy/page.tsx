@@ -14,6 +14,7 @@ import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
@@ -291,7 +292,7 @@ export default async function MyEstateStrategyPage() {
   const [{ data: strategyLineRows }, { data: giftingSummaryData }] = await Promise.all([
     supabase
       .from('strategy_line_items')
-      .select('amount, confidence_level, effective_year, is_active, sign, source_role, consumer_accepted, consumer_rejected')
+      .select('amount, confidence_level, effective_year, is_active, sign, source_role, strategy_source, consumer_accepted, consumer_rejected')
       .eq('household_id', household.id)
       .is('projection_year', null),
     supabase.rpc('calculate_gifting_summary', { p_household_id: household.id }),
@@ -316,6 +317,7 @@ export default async function MyEstateStrategyPage() {
     is_active: row.is_active ?? true,
     sign: typeof row.sign === 'number' ? row.sign : -1,
     source_role: String(row.source_role ?? 'consumer'),
+    strategy_source: String(row.strategy_source ?? ''),
     consumer_accepted: Boolean(row.consumer_accepted),
     consumer_rejected: Boolean(row.consumer_rejected),
   }))
@@ -328,6 +330,7 @@ export default async function MyEstateStrategyPage() {
     (item) => item.source_role === 'advisor' && !item.consumer_accepted,
   )
   const projectedStrategyLineItems = [...actualStrategyLineItems, ...pendingAdvisorStrategyLineItems]
+  const hasBypassTrust = deriveHasBypassTrustFromLineItems(actualStrategyLineItems, 'consumer_accepted')
 
   const horizons = buildStrategyHorizons({
     currentYear,
@@ -350,6 +353,7 @@ export default async function MyEstateStrategyPage() {
     scenarioRows,
     survivorFirstName,
     longevityAge,
+    hasBypassTrust,
   })
   const horizonsProjected = buildStrategyHorizons({
     currentYear,
@@ -372,6 +376,7 @@ export default async function MyEstateStrategyPage() {
     scenarioRows,
     survivorFirstName,
     longevityAge,
+    hasBypassTrust,
   })
 
   const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household.id)

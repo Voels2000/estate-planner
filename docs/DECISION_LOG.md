@@ -1,6 +1,21 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (PDF exemption + action-item dedupe)
+# Last updated: 2026-05-29 (state estate tax unification)
+
+## State estate tax unification — single canonical engine B (2026-05-29)
+
+**Problem:** Three state estate tax implementations coexisted: **A** — hardcoded flat rates in `narrativeEngine.ts`; **B** — `calculateStateEstateTax` (progressive brackets, portability gap, NY cliff); **C** — deprecated `computeStateEstateTaxFromBrackets` (projection death rows only). PDF cover used A while horizons used B; page 3 showed projection row amounts from C. CST `strategy_type` mismatch (`credit_shelter_trust` reads vs `cst` writes) would have prevented `hasBypassTrust` from ever activating.
+
+**Decision:**
+- **Delete engine A.** All display surfaces import **`lib/calculations/stateEstateTax.ts`**.
+- **`lib/constants/strategyTypes.ts`** — single source for CST DB strings; `deriveHasBypassTrustFromLineItems()` / `deriveHasBypassTrustFromConfigs()`.
+- **`hasBypassTrust`** threaded into `computeColumnTaxes` / `buildStrategyHorizons` from **callers** (consumer = accepted line items only; advisor projected = any active CST recommendation).
+- **Governance:** [docs/CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) + regression greps in [NEXT_SESSION.md](./NEXT_SESSION.md) standing rules.
+- **Engine C unchanged** this sprint — projection death-year pipeline is a separate follow-up.
+
+**PDF:** Page 3 shows with/without bypass trust scenario table when `cstBenefit > 0`; `STATE_PORTABILITY_NOTES` for WA/OR/MN/MA/IL/NY.
+
+---
 
 ## PDF tax page exemption aligned with narrative engine (2026-05-30)
 

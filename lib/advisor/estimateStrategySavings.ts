@@ -1,3 +1,5 @@
+import { CST_STRATEGY_SOURCE, isCstStrategyType } from '@/lib/constants/strategyTypes'
+
 export type StrategySavingsContext = {
   grossEstate: number
   totalTax: number
@@ -14,7 +16,7 @@ export type StrategySavingsContext = {
 
 function normalizeStrategyKey(strategyKey: string): string {
   const key = strategyKey.toLowerCase()
-  if (key === 'credit_shelter_trust' || key === 'bypass_trust') return 'cst'
+  if (isCstStrategyType(key)) return CST_STRATEGY_SOURCE
   return key
 }
 
@@ -40,7 +42,7 @@ export function estimateStrategySavings(
   if (grossEstate <= 0) return null
 
   switch (key) {
-    case 'cst': {
+    case CST_STRATEGY_SOURCE: {
       const saving =
         stateExemption > 0 && stateTax > 0
           ? Math.round((stateExemption / grossEstate) * stateTax)

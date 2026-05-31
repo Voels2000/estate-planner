@@ -7,6 +7,7 @@
  * Route: `/advisor/clients/[clientId]`
  */
 
+import { isCstStrategySource } from '@/lib/constants/strategyTypes'
 import { createClient } from '@/lib/supabase/server'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import {
@@ -424,7 +425,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
         ...advisoryMetricsInput,
         cstFundingAmount: hasRunStrategyModules
           ? Number(
-              strategyLineItemsForVm.find((i) => i.strategy_source === 'cst')?.amount ?? 0,
+              strategyLineItemsForVm.find((i) => isCstStrategySource(i.strategy_source))?.amount ?? 0,
             ) || undefined
           : undefined,
       },
@@ -458,6 +459,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       assumptionSnapshot,
       scenarioForStrategy,
       narrativeFields,
+      stateBrackets,
     })
     exportPanelProps = exportPayloads.exportPanelProps
     exportPdfData = exportPayloads.exportPdfData

@@ -9,6 +9,7 @@ import { ClientViewShellProps } from '../_client-view-shell'
 import { formatCurrency, formatDate } from '../_utils'
 import BeneficiaryGrantPanel from './BeneficiaryGrantPanel'
 import EstateFlowDiagram from '@/components/estate-flow/EstateFlowDiagram'
+import { CST_STRATEGY_TYPES } from '@/lib/constants/strategyTypes'
 import { createClient } from '@/lib/supabase/client'
 import { computeBusinessOwnershipValue } from '@/lib/my-estate-strategy/horizonSnapshots'
 import EstateCompositionCard from '@/components/estate/EstateCompositionCard'
@@ -224,7 +225,7 @@ export default function EstateTab({
         .from('strategy_configs')
         .select('id')
         .eq('household_id', household.id)
-        .eq('strategy_type', 'credit_shelter_trust')
+        .in('strategy_type', [...CST_STRATEGY_TYPES])
         .eq('is_active', true)
         .limit(1)
 

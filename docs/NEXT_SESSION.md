@@ -1,18 +1,44 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (PDF exemption + action-item dedupe)
+# Updated: 2026-05-29 (state tax unification shipped)
+
+---
+
+## Standing rules for Cursor sprints
+
+1. **Calculation / tax work:** Start every session with **"read docs/CALCULATION_ENGINES.md"** before writing or changing any tax, projection, strategy, or horizon math.
+2. **Regression grep (after any calc-file touch):** [CALCULATION_ENGINES.md § Regression grep checks](./CALCULATION_ENGINES.md#regression-grep-checks-ongoing-smoke-test) — zero hits on engine A / stray `calcStateTax`.
+3. **CST strings:** Import from **`lib/constants/strategyTypes.ts`** — never hardcode `'cst'` / `'credit_shelter_trust'` at DB query sites.
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF exemption + alert dedupe** (this commit) · **PDF export path wiring** (`a6c7e18`) · **PDF narrative engine** (`efbafba`). Post-deploy: re-export Voels — page 3 exemption ~$28M MFJ; no duplicate trust alerts.
+> My Wealth Maps — **State estate tax unification shipped (2026-05-29).** Engine A (flat-rate `narrativeEngine`) deleted; all display surfaces use **`calculateStateEstateTax`** (engine B). **`lib/constants/strategyTypes.ts`** for CST strings. Read **[CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md)** before any tax calc work.
+>
+> **Post-deploy smoke:** Voels MFJ WA ~$9.3M — re-export PDF; cover + page 3 state tax ~$231K; bypass trust scenario table when `cstBenefit > 0`.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## State tax unification ✅ (2026-05-29)
+
+**Sprint:** [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) — Phases 0–8 complete
+
+| Change | Detail |
+|--------|--------|
+| Engine A deleted | `narrativeEngine.ts` flat-rate `STATE_TAX` / `calcStateTax` removed |
+| Engine B canonical | PDF cover, callout, page 3 scenario table, horizons via `calculateStateEstateTax` |
+| Phase 0 | `lib/constants/strategyTypes.ts` — single CST string source |
+| `hasBypassTrust` | Threaded through `computeColumnTaxes` / `buildStrategyHorizons`; consumer = accepted line items only |
+| Governance | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) + regression greps in standing rules |
+
+**Post-deploy smoke:** Voels MFJ WA ~$9.3M — PDF cover + page 3 state tax ~$231K (engine B); page 3 shows with/without bypass trust table when `cstBenefit > 0`.
 
 ---
 

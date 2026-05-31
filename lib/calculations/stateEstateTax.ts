@@ -1,30 +1,17 @@
 /**
- * lib/calculations/stateEstateTax.ts
+ * CANONICAL STATE ESTATE TAX ENGINE
+ * ==================================
+ * Single source of truth for state estate tax calculations.
+ * ALL surfaces that display state estate tax must import from this file.
  *
- * SESSION 34 — Single source of truth for state estate tax across all pages.
+ * DO NOT add state estate tax logic to narrativeEngine, exportMappers, or components.
  *
- * Replaces three divergent implementations:
- *   - stateRegistry.ts  (blended rate approximation — RETIRED for tax calcs)
- *   - computeStateEstateTaxFromBrackets in estate-tax-projection.ts (no portability, no NY cliff)
- *   - calculate_estate_composition RPC (no portability, no NY cliff)
+ * Exported functions:
+ *   calculateStateEstateTax()    — both no-CST and with-CST scenarios
+ *   calculateStateTaxScenarios() — advisor PDF comparison table
+ *   computeStateEstateTaxFromBrackets() — DEPRECATED, projection death rows only
  *
- * All pages must import from here. The SQL RPC mirrors this logic exactly.
- *
- * Key rules encoded:
- *   1. Graduated brackets from state_estate_tax_rules (never blended rate approximations)
- *   2. No-portability states: WA, OR, MN, MA, ME, IL, MD, NJ, RI, VT, HI
- *      — MFJ without CST: only ONE exemption at second death
- *      — MFJ with CST:    TWO exemptions (double exemption)
- *   3. NY cliff: if gross estate > 105% of exemption, the FULL estate is taxable
- *   4. CT cap: state tax capped at $15M
- *   5. States not in DB: $0 state estate tax
- *
- * IRS / state mechanics:
- *   grossEstate
- *     - state exemption (one or two depending on CST)
- *   = stateTaxableEstate
- *   Apply graduated brackets to stateTaxableEstate
- *   = stateTax
+ * @see docs/CALCULATION_ENGINES.md
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,22 +43,30 @@ export type StateEstateTaxResult = {
 }
 
 // ─── No-portability states ────────────────────────────────────────────────────
-// These states do not allow a surviving spouse to use the deceased spouse's
-// unused exemption (DSUE). Without a Credit Shelter Trust, the first spouse's
-// exemption is lost forever.
 
 const NO_PORTABILITY_STATES = new Set([
   'WA', 'OR', 'MN', 'MA', 'ME', 'IL', 'MD', 'NJ', 'RI', 'VT', 'HI',
-  'DC', 'NE', 'IA', 'KY', 'PA', // inheritance tax states — no estate portability either
+  'DC', 'NE', 'IA', 'KY', 'PA',
 ])
+
+const STATE_DISPLAY_NAMES: Record<string, string> = {
+  WA: 'Washington',
+  OR: 'Oregon',
+  MN: 'Minnesota',
+  MA: 'Massachusetts',
+  IL: 'Illinois',
+  NY: 'New York',
+  MD: 'Maryland',
+  CT: 'Connecticut',
+  ME: 'Maine',
+  HI: 'Hawaii',
+  NJ: 'New Jersey',
+  RI: 'Rhode Island',
+  VT: 'Vermont',
+}
 
 // ─── Core bracket engine ──────────────────────────────────────────────────────
 
-/**
- * Apply graduated state estate tax brackets to a taxable amount.
- * brackets must be sorted ascending by min_amount.
- * taxableAmount = grossEstate - exemption (caller's responsibility).
- */
 function applyBrackets(taxableAmount: number, brackets: StateBracket[]): number {
   if (taxableAmount <= 0 || brackets.length === 0) return 0
   let tax = 0
@@ -85,10 +80,6 @@ function applyBrackets(taxableAmount: number, brackets: StateBracket[]): number 
   return Math.round(tax)
 }
 
-/**
- * Compute state estate tax for a given gross estate and exemption.
- * Handles NY cliff internally.
- */
 function computeStateTaxForExemption(
   grossEstate: number,
   exemption: number,
@@ -103,11 +94,9 @@ function computeStateTaxForExemption(
   let nyCliffTriggered = false
 
   if (stateCode === 'NY') {
-    // NY cliff: if gross estate exceeds 105% of exemption,
-    // the FULL gross estate becomes taxable (no exemption benefit).
     const cliffThreshold = exemption * 1.05
     if (grossEstate > cliffThreshold) {
-      taxableEstate = grossEstate // entire estate taxable — no exemption
+      taxableEstate = grossEstate
       nyCliffTriggered = true
     } else {
       taxableEstate = Math.max(0, grossEstate - exemption)
@@ -122,7 +111,6 @@ function computeStateTaxForExemption(
 
   let tax = applyBrackets(taxableEstate, brackets)
 
-  // CT: state estate tax capped at $15M
   if (stateCode === 'CT') {
     tax = Math.min(tax, 15_000_000)
   }
@@ -130,21 +118,6 @@ function computeStateTaxForExemption(
   return { tax, nyCliffTriggered, taxableEstate: Math.round(taxableEstate) }
 }
 
-// ─── Main exported function ───────────────────────────────────────────────────
-
-/**
- * Calculate state estate tax with full portability and NY cliff logic.
- *
- * @param grossEstate   - Total gross estate value
- * @param stateCode     - Two-letter state postal code (e.g. 'WA', 'NY')
- * @param brackets      - Rows from state_estate_tax_rules for this state+year,
- *                        sorted ascending by min_amount
- * @param isMFJ         - True if married filing jointly
- * @param hasCSTInPlace - True if a Credit Shelter Trust has been established
- *                        (used for the "with CST" scenario calculation)
- *
- * @returns StateEstateTaxResult with both scenarios and CST benefit
- */
 export function calculateStateEstateTax(
   grossEstate: number,
   stateCode: string,
@@ -153,9 +126,9 @@ export function calculateStateEstateTax(
   hasCSTInPlace = false,
 ): StateEstateTaxResult {
   void hasCSTInPlace
+
   const code = stateCode.toUpperCase().trim()
 
-  // No brackets = no state estate tax for this state
   if (brackets.length === 0 || grossEstate <= 0) {
     return {
       stateTax: 0,
@@ -169,31 +142,18 @@ export function calculateStateEstateTax(
     }
   }
 
-  // Exemption is consistent across all brackets for a given state+year
   const singleExemption = brackets[0].exemption_amount ?? 0
   const hasPortabilityGap = isMFJ && NO_PORTABILITY_STATES.has(code)
 
-  // ── Without CST: MFJ no-portability states get only ONE exemption ──────────
-  // This is the worst-case / status-quo scenario for those states.
-  // For states with portability, MFJ effectively gets double exemption federally
-  // but state tax is computed on gross estate with one state exemption at second death.
   const exemptionNoCst = singleExemption
-
   const noCst = computeStateTaxForExemption(grossEstate, exemptionNoCst, brackets, code)
 
-  // ── With CST: MFJ no-portability states get DOUBLE exemption ──────────────
-  // A Credit Shelter Trust "shelters" the first spouse's exemption so the
-  // second estate can deduct both exemptions.
-  // For states WITH portability or single filers, CST provides no additional benefit.
   const exemptionWithCst = hasPortabilityGap ? singleExemption * 2 : singleExemption
   const withCst = hasPortabilityGap
     ? computeStateTaxForExemption(grossEstate, exemptionWithCst, brackets, code)
-    : noCst // same result — CST irrelevant for portability states
+    : noCst
 
   const cstBenefit = Math.max(0, noCst.tax - withCst.tax)
-
-  // Primary stateTax = no-CST (worst case / status quo)
-  // Caller uses stateTaxWithCST for the "with planning" scenario
   const effectiveRate = grossEstate > 0 ? noCst.tax / grossEstate : 0
 
   return {
@@ -208,14 +168,40 @@ export function calculateStateEstateTax(
   }
 }
 
-// ─── Convenience re-export for callers that only need the bracket engine ──────
-// estate-tax-projection.ts uses this directly for death-year rows.
-// Import from here instead of estate-tax-projection.ts going forward.
+/** Active CST in place → use with-CST amount; otherwise status-quo (no CST). */
+export function resolveActiveStateTax(
+  result: StateEstateTaxResult,
+  hasBypassTrust: boolean,
+): number {
+  if (hasBypassTrust && result.hasPortabilityGap) return result.stateTaxWithCST
+  return result.stateTax
+}
+
+export function calculateStateTaxScenarios(params: {
+  grossEstate: number
+  stateCode: string
+  brackets: StateBracket[]
+  filingStatus: string | null | undefined
+}) {
+  const result = calculateStateEstateTax(
+    params.grossEstate,
+    params.stateCode,
+    params.brackets,
+    isMFJFilingStatus(params.filingStatus),
+  )
+
+  return {
+    withBypassTrust: { ...result, stateTax: result.stateTaxWithCST },
+    withoutBypassTrust: { ...result, stateTax: result.stateTax },
+    planningGap: result.cstBenefit,
+    hasPortability: !result.hasPortabilityGap,
+    showScenarioTable: result.cstBenefit > 0,
+  }
+}
 
 /**
  * @deprecated Use calculateStateEstateTax instead.
- * Kept for backward compatibility with computeEstateTaxProjection death-year rows.
- * Does NOT handle portability or NY cliff.
+ * Kept for computeEstateTaxProjection death-year rows only.
  */
 export function computeStateEstateTaxFromBrackets(
   grossEstate: number,
@@ -226,18 +212,13 @@ export function computeStateEstateTaxFromBrackets(
   return applyBrackets(Math.max(0, grossEstate - exemption), brackets)
 }
 
-// ─── Helper: derive isMFJ from filing status string ──────────────────────────
-
 export function isMFJFilingStatus(filingStatus: string | null | undefined): boolean {
   const fs = (filingStatus ?? '').toLowerCase().trim()
   return fs === 'mfj' || fs === 'married_filing_jointly' || fs === 'married filing jointly' || fs === 'married_joint'
 }
 
-// ─── Helper: does this state have an estate tax at all? ──────────────────────
-
 export function stateHasEstateTax(stateCode: string | null | undefined): boolean {
   if (!stateCode) return false
-  // States in state_estate_tax_rules table as of Session 34
   const ESTATE_TAX_STATES = new Set([
     'CT', 'DC', 'HI', 'IA', 'IL', 'KY', 'MA', 'MD', 'ME',
     'MN', 'NE', 'NJ', 'NY', 'OR', 'PA', 'RI', 'VT', 'WA',
@@ -245,17 +226,16 @@ export function stateHasEstateTax(stateCode: string | null | undefined): boolean
   return ESTATE_TAX_STATES.has(stateCode.toUpperCase().trim())
 }
 
-// ─── Helper: portability gap label for UI ────────────────────────────────────
+export function getStateDisplayName(stateCode: string | null | undefined): string {
+  if (!stateCode) return 'State'
+  const code = stateCode.toUpperCase().trim()
+  return STATE_DISPLAY_NAMES[code] ?? code
+}
 
 export function getPortabilityGapLabel(stateCode: string | null | undefined): string | null {
   if (!stateCode) return null
   const code = stateCode.toUpperCase().trim()
   if (!NO_PORTABILITY_STATES.has(code)) return null
-  const STATE_NAMES: Record<string, string> = {
-    WA: 'Washington', OR: 'Oregon', MN: 'Minnesota', MA: 'Massachusetts',
-    ME: 'Maine', IL: 'Illinois', MD: 'Maryland', NJ: 'New Jersey',
-    RI: 'Rhode Island', VT: 'Vermont', HI: 'Hawaii',
-  }
-  const name = STATE_NAMES[code] ?? code
+  const name = getStateDisplayName(code)
   return `${name} does not recognize federal portability. Without a Credit Shelter Trust, one spouse's exemption is lost at first death.`
 }

@@ -4,6 +4,7 @@
 // Recommendation toggles persist advisor-owned strategy recommendations via
 // canonical advisor endpoints.
 
+import { CST_STRATEGY_SOURCE } from '@/lib/constants/strategyTypes'
 import { useState, useEffect } from 'react'
 import { applyGRAT, GRATConfig } from '@/lib/strategy/applyGRAT'
 import { applyCRT, applyCLAT, applyDAF, DAFConfig } from '@/lib/strategy/applyCharitableStrategies'
@@ -57,7 +58,7 @@ interface AdvancedStrategyPanelProps {
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_7520_RATE = 0.052
 const PANEL_TO_STRATEGY_SOURCE: Partial<Record<Exclude<AdvancedPanel, null>, string>> = {
-  credit_shelter_trust: 'cst',
+  credit_shelter_trust: CST_STRATEGY_SOURCE,
 }
 
 function toAdvisorConfidence(
@@ -527,12 +528,12 @@ export default function AdvancedStrategyPanel({
               ))}
             </div>
           )}
-          <RecommendButton strategySource="cst" saved={saved} saving={saving}
-            onToggle={() => toggle('cst', {
+          <RecommendButton strategySource={CST_STRATEGY_SOURCE} saved={saved} saving={saving}
+            onToggle={() => toggle(CST_STRATEGY_SOURCE, {
               scenario_id: 'current_law',
               metric_target: 'taxable_estate',
               category: 'trust_exclusion',
-              strategy_source: 'cst',
+              strategy_source: CST_STRATEGY_SOURCE,
               amount: cstResult?.taxSavingsVsPortability ?? 0,
               sign: -1,
               confidence_level: 'probable',

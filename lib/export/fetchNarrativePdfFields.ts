@@ -2,6 +2,7 @@
  * Parallel fetch of narrative-engine inputs for PDFReportData.
  */
 
+import { CST_STRATEGY_SOURCES, deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { createClient } from '@/lib/supabase/server'
 
 export type NarrativePdfFields = {
@@ -9,6 +10,7 @@ export type NarrativePdfFields = {
   domicileState: string
   hasTrust: boolean
   hasIrrevocableTrust: boolean
+  hasBypassTrust: boolean
   hasGiftingProgram: boolean
   lifeInsuranceOutsideILIT: number
   priorHealthScore?: number
@@ -34,7 +36,7 @@ export async function fetchNarrativePdfFields(params: {
   const supabase = await createClient()
   const filingStatus = normalizePdfFilingStatus(params.filingStatus)
 
-  const [trustRes, irrevocableRes, giftingRes, insuranceRes, priorScoreRes, giftingSummaryRes] =
+  const [trustRes, irrevocableRes, cstLineRes, giftingRes, insuranceRes, priorScoreRes, giftingSummaryRes] =
     await Promise.all([
       supabase
         .from('estate_documents')
@@ -48,8 +50,14 @@ export async function fetchNarrativePdfFields(params: {
         .select('id')
         .eq('household_id', params.householdId)
         .eq('is_active', true)
-        .in('strategy_type', ['ilit', 'slat', 'credit_shelter_trust', 'grat'])
+        .in('strategy_type', ['ilit', 'slat', 'grat'])
         .limit(1),
+      supabase
+        .from('strategy_line_items')
+        .select('strategy_source, source_role, consumer_accepted, consumer_rejected, is_active')
+        .eq('household_id', params.householdId)
+        .in('strategy_source', [...CST_STRATEGY_SOURCES])
+        .eq('is_active', true),
       supabase
         .from('strategy_configs')
         .select('id')
@@ -85,11 +93,14 @@ export async function fetchNarrativePdfFields(params: {
     .filter((p) => !p.is_ilit)
     .reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0)
 
+  const hasBypassTrust = deriveHasBypassTrustFromLineItems(cstLineRes.data ?? [], 'consumer_accepted')
+
   return {
     filingStatus,
     domicileState: params.statePrimary ?? 'WA',
     hasTrust: (trustRes.data?.length ?? 0) > 0,
     hasIrrevocableTrust: (irrevocableRes.data?.length ?? 0) > 0,
+    hasBypassTrust,
     hasGiftingProgram: (giftingRes.data?.length ?? 0) > 0,
     lifeInsuranceOutsideILIT,
     priorHealthScore: priorScoreRes.data?.[0]?.score ?? undefined,

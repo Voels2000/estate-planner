@@ -1,3 +1,4 @@
+import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import {
   buildStrategyHorizons,
@@ -33,6 +34,7 @@ export function buildAdvisorStrategyViewModels(params: {
   latestOutput: Record<string, unknown> | null
   assumptionSnapshot: Record<string, unknown>
   strategyLineItems: Array<{
+    strategy_source: string
     source_role: string
     amount: number
     sign: number
@@ -40,6 +42,7 @@ export function buildAdvisorStrategyViewModels(params: {
     effective_year: number | null
     consumer_accepted: boolean
     consumer_rejected: boolean
+    is_active?: boolean
   }>
 }) {
   const currentMonthYearLabel = new Date().toLocaleString('en-US', {
@@ -77,22 +80,31 @@ export function buildAdvisorStrategyViewModels(params: {
   const actualStrategyLineItems = activeRows
     .filter((item) => item.source_role === 'consumer' || (item.source_role === 'advisor' && item.consumer_accepted))
     .map((item) => ({
+      strategy_source: item.strategy_source,
+      source_role: item.source_role,
+      consumer_accepted: item.consumer_accepted,
       amount: Math.abs(Number(item.amount ?? 0)),
       confidence_level: item.confidence_level,
       effective_year: item.effective_year,
-      is_active: true,
+      is_active: item.is_active ?? true,
       sign: typeof item.sign === 'number' ? item.sign : -1,
     }))
   const pendingAdvisorLineItems = activeRows
     .filter((item) => item.source_role === 'advisor' && !item.consumer_accepted)
     .map((item) => ({
+      strategy_source: item.strategy_source,
+      source_role: item.source_role,
+      consumer_accepted: item.consumer_accepted,
       amount: Math.abs(Number(item.amount ?? 0)),
       confidence_level: item.confidence_level,
       effective_year: item.effective_year,
-      is_active: true,
+      is_active: item.is_active ?? true,
       sign: typeof item.sign === 'number' ? item.sign : -1,
     }))
   const projectedStrategyLineItems = [...actualStrategyLineItems, ...pendingAdvisorLineItems]
+
+  const hasBypassTrustActual = deriveHasBypassTrustFromLineItems(actualStrategyLineItems, 'consumer_accepted')
+  const hasBypassTrustProjected = deriveHasBypassTrustFromLineItems(activeRows, 'advisor_projected')
 
   const lifetimeGiftsUsed = params.lifetimeGiftsUsed ?? 0
 
@@ -117,6 +129,7 @@ export function buildAdvisorStrategyViewModels(params: {
     survivorFirstName,
     longevityAge,
     strategyLineItems: actualStrategyLineItems,
+    hasBypassTrust: hasBypassTrustActual,
   })
 
   const advisorHorizonsProjected: MyEstateStrategyHorizonsResult = buildStrategyHorizons({
@@ -140,6 +153,7 @@ export function buildAdvisorStrategyViewModels(params: {
     survivorFirstName,
     longevityAge,
     strategyLineItems: projectedStrategyLineItems,
+    hasBypassTrust: hasBypassTrustProjected,
   })
 
   const scenarioForStrategy = params.scenario

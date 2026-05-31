@@ -15,16 +15,31 @@
 
 import type { ActionItem } from '@/lib/export-wiring'
 import {
-  calcStateTax,
+  calculateStateTaxScenarios,
+  getStateDisplayName,
+  isMFJFilingStatus,
+  resolveActiveStateTax,
+  calculateStateEstateTax,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
+import {
   dedupeActionItems,
   enrichActionItems,
   generateExecutiveSummary,
   generateGiftingSummary,
   generateHealthTrend,
   generateTaxCallout,
-  getStateTaxInfo,
   groupActionItems,
 } from './narrativeEngine'
+
+const STATE_PORTABILITY_NOTES: Record<string, string> = {
+  WA: 'Washington does not allow portability of its estate tax exemption. Without a credit shelter trust funded at first death, the first spouse\'s $3M exemption is permanently lost. The surviving spouse receives only their own $3M exemption on second death.',
+  OR: 'Oregon does not allow portability of its estate tax exemption. At Oregon\'s $1M threshold, a bypass trust is critical for nearly every married estate over $1M.',
+  MN: 'Minnesota does not allow portability of its estate tax exemption. A bypass trust preserves both spouses\' $3M exemptions across both deaths.',
+  MA: 'Massachusetts does not allow portability and applies a cliff tax: once the estate exceeds $2M, the entire estate is taxed. A bypass trust both preserves the first-death exemption and keeps the survivor\'s estate below the cliff.',
+  IL: 'Illinois does not allow portability of its estate tax exemption. A bypass trust preserves both spouses\' $4M exemptions.',
+  NY: 'New York does not allow portability and applies a cliff tax at 105% of the exemption: if the estate exceeds this threshold, the entire estate is taxed at full rates. Precise planning is critical.',
+}
 
 export interface PDFReportData {
   // Household
@@ -48,6 +63,8 @@ export interface PDFReportData {
   stateTax: number
   federalExemption: number
   lawScenario: string
+  stateBrackets: StateBracket[]
+  hasBypassTrust?: boolean
 
   // Health score
   healthScore: number
@@ -146,6 +163,24 @@ export function generatePDFHTML(data: PDFReportData): string {
   const giftingSummary = generateGiftingSummary(data)
   const actionGroups = groupActionItems(enrichedActions)
 
+  const stateName = getStateDisplayName(data.domicileState)
+  const hasBypassTrust = Boolean(data.hasBypassTrust ?? data.hasIrrevocableTrust)
+  const coverStateResult = calculateStateEstateTax(
+    data.grossEstate,
+    data.domicileState,
+    data.stateBrackets ?? [],
+    isMFJFilingStatus(data.filingStatus),
+    hasBypassTrust,
+  )
+  const coverStateTax = resolveActiveStateTax(coverStateResult, hasBypassTrust)
+  const stateTaxScenarios = calculateStateTaxScenarios({
+    grossEstate: data.grossEstate,
+    stateCode: data.domicileState,
+    brackets: data.stateBrackets ?? [],
+    filingStatus: data.filingStatus,
+  })
+  const page3StateTax = stateTaxScenarios.withoutBypassTrust.stateTax
+
   const pages = determinePDFPages(data)
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
   const pct = (n: number) => `${(n * 100).toFixed(1)}%`
@@ -219,8 +254,8 @@ export function generatePDFHTML(data: PDFReportData): string {
         </div>
         <div class="metric-card">
           <div class="label">Est. total tax exposure</div>
-          <div class="value">${fmt((data.federalTax ?? 0) + calcStateTax(data.grossEstate, data.domicileState, data.filingStatus))}</div>
-          <div class="sub">Federal + ${getStateTaxInfo(data.domicileState).name} state</div>
+          <div class="value">${fmt((data.federalTax ?? 0) + coverStateTax)}</div>
+          <div class="sub">Federal + ${stateName} state</div>
         </div>
         <div class="metric-card">
           <div class="label">Plan health score</div>
@@ -299,6 +334,68 @@ export function generatePDFHTML(data: PDFReportData): string {
 
   // PAGE 3: Tax Analysis
   if (pages.includes('tax_analysis')) {
+    const taxAnalysisSection = stateTaxScenarios.showScenarioTable
+      ? `
+      <div class="section-title">${stateName} estate tax — planning scenario comparison</div>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:10pt;">
+        <tr style="background:#2E4057;color:#fff;">
+          <th style="padding:8px 10px;text-align:left;">Scenario</th>
+          <th style="padding:8px 10px;text-align:right;">State tax</th>
+          <th style="padding:8px 10px;text-align:right;">Net to heirs</th>
+        </tr>
+        <tr style="background:#f0f7f0;">
+          <td style="padding:8px 10px;">
+            <strong>With bypass trust</strong><br>
+            <span style="font-size:9pt;color:#555;">Both spouses' exemptions preserved</span>
+          </td>
+          <td style="padding:8px 10px;text-align:right;color:#166534;font-weight:bold;">
+            ${fmt(stateTaxScenarios.withBypassTrust.stateTax)}
+          </td>
+          <td style="padding:8px 10px;text-align:right;">
+            ${fmt(data.grossEstate - stateTaxScenarios.withBypassTrust.stateTax)}
+          </td>
+        </tr>
+        <tr style="background:#fef2f2;">
+          <td style="padding:8px 10px;">
+            <strong>Without bypass trust (current situation)</strong><br>
+            <span style="font-size:9pt;color:#555;">First spouse's exemption permanently lost at death</span>
+          </td>
+          <td style="padding:8px 10px;text-align:right;color:#991b1b;font-weight:bold;">
+            ${fmt(stateTaxScenarios.withoutBypassTrust.stateTax)}
+          </td>
+          <td style="padding:8px 10px;text-align:right;">
+            ${fmt(data.grossEstate - stateTaxScenarios.withoutBypassTrust.stateTax)}
+          </td>
+        </tr>
+        <tr style="background:#fffbeb;border-top:2px solid #d97706;">
+          <td style="padding:8px 10px;"><strong>Bypass trust planning benefit</strong></td>
+          <td style="padding:8px 10px;text-align:right;color:#92400e;font-weight:bold;">
+            ${fmt(stateTaxScenarios.planningGap)} saved
+          </td>
+          <td style="padding:8px 10px;text-align:right;color:#92400e;">
+            ${fmt(stateTaxScenarios.planningGap)} more to heirs
+          </td>
+        </tr>
+      </table>
+      <div style="background:#fff8e1;border:1px solid #fbbf24;border-radius:5px;padding:10px 14px;font-size:9.5pt;color:#451a03;margin-bottom:12px;">
+        ${STATE_PORTABILITY_NOTES[data.domicileState] ?? ''}
+      </div>`
+      : `
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Federal estate tax</div>
+          <div class="metric-value">${fmt(data.federalTax ?? 0)}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">${stateName} estate tax</div>
+          <div class="metric-value">${fmt(page3StateTax)}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Net to heirs</div>
+          <div class="metric-value">${fmt(data.grossEstate - (data.federalTax ?? 0) - page3StateTax)}</div>
+        </div>
+      </div>`
+
     html += `
     <div class="page">
       <div class="header">
@@ -317,25 +414,10 @@ export function generatePDFHTML(data: PDFReportData): string {
         </div>
         <div class="metric-card">
           <div class="metric-label">State Estate Tax</div>
-          <div class="metric-value" style="color:${data.stateTax > 0 ? '#dc2626' : '#16a34a'}">${fmt(data.stateTax)}</div>
+          <div class="metric-value" style="color:${page3StateTax > 0 ? '#dc2626' : '#16a34a'}">${fmt(page3StateTax)}</div>
         </div>
       </div>
-      <div class="section-title">Tax Scenario Comparison</div>
-      <table>
-        <tr><th>Scenario</th><th>Exemption</th><th>Est. Tax</th><th>Net to Heirs</th></tr>
-        <tr>
-          <td>Current Law</td>
-          <td>${fmt(data.federalExemption)}</td>
-          <td>${fmt(data.federalTax + data.stateTax)}</td>
-          <td>${fmt(data.grossEstate - data.federalTax - data.stateTax)}</td>
-        </tr>
-        <tr>
-          <td>No Exemption</td>
-          <td>$0</td>
-          <td>${fmt(data.grossEstate * 0.40)}</td>
-          <td>${fmt(data.grossEstate * 0.60)}</td>
-        </tr>
-      </table>
+      ${taxAnalysisSection}
       <div class="disclaimer" style="margin-top:32px">
         Tax calculations are estimates based on current federal and state law. Actual tax liability
         depends on many factors including asset valuations at death, applicable deductions, and

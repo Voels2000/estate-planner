@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (PDF exemption + alert dedupe)
+# Last updated: 2026-05-29 (state estate tax unification)
 
 ---
 
@@ -18,6 +18,22 @@
 ---
 
 ## Current sprint
+
+### Sprint — State estate tax unification (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Phase 0 — `lib/constants/strategyTypes.ts` | `[x]` |
+| Delete engine A (`narrativeEngine` flat rates) | `[x]` |
+| PDF cover + callout + page 3 → engine B | `[x]` |
+| `hasBypassTrust` on horizons (consumer accepted / advisor projected) | `[x]` |
+| `docs/CALCULATION_ENGINES.md` + standing grep rules | `[x]` |
+
+**Post-ship:** Voels MFJ WA PDF — cover + page 3 state tax ~$231K (engine B); bypass trust scenario table when `cstBenefit > 0`.
+
+**Follow-up (not this sprint):** Unify projection death-year rows (engine C) with engine B.
+
+---
 
 ### Sprint — PDF exemption + action-item dedupe (2026-05-30) **← shipped**
 

@@ -14,6 +14,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) | Legal/business/ops blockers before `PUBLIC_SIGNUP_OPEN=true` |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
+| [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) | **Canonical calculation registry** — read before any tax/projection/strategy math |
+| [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) | Queued — unify state estate tax to engine B (delete narrative flat-rate engine A) |
 | [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) · [CURSOR_PROMPT_TEMPLATE.md](../CURSOR_PROMPT_TEMPLATE.md) | Brand tokens, UI primitives, Cursor prompts (Tailwind v4 `color:` prefix) |
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Consumer journeys and routes |
 | [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
@@ -52,7 +54,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 > At minimum, update: ROADMAP.md (sprint status), MASTER_ARCHITECTURE.md (Current vs Target),
 > NEXT_SESSION.md (handoff block), and DECISION_LOG.md (any new settled decisions).
 
-- Engine logic changes (`projection-complete`, `roth-analysis`, tax engines, strategy engines)
+- Engine logic changes (`projection-complete`, `roth-analysis`, tax engines, strategy engines) → **read [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) first**; run § Regression grep checks before commit
 - New API routes or route behavior changes
 - Database schema changes (new tables/columns/migrations/RPC signatures)
 - Source-of-truth changes (e.g., table swaps, fallback removals)
@@ -65,6 +67,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
+
+## State estate tax unification (2026-05-29) — shipped
+
+- [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) — canonical engine registry + regression greps
+- [x] [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) — sprint script (Phases 0–8)
+- [x] [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) § State Estate Tax Chain
+- [x] [DECISION_LOG.md](./DECISION_LOG.md) · [ROADMAP.md](./ROADMAP.md) · [NEXT_SESSION.md](./NEXT_SESSION.md)
+- [x] `lib/constants/strategyTypes.ts` — CST string single source of truth
+- [ ] Post-deploy smoke: Voels MFJ WA PDF — engine B state tax + bypass trust scenario table
 
 ## Onboarding wizard (Sprint OB-1) — shipped `b1c7b49`
 

@@ -9,6 +9,7 @@
 import {
   calculateStateEstateTax,
   isMFJFilingStatus,
+  resolveActiveStateTax,
   type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
@@ -124,6 +125,7 @@ export function computeColumnTaxes(params: {
   hasSpouse: boolean
   stateBrackets: StateBracket[]
   lifetimeGiftsUsed?: number
+  hasBypassTrust?: boolean
 }): {
   federalExemption: number
   federalExposure: number
@@ -145,7 +147,7 @@ export function computeColumnTaxes(params: {
   // Legacy alias kept so existing UI destructuring doesn't break
   stateExposure: number
 } {
-  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets, lifetimeGiftsUsed = 0 } = params
+  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets, lifetimeGiftsUsed = 0, hasBypassTrust = false } = params
 
   const isMFJ = isMFJFilingStatus(filingStatus)
   const { exemption: federalExemption, federalExposure, federalTax } =
@@ -172,21 +174,22 @@ export function computeColumnTaxes(params: {
     statePrimary ?? '',
     stateBrackets,
     isMFJ,
+    hasBypassTrust,
   )
+  const activeStateTax = resolveActiveStateTax(stateResult, hasBypassTrust)
 
   return {
     federalExemption,
     federalExposure,
     federalTax,
-    stateTax: stateResult.stateTax,
+    stateTax: activeStateTax,
     stateTaxWithCST: stateResult.stateTaxWithCST,
     cstBenefit: stateResult.cstBenefit,
     hasPortabilityGap: stateResult.hasPortabilityGap,
     nyCliffTriggered: stateResult.nyCliffTriggered,
-    totalTax: federalTax + stateResult.stateTax,
+    totalTax: federalTax + activeStateTax,
     totalTaxWithCST: federalTax + stateResult.stateTaxWithCST,
-    // Legacy alias — UI reads stateExposure today; keep it working
-    stateExposure: stateResult.stateTax,
+    stateExposure: activeStateTax,
   }
 }
 
@@ -248,6 +251,8 @@ export type BuildHorizonsInput = {
   longevityAge: number
   /** Lifetime exemption already used (from calculate_gifting_summary.lifetime_exemption_used). */
   lifetimeGiftsUsed?: number
+  /** Credit shelter trust active for this viewer context (see strategyTypes.ts). */
+  hasBypassTrust?: boolean
 }
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
@@ -295,6 +300,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     longevityAge,
     strategyLineItems,
     lifetimeGiftsUsed = 0,
+    hasBypassTrust = false,
   } = input
 
   const hasSpouse = household.has_spouse ?? false
@@ -330,6 +336,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     hasSpouse,
     stateBrackets,
     lifetimeGiftsUsed,
+    hasBypassTrust,
   }
 
   // ── Today column ───────────────────────────────────────────────────────────

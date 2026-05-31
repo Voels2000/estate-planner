@@ -1,29 +1,17 @@
 // lib/export/narrativeEngine.ts
 // Rule-based narrative engine for PDF estate planning reports.
 
+import {
+  calculateStateEstateTax,
+  calculateStateTaxScenarios,
+  getStateDisplayName,
+  isMFJFilingStatus,
+  resolveActiveStateTax,
+  stateHasEstateTax,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
 import type { PDFReportData } from './generatePDFReport'
 import type { ActionItem } from '@/lib/export-wiring'
-
-const STATE_TAX: Record<string, { name: string; hasStateTax: boolean; exemption: number; rate: number }> = {
-  WA: { name: 'Washington', hasStateTax: true, exemption: 3_000_000, rate: 0.14 },
-  OR: { name: 'Oregon', hasStateTax: true, exemption: 1_000_000, rate: 0.10 },
-  MN: { name: 'Minnesota', hasStateTax: true, exemption: 3_000_000, rate: 0.13 },
-  MA: { name: 'Massachusetts', hasStateTax: true, exemption: 2_000_000, rate: 0.12 },
-  IL: { name: 'Illinois', hasStateTax: true, exemption: 4_000_000, rate: 0.16 },
-  NY: { name: 'New York', hasStateTax: true, exemption: 7_160_000, rate: 0.16 },
-  MD: { name: 'Maryland', hasStateTax: true, exemption: 5_000_000, rate: 0.16 },
-  CT: { name: 'Connecticut', hasStateTax: true, exemption: 13_610_000, rate: 0.12 },
-  TX: { name: 'Texas', hasStateTax: false, exemption: 0, rate: 0 },
-  FL: { name: 'Florida', hasStateTax: false, exemption: 0, rate: 0 },
-  CA: { name: 'California', hasStateTax: false, exemption: 0, rate: 0 },
-  NV: { name: 'Nevada', hasStateTax: false, exemption: 0, rate: 0 },
-  AZ: { name: 'Arizona', hasStateTax: false, exemption: 0, rate: 0 },
-  CO: { name: 'Colorado', hasStateTax: false, exemption: 0, rate: 0 },
-}
-
-export function getStateTaxInfo(state: string) {
-  return STATE_TAX[state] ?? { name: state, hasStateTax: false, exemption: 0, rate: 0 }
-}
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
@@ -47,20 +35,28 @@ function sunsetExemption(filingStatus: string): number {
   return filingStatus === 'mfj' ? 14_000_000 : 7_000_000
 }
 
-export function calcStateTax(grossEstate: number, state: string, filingStatus: string): number {
-  const s = getStateTaxInfo(state)
-  if (!s.hasStateTax) return 0
-  const maritalDeduction = filingStatus === 'mfj' ? grossEstate * 0.5 : 0
-  const taxable = Math.max(0, grossEstate - maritalDeduction - s.exemption)
-  return Math.round(taxable * s.rate)
-}
-
 function scoreLabel(score: number): string {
   if (score >= 80) return 'strong'
   if (score >= 65) return 'good'
   if (score >= 50) return 'fair'
   if (score >= 35) return 'needs attention'
   return 'critical — significant gaps exist'
+}
+
+function narrativeStateTaxContext(data: PDFReportData) {
+  const brackets: StateBracket[] = data.stateBrackets ?? []
+  const hasBypassTrust = Boolean(data.hasBypassTrust ?? data.hasIrrevocableTrust)
+  const result = calculateStateEstateTax(
+    data.grossEstate,
+    data.domicileState,
+    brackets,
+    isMFJFilingStatus(data.filingStatus),
+    hasBypassTrust,
+  )
+  const stateTax = resolveActiveStateTax(result, hasBypassTrust)
+  const stateName = getStateDisplayName(data.domicileState)
+  const hasStateTax = stateHasEstateTax(data.domicileState) || result.stateTax > 0
+  return { result, stateTax, stateName, hasStateTax, hasBypassTrust, brackets }
 }
 
 export function generateExecutiveSummary(data: PDFReportData): string {
@@ -76,10 +72,9 @@ export function generateExecutiveSummary(data: PDFReportData): string {
     person2Name,
   } = data
 
-  const stateInfo = getStateTaxInfo(domicileState)
+  const { stateTax, stateName, hasStateTax } = narrativeStateTaxContext(data)
   const fedExempt = federalExemption(filingStatus)
   const sunsetExempt = sunsetExemption(filingStatus)
-  const stateTax = calcStateTax(grossEstate, domicileState, filingStatus)
   const isMarried = filingStatus === 'mfj' && !!person2Name
   const estateRef = isMarried ? 'Your combined estate' : 'Your estate'
   const sl = scoreLabel(healthScore)
@@ -95,10 +90,10 @@ export function generateExecutiveSummary(data: PDFReportData): string {
 
   if (grossEstate < 3_000_000) {
     let s = `${estateRef} is ${fmt(grossEstate)}. `
-    if (stateInfo.hasStateTax && stateTax > 0) {
-      s += `Federal estate tax is not a current concern, but ${stateInfo.name} state estate tax exposure is estimated at ${fmt(stateTax)}. `
+    if (hasStateTax && stateTax > 0) {
+      s += `Federal estate tax is not a current concern, but ${stateName} state estate tax exposure is estimated at ${fmt(stateTax)}. `
     } else {
-      s += `Federal estate tax is not a current concern${stateInfo.hasStateTax ? `, and your estate is below the ${stateInfo.name} exemption` : ''}. `
+      s += `Federal estate tax is not a current concern${hasStateTax ? `, and your estate is below the ${stateName} exemption` : ''}. `
     }
     s += hasTrust
       ? `Your trust structure provides a strong foundation for probate avoidance. `
@@ -113,8 +108,8 @@ export function generateExecutiveSummary(data: PDFReportData): string {
   if (grossEstate < fedExempt) {
     const hasSunsetRisk = (sunsetTaxEstimate ?? 0) > 100_000
     let s = `${estateRef} is ${fmt(grossEstate)}`
-    if (stateInfo.hasStateTax && stateTax > 0) {
-      s += `, with an estimated ${fmt(stateTax)} in ${stateInfo.name} state estate tax exposure`
+    if (hasStateTax && stateTax > 0) {
+      s += `, with an estimated ${fmt(stateTax)} in ${stateName} state estate tax exposure`
     }
     s += `. `
     if (hasSunsetRisk) {
@@ -133,10 +128,9 @@ export function generateExecutiveSummary(data: PDFReportData): string {
     return s
   }
 
-  const stateTaxLarge = calcStateTax(grossEstate, domicileState, filingStatus)
   let s = `${estateRef} of ${fmt(grossEstate)} is above the current federal exemption, `
   s += `with an estimated ${fmtFull(federalTax ?? 0)} in federal estate tax`
-  if (stateTaxLarge > 0) s += ` and ${fmt(stateTaxLarge)} in ${stateInfo.name} state tax`
+  if (stateTax > 0) s += ` and ${fmt(stateTax)} in ${stateName} state tax`
   s += `. Reducing this exposure requires a coordinated strategy. `
   s += data.hasIrrevocableTrust
     ? `Your irrevocable trust structure is a strong foundation — review current exemption utilization and consider additional funding. `
@@ -158,18 +152,29 @@ export interface TaxCallout {
 export function generateTaxCallout(data: PDFReportData): TaxCallout {
   const { grossEstate, federalTax, filingStatus, domicileState, sunsetTaxEstimate } = data
 
-  const stateInfo = getStateTaxInfo(domicileState)
+  const { stateTax, stateName, hasStateTax, brackets } = narrativeStateTaxContext(data)
   const fedExempt = federalExemption(filingStatus)
   const sunsetExempt = sunsetExemption(filingStatus)
-  const stateTax = calcStateTax(grossEstate, domicileState, filingStatus)
   const hasSunset = (sunsetTaxEstimate ?? 0) > 100_000
   const totalCurrent = (federalTax ?? 0) + stateTax
 
+  const scenarios = calculateStateTaxScenarios({
+    grossEstate,
+    stateCode: domicileState,
+    brackets,
+    filingStatus,
+  })
+  const planningGap = scenarios.planningGap
+  const planningGapNote =
+    planningGap > 100_000
+      ? ` Without a bypass trust, ${stateName} tax increases by ${fmt(planningGap)}.`
+      : ''
+
   if ((federalTax ?? 0) > 0) {
     const detail =
-      stateInfo.hasStateTax && stateTax > 0
-        ? `Federal: ${fmtFull(federalTax ?? 0)} · ${stateInfo.name} state: ${fmt(stateTax)} · Total estimated: ${fmtFull(totalCurrent)}`
-        : `Federal: ${fmtFull(federalTax ?? 0)} · No state estate tax in ${stateInfo.name}`
+      hasStateTax && stateTax > 0
+        ? `Federal: ${fmtFull(federalTax ?? 0)} · ${stateName} state: ${fmt(stateTax)} · Total estimated: ${fmtFull(totalCurrent)}${planningGapNote}`
+        : `Federal: ${fmtFull(federalTax ?? 0)} · No state estate tax in ${stateName}${planningGapNote}`
     return {
       style: 'exposed',
       headline: `Estimated estate tax: ${fmtFull(totalCurrent)}`,
@@ -179,23 +184,23 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
 
   if (hasSunset) {
     const stateDetail =
-      stateInfo.hasStateTax && stateTax > 0 ? ` · ${stateInfo.name} state tax: ${fmt(stateTax)}` : ''
+      hasStateTax && stateTax > 0 ? ` · ${stateName} state tax: ${fmt(stateTax)}` : ''
     return {
       style: 'sunset_risk',
       headline: `No tax today — but TCJA sunset creates up to ${fmt(sunsetTaxEstimate!)} in new exposure`,
-      detail: `Current exemption: ${fmt(fedExempt)} · Post-sunset exemption: ${fmt(sunsetExempt)}${stateDetail}. Consider pre-sunset gifting and trust funding.`,
+      detail: `Current exemption: ${fmt(fedExempt)} · Post-sunset exemption: ${fmt(sunsetExempt)}${stateDetail}${planningGapNote}. Consider pre-sunset gifting and trust funding.`,
     }
   }
 
-  const stateNote = stateInfo.hasStateTax
+  const stateNote = hasStateTax
     ? stateTax > 0
-      ? ` · ${stateInfo.name} state tax: ${fmt(stateTax)}`
-      : ` · ${stateInfo.name} state tax: below exemption`
-    : ` · No state estate tax in ${stateInfo.name}`
+      ? ` · ${stateName} state tax: ${fmt(stateTax)}`
+      : ` · ${stateName} state tax: below exemption`
+    : ` · No state estate tax in ${stateName}`
   return {
     style: 'clear',
     headline: `No federal estate tax under current law`,
-    detail: `Estate of ${fmt(grossEstate)} is below the ${fmt(fedExempt)} federal exemption${stateNote}. Monitor as estate grows.`,
+    detail: `Estate of ${fmt(grossEstate)} is below the ${fmt(fedExempt)} federal exemption${stateNote}${planningGapNote}. Monitor as estate grows.`,
   }
 }
 
@@ -223,10 +228,10 @@ export function generateHealthTrend(data: PDFReportData): HealthTrend {
 }
 
 export function enrichActionItems(items: ActionItem[], data: PDFReportData): ActionItem[] {
-  const { grossEstate, filingStatus, lifeInsuranceOutsideILIT, domicileState } = data
+  const { grossEstate, lifeInsuranceOutsideILIT, domicileState } = data
   const probateCostLow = Math.round(grossEstate * 0.02)
   const probateCostHigh = Math.round(grossEstate * 0.04)
-  const stateTax = calcStateTax(grossEstate, domicileState, filingStatus)
+  const { stateTax, stateName } = narrativeStateTaxContext(data)
 
   return items.map((item) => {
     const t = (item.title ?? item.message ?? '').toLowerCase()
@@ -314,7 +319,7 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
         ...item,
         theme: 'tax_planning' as const,
         owner: 'advisor' as const,
-        dollarImpact: `Estimated ${getStateTaxInfo(domicileState).name} state estate tax: ${fmt(stateTax)}`,
+        dollarImpact: `Estimated ${stateName} state estate tax: ${fmt(stateTax)}`,
         nextStep: 'Review domicile planning and state-specific trust strategies with estate attorney',
       }
     }

@@ -191,11 +191,18 @@ Important:
 
 ### State Estate Tax Chain
 
+**Registry:** [docs/CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) — read before any tax calc change. **CST strings:** `lib/constants/strategyTypes.ts` (`CST_STRATEGY_TYPES`, `CST_STRATEGY_SOURCES`, `deriveHasBypassTrustFromLineItems`).
+
 1. Fetch `state_estate_tax_rules` by `.eq('state', household.state_primary)`.
 2. Build `stateBrackets`.
-3. Call `calculateStateEstateTax(...)` from `lib/calculations/stateEstateTax.ts`.
-4. Feed into `computeColumnTaxes(...)` and `buildStrategyHorizons(...)` in `lib/my-estate-strategy/horizonSnapshots.ts`.
-5. Pass typed horizon outputs to UI; UI should not recalculate estate tax.
+3. Call `calculateStateEstateTax(...)` from `lib/calculations/stateEstateTax.ts` (engine **B** — progressive brackets, portability gap, NY cliff, `stateTaxWithCST` / `cstBenefit`).
+4. Feed into `computeColumnTaxes(...)` with optional **`hasBypassTrust`** (caller-derived — not computed inside `buildStrategyHorizons`).
+5. **`hasBypassTrust` sources:** consumer horizons = accepted `strategy_line_items` only (`consumer_accepted`); advisor actual = same; advisor projected = any active CST line item; advisor PDF = accepted CST line items + `stateBrackets` on `PDFReportData`.
+6. Pass typed horizon outputs to UI; UI should not recalculate estate tax.
+
+**Display surfaces (engine B):** horizons, StateTaxPanel, prospect, PDF cover/callout/page 3 (`calculateStateTaxScenarios`), narrative engine. **Deprecated engine C:** `computeStateEstateTaxFromBrackets` — projection death-year rows only (`estate-tax-projection.ts`).
+
+**Deleted engine A (2026-05-29):** hardcoded flat rates in `narrativeEngine.ts` (`STATE_TAX`, `calcStateTax`) — removed.
 
 ### Advisor Cross-Tab State Tax Parity
 
@@ -270,10 +277,11 @@ Important:
 | Surface | Risk |
 |---------|------|
 | `MeetingPrepTab` | **Fixed** — `meetingPrepBriefFromHorizons(advisorHorizons)`; full Today / 10 / 20 / At Death tax strip |
-| `lib/calculations/estate-tax-projection.ts` | Death-year rows may use deprecated `computeStateEstateTaxFromBrackets` (no portability / NY cliff) |
+| `lib/calculations/estate-tax-projection.ts` | Death-year rows still use deprecated `computeStateEstateTaxFromBrackets` (no portability / NY cliff) — **follow-up sprint** |
 | `lib/actions/generate-base-case.ts` | MFJ check includes `married_filing_jointly` but not full `isMFJFilingStatus` alias set |
 | PDF / Gifting UI | Display-only `filing_status === 'mfj'` — cosmetic, not tax engine |
 | Consumer `/estate-tax` | Uses unified engine + `filingForTax` helper — reference implementation |
+| ~~PDF narrative flat-rate state tax~~ | **Fixed 2026-05-29** — PDF uses `calculateStateEstateTax` + `stateBrackets`; engine A deleted |
 
 **Rule:** Current-law advisor state tax display must come from `advisorHorizons.today` (or explicit missing-input warning). Projection year tables must label `outputs_s2_first` survivor timeline when present.
 
@@ -1042,7 +1050,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Advisor roster net worth uses `lib/advisor/rosterNetWorth.ts` (`loadRosterNetWorthByOwner`) — batched reads on `/advisor`, not per-client `calculate_estate_composition`.
 - Advisor client post-fetch normalization/mapping is now extracted into `lib/advisor/mappers.ts` (`mapAdvisorClientDatasets`) for beneficiary normalization, scenario output selection, and dataset shaping before route composition.
 - Advisor export payload assembly is now extracted into `lib/advisor/exportMappers.ts` (`buildAdvisorExportPayloads`) so the advisor client route no longer owns PDF/Excel/export-panel payload construction logic.
-- **PDF narrative engine (2026-05-30):** `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, gifting bar, themed action items, **`dedupeActionItems()`**. **`currentFederalExemption()`** drives both cover copy and page 3 exemption display (MFJ $27.98M). Payload assembly via **`loadAdvisorExportWiring.ts`** + **`GET /api/advisor/meeting-prep-pdf/[clientId]?type=report`**. Legacy brief at **`?type=brief`**.
+- **PDF narrative engine (2026-05-30):** `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, gifting bar, themed action items, **`dedupeActionItems()`**. **`currentFederalExemption()`** drives cover copy and page 3 exemption display (MFJ $27.98M). **State estate tax (2026-05-29):** cover, callout, and page 3 scenario table use **`calculateStateEstateTax` / `calculateStateTaxScenarios`** with **`stateBrackets`** on `PDFReportData` — flat-rate engine A removed. Payload via **`loadAdvisorExportWiring.ts`** + **`GET /api/advisor/meeting-prep-pdf/[clientId]?type=report`**. Legacy brief at **`?type=brief`**.
 - Shared advisor export panel contract typing is now centralized in `lib/advisor/types.ts` (`AdvisorExportPanelProps`) and consumed by both export mappers and advisor client shell props.
 - Advisor dataset mapper typing is now hardened in `lib/advisor/mappers.ts` with explicit mapper interfaces and typed output shaping; advisor route composition now consumes typed mapper outputs without broad `any` payload contracts.
 - Advisor client route-level assertions for `businesses`, `liabilities`, `businessInterests`, and `insurancePolicies` were removed after mapper output typing alignment, reducing local type coercion in `app/advisor/clients/[clientId]/page.tsx`.

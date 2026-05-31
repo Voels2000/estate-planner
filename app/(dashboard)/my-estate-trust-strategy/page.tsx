@@ -21,6 +21,7 @@ import type {
 } from '@/components/consumer/ConsumerStrategyPanel'
 import type { StrategyLineItemRow } from '@/lib/consumer/strategyLineItemViews'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
@@ -305,6 +306,9 @@ export default async function MyEstateTrustStrategyPage({
       effective_year: item.effective_year,
       is_active: true,
       sign: typeof item.sign === 'number' ? item.sign : -1,
+      strategy_source: String(item.strategy_source ?? ''),
+      source_role: 'advisor' as const,
+      consumer_accepted: Boolean(item.consumer_accepted),
     }))
 
   const consumerHorizonItems = (consumerLineItemRows ?? []).map((item) => ({
@@ -313,9 +317,13 @@ export default async function MyEstateTrustStrategyPage({
     effective_year: item.effective_year,
     is_active: true,
     sign: typeof item.sign === 'number' ? item.sign : -1,
+    strategy_source: String(item.strategy_source ?? ''),
+    source_role: 'consumer' as const,
+    consumer_accepted: true,
   }))
 
   const horizonStrategyItems = [...consumerHorizonItems, ...advisorHorizonItems]
+  const hasBypassTrust = deriveHasBypassTrustFromLineItems(horizonStrategyItems, 'consumer_accepted')
 
   const lifetimeGiftsUsed = giftingSummaryError
     ? 0
@@ -346,6 +354,7 @@ export default async function MyEstateTrustStrategyPage({
     scenarioRows,
     survivorFirstName,
     longevityAge,
+    hasBypassTrust,
   }) : null
 
   const hasHorizonFederalContext =

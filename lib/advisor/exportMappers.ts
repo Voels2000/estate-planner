@@ -7,6 +7,7 @@ import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
 import { currentFederalExemption } from '@/lib/export/narrativeEngine'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
   return rows.map((r) => ({
@@ -49,6 +50,7 @@ export function buildAdvisorExportPayloads(params: {
   assumptionSnapshot: Record<string, unknown>
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
   narrativeFields: NarrativePdfFields
+  stateBrackets: StateBracket[]
 }): {
   exportPanelProps: AdvisorExportPanelProps
   exportPdfData: PDFReportData
@@ -136,6 +138,7 @@ export function buildAdvisorExportPayloads(params: {
     stateTax: stTaxExport,
     federalExemption: exemptionExport,
     lawScenario: lawScenarioExport,
+    stateBrackets: params.stateBrackets,
     healthScore: params.healthScore ?? 0,
     healthComponents: [],
     activeStrategies: params.activeStrategies.map((name) => ({

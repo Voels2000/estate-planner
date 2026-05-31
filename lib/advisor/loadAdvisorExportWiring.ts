@@ -172,5 +172,6 @@ export async function loadAdvisorExportWiringForClient(
     assumptionSnapshot,
     scenarioForStrategy: strategyVm.scenarioForStrategy,
     narrativeFields,
+    stateBrackets,
   })
 }
