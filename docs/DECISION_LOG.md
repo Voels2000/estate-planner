@@ -194,6 +194,14 @@
 
 ---
 
+## Estate Summary collapsible — composition only (2026-05-29)
+
+**Decision:** Remove titling & beneficiary conflict badges from dashboard **`EstateSummarySection`**. Titling gaps are already surfaced via **`PriorityAlertCard`** / open **`household_alerts`** in the main State 3 flow; duplicating them in the collapsible Estate Summary added noise.
+
+**Files:** `EstateSummarySection.tsx`, `_dashboard-client.tsx`
+
+---
+
 ## Dashboard — remove asset allocation card from Financial Summary (2026-05-30)
 
 **Decision:** Remove **`AssetAllocationSummary`** from the **`FinancialSummarySection`** collapsible on **`/dashboard`**. Full allocation editing, benchmarks, and portfolio breakdown remain on **`/allocation`** via **`loadAssetAllocationData`**. **`buildAllocationContext`** stays in **`lib/dashboard/mappers.ts`** for reuse; dashboard no longer builds or passes allocation context on load.

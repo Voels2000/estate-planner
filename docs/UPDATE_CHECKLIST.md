@@ -585,7 +585,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Consolidated alert panel on dashboard (`ConsolidatedAlertPanel`) — **superseded 2026-05-29 Sprint B**
 - [x] Score-driven dashboard — `EstateReadinessCard` · `PriorityAlertCard` · adaptive greeting · `household_alerts` fetch
 - [x] Remove duplicate score from `EstateSummarySection`; ungate score cards on `estateHealthScore`
-- [ ] **Post-deploy smoke:** Voels — greeting → score card → priority alert in main flow; Estate Summary has no score block
+- [x] Remove titling conflict badges from `EstateSummarySection` (priority alerts cover titling)
+- [ ] **Post-deploy smoke:** Voels — Estate Summary collapsible shows composition only
 
 ## Sprint — Score rationalization + dashboard UI ✅ closed 2026-05-29
 

@@ -969,7 +969,6 @@ export function DashboardClient(props: Props) {
             storageKey={SECTION_KEYS.estate}
             totalAssets={totalAssets}
             netWorth={netWorth}
-            conflictReport={conflictReport}
             composition={composition}
           />
         </div>
