@@ -637,6 +637,16 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Retirement tab on Alan — readiness hero · survivor benefit · Roth window · RMD ages (1960+ → 75)
 
+## PDF export path wiring ✅ closed 2026-05-30
+
+- [x] `lib/advisor/loadAdvisorExportWiring.ts` — shared server loader for export payloads
+- [x] `GET /api/advisor/meeting-prep-pdf/[clientId]?type=report` → `generatePDFHTML`
+- [x] `?type=brief` — legacy one-page meeting brief preserved
+- [x] Header: **Export estate report** + **Meeting brief** (replaces single "Prepare for meeting")
+- [x] Meeting Prep tab: **Export estate report (PDF)** link
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Header **Export estate report** + Meeting Prep **Export PDF Report** — same narrative cover
+
 ## PDF narrative engine ✅ closed 2026-05-30
 
 - [x] `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, action enrichment, gifting bar, theme groups

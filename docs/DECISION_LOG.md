@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (PDF narrative engine)
+# Last updated: 2026-05-30 (PDF export path wiring)
+
+## PDF export paths unified — narrative engine on all estate reports (2026-05-30)
+
+**Problem:** Narrative engine shipped on `ExportPanel` only. Header **"Prepare for meeting"** and in-tab **"Prepare for Meeting"** modal used legacy one-page brief HTML — advisors saw old output.
+
+**Decision:** One shared server loader (`lib/advisor/loadAdvisorExportWiring.ts`) builds `exportPdfData` for both the client page and print API. **`GET /api/advisor/meeting-prep-pdf/[clientId]?type=report`** returns full narrative PDF via `generatePDFHTML`. **`?type=brief`** keeps the original one-page meeting brief.
+
+**UI:** Client header → **Export estate report** (narrative) + **Meeting brief** (legacy). Meeting Prep tab → **Export estate report (PDF)** link + **Export PDF Report** in `ExportPanel` (same engine).
+
+---
 
 ## PDF narrative engine — rule-based report enrichment (2026-05-30)
 
@@ -12,7 +22,7 @@
 
 **Action items:** `household_alerts` selects **`title` + `description`**; fetch maps to **`title`** + **`message`** (not `body` at source). PDF uses enriched **`ActionItem`** from `@/lib/export-wiring`.
 
-**Export path:** `page.tsx` → `fetchNarrativePdfFields` → `buildAdvisorExportPayloads` → `ExportPanel` calls **`generatePDFHTML(exportPdfData)`** (replaces inline print HTML when narrative data present).
+**Export path:** `loadAdvisorExportWiringForClient()` → `buildAdvisorExportPayloads` → `generatePDFHTML`. Used by Meeting Prep tab `ExportPanel`, header/API **`?type=report`**, and `page.tsx` when `exportWiring` is on.
 
 **Meeting Prep:** Top 3 open alerts surfaced above Export & Reports (same `actionItems` query as PDF).
 

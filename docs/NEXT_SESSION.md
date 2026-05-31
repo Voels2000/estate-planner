@@ -1,18 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (PDF narrative engine)
+# Updated: 2026-05-30 (PDF export path wiring)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF narrative engine** (this commit) · **Advisor Retirement tab polish** (`3e010bc`) · **Advisor strategy + Estate tabs** (`7a8d10c`) · **Tax Horizons polish** (`56762ad`) · **Roth methodology + headroom** (`6cb942a`, `cae89fc`) · **Three-state dashboard** (`b71af63`). Post-deploy visual smokes pending on Alan + one State 2 household.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF export path wiring** (this commit) · **PDF narrative engine** (`efbafba`) · **Advisor Retirement tab** (`3e010bc`) · **Advisor strategy + Estate tabs** (`7a8d10c`). Post-deploy: test **Export estate report** from header or Meeting Prep tab.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## PDF export path wiring ✅ (2026-05-30)
+
+**Follow-up to narrative engine (`efbafba`):** Unified all estate-report print paths.
+
+| Entry point | Path |
+|-------------|------|
+| Header **Export estate report** | `/api/advisor/meeting-prep-pdf/[clientId]?type=report` |
+| Header **Meeting brief** | same route `?type=brief` (legacy one-pager) |
+| Meeting Prep **Export estate report (PDF)** | `?type=report` |
+| Meeting Prep **Export PDF Report** | `ExportPanel` + `generatePDFHTML(exportPdfData)` |
+| Shared loader | `lib/advisor/loadAdvisorExportWiring.ts` |
+
+**Do not use** in-tab **Prepare for Meeting** modal → Print/PDF for full narrative (modal brief only).
 
 ---
 
@@ -25,11 +41,11 @@
 | Engine | `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, action enrichment, gifting bar, theme groups |
 | Fetch | `lib/export/fetchNarrativePdfFields.ts` — **`Promise.all`** for trust, strategies, insurance, prior score, gifting RPC |
 | PDF | `generatePDFHTML` — new cover layout + grouped action items with impact / next step |
-| Export | `ExportPanel` uses `generatePDFHTML(exportPdfData)` when server payload present |
+| Export | `ExportPanel` + API `?type=report` via `loadAdvisorExportWiringForClient()` |
 | Meeting Prep | Top 3 open alerts above Export & Reports |
 | Action items | `household_alerts.title` + `description` → `title` + `message` at fetch layer |
 
-**Post-deploy smoke:** Advisor → Voels household → Meeting Prep → Export PDF — cover executive summary · tax callout · gifting bar · action items grouped by theme. **`sunset_risk`** only when `sunsetTaxEstimate > $100K` (MFJ gross **> ~$14.25M**).
+**Post-deploy smoke:** Header **Export estate report** OR Meeting Prep → **Export PDF Report** — executive summary · tax callout · gifting bar · grouped action items.
 
 **Files:** `narrativeEngine.ts` · `fetchNarrativePdfFields.ts` · `generatePDFReport.ts` · `export-wiring.ts` · `exportMappers.ts` · `page.tsx` · `ExportPanel.tsx` · `MeetingPrepTab.tsx`
 

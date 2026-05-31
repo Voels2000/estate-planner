@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { loadAdvisorExportWiringForClient } from '@/lib/advisor/loadAdvisorExportWiring'
+import { generatePDFHTML } from '@/lib/export/generatePDFReport'
 
 interface RouteParams {
   params: Promise<{ clientId: string }>
-}
-
-function fmt(n: number | null): string {
-  if (n == null || Number.isNaN(n)) return '—'
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
 }
 
 function escapeHtml(value: string): string {
@@ -21,26 +16,27 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
-export async function GET(_req: NextRequest, { params }: RouteParams) {
-  const { clientId } = await params
-  const supabase = await createClient()
+function fmt(n: number | null): string {
+  if (n == null || Number.isNaN(n)) return '—'
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
+  return `$${Math.round(n).toLocaleString()}`
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return new NextResponse('Unauthorized', { status: 401 })
-
+async function renderMeetingBriefHtml(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  clientId: string,
+  advisorUserId: string,
+): Promise<string | null> {
   const { data: clientAccess } = await supabase
     .from('advisor_clients')
     .select('id, client_id')
-    .eq('advisor_id', user.id)
+    .eq('advisor_id', advisorUserId)
     .eq('client_id', clientId)
     .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
 
-  if (!clientAccess) {
-    return new NextResponse('Access denied', { status: 403 })
-  }
+  if (!clientAccess) return null
 
   const { data: household } = await supabase
     .from('households')
@@ -49,9 +45,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     .maybeSingle()
 
   const householdId = household?.id
-  if (!householdId) {
-    return new NextResponse('Household not found', { status: 404 })
-  }
+  if (!householdId) return null
 
   const [clientProfileRes, healthScoreRes, alertsRes, projectionRes, noteRes, compositionRes] =
     await Promise.all([
@@ -81,7 +75,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
         .from('advisor_notes')
         .select('content, created_at')
         .eq('client_id', clientId)
-        .eq('advisor_id', user.id)
+        .eq('advisor_id', advisorUserId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -175,7 +169,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
         }`
       : 'No open alerts. Consider reviewing beneficiary designations and document staleness if not recently updated.'
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -256,11 +250,50 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
   <script>window.onload = () => setTimeout(() => window.print(), 500)</script>
 </body>
 </html>`
+}
 
-  return new NextResponse(html, {
+export async function GET(req: NextRequest, { params }: RouteParams) {
+  const { clientId } = await params
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return new NextResponse('Unauthorized', { status: 401 })
+
+  const reportType = req.nextUrl.searchParams.get('type') ?? 'report'
+
+  if (reportType === 'report') {
+    const wiring = await loadAdvisorExportWiringForClient(supabase, {
+      advisorUserId: user.id,
+      clientId,
+    })
+    if (!wiring) {
+      return new NextResponse('Access denied', { status: 403 })
+    }
+
+    const html =
+      generatePDFHTML(wiring.exportPdfData) +
+      '<script>window.onload = () => setTimeout(() => window.print(), 500)</script>'
+
+    const clientName = wiring.exportPdfData.clientName
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="estate-report-${clientName.replace(/\s+/g, '-').toLowerCase()}.html"`,
+      },
+    })
+  }
+
+  const briefHtml = await renderMeetingBriefHtml(supabase, clientId, user.id)
+  if (!briefHtml) {
+    return new NextResponse('Access denied', { status: 403 })
+  }
+
+  return new NextResponse(briefHtml, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Content-Disposition': `inline; filename="meeting-brief-${clientName.replace(/\s+/g, '-').toLowerCase()}.html"`,
+      'Content-Disposition': 'inline; filename="meeting-brief.html"',
     },
   })
 }

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (PDF narrative engine)
+# Last updated: 2026-05-30 (PDF export path wiring)
 
 ---
 
@@ -18,6 +18,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — PDF export path wiring (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `loadAdvisorExportWiringForClient()` shared loader | `[x]` |
+| API `meeting-prep-pdf?type=report` → `generatePDFHTML` | `[x]` |
+| API `?type=brief` preserves legacy meeting brief | `[x]` |
+| Header: Export estate report + Meeting brief buttons | `[x]` |
+| Meeting Prep tab: Export estate report link | `[x]` |
+| Manual smoke — header + tab export | `[ ]` |
+
+**Post-ship:** Click **Export estate report** (not modal Print/PDF) — narrative cover + multi-page report.
+
+---
 
 ### Sprint — PDF narrative engine (2026-05-30) **← shipped**
 

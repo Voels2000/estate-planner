@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-30 (PDF narrative engine)
+# Last updated: 2026-05-30 (PDF export path wiring)
 
 ---
 
@@ -134,19 +134,19 @@ See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
 
 ### PDF narrative engine manual smoke (2026-05-30)
 
-**Route:** Advisor → Voels (or any MFJ WA household with open alerts) → **Meeting Prep** tab.
+**Route:** Advisor client workspace → **Meeting Prep** tab OR header **Export estate report**.
 
 | # | Check | Pass |
 |---|--------|------|
-| 1 | **Top alerts block** — up to 3 open items visible above Export & Reports (no PDF required) | [ ] |
-| 2 | **Export PDF Report** — opens print window with narrative cover (not legacy one-page stub) | [ ] |
-| 3 | **Cover — executive summary** — plain-English paragraph referencing estate size and trust status | [ ] |
-| 4 | **Cover — metric row** — gross estate, total tax exposure, health score with trend label | [ ] |
-| 5 | **Cover — tax callout** — styled block (`clear`, `sunset_risk`, or `exposed`); MFJ gross **> ~$14.25M** → expect `sunset_risk` | [ ] |
-| 6 | **Cover — gifting bar** — shown when gross estate ≥ $1M ($38K/yr MFJ) | [ ] |
-| 7 | **Action items page** — grouped by theme (Documents, Titling, Beneficiary, Tax Planning) | [ ] |
-| 8 | **Action items** — each enriched item shows impact line + next step with owner | [ ] |
-| 9 | **Console** — no errors during export | [ ] |
+| 1 | **Header — Export estate report** — opens narrative multi-page PDF (not one-page brief) | [ ] |
+| 2 | **Header — Meeting brief** — legacy one-pager still works (`?type=brief`) | [ ] |
+| 3 | **Top alerts block** — up to 3 open items above Export & Reports on Meeting Prep tab | [ ] |
+| 4 | **Export PDF Report** (tab) — same narrative cover as header export | [ ] |
+| 5 | **Cover — executive summary** — plain-English paragraph | [ ] |
+| 6 | **Cover — tax callout** — styled block (`clear`, `sunset_risk`, or `exposed`) | [ ] |
+| 7 | **Cover — gifting bar** — when gross estate ≥ $1M | [ ] |
+| 8 | **Action items page** — grouped by theme with impact + next step | [ ] |
+| 9 | **In-tab Prepare for Meeting → Print/PDF** — modal brief only (not full narrative — expected) | [ ] |
 
 ### Security hardening post-deploy browser smoke (2026-05-29)
 
@@ -713,6 +713,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-30 | PDF export path wiring | **Closed** — shared `loadAdvisorExportWiring`; API `?type=report`; header Export estate report + Meeting brief split |
 | 2026-05-30 | PDF narrative engine | **Closed** — rule-based cover + action items; `fetchNarrativePdfFields` parallel fetch; Meeting Prep top alerts; manual smoke checklist added |
 | 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added |
 | 2026-05-29 | RPC guards + attorney RLS + edge auth | **Deployed prod** — migrations + `estate-monte-carlo` on `fnzvlmrqwcqwiqueevux`; SQL verified; browser smoke passed 2026-05-30 |

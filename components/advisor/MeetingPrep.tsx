@@ -93,6 +93,8 @@ interface Props {
   estateComposition?: EstateComposition | null
   /** When true, opening the brief uses server seed only (no client refetch) */
   briefHydratedFromServer?: boolean
+  /** Full narrative estate report — opens via API when present */
+  estateReportPdfUrl?: string | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -349,6 +351,7 @@ export default function MeetingPrep({
   initialBriefSeed = null,
   estateComposition = null,
   briefHydratedFromServer = false,
+  estateReportPdfUrl = null,
 }: Props) {
   const [brief, setBrief] = useState<MeetingBrief | null>(() => {
     if (!initialBriefSeed) return null
@@ -456,6 +459,16 @@ export default function MeetingPrep({
         >
           📋 Prepare for Meeting
         </button>
+        {estateReportPdfUrl && (
+          <a
+            href={estateReportPdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 text-sm bg-[#1a1a2e] text-white rounded-lg hover:bg-[#2d2d4e] font-medium transition"
+          >
+            Export estate report (PDF)
+          </a>
+        )}
         {briefHydratedFromServer && (
           <button
             type="button"

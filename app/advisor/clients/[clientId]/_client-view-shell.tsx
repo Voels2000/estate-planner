@@ -167,12 +167,20 @@ export default function ClientViewShell(props: ClientViewShellProps) {
 
             <div className="flex items-center gap-3">
               <a
-                href={`/api/advisor/meeting-prep-pdf/${props.clientId}`}
+                href={`/api/advisor/meeting-prep-pdf/${props.clientId}?type=report`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-md border border-[color:var(--mwm-gold)] px-3 py-1.5 text-sm font-medium text-[color:var(--mwm-navy)] hover:bg-amber-50 transition-colors"
               >
-                Prepare for meeting
+                Export estate report
+              </a>
+              <a
+                href={`/api/advisor/meeting-prep-pdf/${props.clientId}?type=brief`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Meeting brief
               </a>
               <div className="text-right">
                 <div className="text-3xl font-bold text-[color:var(--mwm-navy)]">{household.estate_complexity_score ?? '—'}</div>

@@ -119,10 +119,11 @@ export default function MeetingPrepTab({
           initialBriefSeed={initialBriefSeed}
           estateComposition={estateComposition}
           briefHydratedFromServer
+          estateReportPdfUrl={`/api/advisor/meeting-prep-pdf/${clientId}?type=report`}
         />
       </section>
 
-      {latestOnlyExportPanelProps && (
+      {latestOnlyExportPanelProps ? (
         <section>
           {topAlerts.length > 0 && (
             <div className="mb-6">
@@ -166,6 +167,10 @@ export default function MeetingPrepTab({
           )}
           <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">Export & Reports</h2>
           <ExportPanel {...latestOnlyExportPanelProps} exportPdfData={exportPdfData} />
+        </section>
+      ) : (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Export data is unavailable for this tab. Refresh the page or recalculate the base case.
         </section>
       )}
 
