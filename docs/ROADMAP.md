@@ -28,9 +28,10 @@
 | Sprint B — `EstateReadinessCard` (benchmark bar, component pills, trend delta) | `[x]` |
 | Sprint B — `PriorityAlertCard` + adaptive greeting + collapsed other alerts | `[x]` |
 | Sprint B — `priorScore` + `openAlerts` in `_dashboard-body.tsx` | `[x]` |
+| Sprint B follow-up — dedupe score from `EstateSummarySection`; ungate score cards on `estateHealthScore` | `[x]` |
 | Post-ship smoke — Voels dashboard (score ~56, priority alert, fact line) | `[ ]` |
 
-**Commits:** `843585c` (Sprint A) · Sprint B (feat: score-driven consumer dashboard)
+**Commits:** `843585c` (Sprint A) · `4d51600` (Sprint B)
 
 ---
 

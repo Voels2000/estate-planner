@@ -50,8 +50,9 @@
 | **Helpers** | `lib/dashboard/scoreDisplayHelpers.ts` · benchmarks in `readinessBenchmarks.ts` |
 | **State 2** | Estate readiness `{n}/100` tile + nudge → `/health-check` |
 | **Removed** | `ConsolidatedAlertPanel` (conflict-derived alert list) |
+| **Follow-up ✅** | Removed duplicate `EstateHealthScoreBlock` from **`EstateSummarySection`**; score cards ungated (`estateHealthScore` present → show, not `sectionVisible(3)`) |
 
-**Post-ship smoke:** Voels (~56, WA) — greeting, amber fill, benchmark bar, priority alert + fact line, "+ N other items".
+**Post-ship smoke:** Voels (~56, WA) — greeting → **`EstateReadinessCard`** → **`PriorityAlertCard`** in main flow; Estate Summary collapsible = composition + titling conflicts only.
 
 **Follow-up (future sprint):** Real platform averages from `estate_health_scores` → config table; score history table for reliable trend delta (current table upserts one row per household).
 

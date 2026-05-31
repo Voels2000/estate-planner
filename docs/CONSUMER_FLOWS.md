@@ -225,7 +225,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** **`getDashboardState()`** — **State 1** onramp in `page.tsx`; **State 2** net worth hero + estate-unlock prompt + estate readiness `{n}/100` nudge (no benchmark bar); **State 3** tax exposure hero → adaptive greeting → **`EstateReadinessCard`** + **`PriorityAlertCard`** (top `household_alerts` row) + collapsible other items + checklist/tax snapshot grid. Collapsible **`EstateSummarySection`** below Financial/Retirement (State 3 only). Open alerts + prior score fetched in **`dashboard/_dashboard-body.tsx`**.
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** **`getDashboardState()`** — **State 1** onramp in `page.tsx`; **State 2** net worth hero + estate-unlock prompt + estate readiness `{n}/100` nudge (no benchmark bar); **State 3** tax exposure hero → when **`estateHealthScore`** present: adaptive greeting → **`EstateReadinessCard`** → **`PriorityAlertCard`** + collapsed other items (not plan-stage gated) → checklist/tax snapshot grid (`sectionVisible(3)`). Collapsible **`EstateSummarySection`** below Financial/Retirement — composition + titling conflicts only (no score block). Open alerts + prior score in **`dashboard/_dashboard-body.tsx`**.
 
 ### Financial modules (representative)
 

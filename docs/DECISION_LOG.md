@@ -184,6 +184,16 @@
 
 ---
 
+## Dashboard score display — single surface (2026-05-29, Sprint B follow-up)
+
+**Decision:** **`EstateReadinessCard`** is the sole consumer dashboard score UI. Remove **`EstateHealthScoreBlock`** and the six-bar component grid from collapsible **`EstateSummarySection`** (keep composition card + titling conflict badges). Show greeting + score card + priority alert whenever **`estateHealthScore`** is present — do not gate on **`sectionVisible(3)`** / **`planStage.stage`**. Checklist + tax snapshot grid and **`EstateSummarySection`** collapsible remain stage-gated.
+
+**Reasoning:** Duplicate score blocks caused screenshots to show the old layout in the Estate Summary accordion while the new Sprint B cards were hidden behind plan-stage gating.
+
+**Files:** `_dashboard-client.tsx`, `EstateSummarySection.tsx`
+
+---
+
 ## Dashboard — remove asset allocation card from Financial Summary (2026-05-30)
 
 **Decision:** Remove **`AssetAllocationSummary`** from the **`FinancialSummarySection`** collapsible on **`/dashboard`**. Full allocation editing, benchmarks, and portfolio breakdown remain on **`/allocation`** via **`loadAssetAllocationData`**. **`buildAllocationContext`** stays in **`lib/dashboard/mappers.ts`** for reuse; dashboard no longer builds or passes allocation context on load.

@@ -693,123 +693,121 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout || estateHealthScore) && (
+      {estateHealthScore && (
         <div className="mt-4 space-y-4">
-          {estateHealthScore && (
-            <>
-              {(() => {
-                const g = getGreeting(estateHealthScore.score, fn)
-                return (
-                  <div className="mb-2">
-                    <h2 className="text-xl font-medium text-[color:var(--mwm-navy)]">{g.headline}</h2>
-                    <p className="mt-0.5 text-sm text-[color:var(--mwm-text-secondary)]">{g.sub}</p>
-                  </div>
-                )
-              })()}
+          {(() => {
+            const g = getGreeting(estateHealthScore.score, fn)
+            return (
+              <div className="mb-2">
+                <h2 className="text-xl font-medium text-[color:var(--mwm-navy)]">{g.headline}</h2>
+                <p className="mt-0.5 text-sm text-[color:var(--mwm-text-secondary)]">{g.sub}</p>
+              </div>
+            )
+          })()}
 
-              <EstateReadinessCard
-                score={estateHealthScore.score}
-                priorScore={priorScore}
-                components={estateHealthScore.components}
-              />
+          <EstateReadinessCard
+            score={estateHealthScore.score}
+            priorScore={priorScore}
+            components={estateHealthScore.components}
+          />
 
-              {openAlerts.length > 0 && (() => {
-                const topAlert = openAlerts[0]
-                const grossEstate = estateCallout?.grossEstate ?? totalAssets
-                const fact = getAlertFact(
-                  topAlert.title ?? topAlert.message ?? '',
-                  grossEstate,
-                )
-                const cta = getAlertCTA(topAlert.severity, estateHealthScore.score)
-                return (
-                  <div>
-                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[color:var(--mwm-text-secondary)]">
-                      {estateHealthScore.score >= 80 ? 'Staying current' : 'Focus here first'}
-                    </p>
-                    <PriorityAlertCard
-                      alert={topAlert}
-                      fact={fact}
-                      cta={cta}
-                      score={estateHealthScore.score}
-                    />
-                  </div>
-                )
-              })()}
+          {openAlerts.length > 0 && (() => {
+            const topAlert = openAlerts[0]
+            const grossEstate = estateCallout?.grossEstate ?? totalAssets
+            const fact = getAlertFact(
+              topAlert.title ?? topAlert.message ?? '',
+              grossEstate,
+            )
+            const cta = getAlertCTA(topAlert.severity, estateHealthScore.score)
+            return (
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[color:var(--mwm-text-secondary)]">
+                  {estateHealthScore.score >= 80 ? 'Staying current' : 'Focus here first'}
+                </p>
+                <PriorityAlertCard
+                  alert={topAlert}
+                  fact={fact}
+                  cta={cta}
+                  score={estateHealthScore.score}
+                />
+              </div>
+            )
+          })()}
 
-              {openAlerts.length > 1 && (
-                <div>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 py-2 text-sm text-[color:var(--mwm-text-secondary)]"
-                    onClick={() => setOtherAlertsExpanded((prev) => !prev)}
-                  >
-                    + {openAlerts.length - 1} other{' '}
-                    {openAlerts.length - 1 === 1 ? 'item' : 'items'}
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      className={otherAlertsExpanded ? 'rotate-180' : ''}
+          {openAlerts.length > 1 && (
+            <div>
+              <button
+                type="button"
+                className="flex items-center gap-1 py-2 text-sm text-[color:var(--mwm-text-secondary)]"
+                onClick={() => setOtherAlertsExpanded((prev) => !prev)}
+              >
+                + {openAlerts.length - 1} other{' '}
+                {openAlerts.length - 1 === 1 ? 'item' : 'items'}
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  className={otherAlertsExpanded ? 'rotate-180' : ''}
+                >
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+              {otherAlertsExpanded && (
+                <div className="space-y-2 pl-1">
+                  {openAlerts.slice(1).map((alert) => (
+                    <div
+                      key={alert.id}
+                      className="rounded border border-[color:var(--mwm-border)] bg-white px-3 py-2"
                     >
-                      <path
-                        d="M3 4.5L6 7.5L9 4.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                  {otherAlertsExpanded && (
-                    <div className="space-y-2 pl-1">
-                      {openAlerts.slice(1).map((alert) => (
-                        <div
-                          key={alert.id}
-                          className="rounded border border-[color:var(--mwm-border)] bg-white px-3 py-2"
-                        >
-                          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
-                            {alert.title ?? alert.message}
-                          </p>
-                          {alert.message && alert.title && (
-                            <p className="mt-0.5 text-xs text-[color:var(--mwm-text-secondary)]">
-                              {alert.message}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                      <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                        {alert.title ?? alert.message}
+                      </p>
+                      {alert.message && alert.title && (
+                        <p className="mt-0.5 text-xs text-[color:var(--mwm-text-secondary)]">
+                          {alert.message}
+                        </p>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-
-          {(executionChecklist.length > 0 || estateCallout) && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {executionChecklist.length > 0 && (
-                <EstateExecutionChecklist
-                  items={executionChecklist}
-                  userTier={tier}
-                  onToggle={toggleChecklistItem}
-                  deemphasizeFlagged
-                />
-              )}
-              {estateCallout && (
-                <EstateTaxSnapshotPanel
-                  grossEstate={estateCallout.grossEstate}
-                  totalLiabilities={totalLiabilities}
-                  taxableEstate={composition?.taxable_estate}
-                  federalExemption={composition?.exemption_available}
-                  federalTax={estateCallout.estimatedTaxFederal}
-                  estateTax={estateCallout.estimatedTaxState}
-                  statePrimary={statePrimary}
-                  stateExemption={stateExemption}
-                  noPortability={noPortability}
-                  consumerTier={tier}
-                />
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout) && (
+        <div className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {executionChecklist.length > 0 && (
+              <EstateExecutionChecklist
+                items={executionChecklist}
+                userTier={tier}
+                onToggle={toggleChecklistItem}
+                deemphasizeFlagged
+              />
+            )}
+            {estateCallout && (
+              <EstateTaxSnapshotPanel
+                grossEstate={estateCallout.grossEstate}
+                totalLiabilities={totalLiabilities}
+                taxableEstate={composition?.taxable_estate}
+                federalExemption={composition?.exemption_available}
+                federalTax={estateCallout.estimatedTaxFederal}
+                estateTax={estateCallout.estimatedTaxState}
+                statePrimary={statePrimary}
+                stateExemption={stateExemption}
+                noPortability={noPortability}
+                consumerTier={tier}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -971,10 +969,8 @@ export function DashboardClient(props: Props) {
             storageKey={SECTION_KEYS.estate}
             totalAssets={totalAssets}
             netWorth={netWorth}
-            estateHealthScore={estateHealthScore}
             conflictReport={conflictReport}
             composition={composition}
-            consumerTier={tier}
           />
         </div>
       )}
