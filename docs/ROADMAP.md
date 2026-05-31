@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-31 (estate flow horizon tabs)
+# Last updated: 2026-05-31 (estate flow consumer view horizon fix)
 
 ---
 
@@ -19,7 +19,21 @@
 
 ## Current sprint
 
-### Sprint — Estate flow horizon tabs (2026-05-31) **← shipped**
+### Sprint — Estate flow consumer view horizon fix (2026-05-31) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `horizonOverride` from `buildStrategyHorizons` — same source as tax table (not internal recompute) | `[x]` |
+| Pass `selectedHorizons` from `_my-estate-strategy-client.tsx` → `ConsumerEstateFlowView` | `[x]` |
+| Stale-fetch guard (`cancelled` flag) on tab switch | `[x]` |
+| Tabs stay visible during load; inline spinner (no full-view unmount) | `[x]` |
+| Prominent `graph.summary.gross_estate` above asset tiles | `[x]` |
+| Horizon caption from local `horizon` state (not lagging `graph.horizonLabel`) | `[x]` |
+| Post-ship smoke — Voels rapid tab click: Today → At Longevity → In 10 Years → ~$20.98M final | `[ ]` |
+
+---
+
+### Sprint — Estate flow horizon tabs (2026-05-31) **← shipped (engine pass)**
 
 | Item | Status |
 |------|--------|

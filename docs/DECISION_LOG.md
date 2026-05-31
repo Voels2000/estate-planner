@@ -172,13 +172,23 @@
 
 ---
 
-## Estate flow horizon tabs — "What happens when I die?" (2026-05-31)
+## Estate flow consumer view — horizon display pipeline (2026-05-31)
 
-**Decision:** Timeframe tabs (Today / In 10 Years / In 20 Years / At Longevity) must update the **owner estate total** and **summary trust/probate** from projection rows. **Do not** project individual account balances in asset category tiles — structure is today's holdings; only aggregate estate total changes. Use `findClosestOutputRow()` for 10y/20y (nearest year, not `lastOutput` fallback). Use `findAtDeathRow()` for At Longevity (aligned with `horizonSnapshots.ts`). Add `horizonLabel` on graph + honest context note below asset tiles on projected horizons.
+**Decision:** Consumer “What happens when I die?” must use **`horizonOverride`** sourced from **`buildStrategyHorizons`** (via **`selectedHorizons`** on **`/my-estate-strategy`**) — same single source of truth as the tax horizons table. Do **not** rely on **`generateEstateFlow`** internal projection lookup alone for display totals. Match advisor **`EstateFlowDiagram`** pattern: map `federalTaxEstimate` / `stateTax` → override; **`netToHeirs = gross − federal − state`**.
 
-**Pre-flight note:** `horizon` was already in `ConsumerEstateFlowView` `useEffect` deps — tab re-fetch worked; root cause was lookup + display semantics.
+**UX (supporting):** Stale-fetch **`cancelled`** guard; tabs visible during load; prominent **`gross_estate`** above asset tiles; horizon caption from local **`horizon`** state (not **`graph.horizonLabel`**). Asset category tiles stay today's holdings — only aggregate estate total changes per tab.
 
-**Files:** `lib/estate-flow/generateEstateFlow.ts`, `components/estate-flow/ConsumerEstateFlowView.tsx`
+**Pre-flight note (engine pass):** `horizon` was already in `useEffect` deps; projection data in `outputs_s1_first` was correct — bug was display pipeline, not engine math.
+
+**Files:** `components/estate-flow/ConsumerEstateFlowView.tsx`, `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx` (engine pass: `lib/estate-flow/generateEstateFlow.ts`)
+
+---
+
+## Estate flow horizon tabs — engine lookup (2026-05-31)
+
+**Decision:** Timeframe tabs (Today / In 10 Years / In 20 Years / At Longevity) must update the **owner estate total** and **summary trust/probate** from projection rows. **Do not** project individual account balances in asset category tiles — structure is today's holdings; only aggregate estate total changes. Use `findClosestOutputRow()` for 10y/20y (nearest year, not `lastOutput` fallback). Use `findAtDeathRow()` for At Longevity (aligned with `horizonSnapshots.ts`).
+
+**Files:** `lib/estate-flow/generateEstateFlow.ts`
 
 ---
 

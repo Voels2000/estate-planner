@@ -6,8 +6,15 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import type { EstateFlowGraph, FlowNode, DeathView, EstateHorizon } from '@/lib/estate-flow/generateEstateFlow'
+import type {
+  EstateFlowGraph,
+  FlowNode,
+  DeathView,
+  EstateHorizon,
+  EstateFlowHorizonOverride,
+} from '@/lib/estate-flow/generateEstateFlow'
 import { generateEstateFlow } from '@/lib/estate-flow/generateEstateFlow'
+import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Plain-English flow card ──────────────────────────────────────────────────
@@ -26,6 +33,16 @@ function fmtHeirsCurrency(n: number): string {
     currency: 'USD',
     maximumFractionDigits: 0,
   }).format(n)
+}
+
+function getHorizonDisplayLabel(h: EstateHorizon, calendarYear: number): string | null {
+  if (h === 'today') return null
+  if (h === 'ten_year') return `In 10 years (${calendarYear + 10})`
+  if (h === 'twenty_year') return `In 20 years (${calendarYear + 20})`
+  if (h === 'at_longevity') return 'At longevity'
+  if (h === 'first_spouse_dies') return 'If I die first'
+  if (h === 'second_spouse_dies') return 'If my spouse dies first'
+  return null
 }
 
 function buildFlowSteps(
@@ -163,6 +180,8 @@ interface Props {
   estateAsOfLabel: string
   /** Live net worth from the dashboard — passed so "Today" horizon matches dashboard figures. */
   liveNetWorth: number
+  /** Horizon columns from buildStrategyHorizons — same source as the tax table. */
+  horizons?: MyEstateStrategyHorizonsResult
   /** Whether the household has a spouse (enables death-view picker). */
   hasSpouse: boolean
   /** When true, the page title block is omitted (e.g. when wrapped in CollapsibleSection). */
@@ -174,6 +193,7 @@ export default function ConsumerEstateFlowView({
   scenarioId,
   estateAsOfLabel,
   liveNetWorth,
+  horizons,
   hasSpouse,
   hidePageHeader = false,
 }: Props) {
@@ -185,14 +205,51 @@ export default function ConsumerEstateFlowView({
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [assetsExpanded, setAssetsExpanded] = useState(false)
 
+  const horizonOverride = useMemo<EstateFlowHorizonOverride | null>(() => {
+    if (!horizons) return null
+    const source =
+      horizon === 'today'
+        ? horizons.today
+        : horizon === 'ten_year'
+          ? horizons.tenYear
+          : horizon === 'twenty_year'
+            ? horizons.twentyYear
+            : horizons.atDeath
+    const grossEstate = Number(source.grossEstate ?? 0)
+    const federalTax = Number(source.federalTaxEstimate ?? 0)
+    const stateTax = Number(source.stateTax ?? source.stateExposure ?? 0)
+    const netToHeirs = Math.max(0, grossEstate - federalTax - stateTax)
+    return { grossEstate, federalTax, stateTax, netToHeirs }
+  }, [horizons, horizon])
+
   useEffect(() => {
-    const startTimeoutId = window.setTimeout(() => setLoading(true), 0)
-    generateEstateFlow(householdId, scenarioId, deathView, supabase, false, horizon, liveNetWorth)
-      .then(setGraph)
-      .catch(console.error)
-      .finally(() => setLoading(false))
-    return () => window.clearTimeout(startTimeoutId)
-  }, [householdId, scenarioId, supabase, horizon, deathView, liveNetWorth])
+    let cancelled = false
+    setLoading(true)
+
+    generateEstateFlow(
+      householdId,
+      scenarioId,
+      deathView,
+      supabase,
+      false,
+      horizon,
+      liveNetWorth,
+      horizonOverride,
+    )
+      .then((result) => {
+        if (!cancelled) setGraph(result)
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('[ConsumerEstateFlowView]', err)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [householdId, scenarioId, deathView, supabase, horizon, liveNetWorth, horizonOverride])
 
   const assetGroups = useMemo(() => {
     if (!graph) return [] as Array<{ label: string; items: FlowNode[]; color: string }>
@@ -247,24 +304,10 @@ export default function ConsumerEstateFlowView({
     [assetGroups],
   )
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-        Loading your estate overview…
-      </div>
-    )
-  }
-
-  if (!graph) {
-    return (
-      <div className="text-center py-12 text-gray-400 text-sm">
-        Add assets and documents to see your estate flow.
-      </div>
-    )
-  }
+  const horizonDisplayLabel = getHorizonDisplayLabel(horizon, new Date().getFullYear())
 
   const heirsTodayContext =
-    horizon === 'today'
+    graph && horizon === 'today'
       ? {
           gross: graph.summary.gross_estate,
           totalTax: graph.summary.estate_tax_federal + graph.summary.estate_tax_state,
@@ -273,15 +316,14 @@ export default function ConsumerEstateFlowView({
       : null
 
   const stepHorizonLabel =
-    horizon === 'today' ? estateAsOfLabel : graph.horizonLabel
+    horizon === 'today' ? estateAsOfLabel : (horizonDisplayLabel ?? graph?.horizonLabel ?? '')
 
-  const steps = buildFlowSteps(graph, heirsTodayContext, stepHorizonLabel)
+  const steps = graph ? buildFlowSteps(graph, heirsTodayContext, stepHorizonLabel) : []
 
-  // Simplified visual: show owner → assets → vehicles → recipients in rows
-  const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
-  const assetNodes = graph.nodes.filter(n => n.category === 'asset')
-  const vehicleNodes = graph.nodes.filter(n => n.category === 'vehicle')
-  const recipientNodes = graph.nodes.filter(n => n.category === 'recipient')
+  const ownerNodes = graph?.nodes.filter((n) => n.category === 'owner') ?? []
+  const assetNodes = graph?.nodes.filter((n) => n.category === 'asset') ?? []
+  const vehicleNodes = graph?.nodes.filter((n) => n.category === 'vehicle') ?? []
+  const recipientNodes = graph?.nodes.filter((n) => n.category === 'recipient') ?? []
 
   return (
     <div className="space-y-6">
@@ -339,16 +381,67 @@ export default function ConsumerEstateFlowView({
         )}
       </div>
 
-      {horizon !== 'today' && graph.horizonLabel && (
+      {horizonDisplayLabel && (
         <p className="mb-3 text-xs text-[color:var(--mwm-text-secondary)]">
-          Showing projected estate — {graph.horizonLabel}
+          Showing projected estate — {horizonDisplayLabel}
         </p>
       )}
 
+      {loading && (
+        <div className="flex h-32 items-center justify-center text-sm text-[color:var(--mwm-text-secondary)]">
+          <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          Updating…
+        </div>
+      )}
+
+      {!loading && !graph && (
+        <div className="py-12 text-center text-sm text-gray-400">
+          Add assets and documents to see your estate flow.
+        </div>
+      )}
+
+      {!loading && graph && (
+        <>
       {/* Visual flow */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
+      <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6">
         {/* Layer 1: Owners */}
         <FlowLayer label="Your estate" nodes={ownerNodes} />
+
+        {/* Estate total — horizon-aware, prominent */}
+        <div className="mb-3 flex items-baseline justify-between">
+          <div>
+            <span className="text-2xl font-medium text-[color:var(--mwm-navy)]">
+              {fmtHeirsCurrency(graph.summary.gross_estate)}
+            </span>
+            <span className="ml-2 text-sm text-[color:var(--mwm-text-secondary)]">total estate</span>
+          </div>
+          {graph.summary.estate_tax_state > 0 || graph.summary.estate_tax_federal > 0 ? (
+            <div className="text-right">
+              <span className="text-sm font-medium text-[color:var(--mwm-danger)]">
+                {fmtHeirsCurrency(graph.summary.estate_tax_federal + graph.summary.estate_tax_state)}
+              </span>
+              <span className="ml-1 text-xs text-[color:var(--mwm-text-secondary)]">est. tax</span>
+            </div>
+          ) : (
+            <span className="text-sm text-[color:var(--mwm-text-secondary)]">
+              No estate tax at this level
+            </span>
+          )}
+        </div>
 
         {/* Arrow */}
         <FlowArrow label="passes to" />
@@ -388,10 +481,10 @@ export default function ConsumerEstateFlowView({
                   )
                 })}
               </div>
-              {horizon !== 'today' && (
+              {horizon !== 'today' && horizonDisplayLabel && (
                 <p className="mb-2 text-[11px] text-[color:var(--mwm-text-secondary)]">
                   Account balances shown are current holdings. The estate total above reflects
-                  projected growth at {graph.horizonLabel}.
+                  projected growth at {horizonDisplayLabel}.
                 </p>
               )}
               <div className="mb-2 flex justify-end">
@@ -494,6 +587,8 @@ export default function ConsumerEstateFlowView({
           <div className="text-base font-semibold text-amber-800">{fmt(graph.summary.probate_assets_value)}</div>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

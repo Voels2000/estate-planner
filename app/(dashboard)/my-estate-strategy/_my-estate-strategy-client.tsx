@@ -530,6 +530,7 @@ export default function MyEstateStrategyClient({
             scenarioId={scenarioId}
             estateAsOfLabel={estateAsOfLabel}
             liveNetWorth={today.grossEstate ?? 0}
+            horizons={selectedHorizons}
             hasSpouse={hasSpouse}
             hidePageHeader
           />

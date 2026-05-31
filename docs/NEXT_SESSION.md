@@ -60,7 +60,7 @@
 
 ## Estate flow horizon tabs ✅ (2026-05-31)
 
-**Files:** `lib/estate-flow/generateEstateFlow.ts` · `ConsumerEstateFlowView.tsx`
+**Engine pass (`720861a`):** `lib/estate-flow/generateEstateFlow.ts` · `ConsumerEstateFlowView.tsx`
 
 | Fix | Detail |
 |-----|--------|
@@ -70,7 +70,17 @@
 | Asset tiles | Today's holdings only — context note on projected horizons (no per-account projection) |
 | UI | `horizonLabel` caption below timeframe tabs |
 
-**Smoke:** Voels — Today ~$9.6M owner pill · At Longevity ~$96M · asset tiles unchanged across tabs.
+**Display pipeline pass (2026-05-31):** `ConsumerEstateFlowView.tsx` · `_my-estate-strategy-client.tsx`
+
+| Fix | Detail |
+|-----|--------|
+| **Primary** | `horizonOverride` from `selectedHorizons` (`buildStrategyHorizons`) — same numbers as tax table; passed to `generateEstateFlow` 8th arg (matches `EstateFlowDiagram`) |
+| Race | `cancelled` flag in `useEffect` — fast tab clicks cannot paint stale response |
+| Loading | Tabs stay mounted; inline “Updating…” spinner (no full-view unmount) |
+| UX | Prominent `gross_estate` + est. tax above asset tiles |
+| Caption | `getHorizonDisplayLabel(horizon)` — syncs with tab immediately |
+
+**Smoke:** Voels — Today ~$9.6M · In 10 Years ~$20.98M · At Longevity ~$97.7M. **Rapid click:** Today → At Longevity → In 10 Years in &lt;1s — final tab must show ~$20.98M (not late ~$97M).
 
 ---
 
