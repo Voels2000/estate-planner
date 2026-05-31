@@ -9,7 +9,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DisclaimerBanner } from '@/lib/components/DisclaimerBanner'
-import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { getUserAccess } from '@/lib/get-user-access'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { displayPersonFirstName } from '@/lib/display-person-name'
@@ -20,6 +19,7 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
+import { parseBypassTrustSavings, stateHasNoPortability } from '@/lib/estate/parseBypassTrustSavings'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 
 export default async function MyEstateStrategyPage() {
@@ -375,6 +375,13 @@ export default async function MyEstateStrategyPage() {
   })
 
   const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household.id)
+  const stateExemption = stateBrackets[0]?.exemption_amount ?? null
+  const bypassTrustSavings = parseBypassTrustSavings(
+    estatePlanningDashboard.recommendations?.recommendations,
+    composition.gross_estate,
+    stateExemption != null ? Number(stateExemption) : null,
+    stateHasNoPortability(household.state_primary),
+  )
 
   return (
     <div className="min-h-screen">
@@ -401,17 +408,8 @@ export default async function MyEstateStrategyPage() {
         survivorEndYear={survivorEndYear}
         currentYear={currentYear}
         lifetimeGiftsUsed={lifetimeGiftsUsedForComposition}
-        middleContent={
-          <EstatePlanningDashboard
-            householdId={household.id}
-            userRole={access.isAdvisor ? 'advisor' : 'consumer'}
-            consumerTier={access.tier}
-            showHeader={false}
-            embedded
-            initialRecommendations={estatePlanningDashboard.recommendations}
-            initialCompleteness={estatePlanningDashboard.completeness}
-          />
-        }
+        statePrimary={household.state_primary}
+        bypassTrustSavings={bypassTrustSavings}
       />
       <div className="max-w-6xl mx-auto px-4 pb-12">
         <DisclaimerBanner context="estate strategy" />

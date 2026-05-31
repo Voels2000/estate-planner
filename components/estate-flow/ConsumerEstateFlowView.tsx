@@ -183,6 +183,7 @@ export default function ConsumerEstateFlowView({
   const [graph, setGraph] = useState<EstateFlowGraph | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<number | null>(null)
+  const [assetsExpanded, setAssetsExpanded] = useState(false)
 
   useEffect(() => {
     const startTimeoutId = window.setTimeout(() => setLoading(true), 0)
@@ -192,6 +193,59 @@ export default function ConsumerEstateFlowView({
       .finally(() => setLoading(false))
     return () => window.clearTimeout(startTimeoutId)
   }, [householdId, scenarioId, supabase, horizon, deathView, liveNetWorth])
+
+  const assetGroups = useMemo(() => {
+    if (!graph) return [] as Array<{ label: string; items: FlowNode[]; color: string }>
+    const nodes = graph.nodes.filter((n) => n.category === 'asset')
+    const groups: Record<string, { label: string; items: FlowNode[]; color: string }> = {
+      financial: { label: 'Financial', items: [], color: '#185FA5' },
+      real_estate: { label: 'Real estate', items: [], color: '#1D9E75' },
+      business: { label: 'Business', items: [], color: '#EF9F27' },
+      retirement: { label: 'Retirement', items: [], color: '#7F77DD' },
+      insurance: { label: 'Insurance', items: [], color: '#E24B4A' },
+      other: { label: 'Other', items: [], color: '#888780' },
+    }
+
+    for (const node of nodes) {
+      if (node.type === 'real_estate') {
+        groups.real_estate.items.push(node)
+        continue
+      }
+      if (node.type === 'business') {
+        groups.business.items.push(node)
+        continue
+      }
+      if (node.type === 'insurance') {
+        groups.insurance.items.push(node)
+        continue
+      }
+      const assetType = String(node.metadata?.asset_type ?? '').toLowerCase()
+      if (
+        ['401k', '403b', '457', 'ira', 'retirement', 'pension', 'sep', 'simple'].some((t) =>
+          assetType.includes(t),
+        )
+      ) {
+        groups.retirement.items.push(node)
+        continue
+      }
+      if (node.type === 'asset') {
+        groups.financial.items.push(node)
+        continue
+      }
+      groups.other.items.push(node)
+    }
+
+    return Object.values(groups).filter((g) => g.items.length > 0)
+  }, [graph])
+
+  const maxGroupTotal = useMemo(
+    () =>
+      Math.max(
+        ...assetGroups.map((g) => g.items.reduce((s, n) => s + (Number(n.value) || 0), 0)),
+        0,
+      ),
+    [assetGroups],
+  )
 
   if (loading) {
     return (
@@ -302,7 +356,71 @@ export default function ConsumerEstateFlowView({
         {/* Layer 2: Assets */}
         {assetNodes.length > 0 && (
           <>
-            <FlowLayer label="Your assets" nodes={assetNodes} />
+            <div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Your assets</div>
+              <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {assetGroups.map((group) => {
+                  const total = group.items.reduce((s, n) => s + (Number(n.value) || 0), 0)
+                  const barPct = maxGroupTotal > 0 ? Math.round((total / maxGroupTotal) * 100) : 0
+                  return (
+                    <button
+                      key={group.label}
+                      type="button"
+                      className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-3 text-left"
+                      onClick={() => setAssetsExpanded(true)}
+                    >
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)]">
+                        {group.label}
+                      </p>
+                      <p className="mb-0.5 text-sm font-medium text-[color:var(--mwm-navy)]">
+                        {fmtHeirsCurrency(total)}
+                      </p>
+                      <p className="mb-2 text-[10px] text-[color:var(--mwm-text-secondary)]">
+                        {group.items.length} {group.items.length === 1 ? 'account' : 'accounts'}
+                      </p>
+                      <div className="h-1 overflow-hidden rounded-full bg-[color:var(--mwm-border-tertiary)]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${barPct}%`, background: group.color }}
+                        />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setAssetsExpanded((prev) => !prev)}
+                  className="text-xs text-[color:var(--mwm-text-secondary)] underline underline-offset-2"
+                >
+                  {assetsExpanded ? 'Hide accounts ↑' : 'Show all accounts ↓'}
+                </button>
+              </div>
+              {assetsExpanded && (
+                <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {assetGroups.flatMap((group) =>
+                    group.items.map((node) => (
+                      <div
+                        key={node.id}
+                        className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-2.5"
+                        style={{ borderLeft: `2px solid ${group.color}` }}
+                      >
+                        <p className="mb-0.5 truncate text-xs font-medium text-[color:var(--mwm-navy)]">
+                          {node.label}
+                        </p>
+                        <p className="mb-1 text-[10px] capitalize text-[color:var(--mwm-text-secondary)]">
+                          {String(node.metadata?.asset_type ?? node.type).replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-xs font-medium text-[color:var(--mwm-navy)]">
+                          {fmtHeirsCurrency(Number(node.value) || 0)}
+                        </p>
+                      </div>
+                    )),
+                  )}
+                </div>
+              )}
+            </div>
             <FlowArrow label="transfer through" />
           </>
         )}
