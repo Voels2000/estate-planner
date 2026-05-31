@@ -23,7 +23,9 @@
 
 **Decision:** `PDFReportData.federalExemption` now uses **`currentFederalExemption(normalizePdfFilingStatus(...))`** — same source as cover copy in `narrativeEngine.ts` ($27.98M MFJ / $13.99M single). Projection tax **amounts** on page 3 still come from scenario `latestOutput`; only the exemption **display** label is unified.
 
-**Duplicate action items:** `dedupeActionItems()` drops second alerts whose normalized title matches the first 20 characters of an earlier item (e.g. duplicate "Large estate without trust" rows in Documents vs Additional recommendations).
+**Duplicate action items:** `dedupeActionItems()` groups by first 20 chars of normalized title and **keeps the enriched row** (themed + impact/next step) when `household_alerts` emits duplicates — e.g. "Large estate without trust" under **Documents & trust structure**, not raw **Additional recommendations**.
+
+**Cover worst-case phrasing:** When MFJ + no bypass trust + portability gap, executive summary appends **"without a bypass trust"** to state tax exposure (worst-case number is intentional until CST confirmed).
 
 ---
 

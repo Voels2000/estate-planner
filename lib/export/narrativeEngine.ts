@@ -56,7 +56,49 @@ function narrativeStateTaxContext(data: PDFReportData) {
   const stateTax = resolveActiveStateTax(result, hasBypassTrust)
   const stateName = getStateDisplayName(data.domicileState)
   const hasStateTax = stateHasEstateTax(data.domicileState) || result.stateTax > 0
-  return { result, stateTax, stateName, hasStateTax, hasBypassTrust, brackets }
+  const worstCaseWithoutBypass =
+    !hasBypassTrust && result.hasPortabilityGap && result.stateTax > 0
+  return { result, stateTax, stateName, hasStateTax, hasBypassTrust, brackets, worstCaseWithoutBypass }
+}
+
+/** Cover copy — worst-case MFJ no-portability states label bypass gap explicitly. */
+function formatStateTaxExposure(
+  amount: number,
+  stateName: string,
+  worstCaseWithoutBypass: boolean,
+): string {
+  if (worstCaseWithoutBypass) {
+    return `an estimated ${fmt(amount)} in ${stateName} state estate tax exposure without a bypass trust`
+  }
+  return `an estimated ${fmt(amount)} in ${stateName} state estate tax exposure`
+}
+
+function isMissingTrustAlert(titleOrMessage: string): boolean {
+  const t = titleOrMessage.toLowerCase()
+  return (
+    t.includes('trust') &&
+    (t.includes('no trust') ||
+      t.includes('without a trust') ||
+      t.includes('without trust') ||
+      t.includes('revocable trust'))
+  )
+}
+
+function actionItemDedupeKey(item: ActionItem): string {
+  return (item.title ?? item.message ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 20)
+}
+
+/** Prefer themed/enriched rows when household_alerts emits duplicate titles. */
+function actionItemEnrichmentScore(item: ActionItem): number {
+  let score = 0
+  if (item.theme && item.theme !== 'general') score += 4
+  if (item.dollarImpact) score += 2
+  if (item.nextStep) score += 1
+  return score
 }
 
 export function generateExecutiveSummary(data: PDFReportData): string {
@@ -72,7 +114,7 @@ export function generateExecutiveSummary(data: PDFReportData): string {
     person2Name,
   } = data
 
-  const { stateTax, stateName, hasStateTax } = narrativeStateTaxContext(data)
+  const { stateTax, stateName, hasStateTax, worstCaseWithoutBypass } = narrativeStateTaxContext(data)
   const fedExempt = federalExemption(filingStatus)
   const sunsetExempt = sunsetExemption(filingStatus)
   const isMarried = filingStatus === 'mfj' && !!person2Name
@@ -91,7 +133,7 @@ export function generateExecutiveSummary(data: PDFReportData): string {
   if (grossEstate < 3_000_000) {
     let s = `${estateRef} is ${fmt(grossEstate)}. `
     if (hasStateTax && stateTax > 0) {
-      s += `Federal estate tax is not a current concern, but ${stateName} state estate tax exposure is estimated at ${fmt(stateTax)}. `
+      s += `Federal estate tax is not a current concern, but ${formatStateTaxExposure(stateTax, stateName, worstCaseWithoutBypass)}. `
     } else {
       s += `Federal estate tax is not a current concern${hasStateTax ? `, and your estate is below the ${stateName} exemption` : ''}. `
     }
@@ -109,7 +151,7 @@ export function generateExecutiveSummary(data: PDFReportData): string {
     const hasSunsetRisk = (sunsetTaxEstimate ?? 0) > 100_000
     let s = `${estateRef} is ${fmt(grossEstate)}`
     if (hasStateTax && stateTax > 0) {
-      s += `, with an estimated ${fmt(stateTax)} in ${stateName} state estate tax exposure`
+      s += `, with ${formatStateTaxExposure(stateTax, stateName, worstCaseWithoutBypass)}`
     }
     s += `. `
     if (hasSunsetRisk) {
@@ -130,7 +172,11 @@ export function generateExecutiveSummary(data: PDFReportData): string {
 
   let s = `${estateRef} of ${fmt(grossEstate)} is above the current federal exemption, `
   s += `with an estimated ${fmtFull(federalTax ?? 0)} in federal estate tax`
-  if (stateTax > 0) s += ` and ${fmt(stateTax)} in ${stateName} state tax`
+  if (stateTax > 0) {
+    s += worstCaseWithoutBypass
+      ? ` and ${fmt(stateTax)} in ${stateName} state tax without a bypass trust`
+      : ` and ${fmt(stateTax)} in ${stateName} state tax`
+  }
   s += `. Reducing this exposure requires a coordinated strategy. `
   s += data.hasIrrevocableTrust
     ? `Your irrevocable trust structure is a strong foundation — review current exemption utilization and consider additional funding. `
@@ -236,7 +282,7 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
   return items.map((item) => {
     const t = (item.title ?? item.message ?? '').toLowerCase()
 
-    if (t.includes('trust') && (t.includes('no trust') || t.includes('without a trust') || t.includes('revocable trust'))) {
+    if (isMissingTrustAlert(t)) {
       return {
         ...item,
         theme: 'documents' as const,
@@ -328,20 +374,34 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
   })
 }
 
-/** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps first match. */
+/** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps enriched match. */
 export function dedupeActionItems(items: ActionItem[]): ActionItem[] {
+  const bestByKey = new Map<string, ActionItem>()
+
+  for (const item of items) {
+    const key = actionItemDedupeKey(item)
+    if (!key) continue
+    const existing = bestByKey.get(key)
+    if (!existing || actionItemEnrichmentScore(item) > actionItemEnrichmentScore(existing)) {
+      bestByKey.set(key, item)
+    }
+  }
+
   const seen = new Set<string>()
-  return items.filter((item) => {
-    const key = (item.title ?? item.message ?? '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 20)
-    if (!key) return true
-    if (seen.has(key)) return false
+  const result: ActionItem[] = []
+
+  for (const item of items) {
+    const key = actionItemDedupeKey(item)
+    if (!key) {
+      result.push(item)
+      continue
+    }
+    if (seen.has(key)) continue
     seen.add(key)
-    return true
-  })
+    result.push(bestByKey.get(key) ?? item)
+  }
+
+  return result
 }
 
 export interface GiftingSummary {
