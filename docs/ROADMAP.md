@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-31 (estate flow consumer view horizon fix)
+# Last updated: 2026-05-31 (PDF action-item dedupe key normalization)
 
 ---
 
@@ -18,6 +18,17 @@
 ---
 
 ## Current sprint
+
+### Sprint — PDF action-item dedupe key normalization (2026-05-31) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Sort enriched rows before dedupe (`dollarImpact` + `nextStep`) | `[x]` |
+| `actionItemDedupeKey()` — strip filler words; 20-char stem | `[x]` |
+| Near-duplicate trust titles share key (`largeestatetrust`) | `[x]` |
+| Voels smoke — single trust alert under Documents & trust structure | `[ ]` |
+
+---
 
 ### Sprint — Estate flow consumer view horizon fix (2026-05-31) **← shipped**
 

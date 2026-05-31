@@ -667,9 +667,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 ## PDF exemption + action-item dedupe ✅ closed 2026-05-30
 
 - [x] Page 3 `federalExemption` → `currentFederalExemption()` (not raw `estate_exemption_individual`)
-- [x] `dedupeActionItems()` — duplicate household_alerts by title prefix
-- [x] Master docs synced
-- [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once
+- [x] `dedupeActionItems()` — sort enriched first; filler-normalized `actionItemDedupeKey()` (20-char stem)
+- [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once under Documents
 
 ## PDF export path wiring ✅ closed 2026-05-30
 

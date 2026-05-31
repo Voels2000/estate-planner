@@ -85,20 +85,36 @@ function isMissingTrustAlert(titleOrMessage: string): boolean {
 }
 
 function actionItemDedupeKey(item: ActionItem): string {
-  return (item.title ?? item.message ?? '')
+  const raw = (item.title ?? item.body ?? item.message ?? '')
     .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
+    // Strip filler words that cause near-duplicate titles to diverge
+    .replace(/\b(a|an|the|your|our|with|without|on|in|at|of|for|and|or)\b/g, '')
+    // Strip all non-alphanumeric
+    .replace(/[^a-z0-9]/g, '')
+    // Take first 20 chars of the stem (shorter = more forgiving)
     .slice(0, 20)
+  return raw
 }
 
-/** Prefer themed/enriched rows when household_alerts emits duplicate titles. */
 function actionItemEnrichmentScore(item: ActionItem): number {
-  let score = 0
-  if (item.theme && item.theme !== 'general') score += 4
-  if (item.dollarImpact) score += 2
-  if (item.nextStep) score += 1
-  return score
+  return (item.dollarImpact ? 1 : 0) + (item.nextStep ? 1 : 0)
+}
+
+/** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps enriched match. */
+export function dedupeActionItems(items: ActionItem[]): ActionItem[] {
+  // Sort enriched items first so dedup keeps them over raw duplicates
+  const prioritized = [...items].sort((a, b) => {
+    return actionItemEnrichmentScore(b) - actionItemEnrichmentScore(a)
+  })
+
+  const seen = new Set<string>()
+  return prioritized.filter((item) => {
+    const key = actionItemDedupeKey(item)
+    if (!key) return true
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 export function generateExecutiveSummary(data: PDFReportData): string {
@@ -372,36 +388,6 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
 
     return { ...item, theme: 'general' as const, owner: 'advisor' as const }
   })
-}
-
-/** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps enriched match. */
-export function dedupeActionItems(items: ActionItem[]): ActionItem[] {
-  const bestByKey = new Map<string, ActionItem>()
-
-  for (const item of items) {
-    const key = actionItemDedupeKey(item)
-    if (!key) continue
-    const existing = bestByKey.get(key)
-    if (!existing || actionItemEnrichmentScore(item) > actionItemEnrichmentScore(existing)) {
-      bestByKey.set(key, item)
-    }
-  }
-
-  const seen = new Set<string>()
-  const result: ActionItem[] = []
-
-  for (const item of items) {
-    const key = actionItemDedupeKey(item)
-    if (!key) {
-      result.push(item)
-      continue
-    }
-    if (seen.has(key)) continue
-    seen.add(key)
-    result.push(bestByKey.get(key) ?? item)
-  }
-
-  return result
 }
 
 export interface GiftingSummary {

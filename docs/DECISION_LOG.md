@@ -23,9 +23,19 @@
 
 **Decision:** `PDFReportData.federalExemption` now uses **`currentFederalExemption(normalizePdfFilingStatus(...))`** — same source as cover copy in `narrativeEngine.ts` ($27.98M MFJ / $13.99M single). Projection tax **amounts** on page 3 still come from scenario `latestOutput`; only the exemption **display** label is unified.
 
-**Duplicate action items:** `dedupeActionItems()` groups by first 20 chars of normalized title and **keeps the enriched row** (themed + impact/next step) when `household_alerts` emits duplicates — e.g. "Large estate without trust" under **Documents & trust structure**, not raw **Additional recommendations**.
+**Duplicate action items:** `dedupeActionItems()` sorts by enrichment (`dollarImpact` + `nextStep`), then dedupes by **`actionItemDedupeKey()`** — filler words stripped (`without`, `a`, etc.) + 20-char alphanumeric stem so near-duplicate titles collide (e.g. `"Large estate without a trust"` and `"Large Estate Without Trust"` → `largeestatetrust`). Enriched row wins. PDF: **Documents & trust structure**, not raw **Additional recommendations**.
 
 **Cover worst-case phrasing:** When MFJ + no bypass trust + portability gap, executive summary appends **"without a bypass trust"** to state tax exposure (worst-case number is intentional until CST confirmed).
+
+---
+
+## PDF action-item dedupe — filler-normalized keys (2026-05-31)
+
+**Problem:** `0f9305e` kept enriched rows by score but **`actionItemDedupeKey`** treated `"Large estate without a trust"` and `"Large Estate Without Trust"` as different keys (`…withoutatrust` vs `…withouttrust`) after alphanumeric strip — both alerts could appear in PDF.
+
+**Decision:** Sort enriched items first; dedupe with **`actionItemDedupeKey`** that strips common filler words before alphanumeric normalize + 20-char stem. Both trust titles → **`largeestatetrust`**; enriched row (impact + next step) wins.
+
+**Files:** `lib/export/narrativeEngine.ts`
 
 ---
 

@@ -102,8 +102,22 @@
 
 | Check | Expected | Commit |
 |-------|----------|--------|
-| Action items — trust alert | **Documents & trust structure**; enriched impact + next step | `0f9305e` dedupe prefers enriched row |
+| Action items — trust alert | **Documents & trust structure**; enriched impact + next step | filler-normalized dedupe key (2026-05-31) |
 | Cover — state tax phrasing | **"…exposure without a bypass trust"** when MFJ + no CST + portability gap | `0f9305e` |
+
+---
+
+## PDF action-item dedupe — filler-normalized keys ✅ (2026-05-31)
+
+**Files:** `lib/export/narrativeEngine.ts`
+
+| Fix | Detail |
+|-----|--------|
+| Sort | Enriched rows first (`dollarImpact` + `nextStep` score) before dedupe |
+| Key | `actionItemDedupeKey()` strips filler words (`without`, `a`, `the`, …) then 20-char stem |
+| Trust titles | `"Large estate without a trust"` + `"Large Estate Without Trust"` → **`largeestatetrust`** |
+
+**Smoke:** Voels MFJ PDF — trust alert once under **Documents & trust structure** with probate impact + attorney next step.
 
 ---
 
