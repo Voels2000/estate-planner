@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (state tax unification shipped)
+# Updated: 2026-05-29 (PDF dedupe + worst-case state tax copy)
 
 ---
 
@@ -16,7 +16,7 @@
 
 > My Wealth Maps — **State estate tax unification shipped (2026-05-29).** Engine A (flat-rate `narrativeEngine`) deleted; all display surfaces use **`calculateStateEstateTax`** (engine B). **`lib/constants/strategyTypes.ts`** for CST strings. Read **[CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md)** before any tax calc work.
 >
-> **Post-deploy smoke:** Voels MFJ WA ~$9.3M — re-export PDF; cover + page 3 state tax ~$231K; bypass trust scenario table when `cstBenefit > 0`.
+> **Post-deploy smoke:** Voels MFJ WA — re-export PDF after **`0f9305e`**. Confirm: (1) trust alert under **Documents & trust structure** with impact/next step; (2) cover state tax exposure includes **"without a bypass trust"** when no CST (~$911K WA).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
