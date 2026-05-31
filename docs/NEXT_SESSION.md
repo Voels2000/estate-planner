@@ -107,6 +107,16 @@
 
 ---
 
+## household_alerts trust title — sentence case ✅ (2026-05-31)
+
+| Fix | Detail |
+|-----|--------|
+| Source | `conflict-detector.ts` — `large_estate_no_trust` title → **Large estate without a trust** (matches `evaluateAlerts`) |
+| PDF | `enrichActionItems` sets canonical title on trust enrichment (legacy Title Case rows) |
+| Cleanup | Removed `[dedup input]` debug `console.log` from `generatePDFReport.ts` |
+
+---
+
 ## PDF action-item dedupe — filler-normalized keys ✅ (2026-05-31)
 
 **Files:** `lib/export/narrativeEngine.ts`

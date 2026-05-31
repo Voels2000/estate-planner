@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-31 (PDF action-item dedupe key normalization)
+# Last updated: 2026-05-31 (household_alerts trust title sentence case)
 
 ---
 
@@ -18,6 +18,16 @@
 ---
 
 ## Current sprint
+
+### Sprint — household_alerts trust title sentence case (2026-05-31) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `conflict-detector` — `Large estate without a trust` (matches `evaluateAlerts`) | `[x]` |
+| PDF `enrichActionItems` — canonical title on trust enrichment | `[x]` |
+| Remove `[dedup input]` debug log from `generatePDFReport.ts` | `[x]` |
+
+---
 
 ### Sprint — PDF action-item dedupe key normalization (2026-05-31) **← shipped**
 

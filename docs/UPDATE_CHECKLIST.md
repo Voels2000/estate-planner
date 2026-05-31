@@ -667,6 +667,8 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 ## PDF exemption + action-item dedupe ✅ closed 2026-05-30
 
 - [x] Page 3 `federalExemption` → `currentFederalExemption()` (not raw `estate_exemption_individual`)
+- [x] Trust alert title sentence case — `conflict-detector` + PDF `enrichActionItems` canonical title
+- [x] PDF tax callout — `appendPlanningGapNote()` · separator; no double period
 - [x] `dedupeActionItems()` — sort enriched first; filler-normalized `actionItemDedupeKey()` (20-char stem)
 - [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once under Documents
 

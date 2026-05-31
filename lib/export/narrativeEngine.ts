@@ -305,6 +305,8 @@ export function generateHealthTrend(data: PDFReportData): HealthTrend {
   }
 }
 
+const MISSING_TRUST_ALERT_TITLE = 'Large estate without a trust'
+
 export function enrichActionItems(items: ActionItem[], data: PDFReportData): ActionItem[] {
   const { grossEstate, lifeInsuranceOutsideILIT, domicileState } = data
   const probateCostLow = Math.round(grossEstate * 0.02)
@@ -317,6 +319,7 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
     if (isMissingTrustAlert(t)) {
       return {
         ...item,
+        title: MISSING_TRUST_ALERT_TITLE,
         theme: 'documents' as const,
         owner: 'attorney' as const,
         dollarImpact: `Probate could cost ${fmt(probateCostLow)}–${fmt(probateCostHigh)} in fees and months of delay`,

@@ -159,15 +159,7 @@ export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
   const taxCallout = generateTaxCallout(data)
   const healthTrend = generateHealthTrend(data)
-  const enriched = enrichActionItems(data.actionItems, data)
-  console.log(
-    '[dedup input]',
-    enriched.map((a) => ({
-      title: a.title,
-      score: (a.dollarImpact ? 1 : 0) + (a.nextStep ? 1 : 0),
-    })),
-  )
-  const enrichedActions = dedupeActionItems(enriched)
+  const enrichedActions = dedupeActionItems(enrichActionItems(data.actionItems, data))
   const giftingSummary = generateGiftingSummary(data)
   const actionGroups = groupActionItems(enrichedActions)
 

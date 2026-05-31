@@ -39,6 +39,14 @@
 
 ---
 
+## household_alerts trust title — sentence case (2026-05-31)
+
+**Decision:** Canonical title **`Large estate without a trust`** everywhere — matches `evaluateAlerts` sentence case. Conflict detector `conflictTitle(large_estate_no_trust)` updated; PDF **`enrichActionItems`** normalizes title on trust enrichment so legacy DB rows with Title Case still render correctly.
+
+**Files:** `lib/conflict-detector.ts`, `lib/export/narrativeEngine.ts`
+
+---
+
 ## PDF export paths unified — narrative engine on all estate reports (2026-05-30)
 
 **Problem:** Narrative engine shipped on `ExportPanel` only. Header **"Prepare for meeting"** and in-tab **"Prepare for Meeting"** modal used legacy one-page brief HTML — advisors saw old output.

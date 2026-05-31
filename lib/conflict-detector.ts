@@ -363,7 +363,7 @@ function conflictTitle(type: string): string {
     no_contingent_beneficiary:  'Missing Contingent Beneficiary',
     sole_ownership_married:     'Sole Ownership — Married Estate',
     sole_ownership_real_estate: 'Real Estate Titling Gap',
-    large_estate_no_trust:      'Large Estate Without Trust',
+    large_estate_no_trust:      'Large estate without a trust',
   }
   return titles[type] ?? 'Estate Planning Issue'
 }
