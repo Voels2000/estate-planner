@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (state estate tax unification)
+# Last updated: 2026-05-29 (score rationalization + dashboard Sprint B)
 
 ---
 
@@ -18,6 +18,21 @@
 ---
 
 ## Current sprint
+
+### Sprint — Score rationalization + dashboard UI (2026-05-29) **← shipped**
+
+| Item | Status |
+|------|--------|
+| Sprint A — one consumer label (`Estate readiness`); retire completeness grade on consumer surfaces | `[x]` |
+| Sprint A — `docs/SCORE_TAXONOMY.md` | `[x]` |
+| Sprint B — `EstateReadinessCard` (benchmark bar, component pills, trend delta) | `[x]` |
+| Sprint B — `PriorityAlertCard` + adaptive greeting + collapsed other alerts | `[x]` |
+| Sprint B — `priorScore` + `openAlerts` in `_dashboard-body.tsx` | `[x]` |
+| Post-ship smoke — Voels dashboard (score ~56, priority alert, fact line) | `[ ]` |
+
+**Commits:** `843585c` (Sprint A) · Sprint B (feat: score-driven consumer dashboard)
+
+---
 
 ### Sprint — State estate tax unification (2026-05-29) **← shipped**
 

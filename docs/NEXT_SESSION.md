@@ -39,12 +39,21 @@
 | Advisor | `EstatePlanningDashboard` grade retained — attorney portal only (no `showGrade` prop needed) |
 | Governance | [SCORE_TAXONOMY.md](./SCORE_TAXONOMY.md) |
 
-**Sprint B blocked until A merges** — B assumes canonical "Estate readiness" string and `ESTATE_READINESS_LABEL`.
+**Sprint B ✅ (2026-05-29)** — score-driven consumer dashboard (presentation only; no score engine changes).
 
-### Sprint B follow-up (not started)
+| Item | Detail |
+|------|--------|
+| **`EstateReadinessCard`** | Score hero, benchmark bar (avg American / avg MWM user markers), six component pills, trend delta, disclaimer |
+| **`PriorityAlertCard`** | Single top `household_alerts` row; factual consequence line; escalating CTA |
+| **Adaptive greeting** | Four score-band headline + subtitle variants in State 3 |
+| **Data** | `priorScore` + `openAlerts` fetched in `_dashboard-body.tsx` (not `page.tsx`) |
+| **Helpers** | `lib/dashboard/scoreDisplayHelpers.ts` · benchmarks in `readinessBenchmarks.ts` |
+| **State 2** | Estate readiness `{n}/100` tile + nudge → `/health-check` |
+| **Removed** | `ConsolidatedAlertPanel` (conflict-derived alert list) |
 
-- Score hero UI with benchmark bands (`NAT_AVG_PCT = 28`, `MWM_AVG_PCT = 63` are hardcoded estimates)
-- **Future sprint:** When enough users exist, compute real platform averages from `estate_health_scores` → config table, refresh monthly (see SCORE_TAXONOMY.md)
+**Post-ship smoke:** Voels (~56, WA) — greeting, amber fill, benchmark bar, priority alert + fact line, "+ N other items".
+
+**Follow-up (future sprint):** Real platform averages from `estate_health_scores` → config table; score history table for reliable trend delta (current table upserts one row per household).
 
 ---
 
@@ -403,19 +412,19 @@
 
 ---
 
-## Consolidated dashboard alert panel ✅ (2026-05-30)
+## Score-driven consumer dashboard ✅ (2026-05-29, Sprint B)
 
-**Files:** `_dashboard-client.tsx` · `DashboardIntroSection.tsx` · `EstateExecutionChecklist.tsx`
+**Files:** `_dashboard-body.tsx` · `_dashboard-client.tsx` · `EstateReadinessCard.tsx` · `PriorityAlertCard.tsx` · `scoreDisplayHelpers.ts`
 
 | Item | Notes |
 |------|-------|
-| **`ConsolidatedAlertPanel`** | Ranked alerts: beneficiary · documents · incapacity · business succession · WA portability |
-| Detection | **`conflict_type`** + **`estateHealthScore.components`** (not description substring alone) · **`successionGap`** for business |
-| Removed | Intro conflict pills · bypass blue **`afterMetrics`** card · succession gap banner |
-| Added | Six-bar readiness strip (`estateHealthScore.components`) · checklist **`deemphasizeFlagged`** |
-| Compliance | Persistent disclaimer footer outside alert **`map`** |
+| **`EstateReadinessCard`** | Benchmark bar · component pills · trend delta · disclaimer |
+| **`PriorityAlertCard`** | Top open `household_alerts` row · `getAlertFact` · severity/score CTA |
+| **Greeting** | `getGreeting()` — four bands; placed above score card in State 3 |
+| **Other items** | Collapsible "+ N other items" for remaining alerts |
+| **Supersedes** | **`ConsolidatedAlertPanel`** (2026-05-30 interim — conflict-derived ranked list) |
 
-**Alan post-deploy:** Panel shows beneficiary + documents + incapacity + business (if `successionGap`) + WA bypass info row.
+**Alan post-deploy:** Adaptive greeting · score card with benchmarks · single priority alert from `household_alerts` · collapsed other items.
 
 ---
 

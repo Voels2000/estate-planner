@@ -172,6 +172,18 @@
 
 ---
 
+## Score-driven consumer dashboard — Sprint B (2026-05-29)
+
+**Decision:** Replace **`ConsolidatedAlertPanel`** (conflict-derived ranked alert list) with a score-first State 3 layout: adaptive greeting by score band, **`EstateReadinessCard`** (benchmark bar vs avg American / avg MWM user, six component pills, optional trend delta, disclaimer), and a single **`PriorityAlertCard`** sourced from open **`household_alerts`** rows (not recomputed from conflicts). Remaining alerts collapse behind "+ N other items". Presentation only — no changes to score engine, alert evaluation, or DB schema.
+
+**Benchmark constants:** `NAT_AVG_PCT = 28`, `MWM_AVG_PCT = 63` in `lib/dashboard/readinessBenchmarks.ts` until platform aggregates exist.
+
+**Trend delta caveat:** `priorScore` queries second-most-recent `estate_health_scores` row; table upserts one row per household today, so delta often hidden until score history is stored.
+
+**Files:** `dashboard/_dashboard-body.tsx`, `_dashboard-client.tsx`, `components/dashboard/EstateReadinessCard.tsx`, `components/dashboard/PriorityAlertCard.tsx`, `lib/dashboard/scoreDisplayHelpers.ts`
+
+---
+
 ## Dashboard — remove asset allocation card from Financial Summary (2026-05-30)
 
 **Decision:** Remove **`AssetAllocationSummary`** from the **`FinancialSummarySection`** collapsible on **`/dashboard`**. Full allocation editing, benchmarks, and portfolio breakdown remain on **`/allocation`** via **`loadAssetAllocationData`**. **`buildAllocationContext`** stays in **`lib/dashboard/mappers.ts`** for reuse; dashboard no longer builds or passes allocation context on load.

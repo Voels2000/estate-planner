@@ -221,11 +221,11 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **After save** | N/A; **other pages’** writes eventually refresh score via recompute |
 | **Key lib** | `lib/dashboard/determinePlanStage.ts`, `lib/dashboard/buildEstateExecutionChecklist.ts`, `lib/onboarding/personaConfig.ts`, `components/dashboard/PlanProgressBar.tsx`, `PersonaInsightCard.tsx`, `SetupProgressCard.tsx`, `GET /api/consumer/setup-progress`, `EmptyStateCard.tsx` |
 | **E2E** | `tests/e2e/consumer/dashboard.spec.ts` · `golden-path-show-all-tools.spec.ts` (requires score ≥ 60 — `ensureMinEstateHealthScore` in seed) |
-| **Key UI sections** | **Onramp (State 1):** Import · Guide · Self · faded estate preview · **State 2:** net worth hero · unlock prompt · foundation progress · Financial/Retirement collapsibles · **State 3:** tax hero · alerts · readiness strip · checklist/tax snapshot · estate summary collapsible |
+| **Key UI sections** | **Onramp (State 1):** Import · Guide · Self · faded estate preview · **State 2:** net worth hero · unlock prompt · estate readiness tile + health-check nudge · Financial/Retirement collapsibles · **State 3:** tax hero · adaptive greeting · **`EstateReadinessCard`** · **`PriorityAlertCard`** · collapsed other alerts · checklist/tax snapshot · estate summary collapsible |
 | **Life event write** | `POST /api/consumer/life-events` → `afterHouseholdWriteForOwner` → estate health recompute |
 | **Empty / blocked** | No household → empty state; `grossEstate === 0` → estate callout empty state; no retirement accounts → retirement empty state; no conflicts → banner/chips hidden |
 
-**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** **`getDashboardState()`** — **State 1** onramp in `page.tsx`; **State 2** net worth hero + estate-unlock prompt (no tax hero / readiness strip); **State 3** tax exposure hero → **`ConsolidatedAlertPanel`** + six-bar readiness strip + checklist/tax snapshot grid. Collapsible **`EstateSummarySection`** below Financial/Retirement (State 3 only).
+**Estate summary strip (stage 2–3, `_dashboard-client.tsx` + `EstateCalloutCard.tsx`):** **`getDashboardState()`** — **State 1** onramp in `page.tsx`; **State 2** net worth hero + estate-unlock prompt + estate readiness `{n}/100` nudge (no benchmark bar); **State 3** tax exposure hero → adaptive greeting → **`EstateReadinessCard`** + **`PriorityAlertCard`** (top `household_alerts` row) + collapsible other items + checklist/tax snapshot grid. Collapsible **`EstateSummarySection`** below Financial/Retirement (State 3 only). Open alerts + prior score fetched in **`dashboard/_dashboard-body.tsx`**.
 
 ### Financial modules (representative)
 

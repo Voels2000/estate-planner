@@ -51,6 +51,7 @@ import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionCh
 import { determinePlanStage, getDashboardState } from '@/lib/dashboard/determinePlanStage'
 import { getUserAccess } from '@/lib/get-user-access'
 import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
+import { sortOpenAlerts } from '@/lib/dashboard/scoreDisplayHelpers'
 
 type HouseholdRow = Record<string, unknown> & {
   id: string
@@ -319,6 +320,8 @@ export async function DashboardBody({
     { data: advisorStrategyItems },
     mcScenarioRes,
     { data: healthScoreRow },
+    { data: priorHealthScoreRow },
+    { data: openAlertsData },
     { data: conflictRows },
     { taxDeferredAssets, currentYearWithdrawals },
     { data: stateExemptionRow },
@@ -347,6 +350,25 @@ export async function DashboardBody({
           .select('score, component_scores, computed_at, recommendations')
           .eq('household_id', household.id)
           .maybeSingle()
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? admin
+          .from('estate_health_scores')
+          .select('score, computed_at')
+          .eq('household_id', household.id)
+          .order('computed_at', { ascending: false })
+          .range(1, 1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    household?.id
+      ? admin
+          .from('household_alerts')
+          .select('id, title, description, severity, created_at, action_href')
+          .eq('household_id', household.id)
+          .is('resolved_at', null)
+          .is('dismissed_at', null)
+          .order('created_at', { ascending: false })
+          .limit(10)
       : Promise.resolve({ data: null }),
     household?.id
       ? admin
@@ -389,6 +411,19 @@ export async function DashboardBody({
   // computeEstateHealthScore writes to DB — never call it in render path.
   // Dashboard reads the last persisted score; background recompute updates it.
   const estateHealthScore = mapEstateHealthScore(healthScoreRow)
+
+  const priorScore = priorHealthScoreRow?.score ?? null
+
+  const openAlerts = sortOpenAlerts(
+    (openAlertsData ?? []).map((a) => ({
+      id: a.id,
+      title: a.title,
+      message: a.description,
+      severity: a.severity,
+      created_at: a.created_at,
+      action_href: a.action_href,
+    })),
+  )
 
   // ── Base case (projection rows) — same source as My Estate Strategy ──────
   const baseCaseRows: YearRow[] = baseCaseScenario?.outputs_s1_first ?? []
@@ -584,6 +619,8 @@ export async function DashboardBody({
       retirementSnapshot={retirementSnapshot}
       retirementAccountsTotal={retirementAccountsTotal}
       estateHealthScore={estateHealthScore}
+      priorScore={priorScore}
+      openAlerts={openAlerts}
       conflictReport={conflictReport}
       userId={user!.id}
       householdId={household?.id ?? null}

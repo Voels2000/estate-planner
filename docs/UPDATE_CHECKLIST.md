@@ -582,8 +582,20 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Nav rename: Tax Horizons & Strategy
 - [ ] **Post-deploy visual smoke (once):** Alan `/estate-tax` — waterfall + strategy toggles · $0-tax household — waterfall only
 - [x] Master docs synced
-- [x] Consolidated alert panel on dashboard (`ConsolidatedAlertPanel`)
-- [ ] **Post-deploy smoke:** Alan — five alert types in panel · no intro conflict pills · no bypass blue card
+- [x] Consolidated alert panel on dashboard (`ConsolidatedAlertPanel`) — **superseded 2026-05-29 Sprint B**
+- [x] Score-driven dashboard — `EstateReadinessCard` · `PriorityAlertCard` · adaptive greeting · `household_alerts` fetch
+- [ ] **Post-deploy smoke:** Voels — score card + benchmark bar · priority alert + fact line · "+ N other items"
+
+## Sprint — Score rationalization + dashboard UI ✅ closed 2026-05-29
+
+**Sprint A commit:** `843585c` · **Files:** `lib/estate-health-score.ts`, consumer PDF, unlock gate, execution checklist, `docs/SCORE_TAXONOMY.md`
+
+**Sprint B files:** `_dashboard-body.tsx` · `_dashboard-client.tsx` · `EstateReadinessCard.tsx` · `PriorityAlertCard.tsx` · `scoreDisplayHelpers.ts` · `readinessBenchmarks.ts`
+
+- [x] One consumer label — `ESTATE_READINESS_LABEL` everywhere
+- [x] Consumer PDF uses `estate_health_scores.score` (not completeness grade)
+- [x] Benchmark bar + component pills + priority alert card
+- [x] Master docs — **DECISION_LOG**, **MASTER_ARCHITECTURE**, **CONSUMER_FLOWS**, **NEXT_SESSION**, **ROADMAP**, **SCORE_TAXONOMY**, smoke test
 
 ## Sprint — Dashboard Financial Summary — no allocation card ✅ closed 2026-05-30
 

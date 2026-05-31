@@ -41,6 +41,13 @@ import StrategyRecommendationPanel, {
 import MonteCarloScenarioBanner from '@/components/consumer/MonteCarloScenarioBanner'
 import type { ConsumerMCScenario } from '@/lib/monte-carlo/consumerAssumptionScenarios'
 import { PlanProgressBar } from '@/components/dashboard/PlanProgressBar'
+import { EstateReadinessCard } from '@/components/dashboard/EstateReadinessCard'
+import { PriorityAlertCard } from '@/components/dashboard/PriorityAlertCard'
+import {
+  getAlertCTA,
+  getAlertFact,
+  getGreeting,
+} from '@/lib/dashboard/scoreDisplayHelpers'
 import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
 import { PersonaInsightCard } from '@/components/dashboard/PersonaInsightCard'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
@@ -88,6 +95,15 @@ type Props = {
   retirementSnapshot: RetirementSnapshot | null
   retirementAccountsTotal?: number
   estateHealthScore?: EstateHealthScore | null
+  priorScore?: number | null
+  openAlerts?: Array<{
+    id: string
+    title: string | null
+    message: string | null
+    severity: string
+    created_at: string
+    action_href?: string | null
+  }>
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string
@@ -190,259 +206,6 @@ const SECTION_KEYS = {
   estate: 'dashboard_section_estate',
 } as const
 
-function parseBypassTrustSavings(
-  recommendations: Props['initialRecommendations'],
-  grossEstate: number | undefined,
-  stateExemption: number | null,
-  noPortability: boolean,
-): number {
-  const rec = recommendations?.find((r) => r.branch === 'bypass_trust')
-  if (!rec) return 0
-
-  // Primary: "reduce Washington estate tax by $645,463 or more"
-  const byMatch = rec.reason.match(/by (\$[\d,]+)/i)
-  if (byMatch) {
-    return parseInt(byMatch[1].replace(/[$,]/g, ''), 10)
-  }
-
-  // Fallback: last dollar figure in the RPC reason string
-  const dollarMatches = rec.reason.match(/\$[\d,]+/g)
-  if (dollarMatches?.length) {
-    const last = dollarMatches[dollarMatches.length - 1]
-    return parseInt(last.replace(/[$,]/g, ''), 10)
-  }
-
-  if (noPortability && stateExemption && grossEstate && grossEstate > stateExemption) {
-    return Math.round(Math.max(0, (grossEstate - stateExemption) * 0.10))
-  }
-  return 0
-}
-
-const WA_NO_PORTABILITY_STATES = new Set(['WA', 'MA', 'OR'])
-
-const BENEFICIARY_CONFLICT_TYPES = new Set([
-  'no_primary_beneficiary',
-  'no_contingent_beneficiary',
-  'allocation_not_100',
-])
-
-type ConsolidatedAlert = {
-  severity: 'critical' | 'warning' | 'info'
-  title: string
-  description: string
-  link: string
-  linkLabel: string
-}
-
-function ConsolidatedAlertPanel({
-  conflictReport,
-  estateHealthScore,
-  bypassTrustSavings,
-  statePrimary,
-  stateExemption,
-  successionGap,
-  estimatedTaxState,
-}: {
-  conflictReport: Props['conflictReport']
-  estateHealthScore?: EstateHealthScore | null
-  bypassTrustSavings: number
-  statePrimary: string | null | undefined
-  stateExemption: number | null
-  successionGap: boolean
-  estimatedTaxState: number
-}) {
-  const alerts: ConsolidatedAlert[] = []
-
-  const beneficiaryConflicts = (conflictReport?.conflicts ?? []).filter(
-    (c) =>
-      BENEFICIARY_CONFLICT_TYPES.has(c.conflict_type) ||
-      /beneficiar/i.test(c.description),
-  )
-  const beneficiariesComponent = estateHealthScore?.components.find((c) => c.key === 'beneficiaries')
-
-  if (
-    beneficiaryConflicts.length > 0 ||
-    (beneficiariesComponent && beneficiariesComponent.score < beneficiariesComponent.maxScore)
-  ) {
-    const exemplar =
-      beneficiaryConflicts.find((c) => c.severity === 'critical') ?? beneficiaryConflicts[0]
-    const title =
-      exemplar?.conflict_type === 'allocation_not_100'
-        ? 'Beneficiary allocations need review'
-        : exemplar?.conflict_type === 'no_contingent_beneficiary'
-          ? 'Accounts missing contingent beneficiary on file'
-          : 'Accounts have no primary beneficiary on file'
-
-    alerts.push({
-      severity:
-        exemplar?.severity === 'critical' || (conflictReport?.critical ?? 0) > 0
-          ? 'critical'
-          : 'warning',
-      title,
-      description:
-        exemplar?.description ??
-        'One or more accounts have beneficiary designations that may need review. Accounts without complete beneficiary information typically pass through the estate — your attorney can advise on the implications for your plan.',
-      link: '/titling',
-      linkLabel: 'Review in Titling & Beneficiaries →',
-    })
-  }
-
-  const documentsComponent = estateHealthScore?.components.find((c) => c.key === 'documents')
-  const trustConflict = (conflictReport?.conflicts ?? []).find(
-    (c) => c.conflict_type === 'large_estate_no_trust',
-  )
-
-  if (
-    (documentsComponent && documentsComponent.score < documentsComponent.maxScore) ||
-    trustConflict
-  ) {
-    alerts.push({
-      severity:
-        trustConflict?.severity === 'critical' ||
-        (documentsComponent?.status === 'critical' && !trustConflict)
-          ? 'critical'
-          : 'warning',
-      title: 'No will, trust, or estate documents recorded',
-      description:
-        trustConflict?.description ??
-        'No will, trust, power of attorney, or healthcare directive has been entered in your profile. These are common foundational documents in estate plans — your attorney can confirm what is currently in place and what may be needed.',
-      link: '/my-estate-trust-strategy?tab=trusts',
-      linkLabel: 'Record documents in Trusts & Documents →',
-    })
-  }
-
-  const incapacityComponent = estateHealthScore?.components.find((c) => c.key === 'incapacity')
-
-  if (incapacityComponent && incapacityComponent.score < incapacityComponent.maxScore) {
-    alerts.push({
-      severity: incapacityComponent.status === 'critical' ? 'critical' : 'warning',
-      title: 'No incapacity planning documents recorded',
-      description:
-        'No durable power of attorney or healthcare directive has been entered. Attorneys commonly address financial and medical decision-making authority as part of incapacity planning — review your current documents with counsel.',
-      link: '/incapacity-planning',
-      linkLabel: 'Record documents in Incapacity Planning →',
-    })
-  }
-
-  if (successionGap) {
-    alerts.push({
-      severity: 'warning',
-      title: 'Business interests on file — no succession plan recorded',
-      description:
-        'Your profile includes business interests but no succession plan has been entered. Many estate plans for business owners address continuity and ownership transfer — your advisor or attorney can review what documentation exists.',
-      link: '/business-succession',
-      linkLabel: 'Record succession information →',
-    })
-  }
-
-  if (
-    bypassTrustSavings > 0 &&
-    statePrimary &&
-    WA_NO_PORTABILITY_STATES.has(statePrimary.toUpperCase())
-  ) {
-    alerts.push({
-      severity: 'info',
-      title: `${statePrimary} does not allow portability of its state estate tax exemption`,
-      description: `Based on your ${statePrimary} domicile and estate size, the estimated ${statePrimary} estate tax is ${fmtExact(estimatedTaxState)}. ${statePrimary}'s ${fmtExact(stateExemption ?? 3_000_000)} individual exemption is not portable between spouses — attorneys commonly discuss credit shelter trust structures in this situation. Review with your estate attorney.`,
-      link: '/my-estate-strategy',
-      linkLabel: 'View estate tax strategies →',
-    })
-  }
-
-  if (alerts.length === 0) return null
-
-  const severityOrder = { critical: 0, warning: 1, info: 2 } as const
-  alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
-
-  const criticalCount = alerts.filter((a) => a.severity === 'critical').length
-  const warningCount = alerts.filter((a) => a.severity === 'warning').length
-  const infoCount = alerts.filter((a) => a.severity === 'info').length
-
-  const dotColor = {
-    critical: 'bg-red-500',
-    warning: 'bg-amber-400',
-    info: 'bg-blue-400',
-  }
-
-  const severityLabel = {
-    critical: 'Critical',
-    warning: 'Incomplete',
-    info: 'For review',
-  }
-
-  const severityStyle = {
-    critical: 'bg-red-50 text-red-800',
-    warning: 'bg-amber-50 text-amber-800',
-    info: 'bg-blue-50 text-blue-800',
-  }
-
-  return (
-    <div className="overflow-hidden rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white">
-      <div className="flex items-center justify-between border-b border-[color:var(--mwm-border)] bg-[var(--mwm-bg-muted)] px-4 py-3 gap-3 flex-wrap">
-        <div>
-          <p className="text-xs font-medium text-[color:var(--mwm-navy)]">
-            Items for review with your advisor or attorney
-          </p>
-          <p className="mt-0.5 text-[10px] text-[color:var(--mwm-text-secondary)]">
-            Based on information you&apos;ve entered · not financial, tax, or legal advice
-          </p>
-        </div>
-        <div className="flex flex-shrink-0 gap-2">
-          {criticalCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-800">
-              {criticalCount} critical
-            </span>
-          )}
-          {warningCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-              {warningCount} incomplete
-            </span>
-          )}
-          {infoCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-800">
-              {infoCount} for review
-            </span>
-          )}
-        </div>
-      </div>
-
-      {alerts.map((alert) => (
-        <div
-          key={`${alert.severity}-${alert.title}`}
-          className="flex items-start gap-3 border-b border-[color:var(--mwm-border)] px-4 py-3 last:border-b-0"
-        >
-          <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${dotColor[alert.severity]}`} />
-          <div className="min-w-0 flex-1">
-            <p className="mb-1 text-xs font-medium text-[color:var(--mwm-navy)]">{alert.title}</p>
-            <p className="text-[11px] leading-relaxed text-[color:var(--mwm-text-secondary)]">
-              {alert.description}
-            </p>
-            <Link
-              href={alert.link}
-              className="mt-1.5 inline-block text-[11px] text-emerald-700 underline underline-offset-2"
-            >
-              {alert.linkLabel}
-            </Link>
-          </div>
-          <span
-            className={`mt-0.5 flex-shrink-0 self-start rounded px-1.5 py-0.5 text-[9px] font-medium ${severityStyle[alert.severity]}`}
-          >
-            {severityLabel[alert.severity]}
-          </span>
-        </div>
-      ))}
-
-      <div className="border-t border-[color:var(--mwm-border)] bg-[var(--mwm-bg-muted)] px-4 py-2">
-        <p className="text-[10px] leading-relaxed text-[color:var(--mwm-text-secondary)]">
-          This summary reflects information you&apos;ve entered. It is for planning preparation purposes only —
-          not financial, tax, or legal advice. Consult your financial advisor, CPA, or estate attorney before
-          taking action.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 // ---------------------------------------------------------------------------
 // State 2 — financial hero (net worth focus, estate not yet unlocked)
 // ---------------------------------------------------------------------------
@@ -537,6 +300,15 @@ function State2NetWorthHero({
           </div>
         ))}
       </div>
+
+      {foundationScore > 0 && (
+        <p className="mt-3 text-xs text-[color:var(--mwm-text-secondary)]">
+          Complete your estate profile to see your full score.{' '}
+          <Link href="/health-check" className="font-medium text-emerald-700 underline underline-offset-2">
+            Go to health check →
+          </Link>
+        </p>
+      )}
     </div>
   )
 }
@@ -557,7 +329,8 @@ export function DashboardClient(props: Props) {
   const {
     userName, totalAssets, totalLiabilities, netWorth, netWorthBySource,
     totalIncome, totalExpenses, savingsRate, currentYearNet, annualSSFromPIA,
-    retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, conflictReport,
+    retirementSnapshot, retirementAccountsTotal = 0, estateHealthScore, priorScore = null,
+    openAlerts = [], conflictReport,
     userId, householdId, hasBaseCase, scenarioId,
     completionScore, consumerTier, isAdvisor,
     rmdStatus,
@@ -624,6 +397,7 @@ export function DashboardClient(props: Props) {
 
   const router = useRouter()
   const [quickAddOpen, setQuickAddOpen] = useState(false)
+  const [otherAlertsExpanded, setOtherAlertsExpanded] = useState(false)
   const [setupProgress, setSetupProgress] = useState<SetupProgressCounts | null>(
     initialSetupProgress ?? null,
   )
@@ -691,15 +465,7 @@ export function DashboardClient(props: Props) {
   const pendingRecsCount = advisorStrategyItems.filter(
     (i) => !i.consumer_accepted && !i.consumer_rejected,
   ).length
-  const openAlertsCount =
-    (conflictReport?.critical ?? 0) + (conflictReport?.warnings ?? 0)
-
-  const bypassTrustSavings = parseBypassTrustSavings(
-    initialRecommendations,
-    estateCallout?.grossEstate,
-    stateExemption,
-    noPortability,
-  )
+  const openAlertsCount = openAlerts.length
 
   return (
     <>
@@ -929,53 +695,93 @@ export function DashboardClient(props: Props) {
 
       {sectionVisible(3) && (executionChecklist.length > 0 || estateCallout || estateHealthScore) && (
         <div className="mt-4 space-y-4">
-          <ConsolidatedAlertPanel
-            conflictReport={conflictReport}
-            estateHealthScore={estateHealthScore}
-            bypassTrustSavings={bypassTrustSavings}
-            statePrimary={statePrimary}
-            stateExemption={stateExemption}
-            successionGap={successionGap}
-            estimatedTaxState={estateCallout?.estimatedTaxState ?? composition?.estimated_tax_state ?? 0}
-          />
+          {estateHealthScore && (
+            <>
+              {(() => {
+                const g = getGreeting(estateHealthScore.score, fn)
+                return (
+                  <div className="mb-2">
+                    <h2 className="text-xl font-medium text-[color:var(--mwm-navy)]">{g.headline}</h2>
+                    <p className="mt-0.5 text-sm text-[color:var(--mwm-text-secondary)]">{g.sub}</p>
+                  </div>
+                )
+              })()}
 
-          {estateHealthScore && estateHealthScore.components.length > 0 && (
-            <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-4 py-3">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--mwm-text-secondary)]">
-                  Estate readiness · {estateHealthScore.score}/100
-                </p>
-                <Link
-                  href="/titling"
-                  className="text-[11px] text-emerald-700 underline underline-offset-2"
-                >
-                  Update health check →
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                {estateHealthScore.components.map((comp) => {
-                  const pct = Math.round((comp.score / comp.maxScore) * 100)
-                  const color = pct === 100 ? '#1D9E75' : pct >= 60 ? '#EF9F27' : '#E24B4A'
-                  const textColor = pct === 100 ? '#0F6E56' : pct >= 60 ? '#854F0B' : '#A32D2D'
-                  return (
-                    <div key={comp.key} className="flex flex-col gap-1">
-                      <p className="truncate text-[10px] text-[color:var(--mwm-text-secondary)]">
-                        {comp.label}
-                      </p>
-                      <div className="h-1 overflow-hidden rounded-full bg-[var(--mwm-bg-muted)]">
+              <EstateReadinessCard
+                score={estateHealthScore.score}
+                priorScore={priorScore}
+                components={estateHealthScore.components}
+              />
+
+              {openAlerts.length > 0 && (() => {
+                const topAlert = openAlerts[0]
+                const grossEstate = estateCallout?.grossEstate ?? totalAssets
+                const fact = getAlertFact(
+                  topAlert.title ?? topAlert.message ?? '',
+                  grossEstate,
+                )
+                const cta = getAlertCTA(topAlert.severity, estateHealthScore.score)
+                return (
+                  <div>
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[color:var(--mwm-text-secondary)]">
+                      {estateHealthScore.score >= 80 ? 'Staying current' : 'Focus here first'}
+                    </p>
+                    <PriorityAlertCard
+                      alert={topAlert}
+                      fact={fact}
+                      cta={cta}
+                      score={estateHealthScore.score}
+                    />
+                  </div>
+                )
+              })()}
+
+              {openAlerts.length > 1 && (
+                <div>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 py-2 text-sm text-[color:var(--mwm-text-secondary)]"
+                    onClick={() => setOtherAlertsExpanded((prev) => !prev)}
+                  >
+                    + {openAlerts.length - 1} other{' '}
+                    {openAlerts.length - 1 === 1 ? 'item' : 'items'}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      className={otherAlertsExpanded ? 'rotate-180' : ''}
+                    >
+                      <path
+                        d="M3 4.5L6 7.5L9 4.5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                  {otherAlertsExpanded && (
+                    <div className="space-y-2 pl-1">
+                      {openAlerts.slice(1).map((alert) => (
                         <div
-                          className="h-full rounded-full"
-                          style={{ width: `${pct}%`, background: color }}
-                        />
-                      </div>
-                      <p className="text-[10px] font-medium" style={{ color: textColor }}>
-                        {comp.score}/{comp.maxScore}
-                      </p>
+                          key={alert.id}
+                          className="rounded border border-[color:var(--mwm-border)] bg-white px-3 py-2"
+                        >
+                          <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
+                            {alert.title ?? alert.message}
+                          </p>
+                          {alert.message && alert.title && (
+                            <p className="mt-0.5 text-xs text-[color:var(--mwm-text-secondary)]">
+                              {alert.message}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           {(executionChecklist.length > 0 || estateCallout) && (
@@ -1007,7 +813,6 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {/* successionGap banner removed — covered by ConsolidatedAlertPanel */}
 
       {sectionVisible(2) && personaAlerts?.businessThreshold && (
         <div className="mt-4 mb-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
