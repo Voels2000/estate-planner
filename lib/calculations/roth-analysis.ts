@@ -127,18 +127,45 @@ function normalizeFilingStatusForState(filingStatus: string): 'single' | 'mfj' {
   return ['mfj', 'married_joint', 'married_filing_jointly', 'qw'].includes(filingStatus) ? 'mfj' : 'single'
 }
 
+function getFillTargetFederalRate(
+  peakFederalMarginal: number,
+  brackets: { min: number; max: number; rate: number }[],
+): number {
+  if (!brackets.length) return peakFederalMarginal
+  const sorted = [...brackets].sort((a, b) => a.rate - b.rate)
+  let peakIdx = 0
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (peakFederalMarginal >= sorted[i].rate - 1e-9) {
+      peakIdx = i
+      break
+    }
+  }
+  // When RMD-era marginal is 24%+, fill through the bracket below (just under 24% threshold).
+  if (peakIdx > 0 && peakFederalMarginal >= 0.24 - 1e-9) {
+    return sorted[peakIdx - 1].rate
+  }
+  return peakFederalMarginal
+}
+
+/** Headroom to fill federal brackets up to the RMD-era target (matches legacy roth-optimizer). */
 function getBracketHeadroom(
   taxableIncome: number,
   brackets: { min: number; max: number; rate: number }[],
-  peakRate: number,
+  peakFederalMarginal: number,
   maxConversion: number,
 ): number {
-  let targetCeiling = 0
+  const fillTargetRate = getFillTargetFederalRate(peakFederalMarginal, brackets)
+  let headroom = 0
   for (const b of brackets) {
-    if (b.rate >= peakRate) break
-    targetCeiling = b.max === Infinity ? taxableIncome + maxConversion : b.max
+    if (b.rate > fillTargetRate) break
+    if (b.max === Infinity) {
+      return maxConversion
+    }
+    if (b.max > taxableIncome) {
+      headroom = Math.max(headroom, b.max - taxableIncome)
+    }
   }
-  return Math.max(0, targetCeiling - taxableIncome)
+  return Math.min(Math.max(0, headroom), maxConversion)
 }
 
 export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult {
@@ -161,6 +188,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
   const stateFilingStatus = normalizeFilingStatusForState(filingStatus)
   const incomeTaxLabels = buildIncomeTaxLabelsFromYears(rows.map((row) => row.year))
   let peakRmdCombinedRate = 0.22
+  let peakRmdFederalRate = 0.22
   for (const row of rows) {
     if (row.age_person1 >= rmdStartAge && row.income_rmd > 0) {
       const taxYear = incomeTaxLabels.get(row.year) ?? row.year
@@ -174,6 +202,7 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
         stateIncomeTaxBrackets,
         taxYear,
       ) ?? 0) / 100
+      peakRmdFederalRate = fedRate
       peakRmdCombinedRate = fedRate + stateRate
       break
     }
@@ -222,7 +251,12 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     } else if (combinedMarginal >= peakRmdCombinedRate) {
       rationale = `Rate ${Math.round(combinedMarginal * 100)}% already at or above projected RMD rate ${Math.round(peakRmdCombinedRate * 100)}%`
     } else {
-      const headroom = getBracketHeadroom(taxableIncome, federalBrackets, peakRmdCombinedRate, maxAnnualConversion)
+      const headroom = getBracketHeadroom(
+        taxableIncome,
+        federalBrackets,
+        peakRmdFederalRate,
+        maxAnnualConversion,
+      )
       if (headroom <= 0) {
         rationale = 'Already at top of current bracket'
       } else {
@@ -313,5 +347,32 @@ export function runRothAnalysis(inputs: RothAnalysisInputs): RothAnalysisResult 
     totalLifetimeTaxSavings: totalSavings,
     optimalConversionWindow: windowStart && windowEnd ? { startYear: windowStart, endYear: windowEnd } : null,
     summary,
+  }
+}
+
+/** Rates for UI — use the conversion window, not projection row 0 (often still working years). */
+export function pickRothConversionDisplayContext(rows: RothYearResult[]) {
+  const rmdRow = rows.find((r) => r.rmdAmount > 0) ?? null
+  const windowRows = rows.filter((r) => r.recommendedConversion > 0)
+  const windowRow = windowRows[0] ?? null
+  const preRmdRows = rmdRow ? rows.filter((r) => r.year < rmdRow.year) : rows
+  const lowestPreRmdRow =
+    preRmdRows.length > 0
+      ? preRmdRows.reduce((best, row) =>
+          row.combinedMarginalRate < best.combinedMarginalRate ? row : best,
+        )
+      : null
+
+  const currentRateRow = windowRow ?? lowestPreRmdRow ?? rows[0] ?? null
+  const currentCombinedRate = currentRateRow?.combinedMarginalRate ?? 0.22
+  const projectedCombinedRate = rmdRow?.combinedMarginalRate ?? currentCombinedRate
+
+  return {
+    rmdRow,
+    windowRow,
+    currentCombinedRate,
+    projectedCombinedRate,
+    currentRatePct: Math.round(currentCombinedRate * 100),
+    projectedRmdRatePct: Math.round(projectedCombinedRate * 100),
   }
 }

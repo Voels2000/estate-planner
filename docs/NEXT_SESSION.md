@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (three-state dashboard progression)
+# Updated: 2026-05-30 (Roth conversion bracket headroom fix)
 
 ---
 
@@ -30,6 +30,7 @@
 | Dashboard Script A | `960a414` | Readiness pill on intro row · allocation downstream links · conflict banner dedup |
 | Dashboard — no allocation card | `7e8bf00` | **`AssetAllocationSummary`** removed from Financial Summary; **`/allocation`** unchanged |
 | Three-state dashboard | `b71af63` | State 1 onramp · State 2 net worth hero · State 3 tax hero (Alan unchanged) |
+| Roth bracket headroom | *(this commit)* | `runRothAnalysis` federal headroom · `pickRothConversionDisplayContext` on `/roth` |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**
@@ -44,6 +45,19 @@
 | `/social-security` | Survivor **$4,888/mo**; cumulative chart crossover ~age 84; spousal block unchanged |
 
 **Not in this pass:** Monte Carlo, Scenarios, Allocation, Projections UI polish · Roth emerald rows on IRA fixture household · wizard prod smoke · `supabase db push` for state exemption migration on prod if not yet run.
+
+---
+
+## Roth conversion — bracket headroom fix ✅ (2026-05-30)
+
+**Files:** `lib/calculations/roth-analysis.ts` · `_roth-client.tsx` · `tests/unit/roth-analysis.spec.ts`
+
+| Issue | Fix |
+|-------|-----|
+| Gap-year conversions too small | **`getBracketHeadroom`** uses **`peakRmdFederalRate`** + legacy **`>`** walk; at RMD ≥ 24% federal, fill to top of **22%** bracket |
+| Insight / WhatIf wrong “current rate” | **`pickRothConversionDisplayContext()`** — first conversion-window row, not **`rows[0]`** |
+
+**Post-deploy smoke:** Alan/Cathi pre-RMD gap — emerald rows ~$150K+/yr (headroom-limited); insight **~12% current** vs **~24% projected RMD**.
 
 ---
 

@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (three-state dashboard progression)
+# Last updated: 2026-05-30 (Roth conversion bracket headroom fix)
+
+## Roth conversion — bracket headroom + display context (2026-05-30)
+
+**Decision:** Fix **`runRothAnalysis`** gap-year conversion amounts and **`/roth`** rate display after UI polish regressions.
+
+**Engine (`roth-analysis.ts`):** Headroom must use **`peakRmdFederalRate`** (not combined federal+state) with legacy **`>`** bracket walk. When RMD-era federal marginal is **24%+**, fill through the **22% bracket ceiling** (just under 24% threshold). Previously `>=` against combined rate stopped one bracket early (~$43K–$63K/yr instead of ~$150K–$170K/yr for typical MFJ gap).
+
+**UI (`_roth-client.tsx`):** **`pickRothConversionDisplayContext()`** — insight + **`WhatIfPanel`** use first **conversion-window row** marginal (retirement gap ~10–12%), not **`rows[0]`** (often still working-year rate).
+
+**Tests:** `tests/unit/roth-analysis.spec.ts` (`import-unit` project).
+
+**Verify:** Alan/Cathi pre-RMD gap — emerald rows with conversions to top of 22% bracket; insight shows low current % vs ~24% projected RMD.
+
+---
 
 ## Three-state dashboard progression (2026-05-30)
 

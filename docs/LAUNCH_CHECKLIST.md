@@ -715,6 +715,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | May 2026 | Sprint 15 | Waitlist mode shipped (`7afaedb`, `bb9a191`, `3ceb125`); runtime middleware redirect + force-dynamic signup |
 | 2026-05-24 | Sprint 15 | **Closed** — Domain live, DNS cutover complete, Search Console verified via Cloudflare, sitemap submitted, waitlist mode active, post-cutover smoke §1–3 passed. Open signups pending billing setup — set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production + redeploy when ready. |
 | 2026-06-02 | Sprint P-2 | **Closed** — Pre-launch perf refactors (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`. |
+| 2026-05-30 | Roth bracket headroom | **Closed** — `runRothAnalysis` federal headroom fix; `/roth` display context; unit tests. |
 | 2026-05-30 | Dashboard polish | **Closed** — three-state progression (`b71af63`); allocation card removed from Financial Summary (`7e8bf00`); consolidated alert panel. |
 | 2026-05-28 | Flow & perf Sprint 19a | **Closed** — allocation refresh-only save; dashboard assessment prefetch; Meeting Prep instant brief + refresh (`b7a15dd`). |
 | 2026-05-28 | Flow & perf Sprints K–O | **Closed** — consumer refresh, Recharts/PDF lazy, dashboard Suspense, advisor alerts batch, shells + composition tags (`90d167a`–`3524581`). |

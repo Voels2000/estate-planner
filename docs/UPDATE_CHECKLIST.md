@@ -591,6 +591,16 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] State 3 — Alan layout unchanged (tax hero, alerts, readiness strip, checklist)
 - [x] Master docs synced
 
+## Sprint — Roth bracket headroom fix ✅ closed 2026-05-30
+
+**Files:** `lib/calculations/roth-analysis.ts` · `_roth-client.tsx` · `tests/unit/roth-analysis.spec.ts`
+
+- [x] **`getBracketHeadroom`** — federal RMD rate; fill to 22% ceiling when RMD marginal ≥ 24%
+- [x] **`pickRothConversionDisplayContext()`** — insight + WhatIf use conversion-window rate
+- [x] Unit tests — `import-unit` project (`roth-analysis.spec.ts`)
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Alan `/roth` — gap-year emerald rows + correct rate comparison
+
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30
 
 **Commit:** `839bfbb` · **Client:** `app/(dashboard)/roth/_roth-client.tsx`

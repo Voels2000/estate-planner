@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   RothAnalysisResult,
+  pickRothConversionDisplayContext,
   type RothYearResult,
 } from "@/lib/calculations/roth-analysis";
 import { saveConsumerStrategyLineItem } from "@/lib/consumer/consumerStrategyLineItems";
@@ -26,11 +27,13 @@ function fmt(n: number): string {
 }
 
 function WhatIfPanel({
-  rows,
   currentRatePct,
+  projectedRmdRatePct,
+  rmdRow,
 }: {
-  rows: RothYearResult[];
   currentRatePct: number;
+  projectedRmdRatePct: number;
+  rmdRow: RothYearResult | null;
 }) {
   const [annualConversion, setAnnualConversion] = useState(50);
 
@@ -42,13 +45,8 @@ function WhatIfPanel({
     return `${sign}$${Math.round(abs)}`;
   }
 
-  const rmdRow = rows.find((r) => r.rmdAmount > 0);
-  const projectedRmdPct = rmdRow
-    ? Math.round((rmdRow.combinedMarginalRate ?? currentRatePct / 100) * 100)
-    : currentRatePct;
-
-  const conversionIsOptimal = projectedRmdPct > currentRatePct;
-  const rateDiff = projectedRmdPct - currentRatePct;
+  const conversionIsOptimal = projectedRmdRatePct > currentRatePct;
+  const rateDiff = projectedRmdRatePct - currentRatePct;
   const conversionAmount = annualConversion * 1000;
 
   const taxThisYear = Math.round(conversionAmount * (currentRatePct / 100));
@@ -155,13 +153,11 @@ export function RothClient({ result, householdId }: Props) {
   const windowStart = result.optimalConversionWindow?.startYear;
   const windowEnd = result.optimalConversionWindow?.endYear;
 
-  const currentRate = result.rows[0]?.combinedMarginalRate ?? 0.22;
-  const currentRatePct = Math.round(currentRate * 100);
-
-  const rmdRow = result.rows.find((r) => r.rmdAmount > 0);
-  const projectedRmdRate = rmdRow
-    ? Math.round((rmdRow.combinedMarginalRate ?? currentRate) * 100)
-    : currentRatePct;
+  const {
+    rmdRow,
+    currentRatePct,
+    projectedRmdRatePct,
+  } = useMemo(() => pickRothConversionDisplayContext(result.rows), [result.rows]);
 
   const noConversionRecommended = result.totalConversions === 0;
 
@@ -257,7 +253,7 @@ export function RothClient({ result, householdId }: Props) {
             <p className="mb-4 text-xs leading-relaxed text-[color:var(--mwm-text-secondary)]">
               {noConversionRecommended
                 ? "Your current tax rate equals your projected RMD rate. Converting now would pay tax at the same rate you'd pay later — no advantage today."
-                : `Converting now at ${currentRatePct}% saves tax versus your projected ${projectedRmdRate}% RMD rate. The window is open.`}
+                : `Converting now at ${currentRatePct}% saves tax versus your projected ${projectedRmdRatePct}% RMD rate. The window is open.`}
             </p>
 
             <div className="mb-4 flex items-center gap-3 rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] px-4 py-3">
@@ -278,7 +274,7 @@ export function RothClient({ result, householdId }: Props) {
                   Projected RMD rate
                 </p>
                 <p className="text-xl font-medium text-[color:var(--mwm-navy)]">
-                  {projectedRmdRate}%
+                  {projectedRmdRatePct}%
                 </p>
                 <p className="text-[10px] text-[color:var(--mwm-text-secondary)]">At RMD age</p>
               </div>
@@ -308,7 +304,11 @@ export function RothClient({ result, householdId }: Props) {
             )}
           </div>
 
-          <WhatIfPanel rows={result.rows} currentRatePct={currentRatePct} />
+          <WhatIfPanel
+            currentRatePct={currentRatePct}
+            projectedRmdRatePct={projectedRmdRatePct}
+            rmdRow={rmdRow}
+          />
         </div>
       </div>
 

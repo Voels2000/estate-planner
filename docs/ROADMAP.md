@@ -97,6 +97,16 @@
 
 **Post-ship:** Prod smoke on `/roth` — WhatIfPanel all four cells react to slider (Alan: extra cost + **Delay is better**). Manual: emerald rows on IRA + rate-spread household.
 
+### Sprint — Roth bracket headroom fix (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `getBracketHeadroom` federal rate + 22% ceiling at 24% RMD | `[x]` |
+| `pickRothConversionDisplayContext` for insight/WhatIf | `[x]` |
+| Unit tests `tests/unit/roth-analysis.spec.ts` | `[x]` |
+
+**Post-ship:** Alan pre-RMD gap — conversions to top of 22% bracket; insight shows gap rate not working-year rate.
+
 ---
 
 ### Sprint — Lifetime Snapshot polish (2026-05-30) **← shipped**
@@ -990,6 +1000,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 - `[x]` Dashboard Script A — readiness pill, allocation links, conflict dedup (`960a414`)
 - `[x]` Dashboard Financial Summary — remove embedded asset allocation card (`/allocation` unchanged)
 - `[x]` Three-state dashboard progression — `getDashboardState`, State 2 net worth hero, State 3 unchanged (`b71af63`)
+- `[x]` Roth bracket headroom — gap-year conversion amounts + display context on `/roth`
 - `[x]` Nav: **Tax Horizons & Strategy** (`/my-estate-strategy`)
 
 **Retrospective:** UI-only sprint; no engine/API/DB changes. Sprint 1 completed nav separation and remaining upgrade-gate personalization.

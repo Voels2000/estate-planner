@@ -247,13 +247,14 @@ Consumers build the household balance sheet and cash flows before estate surface
 
 | | |
 |--|--|
+| **Engine** | `runRothAnalysis()` in `lib/calculations/roth-analysis.ts` — projection rows + federal brackets; gap-year **`recommendedConversion`** = headroom to RMD-era target bracket (**2026-05-30 fix:** federal **`peakRmdFederalRate`**, fill through 22% ceiling when RMD marginal ≥ 24%) |
 | **Client** | `_roth-client.tsx` — stat cards · insight card (rate comparison + triggers) · **`WhatIfPanel`** slider · balance projection table · grouped year table |
 | **Render order** | Stat cards → insight (+ what-if) → **balance projection** (always visible) → **grouped table** → Transfer Strategies CTA (if conversions) → methodology |
 | **Grouped table** | Rows grouped by **`conversionRationale`** (`RothYearResult`); section header shows label + year range; emerald rows when `recommendedConversion > 0`; sticky column headers; year · age combined |
 | **Tabs removed** | No `Year-by-year plan` / `Balance projection` tab state — both surfaces always shown |
-| **WhatIfPanel** | Slider-reactive **`lifetimeNetBenefit`** (negative = **Lifetime extra cost**); **"Delay is better"** when current ≥ projected RMD rate; **`iraBalanceAtRmd`** + delta vs no conversion; title **"(delay is optimal)"** when delay wins |
+| **WhatIfPanel** | Slider-reactive **`lifetimeNetBenefit`**; rates from **`pickRothConversionDisplayContext()`** (conversion-window row, not projection row 0); **"Delay is better"** when current ≥ projected RMD |
 | **CTA** | **Use in Transfer Strategies →** — visible only when `totalConversions > 0`; sits **above** methodology note; unchanged deep link |
-| **Post-deploy smoke** | Alan (24% vs 22%): slider moves all four cells — e.g. $50K/yr → **$12K** tax, **−$15K** extra cost, **Delay is better**, IRA at RMD drops. **Pending:** emerald rows on IRA + rate-spread household |
+| **Post-deploy smoke** | Pre-RMD gap: emerald rows with conversions to ~top of 22% bracket; insight **current ~10–12%** vs **projected RMD ~24%**; WhatIfPanel slider moves all four cells |
 
 ### Social Security — `/social-security` (2026-05-30 polish)
 

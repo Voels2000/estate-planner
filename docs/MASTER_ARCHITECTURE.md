@@ -304,7 +304,7 @@ Important:
 
 - `moveBreakeven.ts` uses `lib/calculations/stateIncomeTax.ts`.
 - `projection-complete.ts` now calls `lib/calculations/stateIncomeTax.ts`.
-- `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic.
+- `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic. As of **2026-05-30**, gap-year **`recommendedConversion`** uses **`peakRmdFederalRate`** + bracket headroom to the 22% ceiling when RMD marginal is 24%+; **`pickRothConversionDisplayContext()`** feeds **`/roth`** insight/WhatIfPanel (not projection row 0).
 - `moveBreakeven.ts` now evaluates state income tax deltas by labeled tax year (`currentYear + n`) rather than a single latest-year bracket snapshot.
 - Shared helper introduced for year-labeled income tax basis:
   - `lib/tax/incomeTaxTimeline.ts`
