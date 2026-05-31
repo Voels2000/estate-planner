@@ -626,6 +626,17 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Estate tab — liquidity hero on Alan · waterfall · conflict cards · flow toggle
 
+## Advisor Retirement tab — wire data + polish ✅ closed 2026-05-30
+
+- [x] `page.tsx` — pass `scenarioOutputs` (`YearRow[]` from `@/lib/calculations/projection-complete`)
+- [x] `loadSocialSecurityData(supabase, clientId)` — survivor on `person2.survivorBenefit`; breakeven from `person1.scenarios`
+- [x] `runRothAnalysis()` — `optimalConversionWindow`, `totalLifetimeTaxSavings`, `totalConversions`
+- [x] Loaders — retirement tab enables `scenario: true`, `stateIncome: true`
+- [x] Readiness hero · retirement-year snapshot · asset mix · SS + RMD two-col · withdrawal sequencing
+- [x] Kept RMD planning banner + Planning Assumptions
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Advisor Retirement tab on Alan — readiness hero · survivor benefit · Roth window · RMD ages (1960+ → 75)
+
 ## Sprint — Roth methodology note ✅ closed 2026-05-30
 
 **Commit:** `6cb942a` · **File:** `_roth-client.tsx`

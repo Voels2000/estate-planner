@@ -17,8 +17,9 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | `/my-estate-strategy` | Readiness pill; bypass bar; remove embedded completeness/topics; grouped assets in flow (`56762ad`) |
 | Advisor Strategy tab | Alert hierarchy; severity cards; `estimateStrategySavings`; composite waterfall gate; MC empty state |
 | Advisor Estate tab | Liquidity hero; composition + waterfall / conflict two-col; doc alert; beneficiary-by-account; flow summary + toggle; 6 account groups |
+| Advisor Retirement tab | Wire `YearRow[]` + `loadSocialSecurityData` + `runRothAnalysis`; readiness hero; income snapshot; SS survivor/breakeven; RMD timeline; withdrawal sequencing |
 | `/roth` | Methodology note expansion (`6cb942a`); bracket headroom fix (`cae89fc`) |
-| Shared | `lib/estate/parseBypassTrustSavings.ts`, `lib/advisor/estimateStrategySavings.ts` |
+| Shared | `lib/estate/parseBypassTrustSavings.ts`, `lib/advisor/estimateStrategySavings.ts`, `lib/calculations/roth-analysis.ts` |
 
 ---
 

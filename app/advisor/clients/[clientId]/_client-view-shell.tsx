@@ -17,6 +17,9 @@ import type {
 } from '@/lib/estate/strategyLedger'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
+import type { YearRow } from '@/lib/calculations/projection-complete'
+import type { RothAnalysisResult } from '@/lib/calculations/roth-analysis'
+import type { SocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
 import type { ScenarioVersion, ActionItem, MonteCarloSummary } from '@/lib/export-wiring'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
@@ -423,4 +426,7 @@ export interface ClientViewShellProps {
     splitElected: boolean
     uniqueRecipients: number
   } | null
+  scenarioOutputs?: YearRow[]
+  advisorSsData?: SocialSecurityData | null
+  advisorRothData?: RothAnalysisResult | null
 }

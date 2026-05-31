@@ -1,6 +1,21 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Advisor strategy + Estate tab polish)
+# Last updated: 2026-05-30 (Advisor Retirement tab polish)
+
+## Advisor Retirement tab — wire projection data + polish (2026-05-30)
+
+**Decision:** Polish advisor **Retirement** tab by wiring three existing data sources server-side in `page.tsx` — no new migrations.
+
+**Data wiring (`page.tsx`, `tab === 'retirement'`):**
+- **`scenarioOutputs`** — `YearRow[]` from `projection_scenarios.outputs_s1_first` / `outputs` (loaders now enable `scenario: true` on retirement tab).
+- **`advisorSsData`** — `loadSocialSecurityData(supabase, clientId)` (owner id, same as consumer `/social-security`).
+- **`advisorRothData`** — `runRothAnalysis()` from `@/lib/calculations/roth-analysis` with federal brackets fetch + `resolveDeduction`; uses **`optimalConversionWindow`**, **`totalLifetimeTaxSavings`**, **`totalConversions`**.
+
+**UI (`RetirementTab.tsx`):** Readiness hero (funds outlast + net worth at retirement from **`net_worth`** / **`income_total`** / **`expenses_total`**); asset mix cards; SS coordination with **`person2.survivorBenefit`** + breakeven from **`person1.scenarios`**; RMD timeline; Roth block (analysis or heuristic); withdrawal sequencing. Kept RMD planning banner + Planning Assumptions.
+
+**Verify:** Alan household — readiness hero · retirement-year snapshot · survivor benefit · Roth window when pre-RMD.
+
+---
 
 ## Advisor Estate tab — visual polish (2026-05-30)
 

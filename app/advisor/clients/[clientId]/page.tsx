@@ -36,6 +36,12 @@ import { getCachedAdvisoryMetrics } from '@/lib/advisor/cachedAdvisoryMetrics'
 import type { AdvisoryMetric, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { markClientStrategyQuestionsRead } from '@/lib/advisor/markClientStrategyQuestionsRead'
+import { loadSocialSecurityData } from '@/lib/social-security/loadSocialSecurityData'
+import { runRothAnalysis } from '@/lib/calculations/roth-analysis'
+import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
+import { resolveDeduction } from '@/lib/tax/resolve-deduction'
+import type { YearRow } from '@/lib/calculations/projection-complete'
+import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -472,6 +478,104 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   void markClientStrategyQuestionsRead(supabase, userId, clientId)
 
+  let advisorSsData: Awaited<ReturnType<typeof loadSocialSecurityData>> = null
+  let advisorRothData: ReturnType<typeof runRothAnalysis> | null = null
+  let retirementScenarioOutputs: YearRow[] = (scenarioOutputs ?? []) as YearRow[]
+
+  if (tab === 'retirement') {
+    const [ssData, federalBracketsRes, householdDeductionRes] = await Promise.all([
+      loadSocialSecurityData(supabase, clientId).catch(() => null),
+      supabase
+        .from('federal_tax_brackets')
+        .select('filing_status, min_amount, max_amount, rate_pct, tax_year, bracket_order')
+        .order('tax_year', { ascending: false })
+        .order('filing_status', { ascending: true })
+        .order('bracket_order', { ascending: true }),
+      supabase
+        .from('households')
+        .select('deduction_mode, custom_deduction_amount')
+        .eq('owner_id', clientId)
+        .single(),
+    ])
+
+    advisorSsData = ssData
+    retirementScenarioOutputs = (scenarioOutputs ?? []) as YearRow[]
+
+    if (retirementScenarioOutputs.length > 0) {
+      try {
+        const TAX_DEFERRED_TYPES = [
+          'traditional_ira',
+          'traditional_401k',
+          'traditional_403b',
+          '401k',
+          '403b',
+          'ira',
+          'sep_ira',
+          'simple_ira',
+          '457',
+          'sep',
+          'retirement_account',
+        ]
+        const ROTH_TYPES = ['roth_ira', 'roth_401k', 'roth_403b', 'roth']
+        const TAXABLE_TYPES = [
+          'brokerage',
+          'taxable_brokerage',
+          'savings',
+          'checking',
+          'money_market',
+          'cash',
+        ]
+
+        const assetRows = (assets ?? []) as Array<{ type?: string | null; value?: number | null }>
+        const taxDeferredBalance = assetRows
+          .filter((a) => TAX_DEFERRED_TYPES.includes(String(a.type ?? '')))
+          .reduce((s, a) => s + Number(a.value ?? 0), 0)
+        const rothBalance = assetRows
+          .filter((a) => ROTH_TYPES.includes(String(a.type ?? '')))
+          .reduce((s, a) => s + Number(a.value ?? 0), 0)
+        const taxableBalance = assetRows
+          .filter((a) => TAXABLE_TYPES.includes(String(a.type ?? '')))
+          .reduce((s, a) => s + Number(a.value ?? 0), 0)
+
+        const hhDeduction = householdDeductionRes.data as {
+          deduction_mode?: string | null
+          custom_deduction_amount?: number | null
+        } | null
+
+        advisorRothData = runRothAnalysis({
+          rows: retirementScenarioOutputs,
+          filingStatus: household.filing_status ?? 'single',
+          stateCode: household.state_primary?.toUpperCase() ?? null,
+          stateIncomeTaxBrackets: (stateIncomeTaxBrackets ?? []) as StateIncomeTaxBracket[],
+          federalIncomeTaxBrackets: (federalBracketsRes.data ?? []) as Array<{
+            filing_status: string
+            min_amount: number
+            max_amount: number | null
+            rate_pct: number
+            tax_year?: number | null
+            bracket_order?: number | null
+          }>,
+          taxDeferredBalance,
+          rothBalance,
+          taxableBalance,
+          growthRateRetirement: (household.growth_rate_retirement ?? 5) / 100,
+          maxAnnualConversion: 500_000,
+          standardDeduction: resolveDeduction(
+            hhDeduction?.deduction_mode,
+            hhDeduction?.custom_deduction_amount,
+            household.filing_status ?? 'single',
+          ),
+          inflationRate: (household.inflation_rate ?? 2.5) / 100,
+          person1BirthYear: household.person1_birth_year ?? 1960,
+          person2BirthYear: household.has_spouse ? household.person2_birth_year : null,
+          rmdStartAge: getRmdStartAge(household.person1_birth_year ?? 1960),
+        })
+      } catch {
+        advisorRothData = null
+      }
+    }
+  }
+
   // 4) Route shell composition
   return (
     <ClientViewShell
@@ -523,6 +627,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       initialConsumerLineItems={initialConsumerLineItems}
       initialStrategyConfigs={initialStrategyConfigs}
       initialGiftingActuals={initialGiftingActuals}
+      scenarioOutputs={retirementScenarioOutputs}
+      advisorSsData={advisorSsData}
+      advisorRothData={advisorRothData}
     />
   )
 }

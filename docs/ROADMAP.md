@@ -512,6 +512,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | **Advisor portal UX-5b** | `[x]` | CompositeOverlay: remove manual entry; default `recommendations` mode — SCHEMA_CHANGELOG UX-5b |
 | **Advisor strategy tab polish** | `[x]` | Alert hierarchy, severity cards, opportunity savings, composite gate, MC empty state — 2026-05-30 |
 | **Advisor Estate tab polish** | `[x]` | Liquidity hero, composition waterfall, conflict cards, doc alert, beneficiary-by-account, flow toggle, account groups — 2026-05-30 |
+| **Advisor Retirement tab polish** | `[x]` | Wire YearRow + SS + Roth analysis; readiness hero, snapshot, withdrawal sequencing — 2026-05-30 |
 | **Tax Horizons consumer polish** | `[x]` | Readiness pill, bypass bar, grouped assets, remove embedded dashboard sections — `56762ad` |
 | **Brand consistency pass** | `[x]` | Consumer + advisor page headings/buttons — navy/gold tokens (`fbaa709`) |
 | **Client Summary PDF upgrade** | `[x]` | ConsumerEstatePlanPDF matches Attorney Summary standard — SCHEMA_CHANGELOG 2026-05-27 |

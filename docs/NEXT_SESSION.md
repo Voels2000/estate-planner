@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Advisor strategy + Estate tab polish)
+# Updated: 2026-05-30 (Advisor Retirement tab polish)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Three-state dashboard** (`b71af63`) · **Tax Horizons polish** (`56762ad`) · **Roth methodology + headroom** (`6cb942a`, `cae89fc`) · **Advisor strategy tab polish** · **Advisor Estate tab polish** (this commit) · **No allocation card** (`7e8bf00`) · **Estate Tax strategy panel** (`3c9a97a`) · **Consolidated alert panel** · **RMD** · **Social Security**. Post-deploy visual smokes pending on Alan + one State 2 household.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Three-state dashboard** (`b71af63`) · **Tax Horizons polish** (`56762ad`) · **Roth methodology + headroom** (`6cb942a`, `cae89fc`) · **Advisor strategy tab polish** (`7a8d10c`) · **Advisor Estate tab polish** (`7a8d10c`) · **Advisor Retirement tab polish** (this commit) · **No allocation card** (`7e8bf00`) · **Estate Tax strategy panel** (`3c9a97a`) · **Consolidated alert panel** · **RMD** · **Social Security**. Post-deploy visual smokes pending on Alan + one State 2 household.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
@@ -33,8 +33,9 @@
 | Roth bracket headroom | `cae89fc` | `runRothAnalysis` federal headroom · `pickRothConversionDisplayContext` on `/roth` |
 | Roth methodology note | `6cb942a` | Expanded “How this calculation works” on `/roth` |
 | Tax Horizons polish | `56762ad` | Readiness pill · bypass bar · grouped assets · no embedded completeness/topics |
-| Advisor strategy polish | *(this commit)* | Alert hierarchy · severity cards · opportunity savings · MC empty · composite gate |
-| Advisor Estate tab polish | *(this commit)* | Liquidity hero · waterfall + conflicts two-col · doc alert · beneficiary-by-account · flow toggle |
+| Advisor strategy polish | `7a8d10c` | Alert hierarchy · severity cards · opportunity savings · MC empty · composite gate |
+| Advisor Estate tab polish | `7a8d10c` | Liquidity hero · waterfall + conflicts two-col · doc alert · beneficiary-by-account · flow toggle |
+| Advisor Retirement tab polish | *(this commit)* | YearRow + SS + Roth wiring · readiness hero · snapshot · withdrawal sequencing |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**
@@ -114,6 +115,23 @@
 | Accounts | Six consolidated type groups |
 
 **Post-deploy smoke:** Alan household — liquidity hero · waterfall · conflicts · flow toggle · account groups.
+
+---
+
+## Advisor Retirement tab — wire data + polish ✅ (2026-05-30)
+
+**Files:** `page.tsx` · `_client-view-shell.tsx` · `RetirementTab.tsx` · `lib/advisor/loaders.ts`
+
+| Change | Detail |
+|--------|--------|
+| Data | `scenarioOutputs` (`YearRow[]`); `loadSocialSecurityData(clientId)`; `runRothAnalysis()` |
+| Readiness | Funds outlast lifetime + net worth at retirement year |
+| Snapshot | `income_total` / `expenses_total` / surplus at retirement year |
+| SS | Survivor on `person2.survivorBenefit`; breakeven from scenarios |
+| Roth | `optimalConversionWindow` + `totalLifetimeTaxSavings` when analysis runs |
+| UX | RMD timeline · withdrawal sequencing · kept planning assumptions |
+
+**Post-deploy smoke:** Alan — readiness hero · survivor benefit · Roth conversion window · RMD age 75.
 
 ---
 
