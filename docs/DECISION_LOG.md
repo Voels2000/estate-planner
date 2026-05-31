@@ -172,6 +172,16 @@
 
 ---
 
+## Estate flow horizon tabs — "What happens when I die?" (2026-05-31)
+
+**Decision:** Timeframe tabs (Today / In 10 Years / In 20 Years / At Longevity) must update the **owner estate total** and **summary trust/probate** from projection rows. **Do not** project individual account balances in asset category tiles — structure is today's holdings; only aggregate estate total changes. Use `findClosestOutputRow()` for 10y/20y (nearest year, not `lastOutput` fallback). Use `findAtDeathRow()` for At Longevity (aligned with `horizonSnapshots.ts`). Add `horizonLabel` on graph + honest context note below asset tiles on projected horizons.
+
+**Pre-flight note:** `horizon` was already in `ConsumerEstateFlowView` `useEffect` deps — tab re-fetch worked; root cause was lookup + display semantics.
+
+**Files:** `lib/estate-flow/generateEstateFlow.ts`, `components/estate-flow/ConsumerEstateFlowView.tsx`
+
+---
+
 ## Score-driven consumer dashboard — Sprint B (2026-05-29)
 
 **Decision:** Replace **`ConsolidatedAlertPanel`** (conflict-derived ranked alert list) with a score-first State 3 layout: adaptive greeting by score band, **`EstateReadinessCard`** (benchmark bar vs avg American / avg MWM user, six component pills, optional trend delta, disclaimer), and a single **`PriorityAlertCard`** sourced from open **`household_alerts`** rows (not recomputed from conflicts). Remaining alerts collapse behind "+ N other items". Presentation only — no changes to score engine, alert evaluation, or DB schema.

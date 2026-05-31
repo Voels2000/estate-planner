@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-29 (score rationalization + dashboard Sprint B)
+# Last updated: 2026-05-31 (estate flow horizon tabs)
 
 ---
 
@@ -18,6 +18,18 @@
 ---
 
 ## Current sprint
+
+### Sprint — Estate flow horizon tabs (2026-05-31) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `findClosestOutputRow()` — nearest-year lookup (no 10y/20y → lastOutput collapse) | `[x]` |
+| `at_longevity` uses `findAtDeathRow()` (aligned with Tax Horizons table) | `[x]` |
+| `horizonLabel` on `EstateFlowGraph`; owner pill + summary scale to `computedGrossEstate` | `[x]` |
+| Asset category tiles stay today's holdings + context note for projected horizons | `[x]` |
+| Post-ship smoke — Voels: Today ~$9.6M vs At Longevity ~$96M owner pill | `[ ]` |
+
+---
 
 ### Sprint — Score rationalization + dashboard UI (2026-05-29) **← shipped**
 

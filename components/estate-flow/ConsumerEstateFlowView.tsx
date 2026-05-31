@@ -272,16 +272,10 @@ export default function ConsumerEstateFlowView({
         }
       : null
 
-  const horizonLabel =
-    horizon === 'today'
-      ? estateAsOfLabel
-      : horizon === 'ten_year'
-        ? 'In 10 Years'
-        : horizon === 'twenty_year'
-          ? 'In 20 Years'
-          : 'At Longevity'
+  const stepHorizonLabel =
+    horizon === 'today' ? estateAsOfLabel : graph.horizonLabel
 
-  const steps = buildFlowSteps(graph, heirsTodayContext, horizonLabel)
+  const steps = buildFlowSteps(graph, heirsTodayContext, stepHorizonLabel)
 
   // Simplified visual: show owner → assets → vehicles → recipients in rows
   const ownerNodes = graph.nodes.filter(n => n.category === 'owner')
@@ -345,6 +339,12 @@ export default function ConsumerEstateFlowView({
         )}
       </div>
 
+      {horizon !== 'today' && graph.horizonLabel && (
+        <p className="mb-3 text-xs text-[color:var(--mwm-text-secondary)]">
+          Showing projected estate — {graph.horizonLabel}
+        </p>
+      )}
+
       {/* Visual flow */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
         {/* Layer 1: Owners */}
@@ -388,6 +388,12 @@ export default function ConsumerEstateFlowView({
                   )
                 })}
               </div>
+              {horizon !== 'today' && (
+                <p className="mb-2 text-[11px] text-[color:var(--mwm-text-secondary)]">
+                  Account balances shown are current holdings. The estate total above reflects
+                  projected growth at {graph.horizonLabel}.
+                </p>
+              )}
               <div className="mb-2 flex justify-end">
                 <button
                   type="button"

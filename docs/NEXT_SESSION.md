@@ -58,6 +58,22 @@
 
 ---
 
+## Estate flow horizon tabs ✅ (2026-05-31)
+
+**Files:** `lib/estate-flow/generateEstateFlow.ts` · `ConsumerEstateFlowView.tsx`
+
+| Fix | Detail |
+|-----|--------|
+| Year lookup | `findClosestOutputRow()` — 10y/20y no longer collapse to `lastOutput` when exact year missing |
+| At Longevity | `findAtDeathRow()` (same as Tax Horizons table), not blind final row |
+| Owner pill | `computedGrossEstate`: `liveNetWorth` for Today; projection row for other tabs |
+| Asset tiles | Today's holdings only — context note on projected horizons (no per-account projection) |
+| UI | `horizonLabel` caption below timeframe tabs |
+
+**Smoke:** Voels — Today ~$9.6M owner pill · At Longevity ~$96M · asset tiles unchanged across tabs.
+
+---
+
 ## State tax unification ✅ (2026-05-29)
 
 **Sprint:** [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) — Phases 0–8 complete

@@ -9,7 +9,12 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { computeBusinessOwnershipValue, computeColumnTaxes } from '@/lib/my-estate-strategy/horizonSnapshots'
+import {
+  computeBusinessOwnershipValue,
+  computeColumnTaxes,
+  findAtDeathRow,
+} from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
 
@@ -69,6 +74,7 @@ export interface EstateFlowGraph {
   scenario_id: string | null
   death_view: DeathView
   horizon: EstateHorizon
+  horizonLabel: string
   generated_at: string
   nodes: FlowNode[]
   edges: FlowEdge[]
@@ -198,6 +204,36 @@ interface RawHousehold {
   has_spouse: boolean | null
   filing_status: string | null
   state_primary: string | null
+  person1_birth_year?: number | null
+  person2_birth_year?: number | null
+  person1_longevity_age?: number | null
+  person2_longevity_age?: number | null
+}
+
+type ProjectionOutputRow = Pick<AnnualOutput, 'year'> & {
+  estate_incl_home?: number | null
+  [key: string]: unknown
+}
+
+/**
+ * Find the closest output row to a target year.
+ * Exact match first, then nearest calendar year — avoids collapsing
+ * 10y / 20y / longevity tabs to the same lastOutput fallback.
+ */
+function findClosestOutputRow(
+  outputs: ProjectionOutputRow[],
+  targetYear: number,
+  lastOutput: ProjectionOutputRow | null,
+): ProjectionOutputRow | null {
+  if (!outputs.length) return lastOutput
+
+  const exact = outputs.find((r) => r.year === targetYear)
+  if (exact) return exact
+
+  const sorted = [...outputs].sort(
+    (a, b) => Math.abs(a.year - targetYear) - Math.abs(b.year - targetYear),
+  )
+  return sorted[0] ?? lastOutput
 }
 
 // ─── Main generator ───────────────────────────────────────────────────────────
@@ -308,31 +344,50 @@ export async function generateEstateFlow(
   const rawOutputs = deathView === 'second_death'
     ? (scenario?.outputs_s2_first ?? scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
     : (scenario?.outputs_s1_first ?? scenario?.outputs ?? [])
-  const outputs = Array.isArray(rawOutputs) ? rawOutputs : []
+  const outputs = (Array.isArray(rawOutputs) ? rawOutputs : []) as ProjectionOutputRow[]
 
   const currentCalendarYear = new Date().getFullYear()
   const lastOutput = outputs.length > 0 ? outputs[outputs.length - 1] : null
+  const atLongevityRow =
+    outputs.length > 0
+      ? findAtDeathRow(outputs as AnnualOutput[], {
+          hasSpouse: Boolean(household.has_spouse),
+          person1BirthYear: household.person1_birth_year,
+          person2BirthYear: household.person2_birth_year,
+          person1Longevity: household.person1_longevity_age,
+          person2Longevity: household.person2_longevity_age,
+        })
+      : undefined
 
-  // Pick the projection row that matches the selected horizon.
-  // Falls back to lastOutput if the horizon year isn't in the projection.
-  let horizonRow = lastOutput
+  let horizonRow: ProjectionOutputRow | null = lastOutput
+  let horizonLabel = 'Today'
+
   if (horizon === 'today') {
-    horizonRow = outputs.find(r => r.year === currentCalendarYear) ?? outputs[0] ?? lastOutput
+    horizonRow = findClosestOutputRow(outputs, currentCalendarYear, lastOutput)
+    horizonLabel = 'Today'
   } else if (horizon === 'ten_year') {
     const targetYear = currentCalendarYear + 10
-    horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
+    horizonRow = findClosestOutputRow(outputs, targetYear, lastOutput)
+    horizonLabel = `In 10 years (${targetYear})`
   } else if (horizon === 'twenty_year') {
     const targetYear = currentCalendarYear + 20
-    horizonRow = outputs.find(r => r.year === targetYear) ?? lastOutput
+    horizonRow = findClosestOutputRow(outputs, targetYear, lastOutput)
+    horizonLabel = `In 20 years (${targetYear})`
   } else {
-    // 'at_longevity' — use the final row
-    horizonRow = lastOutput
+    horizonRow = (atLongevityRow as ProjectionOutputRow | undefined) ?? lastOutput
+    const longevityYear = horizonRow?.year ?? lastOutput?.year
+    horizonLabel = longevityYear
+      ? `At longevity (${longevityYear})`
+      : 'At longevity (projected)'
   }
 
   const grossEstateFromHorizon = Number(horizonRow?.estate_incl_home ?? 0)
   const liveNetWorthValue = Number(liveNetWorth)
   const computedGrossEstate =
-    horizon === 'today' && liveNetWorth != null && !Number.isNaN(liveNetWorthValue)
+    horizon === 'today' &&
+    liveNetWorth != null &&
+    !Number.isNaN(liveNetWorthValue) &&
+    liveNetWorthValue > 0
       ? liveNetWorthValue
       : grossEstateFromHorizon
   const grossEstate = Number(horizonOverride?.grossEstate ?? computedGrossEstate)
@@ -1117,6 +1172,7 @@ export async function generateEstateFlow(
     scenario_id: scenarioId,
     death_view: deathView,
     horizon,
+    horizonLabel,
     generated_at: new Date().toISOString(),
     nodes,
     edges,
