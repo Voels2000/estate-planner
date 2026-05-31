@@ -1,18 +1,37 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-30 (Advisor Retirement tab polish)
+# Updated: 2026-05-30 (PDF narrative engine)
 
 ---
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **Three-state dashboard** (`b71af63`) · **Tax Horizons polish** (`56762ad`) · **Roth methodology + headroom** (`6cb942a`, `cae89fc`) · **Advisor strategy tab polish** (`7a8d10c`) · **Advisor Estate tab polish** (`7a8d10c`) · **Advisor Retirement tab polish** (this commit) · **No allocation card** (`7e8bf00`) · **Estate Tax strategy panel** (`3c9a97a`) · **Consolidated alert panel** · **RMD** · **Social Security**. Post-deploy visual smokes pending on Alan + one State 2 household.
+> My Wealth Maps — **Sprint 19 polish pass (2026-05-30).** Shipped: **PDF narrative engine** (this commit) · **Advisor Retirement tab polish** (`3e010bc`) · **Advisor strategy + Estate tabs** (`7a8d10c`) · **Tax Horizons polish** (`56762ad`) · **Roth methodology + headroom** (`6cb942a`, `cae89fc`) · **Three-state dashboard** (`b71af63`). Post-deploy visual smokes pending on Alan + one State 2 household.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
 > **Before flip:** Counsel on ToS §10/§11/§13. **Stripe Phase 1** on preview — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md). **Go-live day:** Phase 2 live catalog + `PUBLIC_SIGNUP_OPEN=true` → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >
 > **Post-deploy:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md). **Manual smoke:** [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md) · [PRE_LAUNCH_CHECKLIST](./PRE_LAUNCH_CHECKLIST.md).
+
+---
+
+## PDF narrative engine ✅ (2026-05-30)
+
+**Sprint: Rule-based PDF report enrichment — COMPLETE**
+
+| Area | Detail |
+|------|--------|
+| Engine | `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, action enrichment, gifting bar, theme groups |
+| Fetch | `lib/export/fetchNarrativePdfFields.ts` — **`Promise.all`** for trust, strategies, insurance, prior score, gifting RPC |
+| PDF | `generatePDFHTML` — new cover layout + grouped action items with impact / next step |
+| Export | `ExportPanel` uses `generatePDFHTML(exportPdfData)` when server payload present |
+| Meeting Prep | Top 3 open alerts above Export & Reports |
+| Action items | `household_alerts.title` + `description` → `title` + `message` at fetch layer |
+
+**Post-deploy smoke:** Advisor → Voels household → Meeting Prep → Export PDF — cover executive summary · tax callout · gifting bar · action items grouped by theme. **`sunset_risk`** only when `sunsetTaxEstimate > $100K` (MFJ gross **> ~$14.25M**).
+
+**Files:** `narrativeEngine.ts` · `fetchNarrativePdfFields.ts` · `generatePDFReport.ts` · `export-wiring.ts` · `exportMappers.ts` · `page.tsx` · `ExportPanel.tsx` · `MeetingPrepTab.tsx`
 
 ---
 
@@ -36,6 +55,7 @@
 | Advisor strategy polish | `7a8d10c` | Alert hierarchy · severity cards · opportunity savings · MC empty · composite gate |
 | Advisor Estate tab polish | `7a8d10c` | Liquidity hero · waterfall + conflicts two-col · doc alert · beneficiary-by-account · flow toggle |
 | Advisor Retirement tab polish | *(this commit)* | YearRow + SS + Roth wiring · readiness hero · snapshot · withdrawal sequencing |
+| PDF narrative engine | *(this commit)* | Executive summary · tax callout · enriched grouped action items · Meeting Prep top alerts |
 | Estate Tax strategy panel | `3c9a97a` | Composition waterfall + toggleable strategies on `/estate-tax` |
 
 **Prod pending (Alan visual smokes, once each):**

@@ -1,14 +1,12 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-30 (dashboard cleanup)
+# Last updated: 2026-05-30 (PDF narrative engine)
 
 ---
 
 ## How to use this document
 
-**At the start of a session:** Read the "Current sprint" section and [NEXT_SESSION.md](./NEXT_SESSION.md) (task detail, file paths, paste block). Update the status of any items completed since the last session. This is the document that answers "where are we?"
-
-**At the end of a session:** Update the status of any items worked on. Add any new items discovered. Move completed sprints to the "Completed" section at the bottom.
+**At the start of a session:** Read the "Current sprint" section and [NEXT_SESSION.md](./NEXT_SESSION.md) (task detail, file paths, paste block). Update the status of any items worked on. Add any new items discovered. Move completed sprints to the "Completed" section at the bottom.
 
 **Status key:**
 - `[ ]` Not started
@@ -20,6 +18,23 @@
 ---
 
 ## Current sprint
+
+### Sprint — PDF narrative engine (2026-05-30) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `lib/export/narrativeEngine.ts` — summary, callout, enrichment, grouping | `[x]` |
+| `lib/export/fetchNarrativePdfFields.ts` — parallel `Promise.all` fetches | `[x]` |
+| Extend `PDFReportData` + `ActionItem` | `[x]` |
+| Wire in `page.tsx` / `exportMappers.ts` | `[x]` |
+| `generatePDFHTML` cover + grouped action items page | `[x]` |
+| `ExportPanel` → `generatePDFHTML(exportPdfData)` | `[x]` |
+| Meeting Prep — top 3 open alerts above Export | `[x]` |
+| Manual smoke — Voels PDF cover + action items | `[ ]` |
+
+**Post-ship:** Advisor → Voels → Meeting Prep → Export PDF — executive summary, tax callout style, gifting bar, themed action items with impact lines.
+
+---
 
 ### Sprint — Dashboard cleanup (2026-05-30) **← shipped**
 

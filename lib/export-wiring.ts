@@ -6,9 +6,15 @@ import { createClient } from '@/lib/supabase/server'
 
 export interface ActionItem {
   id: string
+  title?: string
   message: string
+  body?: string
   severity: string
   created_at: string
+  dollarImpact?: string
+  nextStep?: string
+  owner?: 'client' | 'advisor' | 'attorney'
+  theme?: 'titling' | 'documents' | 'tax_planning' | 'beneficiary' | 'general'
 }
 
 export interface ScenarioVersion {
@@ -99,6 +105,7 @@ export async function fetchActionItems(householdId: string): Promise<ActionItem[
   if (error || !data) return []
   return data.map((a) => ({
     id: a.id,
+    title: (a.title || '').trim() || 'Alert',
     message: (a.description || a.title || '').trim() || 'Alert',
     severity: a.severity ?? 'info',
     created_at: a.created_at,

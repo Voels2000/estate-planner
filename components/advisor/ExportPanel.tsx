@@ -7,6 +7,8 @@ import type {
   MonteCarloSummary,
   ScenarioVersion,
 } from '@/lib/export-wiring'
+import type { PDFReportData } from '@/lib/export/generatePDFReport'
+import { generatePDFHTML } from '@/lib/export/generatePDFReport'
 
 export interface ExportProjectionRow {
   year: number
@@ -38,6 +40,7 @@ interface ExportPanelProps {
   monteCarloResults: MonteCarloSummary | null
   liquidityShortfall: boolean
   scenarioHistory: ScenarioVersion[]
+  exportPdfData?: PDFReportData
 }
 
 function fmt(n: number) {
@@ -62,12 +65,21 @@ export default function ExportPanel({
   monteCarloResults,
   liquidityShortfall,
   scenarioHistory,
+  exportPdfData,
 }: ExportPanelProps) {
   const [exporting, setExporting] = useState(false)
 
   const handlePdfExport = () => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+
+    if (exportPdfData) {
+      printWindow.document.write(generatePDFHTML(exportPdfData))
+      printWindow.document.close()
+      printWindow.focus()
+      printWindow.print()
+      return
+    }
 
     const pages: string[] = []
 

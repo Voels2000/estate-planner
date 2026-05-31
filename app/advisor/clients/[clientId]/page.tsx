@@ -23,6 +23,7 @@ import {
 } from '@/lib/advisor/clientPageLoaders'
 import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
 import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
+import { fetchNarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import {
   advisorDatasetIncludeForTab,
@@ -434,6 +435,14 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   let exportPdfData = undefined
   let exportExcelData = undefined
   if (datasetInclude.exportWiring) {
+    const grossForExport = Number(latestOutput?.estate_incl_home ?? 0)
+    const narrativeFields = await fetchNarrativePdfFields({
+      householdId: household.id,
+      clientId,
+      grossEstate: grossForExport,
+      filingStatus: household.filing_status,
+      statePrimary: household.state_primary,
+    })
     const exportPayloads = buildAdvisorExportPayloads({
       household,
       scenarioId,
@@ -448,6 +457,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       latestOutput,
       assumptionSnapshot,
       scenarioForStrategy,
+      narrativeFields,
     })
     exportPanelProps = exportPayloads.exportPanelProps
     exportPdfData = exportPayloads.exportPdfData

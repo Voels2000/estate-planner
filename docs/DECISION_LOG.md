@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Advisor Retirement tab polish)
+# Last updated: 2026-05-30 (PDF narrative engine)
+
+## PDF narrative engine — rule-based report enrichment (2026-05-30)
+
+**Decision:** Add a deterministic, rule-based narrative layer to advisor PDF export — no new tables, no external APIs.
+
+**Engine (`lib/export/narrativeEngine.ts`):** Executive summary (tiered by estate size), tax callout (`clear` / `sunset_risk` / `exposed`), health score trend, enriched action items (dollar impact + next step + owner), gifting capacity bar, theme grouping.
+
+**Data wiring (`lib/export/fetchNarrativePdfFields.ts`):** Six async reads in one **`Promise.all`** — `estate_documents` (trust), `strategy_configs` (irrevocable + gifting), `insurance_policies` (non-ILIT death benefit sum), prior `estate_health_scores` row, `calculate_gifting_summary` RPC. **`sunsetTaxEstimate`** = `max(0, gross − sunsetExempt) × 0.40` with MFJ sunset exempt $14M. **`filingStatus`** normalized from `married_filing_jointly` → `mfj` before all narrative branches.
+
+**Action items:** `household_alerts` selects **`title` + `description`**; fetch maps to **`title`** + **`message`** (not `body` at source). PDF uses enriched **`ActionItem`** from `@/lib/export-wiring`.
+
+**Export path:** `page.tsx` → `fetchNarrativePdfFields` → `buildAdvisorExportPayloads` → `ExportPanel` calls **`generatePDFHTML(exportPdfData)`** (replaces inline print HTML when narrative data present).
+
+**Meeting Prep:** Top 3 open alerts surfaced above Export & Reports (same `actionItems` query as PDF).
+
+**Smoke note:** `sunset_risk` callout requires **`sunsetTaxEstimate > $100K`** — MFJ gross estate **> ~$14.25M**. At exactly $9.3M MFJ, formula yields $0 federal sunset exposure → **`clear`** (state tax may still appear in detail). Verify wiring by confirming `sunsetTaxEstimate` is populated on cover metrics, not by assuming $9.3M always triggers sunset branch.
+
+---
 
 ## Advisor Retirement tab — wire projection data + polish (2026-05-30)
 

@@ -637,6 +637,16 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Retirement tab on Alan — readiness hero · survivor benefit · Roth window · RMD ages (1960+ → 75)
 
+## PDF narrative engine ✅ closed 2026-05-30
+
+- [x] `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, action enrichment, gifting bar, theme groups
+- [x] `lib/export/fetchNarrativePdfFields.ts` — six async reads in **`Promise.all`**
+- [x] Extend `PDFReportData` + `ActionItem` (`title` + `message` from `household_alerts`)
+- [x] Wire `page.tsx` → `exportMappers.ts` → `ExportPanel` → `generatePDFHTML`
+- [x] Meeting Prep — top 3 open alerts above Export
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Voels → Meeting Prep → Export PDF — cover narrative · tax callout · grouped action items ([LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#pdf-narrative-engine-manual-smoke-2026-05-30))
+
 ## Sprint — Roth methodology note ✅ closed 2026-05-30
 
 **Commit:** `6cb942a` · **File:** `_roth-client.tsx`

@@ -4,6 +4,7 @@ import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor/ExportPanel'
 import type { ActionItem, MonteCarloSummary, ScenarioVersion } from '@/lib/export-wiring'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
+import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
   return rows.map((r) => ({
@@ -45,6 +46,7 @@ export function buildAdvisorExportPayloads(params: {
   latestOutput: Record<string, unknown> | null
   assumptionSnapshot: Record<string, unknown>
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
+  narrativeFields: NarrativePdfFields
 }): {
   exportPanelProps: AdvisorExportPanelProps
   exportPdfData: PDFReportData
@@ -141,10 +143,14 @@ export function buildAdvisorExportPayloads(params: {
       notes: '',
     })),
     actionItems: params.actionItems.map((a) => ({
-      severity: a.severity,
-      title: a.message,
+      id: a.id,
+      title: a.title ?? a.message,
+      message: a.message,
       body: a.message,
+      severity: a.severity,
+      created_at: a.created_at,
     })),
+    ...params.narrativeFields,
   }
 
   const exportExcelData: ExcelExportData = {

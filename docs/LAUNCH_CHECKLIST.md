@@ -1,6 +1,6 @@
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
-# Last updated: 2026-05-30 (Prod API fix + security smoke verified)
+# Last updated: 2026-05-30 (PDF narrative engine)
 
 ---
 
@@ -118,6 +118,7 @@ These must be complete before launch. Update status as sprints close them.
 - [ ] **Persona onboarding migration (2026-05-29)** — apply `20260530100000_onboarding_persona.sql`; smoke fresh signup → profile → persona screen → wizard (persona headline) → dashboard insight card
 - [ ] **Health Score + Advisor Playbook manual smoke (2026-05-29)** — [18-step checklist below](#health-score--advisor-playbook-manual-smoke-2026-05-29)
 - [ ] **Prospect + Mobile manual smoke (2026-05-29)** — [19-step checklist below](#prospect--mobile-review-mode-manual-smoke-2026-05-29); Track 1 (prospect/PDF/intake) before Track 2 (mobile)
+- [ ] **PDF narrative engine manual smoke (2026-05-30)** — [checklist below](#pdf-narrative-engine-manual-smoke-2026-05-30)
 - [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: run SQL in [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops); confirm `attorney_drip_step_2_sent_at` populates; step 3 by day 7 after step 1
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
@@ -130,6 +131,22 @@ These must be complete before launch. Update status as sprints close them.
 **Track 2 — Advisor activation (steps 9–18):** fresh advisor with 0 clients → 3-option empty state; connect first client → playbook panel + `first_client_connected` notification; auto-complete steps 1–3 (client view, strategy tab, recommendation send); needs-attention panel when score &lt; 50 or high alerts.
 
 See playbook script in session notes / [NEXT_SESSION.md](./NEXT_SESSION.md).
+
+### PDF narrative engine manual smoke (2026-05-30)
+
+**Route:** Advisor → Voels (or any MFJ WA household with open alerts) → **Meeting Prep** tab.
+
+| # | Check | Pass |
+|---|--------|------|
+| 1 | **Top alerts block** — up to 3 open items visible above Export & Reports (no PDF required) | [ ] |
+| 2 | **Export PDF Report** — opens print window with narrative cover (not legacy one-page stub) | [ ] |
+| 3 | **Cover — executive summary** — plain-English paragraph referencing estate size and trust status | [ ] |
+| 4 | **Cover — metric row** — gross estate, total tax exposure, health score with trend label | [ ] |
+| 5 | **Cover — tax callout** — styled block (`clear`, `sunset_risk`, or `exposed`); MFJ gross **> ~$14.25M** → expect `sunset_risk` | [ ] |
+| 6 | **Cover — gifting bar** — shown when gross estate ≥ $1M ($38K/yr MFJ) | [ ] |
+| 7 | **Action items page** — grouped by theme (Documents, Titling, Beneficiary, Tax Planning) | [ ] |
+| 8 | **Action items** — each enriched item shows impact line + next step with owner | [ ] |
+| 9 | **Console** — no errors during export | [ ] |
 
 ### Security hardening post-deploy browser smoke (2026-05-29)
 
@@ -696,6 +713,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-05-30 | PDF narrative engine | **Closed** — rule-based cover + action items; `fetchNarrativePdfFields` parallel fetch; Meeting Prep top alerts; manual smoke checklist added |
 | 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added |
 | 2026-05-29 | RPC guards + attorney RLS + edge auth | **Deployed prod** — migrations + `estate-monte-carlo` on `fnzvlmrqwcqwiqueevux`; SQL verified; browser smoke passed 2026-05-30 |
 | 2026-05-29 | Security + CI + dead code | **Closed** — email route gates, household access, CI workflow, 37 unit tests, 4 E2E specs |

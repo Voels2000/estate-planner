@@ -23,6 +23,7 @@ export default function MeetingPrepTab({
   clientId,
   household,
   exportPanelProps,
+  exportPdfData,
   notes,
   scenario,
   estateComposition,
@@ -73,7 +74,7 @@ export default function MeetingPrepTab({
   const initialBriefSeed = {
     health_score_today: exportPanelProps?.healthScore ?? null,
     top_alerts: (exportPanelProps?.actionItems ?? []).slice(0, 3).map((a) => ({
-      title: a.message,
+      title: a.title ?? a.message,
       severity: a.severity,
       description: a.message,
     })),
@@ -99,6 +100,9 @@ export default function MeetingPrepTab({
     has_projection: horizonBrief?.has_projection ?? Boolean(scenario?.id),
   }
 
+  const topAlerts = exportPanelProps?.actionItems ?? []
+  const openAlertCount = topAlerts.length
+
   return (
     <div className="space-y-8">
       <section>
@@ -120,8 +124,48 @@ export default function MeetingPrepTab({
 
       {latestOnlyExportPanelProps && (
         <section>
+          {topAlerts.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)] mb-3">
+                Open planning items ({openAlertCount} total)
+              </h3>
+              <div className="space-y-0">
+                {topAlerts.slice(0, 3).map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="flex gap-2.5 py-2.5 border-b border-gray-100 items-start"
+                  >
+                    <span
+                      className="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0"
+                      style={{
+                        background:
+                          alert.severity === 'high' || alert.severity === 'critical'
+                            ? '#e53e3e'
+                            : alert.severity === 'medium' || alert.severity === 'warning'
+                              ? '#d69e2e'
+                              : '#4299e1',
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {alert.title ?? alert.message}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {alert.body ?? alert.message}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {openAlertCount > 3 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  + {openAlertCount - 3} more in the full PDF report
+                </p>
+              )}
+            </div>
+          )}
           <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">Export & Reports</h2>
-          <ExportPanel {...latestOnlyExportPanelProps} />
+          <ExportPanel {...latestOnlyExportPanelProps} exportPdfData={exportPdfData} />
         </section>
       )}
 

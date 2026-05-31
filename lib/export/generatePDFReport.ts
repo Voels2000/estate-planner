@@ -13,7 +13,17 @@
 //
 // Page is CONDITIONAL — only included if relevant data exists
 
-import { scoreLabel } from '@/lib/estate-health-score'
+import type { ActionItem } from '@/lib/export-wiring'
+import {
+  calcStateTax,
+  enrichActionItems,
+  generateExecutiveSummary,
+  generateGiftingSummary,
+  generateHealthTrend,
+  generateTaxCallout,
+  getStateTaxInfo,
+  groupActionItems,
+} from './narrativeEngine'
 
 export interface PDFReportData {
   // Household
@@ -68,11 +78,19 @@ export interface PDFReportData {
   }
 
   // Action items (from household_alerts)
-  actionItems: Array<{
-    severity: string
-    title: string
-    body: string
-  }>
+  actionItems: ActionItem[]
+
+  // Narrative engine inputs
+  filingStatus: 'mfj' | 'single' | 'widow'
+  domicileState: string
+  hasTrust: boolean
+  hasIrrevocableTrust: boolean
+  hasGiftingProgram: boolean
+  lifeInsuranceOutsideILIT: number
+  priorHealthScore?: number
+  sunsetTaxEstimate?: number
+  annualGiftingCapacity: number
+  lifetimeExemptionRemaining: number
 }
 
 export interface PDFGenerationResult {
@@ -120,6 +138,13 @@ export function determinePDFPages(data: PDFReportData): string[] {
 
 // HTML template for PDF generation via browser print
 export function generatePDFHTML(data: PDFReportData): string {
+  const executiveSummary = generateExecutiveSummary(data)
+  const taxCallout = generateTaxCallout(data)
+  const healthTrend = generateHealthTrend(data)
+  const enrichedActions = enrichActionItems(data.actionItems, data)
+  const giftingSummary = generateGiftingSummary(data)
+  const actionGroups = groupActionItems(enrichedActions)
+
   const pages = determinePDFPages(data)
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
   const pct = (n: number) => `${(n * 100).toFixed(1)}%`
@@ -154,6 +179,19 @@ export function generatePDFHTML(data: PDFReportData): string {
       .health-bar { height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 4px 0; }
       .health-fill { height: 100%; border-radius: 4px; }
       .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+      .exec-summary { background:#f0f4fa; border-left:4px solid #2E4057; padding:16px 20px; margin:20px 0 24px; border-radius:0 4px 4px 0; }
+      .exec-summary p { font-size:11pt; line-height:1.7; color:#1a1a1a; }
+      .metric-row { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin:20px 0; }
+      .metric-card .label { font-size:9pt; color:#666; margin-bottom:4px; }
+      .metric-card .value { font-size:18pt; font-weight:bold; color:#1a1a2e; }
+      .metric-card .sub { font-size:9pt; color:#888; margin-top:2px; }
+      .tax-callout { padding:14px 18px; border-radius:6px; margin:16px 0; font-size:10pt; }
+      .tax-callout.clear { background:#e8f5e9; border:1px solid #66bb6a; }
+      .tax-callout.sunset_risk { background:#fff8e1; border:1px solid #ffc107; }
+      .tax-callout.exposed { background:#fce4ec; border:1px solid #e57373; }
+      .tax-callout .tc-headline { font-weight:bold; font-size:11pt; margin-bottom:4px; }
+      .tax-callout .tc-detail { color:#444; line-height:1.5; }
+      .gifting-bar { background:#f0f0f0; border-radius:4px; padding:10px 16px; font-size:9.5pt; color:#444; margin-top:16px; }
       @media print { .page { page-break-after: always; } }
     </style>
   `
@@ -169,28 +207,35 @@ export function generatePDFHTML(data: PDFReportData): string {
         <div class="report-title">Estate Planning Report</div>
         <div class="client-name">${data.clientName}</div>
       </div>
-      <div class="metric-grid">
+      <div class="exec-summary">
+        <p>${executiveSummary}</p>
+      </div>
+      <div class="metric-row">
         <div class="metric-card">
-          <div class="metric-label">Gross Estate</div>
-          <div class="metric-value">${fmt(data.grossEstate)}</div>
-          <div class="metric-sub">Current estimated value</div>
+          <div class="label">Gross estate</div>
+          <div class="value">${fmt(data.grossEstate)}</div>
+          <div class="sub">Current value</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">Plan Health Score</div>
-          <div class="metric-value">${data.healthScore}/100</div>
-          <div class="metric-sub">${scoreLabel(data.healthScore)}</div>
+          <div class="label">Est. total tax exposure</div>
+          <div class="value">${fmt((data.federalTax ?? 0) + calcStateTax(data.grossEstate, data.domicileState, data.filingStatus))}</div>
+          <div class="sub">Federal + ${getStateTaxInfo(data.domicileState).name} state</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">Est. Estate Tax</div>
-          <div class="metric-value">${fmt(data.federalTax + data.stateTax)}</div>
-          <div class="metric-sub">${data.lawScenario.replace('_', ' ')}</div>
+          <div class="label">Plan health score</div>
+          <div class="value">${healthTrend.label}</div>
+          <div class="sub">${healthTrend.interpretation}</div>
         </div>
       </div>
-      <p style="margin-top: 24px; color: #444; font-size: 10pt; line-height: 1.6;">
-        This report was prepared by ${data.advisorName} of ${data.firmName} on ${data.reportDate}
-        for ${data.clientName}. It summarizes the current state of your estate plan,
-        projected tax exposure, and recommended strategies.
-      </p>
+      <div class="tax-callout ${taxCallout.style}">
+        <div class="tc-headline">${taxCallout.headline}</div>
+        <div class="tc-detail">${taxCallout.detail}</div>
+      </div>
+      ${giftingSummary.show ? `
+      <div class="gifting-bar">
+        <strong>Gifting capacity:</strong> ${giftingSummary.headline}
+      </div>
+      ` : ''}
       <div class="disclaimer">
         This report is for informational purposes only and does not constitute legal, tax, or financial advice.
         Estate planning involves complex legal and tax considerations. Please consult with a qualified attorney
@@ -435,12 +480,46 @@ export function generatePDFHTML(data: PDFReportData): string {
         <div class="firm-name">${data.firmName} | ${data.clientName}</div>
         <div class="report-title" style="font-size:18pt">Action Items & Recommendations</div>
       </div>
-      ${data.actionItems.map(item => `
-        <div class="alert-${item.severity === 'critical' || item.severity === 'high' ? 'critical' : item.severity === 'warning' || item.severity === 'medium' ? 'warning' : 'info'}">
-          <div class="alert-title">${item.title}</div>
-          <div class="alert-body">${item.body}</div>
+      ${actionGroups
+        .map(
+          (group) => `
+      <div style="margin-bottom:20px;">
+        <div style="font-size:10pt; font-weight:bold; color:#2E4057; border-bottom:1px solid #ddd; padding-bottom:4px; margin-bottom:10px;">
+          ${group.label}
         </div>
-      `).join('')}
+        ${group.items
+          .map(
+            (item) => `
+        <div class="alert-${item.severity === 'high' || item.severity === 'critical' ? 'critical' : item.severity === 'medium' || item.severity === 'warning' ? 'warning' : 'info'}"
+             style="margin-bottom:10px; padding:12px 14px; border-radius:5px;">
+          <div class="alert-title" style="font-weight:bold; margin-bottom:4px;">
+            ${item.title ?? item.body ?? item.message}
+          </div>
+          <div class="alert-body" style="font-size:10pt; margin-bottom:6px;">
+            ${item.body ?? item.message}
+          </div>
+          ${
+            item.dollarImpact
+              ? `
+          <div style="font-size:9.5pt; color:#555; margin-top:4px;">
+            <strong>Impact:</strong> ${item.dollarImpact}
+          </div>`
+              : ''
+          }
+          ${
+            item.nextStep
+              ? `
+          <div style="font-size:9.5pt; color:#555; margin-top:3px;">
+            <strong>Next step (${item.owner ?? 'advisor'}):</strong> ${item.nextStep}
+          </div>`
+              : ''
+          }
+        </div>`,
+          )
+          .join('')}
+      </div>`,
+        )
+        .join('')}
       <div class="disclaimer" style="margin-top:32px">
         This report is for informational purposes only and does not constitute legal, tax, or financial advice.
         MyWealthMaps / Estate Planner is not a law firm and does not provide legal services.
