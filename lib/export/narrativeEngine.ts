@@ -100,6 +100,11 @@ function actionItemEnrichmentScore(item: ActionItem): number {
   return (item.dollarImpact ? 1 : 0) + (item.nextStep ? 1 : 0)
 }
 
+function appendPlanningGapNote(detail: string, planningGap: number, stateName: string): string {
+  if (planningGap <= 100_000) return detail
+  return detail.replace(/\.$/, '') + ` · Without a bypass trust, ${stateName} tax increases by ${fmt(planningGap)}.`
+}
+
 /** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps enriched match. */
 export function dedupeActionItems(items: ActionItem[]): ActionItem[] {
   // Sort enriched items first so dedup keeps them over raw duplicates
@@ -227,16 +232,15 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
     filingStatus,
   })
   const planningGap = scenarios.planningGap
-  const planningGapNote =
-    planningGap > 100_000
-      ? ` Without a bypass trust, ${stateName} tax increases by ${fmt(planningGap)}.`
-      : ''
 
   if ((federalTax ?? 0) > 0) {
-    const detail =
+    const detail = appendPlanningGapNote(
       hasStateTax && stateTax > 0
-        ? `Federal: ${fmtFull(federalTax ?? 0)} · ${stateName} state: ${fmt(stateTax)} · Total estimated: ${fmtFull(totalCurrent)}${planningGapNote}`
-        : `Federal: ${fmtFull(federalTax ?? 0)} · No state estate tax in ${stateName}${planningGapNote}`
+        ? `Federal: ${fmtFull(federalTax ?? 0)} · ${stateName} state: ${fmt(stateTax)} · Total estimated: ${fmtFull(totalCurrent)}`
+        : `Federal: ${fmtFull(federalTax ?? 0)} · No state estate tax in ${stateName}`,
+      planningGap,
+      stateName,
+    )
     return {
       style: 'exposed',
       headline: `Estimated estate tax: ${fmtFull(totalCurrent)}`,
@@ -247,10 +251,16 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
   if (hasSunset) {
     const stateDetail =
       hasStateTax && stateTax > 0 ? ` · ${stateName} state tax: ${fmt(stateTax)}` : ''
+    const detail =
+      appendPlanningGapNote(
+        `Current exemption: ${fmt(fedExempt)} · Post-sunset exemption: ${fmt(sunsetExempt)}${stateDetail}`,
+        planningGap,
+        stateName,
+      ) + ' Consider pre-sunset gifting and trust funding.'
     return {
       style: 'sunset_risk',
       headline: `No tax today — but TCJA sunset creates up to ${fmt(sunsetTaxEstimate!)} in new exposure`,
-      detail: `Current exemption: ${fmt(fedExempt)} · Post-sunset exemption: ${fmt(sunsetExempt)}${stateDetail}${planningGapNote}. Consider pre-sunset gifting and trust funding.`,
+      detail,
     }
   }
 
@@ -259,10 +269,16 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
       ? ` · ${stateName} state tax: ${fmt(stateTax)}`
       : ` · ${stateName} state tax: below exemption`
     : ` · No state estate tax in ${stateName}`
+  const detail =
+    appendPlanningGapNote(
+      `Estate of ${fmt(grossEstate)} is below the ${fmt(fedExempt)} federal exemption${stateNote}`,
+      planningGap,
+      stateName,
+    ) + (planningGap > 100_000 ? '' : '.') + ' Monitor as estate grows.'
   return {
     style: 'clear',
     headline: `No federal estate tax under current law`,
-    detail: `Estate of ${fmt(grossEstate)} is below the ${fmt(fedExempt)} federal exemption${stateNote}${planningGapNote}. Monitor as estate grows.`,
+    detail,
   }
 }
 
