@@ -591,6 +591,48 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] State 3 — Alan layout unchanged (tax hero, alerts, readiness strip, checklist)
 - [x] Master docs synced
 
+---
+
+## Tax Horizons & Strategy — consumer polish ✅ closed 2026-05-30
+
+**Commit:** `56762ad`
+
+- [x] Readiness pill in page header (`healthScore` prop)
+- [x] Bypass-trust impact bar — `parseBypassTrustSavings.ts` shared with dashboard
+- [x] What-if tab hidden when `projectedCount === 0`
+- [x] Remove embedded `EstatePlanningDashboard` (completeness + planning topics)
+- [x] `ConsumerEstateFlowView` — grouped asset summary + expand
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** `/my-estate-strategy` — pill · bypass bar · grouped assets
+
+## Advisor strategy tab — visual polish ✅ closed 2026-05-30
+
+- [x] `StrategyAlertBanners` — primary liquidity + secondary alerts
+- [x] `AdvisoryMetricCard` — optional `severity` (default `neutral`); status labels
+- [x] `estimateStrategySavings.ts` — catalog keys (`cst`, `ilit`, `annual_gifting`, …)
+- [x] `CompositeOverlay` — hide waterfall when no active recommendations
+- [x] `MonteCarloPanel` — empty state before first run
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Advisor Strategy tab — CST/ILIT savings lines · composite empty state
+
+## Advisor Estate tab — visual polish ✅ closed 2026-05-30
+
+- [x] Liquidity crisis hero — `composition.inside_liquid` (fallback asset `liquidity === 'liquid'`) vs federal+state tax
+- [x] Two-column layout — composition + waterfall left; conflict cards right (`showMetrics={false}` on card)
+- [x] Documents hero — missing critical `ESTATE_DOC_TYPES` (`exists !== true`)
+- [x] Beneficiaries — group by asset name via `asset_id` / single-asset type match
+- [x] Estate flow — summary tiles + toggled `EstateFlowDiagram`
+- [x] Accounts — six consolidated groups (IRA, 401(k), brokerage, Roth, bank, other)
+- [x] Master docs synced
+- [ ] **Post-deploy smoke:** Advisor Estate tab — liquidity hero on Alan · waterfall · conflict cards · flow toggle
+
+## Sprint — Roth methodology note ✅ closed 2026-05-30
+
+**Commit:** `6cb942a` · **File:** `_roth-client.tsx`
+
+- [x] Expanded methodology note (calculation steps + model limits)
+- [x] Master docs synced
+
 ## Sprint — Roth bracket headroom fix ✅ closed 2026-05-30
 
 **Files:** `lib/calculations/roth-analysis.ts` · `_roth-client.tsx` · `tests/unit/roth-analysis.spec.ts`
@@ -599,6 +641,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] **`pickRothConversionDisplayContext()`** — insight + WhatIf use conversion-window rate
 - [x] Unit tests — `import-unit` project (`roth-analysis.spec.ts`)
 - [x] Master docs synced
+- [x] **Commit:** `cae89fc`
 - [ ] **Post-deploy smoke:** Alan `/roth` — gap-year emerald rows + correct rate comparison
 
 ## Sprint — Roth Conversion polish ✅ closed 2026-05-30

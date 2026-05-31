@@ -304,7 +304,7 @@ Important:
 
 - `moveBreakeven.ts` uses `lib/calculations/stateIncomeTax.ts`.
 - `projection-complete.ts` now calls `lib/calculations/stateIncomeTax.ts`.
-- `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic. As of **2026-05-30**, gap-year **`recommendedConversion`** uses **`peakRmdFederalRate`** + bracket headroom to the 22% ceiling when RMD marginal is 24%+; **`pickRothConversionDisplayContext()`** feeds **`/roth`** insight/WhatIfPanel (not projection row 0).
+- `roth-analysis.ts` now uses `lib/calculations/stateIncomeTax.ts` for state marginal/effective tax logic. As of **2026-05-30**, gap-year **`recommendedConversion`** uses **`peakRmdFederalRate`** + bracket headroom to the 22% ceiling when RMD marginal is 24%+; **`pickRothConversionDisplayContext()`** feeds **`/roth`** insight/WhatIfPanel (not projection row 0). Methodology note on **`/roth`** documents model limits (`6cb942a`; headroom fix `cae89fc`).
 - `moveBreakeven.ts` now evaluates state income tax deltas by labeled tax year (`currentYear + n`) rather than a single latest-year bracket snapshot.
 - Shared helper introduced for year-labeled income tax basis:
   - `lib/tax/incomeTaxTimeline.ts`
@@ -463,12 +463,13 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 
 ### Estate and Tax Tab Strategy Inclusion (ENG-1)
 
-**Advisor Estate tab:**
+**Advisor Estate tab (`EstateTab.tsx`):**
 - Uses `advisorHorizons.today` for advisor composition overrides (`horizonComposition`).
 - `outsideStrategyTotal` uses horizon output (`outsideCertainProbableTotal + outsideIllustrativeTotal`) from the actual strategy set.
 - `estimatedFederalTax` and `estimatedStateTax` are horizon-derived for advisor display parity.
 - Pending (not-yet-accepted) advisor recommendations are not included in the actual horizon set.
 - Consumer composition path (`calculate_estate_composition` with `p_source_role='consumer'`) remains unchanged.
+- **Polish (2026-05-30):** Liquidity crisis hero when liquid coverage **&lt; 1.0x** (`composition.inside_liquid` or asset `liquidity === 'liquid'` vs federal+state tax). Two-column layout: **`EstateCompositionCard`** (`showMetrics={false}`) + IRS waterfall left; conflict cards right. Documents hero for missing critical types. Beneficiaries grouped by asset (name/value/owner). Estate flow summary tiles + toggled **`EstateFlowDiagram`**. Retirement/investment accounts in six consolidated type groups.
 
 **Advisor Tax tab:**
 - Current-law federal estimate uses `advisorHorizons.today.federalTaxEstimate`.
@@ -495,10 +496,10 @@ Manual entry (`custom` mode) removed. Default mode is now `recommendations`, whi
 Coherent advisor path with no duplicate entry points or dead-end panels:
 
 1. **Overview** — `PlanStatusCard` plan readiness; critical gaps above the fold with Discussed / Deferred / Resolved actions.
-2. **Strategy** — Severity-ordered alert banners (liquidity shortfall → exemption → GRAT margin); Step 1 Situation metrics; Step 2 Opportunities catalog with inline **Model this ↓** (`InlineStrategyPanel`); Step 3 Recommendations & Impact (`StrategyImpactPanel` before/after tax delta); Strategy Horizon (`StrategyHorizonTable` + `CompositeOverlay` in recommendations mode); Monte Carlo.
+2. **Strategy** — **Primary/secondary alert banners** (liquidity shortfall primary; exemption + GRAT secondary); Step 1 **severity-colored** Situation metrics + status labels; Step 2 Opportunities catalog with **`estimateStrategySavings`** per row + inline **Model this ↓**; Step 3 Recommendations & Impact; Strategy Horizon (`StrategyHorizonTable` + **`CompositeOverlay`** — waterfall hidden when no recommendations); Monte Carlo empty state before first run.
 3. **Send recommendation** — Inline panel writes `strategy_line_items` (`source_role='advisor'`, confidence from advisor low/medium/high); `router.refresh()` updates Step 3; `CompositeOverlay` picks up the row; consumer sees `StrategyRecommendationPanel` and, when `illustrative`, the row in **Strategy Sandbox** on Transfer Strategies.
 4. **Client accepts / promotes** — Advisor row: `PATCH /api/consumer/strategy-recommendation` (`consumer_accepted`); appears in **In My Plan** when accepted (composition outside reduction still requires `probable`/`certain`). Consumer modeled row: **Add to plan** promotes `illustrative` → `probable` via `/api/strategy-line-items`. Accepted/probable rows join the actual horizon set; Estate and Tax tabs reflect via `advisorHorizons.today` (ENG-1).
-5. **Tax, Domicile, Estate, Retirement** — Proactive alert banners for time-sensitive issues on each tab.
+5. **Tax, Domicile, Estate, Retirement** — Proactive alert banners for time-sensitive issues on each tab. **Estate:** liquidity hero, composition waterfall, conflict cards, missing-doc alert, beneficiary-by-account groups, toggled estate-flow diagram.
 
 ---
 
@@ -520,6 +521,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - As of **2026-05-30**, `/rmd` client (`_rmd-client.tsx`) — hero lifetime/peak stats; status cards with years-away badges; accounts grid (`grid-cols-1 sm:grid-cols-3`); tax callout (28% blended on peak RMD); decade navigator + inflection row highlights on full **`rows`** array paginated via **`periodOffset`**. Single-user layout when `has_spouse === false`.
 - As of **2026-05-30**, consumer **`/dashboard`** uses **`getDashboardState()`** (2 | 3 in client; 1 = **`DashboardOnramp`** in `page.tsx`). **State 2:** net worth hero, source breakdown, financial metrics, amber estate-unlock prompt, **`SetupProgressCard`**. **State 3:** tax exposure hero, **`ConsolidatedAlertPanel`**, readiness strip, checklist/tax snapshot — unchanged for high-exposure households.
 - As of **2026-05-30**, **`/estate-tax`** (`_estate-tax-client.tsx`): interactive composition waterfall (inside/outside from `getCachedComposition` fields); **Current / With strategies** toggle; strategy panel when estimated state or federal tax &gt; 0; synthetic bypass / ILIT / gifting when not in `strategy_line_items`; sidebar **Tax Horizons & Strategy** for `/my-estate-strategy`.
+- As of **2026-05-30**, **`/my-estate-strategy`** (`_my-estate-strategy-client.tsx`, `56762ad`): readiness **pill** in header (replaces large score block); **`parseBypassTrustSavings`** impact bar; what-if tab only when projected strategy count &gt; 0; embedded **`EstatePlanningDashboard`** removed (completeness/topics on dashboard/estate-tax); **`ConsumerEstateFlowView`** grouped asset summary + expand.
 - `StrategyOverlay` already writes advisor recommendations via `/api/advisor/strategy-recommendation` (`useRecommendStrategy`); no `strategy_configs` path.
 
 ### Target
@@ -1224,6 +1226,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.
 - **Advisory metrics (UX-2):** `getCachedAdvisoryMetrics` on Strategy tab (six core metrics cached server-side).
 - **Strategy tab UX (UX-3):** `StrategyTabContent` + `lib/advisor/advisoryMetricSeverity.ts`; `getActiveIndicatorMetricIds` caps severity indicators at 2 (`●` critical, `!` warning); liquidity shortfall banner when coverage &lt; 1.0x.
+- **Strategy tab polish (2026-05-30):** `StrategyAlertBanners` primary/secondary hierarchy; `AdvisoryMetricCard` optional severity + `getMetricStatusLabel`; `lib/advisor/estimateStrategySavings.ts`; `CompositeOverlay` hides waterfall when recommendation list empty; `MonteCarloPanel` pre-run empty state.
+- **Estate tab polish (2026-05-30):** `EstateTab.tsx` — liquidity hero; composition waterfall + conflict cards two-col; documents hero; beneficiary-by-account groups; estate-flow summary + toggle; six consolidated account groups.
 - **Strategy tab UX (UX-4):** Opportunities catalog rows expand inline (`InlineStrategyPanel`, `catalogToPanel.ts`); recommend refreshes Step 3 via `loadConsumerData(true)` + `router.refresh()`.
 - **Strategy tab UX (UX-5):** Step 3 **Recommendations & Impact** with `StrategyImpactPanel` (Current / Projected / With Accepted from horizons); **Strategy Horizon** section below Step 3 (`StrategyHorizonTable` + `CompositeOverlay`); full-width SLAT/ILIT/Advanced panels removed (inline only).
 - **Strategy tab UX (UX-5b):** `CompositeOverlay` loads recommendations from API by default; no manual reduction form.

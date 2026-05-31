@@ -12,16 +12,18 @@ import type { BenchmarkRange } from '@/lib/advisor/benchmarks'
 
 export interface AdvisoryMetricCardProps {
   metric: AdvisoryMetric
-  severity: MetricSeverity
+  severity?: MetricSeverity
   showIndicator: boolean
+  statusLabel?: string
   benchmarkRange?: BenchmarkRange | null
   benchmarkNumericValue?: number | null
 }
 
 export function AdvisoryMetricCard({
   metric,
-  severity,
+  severity = 'neutral',
   showIndicator,
+  statusLabel,
   benchmarkRange,
   benchmarkNumericValue,
 }: AdvisoryMetricCardProps) {
@@ -46,8 +48,11 @@ export function AdvisoryMetricCard({
           <span className={`text-sm font-bold ${config.indicatorClass}`}>{config.indicator}</span>
         )}
       </div>
-      <p className="mt-2 text-2xl font-bold text-gray-900">{metric.value}</p>
+      <p className={`mt-2 text-2xl font-bold ${config.valueClass}`}>{metric.value}</p>
       <p className="mt-1 text-xs text-gray-500">{metric.subtext}</p>
+      {statusLabel && (
+        <p className={`mt-1.5 text-[10px] font-medium ${config.statusClass}`}>{statusLabel}</p>
+      )}
       {FEATURE_FLAGS.ADVISOR_BENCHMARKS && benchmarkRange && benchmarkNumericValue != null && (
         <div className="mt-2">
           <BenchmarkBadge value={benchmarkNumericValue} range={benchmarkRange} />

@@ -8,6 +8,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Tax Horizons + Advisor portal polish (2026-05-30)
+
+**Scope:** Application-layer UI only — no migrations.
+
+| Area | Change |
+|------|--------|
+| `/my-estate-strategy` | Readiness pill; bypass bar; remove embedded completeness/topics; grouped assets in flow (`56762ad`) |
+| Advisor Strategy tab | Alert hierarchy; severity cards; `estimateStrategySavings`; composite waterfall gate; MC empty state |
+| Advisor Estate tab | Liquidity hero; composition + waterfall / conflict two-col; doc alert; beneficiary-by-account; flow summary + toggle; 6 account groups |
+| `/roth` | Methodology note expansion (`6cb942a`); bracket headroom fix (`cae89fc`) |
+| Shared | `lib/estate/parseBypassTrustSavings.ts`, `lib/advisor/estimateStrategySavings.ts` |
+
+---
+
 ## Dashboard estate summary + state exemption (2026-05-30)
 
 **Migrations:** `20260630110000_state_estate_tax_rules_no_portability.sql`

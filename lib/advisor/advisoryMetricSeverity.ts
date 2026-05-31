@@ -9,6 +9,8 @@ export const SEVERITY_CONFIG: Record<
     cardBorder: string
     cardBg: string
     indicatorClass: string
+    valueClass: string
+    statusClass: string
   }
 > = {
   critical: {
@@ -16,24 +18,32 @@ export const SEVERITY_CONFIG: Record<
     cardBorder: 'border-red-200',
     cardBg: 'bg-red-50',
     indicatorClass: 'text-red-500',
+    valueClass: 'text-red-800',
+    statusClass: 'text-red-700',
   },
   warning: {
     indicator: '!',
     cardBorder: 'border-amber-200',
     cardBg: 'bg-amber-50/60',
     indicatorClass: 'text-amber-500',
+    valueClass: 'text-amber-800',
+    statusClass: 'text-amber-700',
   },
   ok: {
     indicator: '✓',
     cardBorder: 'border-green-200',
     cardBg: 'bg-green-50/40',
     indicatorClass: 'text-green-500',
+    valueClass: 'text-emerald-700',
+    statusClass: 'text-emerald-700',
   },
   neutral: {
     indicator: '—',
     cardBorder: 'border-gray-200',
     cardBg: 'bg-white',
     indicatorClass: 'text-gray-300',
+    valueClass: 'text-[color:var(--mwm-navy)]',
+    statusClass: 'text-[color:var(--mwm-text-secondary)]',
   },
 }
 
@@ -207,4 +217,50 @@ export function parseLiquidityShortfall(metric: AdvisoryMetric | undefined): num
   const m = metric.subtext.match(/Shortfall:\s*\$([\d,]+)/i)
   if (!m) return null
   return parseFloat(m[1].replace(/,/g, ''))
+}
+
+const STATUS_LABELS: Partial<Record<string, Record<MetricSeverity, string>>> = {
+  effective_rate: {
+    critical: 'Exposure present',
+    warning: 'Exposure present',
+    ok: 'No current exposure',
+    neutral: 'No current exposure',
+  },
+  liquidity_coverage: {
+    critical: 'Critical — at risk',
+    warning: 'Monitor coverage',
+    ok: 'Adequate',
+    neutral: 'Adequate',
+  },
+  cost_of_inaction: {
+    critical: 'Monitor',
+    warning: 'Monitor',
+    ok: 'No current cost',
+    neutral: 'No current cost',
+  },
+  grat_breakeven: {
+    critical: 'Tight margin',
+    warning: 'Tight margin',
+    ok: 'Favorable',
+    neutral: 'Favorable',
+  },
+  exemption_utilization: {
+    critical: 'Headroom available',
+    warning: 'Headroom available',
+    ok: 'Headroom available',
+    neutral: 'Headroom available',
+  },
+  dsue_at_risk: {
+    critical: 'Review portability election',
+    warning: 'Review portability election',
+    ok: 'No DSUE risk',
+    neutral: 'No DSUE risk',
+  },
+}
+
+export function getMetricStatusLabel(
+  metric: AdvisoryMetric,
+  severity: MetricSeverity,
+): string | undefined {
+  return STATUS_LABELS[metric.id]?.[severity]
 }

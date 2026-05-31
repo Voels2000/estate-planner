@@ -397,11 +397,11 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 | **Nav label** | **Tax Horizons & Strategy** (sidebar; was “Estate Value and Tax Horizons”) |
 | **Tier / gate** | Tier 3; **profile gate**; `UpgradeBanner` + `householdContext` if `tier < 3` |
 | **Server** | `app/(dashboard)/my-estate-strategy/page.tsx` — staleness-based base-case regen; `buildStrategyHorizons`, `classifyEstateAssets` |
-| **Client** | `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx`, `EstatePlanningDashboard` |
+| **Client** | `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx`; **`ConsumerEstateFlowView`** in “What happens when I die?” |
 | **Write APIs** | Strategy changes usually on trust-strategy page; base case via `POST /api/consumer/generate-base-case` when needed |
-| **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules` |
-| **Key lib** | `lib/my-estate-strategy/horizonSnapshots.ts` |
-| **UX** | Collapsible **Estate value & tax horizons**: labeled stepper (Actual vs What-if); **hero tax cards** + **comparison table** (not card-per-column); estate conflicts anchor `#estate-conflicts` on embedded completeness section |
+| **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules`, `generate_estate_recommendations` (bypass savings) |
+| **Key lib** | `lib/my-estate-strategy/horizonSnapshots.ts`, `lib/estate/parseBypassTrustSavings.ts` |
+| **UX** | Page title **Tax Horizons & Strategy** + readiness pill; collapsible horizons (Actual vs What-if when advisor strategies exist); **bypass-trust impact bar**; hero tax cards + table with **Estate size / Tax exposure** group headers; grouped asset tiles in estate flow with expand |
 | **Compliance** | Inline `DISCLAIMER_STRINGS.estateStrategy` below horizon table; page footer via `DisclaimerBanner` |
 | **Empty / blocked** | Amber banner if federal horizon inputs missing (needs base-case projection) |
 

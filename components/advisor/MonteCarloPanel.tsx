@@ -299,6 +299,22 @@ export default function MonteCarloPanel({
             {error}
           </div>
         )}
+
+        {!result && !loading && !error && (
+          <div className="mb-4 flex flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--mwm-border-secondary)] py-10 text-center">
+            <i
+              className="ti ti-chart-dots mb-3 text-[color:var(--mwm-text-secondary)]"
+              aria-hidden="true"
+              style={{ fontSize: 28 }}
+            />
+            <p className="mb-1 text-sm font-medium text-[color:var(--mwm-text-secondary)]">
+              Run simulation to see probability distribution
+            </p>
+            <p className="text-xs text-[color:var(--mwm-text-secondary)]">
+              Shows P10/P50/P90 estate tax outcomes across {simulationCount} market scenarios
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Loading state */}

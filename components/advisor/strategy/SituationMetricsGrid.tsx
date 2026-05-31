@@ -8,6 +8,7 @@ import { AdvisoryMetricCard } from '@/components/advisor/AdvisoryMetricCard'
 import {
   getActiveIndicatorMetricIds,
   getMetricSeverityForAdvisoryMetric,
+  getMetricStatusLabel,
 } from '@/lib/advisor/advisoryMetricSeverity'
 
 const SITUATION_CORE_IDS = [
@@ -64,14 +65,18 @@ export function SituationMetricsGrid({
   return (
     <div data-household-id={householdId}>
       <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${gridCols}`}>
-        {gridMetrics.map((metric) => (
-          <AdvisoryMetricCard
-            key={metric.id}
-            metric={metric}
-            severity={getMetricSeverityForAdvisoryMetric(metric, { section7520Rate })}
-            showIndicator={activeIndicators.has(metric.id)}
-          />
-        ))}
+        {gridMetrics.map((metric) => {
+          const severity = getMetricSeverityForAdvisoryMetric(metric, { section7520Rate })
+          return (
+            <AdvisoryMetricCard
+              key={metric.id}
+              metric={metric}
+              severity={severity}
+              statusLabel={getMetricStatusLabel(metric, severity)}
+              showIndicator={activeIndicators.has(metric.id)}
+            />
+          )
+        })}
       </div>
       <p className="mt-3 text-xs text-gray-400">
         <a href={`#${explanationsAnchorId}`} className="text-[#0F1B3C] hover:text-[#C9A84C]">

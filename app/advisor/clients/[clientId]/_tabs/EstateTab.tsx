@@ -112,12 +112,12 @@ export default function EstateTab({
       (insurancePolicies ?? []).map((p: InsuranceEstateRow) => [p.id, p.estate_inclusion_status ?? 'included'])
     )
   )
+  const [showFullDiagram, setShowFullDiagram] = useState(false)
   const [expandedBeneficiaryGroups, setExpandedBeneficiaryGroups] = useState<Record<string, boolean>>({})
   const [expandedAccountGroups, setExpandedAccountGroups] = useState<Record<string, boolean>>({})
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     coreEstateDocuments: false,
     beneficiaryDesignations: false,
-    estateConflicts: false,
     businessInterests: false,
     realEstateTitling: false,
     retirementInvestmentAccounts: false,
@@ -169,29 +169,46 @@ export default function EstateTab({
     ['401k', 'ira', 'roth_ira', 'sep_ira', '403b', '457', 'pension'].includes(normalizedRetirementType(a))
   )
   const beneficiaryRows = (beneficiaries ?? []) as BeneficiaryRowType[]
-  const beneficiaryGroups = beneficiaryRows.reduce<Record<string, BeneficiaryRowType[]>>((acc, b) => {
-    const key = (b.account_type ?? 'unassigned').toString().toLowerCase()
-    if (!acc[key]) acc[key] = []
-    acc[key].push(b)
-    return acc
-  }, {})
-  const beneficiaryGroupKeys = Object.keys(beneficiaryGroups).sort((a, b) => {
-    if (a === 'unassigned') return 1
-    if (b === 'unassigned') return -1
-    return a.localeCompare(b)
-  })
   const assetRows = (assets ?? []) as AssetRowType[]
-  const accountGroups = assetRows.reduce<Record<string, AssetRowType[]>>((acc, a) => {
-    const key = assetAccountType(a) || 'unassigned'
-    if (!acc[key]) acc[key] = []
-    acc[key].push(a)
+
+  const ACCOUNT_GROUPS = [
+    { key: 'ira', label: 'Traditional IRA', types: ['traditional_ira', 'ira', 'rollover_ira', 'sep_ira'] },
+    { key: '401k', label: 'Traditional 401(k)', types: ['traditional_401k', '401k', 'traditional_403b', '403b', '457', 'pension'] },
+    { key: 'brokerage', label: 'Taxable brokerage', types: ['taxable_brokerage', 'brokerage', 'investment', 'taxable'] },
+    { key: 'roth', label: 'Roth accounts', types: ['roth_ira', 'roth_401k', 'roth_403b'] },
+    { key: 'bank', label: 'Bank accounts', types: ['bank_account', 'checking', 'savings', 'bank'] },
+    { key: 'other', label: 'Other (HSA, SEP, vehicles, etc.)', types: [] as string[] },
+  ]
+
+  function accountGroupKey(a: AssetRowType): string {
+    const raw = assetAccountType(a)
+    const normalized = normalizedRetirementType(a)
+    for (const group of ACCOUNT_GROUPS) {
+      if (group.types.length === 0) continue
+      if (group.types.includes(raw) || group.types.includes(normalized)) return group.key
+    }
+    return 'other'
+  }
+
+  const consolidatedAccountGroups = ACCOUNT_GROUPS.reduce<Record<string, AssetRowType[]>>((acc, group) => {
+    acc[group.key] = []
     return acc
   }, {})
-  const accountGroupKeys = Object.keys(accountGroups).sort((a, b) => {
-    if (a === 'unassigned') return 1
-    if (b === 'unassigned') return -1
-    return a.localeCompare(b)
-  })
+  for (const asset of assetRows) {
+    const key = accountGroupKey(asset)
+    consolidatedAccountGroups[key].push(asset)
+  }
+  const consolidatedAccountGroupKeys = ACCOUNT_GROUPS.map((g) => g.key).filter(
+    (key) => (consolidatedAccountGroups[key]?.length ?? 0) > 0,
+  )
+
+  const beneficiaryAccountGroups = buildBeneficiaryAccountGroups(
+    beneficiaryRows,
+    assetRows,
+    beneficiaries ?? [],
+    household,
+  )
+  const beneficiaryGroupKeys = beneficiaryAccountGroups.map((g) => g.key)
 
   const realEstateRows = (realEstate ?? []) as RealEstateRowType[]
   const totalRE = realEstateRows.reduce((s, r) => s + (r.current_value ?? 0), 0)
@@ -236,16 +253,16 @@ export default function EstateTab({
     })
   }, [beneficiaryGroupKeysDep, beneficiaryGroupKeys])
 
-  const accountGroupKeysDep = accountGroupKeys.join('|')
+  const consolidatedAccountGroupKeysDep = consolidatedAccountGroupKeys.join('|')
   useEffect(() => {
     setExpandedAccountGroups((prev) => {
       const next: Record<string, boolean> = {}
-      accountGroupKeys.forEach((key, idx) => {
+      consolidatedAccountGroupKeys.forEach((key, idx) => {
         next[key] = prev[key] ?? idx === 0
       })
       return next
     })
-  }, [accountGroupKeysDep, accountGroupKeys])
+  }, [consolidatedAccountGroupKeysDep, consolidatedAccountGroupKeys])
 
   // ── Save helpers ─────────────────────────────────────────────────────────
   async function saveAdminExpense(pct: number) {
@@ -333,9 +350,110 @@ export default function EstateTab({
   const hasTransferStrategies = outsideTaxableEstateTotal > 0 || transfers.length > 0
   const estimatedTax = advisorEstateComposition?.estimatedTotalTax ?? composition?.estimated_tax ?? 0
   const grossEstate = advisorEstateComposition?.grossEstate ?? composition?.gross_estate ?? 0
+  const estimatedTaxFederal =
+    advisorEstateComposition?.estimatedFederalTax ?? composition?.estimated_tax_federal ?? 0
+  const estimatedTaxState =
+    advisorEstateComposition?.estimatedStateTax ?? composition?.estimated_tax_state ?? 0
+  const adminExpense = composition?.admin_expense ?? grossEstate * adminExpensePct
+  const adminPctDisplay = Math.round((composition?.admin_expense_pct ?? adminExpensePct) * 1000) / 10
+  const taxableEstate =
+    advisorEstateComposition?.insideTaxableEstate ?? composition?.taxable_estate ?? grossEstate
+  const federalExemption =
+    advisorEstateComposition?.federalExemption ?? composition?.exemption_available ?? 0
+  const statePrimary = household.state_primary ?? 'State'
+
+  const totalLiquid =
+    composition?.inside_liquid ??
+    assetRows
+      .filter((a) => a.liquidity === 'liquid')
+      .reduce((s, a) => s + Number(a.value ?? 0), 0)
+  const taxLiability = estimatedTaxFederal + estimatedTaxState
+  const liquidityRatio = taxLiability > 0 ? totalLiquid / taxLiability : null
+  const liquidityShortfall = taxLiability - totalLiquid
+  const liquidPct = grossEstate > 0 ? (totalLiquid / grossEstate) * 100 : 0
+  const isLiquidityAlert = liquidityRatio !== null && liquidityRatio < 1.0
+
+  const requiredDocsNotConfirmed = ESTATE_DOC_TYPES.filter(({ type, critical }) => {
+    if (!critical) return false
+    return docMap[type]?.exists !== true
+  }).map(({ label }) => label)
+
+  const FINANCIAL_TYPE_HINTS = ['brokerage', 'checking', 'savings', 'investment', 'taxable', 'bank']
+  const financialFlowAssets = assetRows.filter((a) =>
+    FINANCIAL_TYPE_HINTS.some((t) => assetAccountType(a).includes(t)),
+  )
+  const financialFlowTotal = financialFlowAssets.reduce((s, a) => s + Number(a.value ?? 0), 0)
+  const financialFlowCount = financialFlowAssets.length
+  const realEstateFlowTotal = realEstateEquityTotal
+  const realEstateCount = realEstateRows.length
+  const businessFlowTotal = businessValueTotal
+  const businessCount = (businesses ?? []).length + (businessInterests ?? []).length
+  const retirementFlowTotal = retirementAssets.reduce((s, a) => s + Number(a.value ?? 0), 0)
+  const retirementCount = retirementAssets.length
 
   return (
     <div className="space-y-6">
+      {isLiquidityAlert && (
+        <div className="mb-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <svg
+                  className="h-4 w-4 text-red-700 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"
+                  />
+                </svg>
+                <p className="text-sm font-medium text-red-800">
+                  Liquidity crisis — estate settlement at risk
+                </p>
+              </div>
+              <p className="text-xs text-red-700 leading-relaxed mb-3">
+                With only {formatCurrency(totalLiquid)} in liquid assets against a {formatCurrency(taxLiability)} estate tax
+                liability, the estate cannot cover settlement costs without forced asset sales.
+                {liquidPct < 5 &&
+                  ` ${liquidPct.toFixed(1)}% of assets are liquid — the remainder is illiquid (real estate, business interests, retirement accounts).`}
+                {' '}Discuss liquidity strategies before the next meeting.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-red-700 whitespace-nowrap">
+                  Liquid {formatCurrency(totalLiquid)}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-white/60 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-red-600"
+                    style={{ width: `${Math.min(liquidPct, 100)}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-red-700 whitespace-nowrap">
+                  Illiquid {formatCurrency(grossEstate - totalLiquid)}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-3 flex-shrink-0">
+              {[
+                { val: `${liquidityRatio?.toFixed(1)}x`, label: 'Coverage ratio' },
+                { val: formatCurrency(liquidityShortfall), label: 'Shortfall' },
+                { val: `${liquidPct.toFixed(1)}%`, label: 'Liquid %' },
+              ].map((s) => (
+                <div key={s.label} className="text-center bg-white/50 rounded-lg px-3 py-2">
+                  <p className="text-base font-medium text-red-800">{s.val}</p>
+                  <p className="text-[10px] text-red-700">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {estimatedTax > 0 && !hasTransferStrategies && (
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
           <svg
@@ -363,15 +481,113 @@ export default function EstateTab({
         </div>
       )}
 
-      {/* ── Estate Composition — Inside / Outside view ── */}
+      {/* ── Estate Composition + Conflicts ── */}
       {composition && (
-        <EstateCompositionCard
-          composition={composition}
-          horizonComposition={advisorEstateComposition}
-          label={`${household.person1_first_name ?? 'Client'}'s Estate`}
-          snapshotLabel="Current snapshot"
-          variant="advisor"
-        />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 mb-6">
+          <div className="space-y-3">
+            <EstateCompositionCard
+              composition={composition}
+              horizonComposition={advisorEstateComposition}
+              label={`${household.person1_first_name ?? 'Client'}'s Estate`}
+              snapshotLabel="Current snapshot"
+              variant="advisor"
+              showMetrics={false}
+            />
+            <div className="rounded-lg border border-neutral-200 bg-white p-4">
+              <div className="space-y-1">
+                {[
+                  { label: 'Gross estate', val: grossEstate, color: '' },
+                  { label: 'Liabilities', val: -liabilitiesTotal, color: 'text-red-600' },
+                  {
+                    label: `Admin expense (${adminPctDisplay}%)`,
+                    val: -adminExpense,
+                    color: 'text-red-600',
+                  },
+                  { label: 'Taxable estate', val: taxableEstate, color: '', bold: true },
+                  { label: 'Federal exemption', val: federalExemption, color: '' },
+                  {
+                    label: 'Federal estate tax',
+                    val: estimatedTaxFederal,
+                    color: estimatedTaxFederal > 0 ? 'text-red-600' : 'text-emerald-600',
+                  },
+                  {
+                    label: `${statePrimary} estate tax`,
+                    val: estimatedTaxState,
+                    color: estimatedTaxState > 0 ? 'text-red-600' : 'text-emerald-600',
+                    bold: true,
+                    highlight: true,
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className={[
+                      'flex items-center justify-between py-1 text-xs',
+                      row.highlight ? 'rounded bg-neutral-50 px-2 -mx-2 font-medium' : '',
+                      'border-b border-neutral-100 last:border-b-0',
+                    ].join(' ')}
+                  >
+                    <span className={row.bold ? 'font-medium text-neutral-800' : 'text-neutral-500'}>
+                      {row.label}
+                    </span>
+                    <span className={`font-medium ${row.color || 'text-neutral-800'}`}>
+                      {row.val < 0 ? '-' : ''}
+                      {formatCurrency(Math.abs(row.val))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {conflictReport && conflictReport.conflicts.length > 0 && (
+            <div className="rounded-lg border border-neutral-200 bg-white p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Estate conflicts</p>
+                {conflictReport.critical > 0 && (
+                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                    {conflictReport.critical} critical
+                  </span>
+                )}
+                {conflictReport.warnings > 0 && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    {conflictReport.warnings} warning{conflictReport.warnings !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {conflictReport.conflicts.map((conflict, i) => (
+                  <div
+                    key={i}
+                    className={[
+                      'rounded-md p-3',
+                      conflict.severity === 'critical'
+                        ? 'border-l-2 border-red-400 bg-red-50'
+                        : 'border-l-2 border-amber-400 bg-amber-50',
+                    ].join(' ')}
+                    style={{ borderRadius: '0 var(--border-radius-md) var(--border-radius-md) 0' }}
+                  >
+                    <p
+                      className={`text-xs font-medium mb-1 ${
+                        conflict.severity === 'critical' ? 'text-red-800' : 'text-amber-800'
+                      }`}
+                    >
+                      {conflict.description}
+                    </p>
+                    {conflict.recommended_action && (
+                      <p
+                        className={`text-[11px] leading-relaxed ${
+                          conflict.severity === 'critical' ? 'text-red-700' : 'text-amber-700'
+                        }`}
+                      >
+                        {conflict.recommended_action}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Admin Expense Override ── */}
@@ -432,16 +648,50 @@ export default function EstateTab({
           </div>
         </div>
 
-        <EstateFlowDiagram
-          householdId={household.id}
-          scenarioId={household.base_case_scenario_id ?? null}
-          advisorId={advisorId}
-          isAdvisor={true}
-          deathView={deathView}
-          hasCSTStrategy={hasCSTStrategy}
-          liveNetWorth={liveNetWorth}
-          advisorHorizons={advisorHorizons}
-        />
+        <div className="grid grid-cols-2 gap-2 mb-4 sm:grid-cols-4">
+          {[
+            { label: 'Financial', val: financialFlowTotal, color: '#185FA5', count: financialFlowCount },
+            { label: 'Real estate', val: realEstateFlowTotal, color: '#1D9E75', count: realEstateCount },
+            { label: 'Business', val: businessFlowTotal, color: '#EF9F27', count: businessCount },
+            { label: 'Retirement', val: retirementFlowTotal, color: '#7F77DD', count: retirementCount },
+          ].map((g) => (
+            <div key={g.label} className="rounded-md bg-neutral-50 p-2.5">
+              <p className="text-[10px] text-neutral-500 mb-1">{g.label}</p>
+              <p className="text-sm font-medium text-neutral-800">{formatCurrency(g.val)}</p>
+              {g.count > 0 && (
+                <p className="text-[10px] text-neutral-400">
+                  {g.count} account{g.count !== 1 ? 's' : ''}
+                </p>
+              )}
+              <div className="h-0.5 rounded-full mt-1.5" style={{ background: g.color, width: '100%' }} />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end mb-2">
+          <button
+            type="button"
+            onClick={() => setShowFullDiagram((prev) => !prev)}
+            className="text-xs text-blue-600 underline underline-offset-2"
+          >
+            {showFullDiagram
+              ? 'Hide full diagram ↑'
+              : 'View full diagram with individual accounts ↓'}
+          </button>
+        </div>
+
+        {showFullDiagram && (
+          <EstateFlowDiagram
+            householdId={household.id}
+            scenarioId={household.base_case_scenario_id ?? null}
+            advisorId={advisorId}
+            isAdvisor={true}
+            deathView={deathView}
+            hasCSTStrategy={hasCSTStrategy}
+            liveNetWorth={liveNetWorth}
+            advisorHorizons={advisorHorizons}
+          />
+        )}
       </section>
 
       <div className="grid grid-cols-2 gap-6">
@@ -460,6 +710,34 @@ export default function EstateTab({
           </button>
           {expandedSections.coreEstateDocuments && (
             <div className="space-y-2.5">
+              {requiredDocsNotConfirmed.length > 0 && (
+                <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 mb-3">
+                  <svg
+                    className="mt-0.5 h-3.5 w-3.5 text-red-700 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-medium text-red-800">
+                      {requiredDocsNotConfirmed.length} required document
+                      {requiredDocsNotConfirmed.length > 1 ? 's' : ''} not confirmed —{' '}
+                      {requiredDocsNotConfirmed.join(', ')}
+                    </p>
+                    <p className="text-[11px] text-red-700 mt-0.5">
+                      Without these, a court determines who manages the estate and makes medical decisions.
+                    </p>
+                  </div>
+                </div>
+              )}
               {ESTATE_DOC_TYPES.map(({ type, label, critical }) => {
                 const doc       = docMap[type]
                 const confirmed = doc?.exists === true
@@ -511,33 +789,51 @@ export default function EstateTab({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {beneficiaryGroupKeys.map((groupKey) => {
-                    const groupItems = beneficiaryGroups[groupKey] ?? []
-                    const isOpen = expandedBeneficiaryGroups[groupKey] ?? false
-                    const primaryCount = groupItems.filter((b) => !b.contingent).length
-                    const contingentCount = groupItems.filter((b) => b.contingent).length
+                  {beneficiaryAccountGroups.map((group) => {
+                    const isOpen = expandedBeneficiaryGroups[group.key] ?? false
+                    const hasPrimary = group.items.some((b) => !b.contingent)
+                    const hasContingent = group.items.some((b) => b.contingent)
+                    const missingContingent = hasPrimary && !hasContingent
                     return (
-                      <div key={groupKey} className="rounded-lg border border-slate-200">
+                      <div key={group.key} className="rounded-lg border border-slate-200 overflow-hidden">
                         <button
                           type="button"
                           onClick={() =>
-                            setExpandedBeneficiaryGroups((prev) => ({ ...prev, [groupKey]: !isOpen }))
+                            setExpandedBeneficiaryGroups((prev) => ({ ...prev, [group.key]: !isOpen }))
                           }
-                          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
+                          className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-neutral-50 hover:bg-neutral-100"
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                              {formatAccountTypeLabel(groupKey)}
+                            <p className="text-xs font-medium text-neutral-800">
+                              {group.name}
+                              {group.owner && (
+                                <span className="ml-2 text-[10px] font-normal text-neutral-500">
+                                  {group.owner}
+                                </span>
+                              )}
+                              {group.value > 0 && (
+                                <span className="ml-2 text-[10px] font-medium text-neutral-600">
+                                  {formatCurrency(group.value)}
+                                </span>
+                              )}
                             </p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                              {primaryCount} primary{contingentCount > 0 ? ` · ${contingentCount} contingent` : ''}
+                            <p className="text-[10px] text-neutral-400 mt-0.5 capitalize">
+                              {group.type.replace(/_/g, ' ')}
+                              {missingContingent && (
+                                <span className="ml-2 text-red-600 font-medium">Missing contingent</span>
+                              )}
+                              {!missingContingent && hasPrimary && hasContingent && (
+                                <span className="ml-2 text-emerald-600">Primary + contingent confirmed</span>
+                              )}
                             </p>
                           </div>
-                          <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'} ({groupItems.length})</span>
+                          <span className="text-[10px] text-blue-600">
+                            {isOpen ? 'Hide' : 'Show'} ({group.items.length})
+                          </span>
                         </button>
                         {isOpen && (
                           <div className="px-2 pb-2 space-y-1.5">
-                            {groupItems.map((b) => (
+                            {group.items.map((b) => (
                               <BeneficiaryRow key={b.id} b={b} />
                             ))}
                           </div>
@@ -564,66 +860,6 @@ export default function EstateTab({
           )}
         </div>
       </div>
-
-      {/* -- Conflict Detector Panel (Sprint 58) -- */}
-      {conflictReport && conflictReport.conflicts.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection('estateConflicts')}
-            className="w-full px-5 py-4 border-b border-slate-100 flex items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-3">
-              <h3 className="text-sm font-semibold text-[color:var(--mwm-navy)]">Estate Conflicts</h3>
-              {conflictReport.critical > 0 && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                  {conflictReport.critical} critical
-                </span>
-              )}
-              {conflictReport.warnings > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                  {conflictReport.warnings} warning{conflictReport.warnings !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <span className="text-xs text-slate-500">{expandedSections.estateConflicts ? 'Hide' : 'Show'}</span>
-          </button>
-          {expandedSections.estateConflicts && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 px-5 py-3">Severity</th>
-                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Issue</th>
-                    <th className="text-left text-xs font-semibold text-slate-500 pb-2 py-3">Recommended Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {conflictReport.conflicts.map((c, i) => (
-                    <tr key={i} className="hover:bg-slate-50">
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            c.severity === 'critical'
-                              ? 'bg-red-100 text-red-700'
-                              : c.severity === 'warning'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {c.severity}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 text-slate-700 max-w-xs">{c.description}</td>
-                      <td className="py-3 pr-5 text-slate-500 text-xs max-w-xs">{c.recommended_action}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ── Business Interests & Valuation Discounts ── */}
       {(businesses ?? []).length > 0 && (
@@ -903,12 +1139,16 @@ export default function EstateTab({
               <p className="text-sm text-slate-400">No assets on file</p>
             ) : (
               <div className="space-y-3">
-                {accountGroupKeys.map((groupKey) => {
-                  const groupItems = (accountGroups[groupKey] ?? []).sort(
-                    (a, b) => (b.value ?? 0) - (a.value ?? 0)
+                {consolidatedAccountGroupKeys.map((groupKey) => {
+                  const groupDef = ACCOUNT_GROUPS.find((g) => g.key === groupKey)
+                  const groupItems = (consolidatedAccountGroups[groupKey] ?? []).sort(
+                    (a, b) => (b.value ?? 0) - (a.value ?? 0),
                   )
                   const isOpen = expandedAccountGroups[groupKey] ?? false
                   const groupTotal = groupItems.reduce((s, a) => s + Number(a.value ?? 0), 0)
+                  const ownerSummary = [
+                    ...new Set(groupItems.map((a) => formatOwner(a.owner, household)).filter((o) => o !== '—')),
+                  ].join(', ')
                   return (
                     <div key={groupKey} className="rounded-lg border border-slate-200 overflow-hidden">
                       <button
@@ -920,10 +1160,11 @@ export default function EstateTab({
                       >
                         <div>
                           <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                            {formatAccountTypeLabel(groupKey)}
+                            {groupDef?.label ?? formatAccountTypeLabel(groupKey)}
                           </p>
                           <p className="text-[11px] text-slate-400 mt-0.5">
                             {groupItems.length} account{groupItems.length !== 1 ? 's' : ''} · {formatCurrency(groupTotal)}
+                            {ownerSummary ? ` · ${ownerSummary}` : ''}
                           </p>
                         </div>
                         <span className="text-xs text-slate-500">{isOpen ? 'Hide' : 'Show'}</span>
@@ -1016,4 +1257,92 @@ function formatAccountTypeLabel(t: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+}
+
+type BeneficiaryAccountGroup = {
+  key: string
+  name: string
+  value: number
+  owner: string
+  type: string
+  items: BeneficiaryRowType[]
+}
+
+function buildBeneficiaryAccountGroups(
+  rows: BeneficiaryRowType[],
+  assets: AssetRowType[],
+  rawBeneficiaries: Record<string, unknown>[],
+  household: ClientViewShellProps['household'],
+): BeneficiaryAccountGroup[] {
+  const assetById = Object.fromEntries(assets.map((a) => [a.id, a]))
+  const rawById = Object.fromEntries(rawBeneficiaries.map((b) => [String(b.id), b]))
+  const groups: Record<string, BeneficiaryAccountGroup> = {}
+
+  const ensureAssetGroup = (asset: AssetRowType) => {
+    if (groups[asset.id]) return groups[asset.id]
+    groups[asset.id] = {
+      key: asset.id,
+      name: asset.name ?? formatAccountTypeLabel(assetAccountTypeForGroup(asset)),
+      value: Number(asset.value ?? 0),
+      owner: formatOwner(asset.owner, household),
+      type: assetAccountTypeForGroup(asset),
+      items: [],
+    }
+    return groups[asset.id]
+  }
+
+  const ensureTypeGroup = (typeKey: string, label: string) => {
+    const key = `type:${typeKey}`
+    if (!groups[key]) {
+      groups[key] = {
+        key,
+        name: label,
+        value: 0,
+        owner: '',
+        type: typeKey,
+        items: [],
+      }
+    }
+    return groups[key]
+  }
+
+  for (const b of rows) {
+    const raw = rawById[b.id]
+    const assetId = typeof raw?.asset_id === 'string' ? raw.asset_id : null
+    if (assetId && assetById[assetId]) {
+      ensureAssetGroup(assetById[assetId]).items.push(b)
+      continue
+    }
+
+    const bType = (b.account_type ?? 'unassigned').toLowerCase()
+    const matchingAssets = assets.filter((a) => {
+      const rawType = assetAccountTypeForGroup(a)
+      const normalized = normalizeRetirementTypeForGroup(a)
+      return rawType === bType || normalized === bType
+    })
+
+    if (matchingAssets.length === 1) {
+      ensureAssetGroup(matchingAssets[0]).items.push(b)
+      continue
+    }
+
+    ensureTypeGroup(bType, formatAccountTypeLabel(bType)).items.push(b)
+  }
+
+  return Object.values(groups).sort((a, b) => {
+    if (a.name === 'Unassigned') return 1
+    if (b.name === 'Unassigned') return -1
+    return a.name.localeCompare(b.name)
+  })
+}
+
+function assetAccountTypeForGroup(a: { type?: string | null; account_type?: string | null }) {
+  return (a.type ?? a.account_type ?? '').toLowerCase()
+}
+
+function normalizeRetirementTypeForGroup(a: { type?: string | null; account_type?: string | null }) {
+  const raw = assetAccountTypeForGroup(a)
+  if (raw === 'traditional_401k') return '401k'
+  if (raw === 'traditional_ira' || raw === 'rollover_ira') return 'ira'
+  return raw
 }

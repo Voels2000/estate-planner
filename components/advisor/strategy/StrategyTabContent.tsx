@@ -6,6 +6,11 @@ import type { AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import type { AdvisorStrategyLineItemSummary } from '@/lib/estate/strategyLedger'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
 import { resolveAdvisoryMetrics } from '@/lib/advisor/resolveAdvisoryMetrics'
+import {
+  numericValueForMetric,
+  parseLiquidityShortfall,
+} from '@/lib/advisor/advisoryMetricSeverity'
+import type { StrategySavingsContext } from '@/lib/advisor/estimateStrategySavings'
 import { StrategyAlertBanners } from '@/components/advisor/strategy/StrategyAlertBanners'
 import { StrategyStep } from '@/components/advisor/strategy/StrategyStep'
 import { SituationMetricsGrid } from '@/components/advisor/strategy/SituationMetricsGrid'
@@ -78,6 +83,27 @@ export function StrategyTabContent({
     [cachedCoreMetrics, hasRunStrategyModules, metricsInput],
   )
 
+  const savingsContext = useMemo((): StrategySavingsContext => {
+    const liquidityMetric = metrics.find((m) => m.id === 'liquidity_coverage')
+    const gratMetric = metrics.find((m) => m.id === 'grat_breakeven')
+    const liquidityRatio = liquidityMetric ? numericValueForMetric(liquidityMetric) : null
+    const shortfall = parseLiquidityShortfall(liquidityMetric)
+    return {
+      grossEstate,
+      totalTax: estimatedFederalTax + estimatedStateTax,
+      federalTax: estimatedFederalTax,
+      stateTax: estimatedStateTax,
+      federalExemption: metricsInput.federalExemption,
+      stateExemption: metricsInput.survivorExemption ?? metricsInput.federalExemption,
+      hasSpouse: metricsInput.hasSpouse,
+      section7520Rate: metricsInput.section7520Rate,
+      ilitDeathBenefit: metricsInput.ilitDeathBenefit,
+      gratBreakevenRate: gratMetric ? numericValueForMetric(gratMetric) : null,
+      liquidityShortfall:
+        liquidityRatio != null && liquidityRatio < 1.0 && shortfall != null ? shortfall : null,
+    }
+  }, [estimatedFederalTax, estimatedStateTax, grossEstate, metrics, metricsInput])
+
   return (
     <div className="space-y-8 pb-12">
       <StrategyAlertBanners
@@ -111,6 +137,7 @@ export function StrategyTabContent({
             onInlineExpand={onInlineExpand}
             inlinePanelProps={inlinePanelProps}
             strategyLineItems={strategyLineItems}
+            savingsContext={savingsContext}
           />
         </StrategyStep>
       </div>

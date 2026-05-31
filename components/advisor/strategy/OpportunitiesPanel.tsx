@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import type { AdvisoryMetric } from '@/lib/advisoryMetrics'
 import type { AdvisorStrategyLineItemSummary } from '@/lib/estate/strategyLedger'
+import type { StrategySavingsContext } from '@/lib/advisor/estimateStrategySavings'
 import { StrategyOpportunityRow } from '@/components/advisor/strategy/StrategyOpportunityRow'
 import type { InlineStrategyPanelBundle } from '@/components/advisor/strategy/InlineStrategyPanel'
 import {
@@ -18,6 +19,7 @@ interface OpportunitiesPanelProps {
   onInlineExpand: (catalogId: string) => void
   inlinePanelProps: InlineStrategyPanelBundle
   strategyLineItems: AdvisorStrategyLineItemSummary[]
+  savingsContext: StrategySavingsContext
 }
 
 export function OpportunitiesPanel({
@@ -28,6 +30,7 @@ export function OpportunitiesPanel({
   onInlineExpand,
   inlinePanelProps,
   strategyLineItems,
+  savingsContext,
 }: OpportunitiesPanelProps) {
   const highlightedIds = deriveHighlightedStrategies(metrics)
 
@@ -48,6 +51,17 @@ export function OpportunitiesPanel({
 
   return (
     <div className="space-y-3">
+      <div className="mb-3 flex items-center gap-4 text-xs text-[color:var(--mwm-text-secondary)]">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+          Relevant to this client
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-[color:var(--mwm-border-secondary)]" />
+          Available · not flagged
+        </span>
+      </div>
+
       {STRATEGY_CATALOG.slice()
         .sort((a, b) => {
           const aH = highlightedIds.has(a.id) ? 0 : 1
@@ -63,6 +77,7 @@ export function OpportunitiesPanel({
             isSent={sentStrategyIds.has(strategy.id)}
             metrics={metrics}
             hasRunModules={hasRunModules}
+            savingsContext={savingsContext}
             inlinePanelProps={inlinePanelProps}
             onToggle={() => onInlineExpand(strategy.id)}
           />

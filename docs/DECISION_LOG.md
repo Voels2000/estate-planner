@@ -1,6 +1,72 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-30 (Roth conversion bracket headroom fix)
+# Last updated: 2026-05-30 (Advisor strategy + Estate tab polish)
+
+## Advisor Estate tab — visual polish (2026-05-30)
+
+**Decision:** Polish advisor **Estate** tab (`EstateTab.tsx` only) using existing props — no new fetches.
+
+**Liquidity hero:** Shown when coverage ratio **&lt; 1.0x**. Liquid total from **`composition.inside_liquid`**, fallback sum of assets with **`liquidity === 'liquid'`**. Tax liability = horizon/composition federal + state estimates.
+
+**Layout:** Two-column grid — left: **`EstateCompositionCard`** (`showMetrics={false}`) + IRS waterfall (replaces redundant Gross/Net/Admin/Taxable pills); right: conflict cards (`description` + `recommended_action`).
+
+**Documents:** Hero alert when critical docs (`will`, `dpoa`, `medical_poa`) not confirmed via **`docMap[type].exists`**.
+
+**Beneficiaries:** Group by linked asset (`asset_id` on raw records when present; single-asset type match fallback); show account name, value, owner, missing-contingent flag.
+
+**Estate flow:** Summary tiles (Financial / RE / Business / Retirement) always visible; full **`EstateFlowDiagram`** behind toggle.
+
+**Accounts:** Six consolidated groups (IRA, 401(k), brokerage, Roth, bank, other) from **`assetAccountType()`** values.
+
+**Unchanged:** Death-sequence toggle, admin expense override, DLOC/DLOM, RE table, insurance, **`BeneficiaryGrantPanel`**.
+
+---
+
+## Advisor strategy tab — visual hierarchy polish (2026-05-30)
+
+**Decision:** Polish advisor **Strategy** tab presentation without new data fetches: alert hierarchy, severity-colored situation cards, illustrative savings on opportunity rows, Monte Carlo empty state, hide composite waterfall when no recommendations.
+
+**Alerts (`StrategyAlertBanners`):** One **primary** red banner for liquidity coverage **&lt; 1.0x**; compact **secondary** amber banners for unused exemption (&lt; 50%) and tight GRAT §7520 margin.
+
+**Situation (`AdvisoryMetricCard` + `SituationMetricsGrid`):** Optional **`severity`** (default `neutral`) drives card/value/status colors; **`getMetricStatusLabel()`** adds short status lines (“Critical — at risk”, “Headroom available”, etc.).
+
+**Opportunities:** **`estimateStrategySavings()`** in `lib/advisor/estimateStrategySavings.ts` — keys match catalog ids (`cst`, `ilit`, `annual_gifting`, `slat`, `grat`, `liquidity`; aliases `bypass_trust` / `credit_shelter_trust` → `cst`). Savings context built in **`StrategyTabContent`** from existing metrics props.
+
+**Composite (`CompositeOverlay`):** Waterfall + summary hidden in **From Recommendations** mode when **`activeRecommendedItems.length === 0`** (avoids “All 0 strategies…” copy).
+
+**Monte Carlo (`MonteCarloPanel`):** Dashed empty state when **`!result && !loading`**, using existing **`simulationCount`**.
+
+**Verify:** Strategy tab — liquidity shortfall primary banner; CST/ILIT rows show emerald savings line; composite empty until a recommendation is sent.
+
+---
+
+## Tax Horizons & Strategy — consumer page polish (2026-05-30)
+
+**Decision:** Polish **`/my-estate-strategy`** layout: readiness as header pill; bypass-trust impact bar; remove embedded completeness/topics; grouped asset summary in estate flow; hide empty what-if tab.
+
+**Readiness:** Remove **`MyEstateStrategyHealthScore`** block; compact pill in page header uses existing **`healthScore`** prop.
+
+**Bypass bar:** **`parseBypassTrustSavings()`** shared with dashboard (`lib/estate/parseBypassTrustSavings.ts`); shown between horizon cards and table when savings &gt; 0.
+
+**Removed from page:** Embedded **`EstatePlanningDashboard`** (Estate Plan Completeness + Common Planning Topics — live on dashboard / estate-tax).
+
+**What-if tab:** Hidden when **`projectedCount === 0`**.
+
+**Estate flow assets:** **`ConsumerEstateFlowView`** — grouped summary tiles + “Show all accounts” expand (Financial / Real estate / Business / Retirement / Insurance / Other).
+
+**Files:** `_my-estate-strategy-client.tsx`, `page.tsx`, `ConsumerEstateFlowView.tsx`
+
+**Commit:** `56762ad`
+
+---
+
+## Roth conversion — methodology note (2026-05-30)
+
+**Decision:** Expand **“How this calculation works”** on **`/roth`** to document projection source, RMD-era target rate, eligibility (both spouses ≥ 60), bracket headroom, combined IRA/401(k) pool, SS simplification, and WhatIf slider vs table engine.
+
+**Commit:** `6cb942a`
+
+---
 
 ## Roth conversion — bracket headroom + display context (2026-05-30)
 
@@ -13,6 +79,8 @@
 **Tests:** `tests/unit/roth-analysis.spec.ts` (`import-unit` project).
 
 **Verify:** Alan/Cathi pre-RMD gap — emerald rows with conversions to top of 22% bracket; insight shows low current % vs ~24% projected RMD.
+
+**Commit:** `cae89fc`
 
 ---
 

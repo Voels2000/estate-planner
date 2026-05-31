@@ -147,6 +147,9 @@ export default function CompositeOverlay({
   const maxEstate = activeConfig.grossEstate
   const barWidth = (val: number) => `${Math.min(100, (val / maxEstate) * 100).toFixed(1)}%`
 
+  const showCompositeWaterfall =
+    mode !== 'recommendations' || activeRecommendedItems.length > 0
+
   return (
     <div className="space-y-6">
       {/* Mode Selector */}
@@ -267,7 +270,7 @@ export default function CompositeOverlay({
       )}
 
       {/* Double-counting warnings */}
-      {result.hasDoubleCountingRisk && (
+      {showCompositeWaterfall && result.hasDoubleCountingRisk && (
         <div className="space-y-2">
           {result.doubleCountingWarnings.map((w, i) => (
             <div key={i} className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800">
@@ -277,7 +280,9 @@ export default function CompositeOverlay({
         </div>
       )}
 
-      {/* Waterfall Chart */}
+      {/* Waterfall + summary */}
+      {showCompositeWaterfall && (
+      <>
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-gray-800">Estate Waterfall</h4>
 
@@ -361,8 +366,10 @@ export default function CompositeOverlay({
           </tbody>
         </table>
       </div>
+      </>
+      )}
 
-      {insideOutsideToday && (
+      {showCompositeWaterfall && insideOutsideToday && (
         <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
           <h5 className="text-sm font-semibold text-slate-800 mb-3">
             Estate Boundary Snapshot ({estateViewMode === 'projected' ? 'Projected' : 'Actual'})
@@ -390,8 +397,8 @@ export default function CompositeOverlay({
         </div>
       )}
 
-      {/* Advisory notes */}
-      {result.advisoryNotes.map((note, i) => (
+      {showCompositeWaterfall &&
+        result.advisoryNotes.map((note, i) => (
         <div
           key={i}
           className={`rounded p-3 text-xs ${

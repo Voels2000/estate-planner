@@ -7,6 +7,10 @@ import {
   getStrategyBenefit,
   type StrategyCatalogEntry,
 } from '@/components/advisor/strategy/strategyCatalog'
+import {
+  estimateStrategySavings,
+  type StrategySavingsContext,
+} from '@/lib/advisor/estimateStrategySavings'
 
 interface StrategyOpportunityRowProps {
   strategy: StrategyCatalogEntry
@@ -15,6 +19,7 @@ interface StrategyOpportunityRowProps {
   isSent: boolean
   metrics: AdvisoryMetric[]
   hasRunModules: boolean
+  savingsContext: StrategySavingsContext
   inlinePanelProps: InlineStrategyPanelBundle
   onToggle: () => void
 }
@@ -26,11 +31,13 @@ export function StrategyOpportunityRow({
   isSent,
   metrics,
   hasRunModules,
+  savingsContext,
   inlinePanelProps,
   onToggle,
 }: StrategyOpportunityRowProps) {
   const panelConfig = CATALOG_TO_PANEL[strategy.id]
   const benefit = hasRunModules ? getStrategyBenefit(strategy.id, metrics) : null
+  const savings = estimateStrategySavings(strategy.id, savingsContext)
 
   return (
     <div
@@ -46,7 +53,7 @@ export function StrategyOpportunityRow({
         <div className="flex min-w-0 items-start gap-3">
           <div
             className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${
-              isHighlighted ? 'bg-[#C9A84C]' : 'bg-gray-200'
+              isHighlighted ? 'bg-blue-500' : 'bg-gray-200'
             }`}
           />
           <div className="min-w-0">
@@ -65,6 +72,9 @@ export function StrategyOpportunityRow({
               )}
             </div>
             <p className="mt-0.5 text-xs leading-relaxed text-gray-500">{strategy.description}</p>
+            {savings && (
+              <p className="mt-1 text-[11px] font-medium text-emerald-700">{savings}</p>
+            )}
             {benefit && (
               <p className="mt-1 text-xs font-medium text-green-700">Est. benefit: {benefit}</p>
             )}
