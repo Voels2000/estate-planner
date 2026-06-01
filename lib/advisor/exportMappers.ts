@@ -8,6 +8,8 @@ import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
 import { currentFederalExemption } from '@/lib/export/narrativeEngine'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
+import { buildPdfAssetBreakdown, resolveAdvisorBranding } from '@/lib/advisor/advisorBriefHelpers'
+import type { AdvisorProfileRow, HealthScoreComponent } from '@/lib/export-wiring'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
   return rows.map((r) => ({
@@ -51,6 +53,20 @@ export function buildAdvisorExportPayloads(params: {
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
   narrativeFields: NarrativePdfFields
   stateBrackets: StateBracket[]
+  assets?: Array<{ type?: string | null; value?: number | null }>
+  realEstate?: Array<{ current_value?: number | null }>
+  businesses?: Array<{ estimated_value?: number | null; ownership_pct?: number | null }>
+  businessInterests?: Array<{ fmv_estimated?: number | null; ownership_pct?: number | null }>
+  insurancePolicies?: Array<{ death_benefit?: number | null }>
+  healthScoreComponents?: HealthScoreComponent[]
+  advisorProfile?: AdvisorProfileRow
+  meetingDate?: string
+  compositionFallback?: {
+    inside_financial?: number | null
+    inside_real_estate?: number | null
+    inside_business_gross?: number | null
+    inside_insurance?: number | null
+  } | null
 }): {
   exportPanelProps: AdvisorExportPanelProps
   exportPdfData: PDFReportData
@@ -99,6 +115,28 @@ export function buildAdvisorExportPayloads(params: {
     params.liquidAssets > 0 &&
     params.liquidAssets < taxSummaryForExport.federal_tax_current + taxSummaryForExport.state_tax
 
+  const branding = resolveAdvisorBranding(params.advisorProfile ?? {
+    full_name: params.advisorDisplayName,
+    email: null,
+  })
+
+  const assetBreakdown = buildPdfAssetBreakdown({
+    assets: params.assets ?? [],
+    realEstate: params.realEstate ?? [],
+    businesses: params.businesses ?? [],
+    businessInterests: params.businessInterests ?? [],
+    insurancePolicies: params.insurancePolicies ?? [],
+    compositionFallback: params.compositionFallback,
+  })
+
+  const healthComponents = (params.healthScoreComponents ?? []).map((c) => ({
+    label: c.label,
+    score: c.score,
+    maxScore: c.maxScore,
+  }))
+
+  const meetingDate = params.meetingDate ?? new Date().toISOString()
+
   const exportPanelProps = {
     householdId: household.id,
     scenarioId: params.scenarioId ?? '',
@@ -126,21 +164,24 @@ export function buildAdvisorExportPayloads(params: {
           [household.person2_first_name, household.person2_last_name].filter(Boolean).join(' ').trim() || null,
         )
       : undefined,
-    advisorName: params.advisorDisplayName || 'Your Advisor',
-    firmName: 'MyWealthMaps',
+    advisorName: branding.advisorName,
+    firmName: branding.firmName,
+    advisorPhone: branding.advisorPhone,
+    advisorEmail: branding.advisorEmail,
     reportDate: reportDateStr,
+    meetingDate,
     grossEstate: grossForExport,
     netWorth: Number(params.latestOutput?.net_worth ?? grossForExport),
     liquidAssets: params.liquidAssets,
     illiquidAssets: Math.max(0, grossForExport - params.liquidAssets),
-    assetBreakdown: [],
+    assetBreakdown,
     federalTax: fedTaxExport,
     stateTax: stTaxExport,
     federalExemption: exemptionExport,
     lawScenario: lawScenarioExport,
     stateBrackets: params.stateBrackets,
     healthScore: params.healthScore ?? 0,
-    healthComponents: [],
+    healthComponents,
     activeStrategies: params.activeStrategies.map((name) => ({
       name,
       estateReduction: 0,

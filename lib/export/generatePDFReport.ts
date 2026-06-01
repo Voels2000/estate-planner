@@ -49,7 +49,10 @@ export interface PDFReportData {
   person2Name?: string
   advisorName: string
   firmName: string
+  advisorPhone?: string
+  advisorEmail?: string
   reportDate: string
+  meetingDate?: string
 
   // Estate snapshot
   grossEstate: number
@@ -131,10 +134,8 @@ export function determinePDFPages(data: PDFReportData): string[] {
   // Page 3: Always included
   pages.push('tax_analysis')
 
-  // Page 4: Include if any active strategies
-  if (data.activeStrategies.length > 0) {
-    pages.push('strategy_summary')
-  }
+  // Page 4: Always included — shows empty state when no active strategies
+  pages.push('strategy_summary')
 
   // Page 5: Include if Monte Carlo has been run
   if (data.monteCarlo) {
@@ -242,6 +243,17 @@ export function generatePDFHTML(data: PDFReportData): string {
         <div class="firm-name">${data.firmName}</div>
         <div class="report-title">Estate Planning Report</div>
         <div class="client-name">${data.clientName}</div>
+        ${data.advisorPhone ? `<div style="font-size:9pt;color:#666;margin-top:4px;">${data.advisorPhone}</div>` : ''}
+        ${data.advisorEmail ? `<div style="font-size:9pt;color:#666;">${data.advisorEmail}</div>` : ''}
+        ${data.meetingDate ? `
+        <div style="font-size:10pt; color:#666; margin-top:8px;">
+          Prepared for meeting of ${new Date(data.meetingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </div>
+        ` : `
+        <div style="font-size:10pt; color:#666; margin-top:8px;">
+          Prepared ${data.reportDate}
+        </div>
+        `}
       </div>
       <div class="exec-summary">
         <p>${executiveSummary}</p>
@@ -311,20 +323,24 @@ export function generatePDFHTML(data: PDFReportData): string {
       <div class="section-title">Asset Breakdown</div>
       <table>
         <tr><th>Asset Category</th><th>Value</th><th>% of Estate</th></tr>
-        ${data.assetBreakdown.map(a => `<tr><td>${a.label}</td><td>${fmt(a.value)}</td><td>${pct(a.pct)}</td></tr>`).join('')}
+        ${data.assetBreakdown.length > 0
+          ? data.assetBreakdown.map(a => `<tr><td>${a.label}</td><td>${fmt(a.value)}</td><td>${pct(a.pct)}</td></tr>`).join('')
+          : `<tr><td colspan="3" style="color:#666;font-style:italic;">No asset category data available — add assets in the client profile.</td></tr>`}
       </table>
       <div class="section-title">Plan Health Score Components</div>
-      ${data.healthComponents.map(c => `
+      ${data.healthComponents.length > 0
+        ? data.healthComponents.map(c => `
         <div style="margin: 8px 0;">
           <div style="display:flex; justify-content:space-between; font-size:10pt; margin-bottom:3px;">
             <span>${c.label}</span>
             <span>${c.score}/${c.maxScore}</span>
           </div>
           <div class="health-bar">
-            <div class="health-fill" style="width:${(c.score/c.maxScore)*100}%; background:${c.score/c.maxScore > 0.7 ? '#16a34a' : c.score/c.maxScore > 0.4 ? '#d97706' : '#dc2626'};"></div>
+            <div class="health-fill" style="width:${c.maxScore > 0 ? Math.round((c.score / c.maxScore) * 100) : 0}%; background:${c.maxScore > 0 && c.score / c.maxScore > 0.7 ? '#16a34a' : c.maxScore > 0 && c.score / c.maxScore > 0.4 ? '#d97706' : '#dc2626'};"></div>
           </div>
         </div>
-      `).join('')}
+      `).join('')
+        : `<p style="font-size:10pt;color:#666;font-style:italic;">Health score components not yet calculated for this household.</p>`}
       <div class="footer">
         <span>${data.firmName} | ${data.clientName} | ${data.reportDate}</span>
         <span style="float:right">Page 2 of ${pages.length}</span>
@@ -434,6 +450,35 @@ export function generatePDFHTML(data: PDFReportData): string {
   if (pages.includes('strategy_summary')) {
     const totalReduction = data.activeStrategies.reduce((s, a) => s + a.estateReduction, 0)
     const totalSavings = data.activeStrategies.reduce((s, a) => s + a.taxSavings, 0)
+    const strategyBody = data.activeStrategies.length === 0 ? `
+      <div style="background:#f8f8f8; border-radius:6px; padding:16px; font-size:10pt; color:#666;">
+        <strong>No active strategies on file.</strong><br>
+        Strategies discussed in this meeting will be added here after advisor review.
+        ${data.actionItems.some(a => (a.body ?? a.message ?? '').toLowerCase().includes('trust') ||
+                                      (a.body ?? a.message ?? '').toLowerCase().includes('gift')) ? `
+        <br><br><strong>Strategies worth discussing based on your plan gaps:</strong>
+        <ul style="margin-top:8px; padding-left:20px;">
+          ${data.actionItems
+            .filter(a => ['trust','gift','ilit','cst'].some(k =>
+              (a.title ?? a.body ?? a.message ?? '').toLowerCase().includes(k)))
+            .slice(0, 3)
+            .map(a => `<li style="margin:4px 0">${a.title ?? a.body ?? a.message}</li>`)
+            .join('')}
+        </ul>` : ''}
+      </div>
+    ` : `
+      <table>
+        <tr><th>Strategy</th><th>Estate Reduction</th><th>Tax Savings</th><th>Notes</th></tr>
+        ${data.activeStrategies.map(s => `
+          <tr>
+            <td>${s.name}</td>
+            <td>${fmt(s.estateReduction)}</td>
+            <td>${fmt(s.taxSavings)}</td>
+            <td style="font-size:9pt;color:#555">${s.notes}</td>
+          </tr>
+        `).join('')}
+      </table>
+    `
     html += `
     <div class="page">
       <div class="header">
@@ -455,17 +500,7 @@ export function generatePDFHTML(data: PDFReportData): string {
         </div>
       </div>
       <div class="section-title">Active Strategy Detail</div>
-      <table>
-        <tr><th>Strategy</th><th>Estate Reduction</th><th>Tax Savings</th><th>Notes</th></tr>
-        ${data.activeStrategies.map(s => `
-          <tr>
-            <td>${s.name}</td>
-            <td>${fmt(s.estateReduction)}</td>
-            <td>${fmt(s.taxSavings)}</td>
-            <td style="font-size:9pt;color:#555">${s.notes}</td>
-          </tr>
-        `).join('')}
-      </table>
+      ${strategyBody}
       <div class="footer">
         <span>${data.firmName} | ${data.clientName} | ${data.reportDate}</span>
         <span style="float:right">Page 4 of ${pages.length}</span>

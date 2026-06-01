@@ -89,11 +89,17 @@ export async function loadAdvisorExportWiringForClient(
     activeStrategies,
     actionItems,
     advisorDisplayName,
+    advisorProfile,
+    healthScoreComponents,
     monteCarloResults,
     scenarioHistoryForExport,
     scenarioResult,
     stateBracketsResult,
     strategyLineItemsResult,
+    assetsResult,
+    realEstateResult,
+    businessesResult,
+    insurancePoliciesResult,
   } = datasetsBundle
 
   const {
@@ -104,6 +110,11 @@ export async function loadAdvisorExportWiringForClient(
     assumptionSnapshot,
     strategyLineItems,
     stateBrackets,
+    assets,
+    realEstate,
+    businesses,
+    businessInterests,
+    insurancePolicies,
   } = mapAdvisorClientDatasets({
     assetsResult: datasetsBundle.assetsResult,
     realEstateResult: datasetsBundle.realEstateResult,
@@ -161,7 +172,9 @@ export async function loadAdvisorExportWiringForClient(
     household,
     scenarioId,
     advisorDisplayName,
+    advisorProfile,
     healthScore,
+    healthScoreComponents,
     liquidAssets,
     activeStrategies,
     actionItems,
@@ -173,5 +186,18 @@ export async function loadAdvisorExportWiringForClient(
     scenarioForStrategy: strategyVm.scenarioForStrategy,
     narrativeFields,
     stateBrackets,
+    assets,
+    realEstate,
+    businesses,
+    businessInterests,
+    insurancePolicies,
+    compositionFallback: estateComposition
+      ? {
+          inside_financial: estateComposition.inside_financial,
+          inside_real_estate: estateComposition.inside_real_estate,
+          inside_business_gross: estateComposition.inside_business_gross,
+          inside_insurance: estateComposition.inside_insurance,
+        }
+      : null,
   })
 }

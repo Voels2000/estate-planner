@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { loadAdvisorExportWiringForClient } from '@/lib/advisor/loadAdvisorExportWiring'
 import { generatePDFHTML } from '@/lib/export/generatePDFReport'
+import {
+  deriveAgenda,
+  engagementLabel,
+  formatAlertsForBrief,
+  resolveAdvisorBranding,
+  scoreTrendLabel,
+} from '@/lib/advisor/advisorBriefHelpers'
+import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import type { ActionItem } from '@/lib/export-wiring'
+
+/** Prevent CDN/browser from serving a cached pre-sprint brief HTML shell. */
+export const dynamic = 'force-dynamic'
+
+/** Marker in HTML — search response for this string to confirm sprint-four brief template. */
+const BRIEF_TEMPLATE_VERSION = 'sprint-four-surface-polish-v1'
 
 interface RouteParams {
   params: Promise<{ clientId: string }>
@@ -23,6 +39,35 @@ function fmt(n: number | null): string {
   return `$${Math.round(n).toLocaleString()}`
 }
 
+async function fetchLastAdvisorNote(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  clientId: string,
+  advisorUserId: string,
+) {
+  const { data: prepNote, error: prepErr } = await supabase
+    .from('advisor_notes')
+    .select('content, created_at')
+    .eq('client_id', clientId)
+    .eq('advisor_id', advisorUserId)
+    .eq('note_type', 'prep')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!prepErr && prepNote) return prepNote
+
+  const { data: anyNote } = await supabase
+    .from('advisor_notes')
+    .select('content, created_at')
+    .eq('client_id', clientId)
+    .eq('advisor_id', advisorUserId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return anyNote
+}
+
 async function renderMeetingBriefHtml(
   supabase: Awaited<ReturnType<typeof createClient>>,
   clientId: string,
@@ -40,56 +85,77 @@ async function renderMeetingBriefHtml(
 
   const { data: household } = await supabase
     .from('households')
-    .select('id')
+    .select('id, state_primary, filing_status')
     .eq('owner_id', clientId)
     .maybeSingle()
 
   const householdId = household?.id
   if (!householdId) return null
 
-  const [clientProfileRes, healthScoreRes, alertsRes, projectionRes, noteRes, compositionRes] =
-    await Promise.all([
-      supabase.from('profiles').select('full_name, email').eq('id', clientId).single(),
-      supabase
-        .from('estate_health_scores')
-        .select('score, computed_at')
-        .eq('household_id', householdId)
-        .maybeSingle(),
-      supabase
-        .from('household_alerts')
-        .select('title, severity, description')
-        .eq('household_id', householdId)
-        .is('resolved_at', null)
-        .is('dismissed_at', null)
-        .order('severity', { ascending: false })
-        .limit(3),
-      supabase
-        .from('projection_scenarios')
-        .select('outputs_s1_first, status')
-        .eq('household_id', householdId)
-        .eq('status', 'saved')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('advisor_notes')
-        .select('content, created_at')
-        .eq('client_id', clientId)
-        .eq('advisor_id', advisorUserId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('estate_composition_cache')
-        .select('composition')
-        .eq('household_id', householdId)
-        .maybeSingle(),
-    ])
+  const admin = createAdminClient()
+
+  const [
+    clientProfileRes,
+    advisorProfileRes,
+    healthScoreRes,
+    priorScoreRes,
+    alertsRes,
+    projectionRes,
+    noteRes,
+    compositionRes,
+    authUserRes,
+  ] = await Promise.all([
+    supabase.from('profiles').select('full_name, email').eq('id', clientId).single(),
+    supabase
+      .from('profiles')
+      .select('full_name, email, firm_name, phone, firm_logo_url')
+      .eq('id', advisorUserId)
+      .maybeSingle(),
+    supabase
+      .from('estate_health_scores')
+      .select('score, computed_at')
+      .eq('household_id', householdId)
+      .maybeSingle(),
+    supabase
+      .from('estate_health_scores')
+      .select('score')
+      .eq('household_id', householdId)
+      .order('computed_at', { ascending: false })
+      .range(1, 1),
+    supabase
+      .from('household_alerts')
+      .select('id, title, severity, description, created_at')
+      .eq('household_id', householdId)
+      .is('resolved_at', null)
+      .is('dismissed_at', null)
+      .order('severity', { ascending: false })
+      .limit(10),
+    supabase
+      .from('projection_scenarios')
+      .select('outputs_s1_first, status')
+      .eq('household_id', householdId)
+      .eq('status', 'saved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    fetchLastAdvisorNote(supabase, clientId, advisorUserId),
+    supabase
+      .from('estate_composition_cache')
+      .select('composition')
+      .eq('household_id', householdId)
+      .maybeSingle(),
+    admin.auth.admin.getUserById(clientId),
+  ])
 
   const scoreToday = healthScoreRes.data?.score ?? null
+  const priorScore = priorScoreRes.data?.[0]?.score ?? null
   const clientName = clientProfileRes.data?.full_name ?? 'Client'
-  const alerts = alertsRes.data ?? []
-  const lastNote = noteRes.data
+  const branding = resolveAdvisorBranding(advisorProfileRes.data ?? {})
+  const lastNote = noteRes
+  const engagement = engagementLabel(authUserRes.data?.user?.last_sign_in_at ?? null)
+
+  const filingStatus = normalizePdfFilingStatus(household.filing_status)
+  const domicileState = household.state_primary ?? 'WA'
 
   let grossEstate: number | null = null
   let estateTax: number | null = null
@@ -116,25 +182,88 @@ async function renderMeetingBriefHtml(
     }
   }
 
-  const generatedAt = new Date().toLocaleDateString('en-US', {
+  const rawAlerts: ActionItem[] = (alertsRes.data ?? []).map((a) => ({
+    id: a.id,
+    title: a.title ?? undefined,
+    message: a.description ?? a.title ?? '',
+    severity: a.severity ?? 'medium',
+    created_at: a.created_at ?? new Date().toISOString(),
+  }))
+
+  // Same enrichment context as export PDF (state brackets, trust flags, etc.)
+  const exportWiring = await loadAdvisorExportWiringForClient(supabase, {
+    advisorUserId,
+    clientId,
+  })
+  const pdfCtx = exportWiring?.exportPdfData
+
+  const enrichedAlerts = formatAlertsForBrief(rawAlerts, {
+    grossEstate: grossEstate ?? pdfCtx?.grossEstate ?? 0,
+    domicileState: pdfCtx?.domicileState ?? domicileState,
+    filingStatus: pdfCtx?.filingStatus ?? filingStatus,
+    stateBrackets: pdfCtx?.stateBrackets,
+    hasIrrevocableTrust: pdfCtx?.hasIrrevocableTrust,
+    hasBypassTrust: pdfCtx?.hasBypassTrust,
+    hasTrust: pdfCtx?.hasTrust,
+    lifeInsuranceOutsideILIT: pdfCtx?.lifeInsuranceOutsideILIT,
+    sunsetTaxEstimate: pdfCtx?.sunsetTaxEstimate,
+    federalTax: pdfCtx?.federalTax,
+  })
+
+  const agenda = deriveAgenda(enrichedAlerts)
+  const trend =
+    scoreToday != null ? scoreTrendLabel(scoreToday, priorScore) : { delta: null, label: 'Not yet calculated', direction: 'none' as const }
+
+  const meetingDate = new Date().toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   })
 
+  const agendaHtml =
+    agenda.length > 0
+      ? `
+  <div style="background:#f0f4fa; border-left:4px solid #2E4057;
+              padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0;">
+    <div style="font-size:9pt; font-weight:bold; color:#2E4057;
+                text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">
+      Suggested agenda
+    </div>
+    ${agenda
+      .map(
+        (item) => `
+      <div style="display:flex; align-items:baseline; gap:8px;
+                  padding:4px 0; border-bottom:1px solid #e0e7ef;">
+        <span style="font-size:10pt; font-weight:bold; color:#2E4057;
+                     min-width:20px;">${item.order}.</span>
+        <span style="font-size:10pt; flex:1;">${escapeHtml(item.title)}</span>
+        <span style="font-size:9pt; color:#666; white-space:nowrap;">
+          ${item.minutes} min · ${escapeHtml(item.owner)}
+        </span>
+      </div>
+    `,
+      )
+      .join('')}
+  </div>
+  `
+      : ''
+
   const alertsHtml =
-    alerts.length > 0
+    enrichedAlerts.length > 0
       ? `
   <section>
     <h2>Top Planning Gaps</h2>
-    ${alerts
+    ${enrichedAlerts
+      .slice(0, 3)
       .map(
         (a) => `
       <div class="alert">
         <div class="alert-dot ${escapeHtml(a.severity ?? 'medium')}"></div>
         <div>
-          <div class="alert-title">${escapeHtml(a.title ?? '')}</div>
-          <div class="alert-desc">${escapeHtml(a.description ?? '')}</div>
+          <div class="alert-title">${escapeHtml(a.title)}</div>
+          <div class="alert-desc">${escapeHtml(a.body)}</div>
+          ${a.dollarImpact ? `<div class="alert-desc" style="margin-top:4px;color:#374151;"><strong>Impact:</strong> ${escapeHtml(a.dollarImpact)}</div>` : ''}
+          ${a.nextStep ? `<div class="alert-desc" style="margin-top:2px;color:#374151;"><strong>Next step:</strong> ${escapeHtml(a.nextStep)}</div>` : ''}
         </div>
       </div>
     `,
@@ -161,18 +290,23 @@ async function renderMeetingBriefHtml(
     : ''
 
   const focusCopy =
-    alerts.length > 0
-      ? `Review the ${alerts.length} open planning gap${alerts.length > 1 ? 's' : ''} above.${
+    enrichedAlerts.length > 0
+      ? `Review the ${enrichedAlerts.length} open planning gap${enrichedAlerts.length > 1 ? 's' : ''} above.${
           scoreToday != null && scoreToday < 60
             ? ' Estate health score indicates significant room for improvement — prioritize the critical and high-severity items.'
             : ''
         }`
       : 'No open alerts. Consider reviewing beneficiary designations and document staleness if not recently updated.'
 
+  const trendColor =
+    trend.direction === 'up' ? '#16a34a' : trend.direction === 'down' ? '#dc2626' : '#666'
+
   return `<!DOCTYPE html>
+<!-- ${BRIEF_TEMPLATE_VERSION} -->
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="brief-template" content="${BRIEF_TEMPLATE_VERSION}">
 <title>Meeting Brief — ${escapeHtml(clientName)}</title>
 <style>
   @page { size: letter; margin: 0.75in; }
@@ -205,11 +339,13 @@ async function renderMeetingBriefHtml(
 <body>
   <div class="header">
     <div class="header-left">
-      <p>My Wealth Maps — Meeting Brief</p>
+      <p>${escapeHtml(branding.firmName)} — Meeting Brief</p>
       <h1>${escapeHtml(clientName)}</h1>
+      <p style="color:#94a3b8;font-size:9pt;margin-top:4px;text-transform:none;letter-spacing:0;">${escapeHtml(engagement)}</p>
     </div>
     <div class="header-right">
-      <p>Prepared ${generatedAt}</p>
+      <p>Prepared for meeting of ${meetingDate}</p>
+      <p>${escapeHtml(branding.advisorName)}${branding.advisorPhone ? ` · ${escapeHtml(branding.advisorPhone)}` : ''}</p>
       <p>Confidential — Advisor use only</p>
     </div>
   </div>
@@ -218,7 +354,7 @@ async function renderMeetingBriefHtml(
     <div class="stat-card">
       <div class="label">Estate Health Score</div>
       <div class="value">${scoreToday ?? '—'}<span style="font-size:12pt;color:#6b7280">/100</span></div>
-      <div class="delta">${scoreToday != null ? 'Current score' : 'Not yet calculated'}</div>
+      <div class="delta" style="color:${trendColor};">${escapeHtml(trend.label)}</div>
     </div>
     <div class="stat-card">
       <div class="label">Projected Estate</div>
@@ -232,6 +368,7 @@ async function renderMeetingBriefHtml(
     </div>
   </div>
 
+  ${agendaHtml}
   ${alertsHtml}
   ${noteHtml}
 
@@ -241,10 +378,10 @@ async function renderMeetingBriefHtml(
   </section>
 
   <div class="disclaimer">
-    This brief was generated by My Wealth Maps and is intended for advisor use only.
+    This brief was generated by ${escapeHtml(branding.firmName)} and is intended for advisor use only.
     It reflects data entered by the client and is for planning preparation purposes —
     not financial, tax, or legal advice. Consult qualified professionals before acting
-    on any information in this report. © My Wealth Maps ${new Date().getFullYear()}
+    on any information in this report. © ${escapeHtml(branding.firmName)} ${new Date().getFullYear()}
   </div>
 
   <script>window.onload = () => setTimeout(() => window.print(), 500)</script>
@@ -294,6 +431,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Content-Disposition': 'inline; filename="meeting-brief.html"',
+      'Cache-Control': 'private, no-store, max-age=0',
+      'X-Brief-Template': BRIEF_TEMPLATE_VERSION,
     },
   })
 }

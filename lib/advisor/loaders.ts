@@ -14,6 +14,7 @@ import {
   fetchActiveStrategies,
   fetchActionItems,
   fetchAdvisorDisplayName,
+  fetchAdvisorProfile,
   fetchHealthScore,
   fetchLiquidAssets,
   fetchMonteCarloSummary,
@@ -319,10 +320,12 @@ export type AdvisorClientDatasetsResult = {
   strategyLineItemsResult: { data: unknown[] | null; error?: unknown }
   healthScore: number | null
   healthScoreComputedAt: string | null
+  healthScoreComponents: Array<{ label: string; score: number; maxScore: number }>
   liquidAssets: number
   activeStrategies: string[]
   actionItems: Array<{ id: string; message: string; severity: string; created_at: string }>
   advisorDisplayName: string
+  advisorProfile: Awaited<ReturnType<typeof fetchAdvisorProfile>>
   monteCarloResults: { p10: number; p50: number; p90: number; paths: number } | null
   scenarioHistoryForExport: Array<{ id: string; created_at: string; label: string; gross_estate: number }>
   beneficiaryGrantsResult: { data: unknown[] | null; error?: unknown }
@@ -483,6 +486,7 @@ export async function loadAdvisorClientDatasets(
     activeStrategies,
     actionItems,
     advisorDisplayName,
+    advisorProfile,
     monteCarloResults,
     scenarioHistoryForExport,
     beneficiaryGrantsResult,
@@ -636,11 +640,18 @@ export async function loadAdvisorClientDatasets(
       : Promise.resolve(emptyList),
     inc.healthScore
       ? fetchHealthScore(params.householdId)
-      : Promise.resolve({ score: null, computedAt: null }),
+      : Promise.resolve({ score: null, computedAt: null, components: [] }),
     inc.exportWiring ? fetchLiquidAssets(params.clientId) : Promise.resolve(0),
     inc.exportWiring ? fetchActiveStrategies(params.householdId) : Promise.resolve([]),
     inc.exportWiring ? fetchActionItems(params.householdId) : Promise.resolve([]),
     inc.exportWiring ? fetchAdvisorDisplayName(params.userId) : Promise.resolve(''),
+    inc.exportWiring ? fetchAdvisorProfile(params.userId) : Promise.resolve({
+      full_name: null,
+      email: null,
+      firm_name: null,
+      phone: null,
+      firm_logo_url: null,
+    }),
     inc.exportWiring && params.scenarioId
       ? fetchMonteCarloSummary(params.scenarioId)
       : Promise.resolve(null),
@@ -694,10 +705,12 @@ export async function loadAdvisorClientDatasets(
     strategyLineItemsResult,
     healthScore: healthScoreResult.score,
     healthScoreComputedAt: healthScoreResult.computedAt,
+    healthScoreComponents: healthScoreResult.components,
     liquidAssets,
     activeStrategies,
     actionItems,
     advisorDisplayName,
+    advisorProfile,
     monteCarloResults,
     scenarioHistoryForExport,
     beneficiaryGrantsResult,

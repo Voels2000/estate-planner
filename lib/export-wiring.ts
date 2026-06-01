@@ -2,6 +2,7 @@
  * Server-side fetchers for advisor ExportPanel and Meeting Prep wiring.
  */
 
+import { mapHealthComponentsForPdf } from '@/lib/advisor/advisorBriefHelpers'
 import { createClient } from '@/lib/supabase/server'
 
 export interface ActionItem {
@@ -31,25 +32,44 @@ export interface MonteCarloSummary {
   paths: number
 }
 
+export type HealthScoreComponent = { label: string; score: number; maxScore: number }
+
 export type HealthScoreResult = {
   score: number | null
   computedAt: string | null
+  components: HealthScoreComponent[]
+}
+
+export type AdvisorProfileRow = {
+  full_name: string | null
+  email: string | null
+  firm_name: string | null
+  phone: string | null
+  firm_logo_url: string | null
 }
 
 export async function fetchHealthScore(householdId: string): Promise<HealthScoreResult> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('estate_health_scores')
-    .select('score, computed_at')
+    .select('score, computed_at, component_scores')
     .eq('household_id', householdId)
     .maybeSingle()
 
-  if (error || data == null || data.score == null) {
-    return { score: null, computedAt: data?.computed_at ?? null }
+  if (error || data == null) {
+    return { score: null, computedAt: data?.computed_at ?? null, components: [] }
+  }
+
+  const componentScores = data.component_scores as Record<string, { label?: string; score?: number; maxScore?: number }> | null
+  const components = mapHealthComponentsForPdf(componentScores)
+
+  if (data.score == null) {
+    return { score: null, computedAt: data.computed_at ?? null, components }
   }
   return {
     score: data.score,
     computedAt: data.computed_at ?? null,
+    components,
   }
 }
 
@@ -113,18 +133,31 @@ export async function fetchActionItems(householdId: string): Promise<ActionItem[
 }
 
 export async function fetchAdvisorDisplayName(advisorUserId: string): Promise<string> {
+  const profile = await fetchAdvisorProfile(advisorUserId)
+  const name = (profile.full_name || '').trim()
+  if (name) return name
+  const email = profile.email
+  return email ? email.split('@')[0] ?? '' : ''
+}
+
+export async function fetchAdvisorProfile(advisorUserId: string): Promise<AdvisorProfileRow> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('profiles')
-    .select('full_name, email')
+    .select('full_name, email, firm_name, phone, firm_logo_url')
     .eq('id', advisorUserId)
     .maybeSingle()
 
-  if (error || !data) return ''
-  const name = (data.full_name || '').trim()
-  if (name) return name
-  const email = data.email
-  return email ? email.split('@')[0] ?? '' : ''
+  if (error || !data) {
+    return { full_name: null, email: null, firm_name: null, phone: null, firm_logo_url: null }
+  }
+  return {
+    full_name: data.full_name ?? null,
+    email: data.email ?? null,
+    firm_name: (data as { firm_name?: string | null }).firm_name ?? null,
+    phone: (data as { phone?: string | null }).phone ?? null,
+    firm_logo_url: (data as { firm_logo_url?: string | null }).firm_logo_url ?? null,
+  }
 }
 
 export async function fetchScenarioHistoryForExport(householdId: string): Promise<ScenarioVersion[]> {

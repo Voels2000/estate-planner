@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
 import { meetingPrepBriefFromHorizons } from '@/lib/advisor/meetingPrepHorizons'
+import { formatAlertsForBrief, complexityMeetingInterp } from '@/lib/advisor/advisorBriefHelpers'
+import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 function getClientName(household: ClientViewShellProps['household']) {
@@ -71,12 +73,38 @@ export default function MeetingPrepTab({
   const latestNoteCreatedAt =
     latestNote && typeof latestNote.created_at === 'string' ? latestNote.created_at : null
   const horizonBrief = meetingPrepBriefFromHorizons(advisorHorizons)
+  const filingStatus = normalizePdfFilingStatus(household.filing_status)
+  const domicileState = household.state_primary ?? 'WA'
+  const grossForAlerts =
+    horizonBrief?.current_gross_estate ?? estateComposition?.gross_estate ?? exportPdfData?.grossEstate ?? 0
+
+  const enrichedTopAlerts = formatAlertsForBrief(exportPanelProps?.actionItems ?? [], {
+    grossEstate: grossForAlerts,
+    domicileState,
+    filingStatus,
+    stateBrackets: exportPdfData?.stateBrackets,
+    hasIrrevocableTrust: exportPdfData?.hasIrrevocableTrust,
+    hasBypassTrust: exportPdfData?.hasBypassTrust,
+    lifeInsuranceOutsideILIT: exportPdfData?.lifeInsuranceOutsideILIT,
+    sunsetTaxEstimate: exportPdfData?.sunsetTaxEstimate,
+  } as Parameters<typeof formatAlertsForBrief>[1])
+
+  const priorHealthScore = exportPdfData?.priorHealthScore ?? null
+  const currentHealthScore = exportPanelProps?.healthScore ?? null
+
   const initialBriefSeed = {
-    health_score_today: exportPanelProps?.healthScore ?? null,
-    top_alerts: (exportPanelProps?.actionItems ?? []).slice(0, 3).map((a) => ({
-      title: a.title ?? a.message,
+    health_score_today: currentHealthScore,
+    health_score_last_meeting: priorHealthScore,
+    health_score_delta:
+      currentHealthScore != null && priorHealthScore != null
+        ? currentHealthScore - priorHealthScore
+        : null,
+    top_alerts: enrichedTopAlerts.slice(0, 3).map((a) => ({
+      title: a.title,
       severity: a.severity,
-      description: a.message,
+      description: a.body,
+      dollarImpact: a.dollarImpact,
+      nextStep: a.nextStep,
     })),
     current_gross_estate:
       horizonBrief?.current_gross_estate ?? estateComposition?.gross_estate ?? null,
@@ -102,6 +130,8 @@ export default function MeetingPrepTab({
 
   const topAlerts = exportPanelProps?.actionItems ?? []
   const openAlertCount = topAlerts.length
+  const complexityScore = household.estate_complexity_score ?? 0
+  const complexityInterp = complexityMeetingInterp(complexityScore)
 
   return (
     <div className="space-y-8">
@@ -120,6 +150,23 @@ export default function MeetingPrepTab({
           estateComposition={estateComposition}
           briefHydratedFromServer
           estateReportPdfUrl={`/api/advisor/meeting-prep-pdf/${clientId}?type=report`}
+          meetingBriefPrintUrl={`/api/advisor/meeting-prep-pdf/${clientId}?type=brief`}
+          domicileState={domicileState}
+          filingStatus={filingStatus}
+          complexityScore={complexityScore}
+          complexityInterp={complexityInterp}
+          briefEnrichContext={{
+            grossEstate: grossForAlerts,
+            domicileState,
+            filingStatus,
+            stateBrackets: exportPdfData?.stateBrackets,
+            hasIrrevocableTrust: exportPdfData?.hasIrrevocableTrust,
+            hasBypassTrust: exportPdfData?.hasBypassTrust,
+            hasTrust: exportPdfData?.hasTrust,
+            lifeInsuranceOutsideILIT: exportPdfData?.lifeInsuranceOutsideILIT,
+            sunsetTaxEstimate: exportPdfData?.sunsetTaxEstimate,
+            federalTax: exportPdfData?.federalTax,
+          }}
         />
       </section>
 
@@ -131,9 +178,9 @@ export default function MeetingPrepTab({
                 Open planning items ({openAlertCount} total)
               </h3>
               <div className="space-y-0">
-                {topAlerts.slice(0, 3).map((alert) => (
+                {enrichedTopAlerts.slice(0, 3).map((alert, index) => (
                   <div
-                    key={alert.id}
+                    key={topAlerts[index]?.id ?? index}
                     className="flex gap-2.5 py-2.5 border-b border-gray-100 items-start"
                   >
                     <span
@@ -148,12 +195,16 @@ export default function MeetingPrepTab({
                       }}
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {alert.title ?? alert.message}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {alert.body ?? alert.message}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{alert.title}</div>
+                      {alert.dollarImpact && (
+                        <div className="text-xs text-gray-600 mt-0.5">{alert.dollarImpact}</div>
+                      )}
+                      {alert.nextStep && (
+                        <div className="text-xs text-gray-500 mt-0.5">{alert.nextStep}</div>
+                      )}
+                      {!alert.dollarImpact && !alert.nextStep && alert.body && (
+                        <div className="text-xs text-gray-500 mt-0.5">{alert.body}</div>
+                      )}
                     </div>
                   </div>
                 ))}

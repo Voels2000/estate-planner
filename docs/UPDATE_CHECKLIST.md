@@ -672,6 +672,18 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `dedupeActionItems()` — sort enriched first; filler-normalized `actionItemDedupeKey()` (20-char stem)
 - [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once under Documents
 
+## Four-surface advisor polish ✅ closed 2026-06-01
+
+- [x] `lib/advisor/advisorBriefHelpers.ts` — shared brief enrichment, agenda, branding, PDF asset breakdown
+- [x] PDF page 2 — `assetBreakdown` + `healthComponents` via `exportMappers` + composition fallback
+- [x] PDF strategies page always renders (empty state when no active strategies)
+- [x] Meeting brief print — agenda, enriched alerts, score trend, engagement; `?type=brief` template v1
+- [x] Meeting Prep — enriched modal seed, **Open print brief**, complexity context
+- [x] `advisor_notes.note_type` migration + API + Notes tab UI
+- [x] Master docs synced
+- [ ] **Migration:** apply `20260529120000_advisor_notes_note_type.sql` in Supabase before Notes smoke
+- [ ] **Post-deploy smoke:** Voels — PDF page 2 · brief `X-Brief-Template` header · Notes type selector
+
 ## PDF export path wiring ✅ closed 2026-05-30
 
 - [x] `lib/advisor/loadAdvisorExportWiring.ts` — shared server loader for export payloads

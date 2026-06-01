@@ -14,6 +14,11 @@ import {
   meetingPrepBriefFromHorizons,
   type MeetingPrepHorizonColumn,
 } from '@/lib/advisor/meetingPrepHorizons'
+import {
+  deriveAgenda,
+  formatAlertsForBrief,
+  scoreTrendLabel,
+} from '@/lib/advisor/advisorBriefHelpers'
 import type { EstateComposition } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 
@@ -36,7 +41,13 @@ interface MeetingBrief {
   health_score_today: number | null
   health_score_last_meeting: number | null
   health_score_delta: number | null
-  top_alerts: Array<{ title: string; severity: string; description: string }>
+  top_alerts: Array<{
+    title: string
+    severity: string
+    description: string
+    dollarImpact?: string
+    nextStep?: string
+  }>
   // Current estate (from estate composition API)
   current_gross_estate: number | null
   current_taxable_estate: number | null
@@ -62,7 +73,15 @@ interface MeetingBrief {
 
 interface MeetingBriefSeed {
   health_score_today?: number | null
-  top_alerts?: Array<{ title: string; severity: string; description: string }>
+  health_score_last_meeting?: number | null
+  health_score_delta?: number | null
+  top_alerts?: Array<{
+    title: string
+    severity: string
+    description: string
+    dollarImpact?: string
+    nextStep?: string
+  }>
   current_gross_estate?: number | null
   current_taxable_estate?: number | null
   current_estimated_tax?: number | null
@@ -95,6 +114,14 @@ interface Props {
   briefHydratedFromServer?: boolean
   /** Full narrative estate report — opens via API when present */
   estateReportPdfUrl?: string | null
+  /** Server-rendered one-page brief (?type=brief) — used for Print/PDF */
+  meetingBriefPrintUrl?: string | null
+  domicileState?: string
+  filingStatus?: string
+  complexityScore?: number
+  complexityInterp?: string
+  /** Full narrative context for client-side alert enrichment (matches export PDF). */
+  briefEnrichContext?: Parameters<typeof formatAlertsForBrief>[1]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,11 +138,17 @@ function fmtDate(iso: string): string {
 }
 
 function buildBriefFromSeed(clientName: string, seed: MeetingBriefSeed): MeetingBrief {
+  const scoreToday = seed.health_score_today ?? null
+  const scoreLast = seed.health_score_last_meeting ?? null
+  const scoreDelta =
+    seed.health_score_delta ??
+    (scoreToday != null && scoreLast != null ? scoreToday - scoreLast : null)
+
   return {
     client_name: clientName,
-    health_score_today: seed.health_score_today ?? null,
-    health_score_last_meeting: null,
-    health_score_delta: null,
+    health_score_today: scoreToday,
+    health_score_last_meeting: scoreLast,
+    health_score_delta: scoreDelta,
     top_alerts: seed.top_alerts ?? [],
     current_gross_estate: seed.current_gross_estate ?? null,
     current_taxable_estate: seed.current_taxable_estate ?? null,
@@ -174,6 +207,7 @@ async function generateMeetingBrief(
   initialHealthScore?: number | null,
   advisorHorizons?: MyEstateStrategyHorizonsResult,
   preloadedComposition?: EstateComposition | null,
+  enrichContext?: Parameters<typeof formatAlertsForBrief>[1],
 ): Promise<MeetingBrief> {
   const supabase = createClient()
 
@@ -200,12 +234,12 @@ async function generateMeetingBrief(
   ] = await Promise.all([
     supabase
       .from('household_alerts')
-      .select('title, severity, description')
+      .select('id, title, severity, description, created_at')
       .eq('household_id', householdId)
       .is('resolved_at', null)
       .is('dismissed_at', null)
       .order('severity', { ascending: false })
-      .limit(3),
+      .limit(10),
     supabase
       .from('projection_scenarios')
       .select('outputs_s1_first, status')
@@ -214,13 +248,25 @@ async function generateMeetingBrief(
       .order('created_at', { ascending: false })
       .limit(1)
       .single(),
-    supabase
-      .from('advisor_notes')
-      .select('content, created_at')
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single(),
+    (async () => {
+      const { data: prepNote } = await supabase
+        .from('advisor_notes')
+        .select('content, created_at')
+        .eq('client_id', clientId)
+        .eq('note_type', 'prep')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (prepNote) return prepNote
+      const { data: anyNote } = await supabase
+        .from('advisor_notes')
+        .select('content, created_at')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      return anyNote
+    })(),
     supabase
       .from('strategy_configs')
       .select('strategy_type, label')
@@ -237,7 +283,7 @@ async function generateMeetingBrief(
 
   const alerts = alertsRes.data ?? []
   const projection = projectionRes.data
-  const lastNote = notesRes.data
+  const lastNote = notesRes
   const strategyConfigs = strategyConfigsRes.data ?? []
   const advisorLineItems = advisorLineItemsRes.data ?? []
 
@@ -270,6 +316,24 @@ async function generateMeetingBrief(
     estimatedTaxStateWithCst = Number(compositionRow.estimated_tax_state_with_cst ?? 0) || null
   }
 
+  const grossForEnrich =
+    enrichContext?.grossEstate ?? currentGrossEstate ?? 0
+
+  const enrichedAlerts = formatAlertsForBrief(
+    alerts.map((a) => ({
+      id: a.id,
+      title: a.title ?? undefined,
+      message: a.description ?? a.title ?? '',
+      severity: a.severity ?? 'medium',
+      created_at: a.created_at ?? new Date().toISOString(),
+    })),
+    enrichContext ?? {
+      grossEstate: grossForEnrich,
+      domicileState: 'WA',
+      filingStatus: 'mfj',
+    },
+  ).slice(0, 3)
+
   // At-death projection from saved scenario
   let grossEstate: number | null = null
   let estateTax: number | null = null
@@ -292,7 +356,13 @@ async function generateMeetingBrief(
     health_score_today: scoreToday,
     health_score_last_meeting: scoreLast,
     health_score_delta: scoreDelta,
-    top_alerts: alerts,
+    top_alerts: enrichedAlerts.map((a) => ({
+      title: a.title,
+      severity: a.severity,
+      description: a.body,
+      dollarImpact: a.dollarImpact,
+      nextStep: a.nextStep,
+    })),
     current_gross_estate: currentGrossEstate,
     current_taxable_estate: currentTaxableEstate,
     current_estimated_tax: currentEstimatedTax,
@@ -352,6 +422,12 @@ export default function MeetingPrep({
   estateComposition = null,
   briefHydratedFromServer = false,
   estateReportPdfUrl = null,
+  meetingBriefPrintUrl = null,
+  domicileState = 'WA',
+  filingStatus = 'mfj',
+  complexityScore = 0,
+  complexityInterp = 'Low — 30 minutes typical',
+  briefEnrichContext,
 }: Props) {
   const [brief, setBrief] = useState<MeetingBrief | null>(() => {
     if (!initialBriefSeed) return null
@@ -382,6 +458,14 @@ export default function MeetingPrep({
       setBrief(buildBriefFromProps())
     }
     setLoading(true)
+    const enrichContext = briefEnrichContext ?? {
+      grossEstate:
+        initialBriefSeed?.current_gross_estate ??
+        estateComposition?.gross_estate ??
+        0,
+      domicileState,
+      filingStatus,
+    }
     const b = await generateMeetingBrief(
       clientId,
       householdId,
@@ -389,6 +473,7 @@ export default function MeetingPrep({
       initialHealthScore,
       advisorHorizons,
       estateComposition,
+      enrichContext,
     )
     setBrief((prev) => ({
       ...b,
@@ -404,6 +489,14 @@ export default function MeetingPrep({
   const handleRefreshBrief = async () => {
     setOpen(true)
     setLoading(true)
+    const enrichContext = briefEnrichContext ?? {
+      grossEstate:
+        initialBriefSeed?.current_gross_estate ??
+        estateComposition?.gross_estate ??
+        0,
+      domicileState,
+      filingStatus,
+    }
     const b = await generateMeetingBrief(
       clientId,
       householdId,
@@ -411,6 +504,7 @@ export default function MeetingPrep({
       initialHealthScore,
       advisorHorizons,
       estateComposition,
+      enrichContext,
     )
     setBrief((prev) => ({
       ...b,
@@ -423,7 +517,15 @@ export default function MeetingPrep({
     setLoading(false)
   }
 
-  const handlePrint = () => window.print()
+  const openPrintBrief = () => {
+    if (!meetingBriefPrintUrl) return
+    const sep = meetingBriefPrintUrl.includes('?') ? '&' : '?'
+    window.open(`${meetingBriefPrintUrl}${sep}_=${Date.now()}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const handlePrint = () => {
+    openPrintBrief()
+  }
 
   const handleShareWithClient = async () => {
     setSharing(true)
@@ -459,6 +561,15 @@ export default function MeetingPrep({
         >
           📋 Prepare for Meeting
         </button>
+        {meetingBriefPrintUrl && (
+          <button
+            type="button"
+            onClick={openPrintBrief}
+            className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition"
+          >
+            Open print brief
+          </button>
+        )}
         {estateReportPdfUrl && (
           <a
             href={estateReportPdfUrl}
@@ -546,8 +657,32 @@ export default function MeetingPrep({
                         showDelta
                         delta={brief.health_score_delta}
                       />
+                      {(() => {
+                        const trend = scoreTrendLabel(
+                          brief.health_score_today,
+                          brief.health_score_last_meeting,
+                        )
+                        return trend.direction !== 'none' ? (
+                          <p
+                            className="text-xs mt-2"
+                            style={{
+                              color:
+                                trend.direction === 'up'
+                                  ? '#16a34a'
+                                  : trend.direction === 'down'
+                                    ? '#dc2626'
+                                    : '#666',
+                            }}
+                          >
+                            {trend.label}
+                          </p>
+                        ) : null
+                      })()}
                       <p className="text-sm text-neutral-600 mt-2">
                         {scoreContextSentenceForAdvisor(brief.health_score_today, brief.client_name)}
+                      </p>
+                      <p className="text-xs text-[color:var(--mwm-text-secondary)] mt-1">
+                        Complexity {complexityScore}/100 — {complexityInterp}
                       </p>
                     </>
                   ) : (
@@ -556,6 +691,32 @@ export default function MeetingPrep({
                     </p>
                   )}
                 </BriefSection>
+
+                {brief.top_alerts.length > 0 && (
+                  <BriefSection title="Suggested Agenda">
+                    <div className="space-y-2">
+                      {deriveAgenda(
+                        brief.top_alerts.map((a) => ({
+                          title: a.title,
+                          severity: a.severity,
+                          body: a.description,
+                          dollarImpact: a.dollarImpact,
+                          nextStep: a.nextStep,
+                          suggestedMinutes:
+                            a.severity === 'high' || a.severity === 'critical' ? 20 : a.severity === 'medium' ? 10 : 5,
+                        })),
+                      ).map((item) => (
+                        <div key={item.order} className="flex items-baseline gap-2 text-sm">
+                          <span className="font-semibold text-[color:var(--mwm-navy)]">{item.order}.</span>
+                          <span className="flex-1 text-neutral-800">{item.title}</span>
+                          <span className="text-xs text-neutral-500 whitespace-nowrap">
+                            {item.minutes} min · {item.owner}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </BriefSection>
+                )}
 
                 {/* Top alerts */}
                 {brief.top_alerts.length > 0 && (
@@ -571,7 +732,15 @@ export default function MeetingPrep({
                           </span>
                           <div>
                             <p className="text-sm font-medium text-neutral-800">{alert.title}</p>
-                            <p className="text-xs text-neutral-500 mt-0.5">{alert.description}</p>
+                            {alert.dollarImpact && (
+                              <p className="text-xs text-neutral-600 mt-0.5">{alert.dollarImpact}</p>
+                            )}
+                            {alert.nextStep && (
+                              <p className="text-xs text-neutral-500 mt-0.5">{alert.nextStep}</p>
+                            )}
+                            {!alert.dollarImpact && !alert.nextStep && alert.description && (
+                              <p className="text-xs text-neutral-500 mt-0.5">{alert.description}</p>
+                            )}
                           </div>
                         </div>
                       ))}

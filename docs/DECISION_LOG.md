@@ -1,8 +1,21 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-05-29 (state estate tax unification)
+# Last updated: 2026-06-01 (four-surface advisor polish)
 
-## State estate tax unification — single canonical engine B (2026-05-29)
+## Four-surface advisor polish — shared brief helpers (2026-06-01)
+
+**Problem:** Export PDF, meeting brief print, meeting prep tab, and notes were polished independently — alert enrichment duplicated, PDF page 2 empty (`assetBreakdown` / `healthComponents`), meeting brief print still hardcoded "My Wealth Maps", modal vs print were different pipelines.
+
+**Decision:**
+- **`lib/advisor/advisorBriefHelpers.ts`** — single source: `formatAlertsForBrief()`, `deriveAgenda()`, `scoreTrendLabel()`, `engagementLabel()`, `resolveAdvisorBranding()`, `buildPdfAssetBreakdown()`, `mapHealthComponentsForPdf()`.
+- **Export PDF:** `lib/advisor/exportMappers.ts` wires asset breakdown (rows + composition fallback), health components from `component_scores`, always-on strategies page empty state, branding + `meetingDate` on cover.
+- **Meeting brief print:** `GET …/meeting-prep-pdf/[clientId]?type=brief` → `renderMeetingBriefHtml()` uses shared helpers + `loadAdvisorExportWiringForClient` enrichment context; template marker `sprint-four-surface-polish-v1`; `Cache-Control: no-store`.
+- **Meeting prep tab/modal:** enriched alerts in seed + modal; **Open print brief** opens server route (not `window.print()` on React layout).
+- **Notes:** `advisor_notes.note_type` migration (`prep` / `meeting_record` / `follow_up`); API GET/POST; Notes tab selector + badges; brief prefers prep note.
+
+**Three brief surfaces (do not conflate):** Header **Meeting brief** and **Open print brief** → server HTML; **Prepare for Meeting** → React modal preview (Tailwind, not Georgia print layout).
+
+---
 
 **Problem:** Three state estate tax implementations coexisted: **A** — hardcoded flat rates in `narrativeEngine.ts`; **B** — `calculateStateEstateTax` (progressive brackets, portability gap, NY cliff); **C** — deprecated `computeStateEstateTaxFromBrackets` (projection death rows only). PDF cover used A while horizons used B; page 3 showed projection row amounts from C. CST `strategy_type` mismatch (`credit_shelter_trust` reads vs `cst` writes) would have prevented `hasBypassTrust` from ever activating.
 

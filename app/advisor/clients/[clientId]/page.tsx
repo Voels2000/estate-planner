@@ -225,6 +225,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     activeStrategies,
     actionItems,
     advisorDisplayName,
+    advisorProfile,
+    healthScoreComponents,
     monteCarloResults,
     scenarioHistoryForExport,
     beneficiaryGrantsResult,
@@ -448,7 +450,9 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       household,
       scenarioId,
       advisorDisplayName,
+      advisorProfile,
       healthScore,
+      healthScoreComponents,
       liquidAssets,
       activeStrategies,
       actionItems,
@@ -460,6 +464,19 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioForStrategy,
       narrativeFields,
       stateBrackets,
+      assets,
+      realEstate,
+      businesses,
+      businessInterests,
+      insurancePolicies,
+      compositionFallback: estateComposition
+        ? {
+            inside_financial: estateComposition.inside_financial,
+            inside_real_estate: estateComposition.inside_real_estate,
+            inside_business_gross: estateComposition.inside_business_gross,
+            inside_insurance: estateComposition.inside_insurance,
+          }
+        : null,
     })
     exportPanelProps = exportPayloads.exportPanelProps
     exportPdfData = exportPayloads.exportPdfData

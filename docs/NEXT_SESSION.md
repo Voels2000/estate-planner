@@ -1,6 +1,18 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-05-29 (PDF dedupe + worst-case state tax copy)
+# Updated: 2026-06-01 (four-surface advisor polish)
+
+---
+
+## Four-surface advisor polish ✅ (2026-06-01)
+
+**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** asset breakdown + health components · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v1` · **Notes:** `note_type` migration
+
+**Pre-deploy:** Apply `supabase/migrations/20260529120000_advisor_notes_note_type.sql`
+
+**Smoke (Voels):** PDF page 2 rows · brief response header `X-Brief-Template` · **Open print brief** (not modal layout) · Notes type selector
+
+**Verify:** `npx tsx scripts/verify-four-surface-polish.ts`
 
 ---
 
@@ -14,9 +26,9 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **State estate tax unification shipped (2026-05-29).** Engine A (flat-rate `narrativeEngine`) deleted; all display surfaces use **`calculateStateEstateTax`** (engine B). **`lib/constants/strategyTypes.ts`** for CST strings. Read **[CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md)** before any tax calc work.
+> My Wealth Maps — **Four-surface advisor polish shipped (2026-06-01).** Shared **`lib/advisor/advisorBriefHelpers.ts`**. Export PDF page 2 populated; meeting brief print has agenda + enrichment (`?type=brief`, `X-Brief-Template: sprint-four-surface-polish-v1`). **Prepare for Meeting** = React modal; **Open print brief** / header **Meeting brief** = server HTML. Apply **`note_type` migration** before Notes smoke.
 >
-> **Post-deploy smoke:** Voels MFJ WA — re-export PDF after **`0f9305e`**. Confirm: (1) trust alert under **Documents & trust structure** with impact/next step; (2) cover state tax exposure includes **"without a bypass trust"** when no CST (~$911K WA).
+> **Post-deploy smoke:** Voels — PDF page 2 asset table · brief `Suggested agenda` · Notes type selector.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >
