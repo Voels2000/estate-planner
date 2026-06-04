@@ -1,6 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (pdfFilingStatus build fix)
+# Updated: 2026-06-01 (print brief at-death tax)
+
+---
+
+## Print brief at-death tax ✅ (2026-06-01)
+
+**Fix:** `meetingPrepAtDeath` on `loadAdvisorExportWiringForClient` → `totalTaxLiability` for brief tax card (not projection row `estate_tax_*`).
+
+**Smoke:** Voels MFJ — Est. tax exposure ≠ $0; matches modal at-death tax.
 
 ---
 

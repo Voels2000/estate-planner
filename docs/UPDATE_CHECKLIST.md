@@ -677,9 +677,15 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `lib/export/pdfFilingStatus.ts` — pure `normalizePdfFilingStatus` (no `supabase/server`)
 - [x] `MeetingPrepTab` imports from `pdfFilingStatus` — fixes client bundle / `npm run build`
 
+## Print brief at-death tax ✅ closed 2026-06-01
+
+- [x] `meetingPrepAtDeath` on `loadAdvisorExportWiringForClient` — `totalTaxLiability` from `advisorHorizons.atDeath`
+- [x] Brief route: primary tax from `meetingPrepAtDeath`; projection row tax in `else` fallback only
+- [ ] **Post-deploy smoke:** Voels — Est. tax exposure matches modal (not $0)
+
 ## Print brief stat cards ✅ closed 2026-06-01
 
-- [x] `renderMeetingBriefHtml()` — `findAtDeathRow` for projected estate; `estate_tax_federal + estate_tax_state`
+- [x] `renderMeetingBriefHtml()` — `findAtDeathRow` for projected estate gross; tax via horizons (see above)
 - [x] Removed **"At retirement"** mislabel; dynamic **At death (age X)** on tax + projected cards
 - [x] Household select extended (birth years, longevity) for at-death row lookup
 - [x] Template `sprint-four-surface-polish-v2` (`X-Brief-Template` header)

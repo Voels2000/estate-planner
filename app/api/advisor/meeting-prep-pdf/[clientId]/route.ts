@@ -199,21 +199,9 @@ async function renderMeetingBriefHtml(
 
       if (atDeathRow) {
         atDeathGrossEstate = Number(atDeathRow.estate_incl_home ?? atDeathRow.assets_total ?? 0) || null
-        const federal = Number(atDeathRow.estate_tax_federal ?? 0)
-        const state = Number(atDeathRow.estate_tax_state ?? 0)
-        atDeathTax = federal + state
-        atDeathNetToHeirs =
-          atDeathRow.net_to_heirs != null
-            ? Number(atDeathRow.net_to_heirs)
-            : atDeathGrossEstate != null
-              ? atDeathGrossEstate - atDeathTax
-              : null
       }
     }
   }
-
-  // Alert enrichment uses current estate, not at-death projection
-  const grossEstate = currentGrossEstate
 
   const rawAlerts: ActionItem[] = (alertsRes.data ?? []).map((a) => ({
     id: a.id,
@@ -223,15 +211,47 @@ async function renderMeetingBriefHtml(
     created_at: a.created_at ?? new Date().toISOString(),
   }))
 
-  // Same enrichment context as export PDF (state brackets, trust flags, etc.)
+  // Same enrichment + at-death tax as Strategy tab / Meeting Prep modal
   const exportWiring = await loadAdvisorExportWiringForClient(supabase, {
     advisorUserId,
     clientId,
   })
   const pdfCtx = exportWiring?.exportPdfData
+  const atDeathHorizon = exportWiring?.meetingPrepAtDeath
+
+  if (atDeathHorizon?.grossEstate != null) {
+    atDeathGrossEstate = atDeathHorizon.grossEstate
+    atDeathTax = atDeathHorizon.totalTaxLiability ?? 0
+    atDeathNetToHeirs = Math.max(0, atDeathGrossEstate - atDeathTax)
+    if (atDeathHorizon.headerTitle) {
+      atDeathLabel = atDeathHorizon.headerTitle
+    }
+  } else if (atDeathGrossEstate != null && projectionRes.data?.outputs_s1_first) {
+    // Fallback: projection row tax (often $0 for MFJ at survivor year — see estate-tax-projection)
+    const outputs = projectionRes.data.outputs_s1_first as AnnualOutput[]
+    const atDeathRow = findAtDeathRow(outputs, {
+      hasSpouse: household.has_spouse ?? false,
+      person1BirthYear: household.person1_birth_year,
+      person2BirthYear: household.person2_birth_year,
+      person1Longevity: household.person1_longevity_age,
+      person2Longevity: household.person2_longevity_age,
+    })
+    if (atDeathRow) {
+      const federal = Number(atDeathRow.estate_tax_federal ?? 0)
+      const state = Number(atDeathRow.estate_tax_state ?? 0)
+      atDeathTax = federal + state
+      atDeathNetToHeirs =
+        atDeathRow.net_to_heirs != null
+          ? Number(atDeathRow.net_to_heirs)
+          : Math.max(0, atDeathGrossEstate - atDeathTax)
+    }
+  }
+
+  // Alert enrichment uses current estate, not at-death projection
+  const grossEstate = currentGrossEstate ?? pdfCtx?.grossEstate ?? null
 
   const enrichedAlerts = formatAlertsForBrief(rawAlerts, {
-    grossEstate: grossEstate ?? pdfCtx?.grossEstate ?? 0,
+    grossEstate: grossEstate ?? 0,
     domicileState: pdfCtx?.domicileState ?? domicileState,
     filingStatus: pdfCtx?.filingStatus ?? filingStatus,
     stateBrackets: pdfCtx?.stateBrackets,

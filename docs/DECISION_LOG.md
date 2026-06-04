@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (client-safe pdfFilingStatus)
+# Last updated: 2026-06-01 (print brief at-death tax)
+
+## Print brief at-death tax — horizon `totalTaxLiability` (2026-06-01)
+
+**Problem:** After stat-card fix, **Est. tax exposure** showed **$0** for MFJ households. Brief read `estate_tax_federal + estate_tax_state` on the `findAtDeathRow` projection row; `estate-tax-projection` stores **$0** on first-death rows (marital deduction). Survivor death year often maps to that row.
+
+**Decision:** `loadAdvisorExportWiringForClient` returns **`meetingPrepAtDeath`** (`grossEstate`, `totalTaxLiability`, `headerTitle`) from `advisorHorizons.atDeath` — same **`computeColumnTaxes`** path as Strategy tab / Meeting Prep modal. `renderMeetingBriefHtml` uses it for tax cards; projection-row tax only in **`else`** fallback.
+
+---
 
 ## Client-safe `normalizePdfFilingStatus` — build fix (2026-06-01)
 
@@ -21,7 +29,7 @@
 - One-page layout stays **3 cards:** health score · est. tax exposure (at death) · projected estate (at death, dynamic label `At death (age X)`).
 - Template marker **`sprint-four-surface-polish-v2`**.
 
-**Scope:** `app/api/advisor/meeting-prep-pdf/[clientId]/route.ts` only — modal and export PDF unchanged.
+**Scope:** `app/api/advisor/meeting-prep-pdf/[clientId]/route.ts` — modal and export PDF unchanged. **Tax (follow-up):** at-death tax from `meetingPrepAtDeath.totalTaxLiability` via export wiring, not projection row fields.
 
 ---
 

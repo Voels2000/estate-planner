@@ -17,10 +17,18 @@ import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 
+export type MeetingPrepAtDeathSnapshot = {
+  grossEstate: number | null
+  totalTaxLiability: number | null
+  headerTitle: string
+}
+
 export type AdvisorExportWiringResult = {
   exportPdfData: PDFReportData
   exportPanelProps: AdvisorExportPanelProps
   exportExcelData: ExcelExportData
+  /** Same at-death tax as Strategy tab / Meeting Prep modal (`computeColumnTaxes`). */
+  meetingPrepAtDeath: MeetingPrepAtDeathSnapshot | null
 }
 
 export async function loadAdvisorExportWiringForClient(
@@ -168,7 +176,7 @@ export async function loadAdvisorExportWiringForClient(
     statePrimary: household.state_primary,
   })
 
-  return buildAdvisorExportPayloads({
+  const payloads = buildAdvisorExportPayloads({
     household,
     scenarioId,
     advisorDisplayName,
@@ -200,4 +208,16 @@ export async function loadAdvisorExportWiringForClient(
         }
       : null,
   })
+
+  const atDeath = strategyVm.advisorHorizons.atDeath
+  const meetingPrepAtDeath: MeetingPrepAtDeathSnapshot | null =
+    atDeath.grossEstate != null
+      ? {
+          grossEstate: atDeath.grossEstate,
+          totalTaxLiability: atDeath.totalTaxLiability,
+          headerTitle: atDeath.headerTitle,
+        }
+      : null
+
+  return { ...payloads, meetingPrepAtDeath }
 }
