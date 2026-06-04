@@ -42,7 +42,7 @@
 
 ## Four-surface advisor polish ✅ (2026-06-01)
 
-**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** Chart.js estate growth + asset/health two-column · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v2` · **Notes:** `note_type` migration
+**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** inline SVG estate growth + asset/health two-column · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v2` · **Notes:** `note_type` migration
 
 **Pre-deploy:** Apply `supabase/migrations/20260529120000_advisor_notes_note_type.sql`
 
