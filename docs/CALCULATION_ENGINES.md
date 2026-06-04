@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-01 (estate MC engine B)
+Last updated: 2026-06-01 (Domain 1 — engine B complete)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -76,6 +76,10 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | Estate Monte Carlo (advisor Strategy tab) | B — `calculateStateEstateTax` + `resolveActiveStateTax` per simulated estate | Yes — `hasBypassTrust` |
 
 **Estate MC inputs (POST from Strategy tab):** `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust`. Same `stateBrackets` array as horizon snapshots (today column). Flat `stateEstateTaxRate` removed.
+
+**Estate MC `success_rate`:** Share of simulated final estates where **federal + state** estate tax both equal $0 (UI: **Zero-Tax Paths**). Not federal-exemption-only; requires engine B state tax on every path.
+
+**PDF page 3 metric cards (2026-06-01):** Render-time `page3FederalTax` / `page3StateTax` / `page3NetToHeirs` in `generatePDFReport.ts` — engine B; `PDFReportData.federalTax` / `stateTax` from mappers (engine C) still used for Excel/export panel only.
 
 Engine **A** (`narrativeEngine` flat rates) — **deleted**.
 

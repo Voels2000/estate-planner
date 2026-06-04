@@ -1,6 +1,35 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Estate MC engine B + footnote)
+# Updated: 2026-06-01 (PDF page 3 engine B)
+
+---
+
+## PDF page 3 metric cards — engine B ✅ (2026-06-01)
+
+**Shipped:** Page 3 Federal / State / Net cards use `page3FederalTax`, `page3StateTax` (`resolveActiveStateTax` + `hasBypassTrust`), `page3NetToHeirs` in `generatePDFReport.ts` — not `latestOutput` / `withoutBypassTrust` only.
+
+**Deferred:** `exportMappers.ts` Excel + export panel alignment.
+
+**Smoke (Voels `?type=report`):** Federal $0 · state ~$943K (no bypass) · net = gross − state.
+
+---
+
+## Domain 1 — estate MC engine B ✅ (2026-06-01)
+
+**Closed:** All **display** surfaces that show state estate tax dollars use engine B (`lib/calculations/stateEstateTax.ts`). Estate Monte Carlo was the last gap (flat `stateEstateTaxRate`).
+
+| Surface | Engine | Status |
+|---------|--------|--------|
+| Horizons, Tax tab, consumer strategy, PDF cover/narrative, prospect | B | ✅ (2026-05-29) |
+| PDF page 3 metric cards | B at render | ✅ (2026-06-01) |
+| Estate Monte Carlo (advisor Strategy) | B per simulated estate | ✅ `fc85ff8` |
+| MC model footnote + **Zero-Tax Paths** label | Honest copy | ✅ `4bdda56` |
+| exportMappers / Excel / export panel | C (`latestOutput`) | **deferred** |
+| Projection death-year rows | C (deprecated) | Open |
+
+**Commits:** `fc85ff8` (engine B + edge + hoist) · `4bdda56` (Zero-Tax Paths label)
+
+**Regression:** [CALCULATION_ENGINES.md § Regression grep checks](./CALCULATION_ENGINES.md#regression-grep-checks-ongoing-smoke-test)
 
 ---
 
@@ -15,6 +44,7 @@
 | UI | `MonteCarloPanel.tsx` + `StrategyTab.tsx`; `stateBrackets` hoisted via `_client-view-shell.tsx` / `page.tsx` (same array as horizons) |
 | Docs | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) estate MC row; [DECISION_LOG.md](./DECISION_LOG.md) |
 | Footnote | Model assumptions copy updated (no flat-rate language) |
+| Label | **Zero-Tax Paths** — federal + state both $0 (not “Tax-Free Rate”) |
 
 **Deploy:** `supabase functions deploy estate-monte-carlo` on `fnzvlmrqwcqwiqueevux` (deployed 2026-06-01).
 

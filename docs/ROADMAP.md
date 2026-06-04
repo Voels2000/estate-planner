@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (Estate MC engine B)
+# Last updated: 2026-06-01 (PDF page 3 engine B)
 
 ---
 
@@ -19,6 +19,29 @@
 
 ## Current sprint
 
+### Domain 2 — display tax alignment (2026-06-01)
+
+| Item | Status |
+|------|--------|
+| PDF page 3 metric cards — engine B federal + state + net | `[x]` |
+| `exportMappers` — `fedTaxExport` / `stTaxExport` off `latestOutput` | `[ ]` **deferred** |
+| Export panel + Excel tax summary same as PDF page 3 | `[ ]` **deferred** (blocked on exportMappers) |
+| Projection death-year rows — engine C → B | `[ ]` |
+
+**Deferred note:** `buildAdvisorExportPayloads` still sets `PDFReportData.federalTax` / `stateTax` from `latestOutput` for Excel and advisor export panel; page 3 HTML now ignores those fields for metric cards.
+
+---
+
+### Domain 1 — estate MC engine B **← closed (2026-06-01)**
+
+| Item | Status |
+|------|--------|
+| Horizons, PDF, Tax tab, consumer strategy, prospect | `[x]` 2026-05-29 |
+| Estate MC — engine B + `stateBrackets` POST | `[x]` `fc85ff8` |
+| MC footnote + Zero-Tax Paths label | `[x]` `4bdda56` |
+
+---
+
 ### Sprint — Estate MC engine B state tax (2026-06-01) **← shipped**
 
 | Item | Status |
@@ -27,6 +50,7 @@
 | Edge `estate-monte-carlo` — inlined engine B + POST fields | `[x]` |
 | `MonteCarloPanel` + `StrategyTab` + `stateBrackets` hoist | `[x]` |
 | `MonteCarloPanel` model-assumptions footnote | `[x]` |
+| Zero-Tax Paths label (`success_rate` semantics) | `[x]` |
 | `CALCULATION_ENGINES.md` + `DECISION_LOG.md` | `[x]` |
 | `scripts/verify-estate-mc-voels-smoke.ts` | `[x]` |
 | Edge redeploy prod | `[x]` |

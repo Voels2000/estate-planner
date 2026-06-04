@@ -80,9 +80,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `lib/calculations/estate-monte-carlo.ts` — `calculateStateEstateTax` + `resolveActiveStateTax`; flat rate removed
 - [x] `supabase/functions/estate-monte-carlo/index.ts` — inlined engine B; redeploy prod
 - [x] `MonteCarloPanel.tsx`, `StrategyTab.tsx`, `stateBrackets` on shell + `page.tsx`
+- [x] Zero-Tax Paths label + tooltip (`success_rate` = federal + state both $0)
 - [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 - [x] `scripts/verify-estate-mc-voels-smoke.ts`
 - [x] Master docs: MASTER_ARCHITECTURE · ROADMAP · NEXT_SESSION · UPDATE_CHECKLIST
+- [x] **Domain 1 closed** — engine B on estate MC display path
+- [x] PDF page 3 metric cards — engine B (`generatePDFReport.ts`)
+- [ ] **Deferred:** `exportMappers.ts` `fedTaxExport` / `stTaxExport` → engine B or horizons today (Excel + export panel)
 
 ## State estate tax unification (2026-05-29) — shipped
 

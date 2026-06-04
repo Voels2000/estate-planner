@@ -1,16 +1,30 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Estate MC engine B + footnote)
+# Last updated: 2026-06-01 (PDF page 3 engine B + MC engine B)
 
-## Estate MC unified to engine B for state tax (2026-05-29)
+## PDF page 3 metric cards — engine B (2026-06-01)
 
-**Decision:** Estate Monte Carlo state tax uses engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) on each simulated estate value instead of a flat `stateEstateTaxRate` derived from today’s display tax ÷ gross estate.
+**Decision:** PDF tax-analysis page 3 metric cards (Federal Estate Tax, State Estate Tax, Net to Heirs) compute at render time via engine B — not `latestOutput` projection rows (engine C).
+
+**Files:** `lib/export/generatePDFReport.ts` only (`page3FederalTax`, `page3StateTax` via `calculateStateEstateTax` + `resolveActiveStateTax` with `data.hasBypassTrust`; `page3NetToHeirs`).
+
+**Rationale:** Federal card had used `data.federalTax` from `estate_tax_federal` on the last projection row; state card always showed `withoutBypassTrust` even when CST was in place. Cover/narrative already used engine B; page 3 cards were split-brain.
+
+**Deferred:** `lib/advisor/exportMappers.ts` — `fedTaxExport` / `stTaxExport` still from `latestOutput` for Excel and export panel (separate sprint).
+
+**Smoke (Voels):** Federal $0 (below OBBBA exemption); state ~$943K when `hasBypassTrust` false; net = gross − state.
+
+---
+
+## Estate MC unified to engine B for state tax (2026-06-01)
+
+**Decision:** Estate Monte Carlo state tax uses engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) on each simulated estate value instead of flat `stateEstateTaxRate` derived from today’s display tax ÷ gross estate.
 
 **Files:** `lib/calculations/estate-monte-carlo.ts`, `supabase/functions/estate-monte-carlo/index.ts`, `components/advisor/MonteCarloPanel.tsx`, `app/advisor/clients/[clientId]/_tabs/StrategyTab.tsx` (+ `stateBrackets` hoisted via `_client-view-shell.tsx` / `page.tsx`).
 
 **Rationale:** Flat rate produced incorrect tax on progressive WA brackets and ignored bypass-trust (CST) distinction. State-tax sensitivity row removed (bracket sweep meaningless); scenario comparison deferred to MC sprint.
 
-**Follow-up (2026-06-01):** `MonteCarloPanel` model-assumptions footnote updated to describe progressive brackets + CST (no “effective rate from current tax ÷ gross” copy). Edge redeployed; `scripts/verify-estate-mc-voels-smoke.ts` for POST/horizon checks.
+**Follow-up:** `MonteCarloPanel` footnote + **Zero-Tax Paths** label (`4bdda56`); edge redeploy; `scripts/verify-estate-mc-voels-smoke.ts`. Prior cached runs with omitted state tax inflated `success_rate` (~45% federal-only ghost on Voels).
 
 ---
 
