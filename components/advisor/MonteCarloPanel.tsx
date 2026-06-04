@@ -348,7 +348,8 @@ export default function MonteCarloPanel({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
-                label: 'Tax-Free Rate',
+                label: 'Zero-Tax Paths',
+                hint: 'Share of simulations where federal + state estate tax both equal $0',
                 value: `${result.success_rate}%`,
                 color: result.success_rate > 50 ? 'text-green-700' : 'text-red-600',
               },
@@ -360,9 +361,16 @@ export default function MonteCarloPanel({
                 color: 'text-blue-700',
               },
             ].map((card) => (
-              <div key={card.label} className="bg-gray-50 rounded-lg p-3 text-center">
+              <div
+                key={card.label}
+                className="bg-gray-50 rounded-lg p-3 text-center"
+                title={'hint' in card ? card.hint : undefined}
+              >
                 <div className={`text-lg font-semibold ${card.color}`}>{card.value}</div>
                 <div className="text-xs text-gray-500 mt-1">{card.label}</div>
+                {'hint' in card && card.hint ? (
+                  <div className="text-[10px] leading-snug text-gray-400 mt-1 px-1">{card.hint}</div>
+                ) : null}
               </div>
             ))}
           </div>
