@@ -135,6 +135,23 @@ export function buildAdvisorExportPayloads(params: {
     maxScore: c.maxScore,
   }))
 
+  const projectionChartRows = params.scenarioOutputs
+    .filter((r) => r.year != null)
+    .map((r) => {
+      const fedTax = Number(r.estate_tax_federal ?? 0)
+      const stateTax = Number(r.estate_tax_state ?? 0)
+      return {
+        year: Number(r.year),
+        age: Number(r.age_person1 ?? r.age_p1 ?? 0),
+        gross: Number(r.estate_incl_home ?? 0),
+        netToHeirs: Number(r.net_to_heirs ?? 0),
+        fedTax,
+        stateTax,
+        totalTax: fedTax + stateTax,
+      }
+    })
+    .sort((a, b) => a.year - b.year)
+
   const meetingDate = params.meetingDate ?? new Date().toISOString()
 
   const exportPanelProps = {
@@ -175,6 +192,7 @@ export function buildAdvisorExportPayloads(params: {
     liquidAssets: params.liquidAssets,
     illiquidAssets: Math.max(0, grossForExport - params.liquidAssets),
     assetBreakdown,
+    projectionChartRows,
     federalTax: fedTaxExport,
     stateTax: stTaxExport,
     federalExemption: exemptionExport,

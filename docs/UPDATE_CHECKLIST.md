@@ -677,6 +677,14 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `lib/export/pdfFilingStatus.ts` — pure `normalizePdfFilingStatus` (no `supabase/server`)
 - [x] `MeetingPrepTab` imports from `pdfFilingStatus` — fixes client bundle / `npm run build`
 
+## PDF page 2 estate snapshot chart ✅ closed 2026-06-01
+
+- [x] `projectionChartRows` on `PDFReportData` — from `params.scenarioOutputs` in `exportMappers.ts`
+- [x] Chart.js line chart (gross, net to heirs, tax) + `detectTaxCliff()` callout
+- [x] Two-column asset breakdown + health components below chart
+- [x] Empty state when base case not run; print: `height: 200px` on `.chart-container`, `animation: false`
+- [ ] **Post-deploy smoke:** Voels `?type=report` — chart in print preview · cliff callout · asset/health columns
+
 ## Print brief at-death tax ✅ closed 2026-06-01
 
 - [x] `meetingPrepAtDeath` on `loadAdvisorExportWiringForClient` — `totalTaxLiability` from `advisorHorizons.atDeath`

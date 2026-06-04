@@ -1,6 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (print brief at-death tax)
+# Updated: 2026-06-01 (PDF page 2 chart)
+
+---
+
+## PDF page 2 estate snapshot chart ✅ (2026-06-01)
+
+**Shipped:** Chart.js projection chart + tax cliff callout + two-column asset/health on export PDF page 2. Data: `projectionChartRows` from `params.scenarioOutputs`.
+
+**Smoke (Voels `?type=report`):** Chart renders in browser **and Cmd+P print preview** · cliff callout at tax step · no year-by-year table on PDF (Excel still has full rows).
 
 ---
 
@@ -28,7 +36,7 @@
 
 ## Four-surface advisor polish ✅ (2026-06-01)
 
-**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** asset breakdown + health components · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v2` · **Notes:** `note_type` migration
+**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** Chart.js estate growth + asset/health two-column · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v2` · **Notes:** `note_type` migration
 
 **Pre-deploy:** Apply `supabase/migrations/20260529120000_advisor_notes_note_type.sql`
 

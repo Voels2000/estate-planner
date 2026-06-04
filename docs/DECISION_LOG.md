@@ -1,6 +1,19 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (print brief at-death tax)
+# Last updated: 2026-06-01 (PDF page 2 estate snapshot chart)
+
+## PDF page 2 — estate snapshot chart (2026-06-01)
+
+**Problem:** Page 2 was a static asset table + health bars only; year-by-year projection data lived in Excel, not in a visual estate-growth story for advisors.
+
+**Decision:**
+- **`PDFReportData.projectionChartRows`** — derived from **`params.scenarioOutputs`** (`outputs_s1_first`) in `exportMappers.ts`; no new DB fetch.
+- **`generatePDFReport.ts`** page 2: Chart.js 4.4.1 (cdnjs) line chart — gross estate, net to heirs, est. tax (when any `totalTax > 0`); `detectTaxCliff()` for first year tax exceeds $100K; amber cliff callout or green no-exposure callout.
+- Asset breakdown + health components in **two-column** `snapshot-grid` below chart.
+- Chart `<script>` at bottom of page 2 body (after `#estateChart` canvas); `.chart-container { height: 200px }`; `animation: false` for print.
+- Empty state when no base case rows. Excel export unchanged (full year table).
+
+---
 
 ## Print brief at-death tax — horizon `totalTaxLiability` (2026-06-01)
 

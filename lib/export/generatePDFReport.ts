@@ -60,6 +60,16 @@ export interface PDFReportData {
   liquidAssets: number
   illiquidAssets: number
   assetBreakdown: Array<{ label: string; value: number; pct: number }>
+  /** Simplified projection rows for estate snapshot chart (from outputs_s1_first). */
+  projectionChartRows: Array<{
+    year: number
+    age: number
+    gross: number
+    netToHeirs: number
+    fedTax: number
+    stateTax: number
+    totalTax: number
+  }>
 
   // Tax analysis
   federalTax: number
@@ -155,6 +165,38 @@ export function determinePDFPages(data: PDFReportData): string[] {
   return pages
 }
 
+interface TaxCliff {
+  year: number
+  age: number
+  totalTax: number
+  gross: number
+  netToHeirs: number
+}
+
+function detectTaxCliff(rows: PDFReportData['projectionChartRows']): TaxCliff | null {
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i - 1].totalTax === 0 && rows[i].totalTax > 100_000) {
+      return {
+        year: rows[i].year,
+        age: rows[i].age,
+        totalTax: rows[i].totalTax,
+        gross: rows[i].gross,
+        netToHeirs: rows[i].netToHeirs,
+      }
+    }
+  }
+  if (rows.length > 0 && rows[0].totalTax > 100_000) {
+    return {
+      year: rows[0].year,
+      age: rows[0].age,
+      totalTax: rows[0].totalTax,
+      gross: rows[0].gross,
+      netToHeirs: rows[0].netToHeirs,
+    }
+  }
+  return null
+}
+
 // HTML template for PDF generation via browser print
 export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
@@ -229,6 +271,17 @@ export function generatePDFHTML(data: PDFReportData): string {
       .tax-callout .tc-headline { font-weight:bold; font-size:11pt; margin-bottom:4px; }
       .tax-callout .tc-detail { color:#444; line-height:1.5; }
       .gifting-bar { background:#f0f0f0; border-radius:4px; padding:10px 16px; font-size:9.5pt; color:#444; margin-top:16px; }
+      .chart-section { margin: 16px 0; }
+      .chart-container { position: relative; width: 100%; height: 200px; }
+      .chart-legend { display: flex; gap: 16px; margin-top: 6px; margin-bottom: 12px; font-size: 9pt; color: #555; }
+      .chart-legend-item { display: flex; align-items: center; gap: 4px; }
+      .chart-legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+      .tax-cliff-callout { background: #FEF9EC; border: 1px solid #EF9F27; border-radius: 5px;
+                           padding: 10px 14px; margin: 10px 0 14px; font-size: 9.5pt; color: #633806; }
+      .tax-cliff-callout strong { color: #412402; }
+      .snapshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+      .asset-bar-wrap { height: 3px; background: #e8e8e8; border-radius: 2px; margin-top: 3px; }
+      .asset-bar-fill { height: 3px; border-radius: 2px; background: #378ADD; }
       @media print { .page { page-break-after: always; } }
     </style>
   `
@@ -299,6 +352,25 @@ export function generatePDFHTML(data: PDFReportData): string {
 
   // PAGE 2: Estate Snapshot
   if (pages.includes('estate_snapshot')) {
+    const cliff = detectTaxCliff(data.projectionChartRows)
+    const chartRows =
+      data.projectionChartRows.length > 20
+        ? data.projectionChartRows.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % 2 === 0)
+        : data.projectionChartRows
+    const chartYears = JSON.stringify(chartRows.map((r) => r.year))
+    const chartGross = JSON.stringify(chartRows.map((r) => Math.round((r.gross / 1_000_000) * 10) / 10))
+    const chartNet = JSON.stringify(chartRows.map((r) => Math.round((r.netToHeirs / 1_000_000) * 10) / 10))
+    const chartTax = JSON.stringify(chartRows.map((r) => Math.round((r.totalTax / 1_000_000) * 10) / 10))
+    const hasAnyTax = data.projectionChartRows.some((r) => r.totalTax > 0)
+    const maxGross =
+      data.projectionChartRows.length > 0
+        ? Math.max(...data.projectionChartRows.map((r) => r.gross))
+        : data.grossEstate
+    const yMax =
+      chartRows.length > 0
+        ? Math.ceil((Math.max(...chartRows.map((r) => r.gross)) / 1_000_000) * 1.1)
+        : Math.max(1, Math.ceil((data.grossEstate / 1_000_000) * 1.1))
+
     html += `
     <div class="page">
       <div class="header">
@@ -320,27 +392,214 @@ export function generatePDFHTML(data: PDFReportData): string {
           <div class="metric-sub">${data.grossEstate > 0 ? pct(data.liquidAssets / data.grossEstate) : '0%'} of estate</div>
         </div>
       </div>
-      <div class="section-title">Asset Breakdown</div>
-      <table>
-        <tr><th>Asset Category</th><th>Value</th><th>% of Estate</th></tr>
-        ${data.assetBreakdown.length > 0
-          ? data.assetBreakdown.map(a => `<tr><td>${a.label}</td><td>${fmt(a.value)}</td><td>${pct(a.pct)}</td></tr>`).join('')
-          : `<tr><td colspan="3" style="color:#666;font-style:italic;">No asset category data available — add assets in the client profile.</td></tr>`}
-      </table>
-      <div class="section-title">Plan Health Score Components</div>
-      ${data.healthComponents.length > 0
-        ? data.healthComponents.map(c => `
-        <div style="margin: 8px 0;">
-          <div style="display:flex; justify-content:space-between; font-size:10pt; margin-bottom:3px;">
-            <span>${c.label}</span>
-            <span>${c.score}/${c.maxScore}</span>
-          </div>
-          <div class="health-bar">
-            <div class="health-fill" style="width:${c.maxScore > 0 ? Math.round((c.score / c.maxScore) * 100) : 0}%; background:${c.maxScore > 0 && c.score / c.maxScore > 0.7 ? '#16a34a' : c.maxScore > 0 && c.score / c.maxScore > 0.4 ? '#d97706' : '#dc2626'};"></div>
-          </div>
+      ${
+        data.projectionChartRows.length === 0
+          ? `
+      <div style="background:#f8f8f8; border-radius:5px; padding:16px;
+                  text-align:center; font-size:9.5pt; color:#888; margin:16px 0;">
+        Run the base case to see the estate growth projection chart.
+      </div>
+      `
+          : `
+      <div class="section-title">Estate growth projection</div>
+      <div class="chart-section">
+        <div class="chart-container">
+          <canvas id="estateChart"
+            role="img"
+            aria-label="Line chart showing estate growth from ${fmt(data.grossEstate)} today to ${fmt(maxGross)} at longevity${cliff ? ', with tax exposure appearing at age ' + cliff.age : ''}">
+            Estate projected to grow from ${fmt(data.grossEstate)} to ${fmt(maxGross)}.${cliff ? ` Tax exposure of ${fmt(cliff.totalTax)} begins at age ${cliff.age}.` : ' No estate tax exposure projected.'}
+          </canvas>
         </div>
-      `).join('')
-        : `<p style="font-size:10pt;color:#666;font-style:italic;">Health score components not yet calculated for this household.</p>`}
+        <div class="chart-legend">
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#378ADD"></div>
+            Gross estate
+          </div>
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#639922"></div>
+            Net to heirs
+          </div>
+          ${
+            hasAnyTax
+              ? `
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#E24B4A"></div>
+            Est. tax exposure
+          </div>`
+              : ''
+          }
+        </div>
+      </div>
+      ${
+        cliff
+          ? `
+      <div class="tax-cliff-callout">
+        <strong>Tax exposure begins at age ${cliff.age} (${cliff.year}):</strong>
+        Combined federal and ${stateName} state estate tax estimated at
+        ${fmt(cliff.totalTax)}, reducing net to heirs to ${fmt(cliff.netToHeirs)}.
+        A bypass trust and gifting program can meaningfully reduce this exposure
+        before this point.
+      </div>
+      `
+          : `
+      <div style="background:#EAF3DE; border:1px solid #97C459; border-radius:5px;
+                  padding:10px 14px; margin:10px 0 14px; font-size:9.5pt; color:#27500A;">
+        No estate tax exposure is projected under current law.
+        Monitor as estate grows or tax law changes.
+      </div>
+      `
+      }
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+      <script>
+      (function() {
+        var ctx = document.getElementById('estateChart');
+        if (!ctx || !window.Chart) return;
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ${chartYears},
+            datasets: [
+              {
+                label: 'Gross estate',
+                data: ${chartGross},
+                borderColor: '#378ADD',
+                backgroundColor: 'rgba(55,138,221,0.07)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+              },
+              {
+                label: 'Net to heirs',
+                data: ${chartNet},
+                borderColor: '#639922',
+                backgroundColor: 'rgba(99,153,34,0.07)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                borderDash: [4,3],
+              },
+              ${
+                hasAnyTax
+                  ? `{
+                label: 'Est. tax',
+                data: ${chartTax},
+                borderColor: '#E24B4A',
+                backgroundColor: 'rgba(226,75,74,0.12)',
+                borderWidth: 1.5,
+                fill: true,
+                tension: 0,
+                pointRadius: 0,
+              },`
+                  : ''
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(1) + 'M';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: {
+                  font: { size: 9 },
+                  color: '#888',
+                  maxTicksLimit: 8,
+                  autoSkip: true,
+                }
+              },
+              y: {
+                min: 0,
+                max: ${yMax},
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: {
+                  font: { size: 9 },
+                  color: '#888',
+                  callback: function(v) { return '$' + v + 'M'; }
+                }
+              }
+            }
+          }
+        });
+      })();
+      </script>
+      `
+      }
+      <div class="snapshot-grid">
+        <div>
+          <div class="section-title">Asset breakdown</div>
+          <table style="width:100%; border-collapse:collapse; font-size:9.5pt;">
+            <tr style="border-bottom:1px solid #ddd;">
+              <th style="text-align:left; padding:4px 0; font-size:8.5pt; color:#666;
+                         font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">Category</th>
+              <th style="text-align:right; padding:4px 0; font-size:8.5pt; color:#666;
+                         font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">Value</th>
+              <th style="text-align:right; padding:4px 0; font-size:8.5pt; color:#666;
+                         font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">%</th>
+            </tr>
+            ${
+              data.assetBreakdown.length > 0
+                ? data.assetBreakdown
+                    .map(
+                      (a) => `
+            <tr style="border-bottom:0.5px solid #eee;">
+              <td style="padding:5px 0; color:#333;">
+                ${a.label}
+                <div class="asset-bar-wrap">
+                  <div class="asset-bar-fill" style="width:${Math.round(a.pct * 100)}%"></div>
+                </div>
+              </td>
+              <td style="padding:5px 0; text-align:right; color:#333;">${fmt(a.value)}</td>
+              <td style="padding:5px 0; text-align:right; color:#666;">${Math.round(a.pct * 100)}%</td>
+            </tr>
+          `,
+                    )
+                    .join('')
+                : `<tr><td colspan="3" style="padding:8px 0;color:#666;font-style:italic;">No asset category data available — add assets in the client profile.</td></tr>`
+            }
+          </table>
+        </div>
+        <div>
+          <div class="section-title">Estate readiness — ${data.healthScore}/100</div>
+          ${
+            data.healthComponents.length > 0
+              ? data.healthComponents
+                  .map((c) => {
+                    const barPct = c.maxScore > 0 ? Math.round((c.score / c.maxScore) * 100) : 0
+                    const color = barPct >= 70 ? '#639922' : barPct >= 40 ? '#EF9F27' : '#E24B4A'
+                    return `
+          <div style="margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; font-size:9pt;
+                        color:#444; margin-bottom:3px;">
+              <span>${c.label}</span>
+              <span style="color:${color}; font-weight:500;">${c.score}/${c.maxScore}</span>
+            </div>
+            <div style="height:4px; background:#e8e8e8; border-radius:2px;">
+              <div style="height:4px; border-radius:2px; width:${barPct}%;
+                          background:${color};"></div>
+            </div>
+          </div>
+        `
+                  })
+                  .join('')
+              : `<p style="font-size:9pt;color:#666;font-style:italic;">Health score components not yet calculated for this household.</p>`
+          }
+        </div>
+      </div>
       <div class="footer">
         <span>${data.firmName} | ${data.clientName} | ${data.reportDate}</span>
         <span style="float:right">Page 2 of ${pages.length}</span>
