@@ -1,6 +1,28 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (PDF beneficiary summary page shipped)
+# Updated: 2026-06-01 (Estate MC engine B + footnote)
+
+---
+
+## Estate Monte Carlo — engine B state tax ✅ (2026-06-01)
+
+**Shipped:** Advisor Strategy tab estate MC uses engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) per simulated estate — flat `stateEstateTaxRate` removed.
+
+| Area | Detail |
+|------|--------|
+| Lib | `lib/calculations/estate-monte-carlo.ts` — POST inputs: `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust` |
+| Edge | `supabase/functions/estate-monte-carlo/index.ts` — inlined engine B; **redeploy required** after changes |
+| UI | `MonteCarloPanel.tsx` + `StrategyTab.tsx`; `stateBrackets` hoisted via `_client-view-shell.tsx` / `page.tsx` (same array as horizons) |
+| Docs | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) estate MC row; [DECISION_LOG.md](./DECISION_LOG.md) |
+| Footnote | Model assumptions copy updated (no flat-rate language) |
+
+**Deploy:** `supabase functions deploy estate-monte-carlo` on `fnzvlmrqwcqwiqueevux` (deployed 2026-06-01).
+
+**Verify:** `npx tsx scripts/verify-estate-mc-voels-smoke.ts` (POST shape + horizons alignment; edge HTTP needs `SMOKE_ADVISOR_EMAIL` + password in `.env.local`).
+
+**Smoke (Voels Strategy tab):** Network POST has `stateBrackets` (WA, 8 rows), no `stateEstateTaxRate`; P10/P50/P90 + fan chart render. Today `stateTax` ~$943K at ~$9.5M gross — P50 **total** tax is on simulated P50 estate (~$30M+), not comparable to today column.
+
+**Not in scope:** Consumer `/monte-carlo` (retirement portfolio MC) unchanged. Estate MC remains advisor Strategy tab only.
 
 ---
 

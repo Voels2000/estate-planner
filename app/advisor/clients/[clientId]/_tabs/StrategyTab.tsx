@@ -16,6 +16,7 @@ import StrategyHorizonTable from '@/components/shared/StrategyHorizonTable'
 import MonteCarloPanel from '@/components/advisor/MonteCarloPanel'
 import MonteCarloAssumptionsPanel from '@/components/advisor/MonteCarloAssumptionsPanel'
 import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 import ConsumerPlanStatus from '@/components/advisor/ConsumerPlanStatus'
 import {
@@ -45,6 +46,7 @@ export default function StrategyTab({
   initialStrategyConfigs = [],
   initialGiftingActuals,
   advisorId,
+  stateBrackets = [],
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -54,6 +56,7 @@ export default function StrategyTab({
     Number.isFinite(Number(advisorHorizons?.today.stateTax ?? NaN))
   const grossEstate = hasHorizonTodayInputs ? Number(advisorHorizons?.today.grossEstate) : 0
   const filingStatus: FilingStatus = isMFJFilingStatus(household?.filing_status) ? 'mfj' : 'single'
+  const stateCode = household?.state_primary ?? ''
   const defaultExemption = filingStatus === 'mfj'
     ? OBBBA_2026.BASIC_EXCLUSION_MFJ
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
@@ -125,6 +128,28 @@ export default function StrategyTab({
   const [consumerLineItems, setConsumerLineItems] = useState<StrategyLineItemSummary[]>(
     initialConsumerLineItems,
   )
+  const hasBypassTrust = useMemo(() => {
+    const activeAdvisor = advisorLineItems.filter((item) => !item.consumer_rejected)
+    const actualStrategyLineItems = [
+      ...consumerLineItems.map((item) => ({
+        strategy_source: item.strategy_source,
+        source_role: 'consumer' as const,
+        consumer_accepted: true,
+        is_active: item.is_active ?? true,
+        consumer_rejected: false,
+      })),
+      ...activeAdvisor
+        .filter((item) => item.consumer_accepted)
+        .map((item) => ({
+          strategy_source: item.strategy_source,
+          source_role: item.source_role,
+          consumer_accepted: item.consumer_accepted,
+          is_active: item.is_active ?? true,
+          consumer_rejected: item.consumer_rejected,
+        })),
+    ]
+    return deriveHasBypassTrustFromLineItems(actualStrategyLineItems, 'consumer_accepted')
+  }, [advisorLineItems, consumerLineItems])
   type StrategyConfigSummary = { strategy_source: StrategyLineItem['strategy_source'] }
   const [strategyConfigs, setStrategyConfigs] = useState<StrategyConfigSummary[]>(
     initialStrategyConfigs as StrategyConfigSummary[],
@@ -630,6 +655,10 @@ export default function StrategyTab({
             grossEstate={grossEstate}
             federalExemption={federalExemption}
             estimatedStateTax={estimatedStateTax}
+            stateCode={stateCode}
+            stateBrackets={stateBrackets}
+            filingStatus={filingStatus}
+            hasBypassTrust={hasBypassTrust}
             person1BirthYear={person1BirthYear}
             lawScenario={lawScenario}
             supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}

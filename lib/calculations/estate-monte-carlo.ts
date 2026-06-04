@@ -11,28 +11,28 @@
 //   Consumer: retirement portfolio sustainability (will money last?)
 //   Estate:   estate tax burden range (how much will heirs owe across scenarios?)
 
+import {
+  calculateStateEstateTax,
+  resolveActiveStateTax,
+  type StateBracket,
+} from './stateEstateTax'
+
+export type { StateBracket }
+
 export interface EstateMCInputs {
-  // Current estate (year-1 from outputs_s1_first[0])
   grossEstate: number
-  // Federal exemption under selected law scenario
   federalExemption: number
-  // State estate tax rate (flat approximation)
-  stateEstateTaxRate: number
-  // Years until projected death (for growth projection)
+  stateCode: string
+  stateBrackets: StateBracket[]
+  filingStatus: 'single' | 'mfj'
+  hasBypassTrust: boolean
   yearsUntilDeath: number
-  // Asset growth rate assumption (from household growth_rate_accumulation)
   baseGrowthRate: number
-  // Strategy reductions already applied (from CompositeOverlay)
   strategyEstatereduction: number
-  // Law scenario
   lawScenario: 'current_law' | 'no_exemption'
-  // Number of simulation paths
   simulationCount: number
-  // Whether to include sensitivity analysis
   includeSensitivity: boolean
-  /** Annual return mean (percent, e.g. 7 = 7%). Default 7. */
   returnMeanPct?: number
-  /** Annual return volatility (percent, e.g. 12 = 12%). Default 12. */
   volatilityPct?: number
 }
 
@@ -55,32 +55,26 @@ export interface SensitivityResult {
 }
 
 export interface EstateMCResult {
-  // Percentile estate values at death
   p10_estate: number
   p25_estate: number
   p50_estate: number
   p75_estate: number
   p90_estate: number
-  // Percentile tax amounts at death
   p10_tax: number
   p50_tax: number
   p90_tax: number
-  // Success rate: % of paths where estate tax = $0 (below exemption)
   success_rate: number
-  // Median net to heirs
   median_net_to_heirs: number
-  // Year-by-year fan chart data
   fan_chart_data: FanChartDataPoint[]
-  // Sensitivity matrix (growth rate × exemption)
   sensitivity_matrix: SensitivityResult[]
-  // Runtime
   run_duration_ms: number
 }
 
-const DEFAULT_RETURN_MEAN = 0.07
-const DEFAULT_RETURN_VOL = 0.12
+type EstateTaxContext = Pick<
+  EstateMCInputs,
+  'stateCode' | 'stateBrackets' | 'filingStatus' | 'hasBypassTrust'
+>
 
-// Box-Muller transform for normal distribution
 function randomNormal(mean: number, stdDev: number): number {
   let u = 0,
     v = 0
@@ -93,15 +87,21 @@ function randomNormal(mean: number, stdDev: number): number {
 function calcEstateTax(
   estate: number,
   exemption: number,
-  stateRate: number,
-  lawScenario: 'current_law' | 'no_exemption'
+  taxCtx: EstateTaxContext,
+  lawScenario: 'current_law' | 'no_exemption',
 ): number {
   const FEDERAL_RATE = 0.4
-  const effectiveExemption =
-    lawScenario === 'no_exemption' ? 0 : exemption
-
+  const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
   const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
-  const stateTax = estate * stateRate
+  const isMFJ = taxCtx.filingStatus === 'mfj'
+  const stateResult = calculateStateEstateTax(
+    estate,
+    taxCtx.stateCode,
+    taxCtx.stateBrackets,
+    isMFJ,
+    false,
+  )
+  const stateTax = resolveActiveStateTax(stateResult, taxCtx.hasBypassTrust)
   return federalTax + stateTax
 }
 
@@ -114,7 +114,10 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
   const {
     grossEstate,
     federalExemption,
-    stateEstateTaxRate,
+    stateCode,
+    stateBrackets,
+    filingStatus,
+    hasBypassTrust,
     yearsUntilDeath,
     baseGrowthRate,
     strategyEstatereduction,
@@ -125,13 +128,19 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     volatilityPct,
   } = inputs
 
+  const taxCtx: EstateTaxContext = {
+    stateCode,
+    stateBrackets,
+    filingStatus,
+    hasBypassTrust,
+  }
+
   const returnMean = (returnMeanPct ?? 7) / 100
   const returnVol = (volatilityPct ?? 12) / 100
 
   const startTime = Date.now()
   const adjustedEstate = Math.max(0, grossEstate - strategyEstatereduction)
 
-  // Track final estate values and year-by-year paths
   const finalEstates: number[] = []
   const yearlyEstates: number[][] = Array.from({ length: yearsUntilDeath + 1 }, () => [])
 
@@ -147,7 +156,6 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     finalEstates.push(estate)
   }
 
-  // Sort final estates for percentile calculations
   const sortedFinals = [...finalEstates].sort((a, b) => a - b)
 
   const p10_estate = percentile(sortedFinals, 10)
@@ -156,19 +164,17 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
   const p75_estate = percentile(sortedFinals, 75)
   const p90_estate = percentile(sortedFinals, 90)
 
-  const p10_tax = calcEstateTax(p10_estate, federalExemption, stateEstateTaxRate, lawScenario)
-  const p50_tax = calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, lawScenario)
-  const p90_tax = calcEstateTax(p90_estate, federalExemption, stateEstateTaxRate, lawScenario)
+  const p10_tax = calcEstateTax(p10_estate, federalExemption, taxCtx, lawScenario)
+  const p50_tax = calcEstateTax(p50_estate, federalExemption, taxCtx, lawScenario)
+  const p90_tax = calcEstateTax(p90_estate, federalExemption, taxCtx, lawScenario)
 
-  // Success rate: paths where no estate tax is owed
   const successCount = sortedFinals.filter(
-    (e) => calcEstateTax(e, federalExemption, stateEstateTaxRate, lawScenario) === 0
+    (e) => calcEstateTax(e, federalExemption, taxCtx, lawScenario) === 0,
   ).length
   const success_rate = Math.round((successCount / simulationCount) * 100)
 
   const median_net_to_heirs = p50_estate - p50_tax
 
-  // Fan chart: year-by-year percentiles
   const fan_chart_data: FanChartDataPoint[] = yearlyEstates.map((yearArr, i) => {
     const sorted = [...yearArr].sort((a, b) => a - b)
     return {
@@ -181,11 +187,9 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     }
   })
 
-  // Sensitivity matrix: 3×2 (growth rate × exemption)
   const sensitivity_matrix: SensitivityResult[] = []
 
   if (includeSensitivity) {
-    // Growth rate sensitivity
     const growthScenarios = [{ label: 'Growth Rate', low: baseGrowthRate - 0.02, high: baseGrowthRate + 0.02 }]
     for (const scenario of growthScenarios) {
       const lowEstate = adjustedEstate * Math.pow(1 + scenario.low, yearsUntilDeath)
@@ -193,32 +197,23 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
       sensitivity_matrix.push({
         variable: scenario.label,
         low_value: scenario.low,
-        low_tax: calcEstateTax(lowEstate, federalExemption, stateEstateTaxRate, lawScenario),
+        low_tax: calcEstateTax(lowEstate, federalExemption, taxCtx, lawScenario),
         base_tax: p50_tax,
         high_value: scenario.high,
-        high_tax: calcEstateTax(highEstate, federalExemption, stateEstateTaxRate, lawScenario),
+        high_tax: calcEstateTax(highEstate, federalExemption, taxCtx, lawScenario),
       })
     }
 
-    // Exemption sensitivity (current law vs no-exemption stress)
     sensitivity_matrix.push({
       variable: 'Federal Exemption',
       low_value: 0,
-      low_tax: calcEstateTax(p50_estate, 0, stateEstateTaxRate, 'no_exemption'),
+      low_tax: calcEstateTax(p50_estate, 0, taxCtx, 'no_exemption'),
       base_tax: p50_tax,
       high_value: federalExemption,
-      high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, 'current_law'),
+      high_tax: calcEstateTax(p50_estate, federalExemption, taxCtx, 'current_law'),
     })
 
-    // State tax sensitivity
-    sensitivity_matrix.push({
-      variable: 'State Tax Rate',
-      low_value: 0,
-      low_tax: calcEstateTax(p50_estate, federalExemption, 0, lawScenario),
-      base_tax: p50_tax,
-      high_value: stateEstateTaxRate * 2,
-      high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate * 2, lawScenario),
-    })
+    // State tax sensitivity removed — engine B brackets make flat-rate sweep meaningless; add scenario comparison in MC sprint
   }
 
   const run_duration_ms = Date.now() - startTime

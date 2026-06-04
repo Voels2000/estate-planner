@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (PDF beneficiary summary page)
+# Last updated: 2026-06-01 (Estate MC engine B + footnote)
+
+## Estate MC unified to engine B for state tax (2026-05-29)
+
+**Decision:** Estate Monte Carlo state tax uses engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) on each simulated estate value instead of a flat `stateEstateTaxRate` derived from today’s display tax ÷ gross estate.
+
+**Files:** `lib/calculations/estate-monte-carlo.ts`, `supabase/functions/estate-monte-carlo/index.ts`, `components/advisor/MonteCarloPanel.tsx`, `app/advisor/clients/[clientId]/_tabs/StrategyTab.tsx` (+ `stateBrackets` hoisted via `_client-view-shell.tsx` / `page.tsx`).
+
+**Rationale:** Flat rate produced incorrect tax on progressive WA brackets and ignored bypass-trust (CST) distinction. State-tax sensitivity row removed (bracket sweep meaningless); scenario comparison deferred to MC sprint.
+
+**Follow-up (2026-06-01):** `MonteCarloPanel` model-assumptions footnote updated to describe progressive brackets + CST (no “effective rate from current tax ÷ gross” copy). Edge redeployed; `scripts/verify-estate-mc-voels-smoke.ts` for POST/horizon checks.
+
+---
 
 ## PDF beneficiary summary page (2026-06-01)
 

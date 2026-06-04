@@ -166,7 +166,7 @@ E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-
 
 | # | Check | Pass |
 |---|--------|------|
-| 1 | **Monte Carlo** — `e2e-advisor@mywealthmaps.test` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo` | [x] |
+| 1 | **Monte Carlo** — `e2e-advisor@mywealthmaps.test` → Johnson household → Strategy → Run Monte Carlo → P10/P50/P90 visible; Network tab: no 401/403 on `estate-monte-carlo`; POST has `stateBrackets`, no `stateEstateTaxRate` (engine B, 2026-06-01) | [x] |
 | 2 | **Consumer RPCs** — `e2e-consumer@mywealthmaps.test` → `/estate-tax` and `/my-estate-trust-strategy?tab=gifting` load with data (no blank page / console 403) | [x] |
 | 3 | **Referral rate limit** — on `/event/selling-a-business`, DevTools Console (see [GO_LIVE_E2E § Security smoke](./GO_LIVE_E2E.md#security-hardening-post-deploy-smoke-2026-05-29)) → `{ 200: ~60, 429: ~5 }` for fake ref `test123` | [x] |
 | 4 | **Telemetry auth** — logged out / incognito Console → `POST /api/telemetry/horizon-input-missing` → **401** | [x] |

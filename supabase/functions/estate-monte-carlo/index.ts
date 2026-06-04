@@ -18,6 +18,115 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const DEFAULT_RETURN_MEAN = 0.07
 const DEFAULT_RETURN_VOL = 0.12
 
+// Inlined from lib/calculations/stateEstateTax.ts (edge cannot import @/lib)
+type StateBracket = {
+  min_amount: number
+  max_amount: number
+  rate_pct: number
+  exemption_amount: number
+}
+
+const NO_PORTABILITY_STATES = new Set([
+  'WA', 'OR', 'MN', 'MA', 'ME', 'IL', 'MD', 'NJ', 'RI', 'VT', 'HI',
+  'DC', 'NE', 'IA', 'KY', 'PA',
+])
+
+function applyBrackets(taxableAmount: number, brackets: StateBracket[]): number {
+  if (taxableAmount <= 0 || brackets.length === 0) return 0
+  let tax = 0
+  for (const bracket of brackets) {
+    const bracketMin = bracket.min_amount
+    const bracketMax = bracket.max_amount >= 9_999_999_999 ? Infinity : bracket.max_amount
+    if (taxableAmount <= bracketMin) break
+    const inBracket = Math.min(taxableAmount, bracketMax) - bracketMin
+    if (inBracket > 0) tax += inBracket * (bracket.rate_pct / 100)
+  }
+  return Math.round(tax)
+}
+
+function computeStateTaxForExemption(
+  grossEstate: number,
+  exemption: number,
+  brackets: StateBracket[],
+  stateCode: string,
+): { tax: number; nyCliffTriggered: boolean; taxableEstate: number } {
+  if (brackets.length === 0 || grossEstate <= 0) {
+    return { tax: 0, nyCliffTriggered: false, taxableEstate: 0 }
+  }
+
+  let taxableEstate: number
+  let nyCliffTriggered = false
+
+  if (stateCode === 'NY') {
+    const cliffThreshold = exemption * 1.05
+    if (grossEstate > cliffThreshold) {
+      taxableEstate = grossEstate
+      nyCliffTriggered = true
+    } else {
+      taxableEstate = Math.max(0, grossEstate - exemption)
+    }
+  } else {
+    taxableEstate = Math.max(0, grossEstate - exemption)
+  }
+
+  if (taxableEstate <= 0) {
+    return { tax: 0, nyCliffTriggered, taxableEstate: 0 }
+  }
+
+  let tax = applyBrackets(taxableEstate, brackets)
+  if (stateCode === 'CT') {
+    tax = Math.min(tax, 15_000_000)
+  }
+
+  return { tax, nyCliffTriggered, taxableEstate: Math.round(taxableEstate) }
+}
+
+function calculateStateEstateTax(
+  grossEstate: number,
+  stateCode: string,
+  brackets: StateBracket[],
+  isMFJ: boolean,
+): {
+  stateTax: number
+  stateTaxWithCST: number
+  hasPortabilityGap: boolean
+} {
+  const code = stateCode.toUpperCase().trim()
+
+  if (brackets.length === 0 || grossEstate <= 0) {
+    return { stateTax: 0, stateTaxWithCST: 0, hasPortabilityGap: false }
+  }
+
+  const singleExemption = brackets[0].exemption_amount ?? 0
+  const hasPortabilityGap = isMFJ && NO_PORTABILITY_STATES.has(code)
+  const noCst = computeStateTaxForExemption(grossEstate, singleExemption, brackets, code)
+  const exemptionWithCst = hasPortabilityGap ? singleExemption * 2 : singleExemption
+  const withCst = hasPortabilityGap
+    ? computeStateTaxForExemption(grossEstate, exemptionWithCst, brackets, code)
+    : noCst
+
+  return {
+    stateTax: noCst.tax,
+    stateTaxWithCST: withCst.tax,
+    hasPortabilityGap,
+  }
+}
+
+function resolveActiveStateTax(
+  result: { stateTax: number; stateTaxWithCST: number; hasPortabilityGap: boolean },
+  hasBypassTrust: boolean,
+): number {
+  if (hasBypassTrust && result.hasPortabilityGap) return result.stateTaxWithCST
+  return result.stateTax
+}
+
+type EstateTaxContext = {
+  stateCode: string
+  stateBrackets: StateBracket[]
+  filingStatus: 'single' | 'mfj'
+  hasBypassTrust: boolean
+}
+
 function randomNormal(mean: number, stdDev: number): number {
   let u = 0,
     v = 0
@@ -27,11 +136,23 @@ function randomNormal(mean: number, stdDev: number): number {
   return mean + stdDev * n
 }
 
-function calcEstateTax(estate: number, exemption: number, stateRate: number, lawScenario: string): number {
+function calcEstateTax(
+  estate: number,
+  exemption: number,
+  taxCtx: EstateTaxContext,
+  lawScenario: string,
+): number {
   const FEDERAL_RATE = 0.4
   const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
   const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
-  const stateTax = estate * stateRate
+  const isMFJ = taxCtx.filingStatus === 'mfj'
+  const stateResult = calculateStateEstateTax(
+    estate,
+    taxCtx.stateCode,
+    taxCtx.stateBrackets,
+    isMFJ,
+  )
+  const stateTax = resolveActiveStateTax(stateResult, taxCtx.hasBypassTrust)
   return federalTax + stateTax
 }
 
@@ -43,7 +164,10 @@ function pct(sorted: number[], p: number): number {
 function runEstateMonteCarlo(inputs: {
   grossEstate: number
   federalExemption: number
-  stateEstateTaxRate: number
+  stateCode: string
+  stateBrackets: StateBracket[]
+  filingStatus: 'single' | 'mfj'
+  hasBypassTrust: boolean
   yearsUntilDeath: number
   strategyEstateReduction: number
   lawScenario: string
@@ -54,7 +178,10 @@ function runEstateMonteCarlo(inputs: {
   const {
     grossEstate,
     federalExemption,
-    stateEstateTaxRate,
+    stateCode,
+    stateBrackets,
+    filingStatus,
+    hasBypassTrust,
     yearsUntilDeath,
     strategyEstateReduction,
     lawScenario,
@@ -62,6 +189,13 @@ function runEstateMonteCarlo(inputs: {
     returnMeanPct,
     volatilityPct,
   } = inputs
+
+  const taxCtx: EstateTaxContext = {
+    stateCode,
+    stateBrackets,
+    filingStatus,
+    hasBypassTrust,
+  }
 
   const returnMean = (returnMeanPct ?? 7) / 100
   const returnVol = (volatilityPct ?? 12) / 100
@@ -88,12 +222,12 @@ function runEstateMonteCarlo(inputs: {
   const p75_estate = pct(sortedFinals, 75)
   const p90_estate = pct(sortedFinals, 90)
 
-  const p10_tax = calcEstateTax(p10_estate, federalExemption, stateEstateTaxRate, lawScenario)
-  const p50_tax = calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, lawScenario)
-  const p90_tax = calcEstateTax(p90_estate, federalExemption, stateEstateTaxRate, lawScenario)
+  const p10_tax = calcEstateTax(p10_estate, federalExemption, taxCtx, lawScenario)
+  const p50_tax = calcEstateTax(p50_estate, federalExemption, taxCtx, lawScenario)
+  const p90_tax = calcEstateTax(p90_estate, federalExemption, taxCtx, lawScenario)
 
   const successCount = sortedFinals.filter(
-    (e) => calcEstateTax(e, federalExemption, stateEstateTaxRate, lawScenario) === 0
+    (e) => calcEstateTax(e, federalExemption, taxCtx, lawScenario) === 0,
   ).length
   const success_rate = Math.round((successCount / simulationCount) * 100)
   const median_net_to_heirs = p50_estate - p50_tax
@@ -119,34 +253,27 @@ function runEstateMonteCarlo(inputs: {
       low_tax: calcEstateTax(
         adjustedEstate * Math.pow(1.05, yearsUntilDeath),
         federalExemption,
-        stateEstateTaxRate,
-        lawScenario
+        taxCtx,
+        lawScenario,
       ),
       base_tax: p50_tax,
       high_value: 0.09,
       high_tax: calcEstateTax(
         adjustedEstate * Math.pow(1.09, yearsUntilDeath),
         federalExemption,
-        stateEstateTaxRate,
-        lawScenario
+        taxCtx,
+        lawScenario,
       ),
     },
     {
       variable: 'Federal Exemption',
       low_value: 0,
-      low_tax: calcEstateTax(p50_estate, 0, stateEstateTaxRate, 'no_exemption'),
+      low_tax: calcEstateTax(p50_estate, 0, taxCtx, 'no_exemption'),
       base_tax: p50_tax,
       high_value: federalExemption,
-      high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate, 'current_law'),
+      high_tax: calcEstateTax(p50_estate, federalExemption, taxCtx, 'current_law'),
     },
-    {
-      variable: 'State Tax Rate',
-      low_value: 0,
-      low_tax: calcEstateTax(p50_estate, federalExemption, 0, lawScenario),
-      base_tax: p50_tax,
-      high_value: stateEstateTaxRate * 2,
-      high_tax: calcEstateTax(p50_estate, federalExemption, stateEstateTaxRate * 2, lawScenario),
-    },
+    // State tax sensitivity removed — engine B brackets make flat-rate sweep meaningless; add scenario comparison in MC sprint
   ]
 
   return {
@@ -214,7 +341,10 @@ serve(async (req) => {
       scenarioId,
       grossEstate,
       federalExemption,
-      stateEstateTaxRate = 0,
+      stateCode = '',
+      stateBrackets = [],
+      filingStatus = 'single',
+      hasBypassTrust = false,
       yearsUntilDeath = 20,
       strategyEstateReduction = 0,
       lawScenario = 'current_law',
@@ -268,7 +398,10 @@ serve(async (req) => {
     const result = runEstateMonteCarlo({
       grossEstate,
       federalExemption,
-      stateEstateTaxRate,
+      stateCode,
+      stateBrackets,
+      filingStatus: filingStatus === 'mfj' ? 'mfj' : 'single',
+      hasBypassTrust: Boolean(hasBypassTrust),
       yearsUntilDeath,
       strategyEstateReduction,
       lawScenario,

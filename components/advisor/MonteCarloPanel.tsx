@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 
 interface MonteCarloResult {
   p10_estate: number
@@ -47,6 +48,10 @@ interface MonteCarloProps {
   grossEstate: number
   federalExemption: number
   estimatedStateTax: number
+  stateCode: string
+  stateBrackets: StateBracket[]
+  filingStatus: 'single' | 'mfj'
+  hasBypassTrust: boolean
   person1BirthYear: number
   lawScenario: 'current_law' | 'no_exemption'
   supabaseUrl: string
@@ -62,6 +67,10 @@ export default function MonteCarloPanel({
   grossEstate,
   federalExemption,
   estimatedStateTax,
+  stateCode,
+  stateBrackets,
+  filingStatus,
+  hasBypassTrust,
   person1BirthYear,
   lawScenario,
   supabaseUrl,
@@ -76,7 +85,6 @@ export default function MonteCarloPanel({
 
   const currentAge = new Date().getFullYear() - person1BirthYear
   const yearsUntilDeath = Math.max(5, 85 - currentAge)
-  const stateEstateTaxRate = grossEstate > 0 ? estimatedStateTax / grossEstate : 0
 
   const runMonteCarlo = async () => {
     setLoading(true)
@@ -105,7 +113,10 @@ export default function MonteCarloPanel({
           scenarioId,
           grossEstate,
           federalExemption,
-          stateEstateTaxRate,
+          stateCode,
+          stateBrackets,
+          filingStatus,
+          hasBypassTrust,
           yearsUntilDeath,
           strategyEstateReduction: strategyReduction,
           lawScenario,
@@ -247,7 +258,10 @@ export default function MonteCarloPanel({
           <ul className="mt-1 space-y-1 text-xs text-slate-600">
             <li>Market returns: normal distribution (mean 7.0%, std dev 12.0%).</li>
             <li>Federal estate tax: 40% above exemption (or 0 exemption in no-exemption mode).</li>
-            <li>State estate tax: effective rate estimated from current state tax and gross estate.</li>
+            <li>
+              State estate tax: progressive brackets for domicile state (same as Strategy horizons), with
+              MFJ/single filing and credit shelter trust status applied per path.
+            </li>
             <li>Horizon to death: max(5 years, 85 − current age).</li>
           </ul>
         </div>

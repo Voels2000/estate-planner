@@ -346,7 +346,7 @@ Important:
 
 - Real estate year-end growth uses `reGrowthRate`, not `inflation_rate`.
 - Business value compounds at `bizGrowthRate`, not inflation.
-- Estate Monte Carlo (`lib/calculations/estate-monte-carlo.ts` + edge `estate-monte-carlo`) reads `returnMeanPct` / `volatilityPct` from request (defaults 7% / 12%).
+- **Estate Monte Carlo** (`lib/calculations/estate-monte-carlo.ts` + edge `estate-monte-carlo`): `returnMeanPct` / `volatilityPct` from request (defaults 7% / 12%); **state tax = engine B** per simulated estate (`stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust` from Strategy tab POST — same brackets as horizons). Flat `stateEstateTaxRate` removed (2026-06-01).
 
 **Per-record growth (ENG-2C / 2D):**
 
@@ -512,6 +512,16 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 ---
 
 ## Monte Carlo Workflow
+
+### Estate Monte Carlo (advisor only)
+
+- **Surface:** Advisor client → **Strategy** tab → `MonteCarloPanel` (“Probabilistic Estate Tax Range”).
+- **Not** consumer `/monte-carlo` (that is retirement portfolio sustainability — separate engine in `lib/monte-carlo.ts`).
+- **API:** `POST /functions/v1/estate-monte-carlo` with household JWT; persists `monte_carlo_results`.
+- **State tax (2026-06-01):** Engine B inlined in edge; client sends `stateBrackets` from page load (hoisted on `ClientViewShell`), `hasBypassTrust` from accepted CST line items (`consumer_accepted` scope, same as horizons today column).
+- **Verify:** `scripts/verify-estate-mc-voels-smoke.ts`; redeploy edge after `index.ts` changes.
+
+### Consumer + advisor assumption Monte Carlo
 
 ### Current
 

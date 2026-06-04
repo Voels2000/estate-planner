@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-05-29 (state-tax-unification sprint)
+Last updated: 2026-06-01 (estate MC engine B)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -73,6 +73,9 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | Consumer estate strategy | B via `computeColumnTaxes` | Yes — accepted CST line items |
 | Estate tax projection rows | C — `computeStateEstateTaxFromBrackets` | No — future sprint |
 | Prospect mode | B via `calculateStateEstateTax` | Yes |
+| Estate Monte Carlo (advisor Strategy tab) | B — `calculateStateEstateTax` + `resolveActiveStateTax` per simulated estate | Yes — `hasBypassTrust` |
+
+**Estate MC inputs (POST from Strategy tab):** `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust`. Same `stateBrackets` array as horizon snapshots (today column). Flat `stateEstateTaxRate` removed.
 
 Engine **A** (`narrativeEngine` flat rates) — **deleted**.
 

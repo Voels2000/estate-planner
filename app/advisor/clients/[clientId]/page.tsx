@@ -637,6 +637,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       domicileSchedule={domicileSchedule ?? null}
       domicileChecklist={domicileChecklist}
       stateExemptions={stateExemptions}
+      stateBrackets={stateBrackets}
       stateEstateTaxRules={stateTaxRulesAllYears}
       stateIncomeTaxBrackets={stateIncomeTaxBrackets}
       conflictReport={conflictReport}

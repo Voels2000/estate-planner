@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (PDF beneficiary summary page)
+# Last updated: 2026-06-01 (Estate MC engine B)
 
 ---
 
@@ -18,6 +18,23 @@
 ---
 
 ## Current sprint
+
+### Sprint — Estate MC engine B state tax (2026-06-01) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `estate-monte-carlo.ts` — engine B per path; remove flat `stateEstateTaxRate` | `[x]` |
+| Edge `estate-monte-carlo` — inlined engine B + POST fields | `[x]` |
+| `MonteCarloPanel` + `StrategyTab` + `stateBrackets` hoist | `[x]` |
+| `MonteCarloPanel` model-assumptions footnote | `[x]` |
+| `CALCULATION_ENGINES.md` + `DECISION_LOG.md` | `[x]` |
+| `scripts/verify-estate-mc-voels-smoke.ts` | `[x]` |
+| Edge redeploy prod | `[x]` |
+| Voels browser smoke (POST + fan chart) | `[ ]` |
+
+**Post-ship:** Voels Strategy → Run MC — POST has WA `stateBrackets`; P50 tax on simulated estate (not today gross).
+
+---
 
 ### Sprint — PDF beneficiary summary page (2026-06-01) **← shipped**
 

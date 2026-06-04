@@ -75,6 +75,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [DECISION_LOG.md](./DECISION_LOG.md) · [ROADMAP.md](./ROADMAP.md) · [NEXT_SESSION.md](./NEXT_SESSION.md)
 - [ ] Post-deploy smoke: Voels export — 6 pages; beneficiary gaps (Teva, 529) on page 3
 
+## Estate MC engine B state tax (2026-06-01) — shipped
+
+- [x] `lib/calculations/estate-monte-carlo.ts` — `calculateStateEstateTax` + `resolveActiveStateTax`; flat rate removed
+- [x] `supabase/functions/estate-monte-carlo/index.ts` — inlined engine B; redeploy prod
+- [x] `MonteCarloPanel.tsx`, `StrategyTab.tsx`, `stateBrackets` on shell + `page.tsx`
+- [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+- [x] `scripts/verify-estate-mc-voels-smoke.ts`
+- [x] Master docs: MASTER_ARCHITECTURE · ROADMAP · NEXT_SESSION · UPDATE_CHECKLIST
+
 ## State estate tax unification (2026-05-29) — shipped
 
 - [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) — canonical engine registry + regression greps
