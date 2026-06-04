@@ -677,6 +677,11 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `lib/export/pdfFilingStatus.ts` — pure `normalizePdfFilingStatus` (no `supabase/server`)
 - [x] `MeetingPrepTab` imports from `pdfFilingStatus` — fixes client bundle / `npm run build`
 
+## PDF strategy page dedupe ✅ closed 2026-06-01
+
+- [x] “Strategies worth discussing” uses `enrichedActions` (not raw `data.actionItems`)
+- [ ] **Post-deploy smoke:** Voels PDF page 4 — single trust line in gap list
+
 ## PDF page 2 SVG chart fix ✅ closed 2026-06-01
 
 - [x] `buildEstateSVGChart()` — inline SVG (no Chart.js / canvas / CDN)

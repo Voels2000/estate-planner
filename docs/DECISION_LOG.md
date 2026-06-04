@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (PDF page 2 SVG chart)
+# Last updated: 2026-06-01 (PDF strategy page alert dedupe)
+
+## PDF strategy page — dedupe gap recommendations (2026-06-01)
+
+**Problem:** Page 4 “Strategies worth discussing” listed raw `data.actionItems` — duplicate trust alerts (HIGH + MEDIUM) while action-items page used `dedupeActionItems(enrichActionItems(...))`.
+
+**Decision:** Strategy gap list uses **`enrichedActions`** (same deduped pipeline as action-items page).
+
+---
 
 ## PDF page 2 — inline SVG chart for print (2026-06-01)
 

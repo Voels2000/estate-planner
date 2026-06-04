@@ -743,19 +743,22 @@ export function generatePDFHTML(data: PDFReportData): string {
   if (pages.includes('strategy_summary')) {
     const totalReduction = data.activeStrategies.reduce((s, a) => s + a.estateReduction, 0)
     const totalSavings = data.activeStrategies.reduce((s, a) => s + a.taxSavings, 0)
+    // Same deduped/enriched alerts as action-items page — raw household_alerts can duplicate trust rows (HIGH + MEDIUM)
+    const strategyGapRecommendations = enrichedActions.filter((a) =>
+      ['trust', 'gift', 'ilit', 'cst'].some((k) =>
+        (a.title ?? a.body ?? a.message ?? '').toLowerCase().includes(k),
+      ),
+    )
     const strategyBody = data.activeStrategies.length === 0 ? `
       <div style="background:#f8f8f8; border-radius:6px; padding:16px; font-size:10pt; color:#666;">
         <strong>No active strategies on file.</strong><br>
         Strategies discussed in this meeting will be added here after advisor review.
-        ${data.actionItems.some(a => (a.body ?? a.message ?? '').toLowerCase().includes('trust') ||
-                                      (a.body ?? a.message ?? '').toLowerCase().includes('gift')) ? `
+        ${strategyGapRecommendations.length > 0 ? `
         <br><br><strong>Strategies worth discussing based on your plan gaps:</strong>
         <ul style="margin-top:8px; padding-left:20px;">
-          ${data.actionItems
-            .filter(a => ['trust','gift','ilit','cst'].some(k =>
-              (a.title ?? a.body ?? a.message ?? '').toLowerCase().includes(k)))
+          ${strategyGapRecommendations
             .slice(0, 3)
-            .map(a => `<li style="margin:4px 0">${a.title ?? a.body ?? a.message}</li>`)
+            .map((a) => `<li style="margin:4px 0">${a.title ?? a.body ?? a.message}</li>`)
             .join('')}
         </ul>` : ''}
       </div>

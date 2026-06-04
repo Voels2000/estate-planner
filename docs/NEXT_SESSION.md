@@ -1,6 +1,22 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (PDF page 2 SVG chart)
+# Updated: 2026-06-01 (PDF strategy dedupe + beneficiary data note)
+
+---
+
+## Beneficiary data for future PDF page (reference)
+
+**Export PDF today:** **Neither** `beneficiaries` nor `asset_beneficiaries` in `PDFReportData` / `exportMappers.ts`.
+
+**Advisor UI:** `loadAdvisorClientDatasets` reads **`asset_beneficiaries`** only; `mapAdvisorClientDatasets` adds derived **`account_type`** (from linked asset / RE / insurance / business). Estate tab groups via `buildBeneficiaryAccountGroups`. Legacy **`beneficiaries`** table is seed-demo only — not used in loaders.
+
+**Implication for Cursor script:** Account-type summary = **wiring change** (pass mapped beneficiaries + grouping into export payload). Meeting-prep export path already fetches `asset_beneficiaries` but drops them before `buildAdvisorExportPayloads`.
+
+---
+
+## PDF strategy page dedupe ✅ (2026-06-01)
+
+**Fix:** Page 4 gap list uses `enrichedActions` — no duplicate “Large estate without a trust”.
 
 ---
 
