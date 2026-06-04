@@ -545,7 +545,19 @@ export function generatePDFHTML(data: PDFReportData): string {
     brackets: data.stateBrackets ?? [],
     filingStatus: data.filingStatus,
   })
-  const page3StateTax = stateTaxScenarios.withoutBypassTrust.stateTax
+  const page3StateResult = calculateStateEstateTax(
+    data.grossEstate,
+    data.domicileState ?? '',
+    data.stateBrackets ?? [],
+    isMFJFilingStatus(data.filingStatus),
+    false,
+  )
+  const page3StateTax = resolveActiveStateTax(page3StateResult, data.hasBypassTrust ?? false)
+  const FEDERAL_RATE = 0.4
+  const effectiveExemption =
+    data.lawScenario === 'no_exemption' ? 0 : (data.federalExemption ?? 0)
+  const page3FederalTax = Math.max(0, data.grossEstate - effectiveExemption) * FEDERAL_RATE
+  const page3NetToHeirs = data.grossEstate - page3FederalTax - page3StateTax
 
   const pages = determinePDFPages(data)
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -904,7 +916,7 @@ export function generatePDFHTML(data: PDFReportData): string {
       <div class="metric-grid">
         <div class="metric-card">
           <div class="metric-label">Federal estate tax</div>
-          <div class="metric-value">${fmt(data.federalTax ?? 0)}</div>
+          <div class="metric-value">${fmt(page3FederalTax)}</div>
         </div>
         <div class="metric-card">
           <div class="metric-label">${stateName} estate tax</div>
@@ -912,7 +924,7 @@ export function generatePDFHTML(data: PDFReportData): string {
         </div>
         <div class="metric-card">
           <div class="metric-label">Net to heirs</div>
-          <div class="metric-value">${fmt(data.grossEstate - (data.federalTax ?? 0) - page3StateTax)}</div>
+          <div class="metric-value">${fmt(page3NetToHeirs)}</div>
         </div>
       </div>`
 
@@ -930,7 +942,7 @@ export function generatePDFHTML(data: PDFReportData): string {
         </div>
         <div class="metric-card">
           <div class="metric-label">Federal Estate Tax</div>
-          <div class="metric-value" style="color:${data.federalTax > 0 ? '#dc2626' : '#16a34a'}">${fmt(data.federalTax)}</div>
+          <div class="metric-value" style="color:${page3FederalTax > 0 ? '#dc2626' : '#16a34a'}">${fmt(page3FederalTax)}</div>
         </div>
         <div class="metric-card">
           <div class="metric-label">State Estate Tax</div>
@@ -1030,7 +1042,7 @@ export function generatePDFHTML(data: PDFReportData): string {
       </p>
       <div class="metric-grid">
         <div class="metric-card">
-          <div class="metric-label">Tax-Free Rate</div>
+          <div class="metric-label">Zero-Tax Paths</div>
           <div class="metric-value" style="color:${mc.successRate > 50 ? '#16a34a' : '#dc2626'}">${mc.successRate}%</div>
           <div class="metric-sub">Scenarios with no estate tax</div>
         </div>
