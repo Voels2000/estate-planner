@@ -1,14 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (PDF page 2 chart)
+# Updated: 2026-06-01 (PDF page 2 SVG chart)
+
+---
+
+## PDF page 2 SVG chart fix ✅ (2026-06-01)
+
+**Fix:** `buildEstateSVGChart()` — inline SVG replaces Chart.js canvas (print/PDF-safe). Uses full `data.projectionChartRows`.
+
+**Smoke (Voels `?type=report`):** Chart visible in **Cmd+P print preview** · cliff marker + callout · asset/health two-column below.
 
 ---
 
 ## PDF page 2 estate snapshot chart ✅ (2026-06-01)
 
-**Shipped:** Chart.js projection chart + tax cliff callout + two-column asset/health on export PDF page 2. Data: `projectionChartRows` from `params.scenarioOutputs`.
-
-**Smoke (Voels `?type=report`):** Chart renders in browser **and Cmd+P print preview** · cliff callout at tax step · no year-by-year table on PDF (Excel still has full rows).
+**Shipped:** Estate growth SVG + tax cliff callout + two-column asset/health on export PDF page 2. Data: `projectionChartRows` from `params.scenarioOutputs`.
 
 ---
 

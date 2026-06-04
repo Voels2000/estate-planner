@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (PDF page 2 estate snapshot chart)
+# Last updated: 2026-06-01 (PDF page 2 SVG chart)
+
+## PDF page 2 — inline SVG chart for print (2026-06-01)
+
+**Problem:** Chart.js `<canvas>` requires JS before print/PDF capture — chart was blank in print preview and saved PDFs.
+
+**Decision:** Replace canvas + Chart.js CDN with **`buildEstateSVGChart()`** — static inline SVG in page 2 HTML (`viewBox="0 0 600 180"`). Same data: `projectionChartRows`, `detectTaxCliff()`. No JS, no CDN. Renders in print, PDF viewers, and email attachments.
+
+---
 
 ## PDF page 2 — estate snapshot chart (2026-06-01)
 
@@ -8,9 +16,8 @@
 
 **Decision:**
 - **`PDFReportData.projectionChartRows`** — derived from **`params.scenarioOutputs`** (`outputs_s1_first`) in `exportMappers.ts`; no new DB fetch.
-- **`generatePDFReport.ts`** page 2: Chart.js 4.4.1 (cdnjs) line chart — gross estate, net to heirs, est. tax (when any `totalTax > 0`); `detectTaxCliff()` for first year tax exceeds $100K; amber cliff callout or green no-exposure callout.
+- **`generatePDFReport.ts`** page 2: inline SVG estate growth chart (replaced Chart.js); `detectTaxCliff()`; amber cliff callout or green no-exposure callout.
 - Asset breakdown + health components in **two-column** `snapshot-grid` below chart.
-- Chart `<script>` at bottom of page 2 body (after `#estateChart` canvas); `.chart-container { height: 200px }`; `animation: false` for print.
 - Empty state when no base case rows. Excel export unchanged (full year table).
 
 ---

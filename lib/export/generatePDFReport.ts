@@ -197,6 +197,149 @@ function detectTaxCliff(rows: PDFReportData['projectionChartRows']): TaxCliff | 
   return null
 }
 
+function buildEstateSVGChart(
+  rows: PDFReportData['projectionChartRows'],
+  _domicileState: string,
+): string {
+  if (rows.length === 0) return ''
+
+  const W = 600
+  const H = 180
+  const PAD = { top: 10, right: 20, bottom: 28, left: 52 }
+  const innerW = W - PAD.left - PAD.right
+  const innerH = H - PAD.top - PAD.bottom
+
+  const years = rows.map((r) => r.year)
+  const grossArr = rows.map((r) => r.gross)
+  const netArr = rows.map((r) => r.netToHeirs)
+  const taxArr = rows.map((r) => r.totalTax)
+
+  const minYear = years[0]
+  const maxYear = years[years.length - 1]
+  const maxVal = Math.max(...grossArr)
+
+  const maxM = maxVal / 1_000_000
+  const yStep = maxM <= 20 ? 5 : maxM <= 50 ? 10 : maxM <= 100 ? 20 : 25
+  const yMax = Math.max(yStep, Math.ceil(maxM / yStep) * yStep)
+  const yTicks = Array.from({ length: Math.floor(yMax / yStep) + 1 }, (_, i) => i * yStep)
+
+  const yearSpan = maxYear - minYear
+  const xTickEvery = yearSpan <= 20 ? 5 : yearSpan <= 30 ? 5 : 8
+  const xTickYears = years.filter(
+    (y, i) => i === 0 || i === years.length - 1 || (y - minYear) % xTickEvery === 0,
+  )
+
+  const xScale = (year: number): number =>
+    PAD.left + (yearSpan === 0 ? innerW / 2 : ((year - minYear) / yearSpan) * innerW)
+
+  const yScale = (val: number): number =>
+    PAD.top + innerH - (yMax === 0 ? 0 : (val / 1_000_000 / yMax) * innerH)
+
+  function polyline(vals: number[]): string {
+    return vals.map((v, i) => `${xScale(years[i])},${yScale(v)}`).join(' ')
+  }
+
+  function areaPath(vals: number[], baseline: number): string {
+    const firstX = xScale(years[0])
+    const lastX = xScale(years[years.length - 1])
+    const baseY = yScale(baseline)
+    return (
+      `M ${firstX},${baseY} ` +
+      vals.map((v, i) => `L ${xScale(years[i])},${yScale(v)}`).join(' ') +
+      ` L ${lastX},${baseY} Z`
+    )
+  }
+
+  const hasAnyTax = taxArr.some((t) => t > 0)
+  const cliffObj = detectTaxCliff(rows)
+
+  const startGrossM = rows[0] ? Math.round((rows[0].gross / 1_000_000) * 10) / 10 : 0
+  const endGrossM = Math.round((maxVal / 1_000_000) * 10) / 10
+
+  const taxGapPath = hasAnyTax
+    ? 'M ' +
+      xScale(years[0]) +
+      ',' +
+      yScale(grossArr[0]) +
+      ' ' +
+      grossArr.map((v, i) => `L ${xScale(years[i])},${yScale(v)}`).join(' ') +
+      ' ' +
+      netArr
+        .slice()
+        .reverse()
+        .map((v, i) => `L ${xScale(years[years.length - 1 - i])},${yScale(v)}`)
+        .join(' ') +
+      ' Z'
+    : ''
+
+  return `
+<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+     width="100%" style="display:block; max-height:${H}px;"
+     role="img" aria-label="Line chart showing estate growth from $${startGrossM}M to $${endGrossM}M${cliffObj ? ', tax exposure begins at age ' + cliffObj.age : ''}">
+  <title>Estate growth projection</title>
+  <desc>Estate grows from $${startGrossM}M to $${endGrossM}M at longevity${cliffObj ? '. Tax exposure of $' + Math.round((cliffObj.totalTax / 1_000_000) * 10) / 10 + 'M begins at age ' + cliffObj.age + '.' : '. No estate tax exposure projected.'}</desc>
+
+  ${yTicks
+    .map((tick) => {
+      const y = yScale(tick * 1_000_000)
+      return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}"
+                  stroke="#e8e8e8" stroke-width="0.5"/>`
+    })
+    .join('\n  ')}
+
+  ${hasAnyTax ? `<path d="${taxGapPath}" fill="rgba(226,75,74,0.12)" stroke="none"/>` : ''}
+
+  <path d="${areaPath(grossArr, 0)}"
+        fill="rgba(55,138,221,0.07)" stroke="none"/>
+
+  <path d="${areaPath(netArr, 0)}"
+        fill="rgba(99,153,34,0.07)" stroke="none"/>
+
+  <polyline points="${polyline(grossArr)}"
+            fill="none" stroke="#378ADD" stroke-width="1.8"/>
+
+  <polyline points="${polyline(netArr)}"
+            fill="none" stroke="#639922" stroke-width="1.8"
+            stroke-dasharray="5,3"/>
+
+  ${
+    cliffObj
+      ? `
+  <line x1="${xScale(cliffObj.year)}" y1="${PAD.top}"
+        x2="${xScale(cliffObj.year)}" y2="${H - PAD.bottom}"
+        stroke="rgba(226,75,74,0.5)" stroke-width="1"
+        stroke-dasharray="4,3"/>`
+      : ''
+  }
+
+  ${yTicks
+    .filter((_, i) => i % 2 === 0 || yTicks.length <= 5)
+    .map((tick) => {
+      const y = yScale(tick * 1_000_000)
+      return `<text x="${PAD.left - 4}" y="${y + 3.5}"
+                  text-anchor="end" font-size="8" fill="#888"
+                  font-family="Arial, sans-serif">$${tick}M</text>`
+    })
+    .join('\n  ')}
+
+  ${xTickYears
+    .map((year) => {
+      const x = xScale(year)
+      return `<text x="${x}" y="${H - 4}"
+                  text-anchor="middle" font-size="8" fill="#888"
+                  font-family="Arial, sans-serif">${year}</text>`
+    })
+    .join('\n  ')}
+
+  <line x1="${PAD.left}" y1="${PAD.top}"
+        x2="${PAD.left}" y2="${H - PAD.bottom}"
+        stroke="#ccc" stroke-width="0.5"/>
+  <line x1="${PAD.left}" y1="${H - PAD.bottom}"
+        x2="${W - PAD.right}" y2="${H - PAD.bottom}"
+        stroke="#ccc" stroke-width="0.5"/>
+</svg>`
+}
+
 // HTML template for PDF generation via browser print
 export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
@@ -272,7 +415,6 @@ export function generatePDFHTML(data: PDFReportData): string {
       .tax-callout .tc-detail { color:#444; line-height:1.5; }
       .gifting-bar { background:#f0f0f0; border-radius:4px; padding:10px 16px; font-size:9.5pt; color:#444; margin-top:16px; }
       .chart-section { margin: 16px 0; }
-      .chart-container { position: relative; width: 100%; height: 200px; }
       .chart-legend { display: flex; gap: 16px; margin-top: 6px; margin-bottom: 12px; font-size: 9pt; color: #555; }
       .chart-legend-item { display: flex; align-items: center; gap: 4px; }
       .chart-legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
@@ -353,23 +495,7 @@ export function generatePDFHTML(data: PDFReportData): string {
   // PAGE 2: Estate Snapshot
   if (pages.includes('estate_snapshot')) {
     const cliff = detectTaxCliff(data.projectionChartRows)
-    const chartRows =
-      data.projectionChartRows.length > 20
-        ? data.projectionChartRows.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % 2 === 0)
-        : data.projectionChartRows
-    const chartYears = JSON.stringify(chartRows.map((r) => r.year))
-    const chartGross = JSON.stringify(chartRows.map((r) => Math.round((r.gross / 1_000_000) * 10) / 10))
-    const chartNet = JSON.stringify(chartRows.map((r) => Math.round((r.netToHeirs / 1_000_000) * 10) / 10))
-    const chartTax = JSON.stringify(chartRows.map((r) => Math.round((r.totalTax / 1_000_000) * 10) / 10))
     const hasAnyTax = data.projectionChartRows.some((r) => r.totalTax > 0)
-    const maxGross =
-      data.projectionChartRows.length > 0
-        ? Math.max(...data.projectionChartRows.map((r) => r.gross))
-        : data.grossEstate
-    const yMax =
-      chartRows.length > 0
-        ? Math.ceil((Math.max(...chartRows.map((r) => r.gross)) / 1_000_000) * 1.1)
-        : Math.max(1, Math.ceil((data.grossEstate / 1_000_000) * 1.1))
 
     html += `
     <div class="page">
@@ -403,12 +529,8 @@ export function generatePDFHTML(data: PDFReportData): string {
           : `
       <div class="section-title">Estate growth projection</div>
       <div class="chart-section">
-        <div class="chart-container">
-          <canvas id="estateChart"
-            role="img"
-            aria-label="Line chart showing estate growth from ${fmt(data.grossEstate)} today to ${fmt(maxGross)} at longevity${cliff ? ', with tax exposure appearing at age ' + cliff.age : ''}">
-            Estate projected to grow from ${fmt(data.grossEstate)} to ${fmt(maxGross)}.${cliff ? ` Tax exposure of ${fmt(cliff.totalTax)} begins at age ${cliff.age}.` : ' No estate tax exposure projected.'}
-          </canvas>
+        <div style="margin: 4px 0 4px;">
+          ${buildEstateSVGChart(data.projectionChartRows, data.domicileState)}
         </div>
         <div class="chart-legend">
           <div class="chart-legend-item">
@@ -449,94 +571,6 @@ export function generatePDFHTML(data: PDFReportData): string {
       </div>
       `
       }
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-      <script>
-      (function() {
-        var ctx = document.getElementById('estateChart');
-        if (!ctx || !window.Chart) return;
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ${chartYears},
-            datasets: [
-              {
-                label: 'Gross estate',
-                data: ${chartGross},
-                borderColor: '#378ADD',
-                backgroundColor: 'rgba(55,138,221,0.07)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 0,
-                pointHoverRadius: 3,
-              },
-              {
-                label: 'Net to heirs',
-                data: ${chartNet},
-                borderColor: '#639922',
-                backgroundColor: 'rgba(99,153,34,0.07)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 0,
-                pointHoverRadius: 3,
-                borderDash: [4,3],
-              },
-              ${
-                hasAnyTax
-                  ? `{
-                label: 'Est. tax',
-                data: ${chartTax},
-                borderColor: '#E24B4A',
-                backgroundColor: 'rgba(226,75,74,0.12)',
-                borderWidth: 1.5,
-                fill: true,
-                tension: 0,
-                pointRadius: 0,
-              },`
-                  : ''
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(1) + 'M';
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: { color: 'rgba(0,0,0,0.05)' },
-                ticks: {
-                  font: { size: 9 },
-                  color: '#888',
-                  maxTicksLimit: 8,
-                  autoSkip: true,
-                }
-              },
-              y: {
-                min: 0,
-                max: ${yMax},
-                grid: { color: 'rgba(0,0,0,0.05)' },
-                ticks: {
-                  font: { size: 9 },
-                  color: '#888',
-                  callback: function(v) { return '$' + v + 'M'; }
-                }
-              }
-            }
-          }
-        });
-      })();
-      </script>
       `
       }
       <div class="snapshot-grid">
