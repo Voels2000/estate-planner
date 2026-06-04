@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (print brief stat cards)
+# Last updated: 2026-06-01 (client-safe pdfFilingStatus)
+
+## Client-safe `normalizePdfFilingStatus` — build fix (2026-06-01)
+
+**Problem:** `MeetingPrepTab` (`'use client'`) imported `normalizePdfFilingStatus` from `fetchNarrativePdfFields.ts`, which imports `lib/supabase/server` → production build failed (`next/headers` in client bundle).
+
+**Decision:** Pure helper moved to **`lib/export/pdfFilingStatus.ts`** (no server imports). Client components import from there; `fetchNarrativePdfFields.ts` re-exports for server-only callers.
+
+---
 
 ## Print brief stat cards — at-death row + tax fields (2026-06-01)
 

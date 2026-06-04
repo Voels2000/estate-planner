@@ -6,7 +6,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
 import { generatePDFHTML } from '@/lib/export/generatePDFReport'
-import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
 import { mapHealthComponentsForPdf } from '@/lib/advisor/advisorBriefHelpers'
 import { advisorDatasetIncludeForTab } from '@/lib/advisor/loaders'

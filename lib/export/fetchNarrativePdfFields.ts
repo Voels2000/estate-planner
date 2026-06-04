@@ -4,9 +4,13 @@
 
 import { CST_STRATEGY_SOURCES, deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { createClient } from '@/lib/supabase/server'
+import { normalizePdfFilingStatus, type PdfFilingStatus } from '@/lib/export/pdfFilingStatus'
+
+export type { PdfFilingStatus }
+export { normalizePdfFilingStatus }
 
 export type NarrativePdfFields = {
-  filingStatus: 'mfj' | 'single' | 'widow'
+  filingStatus: PdfFilingStatus
   domicileState: string
   hasTrust: boolean
   hasIrrevocableTrust: boolean
@@ -17,13 +21,6 @@ export type NarrativePdfFields = {
   sunsetTaxEstimate: number
   annualGiftingCapacity: number
   lifetimeExemptionRemaining: number
-}
-
-export function normalizePdfFilingStatus(raw: string | null | undefined): 'mfj' | 'single' | 'widow' {
-  const n = (raw ?? '').toLowerCase()
-  if (['mfj', 'married_joint', 'married_filing_jointly', 'joint'].includes(n)) return 'mfj'
-  if (['qw', 'qualifying_widow', 'widow'].includes(n)) return 'widow'
-  return 'single'
 }
 
 export async function fetchNarrativePdfFields(params: {

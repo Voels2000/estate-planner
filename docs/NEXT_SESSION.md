@@ -1,6 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (print brief stat cards)
+# Updated: 2026-06-01 (pdfFilingStatus build fix)
+
+---
+
+## pdfFilingStatus build fix ✅ (2026-06-01)
+
+**Fix:** `lib/export/pdfFilingStatus.ts` — client-safe `normalizePdfFilingStatus`; `MeetingPrepTab` must not import `fetchNarrativePdfFields.ts` (pulls `supabase/server`).
 
 ---
 
@@ -198,6 +204,7 @@
 |------|--------|
 | Engine | `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, action enrichment, gifting bar, theme groups |
 | Fetch | `lib/export/fetchNarrativePdfFields.ts` — **`Promise.all`** for trust, strategies, insurance, prior score, gifting RPC |
+| Filing status (client-safe) | `lib/export/pdfFilingStatus.ts` — `normalizePdfFilingStatus` only; **not** from `fetchNarrativePdfFields` in `'use client'` tabs |
 | PDF | `generatePDFHTML` — new cover layout + grouped action items with impact / next step |
 | Export | `ExportPanel` + API `?type=report` via `loadAdvisorExportWiringForClient()` |
 | Meeting Prep | Top 3 open alerts above Export & Reports |

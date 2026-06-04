@@ -5,7 +5,7 @@ import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor
 import type { ActionItem, MonteCarloSummary, ScenarioVersion } from '@/lib/export-wiring'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
-import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import { currentFederalExemption } from '@/lib/export/narrativeEngine'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 import { buildPdfAssetBreakdown, resolveAdvisorBranding } from '@/lib/advisor/advisorBriefHelpers'

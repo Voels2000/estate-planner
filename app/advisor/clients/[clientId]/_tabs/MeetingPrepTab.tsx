@@ -11,7 +11,7 @@ import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
 import { meetingPrepBriefFromHorizons } from '@/lib/advisor/meetingPrepHorizons'
 import { formatAlertsForBrief, complexityMeetingInterp } from '@/lib/advisor/advisorBriefHelpers'
-import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import { ClientViewShellProps } from '../_client-view-shell'
 
 function getClientName(household: ClientViewShellProps['household']) {

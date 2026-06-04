@@ -672,6 +672,11 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `dedupeActionItems()` — sort enriched first; filler-normalized `actionItemDedupeKey()` (20-char stem)
 - [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once under Documents
 
+## pdfFilingStatus build fix ✅ closed 2026-06-01
+
+- [x] `lib/export/pdfFilingStatus.ts` — pure `normalizePdfFilingStatus` (no `supabase/server`)
+- [x] `MeetingPrepTab` imports from `pdfFilingStatus` — fixes client bundle / `npm run build`
+
 ## Print brief stat cards ✅ closed 2026-06-01
 
 - [x] `renderMeetingBriefHtml()` — `findAtDeathRow` for projected estate; `estate_tax_federal + estate_tax_state`

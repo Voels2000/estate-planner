@@ -11,7 +11,7 @@ import {
   resolveAdvisorBranding,
   scoreTrendLabel,
 } from '@/lib/advisor/advisorBriefHelpers'
-import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
+import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import type { ActionItem } from '@/lib/export-wiring'
 import {
   findAtDeathRow,
