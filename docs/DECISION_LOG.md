@@ -1,6 +1,21 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (four-surface advisor polish)
+# Last updated: 2026-06-01 (print brief stat cards)
+
+## Print brief stat cards — at-death row + tax fields (2026-06-01)
+
+**Problem:** `renderMeetingBriefHtml()` used `outputs[length - 1]` (end-of-plan estate) with hardcoded subtitle **"At retirement"** and read `estate_tax_total` (undefined on projection rows). Advisors saw ~$92M labeled as retirement when the modal/horizons use **at-death** via `findAtDeathRow`.
+
+**Decision:**
+- Household fetch (before `Promise.all`) includes `has_spouse`, birth years, longevity ages for `findAtDeathRow`.
+- At-death gross/tax/net from death-year row; tax = `estate_tax_federal + estate_tax_state`.
+- Alert enrichment uses **current** estate (first projection row or composition), not at-death.
+- One-page layout stays **3 cards:** health score · est. tax exposure (at death) · projected estate (at death, dynamic label `At death (age X)`).
+- Template marker **`sprint-four-surface-polish-v2`**.
+
+**Scope:** `app/api/advisor/meeting-prep-pdf/[clientId]/route.ts` only — modal and export PDF unchanged.
+
+---
 
 ## Four-surface advisor polish — shared brief helpers (2026-06-01)
 
@@ -9,7 +24,7 @@
 **Decision:**
 - **`lib/advisor/advisorBriefHelpers.ts`** — single source: `formatAlertsForBrief()`, `deriveAgenda()`, `scoreTrendLabel()`, `engagementLabel()`, `resolveAdvisorBranding()`, `buildPdfAssetBreakdown()`, `mapHealthComponentsForPdf()`.
 - **Export PDF:** `lib/advisor/exportMappers.ts` wires asset breakdown (rows + composition fallback), health components from `component_scores`, always-on strategies page empty state, branding + `meetingDate` on cover.
-- **Meeting brief print:** `GET …/meeting-prep-pdf/[clientId]?type=brief` → `renderMeetingBriefHtml()` uses shared helpers + `loadAdvisorExportWiringForClient` enrichment context; template marker `sprint-four-surface-polish-v1`; `Cache-Control: no-store`.
+- **Meeting brief print:** `GET …/meeting-prep-pdf/[clientId]?type=brief` → `renderMeetingBriefHtml()` uses shared helpers + `loadAdvisorExportWiringForClient` enrichment context; template marker `sprint-four-surface-polish-v2` (v1: agenda/enrichment; v2: at-death stat cards); `Cache-Control: no-store`.
 - **Meeting prep tab/modal:** enriched alerts in seed + modal; **Open print brief** opens server route (not `window.print()` on React layout).
 - **Notes:** `advisor_notes.note_type` migration (`prep` / `meeting_record` / `follow_up`); API GET/POST; Notes tab selector + badges; brief prefers prep note.
 

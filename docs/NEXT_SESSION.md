@@ -1,12 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (four-surface advisor polish)
+# Updated: 2026-06-01 (print brief stat cards)
+
+---
+
+## Print brief stat cards ✅ (2026-06-01)
+
+**Fix:** `?type=brief` uses `findAtDeathRow` + correct tax fields; no **"At retirement"** label. Template **`sprint-four-surface-polish-v2`**.
+
+**Smoke (Voels):** `X-Brief-Template: sprint-four-surface-polish-v2` · projected estate ~at-death horizon · tax card shows federal+state · subtitle `At death (age X)`
 
 ---
 
 ## Four-surface advisor polish ✅ (2026-06-01)
 
-**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** asset breakdown + health components · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v1` · **Notes:** `note_type` migration
+**Shared:** `lib/advisor/advisorBriefHelpers.ts` · **PDF page 2:** asset breakdown + health components · **Brief print:** `?type=brief` template `sprint-four-surface-polish-v2` · **Notes:** `note_type` migration
 
 **Pre-deploy:** Apply `supabase/migrations/20260529120000_advisor_notes_note_type.sql`
 
@@ -26,9 +34,9 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Four-surface advisor polish shipped (2026-06-01).** Shared **`lib/advisor/advisorBriefHelpers.ts`**. Export PDF page 2 populated; meeting brief print has agenda + enrichment (`?type=brief`, `X-Brief-Template: sprint-four-surface-polish-v1`). **Prepare for Meeting** = React modal; **Open print brief** / header **Meeting brief** = server HTML. Apply **`note_type` migration** before Notes smoke.
+> My Wealth Maps — **Print brief stat fix shipped (2026-06-01).** `?type=brief` at-death row via **`findAtDeathRow`**; tax = federal+state; template **`sprint-four-surface-polish-v2`** (no "At retirement"). Prior: four-surface polish + **`advisorBriefHelpers`**. **Prepare for Meeting** = React modal; **Open print brief** / header **Meeting brief** = server HTML.
 >
-> **Post-deploy smoke:** Voels — PDF page 2 asset table · brief `Suggested agenda` · Notes type selector.
+> **Post-deploy smoke:** Voels — brief v2 header · projected estate at death label · PDF page 2 · Notes type selector (after migration).
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >

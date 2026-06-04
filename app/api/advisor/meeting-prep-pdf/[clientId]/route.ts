@@ -13,12 +13,17 @@ import {
 } from '@/lib/advisor/advisorBriefHelpers'
 import { normalizePdfFilingStatus } from '@/lib/export/fetchNarrativePdfFields'
 import type { ActionItem } from '@/lib/export-wiring'
+import {
+  findAtDeathRow,
+  longevityAndSurvivor,
+} from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 /** Prevent CDN/browser from serving a cached pre-sprint brief HTML shell. */
 export const dynamic = 'force-dynamic'
 
 /** Marker in HTML — search response for this string to confirm sprint-four brief template. */
-const BRIEF_TEMPLATE_VERSION = 'sprint-four-surface-polish-v1'
+const BRIEF_TEMPLATE_VERSION = 'sprint-four-surface-polish-v2'
 
 interface RouteParams {
   params: Promise<{ clientId: string }>
@@ -85,7 +90,9 @@ async function renderMeetingBriefHtml(
 
   const { data: household } = await supabase
     .from('households')
-    .select('id, state_primary, filing_status')
+    .select(
+      'id, state_primary, filing_status, has_spouse, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age',
+    )
     .eq('owner_id', clientId)
     .maybeSingle()
 
@@ -157,30 +164,56 @@ async function renderMeetingBriefHtml(
   const filingStatus = normalizePdfFilingStatus(household.filing_status)
   const domicileState = household.state_primary ?? 'WA'
 
-  let grossEstate: number | null = null
-  let estateTax: number | null = null
-  let netToHeirs: number | null = null
+  let currentGrossEstate: number | null = null
+  let atDeathGrossEstate: number | null = null
+  let atDeathTax: number | null = null
+  let atDeathNetToHeirs: number | null = null
+
+  const { longevityAge: atDeathLongevityAge } = longevityAndSurvivor({
+    hasSpouse: household.has_spouse ?? false,
+    person1Longevity: household.person1_longevity_age,
+    person2Longevity: household.person2_longevity_age,
+  })
+  let atDeathLabel = `At death (age ${atDeathLongevityAge})`
 
   const composition = compositionRes.data?.composition as Record<string, unknown> | null
   if (composition) {
-    grossEstate = Number(composition.gross_estate ?? 0) || null
-    estateTax = Number(composition.estimated_tax_federal ?? composition.estimated_tax ?? 0) || null
-    if (grossEstate != null && estateTax != null) {
-      netToHeirs = grossEstate - estateTax
-    }
+    currentGrossEstate = Number(composition.gross_estate ?? 0) || null
   }
 
   if (projectionRes.data?.outputs_s1_first) {
-    const outputs = projectionRes.data.outputs_s1_first as Record<string, number>[]
-    const lastYear = outputs[outputs.length - 1]
-    if (lastYear) {
-      grossEstate = lastYear.estate_incl_home ?? lastYear.assets_total ?? grossEstate
-      estateTax = lastYear.estate_tax_total ?? estateTax
-      if (grossEstate != null && estateTax != null) {
-        netToHeirs = grossEstate - estateTax
+    const outputs = projectionRes.data.outputs_s1_first as AnnualOutput[]
+
+    if (outputs.length > 0) {
+      const firstRow = outputs[0]
+      currentGrossEstate =
+        Number(firstRow.estate_incl_home ?? firstRow.assets_total ?? 0) || currentGrossEstate
+
+      const atDeathRow = findAtDeathRow(outputs, {
+        hasSpouse: household.has_spouse ?? false,
+        person1BirthYear: household.person1_birth_year,
+        person2BirthYear: household.person2_birth_year,
+        person1Longevity: household.person1_longevity_age,
+        person2Longevity: household.person2_longevity_age,
+      })
+
+      if (atDeathRow) {
+        atDeathGrossEstate = Number(atDeathRow.estate_incl_home ?? atDeathRow.assets_total ?? 0) || null
+        const federal = Number(atDeathRow.estate_tax_federal ?? 0)
+        const state = Number(atDeathRow.estate_tax_state ?? 0)
+        atDeathTax = federal + state
+        atDeathNetToHeirs =
+          atDeathRow.net_to_heirs != null
+            ? Number(atDeathRow.net_to_heirs)
+            : atDeathGrossEstate != null
+              ? atDeathGrossEstate - atDeathTax
+              : null
       }
     }
   }
+
+  // Alert enrichment uses current estate, not at-death projection
+  const grossEstate = currentGrossEstate
 
   const rawAlerts: ActionItem[] = (alertsRes.data ?? []).map((a) => ({
     id: a.id,
@@ -357,14 +390,14 @@ async function renderMeetingBriefHtml(
       <div class="delta" style="color:${trendColor};">${escapeHtml(trend.label)}</div>
     </div>
     <div class="stat-card">
-      <div class="label">Projected Estate</div>
-      <div class="value">${fmt(grossEstate)}</div>
-      <div class="delta">At retirement</div>
+      <div class="label">Est. Tax Exposure</div>
+      <div class="value">${fmt(atDeathTax)}</div>
+      <div class="delta">Net to heirs: ${fmt(atDeathNetToHeirs)} · ${escapeHtml(atDeathLabel)}</div>
     </div>
     <div class="stat-card">
-      <div class="label">Est. Tax Exposure</div>
-      <div class="value">${fmt(estateTax)}</div>
-      <div class="delta">Net to heirs: ${fmt(netToHeirs)}</div>
+      <div class="label">Projected Estate</div>
+      <div class="value">${fmt(atDeathGrossEstate)}</div>
+      <div class="delta">${escapeHtml(atDeathLabel)}</div>
     </div>
   </div>
 

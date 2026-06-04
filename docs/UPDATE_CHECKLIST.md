@@ -672,12 +672,20 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `dedupeActionItems()` — sort enriched first; filler-normalized `actionItemDedupeKey()` (20-char stem)
 - [ ] **Post-deploy smoke:** Voels MFJ — page 3 ~$28M exemption; trust alert once under Documents
 
+## Print brief stat cards ✅ closed 2026-06-01
+
+- [x] `renderMeetingBriefHtml()` — `findAtDeathRow` for projected estate; `estate_tax_federal + estate_tax_state`
+- [x] Removed **"At retirement"** mislabel; dynamic **At death (age X)** on tax + projected cards
+- [x] Household select extended (birth years, longevity) for at-death row lookup
+- [x] Template `sprint-four-surface-polish-v2` (`X-Brief-Template` header)
+- [ ] **Post-deploy smoke:** Voels — v2 header · at-death projected estate · no "At retirement" in HTML
+
 ## Four-surface advisor polish ✅ closed 2026-06-01
 
 - [x] `lib/advisor/advisorBriefHelpers.ts` — shared brief enrichment, agenda, branding, PDF asset breakdown
 - [x] PDF page 2 — `assetBreakdown` + `healthComponents` via `exportMappers` + composition fallback
 - [x] PDF strategies page always renders (empty state when no active strategies)
-- [x] Meeting brief print — agenda, enriched alerts, score trend, engagement; `?type=brief` template v1
+- [x] Meeting brief print — agenda, enriched alerts, score trend, engagement; `?type=brief` template v2 (stat cards)
 - [x] Meeting Prep — enriched modal seed, **Open print brief**, complexity context
 - [x] `advisor_notes.note_type` migration + API + Notes tab UI
 - [x] Master docs synced
