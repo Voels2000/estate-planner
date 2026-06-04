@@ -9,6 +9,10 @@ import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import { currentFederalExemption } from '@/lib/export/narrativeEngine'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 import { buildPdfAssetBreakdown, resolveAdvisorBranding } from '@/lib/advisor/advisorBriefHelpers'
+import {
+  buildBeneficiaryAccountGroups,
+  type AssetBeneficiaryRow,
+} from '@/lib/advisor/beneficiaryHelpers'
 import type { AdvisorProfileRow, HealthScoreComponent } from '@/lib/export-wiring'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
@@ -53,11 +57,23 @@ export function buildAdvisorExportPayloads(params: {
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
   narrativeFields: NarrativePdfFields
   stateBrackets: StateBracket[]
-  assets?: Array<{ type?: string | null; value?: number | null }>
-  realEstate?: Array<{ current_value?: number | null }>
-  businesses?: Array<{ estimated_value?: number | null; ownership_pct?: number | null }>
+  beneficiaries?: AssetBeneficiaryRow[]
+  assets?: Array<{
+    id?: string
+    name?: string | null
+    type?: string | null
+    value?: number | null
+    owner?: string | null
+  }>
+  realEstate?: Array<{ id?: string; name?: string | null; current_value?: number | null }>
+  businesses?: Array<{
+    id?: string
+    name?: string | null
+    estimated_value?: number | null
+    ownership_pct?: number | null
+  }>
   businessInterests?: Array<{ fmv_estimated?: number | null; ownership_pct?: number | null }>
-  insurancePolicies?: Array<{ death_benefit?: number | null }>
+  insurancePolicies?: Array<{ id?: string; policy_name?: string | null; death_benefit?: number | null }>
   healthScoreComponents?: HealthScoreComponent[]
   advisorProfile?: AdvisorProfileRow
   meetingDate?: string
@@ -129,6 +145,30 @@ export function buildAdvisorExportPayloads(params: {
     compositionFallback: params.compositionFallback,
   })
 
+  const person1Name = displayPersonFirstName(
+    [household.person1_first_name, household.person1_last_name].filter(Boolean).join(' ').trim() || null,
+  )
+  const person2Name = household.has_spouse
+    ? displayPersonFirstName(
+        [household.person2_first_name, household.person2_last_name].filter(Boolean).join(' ').trim() || null,
+      )
+    : null
+
+  const beneficiaryData =
+    params.beneficiaries && params.beneficiaries.length > 0
+      ? buildBeneficiaryAccountGroups({
+          benRows: params.beneficiaries,
+          assets: (params.assets ?? []).filter((a): a is { id: string } & typeof a => Boolean(a.id)),
+          realEstate: (params.realEstate ?? []).filter((r): r is { id: string } & typeof r => Boolean(r.id)),
+          insurance: (params.insurancePolicies ?? []).filter(
+            (i): i is { id: string } & typeof i => Boolean(i.id),
+          ),
+          businesses: (params.businesses ?? []).filter((b): b is { id: string } & typeof b => Boolean(b.id)),
+          person1Name,
+          person2Name,
+        })
+      : undefined
+
   const healthComponents = (params.healthScoreComponents ?? []).map((c) => ({
     label: c.label,
     score: c.score,
@@ -192,6 +232,7 @@ export function buildAdvisorExportPayloads(params: {
     liquidAssets: params.liquidAssets,
     illiquidAssets: Math.max(0, grossForExport - params.liquidAssets),
     assetBreakdown,
+    beneficiaryData: beneficiaryData?.groups.length ? beneficiaryData : undefined,
     projectionChartRows,
     federalTax: fedTaxExport,
     stateTax: stTaxExport,

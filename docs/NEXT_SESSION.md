@@ -1,16 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (PDF strategy dedupe + beneficiary data note)
+# Updated: 2026-06-01 (PDF beneficiary summary page shipped)
 
 ---
 
-## Beneficiary data for future PDF page (reference)
+## PDF beneficiary summary page ✅ (2026-06-01)
 
-**Export PDF today:** **Neither** `beneficiaries` nor `asset_beneficiaries` in `PDFReportData` / `exportMappers.ts`.
+**Shipped:** Conditional page **`beneficiary_summary`** between estate snapshot and tax analysis. Voels export → **6 pages** (was 5) when `asset_beneficiaries` rows link to accounts.
 
-**Advisor UI:** `loadAdvisorClientDatasets` reads **`asset_beneficiaries`** only; `mapAdvisorClientDatasets` adds derived **`account_type`** (from linked asset / RE / insurance / business). Estate tab groups via `buildBeneficiaryAccountGroups`. Legacy **`beneficiaries`** table is seed-demo only — not used in loaders.
+**Data:** Raw rows from **`beneficiariesResult.data`** (not mapped UI shape) → **`buildBeneficiaryAccountGroups()`** in **`lib/advisor/beneficiaryHelpers.ts`** → **`PDFReportData.beneficiaryData`**. Params: `beneficiaries`, `assets`, `realEstate`, `insurancePolicies`, `businesses` in **`buildAdvisorExportPayloads`**. Wired in **`loadAdvisorExportWiring.ts`** + **`page.tsx`** when `exportWiring` runs. No new DB fetch (`inc.beneficiaries = true` on meeting-prep).
 
-**Implication for Cursor script:** Account-type summary = **wiring change** (pass mapped beneficiaries + grouping into export payload). Meeting-prep export path already fetches `asset_beneficiaries` but drops them before `buildAdvisorExportPayloads`.
+**Estate tab:** Local **`buildBeneficiaryAccountGroups`** in **`EstateTab.tsx`** unchanged (different signature/shape — UI grouping only).
+
+**Smoke (Voels `?type=report`):** Page 3 = beneficiary summary · stat cards · retirement/insurance sections · gap box (Teva, 529) · page count **6**.
+
+**If page count stays 5:** `beneficiaryData` undefined or empty groups — check `beneficiariesResult` length and row FKs (`asset_id`, etc.).
 
 ---
 
@@ -78,9 +82,9 @@
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **Print brief stat fix shipped (2026-06-01).** `?type=brief` at-death row via **`findAtDeathRow`**; tax = federal+state; template **`sprint-four-surface-polish-v2`** (no "At retirement"). Prior: four-surface polish + **`advisorBriefHelpers`**. **Prepare for Meeting** = React modal; **Open print brief** / header **Meeting brief** = server HTML.
+> My Wealth Maps — **PDF beneficiary summary page shipped (2026-06-01).** Export report order: cover → snapshot → **beneficiaries** → tax → strategies → action items. **`lib/advisor/beneficiaryHelpers.ts`** + raw **`asset_beneficiaries`** through **`exportMappers`**. Prior: print brief stat fix, PDF page 2 SVG chart, strategy page dedupe. **Prepare for Meeting** = React modal; **Export estate report** / **`?type=report`** = full **`generatePDFHTML`**.
 >
-> **Post-deploy smoke:** Voels — brief v2 header · projected estate at death label · PDF page 2 · Notes type selector (after migration).
+> **Post-deploy smoke:** Voels — PDF **6 pages** · beneficiary page (Pfizer complete, Teva missing primary, 529 missing contingent) · brief v2 header · PDF page 2 chart in print preview.
 >
 > **Go-live blockers (non-code):** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, counsel sign-off, WA entity/EIN/B&O, email aliases, Supabase auth tighten, Stripe live config. [LEGAL_TODO.md](./LEGAL_TODO.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until all 🔴 items checked.
 >

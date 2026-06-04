@@ -1,6 +1,19 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (PDF strategy page alert dedupe)
+# Last updated: 2026-06-01 (PDF beneficiary summary page)
+
+## PDF beneficiary summary page (2026-06-01)
+
+**Problem:** Export estate report had no beneficiary designation summary; `asset_beneficiaries` was already fetched for meeting-prep (`inc.beneficiaries = true`) but dropped before **`buildAdvisorExportPayloads`**.
+
+**Decision:**
+- **`lib/advisor/beneficiaryHelpers.ts`** — **`buildBeneficiaryAccountGroups()`** groups raw `asset_beneficiaries` by linked account (asset / RE / insurance / business), primary + contingent, status badges (`complete` / `missing_primary` / `missing_contingent`).
+- **`PDFReportData.beneficiaryData`** optional; **`determinePDFPages`** inserts **`beneficiary_summary`** after **`estate_snapshot`** only when `groups.length > 0`.
+- Export wiring passes **raw** `beneficiariesResult.data` (not `mapAdvisorClientDatasets` UI rows). Estate tab keeps its **separate** local grouping function — not replaced (different API/shape).
+
+**No new DB fetch.** Legacy **`beneficiaries`** table remains seed-demo only.
+
+---
 
 ## PDF strategy page — dedupe gap recommendations (2026-06-01)
 

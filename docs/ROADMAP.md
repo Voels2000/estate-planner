@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-05-31 (household_alerts trust title sentence case)
+# Last updated: 2026-06-01 (PDF beneficiary summary page)
 
 ---
 
@@ -18,6 +18,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — PDF beneficiary summary page (2026-06-01) **← shipped**
+
+| Item | Status |
+|------|--------|
+| `lib/advisor/beneficiaryHelpers.ts` — account-level groups + status | `[x]` |
+| Wire raw `asset_beneficiaries` through `exportMappers` / export wiring | `[x]` |
+| `PDFReportData.beneficiaryData` + conditional `beneficiary_summary` page | `[x]` |
+| Estate tab local helper unchanged (different shape) | `[x]` |
+| Voels smoke — 6-page PDF with beneficiary page | `[ ]` |
+
+**Post-ship:** Voels `?type=report` — page order cover → snapshot → beneficiaries → tax → strategies → action items.
+
+---
 
 ### Sprint — household_alerts trust title sentence case (2026-05-31) **← shipped**
 

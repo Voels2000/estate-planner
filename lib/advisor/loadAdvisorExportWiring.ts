@@ -7,6 +7,7 @@ import type { createClient } from '@/lib/supabase/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
 import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
+import type { AssetBeneficiaryRow } from '@/lib/advisor/beneficiaryHelpers'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import { fetchNarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { advisorDatasetIncludeForTab, loadAdvisorClientDatasets } from '@/lib/advisor/loaders'
@@ -106,6 +107,7 @@ export async function loadAdvisorExportWiringForClient(
     strategyLineItemsResult,
     assetsResult,
     realEstateResult,
+    beneficiariesResult,
     businessesResult,
     insurancePoliciesResult,
   } = datasetsBundle
@@ -196,6 +198,7 @@ export async function loadAdvisorExportWiringForClient(
     stateBrackets,
     assets,
     realEstate,
+    beneficiaries: (beneficiariesResult.data ?? []) as AssetBeneficiaryRow[],
     businesses,
     businessInterests,
     insurancePolicies,

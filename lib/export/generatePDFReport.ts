@@ -22,6 +22,7 @@ import {
   calculateStateEstateTax,
   type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
+import type { BeneficiarySummary } from '@/lib/advisor/beneficiaryHelpers'
 import {
   dedupeActionItems,
   enrichActionItems,
@@ -60,6 +61,8 @@ export interface PDFReportData {
   liquidAssets: number
   illiquidAssets: number
   assetBreakdown: Array<{ label: string; value: number; pct: number }>
+  /** Beneficiary summary from asset_beneficiaries (optional page). */
+  beneficiaryData?: BeneficiarySummary
   /** Simplified projection rows for estate snapshot chart (from outputs_s1_first). */
   projectionChartRows: Array<{
     year: number
@@ -141,7 +144,11 @@ export function determinePDFPages(data: PDFReportData): string[] {
   // Page 2: Always included
   pages.push('estate_snapshot')
 
-  // Page 3: Always included
+  if (data.beneficiaryData && data.beneficiaryData.groups.length > 0) {
+    pages.push('beneficiary_summary')
+  }
+
+  // Tax analysis (page 3 or 4 when beneficiaries present)
   pages.push('tax_analysis')
 
   // Page 4: Always included — shows empty state when no active strategies
@@ -340,6 +347,179 @@ function buildEstateSVGChart(
 </svg>`
 }
 
+function renderBeneficiarySummaryPage(
+  data: PDFReportData,
+  pages: string[],
+  fmt: (n: number) => string,
+): string {
+  if (!pages.includes('beneficiary_summary') || !data.beneficiaryData) return ''
+
+  const bd = data.beneficiaryData
+  const pageNum = pages.indexOf('beneficiary_summary') + 1
+
+  const retirementGroups = bd.groups.filter((g) =>
+    ['retirement', '401k', 'ira', 'roth', '403b', '457', 'pension', 'traditional_401k', 'traditional_ira', 'rollover_ira'].includes(
+      g.accountType.toLowerCase(),
+    ),
+  )
+  const insuranceGroups = bd.groups.filter((g) => g.accountType.toLowerCase().includes('insurance'))
+  const otherGroups = bd.groups.filter((g) => !retirementGroups.includes(g) && !insuranceGroups.includes(g))
+
+  const badge = (status: string) => {
+    if (status === 'complete') return `<span class="bene-badge bene-badge-ok">Complete</span>`
+    if (status === 'missing_primary') return `<span class="bene-badge bene-badge-bad">Missing primary</span>`
+    if (status === 'missing_contingent') return `<span class="bene-badge bene-badge-warn">Missing contingent</span>`
+    return `<span class="bene-badge bene-badge-warn">Review needed</span>`
+  }
+
+  const renderGroup = (g: (typeof bd.groups)[number]) => `
+    <div class="bene-group">
+      <div class="bene-group-header">
+        <div>
+          <div class="bene-group-name">${g.accountName}</div>
+          <div class="bene-group-meta">${g.accountType} · ${g.owner}${g.estimatedValue > 0 ? ` · Est. value ${fmt(g.estimatedValue)}` : ''}</div>
+        </div>
+        ${badge(g.status)}
+      </div>
+      ${
+        g.status === 'missing_primary'
+          ? `
+        <div class="bene-missing">
+          No primary beneficiary designated. This account will pass through probate.
+        </div>
+      `
+          : ''
+      }
+      ${g.primaryBenes
+        .map(
+          (b) => `
+        <div class="bene-row">
+          <div class="bene-dot dot-p"></div>
+          <div>
+            <div style="font-weight:500;">${b.name}</div>
+            <div style="font-size:9pt; color:#666;">${b.relationship}</div>
+          </div>
+          <div style="color:#555;">Primary</div>
+          <div style="text-align:right; font-weight:500;">${Math.round(b.allocationPct)}%</div>
+        </div>
+      `,
+        )
+        .join('')}
+      ${g.contingentBenes
+        .map(
+          (b) => `
+        <div class="bene-row" style="background:#fafafa;">
+          <div class="bene-dot dot-c"></div>
+          <div>
+            <div>${b.name}</div>
+            <div style="font-size:9pt; color:#666;">${b.relationship}</div>
+          </div>
+          <div style="color:#888;">Contingent</div>
+          <div style="text-align:right; color:#555;">${Math.round(b.allocationPct)}%</div>
+        </div>
+      `,
+        )
+        .join('')}
+      ${
+        g.status === 'missing_contingent'
+          ? `
+        <div class="bene-missing bene-missing-warn" style="border-top:0.5px solid #ffe0b2;">
+          No contingent beneficiary. If the primary predeceases the owner, assets pass through probate.
+        </div>
+      `
+          : ''
+      }
+    </div>
+  `
+
+  const renderSection = (label: string, groups: typeof bd.groups) => {
+    if (groups.length === 0) return ''
+    return `
+      <div class="section-title" style="margin-top:14px;">${label}</div>
+      ${groups.map(renderGroup).join('')}
+    `
+  }
+
+  const gapGroups = bd.groups.filter((g) => g.status !== 'complete')
+  const gapBoxHtml =
+    gapGroups.length > 0
+      ? `
+    <div class="bene-gap-box">
+      <div class="bene-gap-title">Action items — beneficiary gaps</div>
+      ${gapGroups
+        .map(
+          (g) => `
+        <div class="bene-gap-item">
+          <span style="font-size:10pt; margin-top:1px;">•</span>
+          <div>
+            <strong>${g.accountName}:</strong>
+            ${
+              g.status === 'missing_primary'
+                ? 'Add a primary beneficiary. Without one, this account passes through probate regardless of your will.'
+                : 'Add a contingent beneficiary so assets don\'t pass through probate if the primary predeceases.'
+            }
+          </div>
+        </div>
+      `,
+        )
+        .join('')}
+    </div>
+  `
+      : ''
+
+  return `
+    <div class="page">
+      <div class="header">
+        <div class="firm-name">${data.firmName} | ${data.clientName}</div>
+        <div class="report-title" style="font-size:18pt;">Beneficiary summary</div>
+      </div>
+
+      <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:16px;">
+        <div class="metric-card">
+          <div class="metric-label">Accounts reviewed</div>
+          <div class="metric-value">${bd.totalAccounts}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fully designated</div>
+          <div class="metric-value" style="color:${bd.completeCount === bd.totalAccounts ? '#166534' : '#1a1a2e'}">
+            ${bd.completeCount}
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Gaps identified</div>
+          <div class="metric-value" style="color:${bd.missingPrimaryCount + bd.missingContingentCount > 0 ? '#c0392b' : '#166534'}">
+            ${bd.missingPrimaryCount + bd.missingContingentCount}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; margin-bottom:12px; font-size:9pt; color:#555;">
+        <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%;
+          background:#378ADD; margin-right:4px; vertical-align:middle;"></span>Primary beneficiary</span>
+        <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%;
+          background:#b0b0b0; margin-right:4px; vertical-align:middle;"></span>Contingent beneficiary</span>
+      </div>
+
+      ${renderSection('Retirement accounts', retirementGroups)}
+      ${renderSection('Life insurance', insuranceGroups)}
+      ${renderSection('Other accounts', otherGroups)}
+
+      ${gapBoxHtml}
+
+      <div class="bene-no-data" style="margin-top:14px;">
+        Beneficiary designations shown reflect data entered by the client or imported from connected accounts.
+        Verify designations directly with each account custodian before relying on this summary.
+        Accounts not listed above did not have beneficiary data available at time of report.
+      </div>
+
+      <div class="footer">
+        <span>${data.firmName} | ${data.clientName} | ${data.reportDate}</span>
+        <span style="float:right">Page ${pageNum} of ${pages.length}</span>
+      </div>
+    </div>
+  `
+}
+
 // HTML template for PDF generation via browser print
 export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
@@ -424,6 +604,35 @@ export function generatePDFHTML(data: PDFReportData): string {
       .snapshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
       .asset-bar-wrap { height: 3px; background: #e8e8e8; border-radius: 2px; margin-top: 3px; }
       .asset-bar-fill { height: 3px; border-radius: 2px; background: #378ADD; }
+      .bene-group { border: 1px solid #e0e0e0; border-radius: 6px;
+                    margin-bottom: 10px; overflow: hidden; page-break-inside: avoid; }
+      .bene-group-header { display: flex; justify-content: space-between; align-items: center;
+                           padding: 8px 12px; background: #f8f8f8;
+                           border-bottom: 1px solid #e0e0e0; }
+      .bene-group-name { font-size: 11pt; font-weight: bold; color: #1a1a2e; }
+      .bene-group-meta { font-size: 9pt; color: #666; margin-top: 2px; }
+      .bene-badge { font-size: 9pt; font-weight: bold; padding: 2px 8px;
+                    border-radius: 20px; white-space: nowrap; }
+      .bene-badge-ok   { background: #e8f5e9; color: #1b5e20; }
+      .bene-badge-warn { background: #fff8e1; color: #e65100; }
+      .bene-badge-bad  { background: #fce4ec; color: #880e4f; }
+      .bene-row { display: grid; grid-template-columns: 12px 1fr 100px 50px;
+                  gap: 8px; padding: 6px 12px; border-bottom: 0.5px solid #f0f0f0;
+                  align-items: center; font-size: 10pt; }
+      .bene-row:last-child { border-bottom: none; }
+      .bene-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .dot-p { background: #378ADD; }
+      .dot-c { background: #b0b0b0; }
+      .bene-missing { padding: 8px 12px; font-size: 9.5pt; font-style: italic; color: #c0392b; }
+      .bene-missing-warn { color: #e65100; }
+      .bene-gap-box { background: #fce4ec; border: 1px solid #e57373; border-radius: 5px;
+                      padding: 10px 14px; margin-top: 14px; font-size: 9.5pt; color: #4a0000; }
+      .bene-gap-title { font-weight: bold; font-size: 10.5pt; margin-bottom: 6px; color: #7b0000; }
+      .bene-gap-item { padding: 3px 0; border-bottom: 0.5px solid rgba(229,57,53,0.2);
+                       display: flex; gap: 6px; line-height: 1.4; }
+      .bene-gap-item:last-child { border-bottom: none; }
+      .bene-no-data { background: #f5f5f5; border-radius: 5px; padding: 10px 14px;
+                      font-size: 9.5pt; color: #555; margin-top: 10px; }
       @media print { .page { page-break-after: always; } }
     </style>
   `
@@ -641,7 +850,9 @@ export function generatePDFHTML(data: PDFReportData): string {
     </div>`
   }
 
-  // PAGE 3: Tax Analysis
+  html += renderBeneficiarySummaryPage(data, pages, fmt)
+
+  // Tax Analysis
   if (pages.includes('tax_analysis')) {
     const taxAnalysisSection = stateTaxScenarios.showScenarioTable
       ? `

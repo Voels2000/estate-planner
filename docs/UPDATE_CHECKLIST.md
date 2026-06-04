@@ -68,6 +68,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## PDF beneficiary summary page (2026-06-01) — shipped
+
+- [x] [lib/advisor/beneficiaryHelpers.ts](../lib/advisor/beneficiaryHelpers.ts) — `buildBeneficiaryAccountGroups`
+- [x] [exportMappers.ts](../lib/advisor/exportMappers.ts) · [loadAdvisorExportWiring.ts](../lib/advisor/loadAdvisorExportWiring.ts) · [generatePDFReport.ts](../lib/export/generatePDFReport.ts)
+- [x] [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [DECISION_LOG.md](./DECISION_LOG.md) · [ROADMAP.md](./ROADMAP.md) · [NEXT_SESSION.md](./NEXT_SESSION.md)
+- [ ] Post-deploy smoke: Voels export — 6 pages; beneficiary gaps (Teva, 529) on page 3
+
 ## State estate tax unification (2026-05-29) — shipped
 
 - [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) — canonical engine registry + regression greps

@@ -24,6 +24,7 @@ import {
 } from '@/lib/advisor/clientPageLoaders'
 import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
 import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
+import type { AssetBeneficiaryRow } from '@/lib/advisor/beneficiaryHelpers'
 import { fetchNarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import {
@@ -466,6 +467,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       stateBrackets,
       assets,
       realEstate,
+      beneficiaries: (beneficiariesResult.data ?? []) as AssetBeneficiaryRow[],
       businesses,
       businessInterests,
       insurancePolicies,
