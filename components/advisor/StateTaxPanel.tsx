@@ -15,6 +15,8 @@ import {
   getPortabilityGapLabel,
 } from '@/lib/calculations/stateEstateTax'
 import { buildEstateTaxYearBasis } from '@/lib/tax/labelTaxBasis'
+import { InfoTooltip } from '@/components/ui/InfoTooltip'
+import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
 
 interface Props {
   grossEstate:      number
@@ -172,6 +174,14 @@ export default function StateTaxPanel({
   const specialRules = STATE_SPECIAL_RULES[stateCode] ?? []
   const hasNyCliff   = rows.some(r => r.nyCliffTriggered)
   const currentYearRow = rows.find((r) => r.year === currentYear)
+  const taxTermCtx: TaxTermContext = {
+    stateCode: unifiedStateCode ?? null,
+    stateExemption:
+      currentYearRow != null && currentYearRow.exemption > 0
+        ? currentYearRow.exemption
+        : null,
+    isMFJ,
+  }
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
@@ -203,7 +213,15 @@ export default function StateTaxPanel({
         </h3>
         <div className="flex gap-2 flex-wrap justify-end">
           {specialRules.includes('no_portability') && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">No portability</span>
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+              <span className="flex items-center gap-1">
+                No portability
+                <InfoTooltip
+                  content={taxTermExplainer('state_no_portability', taxTermCtx)}
+                  size="sm"
+                />
+              </span>
+            </span>
           )}
           {specialRules.includes('ny_cliff') && (
             <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">NY Cliff rule</span>
@@ -237,7 +255,15 @@ export default function StateTaxPanel({
             <tr className="border-b border-slate-100">
               <th className="text-left text-xs font-semibold text-slate-500 pb-2">Year</th>
               <th className="text-right text-xs font-semibold text-slate-500 pb-2">Gross Estate</th>
-              <th className="text-right text-xs font-semibold text-slate-500 pb-2">Exemption</th>
+              <th className="text-right text-xs font-semibold text-slate-500 pb-2">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Exemption
+                  <InfoTooltip
+                    content={taxTermExplainer('state_exemption', taxTermCtx)}
+                    size="sm"
+                  />
+                </span>
+              </th>
               <th className="text-right text-xs font-semibold text-slate-500 pb-2">Taxable Estate</th>
               <th className="text-right text-xs font-semibold text-slate-500 pb-2">State Tax</th>
               <th className="text-right text-xs font-semibold text-slate-500 pb-2">Eff. Rate</th>
