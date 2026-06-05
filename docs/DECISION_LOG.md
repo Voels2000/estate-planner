@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Projection Engine C→B shipped)
+# Last updated: 2026-06-05 (export gross alignment — Option A shipped)
+
+---
+
+## exportMappers gross alignment — Option A shipped (2026-06-05)
+
+**Decision:** exportMappers gross alignment — Option A shipped; **`grossForExport`** prefers **`advisorHorizons.today.grossEstate`** over **`latestOutput`** year-0; **`page.tsx`** direct call and **`fetchNarrativePdfFields`** both aligned; **`projectionChartRows`** unchanged (per-year growth, intentional).
+
+**Files:** `lib/advisor/exportMappers.ts`, `lib/advisor/loadAdvisorExportWiring.ts`, `app/advisor/clients/[clientId]/page.tsx`.
+
+**Voels check:** PDF cover gross moves from base-case year-0 (~$9.30M) to Strategy tab Today composition gross (~$9.49M).
 
 ---
 

@@ -173,7 +173,7 @@ export async function loadAdvisorExportWiringForClient(
   const narrativeFields = await fetchNarrativePdfFields({
     householdId: household.id,
     clientId,
-    grossEstate: grossForExport,
+    grossEstate: strategyVm.advisorHorizons?.today?.grossEstate ?? grossForExport,
     filingStatus: household.filing_status,
     statePrimary: household.state_primary,
   })
@@ -193,6 +193,7 @@ export async function loadAdvisorExportWiringForClient(
     scenarioHistoryForExport,
     scenarioOutputs,
     latestOutput,
+    todayGrossEstate: strategyVm.advisorHorizons?.today?.grossEstate ?? null,
     assumptionSnapshot,
     scenarioForStrategy: strategyVm.scenarioForStrategy,
     narrativeFields,

@@ -61,6 +61,7 @@ export async function buildAdvisorExportPayloads(params: {
   scenarioHistoryForExport: ScenarioVersion[]
   scenarioOutputs: Array<Record<string, unknown>>
   latestOutput: Record<string, unknown> | null
+  todayGrossEstate?: number | null
   assumptionSnapshot: Record<string, unknown>
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
   narrativeFields: NarrativePdfFields
@@ -102,7 +103,10 @@ export async function buildAdvisorExportPayloads(params: {
     : `${household.person1_first_name} ${household.person1_last_name}`
 
   const reportDateStr = new Date().toLocaleDateString()
-  const grossForExport = Number(params.latestOutput?.estate_incl_home ?? 0)
+  const grossForExport =
+    params.todayGrossEstate && params.todayGrossEstate > 0
+      ? params.todayGrossEstate
+      : Number(params.latestOutput?.estate_incl_home ?? 0)
   const exemptionExport = currentFederalExemption(normalizePdfFilingStatus(household.filing_status))
   const lawScenarioExport = params.scenarioForStrategy?.law_scenario ?? 'current_law'
 

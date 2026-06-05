@@ -444,7 +444,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     const narrativeFields = await fetchNarrativePdfFields({
       householdId: household.id,
       clientId,
-      grossEstate: grossForExport,
+      grossEstate: advisorHorizons?.today?.grossEstate ?? grossForExport,
       filingStatus: household.filing_status,
       statePrimary: household.state_primary,
     })
@@ -463,6 +463,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioHistoryForExport,
       scenarioOutputs,
       latestOutput,
+      todayGrossEstate: advisorHorizons?.today?.grossEstate ?? null,
       assumptionSnapshot,
       scenarioForStrategy,
       narrativeFields,
