@@ -45,6 +45,19 @@ export interface FanChartDataPoint {
   p90: number
 }
 
+export interface PercentileByYear {
+  year: number
+  age_p1: number
+  p10_gross: number
+  p25_gross: number
+  p50_gross: number
+  p75_gross: number
+  p90_gross: number
+  p10_net: number
+  p50_net: number
+  p90_net: number
+}
+
 export interface SensitivityResult {
   variable: string
   low_value: number
@@ -84,7 +97,7 @@ function randomNormal(mean: number, stdDev: number): number {
   return mean + stdDev * n
 }
 
-function calcEstateTax(
+export function calcEstateTax(
   estate: number,
   exemption: number,
   taxCtx: EstateTaxContext,
