@@ -59,6 +59,8 @@
 
 **Shipped:** Engine B at death-year rows in **`estate-tax-projection.ts`**; **`generate-base-case.ts`** derives **`hasBypassTrust`** from line items. Voels death-year **2057** state tax **$18,273,170** (zero diff vs engine B). Regenerate base case per household to refresh stored **`outputs_s1_first`**.
 
+**Commit:** `a2a5a38`
+
 **Files:** `lib/calculations/estate-tax-projection.ts`, `lib/actions/generate-base-case.ts`, `lib/export/generatePDFReport.ts`
 
 ---
