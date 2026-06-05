@@ -68,6 +68,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Domain 3 — tax term explainers (2026-06-01) — in progress
+
+- [x] `lib/estate/taxTermExplainers.ts` — static, OBBBA formatters, dynamic ctx
+- [x] `components/ui/InfoTooltip.tsx`
+- [x] `EstateReadinessCard` — score subcategory labels
+- [x] `EstateCalloutCard.tsx` — hero 4-tile labels only (not sidebar snapshot)
+- [ ] `/estate-tax` — summary cards + waterfall row labels
+- [ ] Advisor `StateTaxPanel` — badges + table headers
+- [ ] Hero tile full ctx — `stateExemption` / `isMFJ` props from dashboard-body
+
 ## Estate readiness subcategory explainers (2026-06-01) — shipped
 
 - [x] `components/ui/InfoTooltip.tsx` — custom popover primitive (no Radix)

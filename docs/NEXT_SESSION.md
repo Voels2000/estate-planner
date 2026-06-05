@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Estate readiness subcategory explainers)
+# Updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
+
+---
+
+## Domain 3 — dashboard tax hero tooltips ✅ (2026-06-01)
+
+**Shipped:** `EstateSummaryHeroAndMetrics` tile labels — Federal headroom, Est. federal tax, Est. state tax (`taxTermExplainer` + `InfoTooltip`). Sidebar **`EstateTaxSnapshotPanel`** unchanged.
+
+**Deferred at hero:** `stateExemption` / `isMFJ` — not on hero props; state tax tooltip uses `statePrimary` only.
+
+**Next surface:** `/estate-tax` (`_estate-tax-client.tsx`) — summary cards + waterfall; full `TaxTermContext` derivable client-side.
 
 ---
 

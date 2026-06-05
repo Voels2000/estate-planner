@@ -2,7 +2,9 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { fmt, fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard'
+import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { resolveEstateActionHref } from '@/lib/dashboard/estateUpgradeHref'
+import { taxTermExplainer, type TaxTermContext, type TaxTermKey } from '@/lib/estate/taxTermExplainers'
 
 export interface EstateCalloutCardProps {
   grossEstate: number
@@ -65,6 +67,47 @@ export function EstateSummaryHeroAndMetrics({
   const estateTax = estimatedTaxState
   const federalTax = estimatedTaxFederal
   const isStateExposure = estateTax > 0
+  const stateTaxTooltipCtx: TaxTermContext = {
+    stateCode: statePrimary ?? undefined,
+  }
+
+  const statTiles: Array<{
+    label: string
+    value: string
+    sub: string
+    color: string
+    tooltipKey?: TaxTermKey
+    tooltipCtx?: TaxTermContext
+  }> = [
+    {
+      label: 'Gross estate',
+      value: fmt(grossEstate),
+      sub: 'Total assets',
+      color: '',
+    },
+    {
+      label: 'Federal headroom',
+      value: fmt(exemptionRemaining),
+      sub: 'Before fed tax',
+      color: 'text-emerald-700',
+      tooltipKey: 'federal_headroom',
+    },
+    {
+      label: 'Est. federal tax',
+      value: fmt(federalTax),
+      sub: federalTax === 0 ? 'Below exemption' : 'Due at death',
+      color: federalTax > 0 ? 'text-red-700' : '',
+      tooltipKey: 'federal_exemption',
+    },
+    {
+      label: 'Est. state tax',
+      value: fmt(estateTax),
+      sub: statePrimary ? `${statePrimary} estate tax` : 'State tax',
+      color: estateTax > 0 ? 'text-red-700' : '',
+      tooltipKey: 'state_exemption',
+      tooltipCtx: stateTaxTooltipCtx,
+    },
+  ]
 
   return (
     <div className="space-y-3">
@@ -125,38 +168,23 @@ export function EstateSummaryHeroAndMetrics({
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          {
-            label: 'Gross estate',
-            value: fmt(grossEstate),
-            sub: 'Total assets',
-            color: '',
-          },
-          {
-            label: 'Federal headroom',
-            value: fmt(exemptionRemaining),
-            sub: 'Before fed tax',
-            color: 'text-emerald-700',
-          },
-          {
-            label: 'Est. federal tax',
-            value: fmt(federalTax),
-            sub: federalTax === 0 ? 'Below exemption' : 'Due at death',
-            color: federalTax > 0 ? 'text-red-700' : '',
-          },
-          {
-            label: 'Est. state tax',
-            value: fmt(estateTax),
-            sub: statePrimary ? `${statePrimary} estate tax` : 'State tax',
-            color: estateTax > 0 ? 'text-red-700' : '',
-          },
-        ].map((tile) => (
+        {statTiles.map((tile) => (
           <div
             key={tile.label}
             className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-3"
           >
             <p className="mb-1 text-[10px] uppercase tracking-wide text-[color:var(--mwm-text-secondary)]">
-              {tile.label}
+              {tile.tooltipKey ? (
+                <span className="flex items-center gap-1">
+                  {tile.label}
+                  <InfoTooltip
+                    content={taxTermExplainer(tile.tooltipKey, tile.tooltipCtx)}
+                    size="sm"
+                  />
+                </span>
+              ) : (
+                tile.label
+              )}
             </p>
             <p className={`text-lg font-medium ${tile.color || 'text-[color:var(--mwm-navy)]'}`}>
               {tile.value}

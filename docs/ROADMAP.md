@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (Estate readiness subcategory explainers)
+# Last updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
 
 ---
 
@@ -19,12 +19,24 @@
 
 ## Current sprint
 
+### Domain 3 — tax term explainers (2026-06-01)
+
+| Item | Status |
+|------|--------|
+| `lib/estate/taxTermExplainers.ts` (static + OBBBA formatters + dynamic ctx) | `[x]` |
+| `InfoTooltip` UI primitive | `[x]` |
+| `EstateReadinessCard` — six score subcategory labels | `[x]` |
+| Dashboard tax hero — `EstateSummaryHeroAndMetrics` tile labels | `[x]` |
+| `/estate-tax` — summary cards + waterfall labels | `[ ]` |
+| Advisor `StateTaxPanel` badge/table headers | `[ ]` |
+| Hero `stateExemption` / `isMFJ` ctx (new props from dashboard-body) | `[ ]` **deferred** |
+
+---
+
 ### Estate readiness explainers — InfoTooltip ✅ (2026-06-01)
 
 | Item | Status |
 |------|--------|
-| `InfoTooltip` UI primitive (click toggle, Escape/outside dismiss, viewport flip) | `[x]` |
-| `SCORE_CATEGORY_EXPLAINERS` + `scoreCategoryExplainer()` in `estate-health-score.ts` | `[x]` |
 | Wire into `EstateReadinessCard` subcategory labels | `[x]` |
 | Post-deploy smoke (consumer past onramp — six `?`, copy match) | `[ ]` |
 

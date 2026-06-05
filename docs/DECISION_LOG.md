@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Estate readiness score subcategory explainers)
+# Last updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
+
+## Domain 3 — tax term explainers wired on dashboard hero tiles (2026-06-01)
+
+**Decision:** Wire **`InfoTooltip`** on **`EstateSummaryHeroAndMetrics`** four-tile grid labels only (not **`EstateTaxSnapshotPanel`** sidebar). Copy from **`lib/estate/taxTermExplainers.ts`**: `federal_headroom`, `federal_exemption`, `state_exemption` with `{ stateCode: statePrimary }` only.
+
+**Deferred:** `stateExemption` / `isMFJ` context at hero — props not available on **`EstateSummaryHeroAndMetrics`** without new dashboard-body wiring; generic/state-name-only fallback acceptable for v1.
+
+**Files:** `lib/estate/taxTermExplainers.ts`, `components/dashboard/EstateCalloutCard.tsx` (hero path only).
+
+**Next:** `/estate-tax` summary cards + waterfall row labels (full context available client-side).
+
+---
 
 ## Estate readiness subcategory explainers — InfoTooltip (2026-06-01)
 
