@@ -13,6 +13,7 @@ import {
   type StrategyLayer,
 } from '@/lib/strategy/validateComposability'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { MonteCarloSummary } from '@/lib/advisor/loadScenarioMonteCarlo'
 
 export interface PendingAdvisorItem {
   id: string
@@ -32,6 +33,7 @@ interface StrategyHorizonTableProps {
   onAccept?: (item: PendingAdvisorItem) => void | Promise<void>
   onReject?: (item: PendingAdvisorItem) => void | Promise<void>
   actionSaving?: string | null
+  mcSummary?: MonteCarloSummary | null
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
@@ -79,6 +81,7 @@ export default function StrategyHorizonTable({
   onAccept,
   onReject,
   actionSaving,
+  mcSummary = null,
 }: StrategyHorizonTableProps) {
   const strategyLayers: StrategyLayer[] = useMemo(
     () =>
@@ -152,13 +155,22 @@ export default function StrategyHorizonTable({
             </tr>
           </thead>
           <tbody>
-            {horizonRows.map((row, i) => (
+            {horizonRows.map((row, i) => {
+              const isAtDeath = i === 3 || row.label === horizons.atDeath.headerTitle
+              return (
               <tr
                 key={row.label}
                 className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
               >
                 <td className="px-4 py-2.5 font-medium text-gray-700">{row.label}</td>
-                <td className="px-4 py-2.5 text-right text-gray-700">{fmt(row.grossBase)}</td>
+                <td className="px-4 py-2.5 text-right text-gray-700">
+                  {fmt(row.grossBase)}
+                  {isAtDeath && mcSummary ? (
+                    <div className="mt-1 text-xs text-[--mwm-text-muted]">
+                      P10 {fmt(mcSummary.p10_estate)} – P90 {fmt(mcSummary.p90_estate)}
+                    </div>
+                  ) : null}
+                </td>
                 <td className="px-4 py-2.5 text-right text-red-600">{fmt(row.federalTaxBase)}</td>
                 {showStateTax && <td className="px-4 py-2.5 text-right text-red-500">{fmt(row.stateTaxBase)}</td>}
                 <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{fmt(row.netBase)}</td>
@@ -172,7 +184,8 @@ export default function StrategyHorizonTable({
                   </td>
                 )}
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>

@@ -47,6 +47,7 @@ export default function StrategyTab({
   initialGiftingActuals,
   advisorId,
   stateBrackets = [],
+  mcSummary = null,
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -566,6 +567,7 @@ export default function StrategyTab({
                 pendingItems={[]}
                 federalExemption={federalExemption}
                 mode="advisor"
+                mcSummary={mcSummary}
               />
             )}
             {combinedMode === 'projected' && advisorHorizonsProjected && (
@@ -574,6 +576,7 @@ export default function StrategyTab({
                 pendingItems={[]}
                 federalExemption={federalExemption}
                 mode="advisor"
+                mcSummary={mcSummary}
               />
             )}
 
@@ -663,6 +666,7 @@ export default function StrategyTab({
             lawScenario={lawScenario}
             supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
             assumptions={activeAssumptions ?? undefined}
+            mcCalculatedAt={mcSummary?.mc_calculated_at ?? null}
           />
         )}
       </section>

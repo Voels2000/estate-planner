@@ -35,6 +35,7 @@ import {
   loadAdvisorProjectionStaleness,
   logAdvisorClientAccess,
 } from '@/lib/advisor/loaders'
+import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 import { getCachedAdvisoryMetrics } from '@/lib/advisor/cachedAdvisoryMetrics'
 import type { AdvisoryMetric, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
@@ -607,6 +608,14 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     }
   }
 
+  const mcScenarioId =
+    scenario && typeof (scenario as { id?: string }).id === 'string'
+      ? String((scenario as { id: string }).id)
+      : null
+  const mcSummary = mcScenarioId
+    ? await loadScenarioMonteCarlo(mcScenarioId, supabase)
+    : null
+
   // 4) Route shell composition
   return (
     <ClientViewShell
@@ -662,6 +671,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioOutputs={retirementScenarioOutputs}
       advisorSsData={advisorSsData}
       advisorRothData={advisorRothData}
+      mcSummary={mcSummary}
     />
   )
 }

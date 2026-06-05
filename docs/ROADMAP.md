@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Projection engine C→B sprint queued)
+# Last updated: 2026-06-05 (Monte Carlo integration Phase 2A+2B shipped; Phase 2C active)
 
 ---
 
@@ -19,11 +19,26 @@
 
 ## Current sprint
 
-### Next sprint candidates (post-unification audit)
+### Sprint — Monte Carlo Integration `[~]` **← active (Phase 2C)**
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 0 | Schema — `percentiles_by_year`, unique `scenario_id`, export `calcEstateTax` | `[x]` |
+| 1A/1B | `runEstateMonteCarloAsync` + fire-and-forget after `generateBaseCase` | `[x]` |
+| 1C | `loadScenarioMonteCarlo` unified loader | `[x]` |
+| 2A | Projections — `EstateOutlookChart` (`percentiles_by_year` SVG bands) | `[x]` |
+| 2B | Strategy tab — at-death P10/P90 badge + `MonteCarloPanel` Last precomputed | `[x]` |
+| 2C | PDF SVG polygon bands (`generatePDFReport`) | `[~]` **active** |
+| 2D | Narrative one-liner (`narrativeEngine`) | `[ ]` |
+
+**Commits (Phase 0–2B):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, Phase 2B pending push.
+
+---
+
+### Next sprint candidates (post–Monte Carlo integration)
 
 | Item | Notes |
 |------|-------|
-| Monte Carlo integration sprint | Precomputed MC results; Domain 1+2 clear — **next** |
 | Projection engine C→B unification | Queued **post–Monte Carlo** — see sprint block below |
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 

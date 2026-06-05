@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Projection engine C→B sprint queued)
+# Last updated: 2026-06-05 (Monte Carlo integration Phase 2A+2B shipped; Phase 2C active)
+
+---
+
+## Monte Carlo Phase 2A+2B shipped — projections EstateOutlookChart + Strategy tab badge (2026-06-05)
+
+**Decision:** Monte Carlo Phase 2A+2B shipped — projections **EstateOutlookChart** (`percentiles_by_year` SVG bands), Strategy tab at-death **P10/P90 badge**, **MonteCarloPanel** “Last precomputed” timestamp. **`PrecomputedMonteCarloSummary`** alias added to advisor client shell to avoid export-wiring **`MonteCarloSummary`** type clash.
+
+**Phase 2A:** `/projections` — standalone Estate Outlook section below retirement BarChart; server `loadScenarioMonteCarlo` via `households.base_case_scenario_id`.
+
+**Phase 2B:** Advisor Strategy tab — `mcSummary` prop thread (`page.tsx` → shell → `StrategyTab` → `StrategyHorizonTable` + `MonteCarloPanel`); badge on at-death gross cell only; precomputed timestamp without changing manual Run / edge POST.
+
+**Next:** Phase 2C PDF SVG bands; Phase 2D narrative one-liner.
+
+**Files:** `app/(dashboard)/projections/_components/EstateOutlookChart.tsx`, `app/advisor/clients/[clientId]/page.tsx`, `components/shared/StrategyHorizonTable.tsx`, `components/advisor/MonteCarloPanel.tsx`, `lib/advisor/loadScenarioMonteCarlo.ts`.
+
+---
 
 ## Projection engine C→B — sprint queued (2026-06-05)
 

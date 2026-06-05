@@ -16,6 +16,7 @@ import type {
   StrategyLineItemSummary,
 } from '@/lib/estate/strategyLedger'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { MonteCarloSummary as PrecomputedMonteCarloSummary } from '@/lib/advisor/loadScenarioMonteCarlo'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import type { RothAnalysisResult } from '@/lib/calculations/roth-analysis'
@@ -443,4 +444,5 @@ export interface ClientViewShellProps {
   scenarioOutputs?: YearRow[]
   advisorSsData?: SocialSecurityData | null
   advisorRothData?: RothAnalysisResult | null
+  mcSummary?: PrecomputedMonteCarloSummary | null
 }

@@ -56,6 +56,7 @@ interface MonteCarloProps {
   lawScenario: 'current_law' | 'no_exemption'
   supabaseUrl: string
   assumptions?: MonteCarloAssumptions
+  mcCalculatedAt?: string | null
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -75,6 +76,7 @@ export default function MonteCarloPanel({
   lawScenario,
   supabaseUrl,
   assumptions,
+  mcCalculatedAt = null,
 }: MonteCarloProps) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
   const [result, setResult] = useState<MonteCarloResult | null>(null)
@@ -302,10 +304,22 @@ export default function MonteCarloPanel({
             {loading ? 'Running...' : 'Run Monte Carlo'}
           </button>
           {result && (
-            <span className="text-xs text-gray-400">
-              Completed in {(result.run_duration_ms / 1000).toFixed(1)}s
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400">
+                Completed in {(result.run_duration_ms / 1000).toFixed(1)}s
+              </span>
+              {mcCalculatedAt ? (
+                <p className="mt-1 text-xs text-[--mwm-text-muted]">
+                  Last precomputed: {new Date(mcCalculatedAt).toLocaleDateString()}
+                </p>
+              ) : null}
+            </div>
           )}
+          {!result && mcCalculatedAt ? (
+            <p className="text-xs text-[--mwm-text-muted]">
+              Last precomputed: {new Date(mcCalculatedAt).toLocaleDateString()}
+            </p>
+          ) : null}
         </div>
 
         {error && (
