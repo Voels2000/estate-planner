@@ -12,10 +12,10 @@ ALTER TABLE public.monte_carlo_results
   ADD COLUMN IF NOT EXISTS mc_calculated_at timestamptz DEFAULT now(),
   ADD COLUMN IF NOT EXISTS engine_version text DEFAULT 'engine-b-v1';
 
--- Step 3: Unique index on scenario_id (required for upsert)
+-- Step 3: Unique index on scenario_id (required for PostgREST upsert onConflict)
+-- Non-partial: PostgreSQL allows multiple NULL scenario_id rows; one row per non-null id.
 CREATE UNIQUE INDEX IF NOT EXISTS monte_carlo_results_scenario_id_key
-  ON public.monte_carlo_results (scenario_id)
-  WHERE scenario_id IS NOT NULL;
+  ON public.monte_carlo_results (scenario_id);
 
 -- Step 4: Loader index
 CREATE INDEX IF NOT EXISTS monte_carlo_results_scenario_id_created_at_idx
