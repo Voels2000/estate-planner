@@ -1,6 +1,32 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Domain 3 — chart + gifting tooltips)
+# Last updated: 2026-06-05 (stateBrackets year fallback + Domain 5 docs)
+
+## stateBrackets fetch — latest tax year fallback (2026-06-05)
+
+**Decision:** `loaders.ts` stateBrackets — year fallback added; `tax_year = currentYear` with fallback to latest available; fixes engine B $0 state tax when 2026 rules not yet seeded.
+
+**Context:** `state_estate_tax_rules` query filtered `tax_year = new Date().getFullYear()` only. No 2026 rows → `stateBrackets = []` → `calculateStateEstateTax` returned $0 on export panel / Excel Tax Analysis despite engine B in `exportMappers.ts`.
+
+**Fix:** Two-step fetch in `loadAdvisorClientDatasets` — current year first; if empty, latest available year (up to 20 bracket rows, `tax_year` desc).
+
+**Related:** `exportMappers.ts` — `fedTaxExport` / `stTaxExport` now engine B (aligned with PDF page 3).
+
+**Files:** `lib/advisor/loaders.ts`, `lib/advisor/exportMappers.ts`.
+
+---
+
+## Domain 5 — documentation sync (2026-06-05)
+
+**Decision:** Documentation sync — `CALCULATION_ENGINES.md`, `SCORE_TAXONOMY.md`, `ROADMAP.md` updated to reflect unification audit completion.
+
+- **Monte Carlo:** Engine B canonical for estate MC; flat `stateEstateTaxRate` deprecated (`fc85ff8`). Retirement MC (`lib/monte-carlo.ts`, `monte_carlo_runs`) documented as separate engine.
+- **Score label:** "Plan health score" retired; **`Estate readiness`** (`ESTATE_READINESS_LABEL`) sole canonical consumer label.
+- **Sprint status:** Pre-Monte Carlo Unification Audit marked complete (Domains 1–5); Monte Carlo integration sprint unblocked.
+
+**Files:** `docs/CALCULATION_ENGINES.md`, `docs/SCORE_TAXONOMY.md`, `docs/ROADMAP.md`, `docs/DECISION_LOG.md`.
+
+---
 
 ## Domain 3 — projections chart disclaimer + gifting tooltips (2026-06-01)
 

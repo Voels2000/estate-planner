@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (Domain 3 — StateTaxPanel tooltips)
+# Last updated: 2026-06-05 (Domain 5 — documentation sync)
 
 ---
 
@@ -18,6 +18,32 @@
 ---
 
 ## Current sprint
+
+### Next sprint candidates (post-unification audit)
+
+| Item | Notes |
+|------|-------|
+| `exportMappers.ts` engine C→B | Excel + export panel tax summary | ✅ engine B (`exportMappers.ts`) |
+| Monte Carlo integration sprint | Precomputed MC results; blocked on Domain 1+2 — **now clear** |
+| Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
+
+---
+
+### Sprint — Pre-Monte Carlo Unification Audit ✅ (2026-06-05)
+
+**Status:** Complete
+
+| Domain | Scope | Status |
+|--------|-------|--------|
+| Domain 1 | State tax engine unification | ✅ |
+| Domain 2 | Data flow (PDF page 3) | ✅ — `exportMappers` deferred |
+| Domain 3 | UX copy and tooltips | ✅ |
+| Domain 4 | Voels smoke matrix | ✅ |
+| Domain 5 | Documentation sync | ✅ (this sprint) |
+
+**Commits:** `fc85ff8`, `8e8ef71`, `4bdda56`, `716ffba`, `a7ce6d9`, `d558f46`, `07300c8`, `e6dc48c`, `4372546`
+
+---
 
 ### Domain 3 — tax term explainers (2026-06-01)
 

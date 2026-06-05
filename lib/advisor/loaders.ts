@@ -460,6 +460,27 @@ export async function loadAdvisorClientDatasets(
     ),
   ]
   const taxYears = [...new Set(params.projectionYears)]
+  const currentYear = new Date().getFullYear()
+
+  let fetchedStateBracketsResult: { data: unknown[] | null; error?: unknown } = emptyList
+  if (inc.stateTax) {
+    fetchedStateBracketsResult = await supabase
+      .from('state_estate_tax_rules')
+      .select('min_amount, max_amount, rate_pct, exemption_amount')
+      .eq('state', params.householdStatePrimary ?? '')
+      .eq('tax_year', currentYear)
+      .order('min_amount', { ascending: true })
+
+    if ((fetchedStateBracketsResult.data ?? []).length === 0) {
+      fetchedStateBracketsResult = await supabase
+        .from('state_estate_tax_rules')
+        .select('min_amount, max_amount, rate_pct, exemption_amount')
+        .eq('state', params.householdStatePrimary ?? '')
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true })
+        .limit(20)
+    }
+  }
 
   const [
     assetsResult,
@@ -600,14 +621,7 @@ export async function loadAdvisorClientDatasets(
           p_years: params.projectionYears,
         })
       : Promise.resolve(emptyList),
-    inc.stateTax
-      ? supabase
-          .from('state_estate_tax_rules')
-          .select('min_amount, max_amount, rate_pct, exemption_amount')
-          .eq('state', params.householdStatePrimary ?? '')
-          .eq('tax_year', new Date().getFullYear())
-          .order('min_amount', { ascending: true })
-      : Promise.resolve(emptyList),
+    Promise.resolve(fetchedStateBracketsResult),
     inc.stateTax && stateFilter.length > 0
       ? supabase
           .from('state_estate_tax_rules')

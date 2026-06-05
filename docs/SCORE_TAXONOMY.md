@@ -1,5 +1,5 @@
 # Score taxonomy
-Last updated: 2026-06-01 (subcategory explainers on EstateReadinessCard)
+Last updated: 2026-06-05 (Domain 5 — documentation sync)
 
 This document is the authoritative list of scores and metrics in My Wealth Maps.
 Before adding a new score or metric, check this file.
@@ -11,8 +11,18 @@ If something similar exists, extend it — do not add a new one.
 
 ### 1. Estate readiness (0–100)
 - Source: `estate_health_scores` table, `computeEstateHealthScore()`
-- Label: `ESTATE_READINESS_LABEL` (`'Estate readiness'`) everywhere — no variants (not "Foundation", not "plan health")
-- Six components: Documents (20), Incapacity (15), Beneficiaries (20), Titling (15), Domicile (15), Tax awareness (15)
+- Label: `ESTATE_READINESS_LABEL` (`'Estate readiness'`) — sole canonical label everywhere; no variants (not "Foundation", not "Plan health score")
+- PDF cover page previously used "Plan health score" — verified corrected to "Estate readiness" as of Domain 3 sprint.
+- Six subcategory keys (`ScoreCategoryKey` in `lib/estate-health-score.ts`):
+
+| Key | maxScore |
+|-----|----------|
+| `titling` | 15 |
+| `domicile` | 15 |
+| `documents` | 20 |
+| `estate_tax` | 15 |
+| `incapacity` | 15 |
+| `beneficiaries` | 20 |
 - Explainers: **`SCORE_CATEGORY_EXPLAINERS`** in `lib/estate-health-score.ts` — keyed by component `key`; surfaced via **`InfoTooltip`** on **`EstateReadinessCard`** subcategory labels
 - Benchmark: **`EstateReadinessCard`** shows vs. avg. American (28) and avg. MWM user (63) — constants in `lib/dashboard/readinessBenchmarks.ts`; hardcoded until enough users exist to compute platform averages from `estate_health_scores` (future sprint: config table, monthly refresh)
 - Surfaces: Consumer dashboard (States 2+3), /health-check completion, /my-estate-strategy, consumer PDF export
@@ -59,7 +69,7 @@ If something similar exists, extend it — do not add a new one.
 ---
 
 ## Banned labels (do not use in consumer-facing strings)
-- "plan health" or "plan health score" → use "Estate readiness"
+- "Plan health score", "plan health" (any casing) → use **`Estate readiness`** only
 - "Foundation score" → use "Estate readiness"
 - "Grade F/D/C/B/A" → remove from consumer views
 - Any percentage that implies a grade or judgment without context

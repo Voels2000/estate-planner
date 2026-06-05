@@ -7,7 +7,12 @@ import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
 import { currentFederalExemption } from '@/lib/export/narrativeEngine'
-import type { StateBracket } from '@/lib/calculations/stateEstateTax'
+import {
+  calculateStateEstateTax,
+  resolveActiveStateTax,
+  isMFJFilingStatus,
+  type StateBracket,
+} from '@/lib/calculations/stateEstateTax'
 import { buildPdfAssetBreakdown, resolveAdvisorBranding } from '@/lib/advisor/advisorBriefHelpers'
 import {
   buildBeneficiaryAccountGroups,
@@ -95,17 +100,26 @@ export function buildAdvisorExportPayloads(params: {
 
   const reportDateStr = new Date().toLocaleDateString()
   const grossForExport = Number(params.latestOutput?.estate_incl_home ?? 0)
-  const fedTaxExport = Number(
-    params.latestOutput?.estate_tax_federal ??
-      params.latestOutput?.federal_tax ??
-      params.latestOutput?.federal_estate_tax ??
-      0,
-  )
-  const stTaxExport = Number(
-    params.latestOutput?.estate_tax_state ?? params.latestOutput?.state_tax ?? params.latestOutput?.state_estate_tax ?? 0,
-  )
   const exemptionExport = currentFederalExemption(normalizePdfFilingStatus(household.filing_status))
   const lawScenarioExport = params.scenarioForStrategy?.law_scenario ?? 'current_law'
+
+  // Engine B state tax (aligned with generatePDFReport page 3)
+  const exportStateResult = calculateStateEstateTax(
+    grossForExport,
+    params.narrativeFields.domicileState ?? '',
+    params.stateBrackets ?? [],
+    isMFJFilingStatus(params.narrativeFields.filingStatus),
+    false,
+  )
+  const stTaxExport = resolveActiveStateTax(
+    exportStateResult,
+    params.narrativeFields.hasBypassTrust ?? false,
+  )
+
+  // Engine B federal tax
+  const FEDERAL_RATE = 0.4
+  const exportExemption = lawScenarioExport === 'no_exemption' ? 0 : exemptionExport
+  const fedTaxExport = Math.max(0, grossForExport - exportExemption) * FEDERAL_RATE
 
   const projectionRowsForExcel: Array<Record<string, number | string>> = params.scenarioOutputs.map((row) => {
     const out: Record<string, number | string> = {}

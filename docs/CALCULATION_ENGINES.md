@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-01 (Domain 1 — engine B complete)
+Last updated: 2026-06-05 (Domain 5 — documentation sync)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -62,6 +62,34 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 
 ---
 
+## Monte Carlo engines
+
+Two separate engines — do not merge.
+
+### Estate Monte Carlo (advisor Strategy tab)
+
+| | |
+|--|--|
+| **Files** | `lib/calculations/estate-monte-carlo.ts` + `supabase/functions/estate-monte-carlo/index.ts` |
+| **State tax** | Engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) per simulated estate — **not** flat rate (removed 2026-06-01) |
+| **Inputs** | `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust` via POST from Strategy tab (`MonteCarloPanel`) |
+| **Storage** | `monte_carlo_results` (ad-hoc, on Strategy tab Run click) |
+| **Precomputed** | Not yet — planned for Monte Carlo integration sprint |
+| **Engine version** | Flat rate deprecated; engine B unified as of `fc85ff8` |
+
+**`success_rate`:** Share of simulated final estates where federal + state estate tax both equal $0 (UI: **Zero-Tax Paths**).
+
+### Retirement Monte Carlo (consumer `/monte-carlo`)
+
+| | |
+|--|--|
+| **Files** | `lib/monte-carlo.ts`, `POST /api/monte-carlo` |
+| **Storage** | `monte_carlo_runs` |
+| **Purpose** | Consumer `/monte-carlo` — portfolio sustainability question |
+| **State** | Unchanged (separate from estate MC) |
+
+---
+
 ## Surfaces and canonical engine (post-unification)
 
 | Surface | State estate tax engine | Trust-aware? |
@@ -73,11 +101,7 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | Consumer estate strategy | B via `computeColumnTaxes` | Yes — accepted CST line items |
 | Estate tax projection rows | C — `computeStateEstateTaxFromBrackets` | No — future sprint |
 | Prospect mode | B via `calculateStateEstateTax` | Yes |
-| Estate Monte Carlo (advisor Strategy tab) | B — `calculateStateEstateTax` + `resolveActiveStateTax` per simulated estate | Yes — `hasBypassTrust` |
-
-**Estate MC inputs (POST from Strategy tab):** `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust`. Same `stateBrackets` array as horizon snapshots (today column). Flat `stateEstateTaxRate` removed.
-
-**Estate MC `success_rate`:** Share of simulated final estates where **federal + state** estate tax both equal $0 (UI: **Zero-Tax Paths**). Not federal-exemption-only; requires engine B state tax on every path.
+| Estate Monte Carlo (advisor Strategy tab) | B — see [Monte Carlo engines](#monte-carlo-engines) | Yes — `hasBypassTrust` |
 
 **PDF page 3 metric cards (2026-06-01):** Render-time `page3FederalTax` / `page3StateTax` / `page3NetToHeirs` in `generatePDFReport.ts` — engine B; `PDFReportData.federalTax` / `stateTax` from mappers (engine C) still used for Excel/export panel only.
 
