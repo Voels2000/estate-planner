@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Monte Carlo Phase 2C shipped; Phase 2D active)
+# Last updated: 2026-06-05 (Monte Carlo integration sprint complete — Phase 2D shipped)
+
+---
+
+## Monte Carlo Phase 2D shipped — PDF cover MC narrative line (2026-06-05)
+
+**Decision:** Monte Carlo Phase 2D — one MC summary sentence appended to PDF cover **tax callout detail** via **`buildMCNarrativeLine()`** in **`narrativeEngine.ts`**. Finds first band year where `p10_gross` exceeds WA state exemption (no-portability) or federal exemption; age from matching **`projectionChartRows`** year join. Null **`projectionChartBands`** → narrative unchanged.
+
+**Copy:** `Under adverse market conditions, {WA estate|estate} tax exposure may begin as early as age {N}.`
+
+**Sprint closed:** Phases 0–2D complete. Post-sprint: Projection Engine C→B unification.
 
 ---
 

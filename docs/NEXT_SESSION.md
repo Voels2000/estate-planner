@@ -1,20 +1,27 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (Monte Carlo Phase 2C shipped; Phase 2D active)
+# Updated: 2026-06-05 (Monte Carlo integration sprint complete)
 
 ---
 
-## Monte Carlo Phase 2D — narrative one-liner `[~]` (2026-06-05)
+## Monte Carlo integration sprint — complete ✅ (2026-06-05)
 
-**Goal:** One-line MC range in PDF narrative (`narrativeEngine.ts`) when precomputed MC exists.
+| Phase | Surface | Status |
+|-------|---------|--------|
+| 0 | Schema + `calcEstateTax` export | ✅ |
+| 1A–1C | Async precompute + unified loader | ✅ |
+| 2A | `/projections` EstateOutlookChart | ✅ |
+| 2B | Strategy tab badge + Last precomputed | ✅ |
+| 2C | PDF page 2 MC band polygons | ✅ `aaf46b4` |
+| 2D | PDF cover MC narrative one-liner | ✅ |
 
-**Phase 2C shipped:** PDF page 2 **`buildEstateSVGChart`** — optional **`projectionChartBands`** (P10–P90 gross `#3b82f6`, net `#10b981`); async **`buildAdvisorExportPayloads`** with **`supabase`**; bands join by year (25 MC years on 32 projection rows). Smoke: Voels `?type=report` page 2.
+**Smokes:** `scripts/smoke-strategy-mc-badge.ts` · `scripts/smoke-pdf-mc-bands.ts`
 
-**Next:** Phase 2D closes Monte Carlo integration sprint.
+**Next sprint:** Projection Engine C→B unification (queued post–Monte Carlo).
 
 ---
 
-## Monte Carlo Phase 2C — PDF SVG bands ✅ (2026-06-05)
+## Monte Carlo Phase 2D — narrative one-liner ✅ (2026-06-05)
 
 **Goal:** Overlay P10–P90 gross-estate fan bands on PDF page 2 **`buildEstateSVGChart()`** (same pattern as **`EstateOutlookChart`** on `/projections`).
 

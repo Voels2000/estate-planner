@@ -4,6 +4,7 @@
 import {
   calculateStateEstateTax,
   calculateStateTaxScenarios,
+  getPortabilityGapLabel,
   getStateDisplayName,
   isMFJFilingStatus,
   resolveActiveStateTax,
@@ -103,6 +104,47 @@ function actionItemEnrichmentScore(item: ActionItem): number {
 function appendPlanningGapNote(detail: string, planningGap: number, stateName: string): string {
   if (planningGap <= 100_000) return detail
   return detail.replace(/\.$/, '') + ` · Without a bypass trust, ${stateName} tax increases by ${fmt(planningGap)}.`
+}
+
+function buildMCNarrativeLine(
+  projectionChartBands: PDFReportData['projectionChartBands'],
+  projectionChartRows: PDFReportData['projectionChartRows'],
+  stateCode: string | null | undefined,
+  stateExemption: number | null | undefined,
+  federalExemptionAmount: number,
+): string | null {
+  if (!projectionChartBands || projectionChartBands.length === 0) return null
+
+  const code = stateCode?.toUpperCase().trim() ?? null
+  const noPortability = Boolean(code && getPortabilityGapLabel(code))
+  const threshold =
+    noPortability && stateExemption && stateExemption > 0
+      ? stateExemption
+      : federalExemptionAmount
+
+  const firstTaxBand = projectionChartBands.find((pt) => pt.p10_gross > threshold)
+  if (!firstTaxBand) return null
+
+  const age = projectionChartRows.find((row) => row.year === firstTaxBand.year)?.age ?? null
+  if (!age) return null
+
+  const stateLabel = noPortability && code ? `${code} estate` : 'estate'
+
+  return (
+    `Under adverse market conditions, ${stateLabel} tax exposure ` +
+    `may begin as early as age ${age}.`
+  )
+}
+
+function appendMcNarrativeLine(detail: string, data: PDFReportData): string {
+  const mcLine = buildMCNarrativeLine(
+    data.projectionChartBands,
+    data.projectionChartRows,
+    data.domicileState,
+    data.stateBrackets?.[0]?.exemption_amount ?? null,
+    data.federalExemption ?? currentFederalExemption(data.filingStatus),
+  )
+  return mcLine ? `${detail} ${mcLine}` : detail
 }
 
 /** Drop duplicate alerts (same root issue, different household_alerts rows). Keeps enriched match. */
@@ -244,7 +286,7 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
     return {
       style: 'exposed',
       headline: `Estimated estate tax: ${fmtFull(totalCurrent)}`,
-      detail,
+      detail: appendMcNarrativeLine(detail, data),
     }
   }
 
@@ -260,7 +302,7 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
     return {
       style: 'sunset_risk',
       headline: `No tax today — but TCJA sunset creates up to ${fmt(sunsetTaxEstimate!)} in new exposure`,
-      detail,
+      detail: appendMcNarrativeLine(detail, data),
     }
   }
 
@@ -278,7 +320,7 @@ export function generateTaxCallout(data: PDFReportData): TaxCallout {
   return {
     style: 'clear',
     headline: `No federal estate tax under current law`,
-    detail,
+    detail: appendMcNarrativeLine(detail, data),
   }
 }
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Monte Carlo integration Phase 2C shipped; Phase 2D active)
+# Last updated: 2026-06-05 (Monte Carlo integration sprint complete)
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## Current sprint
 
-### Sprint — Monte Carlo Integration `[~]` **← active (Phase 2D)**
+### Sprint — Monte Carlo Integration `[x]` **complete**
 
 | Phase | Scope | Status |
 |-------|-------|--------|
@@ -29,11 +29,9 @@
 | 2A | Projections — `EstateOutlookChart` (`percentiles_by_year` SVG bands) | `[x]` |
 | 2B | Strategy tab — at-death P10/P90 badge + `MonteCarloPanel` Last precomputed | `[x]` |
 | 2C | PDF SVG polygon bands (`generatePDFReport`) | `[x]` |
-| 2D | Narrative one-liner (`narrativeEngine`) | `[~]` **active** |
+| 2D | Narrative one-liner (`narrativeEngine`) | `[x]` |
 
-**Phase 2C shipped (2026-06-05):** `projectionChartBands` on `PDFReportData`; async `buildAdvisorExportPayloads` + `supabase`; bands join projection rows by year (25 MC years on 32 projection rows).
-
-**Commits (Phase 0–2C):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`, `f14af7e`, Phase 2C pending push.
+**Commits (Phase 0–2D):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`, `f14af7e`, `aaf46b4`, Phase 2D pending push.
 
 ---
 
