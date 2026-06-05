@@ -10,7 +10,10 @@
 // The single source of truth for OBBBA constants is lib/tax/estate-tax-constants.ts.
 
 import type { YearRow } from '@/lib/calculations/projection-complete'
-import { computeStateEstateTaxFromBrackets } from '@/lib/calculations/stateEstateTax'
+import {
+  calculateStateEstateTax,
+  resolveActiveStateTax,
+} from '@/lib/calculations/stateEstateTax'
 
 export type StateBracket = {
   min_amount: number
@@ -65,6 +68,8 @@ export function computeEstateTaxProjection(
   person2BirthYear: number | null,
   person2LongevityAge: number | null,
   stateBrackets: StateBracket[],
+  stateCode?: string,
+  hasBypassTrust?: boolean,
 ): {
   s1_first: DeathSequenceOutput
   s2_first: DeathSequenceOutput | null
@@ -72,6 +77,8 @@ export function computeEstateTaxProjection(
   const isMarried = hasSpouse && filingStatus === 'mfj'
   const exemptionIndividual = config.estate_exemption_individual
   const topRate = config.estate_top_rate_pct / 100
+  const _stateCode = stateCode ?? ''
+  const _hasBypassTrust = hasBypassTrust ?? false
 
   // Death years
   const deathYearP1 = person1BirthYear + person1LongevityAge
@@ -89,6 +96,8 @@ export function computeEstateTaxProjection(
     topRate,
     isMarried,
     stateBrackets,
+    stateCode: _stateCode,
+    hasBypassTrust: _hasBypassTrust,
     sequence: 'S1_first',
   })
 
@@ -103,6 +112,8 @@ export function computeEstateTaxProjection(
           topRate,
           isMarried,
           stateBrackets,
+          stateCode: _stateCode,
+          hasBypassTrust: _hasBypassTrust,
           sequence: 'S2_first',
         })
       : null
@@ -118,6 +129,8 @@ function computeSequence({
   topRate,
   isMarried,
   stateBrackets,
+  stateCode,
+  hasBypassTrust,
   sequence,
 }: {
   rows: YearRow[]
@@ -127,6 +140,8 @@ function computeSequence({
   topRate: number
   isMarried: boolean
   stateBrackets: StateBracket[]
+  stateCode: string
+  hasBypassTrust: boolean
   sequence: 'S1_first' | 'S2_first' | 'single'
 }): DeathSequenceOutput {
   let dsue_amount = 0
@@ -158,7 +173,13 @@ function computeSequence({
         estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
         estate_tax_state =
           taxable_estate > 0
-            ? computeStateEstateTaxFromBrackets(grossEstate, stateBrackets)
+            ? calculateStateEstateTax(
+                grossEstate,
+                stateCode,
+                stateBrackets,
+                false,
+                false,
+              ).stateTax
             : 0
         exemption_used = Math.min(grossEstate, exemption)
       }
@@ -170,7 +191,16 @@ function computeSequence({
       estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
       estate_tax_state =
         taxable_estate > 0
-          ? computeStateEstateTaxFromBrackets(grossEstate, stateBrackets)
+          ? resolveActiveStateTax(
+              calculateStateEstateTax(
+                grossEstate,
+                stateCode,
+                stateBrackets,
+                false,
+                false,
+              ),
+              hasBypassTrust,
+            )
           : 0
       exemption_used = Math.min(grossEstate, exemption)
     }

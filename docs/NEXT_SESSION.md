@@ -1,6 +1,14 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (Monte Carlo integration sprint complete)
+# Updated: 2026-06-05 (Projection Engine C→B shipped)
+
+---
+
+## Projection Engine C→B — shipped ✅ (2026-06-05)
+
+Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEstateTax`** + **`resolveActiveStateTax`**; **`generate-base-case.ts`** passes **`hasBypassTrust`** from line items. Voels smoke: year **2057** state tax **$18,273,170** (zero diff vs engine B).
+
+**Follow-up:** Run **`generateBaseCase`** per household to refresh stored projection rows (Excel + PDF cliff chart).
 
 ---
 
@@ -17,7 +25,7 @@
 
 **Smokes:** `scripts/smoke-strategy-mc-badge.ts` · `scripts/smoke-pdf-mc-bands.ts`
 
-**Next sprint:** Projection Engine C→B unification (queued post–Monte Carlo).
+**Next sprint:** Voels `StateTaxPanel` spot-check; base-case regenerate rollout.
 
 ---
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Monte Carlo integration sprint complete)
+# Last updated: 2026-06-05 (Projection Engine C→B shipped)
 
 ---
 
@@ -19,6 +19,17 @@
 
 ## Current sprint
 
+### Sprint — Projection Engine C→B Unification `[x]` **complete**
+
+| Item | Status |
+|------|--------|
+| Death-year rows — `calculateStateEstateTax` + `resolveActiveStateTax` | `[x]` |
+| `generate-base-case.ts` — `hasBypassTrust` from line items | `[x]` |
+| MFJ first-death marital deduction unchanged | `[x]` |
+| Voels smoke — death-year 2057 state tax $18,273,170 (zero diff vs engine B) | `[x]` |
+
+---
+
 ### Sprint — Monte Carlo Integration `[x]` **complete**
 
 | Phase | Scope | Status |
@@ -35,31 +46,20 @@
 
 ---
 
-### Next sprint candidates (post–Monte Carlo integration)
+### Next sprint candidates
 
 | Item | Notes |
 |------|-------|
-| Projection engine C→B unification | Queued **post–Monte Carlo** — see sprint block below |
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
+| Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
 
 ---
 
-### Sprint — Projection Engine C→B Unification `[ ]` **← queued (post–Monte Carlo)**
+### Sprint — Projection Engine C→B Unification `[x]` **shipped (2026-06-05)**
 
-**Status:** Queued (post–Monte Carlo)
+**Shipped:** Engine B at death-year rows in **`estate-tax-projection.ts`**; **`generate-base-case.ts`** derives **`hasBypassTrust`** from line items. Voels death-year **2057** state tax **$18,273,170** (zero diff vs engine B). Regenerate base case per household to refresh stored **`outputs_s1_first`**.
 
-**Depends on:** Monte Carlo integration sprint (shares `outputs_s1_first` / projection row schema)
-
-**Scope:**
-
-- **`estate-tax-projection.ts` death-year rows:** replace `computeStateEstateTaxFromBrackets` with `calculateStateEstateTax` + `resolveActiveStateTax` (engine B) so `hasBypassTrust`, portability, and NY cliff logic apply at death
-- **MFJ first death:** marital deduction stays $0 federal/state (correct); second death gets engine B instead of engine C bracket math
-- **`outputs_s1_first` stored rows** will reflect engine B after next `generateBaseCase` run — Excel Projection sheet and PDF SVG chart death-year taxes align with Tax Analysis and Strategy tab
-- **Regression risk:** projection chart cliff detection uses `estate_tax_federal` + `estate_tax_state` from stored rows; verify `detectTaxCliff()` still fires correctly after engine change
-
-**Files:** `lib/calculations/estate-tax-projection.ts`, `scripts/verify-estate-mc-voels-smoke.ts` (regression test)
-
-**Context (2026-06-05):** Export Tax Analysis uses engine B snapshot (`exportMappers.ts` + `stateBrackets` year fallback). Excel **Projection** sheet still reads per-row `estate_tax_*` from stored projection output — engine C, death-year-only — so non-death years show $0 and second-death row uses deprecated bracket math.
+**Files:** `lib/calculations/estate-tax-projection.ts`, `lib/actions/generate-base-case.ts`, `lib/export/generatePDFReport.ts`
 
 ---
 
@@ -70,7 +70,7 @@
 | Domain | Scope | Status |
 |--------|-------|--------|
 | Domain 1 | State tax engine unification | ✅ |
-| Domain 2 | Data flow (PDF page 3 + export Tax Analysis) | ✅ — projection rows queued post–MC |
+| Domain 2 | Data flow (PDF page 3 + export Tax Analysis + projection death rows) | ✅ |
 | Domain 3 | UX copy and tooltips | ✅ |
 | Domain 4 | Voels smoke matrix | ✅ |
 | Domain 5 | Documentation sync | ✅ (this sprint) |
@@ -112,9 +112,9 @@
 | `exportMappers` — `fedTaxExport` / `stTaxExport` engine B | `[x]` 2026-06-05 |
 | Export panel + Excel **Tax Analysis** same as PDF page 3 | `[x]` 2026-06-05 |
 | `loaders.ts` — `stateBrackets` tax-year fallback | `[x]` 2026-06-05 |
-| Projection death-year rows — engine C → B | `[ ]` **queued** — Projection Engine C→B sprint (post–Monte Carlo) |
+| Projection death-year rows — engine C → B | `[x]` 2026-06-05 |
 
-**Note:** Tax Analysis / export snapshot uses engine B. Excel **Projection** sheet and PDF SVG chart still use stored `outputs_s1_first` row taxes (engine C at death years only) until projection engine sprint ships and base case is regenerated.
+**Note:** Tax Analysis / export snapshot and **death-year projection rows** use engine B. Stored **`outputs_s1_first`** updates on next **`generateBaseCase`** per household.
 
 ---
 

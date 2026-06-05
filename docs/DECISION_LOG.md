@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Monte Carlo integration sprint complete — Phase 2D shipped)
+# Last updated: 2026-06-05 (Projection Engine C→B shipped)
+
+---
+
+## Projection Engine C→B shipped — death-year state tax engine B (2026-06-05)
+
+**Decision:** Projection Engine C→B — **`computeStateEstateTaxFromBrackets`** removed from **`estate-tax-projection.ts`**; replaced with engine B at both death-year sites (single first death + second death with **`hasBypassTrust`**). **`generate-base-case.ts`** fetches line items and derives **`hasBypassTrust`** before **`computeEstateTaxProjection`** call. Voels smoke: death-year **2057** state tax **$18,273,170** (zero diff vs engine B expected). Non-death years and MFJ first-death marital deduction unchanged.
+
+**Files:** `lib/calculations/estate-tax-projection.ts`, `lib/actions/generate-base-case.ts`, `lib/export/generatePDFReport.ts` (`detectTaxCliff` data-source comment).
+
+**Follow-up:** Regenerate base case per household so stored **`outputs_s1_first`** reflects engine B (Excel Projection sheet + PDF cliff chart).
 
 ---
 
@@ -10,7 +20,7 @@
 
 **Copy:** `Under adverse market conditions, {WA estate|estate} tax exposure may begin as early as age {N}.`
 
-**Sprint closed:** Phases 0–2D complete. Post-sprint: Projection Engine C→B unification.
+**Sprint closed:** Phases 0–2D complete.
 
 ---
 

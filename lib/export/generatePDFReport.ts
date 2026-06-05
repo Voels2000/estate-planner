@@ -188,6 +188,7 @@ interface TaxCliff {
   netToHeirs: number
 }
 
+// Uses stored projectionChartRows (estate_tax_federal + estate_tax_state from outputs_s1_first).
 function detectTaxCliff(rows: PDFReportData['projectionChartRows']): TaxCliff | null {
   for (let i = 1; i < rows.length; i++) {
     if (rows[i - 1].totalTax === 0 && rows[i].totalTax > 100_000) {

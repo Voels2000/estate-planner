@@ -15,6 +15,7 @@ import type {
   ExpenseRowSelect,
 } from '@/lib/types/planner-rows'
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
+import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { runEstateMonteCarloAsync } from './run-estate-monte-carlo-async'
 
 export async function generateBaseCase(householdId: string): Promise<{
@@ -193,6 +194,19 @@ export async function generateBaseCase(householdId: string): Promise<{
       : { data: [] }
     const stateBrackets = stateBracketRows ?? []
 
+    const { data: lineItemsForProjection } = await admin
+      .from('strategy_line_items')
+      .select(
+        'strategy_source, source_role, consumer_accepted, is_active, consumer_rejected',
+      )
+      .eq('household_id', householdId)
+
+    const hasBypassTrustForProjection = deriveHasBypassTrustFromLineItems(
+      lineItemsForProjection ?? [],
+      'consumer_accepted',
+    )
+    const stateCodeForProjection = household.state_primary ?? ''
+
     // Run estate tax projection for all 3 scenarios
     const currentLawConfig = taxConfigs?.find(c => c.scenario_id === 'current_law')
     const legislativeConfig = taxConfigs?.find(c => c.scenario_id === 'legislative_change')
@@ -205,6 +219,9 @@ export async function generateBaseCase(householdId: string): Promise<{
         ? 'mfj'
         : 'single'
 
+    // Engine B state tax at death year — resolveActiveStateTax applies
+    // bypass trust logic. detectTaxCliff() reads these stored values;
+    // correct non-zero values improve cliff detection accuracy.
     const { s1_first, s2_first } = computeEstateTaxProjection(
       projectionRows,
       currentLawConfig,
@@ -215,6 +232,8 @@ export async function generateBaseCase(householdId: string): Promise<{
       household.person2_birth_year,
       household.person2_longevity_age,
       stateBrackets,
+      stateCodeForProjection,
+      hasBypassTrustForProjection,
     )
 
     // Build assumption snapshot
