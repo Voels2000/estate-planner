@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (stateBrackets year fallback + Domain 5 docs)
+# Last updated: 2026-06-05 (Projection engine C→B sprint queued)
+
+## Projection engine C→B — sprint queued (2026-06-05)
+
+**Decision:** Queue **Projection Engine C→B Unification** sprint post–Monte Carlo integration. Replace `computeStateEstateTaxFromBrackets` in `estate-tax-projection.ts` death-year logic with `calculateStateEstateTax` + `resolveActiveStateTax` (engine B). MFJ first-death marital deduction ($0 tax) unchanged; second death uses engine B with `hasBypassTrust`, portability, NY cliff.
+
+**Why now:** Export Tax Analysis and Strategy tab use engine B; Excel Projection sheet and PDF SVG chart still read stored `outputs_s1_first` row taxes (engine C, death-year-only). Voels export (2026-06-05): Tax Analysis WA ~$911K correct; Projection rows 2026–2056 show $0 tax by design until death year.
+
+**After ship:** Regenerate base case (`generateBaseCase`) so stored rows reflect engine B. Regression: `detectTaxCliff()` on projection chart; `scripts/verify-estate-mc-voels-smoke.ts`.
+
+**Depends on:** Monte Carlo integration sprint (shared projection row schema).
+
+**Files:** `lib/calculations/estate-tax-projection.ts`, `scripts/verify-estate-mc-voels-smoke.ts`.
+
+---
 
 ## stateBrackets fetch — latest tax year fallback (2026-06-05)
 

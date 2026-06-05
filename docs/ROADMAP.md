@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Domain 5 — documentation sync)
+# Last updated: 2026-06-05 (Projection engine C→B sprint queued)
 
 ---
 
@@ -23,9 +23,28 @@
 
 | Item | Notes |
 |------|-------|
-| `exportMappers.ts` engine C→B | Excel + export panel tax summary | ✅ engine B (`exportMappers.ts`) |
-| Monte Carlo integration sprint | Precomputed MC results; blocked on Domain 1+2 — **now clear** |
+| Monte Carlo integration sprint | Precomputed MC results; Domain 1+2 clear — **next** |
+| Projection engine C→B unification | Queued **post–Monte Carlo** — see sprint block below |
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
+
+---
+
+### Sprint — Projection Engine C→B Unification `[ ]` **← queued (post–Monte Carlo)**
+
+**Status:** Queued (post–Monte Carlo)
+
+**Depends on:** Monte Carlo integration sprint (shares `outputs_s1_first` / projection row schema)
+
+**Scope:**
+
+- **`estate-tax-projection.ts` death-year rows:** replace `computeStateEstateTaxFromBrackets` with `calculateStateEstateTax` + `resolveActiveStateTax` (engine B) so `hasBypassTrust`, portability, and NY cliff logic apply at death
+- **MFJ first death:** marital deduction stays $0 federal/state (correct); second death gets engine B instead of engine C bracket math
+- **`outputs_s1_first` stored rows** will reflect engine B after next `generateBaseCase` run — Excel Projection sheet and PDF SVG chart death-year taxes align with Tax Analysis and Strategy tab
+- **Regression risk:** projection chart cliff detection uses `estate_tax_federal` + `estate_tax_state` from stored rows; verify `detectTaxCliff()` still fires correctly after engine change
+
+**Files:** `lib/calculations/estate-tax-projection.ts`, `scripts/verify-estate-mc-voels-smoke.ts` (regression test)
+
+**Context (2026-06-05):** Export Tax Analysis uses engine B snapshot (`exportMappers.ts` + `stateBrackets` year fallback). Excel **Projection** sheet still reads per-row `estate_tax_*` from stored projection output — engine C, death-year-only — so non-death years show $0 and second-death row uses deprecated bracket math.
 
 ---
 
@@ -36,7 +55,7 @@
 | Domain | Scope | Status |
 |--------|-------|--------|
 | Domain 1 | State tax engine unification | ✅ |
-| Domain 2 | Data flow (PDF page 3) | ✅ — `exportMappers` deferred |
+| Domain 2 | Data flow (PDF page 3 + export Tax Analysis) | ✅ — projection rows queued post–MC |
 | Domain 3 | UX copy and tooltips | ✅ |
 | Domain 4 | Voels smoke matrix | ✅ |
 | Domain 5 | Documentation sync | ✅ (this sprint) |
@@ -75,11 +94,12 @@
 | Item | Status |
 |------|--------|
 | PDF page 3 metric cards — engine B federal + state + net | `[x]` |
-| `exportMappers` — `fedTaxExport` / `stTaxExport` off `latestOutput` | `[ ]` **deferred** |
-| Export panel + Excel tax summary same as PDF page 3 | `[ ]` **deferred** (blocked on exportMappers) |
-| Projection death-year rows — engine C → B | `[ ]` |
+| `exportMappers` — `fedTaxExport` / `stTaxExport` engine B | `[x]` 2026-06-05 |
+| Export panel + Excel **Tax Analysis** same as PDF page 3 | `[x]` 2026-06-05 |
+| `loaders.ts` — `stateBrackets` tax-year fallback | `[x]` 2026-06-05 |
+| Projection death-year rows — engine C → B | `[ ]` **queued** — Projection Engine C→B sprint (post–Monte Carlo) |
 
-**Deferred note:** `buildAdvisorExportPayloads` still sets `PDFReportData.federalTax` / `stateTax` from `latestOutput` for Excel and advisor export panel; page 3 HTML now ignores those fields for metric cards.
+**Note:** Tax Analysis / export snapshot uses engine B. Excel **Projection** sheet and PDF SVG chart still use stored `outputs_s1_first` row taxes (engine C at death years only) until projection engine sprint ships and base case is regenerated.
 
 ---
 

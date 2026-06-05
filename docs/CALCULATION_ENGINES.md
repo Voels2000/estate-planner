@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-05 (Domain 5 — documentation sync)
+Last updated: 2026-06-05 (Projection engine C→B sprint queued)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -99,11 +99,11 @@ Two separate engines — do not merge.
 | Strategy horizons | B via `computeColumnTaxes` | Yes — `hasBypassTrust` threaded |
 | Advisor tax tab | B via `StateTaxPanel` | Yes — `stateTaxWithCST` / `cstBenefit` |
 | Consumer estate strategy | B via `computeColumnTaxes` | Yes — accepted CST line items |
-| Estate tax projection rows | C — `computeStateEstateTaxFromBrackets` | No — future sprint |
+| Estate tax projection rows | C — `computeStateEstateTaxFromBrackets` at death years only | No — **queued:** Projection Engine C→B sprint (post–Monte Carlo) |
 | Prospect mode | B via `calculateStateEstateTax` | Yes |
 | Estate Monte Carlo (advisor Strategy tab) | B — see [Monte Carlo engines](#monte-carlo-engines) | Yes — `hasBypassTrust` |
 
-**PDF page 3 metric cards (2026-06-01):** Render-time `page3FederalTax` / `page3StateTax` / `page3NetToHeirs` in `generatePDFReport.ts` — engine B; `PDFReportData.federalTax` / `stateTax` from mappers (engine C) still used for Excel/export panel only.
+**Export / PDF tax (2026-06-05):** PDF page 3 metric cards — engine B at render (`page3FederalTax` / `page3StateTax` / `page3NetToHeirs` in `generatePDFReport.ts`). Export panel + Excel **Tax Analysis** — engine B via `exportMappers.ts`. Excel **Projection** sheet + PDF SVG chart — still per-row `estate_tax_*` from stored `outputs_s1_first` (engine C at death years; $0 on non-death rows) until Projection Engine C→B sprint + base-case regenerate.
 
 Engine **A** (`narrativeEngine` flat rates) — **deleted**.
 
