@@ -365,8 +365,8 @@ async function renderMeetingBriefHtml(
   @page { size: letter; margin: 0.75in; }
   @media print { body { -webkit-print-color-adjust: exact; } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Georgia, serif; font-size: 11pt; color: #1f2937; line-height: 1.5; }
-  .header { background: #0F1B3C; color: white; padding: 20px 24px; margin: -0.75in -0.75in 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+  body { font-family: Georgia, serif; font-size: 11pt; color: #1f2937; line-height: 1.5; padding: 0 0.5in; }
+  .header { background: #0F1B3C; color: white; padding: 20px 24px; margin: -0.75in -0.5in 24px; display: flex; justify-content: space-between; align-items: flex-end; }
   .header-left h1 { font-size: 20pt; font-weight: 400; }
   .header-left p  { color: #C9A84C; font-size: 9pt; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
   .header-right   { text-align: right; font-size: 9pt; color: #94a3b8; }

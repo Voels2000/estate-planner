@@ -143,7 +143,7 @@ export function buildExcelWorkbook(data: ExcelExportData) {
     ['P10 Tax', data.monteCarlo.p10Tax],
     ['P50 Tax (Median)', data.monteCarlo.p50Tax],
     ['P90 Tax', data.monteCarlo.p90Tax],
-    ['Tax-Free Rate', `${data.monteCarlo.successRate}%`],
+    ['Zero-Tax Paths', `${data.monteCarlo.successRate}%`],
     ['Median Net to Heirs', data.monteCarlo.medianNetToHeirs],
   ] : []
 
