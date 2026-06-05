@@ -1,6 +1,33 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Domain 3 — complete)
+# Updated: 2026-06-05 (Monte Carlo Phase 2C pre-flight)
+
+---
+
+## Monte Carlo Phase 2C — PDF SVG bands `[~]` (2026-06-05)
+
+**Goal:** Overlay P10–P90 gross-estate fan bands on PDF page 2 **`buildEstateSVGChart()`** (same pattern as **`EstateOutlookChart`** on `/projections`).
+
+**Pre-flight grep (confirmed):**
+
+| Check | Finding |
+|-------|---------|
+| `buildEstateSVGChart` | `generatePDFReport.ts` ~L207 — `(rows: PDFReportData['projectionChartRows'], _domicileState: string) → string`; deterministic gross / net / tax-gap polylines only |
+| `projectionChartRows` | `PDFReportData` ~L67 — `{ year, age, gross, netToHeirs, fedTax, stateTax, totalTax }[]`; built in **`exportMappers.ts`** ~L192 from `scenarioOutputs` (engine C stored rows) |
+| `projectionChartBands` | **Not present** on `PDFReportData` or `exportPdfData` — add in Phase 2C |
+| `exportMappers` MC | `monteCarloResults` → **`exportPanelProps`** only (~L221); slim **`fetchMonteCarloSummary`** shape (p10/p50/p90/paths) — no `percentiles_by_year` on PDF payload |
+| Export wiring | **`loadAdvisorExportWiring.ts`** ~L103/191 — passes `monteCarloResults` from datasets; **does not** call **`loadScenarioMonteCarlo`** yet |
+
+**Implementation plan:**
+
+1. **`loadAdvisorExportWiring.ts`** — `loadScenarioMonteCarlo(scenarioId, supabase)` when `scenarioId` set; pass full summary into **`buildAdvisorExportPayloads`**.
+2. **`exportMappers.ts`** — map `percentiles_by_year` → **`projectionChartBands?: PercentileByYear[]`** on **`exportPdfData`** (optional; omit when null).
+3. **`generatePDFReport.ts`** — extend **`PDFReportData`** + **`buildEstateSVGChart()`** optional bands arg; draw P10–P90 / P25–P75 polygons behind existing lines; legend row for MC range when bands present.
+4. **Smoke:** Voels `?type=report` — page 2 print preview shows fan bands when MC row exists; no bands when row absent.
+
+**Prior phases shipped:** 2A projections chart · 2B Strategy badge + Last precomputed · smoke `scripts/smoke-strategy-mc-badge.ts` PASS.
+
+**Next after 2C:** Phase 2D narrative one-liner (`narrativeEngine.ts`).
 
 ---
 

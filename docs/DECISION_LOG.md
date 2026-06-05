@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Monte Carlo integration Phase 2A+2B shipped; Phase 2C active)
+# Last updated: 2026-06-05 (Monte Carlo Phase 2C pre-flight; PDF bands next)
+
+---
+
+## Monte Carlo Phase 2C pre-flight — PDF chart wiring recon (2026-06-05)
+
+**Decision:** Phase 2C adds MC fan bands to PDF page 2 by extending existing **`buildEstateSVGChart()`** — not a new chart component. Wire **`loadScenarioMonteCarlo`** through export path; **`projectionChartBands`** is a new optional field on **`PDFReportData`** (distinct from deterministic **`projectionChartRows`**).
+
+**Pre-flight confirmed:**
+
+- **`buildEstateSVGChart(rows, domicileState)`** — `lib/export/generatePDFReport.ts`; rows are engine-C **`scenarioOutputs`** mapped to `{ year, age, gross, netToHeirs, fedTax, stateTax, totalTax }`.
+- **`exportPdfData`** — no `projectionChartBands` / `percentiles_by_year` today; optional **`monteCarlo`** block (page 5 tax percentiles) is separate from page 2 chart.
+- **`loadAdvisorExportWiring.ts`** — uses **`monteCarloResults`** from **`fetchMonteCarloSummary`** (slim export-wiring type); replace or supplement with **`loadScenarioMonteCarlo`** for `percentiles_by_year`.
+
+**Reference implementation:** **`EstateOutlookChart`** (Phase 2A) — same `PercentileByYear[]` polygon pattern, print-safe inline SVG.
 
 ---
 
