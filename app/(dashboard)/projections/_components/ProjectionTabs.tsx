@@ -12,6 +12,7 @@ type ProjectionTabsProps = {
   peakNetWorth: number
   p1: string
   p2: string | null
+  chartDisclaimer?: string
 }
 
 export function ProjectionTabs({
@@ -21,6 +22,7 @@ export function ProjectionTabs({
   peakNetWorth,
   p1,
   p2,
+  chartDisclaimer,
 }: ProjectionTabsProps) {
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm">
@@ -38,7 +40,18 @@ export function ProjectionTabs({
         ))}
       </div>
       <div className="p-4">
-        {activeTab === 'chart' && <BarChart projections={projections} peak={peakNetWorth} />}
+        {activeTab === 'chart' && (
+          <>
+            <div className="mb-3 flex items-center gap-1.5 text-xs text-neutral-500">
+              <span className="inline-block h-3 w-3 rounded-t bg-neutral-700" aria-hidden />
+              Base case
+            </div>
+            <BarChart projections={projections} peak={peakNetWorth} />
+            {chartDisclaimer ? (
+              <p className="mt-3 text-xs text-neutral-400">{chartDisclaimer}</p>
+            ) : null}
+          </>
+        )}
         {activeTab === 'table' && <ProjectionTable projections={projections} />}
         {activeTab === 'income' && <IncomeTable projections={projections} p1={p1} p2={p2} />}
       </div>

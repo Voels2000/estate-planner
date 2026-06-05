@@ -1,16 +1,22 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Domain 3 — StateTaxPanel tooltips)
+# Updated: 2026-06-01 (Domain 3 — complete)
+
+---
+
+## Domain 3 — tax term explainers ✅ (2026-06-01)
+
+**Shipped surfaces:** readiness card · dashboard tax hero · `/estate-tax` · **`StateTaxPanel`** · `/projections` chart (Base case legend + **`projectionsChart`** disclaimer) · **`GiftingDashboard`** (`annual_exclusion`, `superfunding`).
+
+**Deferred:** hero full `taxTermCtx` (`stateExemption` / `isMFJ` props from dashboard-body).
+
+**Next:** Domain 4 — Voels smoke matrix.
 
 ---
 
 ## Domain 3 — StateTaxPanel tooltips ✅ (2026-06-01)
 
 **Shipped:** Advisor **`StateTaxPanel`** — `No portability` badge + **Exemption** `<th>` (`taxTermCtx` from `currentYearRow` + `unifiedStateCode` + `isMFJ`). Other badges skipped (no keys).
-
-**Tax exposure surfaces complete:** dashboard hero · `/estate-tax` · **`StateTaxPanel`**.
-
-**Remaining Domain 3:** projections chart disclaimer + gifting `annual_exclusion` / `superfunding` tooltips.
 
 ---
 

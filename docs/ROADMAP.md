@@ -29,8 +29,8 @@
 | Dashboard tax hero — `EstateSummaryHeroAndMetrics` tile labels | `[x]` |
 | `/estate-tax` — summary cards + waterfall labels | `[x]` |
 | Advisor `StateTaxPanel` badge/table headers | `[x]` |
-| Projections chart — Base case label + disclaimer | `[ ]` |
-| Gifting — `annual_exclusion` + `superfunding` tooltips | `[ ]` |
+| Projections chart — Base case label + disclaimer | `[x]` |
+| Gifting — `annual_exclusion` + `superfunding` tooltips | `[x]` |
 | Hero `stateExemption` / `isMFJ` ctx (new props from dashboard-body) | `[ ]` **deferred** |
 
 ---

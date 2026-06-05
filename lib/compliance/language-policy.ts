@@ -41,6 +41,10 @@ export const DISCLAIMER_STRINGS = {
   projections:
     "Projections are estimates based on the assumptions you entered. They are not guarantees of future results. Discuss your retirement strategy with a licensed financial professional.",
 
+  /** Use on /projections chart — single base-case timeline from profile assumptions */
+  projectionsChart:
+    "Base case net worth is a deterministic projection from your profile assumptions — not a range of outcomes. For scenario comparisons, use What-If Scenarios.",
+
   /** Use on /monte-carlo near probability outputs */
   monteCarlo:
     "Monte Carlo results show a range of possible outcomes based on your inputs. They are not a prediction of future performance. Discuss these results with a licensed financial professional.",

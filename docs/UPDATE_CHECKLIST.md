@@ -76,8 +76,8 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `EstateCalloutCard.tsx` — hero 4-tile labels only (not sidebar snapshot)
 - [x] `/estate-tax` — summary cards + waterfall row labels (`SummaryCard.labelTooltip`, `taxTermCtx`)
 - [x] Advisor `StateTaxPanel` — No portability badge + Exemption header (`taxTermCtx` from `currentYearRow`)
-- [ ] Projections chart — Base case legend + `DISCLAIMER_STRINGS.projectionsChart`
-- [ ] Gifting — `annual_exclusion` + `superfunding` on `GiftingDashboard`
+- [x] Projections chart — Base case legend + `DISCLAIMER_STRINGS.projectionsChart`
+- [x] Gifting — `annual_exclusion` + `superfunding` on `GiftingDashboard`
 - [ ] Hero tile full ctx — `stateExemption` / `isMFJ` props from dashboard-body
 
 ## Estate readiness subcategory explainers (2026-06-01) — shipped

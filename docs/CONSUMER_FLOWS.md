@@ -312,7 +312,7 @@ Three related routes share projection engines but answer different questions. **
 
 | Route | Tier | Role | Discoverability |
 |-------|------|------|-----------------|
-| `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs | **ScenariosExploreCard** → `/scenarios` below summary cards |
+| `/projections` | 1 | Retirement-focused summary cards + chart/table/income tabs; chart tab **Base case** legend + **`DISCLAIMER_STRINGS.projectionsChart`** | **ScenariosExploreCard** → `/scenarios` below summary cards |
 | `/complete` | 2 | Full year-by-year `YearRow` table — hero **Funds outlast** card, decade timeline nav, inflection row highlights + badges, sparkline Trend column, dynamic SS/RMD sub-columns, sticky Year column | Nav pills → projections / scenarios |
 | `/scenarios` | 1 | Side-by-side what-if (base + B + C); **`ProfileFieldPrompt`** for deferred retirement/longevity/deduction fields (partial PATCH); planning assumptions via `PATCH /api/consumer/growth-assumptions` | Nav pills → projections / lifetime |
 
@@ -434,7 +434,7 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | **Client** | `components/GiftingDashboard.tsx` (dynamic import) |
 | **Write APIs** | `POST/PATCH/DELETE /api/consumer/gift-history`; annual program via `POST /api/strategy-line-items` (`strategy_source: annual_gifting`) |
 | **Read APIs / RPCs** | `calculate_gifting_summary`, `gift_history` for current tax year |
-| **UX (not separate routes)** | Lifetime exemption meter; per-recipient annual cap warnings; **Prior taxable gifts (Form 709)**; MFJ donor selector; **Gifting scenario** collapsible with **Save to my plan →** when no active plan, or **In your estate plan** card (amount, drift warning, Update plan, Return to sandbox, Withdraw) when `annual_gifting` line item is active |
+| **UX (not separate routes)** | Lifetime exemption meter; **Annual Exclusion Used** + **529 superfunding** labels with **`InfoTooltip`** (`annual_exclusion`, `superfunding`); per-recipient annual cap warnings; **Prior taxable gifts (Form 709)**; MFJ donor selector; **Gifting scenario** collapsible with **Save to my plan →** when no active plan, or **In your estate plan** card (amount, drift warning, Update plan, Return to sandbox, Withdraw) when `annual_gifting` line item is active |
 | **Gift delete + plan** | Deleting a gift when plan has `metadata.synced_from_gift_history` → `GiftDeleteWarningModal`: delete only (drift warning) or delete + withdraw plan (`PATCH` `action: 'withdraw'`) |
 | **E2E** | `consumer-gift-history.spec.ts`, `consumer-strategy-writes.spec.ts`; manual smoke §10c gifting delete + plan |
 

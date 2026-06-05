@@ -149,6 +149,7 @@ export function ProjectionsClient({
         peakNetWorth={peakNetWorth}
         p1={p1}
         p2={p2}
+        chartDisclaimer={DISCLAIMER_STRINGS.projectionsChart}
       />
 
       <p className="mt-4 text-xs text-neutral-400">

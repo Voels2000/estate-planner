@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Domain 3 — StateTaxPanel tooltips)
+# Last updated: 2026-06-01 (Domain 3 — chart + gifting tooltips)
+
+## Domain 3 — projections chart disclaimer + gifting tooltips (2026-06-01)
+
+**Decision:** Close remaining Domain 3 explainer surfaces. **`/projections`** chart tab: **Base case** legend on deterministic bar chart + **`DISCLAIMER_STRINGS.projectionsChart`** below chart (`ProjectionTabs` + `_projections-client.tsx`). **`GiftingDashboard`**: **`annual_exclusion`** on Annual Exclusion Used label; **`superfunding`** on 529 superfunding helper line in annual exclusion card.
+
+**Files:** `lib/compliance/language-policy.ts`, `app/(dashboard)/projections/_components/ProjectionTabs.tsx`, `app/(dashboard)/projections/_projections-client.tsx`, `components/GiftingDashboard.tsx`.
+
+**Domain 3 tax exposure callouts:** complete (dashboard hero · `/estate-tax` · **`StateTaxPanel`** · projections chart · gifting).
+
+---
 
 ## Domain 3 — tax term explainers wired on StateTaxPanel (2026-06-01)
 

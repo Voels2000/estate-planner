@@ -9,6 +9,8 @@ import {
   LIFETIME_EXEMPTION_REMAINING_LABEL,
   LIFETIME_GIFTS_USED_LABEL,
 } from '@/lib/estate/exemptionLabels';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { taxTermExplainer } from '@/lib/estate/taxTermExplainers';
 import {
   GiftDeleteWarningModal,
   type GiftDeleteChoice,
@@ -621,7 +623,12 @@ export default function GiftingDashboard({
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Annual Exclusion Used ({summary.tax_year})</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                <span className="inline-flex items-center gap-1">
+                  Annual Exclusion Used ({summary.tax_year})
+                  <InfoTooltip content={taxTermExplainer('annual_exclusion')} size="sm" />
+                </span>
+              </p>
               <div className="flex items-end justify-between mb-3">
                 <span className="text-2xl font-bold text-gray-900">{fmt$(annualUsedDynamic)}</span>
                 <span className="text-sm text-gray-500">of {fmt$(annualCapacityDynamic)}</span>
@@ -652,6 +659,12 @@ export default function GiftingDashboard({
               <p className="text-xs text-gray-500 mt-1">
                 {recipientCountForCapacity} recipient{recipientCountForCapacity === 1 ? '' : 's'} × {fmt$(annualPerRecipientLimit)}
                 {' '}= {fmt$(annualCapacityDynamic)} capacity; {fmt$(annualUsedDynamic)} used.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="inline-flex items-center gap-1">
+                  529 superfunding (5-year election)
+                  <InfoTooltip content={taxTermExplainer('superfunding')} size="sm" />
+                </span>
               </p>
             </div>
           </div>
