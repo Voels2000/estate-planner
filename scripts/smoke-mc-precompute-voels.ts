@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { runEstateMonteCarloAsync } from '@/lib/actions/run-estate-monte-carlo-async'
+import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 
 const VOELS_HOUSEHOLD_ID = '5ea14f56-e880-4992-87bc-0d815a450cdc'
 
@@ -87,6 +88,19 @@ async function main() {
     console.error('\nSMOKE FAILED')
     process.exit(1)
   }
+
+  const loaded = await loadScenarioMonteCarlo(scenarioId, admin)
+  const loadedBands = loaded?.percentiles_by_year?.length ?? 0
+  console.log('\n=== loadScenarioMonteCarlo ===')
+  console.log('scenario_id:', loaded?.scenario_id)
+  console.log('percentiles_by_year entries:', loadedBands)
+  console.log('engine_version:', loaded?.engine_version)
+
+  if (!loaded || loadedBands !== 25) {
+    console.error('\nLOADER SMOKE FAILED')
+    process.exit(1)
+  }
+  console.log('\nLOADER SMOKE PASSED')
   console.log('\nSMOKE PASSED')
 }
 
