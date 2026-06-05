@@ -9,6 +9,7 @@ import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { mapProjectionRows } from '@/lib/projections/mappers/mapProjectionRows'
 import type { HouseholdProjectionProfile } from '@/lib/projections/types'
 import { checkProjectionReadiness } from '@/lib/planning/projectionReadiness'
+import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 import { buildProjectionPlanningFields } from '@/lib/profile/profileFieldPromptDefs'
 import { ProjectionsClient } from './_projections-client'
 
@@ -32,6 +33,16 @@ export default async function ProjectionsPage() {
     supabase.from('assets').select('value').eq('owner_id', user.id),
     supabase.from('income').select('amount').eq('owner_id', user.id),
   ])
+
+  const householdMcRes = await supabase
+    .from('households')
+    .select('base_case_scenario_id')
+    .eq('owner_id', user.id)
+    .single()
+
+  const mcData = householdMcRes.data?.base_case_scenario_id
+    ? await loadScenarioMonteCarlo(householdMcRes.data.base_case_scenario_id, supabase)
+    : null
 
   const totalAssets = (assetRows ?? []).reduce((sum, row) => sum + Number(row.value ?? 0), 0)
   const totalIncome = (incomeRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
@@ -59,6 +70,7 @@ export default async function ProjectionsPage() {
       householdId={householdProfile?.id ?? null}
       hasRealEstate={(reCount ?? 0) > 0}
       hasBusiness={(bizCount ?? 0) > 0}
+      mcBands={mcData?.percentiles_by_year ?? null}
     />
   )
 }
