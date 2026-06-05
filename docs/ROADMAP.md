@@ -31,7 +31,7 @@
 | 2C | PDF SVG polygon bands (`generatePDFReport`) | `[~]` **active** |
 | 2D | Narrative one-liner (`narrativeEngine`) | `[ ]` |
 
-**Commits (Phase 0–2B):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, Phase 2B pending push.
+**Commits (Phase 0–2B):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`.
 
 ---
 
