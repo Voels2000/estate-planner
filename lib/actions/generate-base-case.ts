@@ -15,6 +15,7 @@ import type {
   ExpenseRowSelect,
 } from '@/lib/types/planner-rows'
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
+import { runEstateMonteCarloAsync } from './run-estate-monte-carlo-async'
 
 export async function generateBaseCase(householdId: string): Promise<{
   scenarioId: string
@@ -295,13 +296,22 @@ export async function generateBaseCase(householdId: string): Promise<{
       return { error: saveError?.message ?? 'Failed to save scenario' }
     }
 
+    const scenarioId = savedScenario.id
+
     // Update household.base_case_scenario_id
     await admin
       .from('households')
-      .update({ base_case_scenario_id: savedScenario.id })
+      .update({ base_case_scenario_id: scenarioId })
       .eq('id', householdId)
 
-    return { scenarioId: savedScenario.id, score: 100 }
+    // Fire-and-forget MC precompute — does not block base case return
+    if (scenarioId) {
+      runEstateMonteCarloAsync(householdId, scenarioId, admin).catch((err) =>
+        console.error('[generateBaseCase] MC async failed:', err),
+      )
+    }
+
+    return { scenarioId, score: 100 }
   } catch (err) {
     console.error('[generate-base-case] error:', err)
     return { error: err instanceof Error ? err.message : 'Unknown error' }
