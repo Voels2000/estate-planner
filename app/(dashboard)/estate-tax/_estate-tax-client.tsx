@@ -13,7 +13,7 @@
 //   • EstateCompositionCard shown at top
 //   • Federal section shows "no tax" state clearly when under exemption
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import {
   computeFederalEstateTax,
@@ -32,6 +32,8 @@ import {
   HEADROOM_BEFORE_FEDERAL_TAX_LABEL,
 } from '@/lib/estate/exemptionLabels'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { InfoTooltip } from '@/components/ui/InfoTooltip'
+import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -115,15 +117,26 @@ function SummaryCard({
   value,
   sub,
   highlight,
+  labelTooltip,
 }: {
   label: string
   value: string
   sub?: string
   highlight?: 'green' | 'red' | 'amber'
+  labelTooltip?: ReactNode
 }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        {labelTooltip ? (
+          <span className="flex items-center gap-1">
+            {label}
+            {labelTooltip}
+          </span>
+        ) : (
+          label
+        )}
+      </p>
       <p className={`mt-1 text-xl font-bold ${
         highlight === 'green' ? 'text-green-600'
         : highlight === 'red' ? 'text-red-600'
@@ -442,6 +455,11 @@ export default function EstateTaxClient({
   const outsideBase = composition?.outside_strategy_total ?? 0
 
   const stateExemption = primaryStateExemption
+  const taxTermCtx: TaxTermContext = {
+    stateCode: statePrimary ?? null,
+    stateExemption: stateExemption > 0 ? stateExemption : null,
+    isMFJ: isMFJ && hasSpouse,
+  }
   const estimatedTaxFederal = federalTaxDisplay
   const estimatedTaxState =
     isMFJ && hasSpouse
@@ -712,10 +730,20 @@ export default function EstateTaxClient({
 
                   <div className="flex items-center gap-3 border-b border-[color:var(--mwm-border)] py-1.5 pl-4">
                     <p className="flex-1 text-xs text-[color:var(--mwm-text-secondary)]">
-                      {statePrimary} exemption
+                      <span className="inline-flex items-center gap-1">
+                        {statePrimary} exemption
+                        <InfoTooltip
+                          content={taxTermExplainer('state_exemption', taxTermCtx)}
+                          size="sm"
+                        />
+                      </span>
                       {noPortability && (
-                        <span className="ml-2 text-[9px] text-amber-700">
+                        <span className="ml-2 inline-flex items-center gap-1 text-[9px] text-amber-700">
                           Individual only · no portability
+                          <InfoTooltip
+                            content={taxTermExplainer('state_no_portability', taxTermCtx)}
+                            size="sm"
+                          />
                         </span>
                       )}
                     </p>
@@ -727,7 +755,13 @@ export default function EstateTaxClient({
 
                   <div className="flex items-center gap-3 rounded-[var(--mwm-radius)] bg-red-50 border border-red-200 px-3 py-2 mt-1">
                     <p className="flex-1 text-xs font-medium text-red-800">
-                      Est. {statePrimary} estate tax
+                      <span className="inline-flex items-center gap-1">
+                        Est. {statePrimary} estate tax
+                        <InfoTooltip
+                          content={taxTermExplainer('state_exemption', taxTermCtx)}
+                          size="sm"
+                        />
+                      </span>
                     </p>
                     <div className="h-1.5 w-32" />
                     <p className="w-24 text-right text-xs font-medium text-red-700">
@@ -858,11 +892,17 @@ export default function EstateTaxClient({
                 label="Gross Estate"
                 value={formatDollars(grossEstateDisplay)}
                 sub="Financial + real estate FMV + business + insurance"
+                labelTooltip={
+                  <InfoTooltip content={taxTermExplainer('gross_estate')} size="sm" />
+                }
               />
               <SummaryCard
                 label="Taxable Estate"
                 value={formatDollars(taxableEstateDisplay)}
                 sub="From your estate composition snapshot"
+                labelTooltip={
+                  <InfoTooltip content={taxTermExplainer('taxable_estate')} size="sm" />
+                }
               />
               <SummaryCard
                 label={FEDERAL_EXEMPTION_AFTER_GIFTS_LABEL}
@@ -874,11 +914,17 @@ export default function EstateTaxClient({
                       ? '$30M MFJ (OBBBA 2026)'
                       : '$15M single (OBBBA 2026)'
                 }
+                labelTooltip={
+                  <InfoTooltip content={taxTermExplainer('federal_exemption')} size="sm" />
+                }
               />
               <div>
                 <SummaryCard
                   label="Federal Estate Tax"
                   value={formatDollars(federalTaxDisplay)}
+                  labelTooltip={
+                    <InfoTooltip content={taxTermExplainer('federal_exemption')} size="sm" />
+                  }
                   sub={
                     federalTaxDisplay > 0
                       ? 'Estimated federal transfer tax'

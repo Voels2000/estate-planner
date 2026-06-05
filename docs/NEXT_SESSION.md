@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
+# Updated: 2026-06-01 (Domain 3 — /estate-tax tooltips)
+
+---
+
+## Domain 3 — /estate-tax tooltips ✅ (2026-06-01)
+
+**Shipped:** Consumer **`/estate-tax`** — four federal summary card labels + waterfall state exemption / no-portability / est. state tax rows. Full **`taxTermCtx`** from client-side `stateExemption` derivation. **`SummaryCard`** gained optional **`labelTooltip?: ReactNode`**.
+
+**Unchanged:** MFJ blue callout, green no-federal block, dollar cells.
+
+**Next surface:** Advisor **`StateTaxPanel.tsx`** — badge pills (`No portability`, etc.) + Exemption table header only; inline callouts (portability gap, NY cliff, violet horizon) stay as-is.
 
 ---
 
@@ -9,8 +19,6 @@
 **Shipped:** `EstateSummaryHeroAndMetrics` tile labels — Federal headroom, Est. federal tax, Est. state tax (`taxTermExplainer` + `InfoTooltip`). Sidebar **`EstateTaxSnapshotPanel`** unchanged.
 
 **Deferred at hero:** `stateExemption` / `isMFJ` — not on hero props; state tax tooltip uses `statePrimary` only.
-
-**Next surface:** `/estate-tax` (`_estate-tax-client.tsx`) — summary cards + waterfall; full `TaxTermContext` derivable client-side.
 
 ---
 

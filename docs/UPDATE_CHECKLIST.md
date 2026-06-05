@@ -74,7 +74,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `components/ui/InfoTooltip.tsx`
 - [x] `EstateReadinessCard` — score subcategory labels
 - [x] `EstateCalloutCard.tsx` — hero 4-tile labels only (not sidebar snapshot)
-- [ ] `/estate-tax` — summary cards + waterfall row labels
+- [x] `/estate-tax` — summary cards + waterfall row labels (`SummaryCard.labelTooltip`, `taxTermCtx`)
 - [ ] Advisor `StateTaxPanel` — badges + table headers
 - [ ] Hero tile full ctx — `stateExemption` / `isMFJ` props from dashboard-body
 

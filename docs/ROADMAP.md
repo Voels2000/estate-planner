@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
+# Last updated: 2026-06-01 (Domain 3 — /estate-tax tooltips)
 
 ---
 
@@ -27,7 +27,7 @@
 | `InfoTooltip` UI primitive | `[x]` |
 | `EstateReadinessCard` — six score subcategory labels | `[x]` |
 | Dashboard tax hero — `EstateSummaryHeroAndMetrics` tile labels | `[x]` |
-| `/estate-tax` — summary cards + waterfall labels | `[ ]` |
+| `/estate-tax` — summary cards + waterfall labels | `[x]` |
 | Advisor `StateTaxPanel` badge/table headers | `[ ]` |
 | Hero `stateExemption` / `isMFJ` ctx (new props from dashboard-body) | `[ ]` **deferred** |
 

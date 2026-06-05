@@ -382,10 +382,10 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 | **User goal** | Federal/state estate tax exposure; interactive inside/outside composition + strategy what-if |
 | **Tier / gate** | Tier 3; **profile gate** |
 | **Server** | `app/(dashboard)/estate-tax/page.tsx` — assets, RE, liabilities, trusts, brackets; **`getCachedComposition`** + **`strategy_line_items`** on entitled path; `noPortability` from state rules |
-| **Client** | `app/(dashboard)/estate-tax/_estate-tax-client.tsx` — composition waterfall (Current / With strategies); strategy panel when state or federal tax &gt; 0; **`getStrategyDescription`** module-level |
+| **Client** | `app/(dashboard)/estate-tax/_estate-tax-client.tsx` — composition waterfall (Current / With strategies); strategy panel when state or federal tax &gt; 0; **`getStrategyDescription`** module-level; federal summary **`SummaryCard`** labels + waterfall state rows have **`InfoTooltip`** via **`taxTermExplainer`** (full **`taxTermCtx`** at page) |
 | **Write APIs** | Read-heavy; trust edits may use consumer trust API from other flows |
 | **Read APIs / RPCs** | `calculate_estate_composition` via `getCachedComposition` / `classifyEstateAssets`; active `strategy_line_items` |
-| **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts`, `lib/strategy/strategyLabels.ts` |
+| **Key lib** | `lib/calculations/estate-tax.ts`, `lib/estate/exemptionLabels.ts`, `lib/estate/taxTermExplainers.ts`, `lib/strategy/strategyLabels.ts` |
 | **Compliance** | Inline `DISCLAIMER_STRINGS.estateTax` under Federal Estate Tax card (`_estate-tax-client.tsx`) |
 | **Empty / blocked** | `UpgradeBanner` if `tier < 3`; strategy panel hidden when both estimated state and federal tax are $0 |
 

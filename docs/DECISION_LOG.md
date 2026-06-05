@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Domain 3 — dashboard tax hero tooltips)
+# Last updated: 2026-06-01 (Domain 3 — /estate-tax tooltips)
+
+## Domain 3 — tax term explainers wired on /estate-tax (2026-06-01)
+
+**Decision:** Wire **`InfoTooltip`** on consumer **`/estate-tax`** summary card labels and waterfall row labels. Copy from **`taxTermExplainer`**: `gross_estate`, `taxable_estate`, `federal_exemption` (summary cards); `state_exemption`, `state_no_portability` (waterfall) with full **`TaxTermContext`** (`stateCode`, `stateExemption`, `isMFJ`).
+
+**Pattern:** **`SummaryCard`** extended with optional **`labelTooltip?: ReactNode`** — label stays `string`; tooltip is sibling inside label row (not wrapped in prop). **`taxTermCtx`** built once after `stateExemption` derivation from `primaryStateBrackets[0]?.exemption_amount`.
+
+**Unchanged:** Blue MFJ bypass callout, green no-federal block, dollar value cells, section headers.
+
+**Files:** `app/(dashboard)/estate-tax/_estate-tax-client.tsx`.
+
+**Next:** Advisor **`StateTaxPanel`** — badge pills + Exemption column header only.
+
+---
 
 ## Domain 3 — tax term explainers wired on dashboard hero tiles (2026-06-01)
 
