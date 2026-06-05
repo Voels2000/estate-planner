@@ -73,6 +73,14 @@ export interface PDFReportData {
     stateTax: number
     totalTax: number
   }>
+  /** MC P10–P90 bands for page 2 chart (subset of percentiles_by_year; optional). */
+  projectionChartBands?: {
+    year: number
+    p10_gross: number
+    p90_gross: number
+    p10_net: number
+    p90_net: number
+  }[] | null
 
   // Tax analysis
   federalTax: number
@@ -207,6 +215,7 @@ function detectTaxCliff(rows: PDFReportData['projectionChartRows']): TaxCliff | 
 function buildEstateSVGChart(
   rows: PDFReportData['projectionChartRows'],
   _domicileState: string,
+  bands?: PDFReportData['projectionChartBands'],
 ): string {
   if (rows.length === 0) return ''
 
@@ -279,6 +288,28 @@ function buildEstateSVGChart(
       ' Z'
     : ''
 
+  const rowYearSet = new Set(years)
+  const bandPoints =
+    bands?.filter((b) => rowYearSet.has(b.year)).sort((a, b) => a.year - b.year) ?? []
+
+  function mcBandPolygon(
+    pickTop: (b: (typeof bandPoints)[number]) => number,
+    pickBottom: (b: (typeof bandPoints)[number]) => number,
+  ): string {
+    if (bandPoints.length === 0) return ''
+    const topFwd = bandPoints.map((b) => `${xScale(b.year)},${yScale(pickTop(b))}`)
+    const bottomRev = bandPoints
+      .slice()
+      .reverse()
+      .map((b) => `${xScale(b.year)},${yScale(pickBottom(b))}`)
+    return `M ${topFwd.join(' L ')} L ${bottomRev.join(' L ')} Z`
+  }
+
+  const grossMcBandPath =
+    bandPoints.length > 0 ? mcBandPolygon((b) => b.p90_gross, (b) => b.p10_gross) : ''
+  const netMcBandPath =
+    bandPoints.length > 0 ? mcBandPolygon((b) => b.p90_net, (b) => b.p10_net) : ''
+
   return `
 <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
      width="100%" style="display:block; max-height:${H}px;"
@@ -293,6 +324,10 @@ function buildEstateSVGChart(
                   stroke="#e8e8e8" stroke-width="0.5"/>`
     })
     .join('\n  ')}
+
+  ${grossMcBandPath ? `<path d="${grossMcBandPath}" fill="#3b82f6" fill-opacity="0.12" stroke="none"/>` : ''}
+
+  ${netMcBandPath ? `<path d="${netMcBandPath}" fill="#10b981" fill-opacity="0.10" stroke="none"/>` : ''}
 
   ${hasAnyTax ? `<path d="${taxGapPath}" fill="rgba(226,75,74,0.12)" stroke="none"/>` : ''}
 
@@ -751,7 +786,11 @@ export function generatePDFHTML(data: PDFReportData): string {
       <div class="section-title">Estate growth projection</div>
       <div class="chart-section">
         <div style="margin: 4px 0 4px;">
-          ${buildEstateSVGChart(data.projectionChartRows, data.domicileState)}
+          ${buildEstateSVGChart(
+            data.projectionChartRows,
+            data.domicileState ?? '',
+            data.projectionChartBands ?? undefined,
+          )}
         </div>
         <div class="chart-legend">
           <div class="chart-legend-item">

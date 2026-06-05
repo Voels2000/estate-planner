@@ -19,6 +19,8 @@ import {
   type AssetBeneficiaryRow,
 } from '@/lib/advisor/beneficiaryHelpers'
 import type { AdvisorProfileRow, HealthScoreComponent } from '@/lib/export-wiring'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 
 function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportProjectionRow[] {
   return rows.map((r) => ({
@@ -32,7 +34,7 @@ function mapScenarioRowsForExport(rows: Array<Record<string, unknown>>): ExportP
   }))
 }
 
-export function buildAdvisorExportPayloads(params: {
+export async function buildAdvisorExportPayloads(params: {
   household: {
     id: string
     has_spouse: boolean | null
@@ -49,6 +51,7 @@ export function buildAdvisorExportPayloads(params: {
     growth_rate_retirement: number | null
   }
   scenarioId: string | null
+  supabase?: SupabaseClient
   advisorDisplayName: string | null
   healthScore: number | null
   liquidAssets: number
@@ -88,11 +91,11 @@ export function buildAdvisorExportPayloads(params: {
     inside_business_gross?: number | null
     inside_insurance?: number | null
   } | null
-}): {
+}): Promise<{
   exportPanelProps: AdvisorExportPanelProps
   exportPdfData: PDFReportData
   exportExcelData: ExcelExportData
-} {
+}> {
   const { household } = params
   const exportClientName = household.has_spouse
     ? `${household.person1_first_name} & ${household.person2_first_name} ${household.person1_last_name}`
@@ -206,6 +209,22 @@ export function buildAdvisorExportPayloads(params: {
     })
     .sort((a, b) => a.year - b.year)
 
+  // Load precomputed MC for chart bands (Phase 2C)
+  const mcForChart =
+    params.scenarioId && params.supabase
+      ? await loadScenarioMonteCarlo(params.scenarioId, params.supabase)
+      : null
+
+  const projectionChartBands = mcForChart?.percentiles_by_year
+    ? mcForChart.percentiles_by_year.map((pt) => ({
+        year: pt.year,
+        p10_gross: pt.p10_gross,
+        p90_gross: pt.p90_gross,
+        p10_net: pt.p10_net,
+        p90_net: pt.p90_net,
+      }))
+    : null
+
   const meetingDate = params.meetingDate ?? new Date().toISOString()
 
   const exportPanelProps = {
@@ -248,6 +267,7 @@ export function buildAdvisorExportPayloads(params: {
     assetBreakdown,
     beneficiaryData: beneficiaryData?.groups.length ? beneficiaryData : undefined,
     projectionChartRows,
+    projectionChartBands,
     federalTax: fedTaxExport,
     stateTax: stTaxExport,
     federalExemption: exemptionExport,

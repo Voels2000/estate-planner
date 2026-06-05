@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Monte Carlo Phase 2C pre-flight; PDF bands next)
+# Last updated: 2026-06-05 (Monte Carlo Phase 2C shipped; Phase 2D active)
+
+---
+
+## Monte Carlo Phase 2C shipped — PDF page 2 MC band polygons (2026-06-05)
+
+**Decision:** Monte Carlo Phase 2C — **`buildEstateSVGChart`** extended with optional **`projectionChartBands`**; **`buildAdvisorExportPayloads`** made async (**`supabase`** param added); call sites in **`page.tsx`** and verify script updated. Bands join by year; 25 MC years overlaid on 32 projection rows.
+
+**Implementation:** **`loadScenarioMonteCarlo`** in **`exportMappers.ts`** → maps `percentiles_by_year` to inline band shape on **`PDFReportData`**; gross P10–P90 fill `#3b82f6` (0.12), net P10–P90 fill `#10b981` (0.10); polygons render behind deterministic gross/net lines. Null bands → page 2 SVG unchanged.
+
+**Files:** `lib/export/generatePDFReport.ts`, `lib/advisor/exportMappers.ts`, `lib/advisor/loadAdvisorExportWiring.ts`, `app/advisor/clients/[clientId]/page.tsx`.
+
+**Next:** Phase 2D narrative one-liner (`narrativeEngine.ts`).
 
 ---
 

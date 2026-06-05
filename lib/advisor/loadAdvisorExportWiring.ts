@@ -178,9 +178,10 @@ export async function loadAdvisorExportWiringForClient(
     statePrimary: household.state_primary,
   })
 
-  const payloads = buildAdvisorExportPayloads({
+  const payloads = await buildAdvisorExportPayloads({
     household,
     scenarioId,
+    supabase,
     advisorDisplayName,
     advisorProfile,
     healthScore,

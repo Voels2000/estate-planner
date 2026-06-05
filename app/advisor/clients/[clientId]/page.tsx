@@ -448,9 +448,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       filingStatus: household.filing_status,
       statePrimary: household.state_primary,
     })
-    const exportPayloads = buildAdvisorExportPayloads({
+    const exportPayloads = await buildAdvisorExportPayloads({
       household,
       scenarioId,
+      supabase,
       advisorDisplayName,
       advisorProfile,
       healthScore,

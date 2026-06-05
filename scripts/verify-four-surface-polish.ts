@@ -308,7 +308,7 @@ async function main() {
     lifetimeExemptionRemaining: 0,
   }
 
-  const payloads = buildAdvisorExportPayloads({
+  const payloads = await buildAdvisorExportPayloads({
     household,
     scenarioId: household.base_case_scenario_id,
     advisorDisplayName: datasetsBundle.advisorDisplayName,
