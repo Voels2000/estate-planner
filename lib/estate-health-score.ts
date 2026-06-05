@@ -3,6 +3,35 @@ import { createAdminClient } from '@/lib/supabase/admin'
 /** The single canonical consumer-facing label for the 0–100 score. */
 export const ESTATE_READINESS_LABEL = 'Estate readiness'
 
+/** Stable keys used in `HealthScoreComponent.key` and persisted `component_scores`. */
+export type ScoreCategoryKey =
+  | 'documents'
+  | 'incapacity'
+  | 'beneficiaries'
+  | 'titling'
+  | 'domicile'
+  | 'estate_tax'
+
+/** Consumer-facing explainer copy for each score subcategory (keyed by `HealthScoreComponent.key`). */
+export const SCORE_CATEGORY_EXPLAINERS: Record<ScoreCategoryKey, string> = {
+  titling:
+    'How your assets are titled determines what goes through probate at death and how they pass to heirs. Assets without documented titling or a named beneficiary often require court supervision to transfer. This score reflects how completely your asset titling is recorded and whether any assets are held in trust.',
+  domicile:
+    'Your state of domicile determines which estate tax laws apply to you. Owning property or maintaining ties in multiple states can create competing claims. This score reflects whether your primary residence and legal domicile are clearly established.',
+  documents:
+    'A will and revocable living trust direct how assets pass at death and can keep your estate out of probate. Powers of attorney and healthcare directives are scored separately under Incapacity Planning. This score reflects whether a will and/or trust are confirmed on file.',
+  estate_tax:
+    'Understanding your current and projected estate tax exposure is the first step to reducing it. This score reflects whether you have an estate tax base case on file and whether your estate size suggests a meaningful tax review.',
+  incapacity:
+    'If you become unable to manage your affairs, someone needs legal authority to act on your behalf. Without a durable power of attorney and healthcare directive, a court may need to appoint a guardian. This score reflects incapacity documents confirmed on file.',
+  beneficiaries:
+    'Retirement accounts, life insurance, and certain bank accounts pass directly to named beneficiaries — outside your will and trust. Missing or outdated designations can override your estate plan. This score reflects accounts with complete primary and contingent designations.',
+}
+
+export function scoreCategoryExplainer(key: string): string | undefined {
+  return (SCORE_CATEGORY_EXPLAINERS as Record<string, string>)[key]
+}
+
 export type HealthScoreComponent = {
   key: string
   label: string

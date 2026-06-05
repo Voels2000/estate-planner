@@ -241,7 +241,7 @@ Run sub-sections independently if time-boxed; step IDs are stable for failure no
 | 10.11c | **Roth Conversion** (`/roth`) | Stat cards + insight + **WhatIfPanel** (all four cells react to slider; Alan: **−$15K** lifetime extra cost at $50K/yr, **Delay is better**, IRA at RMD drops). Balance above grouped table. Emerald rows + CTA when conversions &gt; 0 | ☐ |
 | 10.11d | **Social Security** (`/social-security`) | Hero elected cards + insight (survivor **$4,888/mo** for Alan) · cumulative chart (blue elected crosses gray FRA ~age 84) · claiming tables with bar column · spousal section unchanged below. **Prod 2026-05-30:** programmatic verify on Alan household; visual once post-deploy | ☐ |
 | 10.11e | **RMD Calculator** (`/rmd`) | Hero lifetime + peak · status cards **Alan 9 yr / Cathi 16 yr away** · decade navigator · inflection highlights · legend | ☐ |
-| 10.11f | **Dashboard score + priority alert (Sprint B)** | Adaptive greeting by score band · **`EstateReadinessCard`** (benchmark bar, component pills, disclaimer) · single **`PriorityAlertCard`** from `household_alerts` · "+ N other items" collapsed · Voels: ~56/100 amber, probate fact line | ☐ |
+| 10.11f | **Dashboard score + priority alert (Sprint B)** | Adaptive greeting by score band · **`EstateReadinessCard`** (benchmark bar, component pills, **`InfoTooltip`** on each subcategory, disclaimer) · single **`PriorityAlertCard`** from `household_alerts` · "+ N other items" collapsed · consumer past onramp (score ≥ 60): six `?` icons, copy matches **`SCORE_CATEGORY_EXPLAINERS`** | ☐ |
 | 10.11g | **Estate Tax Snapshot** (`/estate-tax`) | Composition waterfall · Current/With strategies toggle · strategy panel (Alan WA) · $0-tax user — waterfall only, no panel | ☐ |
 
 #### 10d. Gift History

@@ -1,5 +1,5 @@
 # Score taxonomy
-Last updated: 2026-05-29 (Sprint B dashboard UI shipped)
+Last updated: 2026-06-01 (subcategory explainers on EstateReadinessCard)
 
 This document is the authoritative list of scores and metrics in My Wealth Maps.
 Before adding a new score or metric, check this file.
@@ -13,6 +13,7 @@ If something similar exists, extend it — do not add a new one.
 - Source: `estate_health_scores` table, `computeEstateHealthScore()`
 - Label: `ESTATE_READINESS_LABEL` (`'Estate readiness'`) everywhere — no variants (not "Foundation", not "plan health")
 - Six components: Documents (20), Incapacity (15), Beneficiaries (20), Titling (15), Domicile (15), Tax awareness (15)
+- Explainers: **`SCORE_CATEGORY_EXPLAINERS`** in `lib/estate-health-score.ts` — keyed by component `key`; surfaced via **`InfoTooltip`** on **`EstateReadinessCard`** subcategory labels
 - Benchmark: **`EstateReadinessCard`** shows vs. avg. American (28) and avg. MWM user (63) — constants in `lib/dashboard/readinessBenchmarks.ts`; hardcoded until enough users exist to compute platform averages from `estate_health_scores` (future sprint: config table, monthly refresh)
 - Surfaces: Consumer dashboard (States 2+3), /health-check completion, /my-estate-strategy, consumer PDF export
 - NOT shown: Advisor complexity score, letter grade, raw completeness %

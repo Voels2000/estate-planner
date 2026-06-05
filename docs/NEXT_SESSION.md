@@ -1,6 +1,24 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (PDF page 3 engine B)
+# Updated: 2026-06-01 (Estate readiness subcategory explainers)
+
+---
+
+## Estate readiness explainers — InfoTooltip ✅ (2026-06-01)
+
+**Shipped:** Six score subcategory labels on **`EstateReadinessCard`** have inline **`InfoTooltip`** explainers. Copy in **`SCORE_CATEGORY_EXPLAINERS`** (`lib/estate-health-score.ts`); lookup via **`scoreCategoryExplainer(c.key)`**.
+
+| File | Role |
+|------|------|
+| `components/ui/InfoTooltip.tsx` | Custom accessible popover (`?` trigger; MWM tokens; above/below flip) |
+| `lib/estate-health-score.ts` | `ScoreCategoryKey`, `SCORE_CATEGORY_EXPLAINERS`, `scoreCategoryExplainer()` |
+| `components/dashboard/EstateReadinessCard.tsx` | One tooltip per subcategory when explainer non-empty |
+
+**Onramp note:** Voels consumer (score 56) stays on **`DashboardOnramp`** until score ≥ 60 — tooltips visible only on full dashboard (State 3 with **`estateHealthScore`**).
+
+**Smoke:** e2e consumer localhost — 6 icons; documents/titling/estate_tax copy checks pass.
+
+**Next explainer surfaces (not started):** MC panel metrics · advisory metrics accordion · score band header · compliance disclaimers.
 
 ---
 

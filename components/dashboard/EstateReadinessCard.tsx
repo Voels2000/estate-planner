@@ -1,5 +1,7 @@
 'use client'
 
+import { InfoTooltip } from '@/components/ui/InfoTooltip'
+import { scoreCategoryExplainer } from '@/lib/estate-health-score'
 import { getBand, getPctile } from '@/lib/dashboard/scoreDisplayHelpers'
 import { NAT_AVG_PCT, MWM_AVG_PCT } from '@/lib/dashboard/readinessBenchmarks'
 
@@ -98,10 +100,14 @@ export function EstateReadinessCard({ score, priorScore, components }: EstateRea
                 c.status === 'good' ? '#3B6D11' : c.status === 'warning' ? '#854F0B' : '#A32D2D'
               const barFill =
                 c.status === 'good' ? '#639922' : c.status === 'warning' ? '#EF9F27' : '#E24B4A'
+              const explainer = scoreCategoryExplainer(c.key)
               return (
                 <div key={c.key} className="rounded bg-[color:var(--mwm-surface)] p-2">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-[11px] text-[color:var(--mwm-text-secondary)]">{c.label}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-[color:var(--mwm-text-secondary)]">
+                      {c.label}
+                      {explainer && <InfoTooltip content={explainer} size="sm" />}
+                    </span>
                     <span className="text-xs font-medium" style={{ color: pillColor }}>
                       {c.score}/{c.maxScore}
                     </span>

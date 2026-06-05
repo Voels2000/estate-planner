@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-01 (PDF page 3 engine B)
+# Last updated: 2026-06-01 (Estate readiness subcategory explainers)
 
 ---
 
@@ -18,6 +18,17 @@
 ---
 
 ## Current sprint
+
+### Estate readiness explainers — InfoTooltip ✅ (2026-06-01)
+
+| Item | Status |
+|------|--------|
+| `InfoTooltip` UI primitive (click toggle, Escape/outside dismiss, viewport flip) | `[x]` |
+| `SCORE_CATEGORY_EXPLAINERS` + `scoreCategoryExplainer()` in `estate-health-score.ts` | `[x]` |
+| Wire into `EstateReadinessCard` subcategory labels | `[x]` |
+| Post-deploy smoke (consumer past onramp — six `?`, copy match) | `[ ]` |
+
+---
 
 ### Domain 2 — display tax alignment (2026-06-01)
 

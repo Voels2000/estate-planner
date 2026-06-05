@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (PDF page 3 engine B + MC engine B)
+# Last updated: 2026-06-01 (Estate readiness score subcategory explainers)
+
+## Estate readiness subcategory explainers — InfoTooltip (2026-06-01)
+
+**Decision:** Add inline `?` explainers on each of the six **`EstateReadinessCard`** subcategory labels. Copy lives in **`SCORE_CATEGORY_EXPLAINERS`** keyed by stable **`ScoreCategoryKey`** (`documents`, `incapacity`, `beneficiaries`, `titling`, `domicile`, `estate_tax`) — not on computed **`HealthScoreComponent`** rows. UI uses custom **`InfoTooltip`** (`components/ui/InfoTooltip.tsx`); no Radix/shadcn dependency.
+
+**Files:** `lib/estate-health-score.ts` (`SCORE_CATEGORY_EXPLAINERS`, `scoreCategoryExplainer`), `components/ui/InfoTooltip.tsx`, `components/dashboard/EstateReadinessCard.tsx`.
+
+**Copy alignment:** Documents score = will + trust only (POA/HCD under Incapacity). Titling = documented coverage + trust bonus (not joint-vs-single). Estate tax = base case on file + estate-size tiers (not vague “reviewed and documented”).
+
+**Visibility:** Card renders only when **`estateHealthScore`** is present and user passes onramp gate (`shouldShowOnramp` false — score ≥ 60, wizard complete, household data). Voels consumer (score 56) currently sees onramp only, not the six tooltips.
+
+**Smoke:** e2e consumer on localhost — six icons; all popovers match **`SCORE_CATEGORY_EXPLAINERS`**; adjusted copy checks pass.
+
+---
 
 ## PDF page 3 metric cards — engine B (2026-06-01)
 

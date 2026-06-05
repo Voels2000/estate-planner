@@ -68,6 +68,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Estate readiness subcategory explainers (2026-06-01) — shipped
+
+- [x] `components/ui/InfoTooltip.tsx` — custom popover primitive (no Radix)
+- [x] `lib/estate-health-score.ts` — `SCORE_CATEGORY_EXPLAINERS`, `scoreCategoryExplainer()`
+- [x] `components/dashboard/EstateReadinessCard.tsx` — inline `?` per subcategory label
+- [x] Master docs synced
+- [ ] Post-deploy smoke: consumer past onramp — six `?` icons; copy matches explainers
+
 ## PDF beneficiary summary page (2026-06-01) — shipped
 
 - [x] [lib/advisor/beneficiaryHelpers.ts](../lib/advisor/beneficiaryHelpers.ts) — `buildBeneficiaryAccountGroups`
