@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-01 (Domain 3 — /estate-tax tooltips)
+# Last updated: 2026-06-01 (Domain 3 — StateTaxPanel tooltips)
+
+## Domain 3 — tax term explainers wired on StateTaxPanel (2026-06-01)
+
+**Decision:** Wire **`InfoTooltip`** on advisor **`StateTaxPanel`** — **`No portability`** badge and **Exemption** table header only. Copy: `state_no_portability`, `state_exemption` with **`taxTermCtx`** from `currentYearRow.exemption`, `unifiedStateCode`, `isMFJ`.
+
+**Skipped:** `ny_cliff`, `inflation_indexed`, `tracks_federal` badges — no keys in **`taxTermExplainers.ts`**.
+
+**Unchanged:** `getPortabilityGapLabel()` amber callout, NY cliff warning, violet horizon box, table data cells.
+
+**Files:** `components/advisor/StateTaxPanel.tsx`.
+
+**Next:** Chart disclaimers (`/projections`) · gifting tooltips (`GiftingDashboard`).
+
+---
 
 ## Domain 3 — tax term explainers wired on /estate-tax (2026-06-01)
 

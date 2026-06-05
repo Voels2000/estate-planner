@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-01 (Domain 3 — /estate-tax tooltips)
+# Updated: 2026-06-01 (Domain 3 — StateTaxPanel tooltips)
+
+---
+
+## Domain 3 — StateTaxPanel tooltips ✅ (2026-06-01)
+
+**Shipped:** Advisor **`StateTaxPanel`** — `No portability` badge + **Exemption** `<th>` (`taxTermCtx` from `currentYearRow` + `unifiedStateCode` + `isMFJ`). Other badges skipped (no keys).
+
+**Tax exposure surfaces complete:** dashboard hero · `/estate-tax` · **`StateTaxPanel`**.
+
+**Remaining Domain 3:** projections chart disclaimer + gifting `annual_exclusion` / `superfunding` tooltips.
 
 ---
 
