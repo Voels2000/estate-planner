@@ -1,6 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
+# Updated: 2026-06-05 (advisor portal firm_name fallback)
+
+---
+
+## Advisor portal — `profiles.firm_name` fallback — shipped ✅ (2026-06-05)
+
+**Problem:** Export PDF used **`profiles.firm_name`**; advisor portal used **`firms.name`** only → generic **"Firm"** label when no **`firms`** row.
+
+**Fix:** **`getAccessContext`** loads **`profiles.firm_name`**; resolves **`firm_name: firms.name?.trim() || profiles.firm_name?.trim() || null`**. Advisor layout nav shows resolved name.
+
+**Files:** `lib/access/getAccessContext.ts` · `app/advisor/layout.tsx`
+
+**Voels:** Alan `854051be…` — nav + roster show **Voels Financial Group**.
+
+**Next:** base-case regenerate (Voels + rollout) · export federal → **`computeFederalEstateTax`** (deferred) · titling perf (deferred).
 
 ---
 
@@ -26,7 +40,7 @@
 
 **Optional:** ~~PDF Phase 2D — confirm **`first_tax_year_p10`** reads stored value~~ → **done** (`firstTaxYearP10` on PDF payload).
 
-**Next sprint candidates:** Voels **`StateTaxPanel`** spot-check · base-case regenerate · portal **`profiles.firm_name`** fallback · titling perf.
+**Next sprint candidates:** base-case regenerate · export federal engine B · titling perf (deferred).
 
 ---
 
@@ -93,7 +107,7 @@
 
 **Verify:** `PLAYWRIGHT_BASE_URL=http://localhost:3000 npx dotenv-cli -e .env.local -e .env.test -- npx tsx scripts/verify-advisor-settings-voels.ts` — Voels GET/PATCH + PDF cover firm name. Browser form smoke for `avoels@comcast.net` requires MFA + real `SMOKE_ADVISOR_PASSWORD`.
 
-**Next:** portal **`profiles.firm_name`** fallback when **`firms.name`** absent · PDF logo render · logo file upload sprint.
+**Next:** PDF logo render · logo file upload sprint.
 
 ---
 
@@ -115,9 +129,11 @@
 
 **DB (Voels):** Alan `854051be…` — `firm_name: Voels Financial Group`, `phone: (218) 555-0147`.
 
-**PDF `'My Wealth Maps'` causes:** e2e-advisor session · `fetchAdvisorProfile` error · not advisor-portal UI (uses **`firms.name`** / `firm_id`).
+**PDF `'My Wealth Maps'` causes:** e2e-advisor session · `fetchAdvisorProfile` error · missing **`profiles.firm_name`**.
 
-**Next:** portal **`profiles.firm_name`** fallback · PDF logo · logo upload · Voels `StateTaxPanel` spot-check · base-case regenerate.
+**Portal firm label:** **`getAccessContext`** — **`firms.name` → `profiles.firm_name`** (shipped 2026-06-05).
+
+**Next:** PDF logo · logo upload · base-case regenerate.
 
 ---
 

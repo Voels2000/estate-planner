@@ -49,7 +49,9 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_superuser, is_admin, is_attorney, subscription_status, consumer_tier, terms_accepted_at, terms_version, firm_id, firm_role')
+    .select(
+      'role, is_superuser, is_admin, is_attorney, subscription_status, consumer_tier, terms_accepted_at, terms_version, firm_id, firm_role, firm_name',
+    )
     .eq('id', user.id)
     .single()
 
@@ -72,6 +74,8 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
 
   const role = profile?.role ?? ''
   const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
+  const profileFirmName = profile?.firm_name?.trim() || null
+  const resolvedFirmName = firm?.name?.trim() || profileFirmName || null
 
   // isSuperuser grants admin, advisor, and attorney portal access regardless of role.
   return {
@@ -87,7 +91,7 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
       profile?.subscription_status === 'trialing',
     firm_id: profile?.firm_id ?? null,
     firm_role: profile?.firm_role ?? null,
-    firm_name: firm?.name ?? null,
+    firm_name: resolvedFirmName,
     firm_tier: firm?.tier ?? null,
     seat_count: firm?.seat_count ?? null,
     isFirmOwner: profile?.firm_role === 'owner',

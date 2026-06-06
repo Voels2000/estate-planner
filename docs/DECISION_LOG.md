@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
+# Last updated: 2026-06-05 (advisor portal firm_name fallback)
+
+---
+
+## Advisor portal — `profiles.firm_name` fallback (2026-06-05)
+
+**Decision:** **`getAccessContext`** resolves **`firm_name`** as **`firms.name` → `profiles.firm_name` → null** — same priority as export branding. Portal roster banner, firm settings, and advisor layout nav no longer show generic **"Firm"** when advisor has **`profiles.firm_name`** but no **`firms`** row (or empty **`firms.name`**).
+
+| Surface | Before | After |
+|---------|--------|-------|
+| **`/advisor` roster banner** | **`firms.name`** only | Resolved name (Voels: **Voels Financial Group**) |
+| **Advisor layout nav** | Email only | Firm name when resolved |
+| **Export PDF** | Already used **`profiles.firm_name`** | Unchanged — now aligned with portal |
+
+**Files:** `lib/access/getAccessContext.ts` · `app/advisor/layout.tsx`.
+
+**Voels:** Alan `854051be…` — **`profiles.firm_name: Voels Financial Group`**, no **`firm_id`**.
 
 ---
 

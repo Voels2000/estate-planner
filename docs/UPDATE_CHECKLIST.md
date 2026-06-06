@@ -68,6 +68,12 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Advisor portal — `profiles.firm_name` fallback (2026-06-05) — shipped
+
+- [x] `getAccessContext` — `firm_name: firms.name → profiles.firm_name`
+- [x] Advisor layout nav — resolved firm name
+- [x] ROADMAP · DECISION_LOG · NEXT_SESSION synced
+
 ## Domain 3 — tax term explainers (2026-06-01) — in progress
 
 - [x] `lib/estate/taxTermExplainers.ts` — static, OBBBA formatters, dynamic ctx

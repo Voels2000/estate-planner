@@ -30,6 +30,9 @@ export default async function AdvisorLayout({
           </span>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+          {ctx.firm_name ? (
+            <span className="text-sm font-medium text-white/80">{ctx.firm_name}</span>
+          ) : null}
           <Link
             href="/dashboard"
             className="text-sm font-medium text-white/70 hover:text-white hover:underline"

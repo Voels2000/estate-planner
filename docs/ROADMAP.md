@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
+# Last updated: 2026-06-05 (advisor portal firm_name fallback)
 
 ---
 
@@ -66,7 +66,7 @@
 
 ---
 
-### Sprint — Advisor Profile Settings UI `[~]` **partial — form shipped**
+### Sprint — Advisor Profile Settings UI `[~]` **partial — portal fallback shipped**
 
 | Item | Status |
 |------|--------|
@@ -75,7 +75,7 @@
 | `fetchAdvisorProfile` debug logs removed | `[x]` `52ddc23` |
 | Settings form — `/advisor/settings` + `PATCH /api/advisor/profile` (`full_name`, `firm_name`, `phone`) | `[x]` |
 | Logo upload UI — `firm_logo_url` file upload | `[-]` deferred (file-upload sprint) |
-| Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[ ]` **next** |
+| Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[x]` |
 | PDF cover logo from `firm_logo_url` | `[ ]` |
 
 **Scope:** Advisor-editable branding for export surfaces; replaces manual Supabase seed for new advisors.
@@ -93,7 +93,7 @@
 | Migration history sync (duplicate `20260529120000` → `20260529120500`) | `[x]` `11a867d` |
 | Debug logs in `fetchAdvisorProfile` | `[x]` removed `52ddc23` |
 
-**Note:** Portal UI firm label uses **`firms.name`** (`firm_id`); export PDF uses **`profiles.firm_name`**.
+**Note:** Portal + export both resolve firm label **`firms.name` → `profiles.firm_name`** via **`getAccessContext`** / **`resolveAdvisorBranding`**.
 
 ---
 
