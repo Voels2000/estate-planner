@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
+# Last updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
 
 ---
 
@@ -26,7 +26,7 @@
 | Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | Depletion Risk tile (% below floor at death); green ≤20%, red >20% | `[x]` |
 | Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” | `[ ]` |
 | PDF cover narrative | `first_tax_year_p10` | Phase 2D — confirm reads stored value | `[ ]` |
-| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on the fan chart | `[ ]` |
+| Projections `EstateOutlookChart` | `stateExemption` (`state_estate_tax_rules`) | Amber dashed threshold line + legend on fan chart | `[x]` |
 
 **Prerequisite:** Phase 3 signals compute + store shipped (`runEstateMonteCarloAsync` + `loadScenarioMonteCarlo`).
 
@@ -41,7 +41,7 @@
 | `loadScenarioMonteCarlo` — unified loader returns all four fields | `[x]` |
 | `MC_DEPLETION_FLOOR` constant (`500_000`) | `[x]` |
 | Voels smoke — `first_tax_year_p10=2026`, `depletion=0`, `threshold_years=25` | `[x]` |
-| UI surfaces (estate-tax, PDF, Strategy, projections chart) | `[ ]` **next sprint** |
+| UI surfaces (estate-tax, PDF, Strategy, projections chart) | `[~]` projections chart threshold line shipped; estate-tax + PDF remain |
 
 **State exemption source:** `stateBrackets[0].exemption_amount` (not hardcoded $3M).
 
@@ -114,7 +114,7 @@
 | 2C | PDF SVG polygon bands (`generatePDFReport`) | `[x]` |
 | 2D | Narrative one-liner (`narrativeEngine`) | `[x]` |
 | 3 | Signals — threshold prob, first tax year, longevity depletion (store only) | `[x]` |
-| 3 UI | Surface signals on estate-tax, PDF, Strategy, projections | `[ ]` **next** |
+| 3 UI | Surface signals on estate-tax, PDF, Strategy, projections | `[~]` Strategy + projections chart shipped |
 
 **Commits (Phase 0–2D):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`, `f14af7e`, `aaf46b4`, `fc9cddd`.
 

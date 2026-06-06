@@ -25,6 +25,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Projections EstateOutlookChart — state exemption threshold line (2026-06-05)
+
+**No migration.** Application-layer only.
+
+| Change | Detail |
+|--------|--------|
+| `projections/page.tsx` | Fetch `state_estate_tax_rules.exemption_amount` for `household.state_primary` (current tax year; fallback latest year) |
+| `EstateOutlookChart` | Optional `stateExemption` prop — amber dashed Y reference line + legend when > 0 |
+| `_projections-client.tsx` | Pass-through prop from server |
+
+**Note:** Uses static exemption amount from rules table — not stored MC **`wa_threshold_prob_by_year`**.
+
+---
+
 ## Advisor profiles branding + migration history sync (2026-06-05)
 
 **Migrations:**

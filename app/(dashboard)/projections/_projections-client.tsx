@@ -39,6 +39,7 @@ type ProjectionsClientProps = {
   hasRealEstate?: boolean
   hasBusiness?: boolean
   mcBands?: PercentileByYear[] | null
+  stateExemption?: number | null
 }
 
 export function ProjectionsClient({
@@ -50,6 +51,7 @@ export function ProjectionsClient({
   hasRealEstate = true,
   hasBusiness = true,
   mcBands = null,
+  stateExemption = null,
 }: ProjectionsClientProps) {
   const [household, setHousehold] = useState<HouseholdProjectionProfile | null>(initialHousehold)
   const [projections, setProjections] = useState<ProjectionYear[]>(initialProjections)
@@ -168,7 +170,7 @@ export function ProjectionsClient({
               : '7%'}{' '}
             annual growth.
           </p>
-          <EstateOutlookChart bands={mcBands} />
+          <EstateOutlookChart bands={mcBands} stateExemption={stateExemption ?? null} />
           <p className="mt-2 text-xs text-[--mwm-text-muted]">
             {DISCLAIMER_STRINGS.projectionsChart}
           </p>

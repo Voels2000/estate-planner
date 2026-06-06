@@ -1,6 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
+# Updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
+
+---
+
+## MC Phase 3 UI — EstateOutlookChart threshold line ✅ (2026-06-05)
+
+**Shipped:** Consumer **`/projections`** fan chart — amber dashed horizontal line at **`stateExemption`** when > 0; right-edge label **"WA exempt."**; legend **╌╌ State exemption threshold**. Line renders above band polygons, below P50 median. No line when exemption null/zero.
+
+**Data path:** `projections/page.tsx` fetches **`state_estate_tax_rules.exemption_amount`** for `household.state_primary` (current tax year, fallback latest year) — no extra MC fetch. Passed via **`ProjectionsClient`** → **`EstateOutlookChart`**.
+
+**Voels verify:** line at ~$2.19M near bottom of chart (estate well above exemption).
+
+**Files:** `app/(dashboard)/projections/_components/EstateOutlookChart.tsx` · `_projections-client.tsx` · `page.tsx`
+
+**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm.
 
 ---
 
@@ -10,7 +24,7 @@
 
 **Files:** `components/advisor/MonteCarloPanel.tsx` · `app/advisor/clients/[clientId]/_tabs/StrategyTab.tsx`
 
-**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm · `EstateOutlookChart` threshold line.
+**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm.
 
 ---
 
@@ -29,7 +43,7 @@
 | `/estate-tax` | `wa_threshold_prob_by_year` |
 | PDF cover narrative | `first_tax_year_p10` (confirm Phase 2D reads stored value) |
 | Strategy / `MonteCarloPanel` | `longevity_depletion_pct` |
-| `EstateOutlookChart` | `wa_threshold_prob_by_year` threshold line |
+| `EstateOutlookChart` | `stateExemption` threshold line ✅ |
 
 ---
 

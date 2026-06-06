@@ -44,10 +44,36 @@ export default async function ProjectionsPage() {
     ? await loadScenarioMonteCarlo(householdMcRes.data.base_case_scenario_id, supabase)
     : null
 
+  const householdProfile = household as HouseholdProjectionProfile | null
+  const statePrimary = householdProfile?.state_primary?.trim().toUpperCase() ?? ''
+  let stateExemption: number | null = null
+  if (statePrimary) {
+    const currentYear = new Date().getFullYear()
+    let rulesRes = await supabase
+      .from('state_estate_tax_rules')
+      .select('exemption_amount')
+      .eq('state', statePrimary)
+      .eq('tax_year', currentYear)
+      .order('min_amount', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (!rulesRes.data?.exemption_amount) {
+      rulesRes = await supabase
+        .from('state_estate_tax_rules')
+        .select('exemption_amount')
+        .eq('state', statePrimary)
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    }
+    stateExemption =
+      rulesRes.data?.exemption_amount != null ? Number(rulesRes.data.exemption_amount) : null
+  }
+
   const totalAssets = (assetRows ?? []).reduce((sum, row) => sum + Number(row.value ?? 0), 0)
   const totalIncome = (incomeRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
 
-  const householdProfile = household as HouseholdProjectionProfile | null
   const readiness = checkProjectionReadiness({
     person1BirthYear: householdProfile?.person1_birth_year ?? null,
     person1RetirementAge: householdProfile?.person1_retirement_age ?? null,
@@ -71,6 +97,7 @@ export default async function ProjectionsPage() {
       hasRealEstate={(reCount ?? 0) > 0}
       hasBusiness={(bizCount ?? 0) > 0}
       mcBands={mcData?.percentiles_by_year ?? null}
+      stateExemption={stateExemption}
     />
   )
 }

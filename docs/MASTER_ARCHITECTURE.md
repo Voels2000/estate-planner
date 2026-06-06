@@ -1042,8 +1042,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 ### Consumer UI Composition (Current)
 
-- Route: `app/(dashboard)/projections/page.tsx`
-- Local UI components are split under `app/(dashboard)/projections/_components/*`
+- Route: `app/(dashboard)/projections/page.tsx` — server loads MC fan bands via **`loadScenarioMonteCarlo`** (`households.base_case_scenario_id`) and **`stateExemption`** from **`state_estate_tax_rules`** (current tax year, fallback latest year) for **`EstateOutlookChart`** threshold line
+- Local UI components are split under `app/(dashboard)/projections/_components/*` — **`EstateOutlookChart.tsx`** renders P10–P90 SVG bands + optional amber state exemption reference line
 - Shared projection route types are centralized in `lib/projections/types.ts`
 - This refactor is structure-only (no behavior/calculation change); projection math still comes from `projection-complete.ts`
 - Dashboard route `app/(dashboard)/dashboard/page.tsx` is decomposed into helper modules under `lib/dashboard/*` (calculations, loaders, and mappers) with no behavior changes. Session 122 adds gift-aware `classifyEstateAssets` + `EstateCalloutCard` on the same server page.

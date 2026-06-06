@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
+# Last updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
+
+---
+
+## MC Phase 3 UI — EstateOutlookChart state exemption threshold line (2026-06-05)
+
+**Decision:** Consumer **`/projections`** **`EstateOutlookChart`** accepts optional **`stateExemption`** prop. When > 0, draw amber (`#f59e0b`) dashed horizontal line at exemption Y (same scale as P90 max), **"WA exempt."** label at right edge, and legend entry **╌╌ State exemption threshold**. Line z-order: above fan bands, below P50 median — matches PDF cliff callout color.
+
+**Data:** Server **`projections/page.tsx`** reads **`state_estate_tax_rules.exemption_amount`** for `household.state_primary` (current year, fallback latest available year). No new MC query — threshold is the static exemption amount, not **`wa_threshold_prob_by_year`**.
+
+**Voels:** ~$2,193,000 line near bottom of chart.
+
+**Files:** `EstateOutlookChart.tsx` · `_projections-client.tsx` · `page.tsx`.
+
+**Remaining Phase 3 UI:** `/estate-tax` · PDF **`first_tax_year_p10`** confirm.
 
 ---
 
@@ -10,7 +24,7 @@
 
 **Voels:** `longevity_depletion_pct=0` → green **0% Depletion Risk**.
 
-**Remaining:** `/estate-tax` · PDF narrative confirm · **`EstateOutlookChart`** threshold line.
+**Remaining:** `/estate-tax` · PDF narrative confirm.
 
 ---
 
@@ -27,7 +41,7 @@
 | Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” |
 | PDF cover narrative | `first_tax_year_p10` | Phase 2D wired — confirm reads stored value |
 | Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | “0% of scenarios show estate depletion by age 90” |
-| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on fan chart |
+| Projections `EstateOutlookChart` | `stateExemption` from `state_estate_tax_rules` | Amber dashed threshold line on fan chart ✅ |
 
 ---
 

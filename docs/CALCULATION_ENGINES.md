@@ -79,6 +79,8 @@ Two separate engines — do not merge.
 
 **`success_rate`:** Share of simulated final estates where federal + state estate tax both equal $0 (UI: **Zero-Tax Paths**).
 
+**UI surfaces (precomputed):** Advisor **`MonteCarloPanel`** (edge + precomputed tiles) · Strategy at-death badge · PDF page 2 fan bands · consumer **`/projections`** **`EstateOutlookChart`** ( **`percentiles_by_year`** bands + optional **`stateExemption`** threshold line from **`state_estate_tax_rules`**, not MC signals).
+
 ### Retirement Monte Carlo (consumer `/monte-carlo`)
 
 | | |

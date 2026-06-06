@@ -3,6 +3,7 @@ import type { PercentileByYear } from '@/lib/calculations/estate-monte-carlo'
 export interface EstateOutlookChartProps {
   bands: PercentileByYear[]
   className?: string
+  stateExemption?: number | null
 }
 
 function fmtMillions(n: number): string {
@@ -11,7 +12,7 @@ function fmtMillions(n: number): string {
   return `$${Math.round(n)}`
 }
 
-export function EstateOutlookChart({ bands, className }: EstateOutlookChartProps) {
+export function EstateOutlookChart({ bands, className, stateExemption = null }: EstateOutlookChartProps) {
   if (!bands.length) return null
 
   const width = 600
@@ -27,6 +28,9 @@ export function EstateOutlookChart({ bands, className }: EstateOutlookChartProps
   const xScale = (i: number) =>
     padding.left + (bands.length <= 1 ? chartW / 2 : (i / (bands.length - 1)) * chartW)
   const yScale = (v: number) => padding.top + chartH - ((v - minVal) / range) * chartH
+
+  const showThreshold = stateExemption != null && stateExemption > 0
+  const thresholdY = showThreshold ? yScale(stateExemption) : null
 
   const pathD = (key: 'p10_gross' | 'p25_gross' | 'p50_gross' | 'p75_gross' | 'p90_gross') =>
     bands.map((d, i) => `${i === 0 ? 'M' : 'L'}${xScale(i)},${yScale(d[key])}`).join(' ')
@@ -60,6 +64,27 @@ export function EstateOutlookChart({ bands, className }: EstateOutlookChartProps
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" aria-label="Estate outlook fan chart">
         <path d={bandPath} fill="#3b82f6" fillOpacity="0.15" />
         <path d={bandInner} fill="#3b82f6" fillOpacity="0.25" />
+        {thresholdY !== null && (
+          <>
+            <line
+              x1={padding.left}
+              y1={thresholdY}
+              x2={width - padding.right}
+              y2={thresholdY}
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+            <text
+              x={width - padding.right + 4}
+              y={thresholdY + 4}
+              fontSize="8"
+              fill="#f59e0b"
+            >
+              WA exempt.
+            </text>
+          </>
+        )}
         <path d={pathD('p50_gross')} fill="none" stroke="#2563eb" strokeWidth="2" />
         <path
           d={pathD('p10_gross')}
@@ -110,10 +135,13 @@ export function EstateOutlookChart({ bands, className }: EstateOutlookChartProps
         })}
       </svg>
 
-      <div className="mt-2 flex items-center gap-4 text-xs text-[--mwm-text-muted]">
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-[--mwm-text-muted]">
         <span>── P50 median</span>
         <span>░░ P25–P75 range</span>
         <span>╌╌ P10 / P90</span>
+        {showThreshold ? (
+          <span style={{ color: '#f59e0b' }}>╌╌ State exemption threshold</span>
+        ) : null}
       </div>
     </div>
   )

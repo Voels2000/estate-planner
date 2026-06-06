@@ -680,8 +680,10 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `CompositeOverlay` — hide waterfall when no active recommendations
 - [x] `MonteCarloPanel` — empty state before first run
 - [x] `MonteCarloPanel` — precomputed Depletion Risk tile (`longevity_depletion_pct` from `mcSummary`)
+- [x] **`EstateOutlookChart`** — state exemption threshold line on `/projections` (`stateExemption` prop; `state_estate_tax_rules` fetch on `page.tsx`)
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Strategy tab — CST/ILIT savings lines · composite empty state
+- [ ] **Post-deploy smoke:** Voels `/projections` — amber line ~$2.19M · legend entry · no line when exemption null
 
 ## Advisor Estate tab — visual polish ✅ closed 2026-05-30
 
