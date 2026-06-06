@@ -1,6 +1,22 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (PDF cover logo from firm_logo_url)
+# Updated: 2026-06-06 (doc sync — post-deploy verify scripts + sprint handoff)
+
+---
+
+## Post-deploy verification scripts — indexed ✅ (2026-06-06)
+
+**Voels prod gate:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts`
+
+| Script | Purpose |
+|--------|---------|
+| `verify-post-deploy-voels.ts` | MC Phase 3 surfaces + PDF narrative line (7 checks) |
+| `regenerate-base-case-voels.ts` | Force base-case regenerate; death-year **2057** engine B parity |
+| `verify-state-tax-panel-states.ts` | All **13** modeled estate-tax states — engine B brackets |
+| `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |
+| `verify-advisor-settings-voels.ts` | Advisor profile API + PDF firm name |
+
+**Next code sprint:** export federal → bracket engine B (deferred) · logo file-upload · titling perf.
 
 ---
 

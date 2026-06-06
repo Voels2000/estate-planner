@@ -522,6 +522,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - **`success_rate` / Zero-Tax Paths:** Percent of simulated paths where federal + state estate tax both equal $0 (not federal exemption alone). Stale runs with omitted state tax inflated this metric.
 - **PDF page 3 cards (2026-06-01):** `page3FederalTax` + `page3StateTax` + `page3NetToHeirs` at HTML render — engine B; bypass via `hasBypassTrust` on `PDFReportData`.
 - **Verify:** `scripts/verify-estate-mc-voels-smoke.ts`; redeploy edge after `index.ts` changes.
+- **Post-deploy Voels gate (2026-06-06):** `scripts/verify-post-deploy-voels.ts` (MC Phase 3 surfaces + PDF narrative); `scripts/regenerate-base-case-voels.ts`; `scripts/verify-state-tax-panel-states.ts`; `scripts/verify-state-tax-coverage.ts` — see [NEXT_SESSION.md § Post-deploy verification scripts](./NEXT_SESSION.md#post-deploy-verification-scripts--indexed--2026-06-06).
 
 ### Consumer + advisor assumption Monte Carlo
 

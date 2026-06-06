@@ -68,6 +68,11 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Post-deploy Voels verify script (2026-06-06) — shipped
+
+- [x] `scripts/verify-post-deploy-voels.ts` — MC Phase 3 + PDF narrative gate (7 checks)
+- [x] ROADMAP · DECISION_LOG · NEXT_SESSION verify script index
+
 ## PDF cover logo — firm_logo_url render (2026-06-06) — shipped
 
 - [x] `PDFReportData.firmLogoUrl` from `resolveAdvisorBranding`

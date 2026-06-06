@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-06 (PDF cover logo from firm_logo_url)
+# Last updated: 2026-06-06 (doc sync — post-deploy verify scripts + sprint handoff)
 
 ---
 
@@ -143,11 +143,17 @@
 
 | Item | Notes |
 |------|-------|
-| MC Phase 3 UI wiring | `[x]` complete — depletion tile, EstateOutlookChart line, `/estate-tax` MC copy |
-| Voels advisor `StateTaxPanel` spot-check | `[x]` multi-state registry + engine B verify |
-| Base-case regenerate (all households) | `[x]` migration `20260605130000` bumps `updated_at`; Voels script PASS |
+| MC Phase 3 UI wiring | `[x]` `d3a2f81` |
 | Portal `profiles.firm_name` fallback | `[x]` `8f7df08` |
-| PDF cover logo from `firm_logo_url` | `[x]` `firmLogoUrl` on `PDFReportData` + cover `<img>` |
+| Base-case regenerate (all households) | `[x]` `a5b93e3` — migration `20260605130000` |
+| StateTaxPanel multi-state | `[x]` `004c591` |
+| PDF cover logo from `firm_logo_url` | `[x]` `556e773` |
+| **Export federal → bracket engine B** | `[ ]` deferred — Excel/export panel flat 40% |
+| **Logo file-upload UI** | `[ ]` deferred — `firm_logo_url` write path |
+| **Titling perf / memoization** | `[ ]` deferred |
+| **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
+
+**Recent commits (2026-06-05 → 06):** `8f7df08` · `a5b93e3` · `004c591` · `556e773`
 
 ---
 

@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (PDF cover logo from firm_logo_url)
+# Last updated: 2026-06-06 (doc sync — post-deploy verify scripts)
+
+---
+
+## Post-deploy verification scripts (2026-06-06)
+
+**Decision:** Index repeatable prod smoke scripts for Voels / post-deploy gates. **`verify-post-deploy-voels.ts`** checks MC Phase 3 (projections threshold data, estate-tax copy signal, depletion tile data, PDF MC narrative via advisor session). Complements **`regenerate-base-case-voels.ts`**, **`verify-state-tax-panel-states.ts`**, **`verify-state-tax-coverage.ts`**.
+
+**Run:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts`
 
 ---
 
