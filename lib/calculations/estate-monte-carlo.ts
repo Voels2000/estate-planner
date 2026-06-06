@@ -19,6 +19,9 @@ import {
 
 export type { StateBracket }
 
+/** Gross estate floor for longevity depletion signal (Phase 3 MC). */
+export const MC_DEPLETION_FLOOR = 500_000
+
 export interface EstateMCInputs {
   grossEstate: number
   federalExemption: number

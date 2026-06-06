@@ -1,6 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { FanChartDataPoint, PercentileByYear } from '@/lib/calculations/estate-monte-carlo'
 
+export interface WaThresholdProbByYear {
+  year: number
+  age_p1: number
+  pct_above_threshold: number
+}
+
 export interface MonteCarloSummary {
   scenario_id: string
   p10_estate: number
@@ -16,6 +22,10 @@ export interface MonteCarloSummary {
   mc_calculated_at: string | null
   engine_version: string | null
   assumption_hash: string | null
+  wa_threshold_prob_by_year: WaThresholdProbByYear[] | null
+  first_tax_year_p10: number | null
+  longevity_depletion_pct: number | null
+  depletion_floor_amount: number | null
 }
 
 /**
@@ -34,7 +44,7 @@ export async function loadScenarioMonteCarlo(
   const { data, error } = await supabase
     .from('monte_carlo_results')
     .select(
-      'scenario_id, p10_estate, p50_estate, p90_estate, p10_tax, p50_tax, p90_tax, success_rate, median_net_to_heirs, fan_chart_data, percentiles_by_year, mc_calculated_at, engine_version, assumption_hash',
+      'scenario_id, p10_estate, p50_estate, p90_estate, p10_tax, p50_tax, p90_tax, success_rate, median_net_to_heirs, fan_chart_data, percentiles_by_year, mc_calculated_at, engine_version, assumption_hash, wa_threshold_prob_by_year, first_tax_year_p10, longevity_depletion_pct, depletion_floor_amount',
     )
     .eq('scenario_id', scenarioId)
     .order('created_at', { ascending: false })
@@ -58,6 +68,11 @@ export async function loadScenarioMonteCarlo(
     ? (fanChartRaw as FanChartDataPoint[])
     : []
 
+  const thresholdRaw = data.wa_threshold_prob_by_year
+  const wa_threshold_prob_by_year = Array.isArray(thresholdRaw)
+    ? (thresholdRaw as WaThresholdProbByYear[])
+    : null
+
   return {
     scenario_id: data.scenario_id,
     p10_estate: Number(data.p10_estate ?? 0),
@@ -73,5 +88,12 @@ export async function loadScenarioMonteCarlo(
     mc_calculated_at: data.mc_calculated_at ?? null,
     engine_version: data.engine_version ?? null,
     assumption_hash: data.assumption_hash ?? null,
+    wa_threshold_prob_by_year,
+    first_tax_year_p10:
+      data.first_tax_year_p10 != null ? Number(data.first_tax_year_p10) : null,
+    longevity_depletion_pct:
+      data.longevity_depletion_pct != null ? Number(data.longevity_depletion_pct) : null,
+    depletion_floor_amount:
+      data.depletion_floor_amount != null ? Number(data.depletion_floor_amount) : null,
   }
 }

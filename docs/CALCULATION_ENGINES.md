@@ -73,8 +73,8 @@ Two separate engines — do not merge.
 | **Files** | `lib/calculations/estate-monte-carlo.ts` + `supabase/functions/estate-monte-carlo/index.ts` |
 | **State tax** | Engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) per simulated estate — **not** flat rate (removed 2026-06-01) |
 | **Inputs** | `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust` via POST from Strategy tab (`MonteCarloPanel`) |
-| **Storage** | `monte_carlo_results` (ad-hoc, on Strategy tab Run click) |
-| **Precomputed** | Not yet — planned for Monte Carlo integration sprint |
+| **Storage** | `monte_carlo_results` — edge on Strategy tab Run; **`runEstateMonteCarloAsync`** after **`generateBaseCase`** (precompute + Phase 3 signals) |
+| **Precomputed** | Yes — `percentiles_by_year` + Phase 3 signals via **`loadScenarioMonteCarlo`** |
 | **Engine version** | Flat rate deprecated; engine B unified as of `fc85ff8` |
 
 **`success_rate`:** Share of simulated final estates where federal + state estate tax both equal $0 (UI: **Zero-Tax Paths**).

@@ -1,6 +1,23 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (advisor profile settings UI shipped)
+# Last updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
+
+---
+
+## Phase 3 MC signals — shipped ✅ (2026-06-05)
+
+**Decision:** Phase 3 MC signals shipped — **`wa_threshold_prob_by_year`** (P10–P90 ladder per year), **`first_tax_year_p10`** (first year P10 exceeds state exemption), **`longevity_depletion_pct`** (% paths below $500K floor at death year), **`depletion_floor_amount`**. Voels smoke: **`first_tax_year_p10=2026`**, **`depletion=0`**, **`threshold_years=25`**. UI wiring deferred to next sprint.
+
+**Compute/store:** `runEstateMonteCarloAsync` · **`loadScenarioMonteCarlo`** · migration **`20260605110000_mc_phase3_signals.sql`** · **`MC_DEPLETION_FLOOR`** = 500_000. State exemption from **`stateBrackets[0].exemption_amount`**.
+
+**Next sprint — UI surfaces:**
+
+| Surface | Signal | Copy / UI |
+|---------|--------|-----------|
+| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” |
+| PDF cover narrative | `first_tax_year_p10` | Phase 2D wired — confirm reads stored value |
+| Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | “0% of scenarios show estate depletion by age 90” |
+| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on fan chart |
 
 ---
 

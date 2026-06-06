@@ -1,6 +1,25 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (advisor profile settings UI shipped)
+# Updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
+
+---
+
+## MC Phase 3 signals — shipped ✅ (2026-06-05)
+
+**Stored columns:** `wa_threshold_prob_by_year`, `first_tax_year_p10`, `longevity_depletion_pct`, `depletion_floor_amount` on **`monte_carlo_results`**.
+
+**Paths:** `runEstateMonteCarloAsync` (fire-and-forget after **`generateBaseCase`**) · **`loadScenarioMonteCarlo`**.
+
+**Voels smoke (`1da0c50f…`):** `first_tax_year_p10=2026` · `longevity_depletion_pct=0` · `depletion_floor_amount=500000` · `threshold_years=25`.
+
+**Next sprint — UI wiring (no UI in this pass):**
+
+| Surface | Signal |
+|---------|--------|
+| `/estate-tax` | `wa_threshold_prob_by_year` |
+| PDF cover narrative | `first_tax_year_p10` (confirm Phase 2D reads stored value) |
+| Strategy / `MonteCarloPanel` | `longevity_depletion_pct` |
+| `EstateOutlookChart` | `wa_threshold_prob_by_year` threshold line |
 
 ---
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   calcEstateTax,
+  MC_DEPLETION_FLOOR,
   runEstateMonteCarlo,
   type PercentileByYear,
   type StateBracket,
@@ -156,7 +157,37 @@ export async function runEstateMonteCarloAsync(
     p90_net: Math.max(0, pt.p90 - calcEstateTax(pt.p90, federalExemption, taxCtx, lawScenario)),
   }))
 
-  const lastFanPoint = result.fan_chart_data.at(-1)
+  const stateExemption = bracketsData[0]?.exemption_amount ?? 0
+
+  const wa_threshold_prob_by_year =
+    stateExemption > 0
+      ? result.fan_chart_data.map((pt) => {
+          let pct = 0
+          if (pt.p10 > stateExemption) pct = 100
+          else if (pt.p25 > stateExemption) pct = 90
+          else if (pt.p50 > stateExemption) pct = 75
+          else if (pt.p75 > stateExemption) pct = 50
+          else if (pt.p90 > stateExemption) pct = 25
+          return {
+            year: pt.year,
+            age_p1: person1BirthYear + (pt.year - currentYear),
+            pct_above_threshold: pct,
+          }
+        })
+      : null
+
+  const first_tax_year_p10 =
+    stateExemption > 0
+      ? (result.fan_chart_data.find((pt) => pt.p10 > stateExemption)?.year ?? null)
+      : null
+
+  const lastBand = result.fan_chart_data.at(-1)
+  let longevity_depletion_pct = 0
+  if (lastBand) {
+    if (lastBand.p50 < MC_DEPLETION_FLOOR) longevity_depletion_pct = 50
+    else if (lastBand.p25 < MC_DEPLETION_FLOOR) longevity_depletion_pct = 25
+    else if (lastBand.p10 < MC_DEPLETION_FLOOR) longevity_depletion_pct = 10
+  }
 
   const { error: upsertError } = await supabase.from('monte_carlo_results').upsert(
     {
@@ -181,6 +212,10 @@ export async function runEstateMonteCarloAsync(
       assumption_hash,
       mc_calculated_at: new Date().toISOString(),
       engine_version: 'engine-b-v1',
+      wa_threshold_prob_by_year,
+      first_tax_year_p10,
+      longevity_depletion_pct,
+      depletion_floor_amount: MC_DEPLETION_FLOOR,
     },
     { onConflict: 'scenario_id' },
   )

@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## MC Phase 3 signals — monte_carlo_results columns (2026-06-05)
+
+**Migration:** `20260605110000_mc_phase3_signals.sql`
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `wa_threshold_prob_by_year` | jsonb | Per-year `{ year, age_p1, pct_above_threshold }[]` from fan P10–P90 ladder vs `stateBrackets[0].exemption_amount` |
+| `first_tax_year_p10` | integer | First calendar year where P10 gross exceeds state exemption |
+| `longevity_depletion_pct` | integer | Estimated % paths below floor at death year |
+| `depletion_floor_amount` | numeric | Floor constant (`MC_DEPLETION_FLOOR` = 500_000) |
+
+**App:** `runEstateMonteCarloAsync` upsert · `loadScenarioMonteCarlo` SELECT. UI wiring next sprint.
+
+---
+
 ## Advisor profiles branding + migration history sync (2026-06-05)
 
 **Migrations:**

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (advisor profile settings UI shipped)
+# Last updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
 
 ---
 
@@ -18,6 +18,34 @@
 ---
 
 ## Current sprint
+
+### Sprint — MC Phase 3 UI wiring `[ ]` **next**
+
+| Surface | Signal | Copy / UI |
+|---------|--------|-----------|
+| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” |
+| PDF cover narrative | `first_tax_year_p10` | Already wired in Phase 2D — confirm reads stored value |
+| Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | “0% of scenarios show estate depletion by age 90” |
+| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on the fan chart |
+
+**Prerequisite:** Phase 3 signals compute + store shipped (`runEstateMonteCarloAsync` + `loadScenarioMonteCarlo`).
+
+---
+
+### Sprint — MC Phase 3 signals (compute/store) `[x]` **complete**
+
+| Item | Status |
+|------|--------|
+| Migration — `wa_threshold_prob_by_year`, `first_tax_year_p10`, `longevity_depletion_pct`, `depletion_floor_amount` | `[x]` `20260605110000` |
+| `runEstateMonteCarloAsync` — P10–P90 ladder threshold prob, first tax year, depletion signal | `[x]` |
+| `loadScenarioMonteCarlo` — unified loader returns all four fields | `[x]` |
+| `MC_DEPLETION_FLOOR` constant (`500_000`) | `[x]` |
+| Voels smoke — `first_tax_year_p10=2026`, `depletion=0`, `threshold_years=25` | `[x]` |
+| UI surfaces (estate-tax, PDF, Strategy, projections chart) | `[ ]` **next sprint** |
+
+**State exemption source:** `stateBrackets[0].exemption_amount` (not hardcoded $3M).
+
+---
 
 ### Sprint — Advisor Profile Settings UI `[~]` **partial — form shipped**
 
@@ -85,6 +113,8 @@
 | 2B | Strategy tab — at-death P10/P90 badge + `MonteCarloPanel` Last precomputed | `[x]` |
 | 2C | PDF SVG polygon bands (`generatePDFReport`) | `[x]` |
 | 2D | Narrative one-liner (`narrativeEngine`) | `[x]` |
+| 3 | Signals — threshold prob, first tax year, longevity depletion (store only) | `[x]` |
+| 3 UI | Surface signals on estate-tax, PDF, Strategy, projections | `[ ]` **next** |
 
 **Commits (Phase 0–2D):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`, `f14af7e`, `aaf46b4`, `fc9cddd`.
 
@@ -94,6 +124,7 @@
 
 | Item | Notes |
 |------|-------|
+| MC Phase 3 UI wiring | See current sprint — estate-tax, PDF confirm, MonteCarloPanel, EstateOutlookChart |
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
 | Portal `profiles.firm_name` fallback | Nav label when `firm_id` null |
@@ -139,7 +170,7 @@
 | Advisor `StateTaxPanel` badge/table headers | `[x]` |
 | Projections chart — Base case label + disclaimer | `[x]` |
 | Gifting — `annual_exclusion` + `superfunding` tooltips | `[x]` |
-| Hero `stateExemption` / `isMFJ` ctx (new props from dashboard-body) | `[ ]` **deferred** |
+| Hero `stateExemption` / `isMFJ` ctx (via `isMFJFilingStatus`) | `[x]` |
 
 ---
 
