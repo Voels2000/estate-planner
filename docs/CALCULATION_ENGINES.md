@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-05 (Projection engine C→B shipped)
+Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 

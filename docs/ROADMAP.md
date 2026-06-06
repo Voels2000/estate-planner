@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-06 (base-case staleness bump + Voels regenerate verified)
+# Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
 
 ---
 
@@ -144,7 +144,7 @@
 | Item | Notes |
 |------|-------|
 | MC Phase 3 UI wiring | `[x]` complete — depletion tile, EstateOutlookChart line, `/estate-tax` MC copy |
-| Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
+| Voels advisor `StateTaxPanel` spot-check | `[x]` multi-state registry + engine B verify |
 | Base-case regenerate (all households) | `[x]` migration `20260605130000` bumps `updated_at`; Voels script PASS |
 | Portal `profiles.firm_name` fallback | `[x]` `8f7df08` |
 | PDF cover logo from `firm_logo_url` | After file-upload sprint |

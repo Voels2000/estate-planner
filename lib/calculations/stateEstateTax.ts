@@ -42,11 +42,52 @@ export type StateEstateTaxResult = {
   effectiveRate: number
 }
 
+// ─── Modeled estate-tax states (brackets in `state_estate_tax_rules`) ─────────
+
+export const MODELED_ESTATE_TAX_STATES = [
+  'CT',
+  'DC',
+  'HI',
+  'IL',
+  'MA',
+  'MD',
+  'ME',
+  'MN',
+  'NY',
+  'OR',
+  'RI',
+  'VT',
+  'WA',
+] as const
+
+/** States with no broad-based personal income tax (zero brackets is correct). */
+export const NO_STATE_INCOME_TAX_STATES = [
+  'AK',
+  'FL',
+  'NV',
+  'NH',
+  'SD',
+  'TN',
+  'TX',
+  'WA',
+  'WY',
+] as const
+
+/** States with inheritance tax rules in `state_inheritance_tax_rules`. */
+export const MODELED_INHERITANCE_TAX_STATES = [
+  'IA',
+  'KY',
+  'MD',
+  'NE',
+  'NJ',
+  'PA',
+] as const
+
 // ─── No-portability states ────────────────────────────────────────────────────
 
 const NO_PORTABILITY_STATES = new Set([
-  'WA', 'OR', 'MN', 'MA', 'ME', 'IL', 'MD', 'NJ', 'RI', 'VT', 'HI',
-  'DC', 'NE', 'IA', 'KY', 'PA',
+  'WA', 'OR', 'MN', 'MA', 'ME', 'IL', 'MD', 'RI', 'VT', 'HI', 'NY',
+  'DC', 'NE', 'IA', 'KY', 'PA', 'NJ',
 ])
 
 const STATE_DISPLAY_NAMES: Record<string, string> = {
@@ -219,11 +260,14 @@ export function isMFJFilingStatus(filingStatus: string | null | undefined): bool
 
 export function stateHasEstateTax(stateCode: string | null | undefined): boolean {
   if (!stateCode) return false
-  const ESTATE_TAX_STATES = new Set([
-    'CT', 'DC', 'HI', 'IA', 'IL', 'KY', 'MA', 'MD', 'ME',
-    'MN', 'NE', 'NJ', 'NY', 'OR', 'PA', 'RI', 'VT', 'WA',
-  ])
-  return ESTATE_TAX_STATES.has(stateCode.toUpperCase().trim())
+  return (MODELED_ESTATE_TAX_STATES as readonly string[]).includes(
+    stateCode.toUpperCase().trim(),
+  )
+}
+
+export function stateHasNoPortability(stateCode: string | null | undefined): boolean {
+  if (!stateCode) return false
+  return NO_PORTABILITY_STATES.has(stateCode.toUpperCase().trim())
 }
 
 export function getStateDisplayName(stateCode: string | null | undefined): string {

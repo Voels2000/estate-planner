@@ -1,3 +1,7 @@
+import { stateHasNoPortability } from '@/lib/calculations/stateEstateTax'
+
+export { stateHasNoPortability }
+
 type BypassRecommendation = {
   branch: string
   reason: string
@@ -27,10 +31,4 @@ export function parseBypassTrustSavings(
     return Math.round(Math.max(0, (grossEstate - stateExemption) * 0.10))
   }
   return 0
-}
-
-const NO_PORTABILITY_STATES = new Set(['WA', 'MA', 'OR'])
-
-export function stateHasNoPortability(statePrimary: string | null | undefined): boolean {
-  return NO_PORTABILITY_STATES.has(String(statePrimary ?? '').toUpperCase())
 }

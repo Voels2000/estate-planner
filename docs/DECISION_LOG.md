@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (base-case staleness bump + Voels regenerate verified)
+# Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+
+---
+
+## StateTaxPanel multi-state + non-estate tax coverage (2026-06-06)
+
+**Decision:** **`StateTaxPanel`** UI registry expanded from 6 hardcoded codes (incl. erroneous AZ) to all **13 modeled estate-tax states** (`MODELED_ESTATE_TAX_STATES` in **`stateEstateTax.ts`**). Tax tab copy no longer hardcodes “Washington”. Advisor dataset prefetch uses **`buildAdvisorStatesToFetch()`** (all modeled estate states + household primary) instead of **`['WA','NY','MA','OR','CT','AZ']`**. **`stateHasNoPortability`** centralized in engine B (was WA/MA/OR-only stub in **`parseBypassTrustSavings`**). NY added to no-portability set for CST/MFJ parity.
+
+**Non-estate tax coverage (verified):**
+
+| Tax type | Engine | DB source | Coverage |
+|----------|--------|-----------|----------|
+| State **income** | **`stateIncomeTax.ts`** | **`state_income_tax_brackets`** | 42 states + DC with 2026 brackets; 9 no-income-tax states (AK, FL, NV, NH, SD, TN, TX, WA, WY) correctly $0 |
+| State **inheritance** | **`calculateInheritanceTax`** / **`computeStateInheritanceTax`** | **`state_inheritance_tax_rules`** | 6 states: IA, KY, MD, NE, NJ, PA |
+| State **estate** | **`stateEstateTax.ts`** engine B | **`state_estate_tax_rules`** | 13 states + DC |
+
+**Verify:** **`scripts/verify-state-tax-panel-states.ts`** · **`scripts/verify-state-tax-coverage.ts`**
+
+**Files:** `stateEstateTax.ts` · `stateRegistry.ts` · `StateTaxPanel.tsx` · `TaxTab.tsx` · `advisorStateFetchScope.ts` · `parseBypassTrustSavings.ts`
 
 ---
 

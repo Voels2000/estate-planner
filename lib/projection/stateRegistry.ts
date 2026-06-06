@@ -2,7 +2,11 @@
 // This file now focuses on state display helpers and inheritance-tax helpers.
 // Estate tax calculation has been migrated to lib/calculations/stateEstateTax.ts.
 
-export type StateTaxCode = 'WA' | 'MA' | 'OR' | 'NY' | 'CT' | 'AZ' | 'other'
+import { stateHasEstateTax, MODELED_ESTATE_TAX_STATES } from '@/lib/calculations/stateEstateTax'
+
+export { MODELED_ESTATE_TAX_STATES }
+
+export type StateTaxCode = (typeof MODELED_ESTATE_TAX_STATES)[number] | 'other'
 
 export type InheritanceTaxCode = 'PA' | 'NJ' | 'KY' | 'NE' | 'IA' | 'MD'
 
@@ -33,8 +37,10 @@ export interface DbStateExemption {
 
 // ── parseStateTaxCode ─────────────────────────────────────────────────────────
 export function parseStateTaxCode(state: string | null | undefined): StateTaxCode {
-  const valid: StateTaxCode[] = ['WA', 'MA', 'OR', 'NY', 'CT', 'AZ']
-  if (state && valid.includes(state as StateTaxCode)) return state as StateTaxCode
+  const ab = state?.trim().toUpperCase()
+  if (ab && (MODELED_ESTATE_TAX_STATES as readonly string[]).includes(ab)) {
+    return ab as StateTaxCode
+  }
   return 'other'
 }
 
@@ -52,8 +58,20 @@ export const US_STATE_POSTAL_TO_NAME: Record<string, string> = {
 }
 
 const STATE_NAMES: Record<StateTaxCode, string> = {
-  WA: 'Washington', NY: 'New York', MA: 'Massachusetts',
-  OR: 'Oregon', CT: 'Connecticut', AZ: 'Arizona', other: 'Other',
+  WA: 'Washington',
+  NY: 'New York',
+  MA: 'Massachusetts',
+  OR: 'Oregon',
+  CT: 'Connecticut',
+  MN: 'Minnesota',
+  IL: 'Illinois',
+  ME: 'Maine',
+  MD: 'Maryland',
+  HI: 'Hawaii',
+  RI: 'Rhode Island',
+  VT: 'Vermont',
+  DC: 'District of Columbia',
+  other: 'Other',
 }
 
 const SPECIAL_RULES: Record<StateTaxCode, string[]> = {
@@ -62,7 +80,14 @@ const SPECIAL_RULES: Record<StateTaxCode, string[]> = {
   MA: ['no_portability', 'flat_exemption'],
   OR: ['no_portability', 'flat_exemption', 'low_threshold'],
   CT: ['tracks_federal', 'ct_tax_cap'],
-  AZ: [],
+  MN: ['no_portability', 'flat_exemption'],
+  IL: ['no_portability'],
+  ME: ['no_portability'],
+  MD: ['no_portability'],
+  HI: ['no_portability'],
+  RI: ['no_portability'],
+  VT: ['no_portability'],
+  DC: ['no_portability'],
   other: [],
 }
 
@@ -112,18 +137,26 @@ export function calculateInheritanceTax(params: {
 }
 
 // ── STATE_REGISTRY (kept for UI badge/label lookups) ─────────────────────────
-export const STATE_HAS_ESTATE_TAX: Record<string, boolean> = {
-  WA: true, NY: true, MA: true, OR: true, CT: true,
-  AZ: false, FL: false, TX: false, NV: false, SD: false,
-}
+export const STATE_HAS_ESTATE_TAX: Record<string, boolean> = Object.fromEntries(
+  MODELED_ESTATE_TAX_STATES.map((code) => [code, true]),
+)
 
 export const STATE_SPECIAL_RULES = SPECIAL_RULES
 export const STATE_NAMES_MAP = STATE_NAMES
 
+/** Whether the advisor State Tax panel should render bracket detail (not the $0 no-tax stub). */
+export function shouldShowStateEstateTaxPanel(
+  stateAbbrev: string | null | undefined,
+  hasDbBrackets: boolean,
+): boolean {
+  if (hasDbBrackets) return true
+  return stateHasEstateTax(stateAbbrev)
+}
+
 /** Display name for advisor UI: modeled state name, or profile state when code is `other`. */
 export function getEstateTaxDisplayStateName(
   parsedCode: StateTaxCode,
-  profileStateAbbrev: string | null | undefined
+  profileStateAbbrev: string | null | undefined,
 ): string {
   if (parsedCode !== 'other') return STATE_NAMES[parsedCode]
   const ab = profileStateAbbrev?.trim().toUpperCase()

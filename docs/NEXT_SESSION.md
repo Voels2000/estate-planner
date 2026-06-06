@@ -1,6 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (base-case staleness bump + Voels regenerate verified)
+# Updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+
+---
+
+## StateTaxPanel multi-state — shipped ✅ (2026-06-06)
+
+**Problem:** UI registry recognized only WA/MA/OR/NY/CT/AZ; Tax tab hardcoded “Washington”; advisor prefetch omitted MN/IL/ME/MD/HI/RI/VT/DC.
+
+**Fix:** **`MODELED_ESTATE_TAX_STATES`** (13 + DC) canonical in **`stateEstateTax.ts`**; **`StateTaxPanel`** badges/rules from resolved state abbrev; dynamic Tax tab copy; **`buildAdvisorStatesToFetch()`** for advisor datasets.
+
+**Non-estate taxes:** Income tax = progressive brackets for 42 states (9 no-tax states intentional). Inheritance = 6 states via DB + **`stateRegistry`**.
+
+**Verify:** `scripts/verify-state-tax-panel-states.ts` · `scripts/verify-state-tax-coverage.ts`
+
+**Next:** PDF **`firm_logo_url`** · export federal engine B (deferred).
 
 ---
 

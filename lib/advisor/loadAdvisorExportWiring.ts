@@ -14,7 +14,7 @@ import { advisorDatasetIncludeForTab, loadAdvisorClientDatasets } from '@/lib/ad
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
-import type { ExcelExportData } from '@/lib/export/generateExcelExport'
+import { buildAdvisorStatesToFetch } from '@/lib/tax/advisorStateFetchScope'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 
@@ -67,7 +67,7 @@ export async function loadAdvisorExportWiringForClient(
     currentYear + 4,
     currentYear + 5,
   ]
-  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
+  const statesToFetch = buildAdvisorStatesToFetch(household.state_primary ?? null)
   const scenarioId = household.base_case_scenario_id as string | null
   const include = advisorDatasetIncludeForTab('meeting-prep')
 

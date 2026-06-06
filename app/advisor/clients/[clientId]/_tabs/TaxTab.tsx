@@ -11,7 +11,7 @@ import StateTaxPanel from '@/components/advisor/StateTaxPanel'
 import { parseStateTaxCode } from '@/lib/projection/stateRegistry'
 import { ClientViewShellProps } from '../_client-view-shell'
 import { formatCurrency } from '../_utils'
-import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+import { getPortabilityGapLabel, getStateDisplayName, isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
 
 const LAW_SCENARIO_OPTIONS: { value: EstateScenario; label: string; description: string }[] = [
@@ -77,7 +77,10 @@ export default function TaxTab({
       ? (hasHorizonFederalInputs ? Number(advisorHorizons?.today.federalTaxEstimate) : 0)
       : estimateFederalTaxStress(grossEstate, federalExemption)
 
-  const stateCode = parseStateTaxCode((household?.state_primary ?? 'WA').toUpperCase())
+  const statePrimary = (household?.state_primary ?? '').trim().toUpperCase()
+  const stateCode = parseStateTaxCode(statePrimary || null)
+  const stateDisplayName = getStateDisplayName(statePrimary || null)
+  const stateHasNoPortability = getPortabilityGapLabel(statePrimary || null) != null
   const currentYear = new Date().getFullYear()
   const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
 
@@ -99,13 +102,13 @@ export default function TaxTab({
   const horizonAtDeathGross =
     atDeathHorizon && isFiniteNumber(atDeathHorizon.grossEstate) ? Number(atDeathHorizon.grossEstate) : null
 
-  const taxBasisNote = isMFJ
-    ? `Today’s snapshot only (${formatCurrency(grossEstate)} gross estate). State tax uses one exemption at second death (WA has no portability) unless a Credit Shelter Trust is in place — matches Strategy → Today.`
+  const taxBasisNote = isMFJ && stateHasNoPortability
+    ? `Today’s snapshot only (${formatCurrency(grossEstate)} gross estate). State tax uses one exemption at second death (${stateDisplayName} has no portability) unless a Credit Shelter Trust is in place — matches Strategy → Today.`
     : `Today’s snapshot only (${formatCurrency(grossEstate)} gross estate). Matches Strategy → Today column.`
 
   const projectionTimelineNote = usesSurvivorProjectionTimeline
-    ? `The waterfall above is a single-year “today” view. This table follows the surviving spouse projection timeline (after first death), so later years and the at-death row can show a larger estate and higher Washington tax than today. Compare the violet “At death” callout to Strategy → At Death.`
-    : `The waterfall above is today’s snapshot only. This table projects gross estate forward by calendar year from the base-case scenario; later years may show higher tax as the estate grows.`
+    ? `The waterfall above is a single-year “today” view. This table follows the surviving spouse projection timeline (after first death), so later years and the at-death row can show a larger estate and higher ${stateDisplayName} tax than today. Compare the violet “At death” callout to Strategy → At Death.`
+    : `The waterfall above is today’s snapshot only. This table projects gross estate forward by calendar year from the base-case scenario; later years may show higher ${stateDisplayName} tax as the estate grows.`
 
   useEffect(() => {
     if (lawScenario !== 'current_law') return

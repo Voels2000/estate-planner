@@ -3,14 +3,16 @@
 'use client'
 
 import {
-  STATE_HAS_ESTATE_TAX,
   STATE_SPECIAL_RULES,
   getEstateTaxDisplayStateName,
+  parseStateTaxCode,
+  shouldShowStateEstateTaxPanel,
   type DbStateExemption,
   type StateTaxCode,
 } from '@/lib/projection/stateRegistry'
 import {
   calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  stateHasEstateTax,
   type StateBracket,
   getPortabilityGapLabel,
 } from '@/lib/calculations/stateEstateTax'
@@ -81,12 +83,13 @@ export default function StateTaxPanel({
   atDeathColumnLabel,
   projectionTimelineNote,
 }: Props) {
-  const unifiedStateCode = (stateAbbrev ?? '').toUpperCase()
+  const unifiedStateCode = (stateAbbrev ?? profileStateAbbrev ?? '').toUpperCase()
   const hasUnifiedRules =
     !!unifiedStateCode &&
     (stateEstateTaxRules ?? []).some((r) => r.state.toUpperCase() === unifiedStateCode)
-  const hasStateTax = hasUnifiedRules ? true : Boolean(STATE_HAS_ESTATE_TAX[stateCode])
-  const stateName = getEstateTaxDisplayStateName(stateCode, profileStateAbbrev)
+  const resolvedCode = parseStateTaxCode(unifiedStateCode || profileStateAbbrev)
+  const hasStateTax = shouldShowStateEstateTaxPanel(unifiedStateCode, hasUnifiedRules)
+  const stateName = getEstateTaxDisplayStateName(resolvedCode, profileStateAbbrev)
 
   if (!hasStateTax) {
     return (
@@ -171,7 +174,7 @@ export default function StateTaxPanel({
     }
   })
 
-  const specialRules = STATE_SPECIAL_RULES[stateCode] ?? []
+  const specialRules = STATE_SPECIAL_RULES[resolvedCode] ?? []
   const hasNyCliff   = rows.some(r => r.nyCliffTriggered)
   const currentYearRow = rows.find((r) => r.year === currentYear)
   const taxTermCtx: TaxTermContext = {
@@ -337,8 +340,10 @@ export default function StateTaxPanel({
         Future years use projected gross estate from the base-case scenario
         {projectionTimelineNote ? ' (see note above for first vs second death timeline)' : ''}.
         {hasUnifiedRules
-          ? ` ${stateName} estate tax uses unified live state brackets.`
-          : ` ${stateName} estate tax unavailable for selected year/rules.`
+          ? ` ${stateName} estate tax uses unified live state brackets (engine B).`
+          : stateHasEstateTax(unifiedStateCode)
+            ? ` ${stateName} estate tax brackets are not loaded for the selected years.`
+            : ` ${stateName} has no modeled state estate tax.`
         } Consult a qualified estate attorney for precise calculations.
       </p>
     </div>

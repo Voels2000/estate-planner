@@ -46,6 +46,7 @@ import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import { resolveDeduction } from '@/lib/tax/resolve-deduction'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
+import { buildAdvisorStatesToFetch } from '@/lib/tax/advisorStateFetchScope'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -73,7 +74,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const ownerId = clientId
   const currentYear = new Date().getFullYear()
   const projectionYears = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3, currentYear + 4, currentYear + 5]
-  const statesToFetch = ['WA', 'NY', 'MA', 'OR', 'CT', 'AZ']
+  const statesToFetch = buildAdvisorStatesToFetch(household.state_primary)
   const scenarioId = household.base_case_scenario_id
 
   const datasetInclude = advisorDatasetIncludeForTab(tab)
