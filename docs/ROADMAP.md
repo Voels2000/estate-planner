@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (Projection Engine C→B shipped)
+# Last updated: 2026-06-05 (export gross alignment — Option A shipped)
 
 ---
 
@@ -18,6 +18,19 @@
 ---
 
 ## Current sprint
+
+### Sprint — export gross alignment (Option A) `[x]` **complete**
+
+| Item | Status |
+|------|--------|
+| `exportMappers` — `grossForExport` prefers `advisorHorizons.today.grossEstate` | `[x]` |
+| `loadAdvisorExportWiring` + `page.tsx` — `todayGrossEstate` + narrative inputs aligned | `[x]` |
+| `projectionChartRows` — per-year `estate_incl_home` unchanged | `[x]` |
+| Voels — PDF cover gross ~$9.49M (Strategy Today), not year-0 ~$9.30M | `[x]` |
+
+**Commit:** `d8cac06`
+
+---
 
 ### Sprint — Projection Engine C→B Unification `[x]` **complete**
 
@@ -115,8 +128,9 @@
 | Export panel + Excel **Tax Analysis** same as PDF page 3 | `[x]` 2026-06-05 |
 | `loaders.ts` — `stateBrackets` tax-year fallback | `[x]` 2026-06-05 |
 | Projection death-year rows — engine C → B | `[x]` 2026-06-05 |
+| `exportMappers` gross alignment — cover / Excel / narrative use `advisorHorizons.today.grossEstate` | `[x]` 2026-06-05 |
 
-**Note:** Tax Analysis / export snapshot and **death-year projection rows** use engine B. Stored **`outputs_s1_first`** updates on next **`generateBaseCase`** per household.
+**Note:** Tax Analysis / export snapshot and **death-year projection rows** use engine B. PDF cover gross and narrative inputs use **Today composition gross** (Option A); **`projectionChartRows`** still per-year scenario output. Stored **`outputs_s1_first`** updates on next **`generateBaseCase`** per household.
 
 ---
 

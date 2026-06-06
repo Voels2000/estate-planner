@@ -1,6 +1,22 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (Projection Engine C→B shipped)
+# Updated: 2026-06-05 (export gross alignment — Option A shipped)
+
+---
+
+## export gross alignment — Option A shipped ✅ (2026-06-05)
+
+**Shipped:** PDF cover gross, Excel assumptions, engine B tax snapshot, and **`fetchNarrativePdfFields`** inputs (gifting capacity, sunset estimates, ILIT narrative) all prefer **`advisorHorizons.today.grossEstate`** over base-case year-0 **`latestOutput.estate_incl_home`**. Same fallback when horizons absent.
+
+| Surface | Gross source |
+|---------|----------------|
+| PDF cover + Excel Tax Analysis | `grossForExport` in **`exportMappers.ts`** |
+| Narrative inputs | **`fetchNarrativePdfFields`** in wiring + **`page.tsx`** |
+| PDF page 2 chart | **`projectionChartRows`** — per-year `estate_incl_home` (unchanged) |
+
+**Commit:** `d8cac06` · **Voels:** cover ~$9.49M (Strategy Today), not year-0 ~$9.30M.
+
+**Next sprint:** Voels `StateTaxPanel` spot-check; base-case regenerate rollout.
 
 ---
 
@@ -29,7 +45,7 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 
 ---
 
-## Monte Carlo Phase 2D — narrative one-liner ✅ (2026-06-05)
+## Monte Carlo integration sprint — complete ✅ (2026-06-05)
 
 **Goal:** Overlay P10–P90 gross-estate fan bands on PDF page 2 **`buildEstateSVGChart()`** (same pattern as **`EstateOutlookChart`** on `/projections`).
 
@@ -112,9 +128,9 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 
 **Shipped:** Page 3 Federal / State / Net cards use `page3FederalTax`, `page3StateTax` (`resolveActiveStateTax` + `hasBypassTrust`), `page3NetToHeirs` in `generatePDFReport.ts` — not `latestOutput` / `withoutBypassTrust` only.
 
-**Deferred:** `exportMappers.ts` Excel + export panel alignment.
+**Also shipped (2026-06-05):** `exportMappers` engine B tax + gross alignment Option A (`d8cac06`) — cover / Excel / narrative use Today composition gross.
 
-**Smoke (Voels `?type=report`):** Federal $0 · state ~$943K (no bypass) · net = gross − state.
+**Smoke (Voels `?type=report`):** Federal $0 · state ~$943K (no bypass) · net = gross − state · cover gross ~$9.49M.
 
 ---
 
@@ -128,8 +144,8 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 | PDF page 3 metric cards | B at render | ✅ (2026-06-01) |
 | Estate Monte Carlo (advisor Strategy) | B per simulated estate | ✅ `fc85ff8` |
 | MC model footnote + **Zero-Tax Paths** label | Honest copy | ✅ `4bdda56` |
-| exportMappers / Excel / export panel | C (`latestOutput`) | **deferred** |
-| Projection death-year rows | C (deprecated) | Open |
+| exportMappers / Excel / export panel | B + Today gross (Option A) | ✅ `d8cac06` |
+| Projection death-year rows | B | ✅ `a2a5a38` |
 
 **Commits:** `fc85ff8` (engine B + edge + hoist) · `4bdda56` (Zero-Tax Paths label)
 
