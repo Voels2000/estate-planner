@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (fetchAdvisorProfile debug logging)
+# Last updated: 2026-06-05 (advisor firm branding migration)
 
 ---
 
@@ -19,18 +19,29 @@
 
 ## Current sprint
 
-### Next up — advisor export branding
+### Sprint — Advisor Profile Settings UI `[ ]` **next**
 
 | Item | Status |
 |------|--------|
-| Recon — `profiles` fields used by PDF / brief | `[x]` |
-| Seed Voels advisor `profiles.firm_name` + `phone` for smoke | `[x]` Alan `854051be…` |
-| `fetchAdvisorProfile` server logs (success + error) | `[x]` |
-| Confirm PDF as Alan (`avoels@comcast.net`) — check server log | `[ ]` |
-| Advisor profile settings UI | `[ ]` |
+| Migration — `profiles.firm_name`, `phone`, `firm_logo_url` | `[x]` `20260605100000` |
+| Export wiring — `fetchAdvisorProfile` → `resolveAdvisorBranding` on PDF/brief | `[x]` |
+| Settings form — write `firm_name`, `phone`, `firm_logo_url` to `profiles` | `[ ]` |
+| Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[ ]` |
 | PDF cover logo from `firm_logo_url` | `[ ]` |
 
-**Note:** Portal UI firm label uses **`firms.name`** (`firm_id`), not `profiles.firm_name`. Export PDF uses **`profiles.firm_name`** via `fetchAdvisorProfile`.
+**Scope:** Advisor-editable branding for export surfaces; replaces manual Supabase seed for new advisors.
+
+---
+
+### Sprint — advisor export branding (recon) `[x]` **complete**
+
+| Item | Status |
+|------|--------|
+| Recon — `profiles` vs `firms.name` vs `advisor_directory` | `[x]` |
+| Voels seed — Alan `854051be…` `firm_name` + `phone` | `[x]` |
+| Debug logs in `fetchAdvisorProfile` | removed pre-launch |
+
+**Note:** Portal UI firm label uses **`firms.name`** (`firm_id`); export PDF uses **`profiles.firm_name`**.
 
 ---
 
@@ -80,9 +91,7 @@
 |------|-------|
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
-| Advisor export branding — seed `profiles.firm_name` / `phone` (Voels smoke) | Alan seeded; confirm PDF as Alan not e2e-advisor |
-| `fetchAdvisorProfile` debug logs | Shipped — check server log on `?type=report` |
-| Advisor profile settings UI | Edit `profiles` branding; deferred until post-seed smoke |
+| Advisor Profile Settings UI | Form to write `firm_name`, `phone`, `firm_logo_url` on `profiles` |
 
 ---
 

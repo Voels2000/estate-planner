@@ -149,10 +149,8 @@ export async function fetchAdvisorProfile(advisorUserId: string): Promise<Adviso
     .maybeSingle()
 
   if (error || !data) {
-    console.error('[fetchAdvisorProfile] failed for userId:', advisorUserId, error?.message)
     return { full_name: null, email: null, firm_name: null, phone: null, firm_logo_url: null }
   }
-  console.log('[fetchAdvisorProfile] firm_name:', (data as any).firm_name, 'for:', advisorUserId)
   return {
     full_name: data.full_name ?? null,
     email: data.email ?? null,
