@@ -50,6 +50,7 @@ export interface PDFReportData {
   person2Name?: string
   advisorName: string
   firmName: string
+  firmLogoUrl?: string
   advisorPhone?: string
   advisorEmail?: string
   reportDate: string
@@ -558,6 +559,30 @@ function renderBeneficiarySummaryPage(
   `
 }
 
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function isAllowedLogoUrl(url: string | undefined): url is string {
+  if (!url?.trim()) return false
+  try {
+    const parsed = new URL(url.trim())
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+function renderCoverLogoHtml(logoUrl: string | undefined): string {
+  if (!isAllowedLogoUrl(logoUrl)) return ''
+  const safeUrl = escapeHtmlAttr(logoUrl.trim())
+  return `<img src="${safeUrl}" alt="" class="firm-logo" />`
+}
+
 // HTML template for PDF generation via browser print
 export function generatePDFHTML(data: PDFReportData): string {
   const executiveSummary = generateExecutiveSummary(data)
@@ -608,6 +633,8 @@ export function generatePDFHTML(data: PDFReportData): string {
       .page { width: 8.5in; min-height: 11in; padding: 1in; page-break-after: always; position: relative; }
       .page:last-child { page-break-after: avoid; }
       .header { border-bottom: 2px solid #2E4057; padding-bottom: 16px; margin-bottom: 24px; }
+      .cover-brand { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+      .firm-logo { max-height: 52px; max-width: 200px; object-fit: contain; display: block; }
       .firm-name { font-size: 9pt; color: #666; text-transform: uppercase; letter-spacing: 1px; }
       .report-title { font-size: 22pt; font-weight: bold; color: #2E4057; margin: 8px 0 4px; }
       .client-name { font-size: 14pt; color: #444; }
@@ -691,9 +718,11 @@ export function generatePDFHTML(data: PDFReportData): string {
 
   // PAGE 1: Cover
   if (pages.includes('cover')) {
+    const coverLogoHtml = renderCoverLogoHtml(data.firmLogoUrl)
     html += `
     <div class="page">
       <div class="header">
+        ${coverLogoHtml ? `<div class="cover-brand">${coverLogoHtml}</div>` : ''}
         <div class="firm-name">${data.firmName}</div>
         <div class="report-title">Estate Planning Report</div>
         <div class="client-name">${data.clientName}</div>

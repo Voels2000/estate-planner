@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+# Last updated: 2026-06-06 (PDF cover logo from firm_logo_url)
 
 ---
 
@@ -76,7 +76,7 @@
 | Settings form — `/advisor/settings` + `PATCH /api/advisor/profile` (`full_name`, `firm_name`, `phone`) | `[x]` |
 | Logo upload UI — `firm_logo_url` file upload | `[-]` deferred (file-upload sprint) |
 | Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[x]` |
-| PDF cover logo from `firm_logo_url` | `[ ]` |
+| PDF cover logo from `firm_logo_url` | `[x]` render on cover when HTTPS URL set |
 
 **Scope:** Advisor-editable branding for export surfaces; replaces manual Supabase seed for new advisors.
 
@@ -147,7 +147,7 @@
 | Voels advisor `StateTaxPanel` spot-check | `[x]` multi-state registry + engine B verify |
 | Base-case regenerate (all households) | `[x]` migration `20260605130000` bumps `updated_at`; Voels script PASS |
 | Portal `profiles.firm_name` fallback | `[x]` `8f7df08` |
-| PDF cover logo from `firm_logo_url` | After file-upload sprint |
+| PDF cover logo from `firm_logo_url` | `[x]` `firmLogoUrl` on `PDFReportData` + cover `<img>` |
 
 ---
 

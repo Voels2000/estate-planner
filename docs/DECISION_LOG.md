@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+# Last updated: 2026-06-06 (PDF cover logo from firm_logo_url)
+
+---
+
+## PDF cover logo — `firm_logo_url` on cover page (2026-06-06)
+
+**Decision:** Render **`profiles.firm_logo_url`** on PDF cover when URL is http(s). **`exportMappers`** passes **`firmLogoUrl`** from **`resolveAdvisorBranding`**; **`generatePDFHTML`** inserts sanitized **`<img class="firm-logo">`** above firm name. Invalid/non-http URLs omitted silently. Logo upload UI remains deferred.
+
+**Files:** `lib/export/generatePDFReport.ts` · `lib/advisor/exportMappers.ts`
 
 ---
 

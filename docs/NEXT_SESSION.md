@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+# Updated: 2026-06-06 (PDF cover logo from firm_logo_url)
+
+---
+
+## PDF cover logo — `firm_logo_url` render — shipped ✅ (2026-06-06)
+
+**Shipped:** Export PDF cover page renders advisor logo when **`profiles.firm_logo_url`** is a valid http(s) URL. Wired via **`resolveAdvisorBranding`** → **`firmLogoUrl`** on **`PDFReportData`** → **`generatePDFHTML`** cover header (`<img class="firm-logo">`). Firm name text retained below logo. Upload UI still deferred — advisors can set URL in Supabase until file-upload sprint.
+
+**Files:** `lib/export/generatePDFReport.ts` · `lib/advisor/exportMappers.ts`
+
+**Next:** export federal engine B (deferred) · logo file-upload sprint.
 
 ---
 

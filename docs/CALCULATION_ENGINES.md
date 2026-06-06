@@ -22,6 +22,8 @@ Strategy type/source strings: **`lib/constants/strategyTypes.ts`** — never har
 | `resolveActiveStateTax()` | same | Pick status-quo vs with-CST amount when `hasBypassTrust` is set |
 | `computeStateEstateTaxFromBrackets()` | same | **DEPRECATED** — projection death-year rows only |
 
+**Modeled states:** **`MODELED_ESTATE_TAX_STATES`** in `stateEstateTax.ts` — CT, DC, HI, IL, MA, MD, ME, MN, NY, OR, RI, VT, WA (brackets in **`state_estate_tax_rules`**). **`stateHasEstateTax()`** / **`StateTaxPanel`** use this list — not a WA-only path.
+
 **Rule:** Any file that displays a state estate tax dollar amount must import
 from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitted.
 
@@ -41,7 +43,7 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | Function | File | Use for |
 |----------|------|---------|
 | `estimateFederalEstateTaxSnapshot()` | `lib/my-estate-strategy/horizonSnapshots.ts` | Horizon snapshot columns |
-| `computeEstateTaxProjection()` | `lib/calculations/estate-tax-projection.ts` | Year-by-year projection rows (engine C for state death rows) |
+| `computeEstateTaxProjection()` | `lib/calculations/estate-tax-projection.ts` | Year-by-year projection rows (engine B at death years) |
 | `currentFederalExemption()` | `lib/export/narrativeEngine.ts` | Display copy only |
 
 ---
@@ -50,7 +52,21 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 
 | Function | File | Use for |
 |----------|------|---------|
-| `calcStateTax()` | `lib/calculations/projection-complete.ts` | State **income** tax on ordinary income in projection |
+| `calculateStateIncomeTax()` | `lib/calculations/stateIncomeTax.ts` | Progressive state income tax from **`state_income_tax_brackets`** |
+| `calcStateTax()` | `lib/calculations/projection-complete.ts` | Wrapper in projection engine — calls **`calculateStateIncomeTax`** |
+
+**Coverage:** 42 states + DC have 2026 brackets in DB. **`NO_STATE_INCOME_TAX_STATES`**: AK, FL, NV, NH, SD, TN, TX, WA, WY — zero brackets is correct ($0 tax).
+
+---
+
+## State inheritance tax (NOT estate tax)
+
+| Function | File | Use for |
+|----------|------|---------|
+| `computeStateInheritanceTax()` | `lib/calculations/estate-tax.ts` | Consumer **`/estate-tax`** waterfall |
+| `calculateInheritanceTax()` | `lib/projection/stateRegistry.ts` | Advisor **`InheritanceTaxWaterfall`** |
+
+**Coverage:** **`MODELED_INHERITANCE_TAX_STATES`**: IA, KY, MD, NE, NJ, PA — rules in **`state_inheritance_tax_rules`**.
 
 ---
 

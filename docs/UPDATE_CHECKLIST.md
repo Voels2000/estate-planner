@@ -68,6 +68,12 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## PDF cover logo — firm_logo_url render (2026-06-06) — shipped
+
+- [x] `PDFReportData.firmLogoUrl` from `resolveAdvisorBranding`
+- [x] Cover page `<img class="firm-logo">` when http(s) URL present
+- [x] ROADMAP · DECISION_LOG · NEXT_SESSION · DATABASE_SCHEMA_REFERENCE synced
+
 ## StateTaxPanel multi-state + tax coverage audit (2026-06-06) — shipped
 
 - [x] `MODELED_ESTATE_TAX_STATES` — 13 estate-tax states canonical in `stateEstateTax.ts`

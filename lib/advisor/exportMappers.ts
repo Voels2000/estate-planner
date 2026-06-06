@@ -260,6 +260,7 @@ export async function buildAdvisorExportPayloads(params: {
       : undefined,
     advisorName: branding.advisorName,
     firmName: branding.firmName,
+    firmLogoUrl: branding.firmLogoUrl,
     advisorPhone: branding.advisorPhone,
     advisorEmail: branding.advisorEmail,
     reportDate: reportDateStr,
