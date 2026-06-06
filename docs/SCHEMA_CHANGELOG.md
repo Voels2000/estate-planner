@@ -23,6 +23,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Advisor Profile Settings UI (2026-06-05)
+
+**App (no migration):** `/advisor/settings` · `GET`/`PATCH` `/api/advisor/profile` — partial update of `full_name`, `firm_name`, `phone` on `profiles` where `id = auth.uid()`. Logo upload UI placeholder only; `firm_logo_url` write deferred.
+
+**Verify:** `scripts/verify-advisor-settings-voels.ts` — Voels GET/PATCH + PDF cover firm name.
+
+---
+
 ## Tax Horizons + Advisor portal polish (2026-05-30)
 
 **Scope:** Application-layer UI only — no migrations.

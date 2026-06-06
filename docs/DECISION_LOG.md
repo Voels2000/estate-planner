@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (advisor branding migrations synced; debug logs removed)
+# Last updated: 2026-06-05 (advisor profile settings UI shipped)
+
+---
+
+## Advisor Profile Settings UI — `/advisor/settings` (2026-06-05)
+
+**Decision:** Advisors edit export branding on their **`profiles`** row via **`/advisor/settings`** + **`PATCH /api/advisor/profile`** (`full_name`, `firm_name`, `phone` partial update; max-length validation). **`email`** read-only; **`firm_logo_url`** write deferred to file-upload sprint (placeholder UI only). Nav **Profile ⚙️** visible to all advisors (not gated on `firm_role`).
+
+**Verify:** Voels PATCH → PDF `?type=report` cover shows updated **`firm_name`**; `scripts/verify-advisor-settings-voels.ts`.
+
+**Next:** portal **`profiles.firm_name`** fallback · PDF logo from **`firm_logo_url`**.
 
 ---
 
@@ -14,7 +24,7 @@
 
 **Decision:** Migration **`20260605100000_profiles_branding_columns.sql`** adds **`profiles.firm_name`**, **`firm_logo_url`** ( **`phone`** idempotent). Prod history synced via **`20260529120500`** renumber + **`migration repair`** (`11a867d`). Export via **`fetchAdvisorProfile`** → **`resolveAdvisorBranding`**.
 
-**Next:** Advisor Profile Settings UI · portal **`firms.name`** fallback · optional PDF logo.
+**Next:** portal **`profiles.firm_name`** fallback · PDF logo · logo upload UI.
 
 ---
 

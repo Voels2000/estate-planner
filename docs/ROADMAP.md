@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (migrations synced; debug logs removed)
+# Last updated: 2026-06-05 (advisor profile settings UI shipped)
 
 ---
 
@@ -19,18 +19,21 @@
 
 ## Current sprint
 
-### Sprint — Advisor Profile Settings UI `[ ]` **next**
+### Sprint — Advisor Profile Settings UI `[~]` **partial — form shipped**
 
 | Item | Status |
 |------|--------|
 | Migration — `profiles.firm_name`, `phone`, `firm_logo_url` | `[x]` `20260605100000` prod synced |
 | Export wiring — `fetchAdvisorProfile` → `resolveAdvisorBranding` on PDF/brief | `[x]` |
 | `fetchAdvisorProfile` debug logs removed | `[x]` `52ddc23` |
-| Settings form — write `firm_name`, `phone`, `firm_logo_url` to `profiles` | `[ ]` |
-| Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[ ]` |
+| Settings form — `/advisor/settings` + `PATCH /api/advisor/profile` (`full_name`, `firm_name`, `phone`) | `[x]` |
+| Logo upload UI — `firm_logo_url` file upload | `[-]` deferred (file-upload sprint) |
+| Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[ ]` **next** |
 | PDF cover logo from `firm_logo_url` | `[ ]` |
 
 **Scope:** Advisor-editable branding for export surfaces; replaces manual Supabase seed for new advisors.
+
+**Verify:** `scripts/verify-advisor-settings-voels.ts` (API + PDF cover; browser UI needs MFA for `avoels@comcast.net`).
 
 ---
 
@@ -93,7 +96,8 @@
 |------|-------|
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
-| Advisor Profile Settings UI | Form to write `firm_name`, `phone`, `firm_logo_url` on `profiles` |
+| Portal `profiles.firm_name` fallback | Nav label when `firm_id` null |
+| PDF cover logo from `firm_logo_url` | After file-upload sprint |
 
 ---
 

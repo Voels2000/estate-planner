@@ -45,6 +45,12 @@ export default async function AdvisorLayout({
             </a>
           )}
           <span className="text-sm text-white/60">{ctx.user.email}</span>
+          <Link
+            href="/advisor/settings"
+            className="text-sm font-medium text-white/70 hover:text-white hover:underline"
+          >
+            Profile ⚙️
+          </Link>
           <AdvisorSignOut />
         </div>
       </nav>

@@ -1,6 +1,26 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (advisor branding migrations synced; debug logs removed)
+# Updated: 2026-06-05 (advisor profile settings UI shipped)
+
+---
+
+## Advisor Profile Settings UI — shipped ✅ (2026-06-05)
+
+**Routes:** `/advisor/settings` (server page + client form) · `GET`/`PATCH` **`/api/advisor/profile`**
+
+| Field | Editable | Notes |
+|-------|----------|-------|
+| `full_name` | ✅ | Display name |
+| `firm_name` | ✅ | Hint: PDF exports + meeting briefs |
+| `phone` | ✅ | Cover contact line |
+| `email` | read-only | Auth email |
+| `firm_logo_url` | deferred | Grey “Logo upload coming soon” placeholder |
+
+**Nav:** **Profile ⚙️** in advisor layout (all advisors) · **👤 Profile** tab in `advisor-tabs.tsx`.
+
+**Verify:** `PLAYWRIGHT_BASE_URL=http://localhost:3000 npx dotenv-cli -e .env.local -e .env.test -- npx tsx scripts/verify-advisor-settings-voels.ts` — Voels GET/PATCH + PDF cover firm name. Browser form smoke for `avoels@comcast.net` requires MFA + real `SMOKE_ADVISOR_PASSWORD`.
+
+**Next:** portal **`profiles.firm_name`** fallback when **`firms.name`** absent · PDF logo render · logo file upload sprint.
 
 ---
 
@@ -24,7 +44,7 @@
 
 **PDF `'My Wealth Maps'` causes:** e2e-advisor session · `fetchAdvisorProfile` error · not advisor-portal UI (uses **`firms.name`** / `firm_id`).
 
-**Next:** Advisor Profile Settings UI · portal **`profiles.firm_name`** fallback · optional PDF logo · Voels `StateTaxPanel` spot-check · base-case regenerate.
+**Next:** portal **`profiles.firm_name`** fallback · PDF logo · logo upload · Voels `StateTaxPanel` spot-check · base-case regenerate.
 
 ---
 
