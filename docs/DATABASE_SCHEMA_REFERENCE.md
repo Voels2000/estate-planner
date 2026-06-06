@@ -45,7 +45,7 @@ This is a developer reference, not a full SQL DDL dump.
 
 - **Key columns:** `id`, `role`, `consumer_tier`, `subscription_status`, `referral_code`, `attorney_referral_code`, `onboarding_invite_advisor_completed_at`, `onboarding_wizard_completed_at`, `full_name`, `email`, `firm_name`, `phone`, `firm_logo_url`
 - **Purpose:** user identity attributes and subscription/role flags.
-- **Export branding (2026-06-05):** PDF cover + meeting brief read `full_name`, `email`, `firm_name`, `phone`, `firm_logo_url` via `fetchAdvisorProfile()` → `resolveAdvisorBranding()`. No advisor settings UI edits these yet; seed for smoke or add settings page.
+- **Export branding (2026-06-05):** PDF cover + meeting brief read `full_name`, `email`, `firm_name`, `phone`, `firm_logo_url` via `fetchAdvisorProfile()` → `resolveAdvisorBranding()`. Migration `20260605100000_profiles_branding_columns.sql` applied on prod. Advisor settings UI pending.
 - **Referral attribution (Sprint 9):** set once at signup from event-page sessionStorage; join `referral_code` → `advisor_directory.referral_code`, `attorney_referral_code` → `attorney_listings.referral_code`.
 - **Invite-advisor gate (Sprint 10):** `onboarding_invite_advisor_completed_at` — set when consumer completes or skips `/onboarding/invite-advisor` (same timestamp for both; no separate skipped flag).
 - **Onboarding wizard (Sprint OB-1):** `onboarding_wizard_completed_at` — set when consumer finishes `/onboarding/wizard` (also sets invite-advisor timestamp via `POST /api/consumer/onboarding-wizard-complete`).

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (advisor firm branding migration)
+# Last updated: 2026-06-05 (migrations synced; debug logs removed)
 
 ---
 
@@ -23,8 +23,9 @@
 
 | Item | Status |
 |------|--------|
-| Migration — `profiles.firm_name`, `phone`, `firm_logo_url` | `[x]` `20260605100000` |
+| Migration — `profiles.firm_name`, `phone`, `firm_logo_url` | `[x]` `20260605100000` prod synced |
 | Export wiring — `fetchAdvisorProfile` → `resolveAdvisorBranding` on PDF/brief | `[x]` |
+| `fetchAdvisorProfile` debug logs removed | `[x]` `52ddc23` |
 | Settings form — write `firm_name`, `phone`, `firm_logo_url` to `profiles` | `[ ]` |
 | Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[ ]` |
 | PDF cover logo from `firm_logo_url` | `[ ]` |
@@ -39,7 +40,8 @@
 |------|--------|
 | Recon — `profiles` vs `firms.name` vs `advisor_directory` | `[x]` |
 | Voels seed — Alan `854051be…` `firm_name` + `phone` | `[x]` |
-| Debug logs in `fetchAdvisorProfile` | removed pre-launch |
+| Migration history sync (duplicate `20260529120000` → `20260529120500`) | `[x]` `11a867d` |
+| Debug logs in `fetchAdvisorProfile` | `[x]` removed `52ddc23` |
 
 **Note:** Portal UI firm label uses **`firms.name`** (`firm_id`); export PDF uses **`profiles.firm_name`**.
 

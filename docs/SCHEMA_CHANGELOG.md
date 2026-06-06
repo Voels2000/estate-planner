@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+---
+
+## Advisor profiles branding + migration history sync (2026-06-05)
+
+**Migrations:**
+- `20260605100000_profiles_branding_columns.sql` — `profiles.firm_name`, `firm_logo_url` (idempotent `phone`)
+- `20260605000000_mc_percentiles.sql` — MC `percentiles_by_year`, unique `scenario_id` index
+- `20260529120500_sprint_import_attorney.sql` — renumbered from duplicate `20260529120000`; `drop policy if exists` on `document_gap_dismissals`
+
+**Prod apply:** Schema pre-existed from manual applies; `supabase migration repair` + renumber (`11a867d`). `supabase db push` → remote up to date.
+
+**App:** `fetchAdvisorProfile` → `resolveAdvisorBranding` on PDF/brief; temporary debug logs removed pre-launch (`52ddc23`).
+
+---
+
 ## Tax Horizons + Advisor portal polish (2026-05-30)
 
 **Scope:** Application-layer UI only — no migrations.

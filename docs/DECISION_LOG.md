@@ -1,26 +1,26 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (fetchAdvisorProfile debug logging)
+# Last updated: 2026-06-05 (advisor branding migrations synced; debug logs removed)
 
 ---
 
-## fetchAdvisorProfile debug logging — PDF firm name diagnosis (2026-06-05)
+## fetchAdvisorProfile debug logs removed (2026-06-05)
 
-**Decision:** Added server logs in **`fetchAdvisorProfile`** (`lib/export-wiring.ts`) — `console.error` on query failure (userId + message); `console.log` on success (`firm_name` + userId). Confirms whether PDF `'My Wealth Maps'` fallback is silent fetch failure vs wrong session advisor vs null DB row.
+**Decision:** Temporary **`fetchAdvisorProfile`** server logs (added in `5b92da7`) **removed pre-launch** in `52ddc23` — silent null stub on query failure restored. Diagnosis confirmed: **`exportWiring: true`** on meeting-prep path; Voels Alan row has **`profiles.firm_name`**; PDF `'My Wealth Maps'` when logged in as e2e-advisor or on fetch error.
 
-**Root cause (recon):** `meeting-prep` / `?type=report` path has **`exportWiring: true`** — stub not used. Alan Voels (`854051be…`) has **`profiles.firm_name = Voels Financial Group`** in DB. Advisor portal UI reads **`firms.name`** via **`firm_id`** (null for Alan) — separate from export branding. Smoke scripts use **e2e-advisor** (`firm_name` null) → PDF shows `'My Wealth Maps'` unless logged in as Alan.
+---
 
-**Next:** Hit `?type=report` as Alan; read server log line. Remove or gate logs after diagnosis.
+## Advisor export branding — profiles migration + wiring (2026-06-05)
+
+**Decision:** Migration **`20260605100000_profiles_branding_columns.sql`** adds **`profiles.firm_name`**, **`firm_logo_url`** ( **`phone`** idempotent). Prod history synced via **`20260529120500`** renumber + **`migration repair`** (`11a867d`). Export via **`fetchAdvisorProfile`** → **`resolveAdvisorBranding`**.
+
+**Next:** Advisor Profile Settings UI · portal **`firms.name`** fallback · optional PDF logo.
 
 ---
 
 ## Advisor export branding — seed profiles before settings UI (2026-06-05)
 
-**Decision:** PDF cover / meeting brief branding reads **`profiles`** via **`fetchAdvisorProfile`** → **`resolveAdvisorBranding`** (`full_name`, `email`, `firm_name`, `phone`, `firm_logo_url`). No advisor settings UI writes those columns today; **`app/advisor/firm`** uses firm-access context, not profile edit. **Seed `profiles.firm_name` / `phone` in Supabase for Voels smoke** before building settings UI — export surfaces already wired; defaults are `'My Wealth Maps'` / `'Your Advisor'`. **`firm_logo_url`** resolved but not rendered in **`generatePDFReport.ts`** yet.
-
-**Files:** `lib/export-wiring.ts`, `lib/advisor/advisorBriefHelpers.ts`, `lib/advisor/exportMappers.ts`, `app/api/advisor/meeting-prep-pdf/[clientId]/route.ts`, `lib/export/generatePDFReport.ts`.
-
-**Next:** Voels advisor row seed · advisor profile settings page (deferred) · optional logo on PDF cover.
+**Decision:** PDF cover / meeting brief branding reads **`profiles`** via **`fetchAdvisorProfile`** → **`resolveAdvisorBranding`**. Alan Voels seeded **`Voels Financial Group`**. **`firm_logo_url`** not rendered in PDF HTML yet.
 
 ---
 

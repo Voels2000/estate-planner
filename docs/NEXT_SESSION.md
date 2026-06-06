@@ -1,12 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (fetchAdvisorProfile debug logging)
+# Updated: 2026-06-05 (advisor branding migrations synced; debug logs removed)
 
 ---
 
-## Advisor export branding — recon ✅ · debug logs shipped (2026-06-05)
+## Advisor export branding — wired ✅ · migrations synced (2026-06-05)
 
-**Wiring (already shipped):** Export PDF + meeting brief read advisor branding from **`profiles`**:
+**Wiring:** Export PDF + meeting brief read advisor branding from **`profiles`**:
 
 | Column | Used by |
 |--------|---------|
@@ -16,23 +16,15 @@
 | `email` | Cover contact line |
 | `firm_logo_url` | `resolveAdvisorBranding` only — **not rendered in PDF HTML yet** |
 
-**Load path:** `fetchAdvisorProfile()` in **`lib/export-wiring.ts`** → **`resolveAdvisorBranding()`** → **`exportMappers.ts`** / **`meeting-prep-pdf/route.ts`**.
+**Load path:** `fetchAdvisorProfile()` in **`lib/export-wiring.ts`** → **`resolveAdvisorBranding()`** → **`exportMappers.ts`** / **`meeting-prep-pdf/route.ts`**. Silent null stub on fetch error (no debug logs).
 
-**DB (Voels):** Alan advisor `854051be…` — `firm_name: Voels Financial Group`, `phone: (218) 555-0147`. **`exportWiring: true`** on `meeting-prep` path (not the null stub).
+**Migrations (prod synced):** `20260605100000_profiles_branding_columns.sql` · `20260605000000_mc_percentiles.sql` · `20260529120500_sprint_import_attorney.sql` (renumbered from duplicate `20260529120000`; `supabase migration repair` + `db push` clean).
 
-**Why PDF may still show `'My Wealth Maps'`:**
-1. Logged in as **e2e-advisor** (smoke) — `firm_name` null in DB.
-2. **`fetchAdvisorProfile`** query error → silent null stub (check server log).
-3. **Advisor portal UI** uses **`firms.name`** / `firm_id` — Alan has no firm row → shows **"Firm"**, not a PDF bug.
+**DB (Voels):** Alan `854051be…` — `firm_name: Voels Financial Group`, `phone: (218) 555-0147`.
 
-**Debug (shipped):** Server logs in **`fetchAdvisorProfile`** — `[fetchAdvisorProfile] firm_name: … for: <userId>` or `[fetchAdvisorProfile] failed for userId: …`.
+**PDF `'My Wealth Maps'` causes:** e2e-advisor session · `fetchAdvisorProfile` error · not advisor-portal UI (uses **`firms.name`** / `firm_id`).
 
-**Next:**
-1. Open Voels `?type=report` logged in as **`avoels@comcast.net`** — expect log `firm_name: Voels Financial Group`.
-2. Advisor profile settings UI (deferred) · unify portal UI with `profiles.firm_name` or create `firms` row.
-3. Optional — PDF cover logo from `firm_logo_url`.
-
-**Also open:** Voels `StateTaxPanel` spot-check · base-case regenerate rollout.
+**Next:** Advisor Profile Settings UI · portal **`profiles.firm_name`** fallback · optional PDF logo · Voels `StateTaxPanel` spot-check · base-case regenerate.
 
 ---
 
