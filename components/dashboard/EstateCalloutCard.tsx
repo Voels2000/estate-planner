@@ -16,6 +16,8 @@ export interface EstateCalloutCardProps {
   exemptionMarginTight?: boolean
   userTier?: number
   statePrimary?: string | null
+  stateExemption?: number | null
+  isMFJ?: boolean
 }
 
 export type EstateTaxSnapshotPanelProps = {
@@ -38,6 +40,8 @@ export function EstateSummaryHeroAndMetrics({
   estimatedTaxFederal,
   estimatedTaxState,
   statePrimary,
+  stateExemption,
+  isMFJ = false,
   userTier,
   afterMetrics,
 }: Pick<
@@ -47,6 +51,8 @@ export function EstateSummaryHeroAndMetrics({
   | 'estimatedTaxFederal'
   | 'estimatedTaxState'
   | 'statePrimary'
+  | 'stateExemption'
+  | 'isMFJ'
   | 'userTier'
 > & {
   /** Rendered after the four metric tiles, still inside the tax exposure block. */
@@ -68,7 +74,9 @@ export function EstateSummaryHeroAndMetrics({
   const federalTax = estimatedTaxFederal
   const isStateExposure = estateTax > 0
   const stateTaxTooltipCtx: TaxTermContext = {
-    stateCode: statePrimary ?? undefined,
+    stateCode: statePrimary ?? null,
+    stateExemption: stateExemption ?? null,
+    isMFJ: isMFJ ?? false,
   }
 
   const statTiles: Array<{

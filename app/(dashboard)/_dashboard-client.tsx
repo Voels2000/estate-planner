@@ -688,6 +688,8 @@ export function DashboardClient(props: Props) {
           <EstateSummaryHeroAndMetrics
             {...estateCallout}
             statePrimary={statePrimary}
+            stateExemption={stateExemption}
+            isMFJ={['mfj', 'married_joint'].includes(composition?.filing_status ?? '')}
             userTier={tier}
           />
         </div>
