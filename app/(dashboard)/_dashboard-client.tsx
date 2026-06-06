@@ -22,6 +22,7 @@ import { FeedbackButton } from './_components/feedback-button'
 import { LifeEventBanner, type LifeEvent, type LoggedLifeEvent } from './_components/LifeEventBanner'
 import type { RelevanceHousehold } from '@/lib/events/catalog'
 import type { EstateComposition } from '@/lib/estate/types'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { firstName, fmt, fmtExact } from '@/app/(dashboard)/_components/dashboard/formatters'
 import { FinancialSummarySection } from '@/app/(dashboard)/_components/dashboard/FinancialSummarySection'
 import { RetirementSummarySection } from '@/app/(dashboard)/_components/dashboard/RetirementSummarySection'
@@ -689,7 +690,7 @@ export function DashboardClient(props: Props) {
             {...estateCallout}
             statePrimary={statePrimary}
             stateExemption={stateExemption}
-            isMFJ={['mfj', 'married_joint'].includes(composition?.filing_status ?? '')}
+            isMFJ={isMFJFilingStatus(composition?.filing_status)}
             userTier={tier}
           />
         </div>
