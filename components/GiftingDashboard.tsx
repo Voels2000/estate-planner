@@ -11,6 +11,7 @@ import {
 } from '@/lib/estate/exemptionLabels';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { taxTermExplainer } from '@/lib/estate/taxTermExplainers';
+import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit';
 import {
   GiftDeleteWarningModal,
   type GiftDeleteChoice,
@@ -398,8 +399,10 @@ export default function GiftingDashboard({
   const annualSplitSelected =
     summary.split_elected ??
     (summary.filing_status === 'mfj' && annualGiftRows.some(g => g.form_709_filed === true));
-  const annualPerRecipientLimit =
-    summary.per_recipient_limit ?? (annualSplitSelected ? 38000 : 19000);
+  const annualPerRecipientLimit = perRecipientLimitFromSplit(
+    annualSplitSelected,
+    summary.per_recipient_limit ?? null,
+  );
   const uniqueAnnualRecipients = new Set(
     annualGiftRows
       .map(g => (g.recipient_name ?? '').trim().toLowerCase())

@@ -24,6 +24,7 @@ import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-str
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
+import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 function num(v: unknown): number {
@@ -405,6 +406,7 @@ export default async function MyEstateTrustStrategyPage({
             annual_used?: number
             annual_remaining?: number
             tax_year?: number
+            per_recipient_limit?: number
           }
         | null)
   const giftingTaxYear = giftingData?.tax_year ?? currentTaxYear
@@ -415,7 +417,10 @@ export default async function MyEstateTrustStrategyPage({
     form_709_filed: boolean | null
   }>
   const splitSelected = giftRows.some((r) => r.form_709_filed === true)
-  const perRecipientLimit = splitSelected ? 38000 : 19000
+  const perRecipientLimit = perRecipientLimitFromSplit(
+    splitSelected,
+    giftingData?.per_recipient_limit ?? null,
+  )
   const recipientGiftTotals = new Map<string, number>()
   for (const row of giftRows) {
     if ((row.gift_type ?? 'annual') !== 'annual') continue

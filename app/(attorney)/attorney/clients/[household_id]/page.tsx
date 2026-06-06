@@ -145,15 +145,12 @@ export default async function AttorneyClientPage({
           ⚠️ This is a read-only view. Changes cannot be made from the attorney portal.
         </p>
         <EstateTaxClient
-          realEstate={realEstateRows ?? []}
-          assets={assetsRows ?? []}
           liabilities={liabilitiesRows ?? []}
           trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
           household={household as Record<string, unknown> | null}
           brackets={federalEstateTaxBracketsRows ?? []}
           stateEstateTaxRules={stateEstateTaxRows ?? []}
           stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
-          primaryResidenceValue={primaryResidenceValue}
         />
       </div>
 

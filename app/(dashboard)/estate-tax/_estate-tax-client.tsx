@@ -34,6 +34,8 @@ import {
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
+import { annualGiftingCapacity } from '@/lib/gifting/perRecipientLimit'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -187,6 +189,7 @@ export default function EstateTaxClient({
   composition: compositionProp,
   strategyLineItems,
   noPortability = false,
+  waThresholdToday = null,
 }: {
   liabilities: Record<string, unknown>[]
   trusts: EstateTaxTrustRow[]
@@ -194,7 +197,6 @@ export default function EstateTaxClient({
   brackets: Record<string, unknown>[]
   stateEstateTaxRules: Record<string, unknown>[]
   stateInheritanceTaxRules: Record<string, unknown>[]
-  primaryResidenceValue?: number | null
   giftingAnnualCapacity?: number | null
   giftingAnnualUsed?: number | null
   giftingAnnualRemaining?: number | null
@@ -203,14 +205,14 @@ export default function EstateTaxClient({
   giftingSplitSelected?: boolean
   giftingPerRecipientLimit?: number | null
   giftingExcessOverLimit?: number | null
-  // New — from classifyEstateAssets RPC
   composition?: EstateComposition | null
   strategyLineItems?: EstateTaxStrategyLineItem[] | null
   noPortability?: boolean
-  // Legacy props kept for backwards compat — no longer used for gross estate
-  assets?: Record<string, unknown>[]
-  realEstate?: Record<string, unknown>[]
-  businesses?: Record<string, unknown>[]
+  waThresholdToday?: {
+    year: number
+    age_p1: number
+    pct_above_threshold: number
+  } | null
 }) {
   // Composition state — use prop if available, else fetch client-side
   const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
@@ -492,15 +494,19 @@ export default function EstateTaxClient({
         s.label.toLowerCase().includes('bypass') ||
         s.label.toLowerCase().includes('credit shelter'),
     )
-    if (!hasBypass && statePrimary && WA_NO_PORTABILITY_STATES.has(statePrimary.toUpperCase())) {
-      const stateExAmt = stateExemption ?? 3_000_000
+    if (
+      !hasBypass &&
+      statePrimary &&
+      WA_NO_PORTABILITY_STATES.has(statePrimary.toUpperCase()) &&
+      stateExemption > 0
+    ) {
       const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
       strategies.push({
         id: 'bypass-trust-synthetic',
         label: 'Bypass trust (credit shelter)',
-        description: `Moves $${(stateExAmt / 1_000_000).toFixed(1)}M outside estate at first death · preserves ${statePrimary} exemption`,
-        taxSaving: Math.round(stateExAmt * effectiveRate),
-        exclusionAmount: stateExAmt,
+        description: `Moves $${(stateExemption / 1_000_000).toFixed(1)}M outside estate at first death · preserves ${statePrimary} exemption`,
+        taxSaving: Math.round(stateExemption * effectiveRate),
+        exclusionAmount: stateExemption,
       })
     }
 
@@ -520,14 +526,8 @@ export default function EstateTaxClient({
     }
 
     const hasGifting = strategies.some((s) => s.label.toLowerCase().includes('gift'))
-    const filingStatus = household?.filing_status as string | null | undefined
     if (!hasGifting && estimatedTaxState > 0) {
-      const annualExclusion =
-        filingStatus === 'mfj' ||
-        filingStatus === 'married_joint' ||
-        filingStatus === 'married_filing_jointly'
-          ? 36_000
-          : 18_000
+      const annualExclusion = annualGiftingCapacity(isMFJFilingStatus(household?.filing_status as string))
       const effectiveRate = grossEstate > 0 ? estimatedTaxState / grossEstate : 0.1
       strategies.push({
         id: 'gifting-synthetic',
@@ -768,6 +768,13 @@ export default function EstateTaxClient({
                       {formatDollars(estimatedTaxState)}
                     </p>
                   </div>
+                  {waThresholdToday && waThresholdToday.pct_above_threshold > 0 && (
+                    <div className="mt-2 text-xs text-[--mwm-text-muted]">
+                      {waThresholdToday.pct_above_threshold === 100
+                        ? `Your estate exceeds the ${statePrimary} exemption in all simulated market scenarios.`
+                        : `Your estate exceeds the ${statePrimary} exemption in ${waThresholdToday.pct_above_threshold}% of simulated market scenarios.`}
+                    </div>
+                  )}
                 </>
               )}
             </div>

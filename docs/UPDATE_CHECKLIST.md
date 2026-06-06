@@ -681,9 +681,12 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `MonteCarloPanel` — empty state before first run
 - [x] `MonteCarloPanel` — precomputed Depletion Risk tile (`longevity_depletion_pct` from `mcSummary`)
 - [x] **`EstateOutlookChart`** — state exemption threshold line on `/projections` (`stateExemption` prop; `state_estate_tax_rules` fetch on `page.tsx`)
-- [x] Master docs synced
-- [ ] **Post-deploy smoke:** Advisor Strategy tab — CST/ILIT savings lines · composite empty state
-- [ ] **Post-deploy smoke:** Voels `/projections` — amber line ~$2.19M · legend entry · no line when exemption null
+- [x] **`/estate-tax`** — WA threshold probability sentence (`wa_threshold_prob_by_year[0]` from `loadScenarioMonteCarlo`)
+- [x] Codebase cleanup — dead components, estate-tax fetch trim, `/my-advisor` multi-row fix
+- [x] Constants — `lib/gifting/perRecipientLimit.ts`; PDF `firstTaxYearP10` stored signal
+- [x] Perf P-3 — memo charts, scenarios row index, `getFullHouseholdForOwner`
+- [x] Master docs synced — Phase 3 MC UI complete + cleanup pass
+- [ ] **Post-deploy smoke:** Voels `/estate-tax` · `/my-advisor` · PDF MC narrative line
 
 ## Advisor Estate tab — visual polish ✅ closed 2026-05-30
 

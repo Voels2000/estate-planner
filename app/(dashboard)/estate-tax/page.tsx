@@ -8,6 +8,8 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { strategyLabel } from '@/lib/strategy/strategyLabels'
+import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
+import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -78,34 +80,17 @@ export default async function EstateTaxPage() {
   }
 
   const [
-    { data: realEstateRows },
-    { data: assetsRows },
     { data: liabilitiesRows },
-    ,
     { data: trustsRows },
     { data: federalEstateTaxBracketsRows },
     { data: stateEstateTaxRows },
     { data: stateInheritanceTaxRows },
   ] = await Promise.all([
     supabase
-      .from('real_estate')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('assets')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false }),
-    supabase
       .from('liabilities')
       .select('*')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('businesses')
-      .select('id, estimated_value, ownership_pct')
-      .eq('owner_id', user.id),
     supabase
       .from('trusts')
       .select('*')
@@ -134,18 +119,6 @@ export default async function EstateTaxPage() {
 
   requireMinimumViableProfile(householdRow, '/estate-tax')
 
-  const primaryResidenceValue = (() => {
-    const rows = (realEstateRows ?? []).filter(
-      (r) => (r as { is_primary_residence?: boolean }).is_primary_residence === true,
-    )
-    if (rows.length === 0) return null as number | null
-    const sum = rows.reduce(
-      (s, r) => s + Number((r as { current_value?: unknown }).current_value ?? 0),
-      0,
-    )
-    return sum > 0 ? sum : null
-  })()
-
   const giftingSummary =
     householdRow?.id != null
       ? await supabase.rpc('calculate_gifting_summary', {
@@ -160,6 +133,7 @@ export default async function EstateTaxPage() {
         annual_used?: number
         annual_remaining?: number
         tax_year?: number
+        per_recipient_limit?: number
       }
     | null
   const giftingTaxYear = giftingData?.tax_year ?? currentTaxYear
@@ -180,7 +154,10 @@ export default async function EstateTaxPage() {
     form_709_filed: boolean | null
   }>
   const splitSelected = giftRows.some((r) => r.form_709_filed === true)
-  const perRecipientLimit = splitSelected ? 38000 : 19000
+  const perRecipientLimit = perRecipientLimitFromSplit(
+    splitSelected,
+    giftingData?.per_recipient_limit ?? null,
+  )
 
   const recipientGiftTotals = new Map<string, number>()
   for (const row of giftRows) {
@@ -253,18 +230,25 @@ export default async function EstateTaxPage() {
         .toUpperCase() === statePrimaryUpper && row.no_portability === true,
   )
 
+  const householdMcRes = await supabase
+    .from('households')
+    .select('base_case_scenario_id')
+    .eq('owner_id', user.id)
+    .single()
+
+  const mcData = householdMcRes.data?.base_case_scenario_id
+    ? await loadScenarioMonteCarlo(householdMcRes.data.base_case_scenario_id, supabase)
+    : null
+
   return (
     <>
       <EstateTaxClient
-        realEstate={realEstateRows ?? []}
-        assets={assetsRows ?? []}
         liabilities={liabilitiesRows ?? []}
         trusts={(trustsRows ?? []) as EstateTaxTrustRow[]}
         household={householdRow as Record<string, unknown> | null}
         brackets={federalEstateTaxBracketsRows ?? []}
         stateEstateTaxRules={stateEstateTaxRows ?? []}
         stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
-        primaryResidenceValue={primaryResidenceValue}
         giftingAnnualCapacity={giftingData?.annual_capacity ?? null}
         giftingAnnualUsed={qualifyingAnnualGifts}
         giftingAnnualRemaining={giftingData?.annual_remaining ?? null}
@@ -276,6 +260,7 @@ export default async function EstateTaxPage() {
         composition={composition}
         strategyLineItems={strategyLineItems}
         noPortability={noPortability}
+        waThresholdToday={mcData?.wa_threshold_prob_by_year?.[0] ?? null}
       />
     </>
   )

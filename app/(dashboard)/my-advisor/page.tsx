@@ -29,6 +29,8 @@ export default async function MyAdvisorPage() {
     `)
     .eq('client_id', user.id)
     .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+    .order('accepted_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   const advisorId = connection?.advisor_id ?? null

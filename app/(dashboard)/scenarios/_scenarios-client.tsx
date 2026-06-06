@@ -5,7 +5,7 @@
 // Route: /scenarios
 // ─────────────────────────────────────────
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { YearRow } from '@/lib/calculations/projection-complete'
@@ -697,12 +697,20 @@ function ScenarioEditor({
   )
 }
 
+function rowsByAge(rows: YearRow[]): Map<number, YearRow> {
+  return new Map(rows.map((r) => [r.age_person1, r]))
+}
+
 function MultiLineChart({ results, names, peak, loading }: {
   results: (ScenarioResult)[]
   names: string[]
   peak: number
   loading: boolean[]
 }) {
+  const rowIndexes = useMemo(
+    () => results.map((r) => rowsByAge(r?.rows ?? [])),
+    [results],
+  )
   const baseRows = results.find(r => r !== null)?.rows ?? []
   const allAges  = baseRows.map(r => r.age_person1)
   const step     = allAges.length > 40 ? 5 : allAges.length > 25 ? 2 : 1
@@ -716,7 +724,7 @@ function MultiLineChart({ results, names, peak, loading }: {
             <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 hidden group-hover:block whitespace-nowrap rounded-lg bg-neutral-900 px-2 py-1.5 text-xs text-white shadow-lg">
               <p className="font-semibold mb-0.5">Age {age}</p>
               {results.map((r, i) => {
-                const row = r?.rows.find(row => row.age_person1 === age)
+                const row = rowIndexes[i]?.get(age)
                 return (
                   <p key={i} style={{ color: SCENARIO_COLORS[i] === '#1a1a1a' ? '#fff' : SCENARIO_COLORS[i] }}>
                     {names[i]}: {formatDollars(row?.net_worth ?? 0)}
@@ -726,7 +734,7 @@ function MultiLineChart({ results, names, peak, loading }: {
             </div>
             <div className="w-full flex items-end gap-px" style={{ height: '200px' }}>
               {results.map((r, i) => {
-                const row = r?.rows.find(row => row.age_person1 === age)
+                const row = rowIndexes[i]?.get(age)
                 const pct = peak > 0 ? ((row?.net_worth ?? 0) / peak) * 100 : 0
                 return (
                   <div key={i} className={`flex-1 rounded-t transition-all ${loading[i] ? 'opacity-30' : ''}`} style={{
@@ -749,7 +757,15 @@ function ComparisonTable({ results, names, loading }: {
   names: string[]
   loading: boolean[]
 }) {
+  const rowIndexes = useMemo(
+    () => results.map((r) => rowsByAge(r?.rows ?? [])),
+    [results],
+  )
   const baseRows = results.find(r => r !== null)?.rows ?? []
+  const retirementAge = useMemo(() => {
+    const first = results[0]?.rows
+    return first?.find((r) => r.age_person1 >= 65)?.age_person1 ?? 65
+  }, [results])
 
   return (
     <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -779,12 +795,14 @@ function ComparisonTable({ results, names, loading }: {
         </thead>
         <tbody className="divide-y divide-neutral-100">
           {baseRows.map((row) => (
-            <tr key={row.age_person1} className={row.age_person1 >= (results[0]?.rows.find(r => r.age_person1 >= 65)?.age_person1 ?? 65) ? 'bg-orange-50/40' : ''}>
+            <tr key={row.age_person1} className={row.age_person1 >= retirementAge ? 'bg-orange-50/40' : ''}>
               <td className="py-1.5 pr-4 font-medium text-neutral-800">{row.age_person1}</td>
               <td className="py-1.5 pr-4 text-neutral-500">{row.year}</td>
               {results.map((r, i) => {
-                const yr        = r?.rows.find(y => y.age_person1 === row.age_person1)
-                const allVals   = results.map(res => res?.rows.find(y => y.age_person1 === row.age_person1)?.net_worth ?? 0)
+                const yr = rowIndexes[i]?.get(row.age_person1)
+                const allVals = results.map(
+                  (res, ri) => rowIndexes[ri]?.get(row.age_person1)?.net_worth ?? 0,
+                )
                 const isBest    = (yr?.net_worth ?? 0) === Math.max(...allVals)
                 return (
                   <td key={i} className={`py-1.5 pr-4 font-semibold ${loading[i] ? 'text-neutral-300' : isBest ? SCENARIO_TEXT[i] : 'text-neutral-600'}`}>
@@ -793,7 +811,7 @@ function ComparisonTable({ results, names, loading }: {
                 )
               })}
               {results.map((r, i) => {
-                const yr = r?.rows.find(y => y.age_person1 === row.age_person1)
+                const yr = rowIndexes[i]?.get(row.age_person1)
                 return (
                   <td key={`tax-${i}`} className={`py-1.5 pr-4 ${loading[i] ? 'text-neutral-300' : 'text-neutral-600'}`}>
                     {loading[i] ? '…' : formatDollars(yr?.tax_total ?? 0)}

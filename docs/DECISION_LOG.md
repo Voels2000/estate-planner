@@ -1,6 +1,47 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
+# Last updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
+
+---
+
+## Codebase cleanup + perf/constants pass (2026-06-05)
+
+**Decision:** Low-risk cleanup and render/fetch optimizations without UX changes. Removed orphaned components and unused estate-tax DB queries; centralized annual gift exclusion constants; wired PDF MC narrative to stored **`first_tax_year_p10`**; memoized fan charts and indexed scenarios table lookups.
+
+| Change | Detail |
+|--------|--------|
+| **Dead code** | Deleted **`AssetAllocationSummary`**, orphan **`_attorney-client.tsx`**, unused **`buildAllocationContext`** |
+| **Estate-tax server** | Dropped **`assets`/`real_estate`/`businesses`** fetches — **`getCachedComposition`** only |
+| **`/my-advisor`** | **`advisor_clients`** query uses **`.order('accepted_at').limit(1)`** — fixes PGRST116 when multiple active rows |
+| **`lib/gifting/perRecipientLimit.ts`** | **`perRecipientLimitFromSplit`**, **`annualGiftingCapacity`** — replaces scattered **`19000`/`38000`** |
+| **Estate-tax client** | Bypass-trust synthetic uses **`stateExemption`** from brackets (no **`3_000_000`** fallback) |
+| **PDF** | **`firstTaxYearP10`** on **`PDFReportData`**; **`narrativeEngine`** prefers stored signal |
+| **Perf** | **`React.memo`** on **`EstateOutlookChart`**; **`MonteCarloFanChart`** extracted; scenarios **`rowsByAge` Map** |
+| **Fetch** | **`getFullHouseholdForOwner`** (`React.cache`) on **`/dashboard`** |
+
+---
+
+## Phase 3 MC UI complete (2026-06-05)
+
+**Decision:** Phase 3 MC UI complete — MonteCarloPanel depletion risk tile (precomputed + edge-run), EstateOutlookChart amber threshold line at state exemption, `/estate-tax` WA threshold probability sentence below state tax row. All three surfaces confirmed passing smoke.
+
+| Surface | Implementation |
+|---------|----------------|
+| **`MonteCarloPanel`** | **`longevity_depletion_pct`** + **`depletion_floor_amount`** from **`mcSummary`** — Depletion Risk tile (green ≤20%, red >20%) |
+| **`EstateOutlookChart`** | **`stateExemption`** from **`state_estate_tax_rules`** — amber dashed line + legend on `/projections` fan chart |
+| **`/estate-tax`** | **`wa_threshold_prob_by_year[0]`** via **`loadScenarioMonteCarlo`** — probability sentence after state tax waterfall row |
+
+**Voels:** depletion 0% · threshold line ~$2.19M · “exceeds the WA exemption in all simulated market scenarios” (pct 100).
+
+**Optional follow-up:** PDF Phase 2D — confirm **`first_tax_year_p10`** reads stored value vs recomputed bands → **shipped** in cleanup pass (**`firstTaxYearP10`** on **`PDFReportData`**).
+
+---
+
+## `/my-advisor` — multiple active advisor_clients rows (2026-06-05)
+
+**Decision:** Consumer **`/my-advisor`** connected-advisor query orders by **`accepted_at` DESC**, **`limit(1)`**, then **`maybeSingle()`** — returns most recently accepted link instead of PGRST116 when duplicate active rows exist for one **`client_id`**.
+
+**Files:** `app/(dashboard)/my-advisor/page.tsx`.
 
 ---
 
@@ -14,8 +55,6 @@
 
 **Files:** `EstateOutlookChart.tsx` · `_projections-client.tsx` · `page.tsx`.
 
-**Remaining Phase 3 UI:** `/estate-tax` · PDF **`first_tax_year_p10`** confirm.
-
 ---
 
 ## MC Phase 3 UI — MonteCarloPanel depletion tile (2026-06-05)
@@ -24,13 +63,11 @@
 
 **Voels:** `longevity_depletion_pct=0` → green **0% Depletion Risk**.
 
-**Remaining:** `/estate-tax` · PDF narrative confirm.
-
 ---
 
 ## Phase 3 MC signals — shipped ✅ (2026-06-05)
 
-**Decision:** Phase 3 MC signals shipped — **`wa_threshold_prob_by_year`** (P10–P90 ladder per year), **`first_tax_year_p10`** (first year P10 exceeds state exemption), **`longevity_depletion_pct`** (% paths below $500K floor at death year), **`depletion_floor_amount`**. Voels smoke: **`first_tax_year_p10=2026`**, **`depletion=0`**, **`threshold_years=25`**. UI wiring deferred to next sprint.
+**Decision:** Phase 3 MC signals shipped — **`wa_threshold_prob_by_year`** (P10–P90 ladder per year), **`first_tax_year_p10`** (first year P10 exceeds state exemption), **`longevity_depletion_pct`** (% paths below $500K floor at death year), **`depletion_floor_amount`**. Voels smoke: **`first_tax_year_p10=2026`**, **`depletion=0`**, **`threshold_years=25`**. UI wiring shipped same sprint (see Phase 3 MC UI complete entry).
 
 **Compute/store:** `runEstateMonteCarloAsync` · **`loadScenarioMonteCarlo`** · migration **`20260605110000_mc_phase3_signals.sql`** · **`MC_DEPLETION_FLOOR`** = 500_000. State exemption from **`stateBrackets[0].exemption_amount`**.
 

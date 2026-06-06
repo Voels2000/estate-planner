@@ -79,7 +79,9 @@ Two separate engines — do not merge.
 
 **`success_rate`:** Share of simulated final estates where federal + state estate tax both equal $0 (UI: **Zero-Tax Paths**).
 
-**UI surfaces (precomputed):** Advisor **`MonteCarloPanel`** (edge + precomputed tiles) · Strategy at-death badge · PDF page 2 fan bands · consumer **`/projections`** **`EstateOutlookChart`** ( **`percentiles_by_year`** bands + optional **`stateExemption`** threshold line from **`state_estate_tax_rules`**, not MC signals).
+**UI surfaces (precomputed):** Advisor **`MonteCarloPanel`** (edge + precomputed tiles; **`MonteCarloFanChart`**) · Strategy at-death badge · PDF page 2 fan bands + cover MC narrative (**`firstTaxYearP10`** stored signal, band-scan fallback) · consumer **`/projections`** **`EstateOutlookChart`** · consumer **`/estate-tax`** threshold copy.
+
+**Gift exclusion constants:** **`lib/gifting/perRecipientLimit.ts`** — prefer **`calculate_gifting_summary.per_recipient_limit`**, fallback **`19_000`/`38_000`**.
 
 ### Retirement Monte Carlo (consumer `/monte-carlo`)
 

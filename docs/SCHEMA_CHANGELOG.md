@@ -21,7 +21,34 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | `longevity_depletion_pct` | integer | Estimated % paths below floor at death year |
 | `depletion_floor_amount` | numeric | Floor constant (`MC_DEPLETION_FLOOR` = 500_000) |
 
-**App:** `runEstateMonteCarloAsync` upsert · `loadScenarioMonteCarlo` SELECT. UI wiring next sprint.
+**App:** `runEstateMonteCarloAsync` upsert · `loadScenarioMonteCarlo` SELECT. UI wiring shipped — see Phase 3 MC UI complete in DECISION_LOG.
+
+---
+
+## Codebase cleanup + perf/constants (2026-06-05)
+
+**No migration.**
+
+| Change | Detail |
+|--------|--------|
+| Deleted | `AssetAllocationSummary.tsx`, `app/(attorney)/attorney/_attorney-client.tsx` |
+| `lib/gifting/perRecipientLimit.ts` | Central annual exclusion constants + RPC-aware helper |
+| `lib/household/getHouseholdForOwner.ts` | `React.cache()` full household for dashboard |
+| `components/advisor/MonteCarloFanChart.tsx` | Extracted memoized SVG fan chart |
+| `estate-tax/page.tsx` | Removed unused asset/RE/business queries |
+| `my-advisor/page.tsx` | `advisor_clients` order + limit for multi-row safety |
+| PDF | `firstTaxYearP10` on `PDFReportData` + `narrativeEngine` |
+
+---
+
+## `/estate-tax` — WA threshold probability copy (2026-06-05)
+
+**No migration.** Application-layer only.
+
+| Change | Detail |
+|--------|--------|
+| `estate-tax/page.tsx` | `loadScenarioMonteCarlo` via `households.base_case_scenario_id`; pass `wa_threshold_prob_by_year[0]` |
+| `_estate-tax-client.tsx` | Probability sentence after state tax waterfall row when `pct_above_threshold > 0` |
 
 ---
 

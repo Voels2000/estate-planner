@@ -10,6 +10,7 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
+import { getFullHouseholdForOwner } from '@/lib/household/getHouseholdForOwner'
 import { DashboardOnramp } from '@/components/dashboard/DashboardOnramp'
 import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
 import { displayPersonFirstName } from '@/lib/display-person-name'
@@ -29,18 +30,17 @@ export default async function DashboardPage() {
 
   const supabase = await createClient()
 
-  const [{ data: household, error: householdError }, { data: healthScore }, hasAnyHouseholdData] =
-    await Promise.all([
-      supabase.from('households').select('*').eq('id', householdRow.id).single(),
-      supabase
-        .from('estate_health_scores')
-        .select('score')
-        .eq('household_id', householdRow.id)
-        .maybeSingle(),
-      checkHouseholdHasData(supabase, sessionUser.id),
-    ])
+  const [household, { data: healthScore }, hasAnyHouseholdData] = await Promise.all([
+    getFullHouseholdForOwner(sessionUser.id),
+    supabase
+      .from('estate_health_scores')
+      .select('score')
+      .eq('household_id', householdRow.id)
+      .maybeSingle(),
+    checkHouseholdHasData(supabase, sessionUser.id),
+  ])
 
-  if (!household || householdError) return <DashboardEmptyState />
+  if (!household) return <DashboardEmptyState />
 
   if (profile?.role === 'consumer') {
     const showOnramp = shouldShowOnramp({

@@ -1,6 +1,32 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
+# Updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
+
+---
+
+## Codebase cleanup + perf/constants — shipped ✅ (2026-06-05)
+
+**Scope:** Dead code removal · estate-tax fetch trim · **`/my-advisor`** multi-row fix · **`perRecipientLimit`** helper · PDF **`firstTaxYearP10`** · chart memoization · dashboard **`getFullHouseholdForOwner`**.
+
+**Next:** Voels **`StateTaxPanel`** spot-check · base-case regenerate · titling memo (deferred) · table virtualization (deferred).
+
+---
+
+## Phase 3 MC UI — complete ✅ (2026-06-05)
+
+**Shipped (three surfaces, Voels smoke pass):**
+
+| Surface | Signal / data | Copy / UI |
+|---------|---------------|-----------|
+| Advisor **`MonteCarloPanel`** | **`longevity_depletion_pct`** | Depletion Risk tile — precomputed + edge-run |
+| **`/projections`** **`EstateOutlookChart`** | **`stateExemption`** | Amber dashed threshold line + legend |
+| **`/estate-tax`** waterfall | **`wa_threshold_prob_by_year[0]`** | Probability sentence below state tax row |
+
+**Commits:** `a007845` (depletion tile) · `3ac4451` (fan chart line) · estate-tax MC copy (this commit).
+
+**Optional:** ~~PDF Phase 2D — confirm **`first_tax_year_p10`** reads stored value~~ → **done** (`firstTaxYearP10` on PDF payload).
+
+**Next sprint candidates:** Voels **`StateTaxPanel`** spot-check · base-case regenerate · portal **`profiles.firm_name`** fallback · titling perf.
 
 ---
 
@@ -14,7 +40,13 @@
 
 **Files:** `app/(dashboard)/projections/_components/EstateOutlookChart.tsx` · `_projections-client.tsx` · `page.tsx`
 
-**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm.
+---
+
+## MC Phase 3 UI — `/estate-tax` threshold copy ✅ (2026-06-05)
+
+**Shipped:** Probability sentence below state tax waterfall — **`wa_threshold_prob_by_year[0]`** from **`loadScenarioMonteCarlo`** on **`estate-tax/page.tsx`**. Renders when **`pct_above_threshold > 0`**; 100% → “all simulated market scenarios”.
+
+**Files:** `app/(dashboard)/estate-tax/page.tsx` · `_estate-tax-client.tsx`
 
 ---
 
@@ -23,8 +55,6 @@
 **Shipped:** Precomputed **Depletion Risk** tile on advisor **`MonteCarloPanel`** — reads **`longevity_depletion_pct`** + **`depletion_floor_amount`** from **`mcSummary`** (`loadScenarioMonteCarlo`). Shows before edge Run (Voels: **0%** green) and as fifth tile after edge results. No changes to edge-run logic or existing four stat tiles.
 
 **Files:** `components/advisor/MonteCarloPanel.tsx` · `app/advisor/clients/[clientId]/_tabs/StrategyTab.tsx`
-
-**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm.
 
 ---
 
@@ -40,7 +70,7 @@
 
 | Surface | Signal |
 |---------|--------|
-| `/estate-tax` | `wa_threshold_prob_by_year` |
+| `/estate-tax` | `wa_threshold_prob_by_year` threshold copy ✅ |
 | PDF cover narrative | `first_tax_year_p10` (confirm Phase 2D reads stored value) |
 | Strategy / `MonteCarloPanel` | `longevity_depletion_pct` |
 | `EstateOutlookChart` | `stateExemption` threshold line ✅ |

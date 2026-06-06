@@ -1,4 +1,3 @@
-import type { AssetAllocationContext } from '@/components/AssetAllocationSummary'
 import type { Conflict, ConflictReport } from '@/lib/conflict-detector'
 import type { EstateHealthScore } from '@/lib/estate-health-score'
 
@@ -56,34 +55,5 @@ export function mapConflictReport(
     critical: conflictRows.filter((c) => c.severity === 'critical').length,
     warnings: conflictRows.filter((c) => c.severity === 'warning').length,
     computedAt: new Date().toISOString(),
-  }
-}
-
-export function buildAllocationContext(input: {
-  profile: {
-    current_age?: number | null
-    risk_tolerance?: string | null
-    retirement_age?: number | null
-    marital_status?: string | null
-    dependents?: number | null
-  } | null
-  household: {
-    person1_birth_year?: number | null
-    risk_tolerance?: string | null
-    person1_retirement_age?: number | null
-    has_spouse?: boolean | null
-    filing_status?: string | null
-  } | null
-}): AssetAllocationContext {
-  const { profile, household } = input
-  return {
-    currentAge: profile?.current_age ?? null,
-    birthYear: household?.person1_birth_year ?? null,
-    riskTolerance: household?.risk_tolerance ?? profile?.risk_tolerance ?? null,
-    retirementAge: profile?.retirement_age ?? household?.person1_retirement_age ?? null,
-    maritalStatus: profile?.marital_status ?? null,
-    dependents: profile?.dependents ?? null,
-    hasSpouse: household?.has_spouse ?? null,
-    filingStatus: household?.filing_status != null ? String(household.filing_status) : null,
   }
 }

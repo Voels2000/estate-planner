@@ -81,6 +81,8 @@ export interface PDFReportData {
     p10_net: number
     p90_net: number
   }[] | null
+  /** Stored MC signal — first year P10 gross exceeds exemption (optional). */
+  firstTaxYearP10?: number | null
 
   // Tax analysis
   federalTax: number

@@ -272,6 +272,7 @@ export async function buildAdvisorExportPayloads(params: {
     beneficiaryData: beneficiaryData?.groups.length ? beneficiaryData : undefined,
     projectionChartRows,
     projectionChartBands,
+    firstTaxYearP10: mcForChart?.first_tax_year_p10 ?? null,
     federalTax: fedTaxExport,
     stateTax: stTaxExport,
     federalExemption: exemptionExport,

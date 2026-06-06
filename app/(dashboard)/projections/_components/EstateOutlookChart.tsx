@@ -1,4 +1,5 @@
 import type { PercentileByYear } from '@/lib/calculations/estate-monte-carlo'
+import { memo } from 'react'
 
 export interface EstateOutlookChartProps {
   bands: PercentileByYear[]
@@ -12,7 +13,11 @@ function fmtMillions(n: number): string {
   return `$${Math.round(n)}`
 }
 
-export function EstateOutlookChart({ bands, className, stateExemption = null }: EstateOutlookChartProps) {
+const EstateOutlookChartInner = memo(function EstateOutlookChartInner({
+  bands,
+  className,
+  stateExemption = null,
+}: EstateOutlookChartProps) {
   if (!bands.length) return null
 
   const width = 600
@@ -145,4 +150,8 @@ export function EstateOutlookChart({ bands, className, stateExemption = null }: 
       </div>
     </div>
   )
+})
+
+export function EstateOutlookChart(props: EstateOutlookChartProps) {
+  return <EstateOutlookChartInner {...props} />
 }

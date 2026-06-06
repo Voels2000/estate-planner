@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (MC Phase 3 UI — EstateOutlookChart exemption threshold line shipped)
+# Last updated: 2026-06-05 (Phase 3 UI complete + cleanup/perf/constants pass)
 
 ---
 
@@ -19,16 +19,35 @@
 
 ## Current sprint
 
-### Sprint — MC Phase 3 UI wiring `[~]` **in progress**
+### Sprint — Codebase cleanup + perf/constants `[x]` **complete (2026-06-05)**
+
+| Item | Status |
+|------|--------|
+| Dead code — `AssetAllocationSummary`, orphan `_attorney-client`, `buildAllocationContext` | `[x]` |
+| Estate-tax page — drop unused asset/RE/business fetches (composition RPC only) | `[x]` |
+| `/my-advisor` — multi-row `advisor_clients` safe (`.order('accepted_at').limit(1)`) | `[x]` |
+| Constants — `lib/gifting/perRecipientLimit.ts` (annual exclusion limits) | `[x]` |
+| Estate-tax — remove `$3M` bypass-trust fallback; use bracket exemption | `[x]` |
+| PDF narrative — `firstTaxYearP10` from stored MC signal (fallback to band scan) | `[x]` |
+| Perf — memo `EstateOutlookChart`, extract `MonteCarloFanChart`, scenarios row `Map` index | `[x]` |
+| Fetch dedup — `getFullHouseholdForOwner` (`React.cache`) on dashboard | `[x]` |
+
+**Deferred:** titling memo/code-split · table virtualization · export panel flat 40% federal → bracket engine.
+
+---
+
+### Sprint — MC Phase 3 UI wiring `[x]` **complete**
 
 | Surface | Signal | Copy / UI | Status |
 |---------|--------|-----------|--------|
 | Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | Depletion Risk tile (% below floor at death); green ≤20%, red >20% | `[x]` |
-| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” | `[ ]` |
-| PDF cover narrative | `first_tax_year_p10` | Phase 2D — confirm reads stored value | `[ ]` |
+| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | Probability sentence below state tax waterfall row | `[x]` |
+| PDF cover narrative | `first_tax_year_p10` | Stored MC signal on `PDFReportData`; band-scan fallback | `[x]` |
 | Projections `EstateOutlookChart` | `stateExemption` (`state_estate_tax_rules`) | Amber dashed threshold line + legend on fan chart | `[x]` |
 
 **Prerequisite:** Phase 3 signals compute + store shipped (`runEstateMonteCarloAsync` + `loadScenarioMonteCarlo`).
+
+**Voels smoke:** Depletion Risk 0% · fan chart amber line ~$2.19M · estate-tax “all simulated market scenarios” (pct 100).
 
 ---
 
@@ -41,7 +60,7 @@
 | `loadScenarioMonteCarlo` — unified loader returns all four fields | `[x]` |
 | `MC_DEPLETION_FLOOR` constant (`500_000`) | `[x]` |
 | Voels smoke — `first_tax_year_p10=2026`, `depletion=0`, `threshold_years=25` | `[x]` |
-| UI surfaces (estate-tax, PDF, Strategy, projections chart) | `[~]` projections chart threshold line shipped; estate-tax + PDF remain |
+| UI surfaces (estate-tax, PDF confirm, Strategy, projections chart) | `[x]` three consumer/advisor surfaces shipped; PDF `first_tax_year_p10` confirm optional |
 
 **State exemption source:** `stateBrackets[0].exemption_amount` (not hardcoded $3M).
 
@@ -114,7 +133,7 @@
 | 2C | PDF SVG polygon bands (`generatePDFReport`) | `[x]` |
 | 2D | Narrative one-liner (`narrativeEngine`) | `[x]` |
 | 3 | Signals — threshold prob, first tax year, longevity depletion (store only) | `[x]` |
-| 3 UI | Surface signals on estate-tax, PDF, Strategy, projections | `[~]` Strategy + projections chart shipped |
+| 3 UI | Surface signals on estate-tax, PDF, Strategy, projections | `[x]` |
 
 **Commits (Phase 0–2D):** `e8b6745`, `d979459`, `fe53112`, `55646a2`, `197f341`, `548b3c7`, `f14af7e`, `aaf46b4`, `fc9cddd`.
 
@@ -124,7 +143,7 @@
 
 | Item | Notes |
 |------|-------|
-| MC Phase 3 UI wiring | See current sprint — estate-tax, PDF confirm, MonteCarloPanel, EstateOutlookChart |
+| MC Phase 3 UI wiring | `[x]` complete — depletion tile, EstateOutlookChart line, `/estate-tax` MC copy |
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
 | Portal `profiles.firm_name` fallback | Nav label when `firm_id` null |

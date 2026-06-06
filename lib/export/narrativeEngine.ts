@@ -112,11 +112,24 @@ function buildMCNarrativeLine(
   stateCode: string | null | undefined,
   stateExemption: number | null | undefined,
   federalExemptionAmount: number,
+  firstTaxYearP10?: number | null,
 ): string | null {
-  if (!projectionChartBands || projectionChartBands.length === 0) return null
-
   const code = stateCode?.toUpperCase().trim() ?? null
   const noPortability = Boolean(code && getPortabilityGapLabel(code))
+  const stateLabel = noPortability && code ? `${code} estate` : 'estate'
+
+  if (firstTaxYearP10 != null) {
+    const age = projectionChartRows.find((row) => row.year === firstTaxYearP10)?.age ?? null
+    if (age != null) {
+      return (
+        `Under adverse market conditions, ${stateLabel} tax exposure ` +
+        `may begin as early as age ${age}.`
+      )
+    }
+  }
+
+  if (!projectionChartBands || projectionChartBands.length === 0) return null
+
   const threshold =
     noPortability && stateExemption && stateExemption > 0
       ? stateExemption
@@ -127,8 +140,6 @@ function buildMCNarrativeLine(
 
   const age = projectionChartRows.find((row) => row.year === firstTaxBand.year)?.age ?? null
   if (!age) return null
-
-  const stateLabel = noPortability && code ? `${code} estate` : 'estate'
 
   return (
     `Under adverse market conditions, ${stateLabel} tax exposure ` +
@@ -143,6 +154,7 @@ function appendMcNarrativeLine(detail: string, data: PDFReportData): string {
     data.domicileState,
     data.stateBrackets?.[0]?.exemption_amount ?? null,
     data.federalExemption ?? currentFederalExemption(data.filingStatus),
+    data.firstTaxYearP10,
   )
   return mcLine ? `${detail} ${mcLine}` : detail
 }
