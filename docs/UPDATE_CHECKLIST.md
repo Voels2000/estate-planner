@@ -679,6 +679,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] `estimateStrategySavings.ts` — catalog keys (`cst`, `ilit`, `annual_gifting`, …)
 - [x] `CompositeOverlay` — hide waterfall when no active recommendations
 - [x] `MonteCarloPanel` — empty state before first run
+- [x] `MonteCarloPanel` — precomputed Depletion Risk tile (`longevity_depletion_pct` from `mcSummary`)
 - [x] Master docs synced
 - [ ] **Post-deploy smoke:** Advisor Strategy tab — CST/ILIT savings lines · composite empty state
 

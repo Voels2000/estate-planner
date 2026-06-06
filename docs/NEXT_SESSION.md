@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
+# Updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
+
+---
+
+## MC Phase 3 UI — MonteCarloPanel depletion tile ✅ (2026-06-05)
+
+**Shipped:** Precomputed **Depletion Risk** tile on advisor **`MonteCarloPanel`** — reads **`longevity_depletion_pct`** + **`depletion_floor_amount`** from **`mcSummary`** (`loadScenarioMonteCarlo`). Shows before edge Run (Voels: **0%** green) and as fifth tile after edge results. No changes to edge-run logic or existing four stat tiles.
+
+**Files:** `components/advisor/MonteCarloPanel.tsx` · `app/advisor/clients/[clientId]/_tabs/StrategyTab.tsx`
+
+**Remaining Phase 3 UI:** `/estate-tax` threshold copy · PDF `first_tax_year_p10` confirm · `EstateOutlookChart` threshold line.
 
 ---
 

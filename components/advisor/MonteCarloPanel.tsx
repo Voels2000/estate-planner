@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
+import { MC_DEPLETION_FLOOR } from '@/lib/calculations/estate-monte-carlo'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 
 interface MonteCarloResult {
@@ -57,6 +58,8 @@ interface MonteCarloProps {
   supabaseUrl: string
   assumptions?: MonteCarloAssumptions
   mcCalculatedAt?: string | null
+  longevityDepletionPct?: number | null
+  depletionFloorAmount?: number | null
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -77,6 +80,8 @@ export default function MonteCarloPanel({
   supabaseUrl,
   assumptions,
   mcCalculatedAt = null,
+  longevityDepletionPct = null,
+  depletionFloorAmount = null,
 }: MonteCarloProps) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
   const [result, setResult] = useState<MonteCarloResult | null>(null)
@@ -87,6 +92,21 @@ export default function MonteCarloPanel({
 
   const currentAge = new Date().getFullYear() - person1BirthYear
   const yearsUntilDeath = Math.max(5, 85 - currentAge)
+  const showDepletionTile = longevityDepletionPct !== null && longevityDepletionPct !== undefined
+  const depletionFloor = depletionFloorAmount ?? MC_DEPLETION_FLOOR
+  const depletionColor =
+    longevityDepletionPct != null && longevityDepletionPct > 20 ? 'text-red-600' : 'text-green-700'
+
+  const DepletionRiskTile = () =>
+    showDepletionTile ? (
+      <div className="bg-gray-50 rounded-lg p-3 text-center">
+        <div className={`text-lg font-semibold ${depletionColor}`}>{longevityDepletionPct}%</div>
+        <div className="text-xs text-gray-500 mt-1">Depletion Risk</div>
+        <div className="text-[10px] leading-snug text-gray-400 mt-1 px-1">
+          % of scenarios below {fmt(depletionFloor)} at death
+        </div>
+      </div>
+    ) : null
 
   const runMonteCarlo = async () => {
     setLoading(true)
@@ -328,6 +348,12 @@ export default function MonteCarloPanel({
           </div>
         )}
 
+        {showDepletionTile && !result && !loading && (
+          <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <DepletionRiskTile />
+          </div>
+        )}
+
         {!result && !loading && !error && (
           <div className="mb-4 flex flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--mwm-border-secondary)] py-10 text-center">
             <i
@@ -387,6 +413,7 @@ export default function MonteCarloPanel({
                 ) : null}
               </div>
             ))}
+            {showDepletionTile ? <DepletionRiskTile /> : null}
           </div>
 
           {/* Fan chart */}

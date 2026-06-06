@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
+# Last updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
+
+---
+
+## MC Phase 3 UI — MonteCarloPanel depletion tile (2026-06-05)
+
+**Decision:** Surface precomputed **`longevity_depletion_pct`** on advisor **`MonteCarloPanel`** as a **Depletion Risk** stat tile — props from **`mcSummary`** via **`StrategyTab`**. Tile visible when precompute exists (before edge Run); green when ≤20%, red when >20%; hint shows floor from **`depletion_floor_amount`** (default **`MC_DEPLETION_FLOOR`** $500K). Edge-run tiles unchanged.
+
+**Voels:** `longevity_depletion_pct=0` → green **0% Depletion Risk**.
+
+**Remaining:** `/estate-tax` · PDF narrative confirm · **`EstateOutlookChart`** threshold line.
 
 ---
 

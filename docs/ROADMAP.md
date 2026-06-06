@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (MC Phase 3 signals shipped; UI wiring next)
+# Last updated: 2026-06-05 (MC Phase 3 UI — MonteCarloPanel depletion tile shipped)
 
 ---
 
@@ -19,14 +19,14 @@
 
 ## Current sprint
 
-### Sprint — MC Phase 3 UI wiring `[ ]` **next**
+### Sprint — MC Phase 3 UI wiring `[~]` **in progress**
 
-| Surface | Signal | Copy / UI |
-|---------|--------|-----------|
-| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” |
-| PDF cover narrative | `first_tax_year_p10` | Already wired in Phase 2D — confirm reads stored value |
-| Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | “0% of scenarios show estate depletion by age 90” |
-| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on the fan chart |
+| Surface | Signal | Copy / UI | Status |
+|---------|--------|-----------|--------|
+| Strategy tab / `MonteCarloPanel` | `longevity_depletion_pct` | Depletion Risk tile (% below floor at death); green ≤20%, red >20% | `[x]` |
+| Consumer `/estate-tax` | `wa_threshold_prob_by_year` | “In most market scenarios your estate is above the WA threshold today” | `[ ]` |
+| PDF cover narrative | `first_tax_year_p10` | Phase 2D — confirm reads stored value | `[ ]` |
+| Projections `EstateOutlookChart` | `wa_threshold_prob_by_year` | Threshold line on the fan chart | `[ ]` |
 
 **Prerequisite:** Phase 3 signals compute + store shipped (`runEstateMonteCarloAsync` + `loadScenarioMonteCarlo`).
 
