@@ -1,6 +1,18 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (advisor portal firm_name fallback)
+# Updated: 2026-06-06 (base-case staleness bump + Voels regenerate verified)
+
+---
+
+## Base-case regenerate — engine C→B stored rows (2026-06-06)
+
+**Problem:** Engine C→B shipped in code; stored **`outputs_s1_first`** death-year taxes only refresh after **`generateBaseCase`**.
+
+**Fix:** Migration **`20260605130000_bump_staleness_after_engine_cb.sql`** — **`UPDATE households SET updated_at = NOW()`** where **`base_case_scenario_id IS NOT NULL`** (same pattern as ENG-2 growth assumptions). Dashboard, **`/my-estate-strategy`**, and advisor client pages auto-regenerate in background when stale.
+
+**Voels verify:** **`scripts/regenerate-base-case-voels.ts`** — POST **`/api/advisor/generate-base-case`**; death year **2057** state tax **$18,273,170** (engine B parity).
+
+**Next:** export federal flat 40% → bracket engine (deferred) · titling perf (deferred).
 
 ---
 

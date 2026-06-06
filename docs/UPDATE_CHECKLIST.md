@@ -68,6 +68,12 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Base-case regenerate — engine C→B staleness bump (2026-06-06) — shipped
+
+- [x] Migration `20260605130000_bump_staleness_after_engine_cb.sql` — bump `households.updated_at` for all saved base cases
+- [x] `scripts/regenerate-base-case-voels.ts` — advisor API regenerate + death-year **2057** state tax verify
+- [x] ROADMAP · DECISION_LOG · NEXT_SESSION synced
+
 ## Advisor portal — `profiles.firm_name` fallback (2026-06-05) — shipped
 
 - [x] `getAccessContext` — `firm_name: firms.name → profiles.firm_name`

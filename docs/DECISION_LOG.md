@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (advisor portal firm_name fallback)
+# Last updated: 2026-06-06 (base-case staleness bump + Voels regenerate verified)
+
+---
+
+## Base-case regenerate — engine C→B stored rows (2026-06-06)
+
+**Decision:** Post engine C→B deploy, bump **`households.updated_at`** for all households with a saved base case so **`isProjectionStale`** fires and **`generateBaseCase`** runs on next dashboard / estate-strategy / advisor client load. Mirrors ENG-2 growth-assumptions backfill (**`20260527130400`**).
+
+**Voels:** Death year **2057** **`estate_tax_state`** = **$18,273,170** before and after explicit regenerate — stored rows already engine B; migration ensures other households catch up without manual SQL.
+
+**Files:** `supabase/migrations/20260605130000_bump_staleness_after_engine_cb.sql` · `scripts/regenerate-base-case-voels.ts`
 
 ---
 
