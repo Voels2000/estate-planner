@@ -1,10 +1,10 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (advisor export branding recon)
+# Updated: 2026-06-05 (fetchAdvisorProfile debug logging)
 
 ---
 
-## Advisor export branding — recon ✅ · seed next (2026-06-05)
+## Advisor export branding — recon ✅ · debug logs shipped (2026-06-05)
 
 **Wiring (already shipped):** Export PDF + meeting brief read advisor branding from **`profiles`**:
 
@@ -16,13 +16,20 @@
 | `email` | Cover contact line |
 | `firm_logo_url` | `resolveAdvisorBranding` only — **not rendered in PDF HTML yet** |
 
-**Load path:** `fetchAdvisorProfile()` in **`lib/export-wiring.ts`** → **`resolveAdvisorBranding()`** in **`advisorBriefHelpers.ts`** → **`exportMappers.ts`** / **`meeting-prep-pdf/route.ts`**.
+**Load path:** `fetchAdvisorProfile()` in **`lib/export-wiring.ts`** → **`resolveAdvisorBranding()`** → **`exportMappers.ts`** / **`meeting-prep-pdf/route.ts`**.
 
-**Gap:** No advisor settings UI writes `profiles.firm_name` / `phone`. **`app/advisor/firm`** is firm-seat management (`access.firm_name`), not profile branding edit.
+**DB (Voels):** Alan advisor `854051be…` — `firm_name: Voels Financial Group`, `phone: (218) 555-0147`. **`exportWiring: true`** on `meeting-prep` path (not the null stub).
 
-**Next (in order):**
-1. Seed Voels advisor `profiles` row (`854051be-…` or e2e-advisor) — smoke `?type=report` + meeting brief for real firm name / phone.
-2. Advisor profile settings UI (deferred).
+**Why PDF may still show `'My Wealth Maps'`:**
+1. Logged in as **e2e-advisor** (smoke) — `firm_name` null in DB.
+2. **`fetchAdvisorProfile`** query error → silent null stub (check server log).
+3. **Advisor portal UI** uses **`firms.name`** / `firm_id` — Alan has no firm row → shows **"Firm"**, not a PDF bug.
+
+**Debug (shipped):** Server logs in **`fetchAdvisorProfile`** — `[fetchAdvisorProfile] firm_name: … for: <userId>` or `[fetchAdvisorProfile] failed for userId: …`.
+
+**Next:**
+1. Open Voels `?type=report` logged in as **`avoels@comcast.net`** — expect log `firm_name: Voels Financial Group`.
+2. Advisor profile settings UI (deferred) · unify portal UI with `profiles.firm_name` or create `firms` row.
 3. Optional — PDF cover logo from `firm_logo_url`.
 
 **Also open:** Voels `StateTaxPanel` spot-check · base-case regenerate rollout.

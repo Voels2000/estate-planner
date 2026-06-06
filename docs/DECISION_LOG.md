@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (advisor export branding recon)
+# Last updated: 2026-06-05 (fetchAdvisorProfile debug logging)
+
+---
+
+## fetchAdvisorProfile debug logging — PDF firm name diagnosis (2026-06-05)
+
+**Decision:** Added server logs in **`fetchAdvisorProfile`** (`lib/export-wiring.ts`) — `console.error` on query failure (userId + message); `console.log` on success (`firm_name` + userId). Confirms whether PDF `'My Wealth Maps'` fallback is silent fetch failure vs wrong session advisor vs null DB row.
+
+**Root cause (recon):** `meeting-prep` / `?type=report` path has **`exportWiring: true`** — stub not used. Alan Voels (`854051be…`) has **`profiles.firm_name = Voels Financial Group`** in DB. Advisor portal UI reads **`firms.name`** via **`firm_id`** (null for Alan) — separate from export branding. Smoke scripts use **e2e-advisor** (`firm_name` null) → PDF shows `'My Wealth Maps'` unless logged in as Alan.
+
+**Next:** Hit `?type=report` as Alan; read server log line. Remove or gate logs after diagnosis.
 
 ---
 

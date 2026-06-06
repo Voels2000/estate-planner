@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (advisor export branding recon)
+# Last updated: 2026-06-05 (fetchAdvisorProfile debug logging)
 
 ---
 
@@ -24,11 +24,13 @@
 | Item | Status |
 |------|--------|
 | Recon — `profiles` fields used by PDF / brief | `[x]` |
-| Seed Voels advisor `profiles.firm_name` + `phone` for smoke | `[ ]` |
+| Seed Voels advisor `profiles.firm_name` + `phone` for smoke | `[x]` Alan `854051be…` |
+| `fetchAdvisorProfile` server logs (success + error) | `[x]` |
+| Confirm PDF as Alan (`avoels@comcast.net`) — check server log | `[ ]` |
 | Advisor profile settings UI | `[ ]` |
 | PDF cover logo from `firm_logo_url` | `[ ]` |
 
-**Decision:** Seed before settings UI — export wiring complete; defaults `'My Wealth Maps'` / `'Your Advisor'` until seeded.
+**Note:** Portal UI firm label uses **`firms.name`** (`firm_id`), not `profiles.firm_name`. Export PDF uses **`profiles.firm_name`** via `fetchAdvisorProfile`.
 
 ---
 
@@ -78,7 +80,8 @@
 |------|-------|
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
-| Advisor export branding — seed `profiles.firm_name` / `phone` (Voels smoke) | Before settings UI; PDF + brief already wired via `resolveAdvisorBranding` |
+| Advisor export branding — seed `profiles.firm_name` / `phone` (Voels smoke) | Alan seeded; confirm PDF as Alan not e2e-advisor |
+| `fetchAdvisorProfile` debug logs | Shipped — check server log on `?type=report` |
 | Advisor profile settings UI | Edit `profiles` branding; deferred until post-seed smoke |
 
 ---
