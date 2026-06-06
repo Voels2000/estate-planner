@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-05 (export gross alignment — Option A shipped)
+# Last updated: 2026-06-05 (advisor export branding recon)
+
+---
+
+## Advisor export branding — seed profiles before settings UI (2026-06-05)
+
+**Decision:** PDF cover / meeting brief branding reads **`profiles`** via **`fetchAdvisorProfile`** → **`resolveAdvisorBranding`** (`full_name`, `email`, `firm_name`, `phone`, `firm_logo_url`). No advisor settings UI writes those columns today; **`app/advisor/firm`** uses firm-access context, not profile edit. **Seed `profiles.firm_name` / `phone` in Supabase for Voels smoke** before building settings UI — export surfaces already wired; defaults are `'My Wealth Maps'` / `'Your Advisor'`. **`firm_logo_url`** resolved but not rendered in **`generatePDFReport.ts`** yet.
+
+**Files:** `lib/export-wiring.ts`, `lib/advisor/advisorBriefHelpers.ts`, `lib/advisor/exportMappers.ts`, `app/api/advisor/meeting-prep-pdf/[clientId]/route.ts`, `lib/export/generatePDFReport.ts`.
+
+**Next:** Voels advisor row seed · advisor profile settings page (deferred) · optional logo on PDF cover.
 
 ---
 

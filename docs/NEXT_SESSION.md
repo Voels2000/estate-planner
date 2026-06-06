@@ -1,6 +1,31 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-05 (export gross alignment — Option A shipped)
+# Updated: 2026-06-05 (advisor export branding recon)
+
+---
+
+## Advisor export branding — recon ✅ · seed next (2026-06-05)
+
+**Wiring (already shipped):** Export PDF + meeting brief read advisor branding from **`profiles`**:
+
+| Column | Used by |
+|--------|---------|
+| `full_name` | `advisorName` (fallback `'Your Advisor'`) |
+| `firm_name` | `firmName` (fallback `'My Wealth Maps'`) |
+| `phone` | Cover + brief contact line |
+| `email` | Cover contact line |
+| `firm_logo_url` | `resolveAdvisorBranding` only — **not rendered in PDF HTML yet** |
+
+**Load path:** `fetchAdvisorProfile()` in **`lib/export-wiring.ts`** → **`resolveAdvisorBranding()`** in **`advisorBriefHelpers.ts`** → **`exportMappers.ts`** / **`meeting-prep-pdf/route.ts`**.
+
+**Gap:** No advisor settings UI writes `profiles.firm_name` / `phone`. **`app/advisor/firm`** is firm-seat management (`access.firm_name`), not profile branding edit.
+
+**Next (in order):**
+1. Seed Voels advisor `profiles` row (`854051be-…` or e2e-advisor) — smoke `?type=report` + meeting brief for real firm name / phone.
+2. Advisor profile settings UI (deferred).
+3. Optional — PDF cover logo from `firm_logo_url`.
+
+**Also open:** Voels `StateTaxPanel` spot-check · base-case regenerate rollout.
 
 ---
 

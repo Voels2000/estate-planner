@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-05 (export gross alignment — Option A shipped)
+# Last updated: 2026-06-05 (advisor export branding recon)
 
 ---
 
@@ -18,6 +18,19 @@
 ---
 
 ## Current sprint
+
+### Next up — advisor export branding
+
+| Item | Status |
+|------|--------|
+| Recon — `profiles` fields used by PDF / brief | `[x]` |
+| Seed Voels advisor `profiles.firm_name` + `phone` for smoke | `[ ]` |
+| Advisor profile settings UI | `[ ]` |
+| PDF cover logo from `firm_logo_url` | `[ ]` |
+
+**Decision:** Seed before settings UI — export wiring complete; defaults `'My Wealth Maps'` / `'Your Advisor'` until seeded.
+
+---
 
 ### Sprint — export gross alignment (Option A) `[x]` **complete**
 
@@ -65,6 +78,8 @@
 |------|-------|
 | Voels advisor `StateTaxPanel` spot-check | Domain 4 remainder — browser smoke on badge + exemption headers |
 | Base-case regenerate (all households) | Stored `outputs_s1_first` picks up engine B after `generateBaseCase` |
+| Advisor export branding — seed `profiles.firm_name` / `phone` (Voels smoke) | Before settings UI; PDF + brief already wired via `resolveAdvisorBranding` |
+| Advisor profile settings UI | Edit `profiles` branding; deferred until post-seed smoke |
 
 ---
 
