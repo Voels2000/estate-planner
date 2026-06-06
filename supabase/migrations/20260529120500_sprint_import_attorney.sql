@@ -22,6 +22,8 @@ create table if not exists document_gap_dismissals (
 
 alter table document_gap_dismissals enable row level security;
 
+drop policy if exists "Attorneys manage own gap dismissals" on document_gap_dismissals;
+
 create policy "Attorneys manage own gap dismissals"
   on document_gap_dismissals for all
   using (attorney_id = auth.uid())
