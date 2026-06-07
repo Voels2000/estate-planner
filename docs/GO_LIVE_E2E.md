@@ -6,7 +6,7 @@ Run these against **production** (`PLAYWRIGHT_BASE_URL` in `.env.test`, default 
 
 **GitHub Actions (pre-go-live):** Enable E2E smoke on every `main` push/PR before open signups — [LAUNCH_CHECKLIST § GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live). Workflow runs against localhost + production Supabase; local pre-flight below uses production URL.
 
-**Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) runs Voels MC + PDF checks. Manual: `npm run verify:post-deploy-voels`.
+**Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) **backfills missing Voels MC cache**, then runs the 7 checks. Manual: `npm run verify:post-deploy-voels` (no auto-remediate) or `npm run smoke:mc-voels` for immediate backfill.
 
 ---
 

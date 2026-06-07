@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { runEstateMonteCarloAsync } from '@/lib/actions/run-estate-monte-carlo-async'
 import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
@@ -79,6 +80,39 @@ export type RunPostDeployVoelsOptions = {
   supabaseUrl?: string
   serviceRoleKey?: string
   anonKey?: string
+  /** When true (daily cron), backfill missing Voels MC cache before running checks. */
+  remediate?: boolean
+}
+
+async function voelsMcHasBands(admin: SupabaseClient, scenarioId: string): Promise<boolean> {
+  const mc = await loadScenarioMonteCarlo(scenarioId, admin)
+  return Boolean(mc?.percentiles_by_year?.length)
+}
+
+/** Re-run MC precompute for Voels when monte_carlo_results is missing (cron self-heal). */
+export async function ensureVoelsMonteCarloCached(
+  admin: SupabaseClient,
+  householdId: string,
+  scenarioId: string,
+): Promise<{ ok: true } | { ok: false; detail: string }> {
+  if (await voelsMcHasBands(admin, scenarioId)) {
+    return { ok: true }
+  }
+
+  try {
+    await runEstateMonteCarloAsync(householdId, scenarioId, admin)
+  } catch (e) {
+    return {
+      ok: false,
+      detail: `MC precompute failed: ${e instanceof Error ? e.message : String(e)}`,
+    }
+  }
+
+  if (await voelsMcHasBands(admin, scenarioId)) {
+    return { ok: true }
+  }
+
+  return { ok: false, detail: `MC precompute ran but monte_carlo_results still empty for ${scenarioId}` }
 }
 
 /** Voels MC Phase 3 + PDF narrative gate — used by CLI script and post-deploy cron. */
@@ -113,6 +147,19 @@ export async function runPostDeployVoelsChecks(
   }
 
   const scenarioId = household.base_case_scenario_id ?? VOELS_SCENARIO_ID
+
+  if (options.remediate) {
+    const healed = await ensureVoelsMonteCarloCached(admin, household.id, scenarioId)
+    record(
+      'mc-precompute-remediate',
+      healed.ok,
+      healed.ok
+        ? `Voels MC cache OK for scenario ${scenarioId}`
+        : healed.detail,
+    )
+    if (!healed.ok) return checks
+  }
+
   const mc = await loadScenarioMonteCarlo(scenarioId, admin)
 
   const bands = mc?.percentiles_by_year ?? []
@@ -120,7 +167,7 @@ export async function runPostDeployVoelsChecks(
     record(
       'mc-precompute',
       false,
-      `No monte_carlo_results for scenario ${scenarioId} — run: npx dotenv -e .env.local -- npx tsx scripts/smoke-mc-precompute-voels.ts`,
+      `No monte_carlo_results for scenario ${scenarioId} — run: npm run smoke:mc-voels`,
     )
     return checks
   }
