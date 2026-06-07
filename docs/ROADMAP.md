@@ -154,6 +154,7 @@
 | **ATG intake + composition** | `[x]` — gifting tab section + `/api/consumer/adjusted-taxable-gifts` + RPC `20260701120000` |
 | **Consumer MC full parity** | `[x]` — 7 advisor assumption fields on `/monte-carlo` |
 | **Attorney portal collaboration v2** | `[x]` — requests inbox, matter workflow, doc requests, firm notes, settings |
+| **Attorney weekly digest email** | `[x]` — cron §10 Fridays; gaps, doc requests, stale matter stage |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `10cd004` · `0b375ae` · `fde50cc` · `e1047a7`
@@ -1454,8 +1455,6 @@ invite-your-advisor Path A onboarding; A/B exit criteria.
 - **Dashboard projection-setup nudge (low priority)** — When `checkProjectionReadiness().canShowPartial` is true (assets/income present but birth year or retirement age missing), show a subtle card on `/dashboard` (“Add your retirement age to see your full timeline” → `/projections` or inline prompt). **Deferred:** add noise before funnel data; revisit after ~2 weeks of real traffic on the scenarios → projections path. Projections page already shows inline `ProfileFieldPrompt` for partial users.
 
 - **Attorney drip cron verification (ops)** — After the first real attorney registers, confirm steps 2–3 fire via daily `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Cron schedules step 2 when `attorney_drip_step_1_sent_at` is ≥3 days ago; step 3 when step 1 is ≥7 days ago (same pattern as advisor drip — **not** `profiles.created_at`). Manual check ~3 days after first signup: SQL + Resend inbox. See [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops), [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
-
-- **Attorney weekly digest email** — Schema shipped (`profiles.attorney_digest_sent_at`, migration `20260703120000`). **Code backlog:** Resend template + send route + cron §10 (6-day cooldown); content: document gaps (`getMissingDocumentAlerts`), pending `attorney_document_requests`, stale `matter_stage`. See [NEXT_SESSION.md § Attorney weekly digest](./NEXT_SESSION.md#attorney-weekly-digest--schema-prep-2026-06-07).
 
 ---
 

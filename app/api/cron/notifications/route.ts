@@ -488,6 +488,49 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── §10. Attorney weekly digest — Fridays only, 6-day cooldown ────────────
+  const isFriday = now.getUTCDay() === 5
+  const sixDaysAgo = new Date(now)
+  sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
+
+  if (isFriday) {
+    const { data: digestCandidates } = await supabase
+      .from('profiles')
+      .select('id, email, role, is_attorney, attorney_digest_sent_at')
+      .not('email', 'is', null)
+      .or('role.eq.attorney,is_attorney.eq.true')
+
+    for (const attorney of digestCandidates ?? []) {
+      const isAttorney = attorney.role === 'attorney' || attorney.is_attorney === true
+      if (!isAttorney) continue
+
+      const lastSent = attorney.attorney_digest_sent_at
+        ? new Date(attorney.attorney_digest_sent_at)
+        : null
+      if (lastSent && lastSent > sixDaysAgo) continue
+
+      const res = await fetch(`${BASE_URL}/api/email/attorney-digest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+        },
+        body: JSON.stringify({ attorney_id: attorney.id }),
+      }).catch(() => null)
+
+      if (res?.ok) {
+        const payload = (await res.json().catch(() => ({}))) as {
+          success?: boolean
+          skipped?: boolean
+        }
+        if (payload.success) results.sent++
+        else results.skipped++
+      } else {
+        results.errors++
+      }
+    }
+  }
+
   console.log('[cron:notifications]', results)
   return NextResponse.json({ ok: true, ...results })
 }

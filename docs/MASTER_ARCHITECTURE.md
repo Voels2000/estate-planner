@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (attorney digest schema prep)
+# Last updated: 2026-06-07 (attorney weekly digest shipped)
 
 ---
 
@@ -1145,7 +1145,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 | Upgrade prompts | `components/attorney/AttorneyUpgradePrompt.tsx` — client cap, PDF export, doc dashboard blur |
 | Cap enforcement | `lib/attorney/attorneyClientCap.ts`; 403 on `grant-access` + `accept-request` |
 | Drip | `lib/attorney/sendAttorneyDripStep.ts`; step 1 on signup/claim/portal; steps 2–3 in cron |
-| Weekly digest (planned) | `profiles.attorney_digest_sent_at` (migration `20260703120000`); cron §10 + `/api/email/attorney-digest` not shipped — gaps, doc requests, matter stage |
+| Weekly digest | `lib/attorney/sendAttorneyDigest.ts`; `getAttorneyDigestData.ts`; cron §10 Fridays + 6-day cooldown on `attorney_digest_sent_at`; gaps, pending doc requests, stale matter stage |
 
 **Manual before go-live:** Create Stripe products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY`, `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 

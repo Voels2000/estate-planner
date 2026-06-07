@@ -1,16 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (attorney digest schema prep)
+# Last updated: 2026-06-07 (attorney weekly digest shipped)
 
 ---
 
-## Attorney weekly digest — schema prep (2026-06-07)
+## Attorney weekly digest — shipped ✅ (2026-06-07)
 
-**Migration:** `20260703120000_attorney_digest_sent_at.sql` — **`profiles.attorney_digest_sent_at`** (last send; 6-day cooldown for cron §10).
+**Shipped:** Weekly Resend email for attorneys with active clients — document gaps (`getMissingDocumentAlerts` + dismissals), pending **`attorney_document_requests`**, stale **`matter_stage`** (30+ days, not `complete`). Skips when nothing actionable.
 
-**Next (code):** Weekly digest email — document gaps, pending **`attorney_document_requests`**, stale **`matter_stage`**; mirror attorney drip Resend pattern (`lib/emails/attorney-drip-templates.ts`, `sendAttorneyDripStep.ts`); add cron §10 in **`app/api/cron/notifications/route.ts`**.
+**Files:** `lib/emails/attorney-digest-template.ts` · `lib/attorney/getAttorneyDigestData.ts` · `lib/attorney/sendAttorneyDigest.ts` · `POST /api/email/attorney-digest`
 
-**Apply migration:** `supabase db push` when ready.
+**Cron:** `GET /api/cron/notifications` §10 — **Fridays only**; 6-day cooldown on **`profiles.attorney_digest_sent_at`**
+
+**Migration:** `20260703120000_attorney_digest_sent_at.sql` (apply via `supabase db push` if not on remote)
+
+**Smoke:** `POST /api/email/attorney-digest` with e2e attorney id → `{ success: true }`; BCC `avoels@comcast.net`
 
 ---
 

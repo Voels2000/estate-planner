@@ -220,7 +220,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 |--------|--------|
 | `profiles.attorney_digest_sent_at` | Timestamptz — last weekly digest email sent; 6-day cooldown for cron §10 |
 
-**Code (planned):** `GET /api/cron/notifications` §10 → `POST /api/email/attorney-digest`; template + send helper mirroring attorney drip. Not shipped yet — schema only.
+**Code:** `GET /api/cron/notifications` §10 (Fridays, 6-day cooldown) → `POST /api/email/attorney-digest`; `lib/emails/attorney-digest-template.ts`, `lib/attorney/getAttorneyDigestData.ts`, `lib/attorney/sendAttorneyDigest.ts`. Content: document gaps (`getMissingDocumentAlerts` + `document_gap_dismissals`), pending `attorney_document_requests`, stale `matter_stage` (30+ days, not `complete`). Skips send when nothing actionable.
 
 **Apply on remote:** `20260703120000_attorney_digest_sent_at.sql`.
 
@@ -1748,7 +1748,11 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 ## Session 128 Note
 
 - Schema: migration **`20260703120000_attorney_digest_sent_at.sql`** — **`profiles.attorney_digest_sent_at`** (weekly digest send timestamp; 6-day cron cooldown).
-- Application-layer — attorney weekly digest email + cron §10 **not yet implemented** (schema prep only).
+- Application-layer — attorney weekly digest email + cron §10:
+  - **`lib/emails/attorney-digest-template.ts`**, **`lib/attorney/getAttorneyDigestData.ts`**, **`lib/attorney/sendAttorneyDigest.ts`**, **`POST /api/email/attorney-digest`**
+  - Cron §10 in **`app/api/cron/notifications/route.ts`** — Fridays only (`isFriday`); 6-day cooldown on **`attorney_digest_sent_at`**
+  - Gaps via **`getMissingDocumentAlerts(documents, dismissals)`** — `legal_documents` (`is_deleted = false`); dismissals use **`document_gap_dismissals.attorney_id`** = profile id (auth uid)
+  - Smoke: e2e attorney **`88a891a9-f57d-4b08-8873-293b3b411374`** → `{ success: true }`; **`attorney_digest_sent_at`** stamped
 
 ## Session 127 Note
 
