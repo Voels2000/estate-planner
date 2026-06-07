@@ -19,7 +19,7 @@ const RATE_WINDOW_MS = 60 * 1000
  */
 export async function POST(req: NextRequest) {
   const ip = clientIp(req)
-  const rl = checkRateLimit(`referral-track:${ip}`, RATE_MAX, RATE_WINDOW_MS)
+  const rl = await checkRateLimit(`referral-track:${ip}`, RATE_MAX, RATE_WINDOW_MS)
   if (!rl.allowed) {
     return NextResponse.json(
       { ok: false, error: 'Too many requests' },

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateBaseCase } from '@/lib/actions/generate-base-case'
 import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,25 +12,21 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { householdId } = await request.json()
-  if (!householdId) return NextResponse.json({ error: 'householdId required' }, { status: 400 })
+  const body = await request.json()
+  const parsed = parseHouseholdIdBody(body)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-  // Verify the logged-in user owns this household
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('id', householdId)
-    .eq('owner_id', user.id)
-    .single()
+  const access = await requireHouseholdAccess(supabase, user.id, parsed.householdId, {
+    ownerOnly: true,
+  })
+  if (!access.ok) return access.response
 
-  if (!household) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const result = await generateBaseCase(householdId)
+  const result = await generateBaseCase(parsed.householdId)
   if ('error' in result) {
     return NextResponse.json({ error: result.error }, { status: 500 })
   }
 
-  await afterHouseholdWrite(supabase, householdId)
+  await afterHouseholdWrite(supabase, parsed.householdId)
 
   return NextResponse.json({ success: true, scenarioId: result.scenarioId })
 }

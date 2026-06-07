@@ -4,7 +4,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
-import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
 import { loadEstatePlanPdfTaxPayload } from '@/lib/export/loadEstatePlanPdfTaxPayload'
 
 export const runtime = 'nodejs'
@@ -12,11 +13,11 @@ export const runtime = 'nodejs'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const householdId = searchParams.get('household_id')
-
-    if (!householdId) {
-      return NextResponse.json({ error: 'household_id is required' }, { status: 400 })
+    const parsed = parseHouseholdIdParam(searchParams.get('household_id'))
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
+    const householdId = parsed.householdId
 
     const cookieStore = await cookies()
 
@@ -66,13 +67,8 @@ export async function GET(request: NextRequest) {
     const variant = searchParams.get('variant') ?? null
     const isAttorneyVariant = variant === 'attorney'
 
-    const access = await assertHouseholdAccess(supabase, user.id, householdId)
-    if (!access.ok) {
-      return NextResponse.json(
-        { error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
-        { status: access.reason === 'not_found' ? 404 : 403 },
-      )
-    }
+    const access = await requireHouseholdAccess(supabase, user.id, householdId)
+    if (!access.ok) return access.response
 
     // Client Summary + attorney intake PDFs need household profile figures (tax + assets).
     const includeFinancialProfile =

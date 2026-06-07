@@ -121,6 +121,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/my-family', label: 'My Family', icon: '👨‍👩‍👧‍👦', feature: 'my-family' },
       { href: '/titling', label: 'Titling & Beneficiaries', icon: '📜', feature: 'titling' },
       { href: '/incapacity-planning', label: 'Incapacity Planning', icon: '🏥', feature: 'incapacity' },
+      { href: '/settings/documents', label: 'Document Vault', icon: '📁', feature: 'document-vault' },
       { href: '/domicile-analysis', label: 'Domicile Analysis', icon: '🗺️', feature: 'domicile-analysis' },
       { href: '/estate-tax', label: 'Estate Tax Snapshot', icon: '⚖️', feature: 'estate-tax' },
       { href: '/my-estate-strategy', label: 'Tax Horizons & Strategy', icon: '📈' },

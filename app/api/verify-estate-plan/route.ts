@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 import { runEstateVerification } from '@/lib/verify/runEstateVerification'
 
 export const runtime = 'nodejs'
@@ -19,23 +20,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = (await request.json()) as { householdId?: string }
-    const householdId = body.householdId?.trim()
-
-    if (!householdId) {
-      return NextResponse.json({ error: 'householdId is required' }, { status: 400 })
+    const body = await request.json()
+    const parsed = parseHouseholdIdBody(body)
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
 
-    const access = await assertHouseholdAccess(supabase, user.id, householdId)
-    if (!access.ok) {
-      return NextResponse.json(
-        { error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
-        { status: access.reason === 'not_found' ? 404 : 403 },
-      )
-    }
+    const access = await requireHouseholdAccess(supabase, user.id, parsed.householdId)
+    if (!access.ok) return access.response
 
     const admin = createAdminClient()
-    const result = await runEstateVerification(admin, { householdId })
+    const result = await runEstateVerification(admin, { householdId: parsed.householdId })
 
     return NextResponse.json({
       passed: result.passed,

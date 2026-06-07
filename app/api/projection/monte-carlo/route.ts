@@ -1,48 +1,32 @@
-/**
- * Advisor Monte Carlo run API.
- *
- * POST runs a Monte Carlo simulation for an advisor-linked household using merged
- * system-default and request-provided assumption overrides.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import {
   runMonteCarloSimulation,
   MONTE_CARLO_SYSTEM_DEFAULTS,
   type MonteCarloAssumptions,
 } from '@/lib/calculations/monteCarlo'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { householdId, grossEstate, assumptions } = (await request.json()) as {
-    householdId: string
-    grossEstate: number
+  const body = await request.json()
+  const parsed = parseHouseholdIdBody(body)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+
+  const { grossEstate, assumptions } = body as {
+    grossEstate?: number
     assumptions?: Partial<MonteCarloAssumptions>
   }
-  if (!householdId || grossEstate == null) {
-    return NextResponse.json({ error: 'householdId and grossEstate required' }, { status: 400 })
+  if (grossEstate == null) {
+    return NextResponse.json({ error: 'grossEstate required' }, { status: 400 })
   }
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('owner_id')
-    .eq('id', householdId)
-    .single()
-  if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-
-  const { data: link } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', user.id)
-    .eq('client_id', household.owner_id)
-    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-    .maybeSingle()
-  if (!link) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const access = await requireHouseholdAccess(supabase, user.id, parsed.householdId)
+  if (!access.ok) return access.response
 
   const mergedAssumptions: MonteCarloAssumptions = {
     ...MONTE_CARLO_SYSTEM_DEFAULTS,

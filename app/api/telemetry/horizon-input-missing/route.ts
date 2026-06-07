@@ -19,7 +19,7 @@ type AllowedSurface =
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req)
-  const rl = checkRateLimit(`horizon-telemetry:${ip}`, RATE_MAX, RATE_WINDOW_MS)
+  const rl = await checkRateLimit(`horizon-telemetry:${ip}`, RATE_MAX, RATE_WINDOW_MS)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },

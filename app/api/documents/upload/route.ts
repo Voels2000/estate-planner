@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAttorneyHouseholdAccess } from '@/lib/attorney/verifyAttorneyHouseholdAccess'
 import { resolveAttorneyProfileId } from '@/lib/attorney/resolveAttorneyProfileId'
+import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
+import { householdIdSchema } from '@/lib/api/schemas/householdAccess'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -26,6 +27,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const householdParsed = householdIdSchema.safeParse(household_id)
+  if (!householdParsed.success) {
+    return NextResponse.json({ error: 'Invalid household_id' }, { status: 400 })
+  }
+  const householdId = householdParsed.data
+
   // ── 3. Validate file is PDF ─────────────────────────────────
   if (file.type !== 'application/pdf') {
     return NextResponse.json(
@@ -43,27 +50,18 @@ export async function POST(req: NextRequest) {
 
   const callerRole = profile?.role
 
-  if (callerRole === 'consumer') {
-    // Consumer must own the household
-    const { data: household } = await supabase
-      .from('households')
-      .select('id')
-      .eq('id', household_id)
-      .eq('owner_id', user.id)
-      .maybeSingle()
+  const vaultAccess = await requireVaultHouseholdAccess(
+    supabase,
+    user.id,
+    householdId,
+    callerRole,
+  )
+  if (!vaultAccess.ok) return vaultAccess.response
 
-    if (!household) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-  } else if (callerRole === 'attorney') {
-    const access = await verifyAttorneyHouseholdAccess(supabase, user.id, household_id)
-    if (!access.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-  } else {
+  if (vaultAccess.role === 'advisor') {
     return NextResponse.json(
       { error: 'Only consumers and attorneys can upload documents' },
-      { status: 403 }
+      { status: 403 },
     )
   }
 
@@ -72,7 +70,7 @@ export async function POST(req: NextRequest) {
   const { data: existingDocs } = await supabase
     .from('legal_documents')
     .select('id, version')
-    .eq('household_id', household_id)
+    .eq('household_id', householdId)
     .eq('document_type', document_type)
     .eq('is_current', true)
     .eq('is_deleted', false)
@@ -93,7 +91,7 @@ export async function POST(req: NextRequest) {
   // Path pattern: households/{household_id}/{document_type}/v{version}_{timestamp}_{filename}
   const timestamp = Date.now()
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const storagePath = `households/${household_id}/${document_type}/v${nextVersion}_${timestamp}_${safeName}`
+  const storagePath = `households/${householdId}/${document_type}/v${nextVersion}_${timestamp}_${safeName}`
 
   const fileBuffer = await file.arrayBuffer()
 
@@ -120,10 +118,10 @@ export async function POST(req: NextRequest) {
   const { data: document, error: dbError } = await supabase
     .from('legal_documents')
     .insert({
-      household_id,
+      household_id: householdId,
       attorney_id: attorney_id ?? null,
       uploaded_by: user.id,
-      uploader_role: callerRole,
+      uploader_role: vaultAccess.role === 'attorney' ? 'attorney' : 'consumer',
       document_type,
       file_name: file.name,
       storage_path: storagePath,
@@ -148,12 +146,11 @@ export async function POST(req: NextRequest) {
 
   // ── 9. Notify the other party (non-fatal) ──────────────────
   try {
-    if (callerRole === 'attorney') {
-      // Attorney uploaded — notify consumer
+    if (vaultAccess.role === 'attorney') {
       const { data: consumerHousehold } = await supabase
         .from('households')
         .select('owner_id')
-        .eq('id', household_id)
+        .eq('id', householdId)
         .single()
 
       if (consumerHousehold?.owner_id) {

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
+import { parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
+import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
 
 export async function GET(
   _req: NextRequest,
@@ -18,8 +20,11 @@ export async function GET(
   }
 
   const { household_id } = await params
+  const parsed = parseHouseholdIdParam(household_id)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
+  }
 
-  // ── 2. Get caller role ─────────────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, consumer_tier, subscription_status')
@@ -28,7 +33,14 @@ export async function GET(
 
   const callerRole = profile?.role
 
-  // ── 3. Check URL params for version history toggle ─────────
+  const vaultAccess = await requireVaultHouseholdAccess(
+    supabase,
+    user.id,
+    parsed.householdId,
+    callerRole,
+  )
+  if (!vaultAccess.ok) return vaultAccess.response
+
   const { searchParams } = new URL(_req.url)
   const includeHistory = searchParams.get('history') === 'true'
 
@@ -49,7 +61,7 @@ export async function GET(
       is_current,
       created_at
     `)
-    .eq('household_id', household_id)
+    .eq('household_id', parsed.householdId)
     .eq('is_deleted', false)
     .order('document_type', { ascending: true })
     .order('version', { ascending: false })
@@ -78,7 +90,7 @@ export async function GET(
     const { data: clientRow } = await supabase
       .from('advisor_clients')
       .select('advisor_pdf_access')
-      .eq('household_id', household_id)
+      .eq('household_id', parsed.householdId)
       .maybeSingle()
 
     advisorPdfAccess = clientRow?.advisor_pdf_access ?? false
@@ -133,7 +145,7 @@ export async function GET(
   // ── 7. Return documents ────────────────────────────────────
   return NextResponse.json({
     success: true,
-    household_id,
+    household_id: parsed.householdId,
     document_count: shaped.length,
     documents: shaped,
   })

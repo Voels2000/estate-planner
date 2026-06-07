@@ -1,41 +1,24 @@
-/**
- * Read API for active advisor-sourced `strategy_line_items` on a household.
- *
- * POST `{ householdId }` — advisor-only; verifies `advisor_clients` link before returning rows.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { householdId } = await request.json()
-  if (!householdId) return NextResponse.json({ error: 'householdId required' }, { status: 400 })
+  const body = await request.json()
+  const parsed = parseHouseholdIdBody(body)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('owner_id')
-    .eq('id', householdId)
-    .single()
-  if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-
-  const { data: link } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', user.id)
-    .eq('client_id', household.owner_id)
-    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-    .maybeSingle()
-  if (!link) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const access = await requireHouseholdAccess(supabase, user.id, parsed.householdId)
+  if (!access.ok) return access.response
 
   const { data, error } = await supabase
     .from('strategy_line_items')
     .select('id, strategy_source, amount, sign, scenario_name, consumer_accepted, consumer_rejected, created_at')
-    .eq('household_id', householdId)
+    .eq('household_id', parsed.householdId)
     .eq('source_role', 'advisor')
     .eq('is_active', true)
     .order('created_at', { ascending: false })

@@ -10,19 +10,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
-import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { householdId?: string; sourceRole?: 'consumer' | 'advisor' }
-    const { householdId, sourceRole } = body
-
-    if (!householdId) {
-      return NextResponse.json(
-        { success: false, error: 'householdId is required' },
-        { status: 400 },
-      )
+    const parsed = parseHouseholdIdBody(body)
+    if (!parsed.ok) {
+      return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
     }
+    const { sourceRole } = body
+    const householdId = parsed.householdId
 
     const supabase = await createClient()
 
@@ -35,13 +34,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const access = await assertHouseholdAccess(supabase, user.id, householdId)
-    if (!access.ok) {
-      return NextResponse.json(
-        { success: false, error: access.reason === 'not_found' ? 'Household not found' : 'Forbidden' },
-        { status: access.reason === 'not_found' ? 404 : 403 },
-      )
-    }
+    const access = await requireHouseholdAccess(supabase, user.id, householdId)
+    if (!access.ok) return access.response
 
     const normalizedSourceRole: 'consumer' | 'advisor' =
       sourceRole === 'advisor' ? 'advisor' : 'consumer'

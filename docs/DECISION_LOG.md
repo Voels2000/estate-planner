@@ -6,6 +6,21 @@
 
 ---
 
+## Competitive scan M1–M4 (2026-06-07)
+
+**Decision:** Ship medium-impact competitive backlog (except M5 attorney billing — Stripe at go-live).
+
+| Item | Approach |
+|------|----------|
+| M1 | `requireHouseholdAccess` + Zod `householdId` on RPC/composition/document/advisor routes |
+| M2 | Consumer `/settings/documents` vault — PDF upload via existing `/api/documents/upload` |
+| M3 | `runPostDeployVoelsChecks` + daily cron `/api/cron/post-deploy-verify` + `npm run verify:post-deploy-voels` |
+| M4 | `@upstash/ratelimit` when `UPSTASH_REDIS_*` set; memory fallback for dev/CI |
+
+**Files:** `lib/api/schemas/householdAccess.ts`, `lib/api/requireVaultAccess.ts`, `components/consumer/ConsumerDocumentVault.tsx`, `lib/verify/runPostDeployVoelsChecks.ts`, `lib/api/simpleRateLimit.ts`
+
+---
+
 ## Competitive scan H1–H4 + GitHub E2E smoke (2026-06-07)
 
 **Decision:** Ship high-impact competitive backlog items before go-live; gate privileged MFA and CI E2E with env flags so automation keeps working until launch.

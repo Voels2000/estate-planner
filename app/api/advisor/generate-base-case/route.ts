@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { generateBaseCase } from '@/lib/actions/generate-base-case'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { createClient } from '@/lib/supabase/server'
+import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,32 +12,17 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!isAdvisor && !isSuperuser) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { householdId } = await request.json()
-  if (!householdId) return NextResponse.json({ error: 'householdId required' }, { status: 400 })
-
-  // Verify advisor has access to this household
-  const admin = createAdminClient()
-  const { data: household } = await admin
-    .from('households')
-    .select('id, owner_id')
-    .eq('id', householdId)
-    .single()
-
-  if (!household) return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+  const body = await request.json()
+  const parsed = parseHouseholdIdBody(body)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
   if (!isSuperuser) {
-    const { data: link } = await admin
-      .from('advisor_clients')
-      .select('id')
-      .eq('advisor_id', user.id)
-      .eq('client_id', household.owner_id)
-      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-      .single()
-
-    if (!link) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const supabase = await createClient()
+    const access = await requireHouseholdAccess(supabase, user.id, parsed.householdId)
+    if (!access.ok) return access.response
   }
 
-  const result = await generateBaseCase(householdId)
+  const result = await generateBaseCase(parsed.householdId)
 
   if ('error' in result) {
     return NextResponse.json({ error: result.error }, { status: 500 })

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
+import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
 
 export async function GET(
   _req: NextRequest,
@@ -44,6 +45,14 @@ export async function GET(
     .single()
 
   const callerRole = profile?.role
+
+  const vaultAccess = await requireVaultHouseholdAccess(
+    supabase,
+    user.id,
+    document.household_id,
+    callerRole,
+  )
+  if (!vaultAccess.ok) return vaultAccess.response
 
   // Download policy: consumer trial users cannot download artifacts.
   if (

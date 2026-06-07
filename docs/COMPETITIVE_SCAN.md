@@ -59,10 +59,10 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | # | Item | Status |
 |---|------|--------|
-| M1 | Expand `assertHouseholdAccess` to all household-scoped API routes + shared Zod schemas | `[ ]` |
-| M2 | Consumer document vault (self-upload) — without full doc generation | `[ ]` |
-| M3 | Wire `verify:estate:voels` into post-deploy checklist / cron | `[ ]` |
-| M4 | Shared rate-limit store (Upstash/Redis) — replace in-memory `simpleRateLimit` | `[ ]` |
+| M1 | Expand `assertHouseholdAccess` to all household-scoped API routes + shared Zod schemas | `[x]` |
+| M2 | Consumer document vault (self-upload) — without full doc generation | `[x]` `/settings/documents` |
+| M3 | Wire `verify:estate:voels` into post-deploy checklist / cron | `[x]` daily cron + `npm run verify:post-deploy-voels` |
+| M4 | Shared rate-limit store (Upstash/Redis) — replace in-memory `simpleRateLimit` | `[x]` Upstash when env set; memory fallback |
 | M5 | Attorney Stripe products live + attorney E2E suite expansion | `[ ]` |
 
 ### Lower impact (scale polish)
@@ -323,5 +323,6 @@ Quarter 3+ (scale)
 
 | Date | Change |
 |------|--------|
+| 2026-06-07 | M1–M4 shipped: household access sweep, consumer document vault, post-deploy verify cron, Upstash rate limits |
 | 2026-06-07 | H1–H4 wired: attorney FK fix, custodian import Phase A, e2e-smoke workflow, privileged MFA flag |
 | 2026-06-07 | Initial competitive scan + prioritized backlog (code review session) |
