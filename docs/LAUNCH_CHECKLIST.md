@@ -74,10 +74,11 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **In-app copy audit** — dashboard, public event/assess, planning surfaces, landing, share links (Sprint 12)
 - [x] **Pre-launch E2E baseline (profile + growth API, 2026-05-27)** — `consumer-profile-spouse-layout.spec.ts` (4 tests: section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2`); `consumer-growth-assumptions-api.spec.ts` (empty-body 400 always; round-trip PATCH + revert when `PLAYWRIGHT_HOUSEHOLD_ID` set). Run: `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts --project=consumer --workers=1`. Enable skipped round-trip: `npm run seed:e2e` → copy `PLAYWRIGHT_HOUSEHOLD_ID` to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
 - [x] **Post-deploy partial PATCH smoke (inline profile prompts, 2026-05-27)** — verified on production (SS + retirement/longevity). Third case (custom deduction) + UI prompts: `npm run test:e2e:go-live-profile`.
-- [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): `npm run test:e2e:go-live-profile` then `npm run test:e2e:consumer -- --workers=1`. Then [Prospect + Mobile manual smoke](#prospect--mobile-review-mode-manual-smoke-2026-05-29) (Track 1 before Track 2).
+- [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): enable GitHub **`E2E_SMOKE_IN_CI`** + **`RLS_VERIFY_IN_CI`** ([§ Pre-go-live GitHub Actions](./GO_LIVE_E2E.md#pre-go-live-github-actions-enable-before-public_signup_open)); then `npm run test:e2e:go-live-profile` → `npm run test:e2e:consumer -- --workers=1` → `npm run verify:rls -- --require-sql`. Then [Prospect + Mobile manual smoke](#prospect--mobile-review-mode-manual-smoke-2026-05-29) (Track 1 before Track 2).
 - [ ] **Post-deploy Voels verify** — `npm run verify:post-deploy-voels` after prod deploy (manual). **Daily cron** `/api/cron/post-deploy-verify` (9:00 UTC) **self-heals** missing Voels MC cache then verifies — up to ~24h lag if cache drops mid-day; use **`npm run smoke:mc-voels`** for immediate fix.
 - [ ] **Upstash rate limits (optional pre-scale)** — set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in Vercel Production for shared referral/telemetry limits (falls back to in-memory if unset).
 - [ ] **GitHub Actions E2E smoke enabled (pre-go-live)** — Turn on **before** open signups so every push/PR to `main` runs profile + security smoke against production Supabase. [Step-by-step checklist below](#github-actions-e2e-smoke-pre-go-live).
+- [ ] **GitHub Actions RLS verify enabled (pre-go-live)** — Turn on **before** open signups (same window as E2E smoke) so RLS migrations are gated in CI. [Step-by-step checklist below](#github-actions-rls-verify-pre-go-live).
 - [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
   attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
   life-event-on-connect)
@@ -405,6 +406,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
 | `REQUIRE_PRIVILEGED_MFA` | Mandatory TOTP for admin/advisor/attorney | **Pending** — flip `true` with `PUBLIC_SIGNUP_OPEN` on go-live; keep **false** in test/CI |
 | `E2E_SMOKE_IN_CI` | GitHub Actions repo variable — PR/push E2E smoke | **Pending** — set `true` [pre-go-live](#github-actions-e2e-smoke-pre-go-live); keep privileged MFA off in workflow |
+| `RLS_VERIFY_IN_CI` | GitHub Actions repo variable — post-migration RLS SQL + JWT isolation | **Pending** — set `true` [pre-go-live](#github-actions-rls-verify-pre-go-live); requires `SUPABASE_DB_URL` secret |
 | `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | ✅ `avoels@comcast.net` (2026-05-25) |
 
 **Checklist (Production environment only):**
@@ -419,6 +421,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed**; Search Console verified via Cloudflare (2026-05-24)
 - [ ] **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open (go-live day — after legal + C-4 manual verify)
 - [ ] **GitHub E2E smoke:** `E2E_SMOKE_IN_CI=true` + secrets configured → green manual workflow run ([§ GitHub Actions E2E smoke](#github-actions-e2e-smoke-pre-go-live))
+- [ ] **GitHub RLS verify:** `RLS_VERIFY_IN_CI=true` + `SUPABASE_DB_URL` + Supabase secrets → green manual workflow run ([§ GitHub Actions RLS verify](#github-actions-rls-verify-pre-go-live))
 
 **Not required in Vercel Production:**
 
@@ -791,6 +794,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | **Stripe Phase 1 (test mode)** | You | [§ Stripe Setup — Phase 1](./LAUNCH_CHECKLIST.md#phase-1--test-mode-sandbox--complete-before-live-keys) — 6 prices + preview env + webhook |
 | **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview |
 | **GitHub E2E smoke (pre-go-live)** | You | [§ GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live) — `E2E_SMOKE_IN_CI=true` + secrets before open signups |
+| **GitHub RLS verify (pre-go-live)** | You | [§ GitHub Actions RLS verify](./LAUNCH_CHECKLIST.md#github-actions-rls-verify-pre-go-live) — `RLS_VERIFY_IN_CI=true` + `SUPABASE_DB_URL` before open signups |
 | **Stripe Phase 2 (live mode)** | You | [§ Stripe Setup — Phase 2](./LAUNCH_CHECKLIST.md#phase-2--live-mode-production--go-live-day-only) — go-live day only |
 | **Go-live day ops** | You | Supabase Auth ON → verify callback → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke |
 | **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |

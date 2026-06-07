@@ -4,9 +4,34 @@ Run these against **production** (`PLAYWRIGHT_BASE_URL` in `.env.test`, default 
 
 **Prerequisites:** `npm run seed:e2e` on the target environment; copy printed block to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)). Requires `PLAYWRIGHT_HOUSEHOLD_ID` + `SUPABASE_SERVICE_ROLE_KEY`.
 
-**GitHub Actions (pre-go-live):** Enable E2E smoke on every `main` push/PR before open signups — [LAUNCH_CHECKLIST § GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live). Workflow runs against localhost + production Supabase; local pre-flight below uses production URL.
+**GitHub Actions (pre-go-live):** Enable **both** workflows on every `main` push/PR **before** `PUBLIC_SIGNUP_OPEN` — [§ Pre-go-live GitHub Actions](#pre-go-live-github-actions-enable-before-public_signup_open). E2E smoke runs against localhost + production Supabase; local pre-flight below uses production URL.
 
 **Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) **backfills missing Voels MC cache**, then runs the 7 checks. Manual: `npm run verify:post-deploy-voels` (no auto-remediate) or `npm run smoke:mc-voels` for immediate backfill.
+
+---
+
+## Pre-go-live GitHub Actions (enable before PUBLIC_SIGNUP_OPEN)
+
+Turn on **before** open signups — not on go-live day. Both use repo **Variables** (not secrets) as the master switch.
+
+| Variable | Workflow | What it gates |
+|----------|----------|----------------|
+| `E2E_SMOKE_IN_CI` | `.github/workflows/e2e-smoke.yml` | Profile save + security smoke (`test:e2e:go-live-profile`, `test:e2e:security-smoke`) |
+| `RLS_VERIFY_IN_CI` | `.github/workflows/rls-verify.yml` | SQL RLS invariants + consumer JWT isolation (`verify:rls --require-sql`) |
+
+**Shared secrets** (both workflows): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PLAYWRIGHT_HOUSEHOLD_ID`, optional `PLAYWRIGHT_CONSUMER_*` / `PLAYWRIGHT_ADVISOR_*`.
+
+**RLS-only secret:** `SUPABASE_DB_URL` — Supabase → Database → Connection string → **Session pooler** URI.
+
+**Enable checklist:**
+
+1. `npm run seed:e2e` on production Supabase → copy secrets ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md))
+2. Add `SUPABASE_DB_URL` secret ([LAUNCH_CHECKLIST § RLS verify](./LAUNCH_CHECKLIST.md#github-actions-rls-verify-pre-go-live))
+3. Set `E2E_SMOKE_IN_CI=true` → run **E2E smoke** workflow → green
+4. Set `RLS_VERIFY_IN_CI=true` → run **RLS verify** workflow → green
+5. Proceed with local pre-flight below
+
+**Consumer API contract** (always on in main CI): `npm run verify:consumer-openapi` — `GET /api/consumer/openapi` must match route handlers.
 
 ---
 

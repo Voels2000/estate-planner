@@ -16,6 +16,15 @@ test('projection run GET returns OpenAPI spec', async ({ request }) => {
   expect(json.info?.title).toBeTruthy()
 })
 
+test('consumer API GET returns OpenAPI spec', async ({ request }) => {
+  const res = await request.get('/api/consumer/openapi')
+  expect(res.ok()).toBeTruthy()
+  const json = await res.json()
+  expect(json.openapi).toBe('3.0.0')
+  expect(json.info?.title).toMatch(/Consumer API/i)
+  expect(Object.keys(json.paths ?? {}).length).toBeGreaterThan(20)
+})
+
 test('invalid beneficiary token shows unavailable message', async ({ page }) => {
   await page.goto('/beneficiary/e2e-invalid-token-00000000')
   await expect(page.getByRole('heading', { name: 'Link Unavailable' })).toBeVisible()

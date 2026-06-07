@@ -329,6 +329,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Admin funnel tab — `persona_selected`, `persona_skipped`
 - [x] Master docs sync (this pass)
 
+## L4 consumer OpenAPI contract (2026-06-07) — shipped
+
+- [x] `GET /api/consumer/openapi` — OpenAPI 3.0 for all consumer routes
+- [x] `npm run verify:consumer-openapi` — route/spec drift guard in `ci.yml`
+- [x] Go-live precheck: enable `RLS_VERIFY_IN_CI` alongside `E2E_SMOKE_IN_CI` ([GO_LIVE_E2E.md](./GO_LIVE_E2E.md))
+- [x] Master docs: COMPETITIVE_SCAN · NEXT_SESSION · UPDATE_CHECKLIST · GO_LIVE_E2E · LAUNCH_CHECKLIST
+
 ## L3 RLS post-migration verify (2026-06-07) — shipped
 
 - [x] `scripts/verify-rls-invariants.sql` — 5 SQL invariant checks (0 rows = pass)

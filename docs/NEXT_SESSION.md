@@ -4,6 +4,21 @@
 
 ---
 
+## L4 consumer OpenAPI contract — shipped ✅ (2026-06-07)
+
+**L4 (competitive backlog):** Typed API contract for all `/api/consumer/*` routes.
+
+| Piece | Path |
+|-------|------|
+| **Spec endpoint** | `GET /api/consumer/openapi` (OpenAPI 3.0) |
+| **Discovery** | `lib/api/openapi/discoverConsumerApiRoutes.ts` — scans route handlers |
+| **Builder** | `lib/api/openapi/buildConsumerOpenApiSpec.ts` |
+| **CI drift guard** | `npm run verify:consumer-openapi` (main `ci.yml`) |
+
+Spec documents session-cookie auth, standard error responses, and `HouseholdIdBody` schema. Operation summaries auto-generated from paths; key routes have hand-written summaries.
+
+---
+
 ## L3 RLS post-migration verify — shipped ✅ (2026-06-07)
 
 **L3 (competitive backlog):** Automate post-migration RLS invariants in CI against staging/production Supabase.

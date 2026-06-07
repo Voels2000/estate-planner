@@ -40,5 +40,8 @@ jobs:
       - name: App route slug validation
         run: npx tsx scripts/verify-app-route-slugs.ts
 
+      - name: Consumer OpenAPI contract
+        run: npm run verify:consumer-openapi
+
       - name: Unit tests (import-unit project)
         run: npm run test:unit
