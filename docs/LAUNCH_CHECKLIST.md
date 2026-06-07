@@ -177,7 +177,7 @@ E2E equivalents: `e2e-advisor@mywealthmaps.test` + Michael Johnson client; `e2e-
 
 ### Prospect + Mobile Review Mode manual smoke (2026-05-29)
 
-**Automated pre-check (CI/local):** `npm run test:import:unit` (24/24); ESLint on sprint files; TypeScript (excluding pre-existing `consumer-import.spec.ts`).
+**Automated pre-check (CI/local):** `npm run test:import:unit` (24/24); ESLint on sprint files; TypeScript (excluding pre-existing `consumer-import.spec.ts`). **Mobile Track 2 (steps 13–19):** `npm run test:e2e:mobile` — iPhone 12 viewport; steps 15–16 skip if E2E household lacks projection/RMD table data; step 18 skips if no pending advisor recs.
 
 **Not automated** — requires advisor login, Resend inbox, DevTools 390px. Run **Track 1 first** (more moving parts).
 

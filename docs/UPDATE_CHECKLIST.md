@@ -329,6 +329,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Admin funnel tab — `persona_selected`, `persona_skipped`
 - [x] Master docs sync (this pass)
 
+## L2 mobile E2E + mfa-enroll build fix (2026-06-07) — shipped
+
+- [x] `consumer-mobile-review.spec.ts` — Track 2 steps 13–19; `tests/e2e/helpers/mobile-review.ts`
+- [x] `npm run test:e2e:mobile`
+- [x] `/mfa-enroll` Suspense boundary for `useSearchParams()` (Vercel build)
+- [x] Master docs: COMPETITIVE_SCAN · LAUNCH_CHECKLIST · PLAYWRIGHT_E2E · GO_LIVE_E2E · NEXT_SESSION · UPDATE_CHECKLIST
+
 ## Queued next (2026-05-29) — not scheduled
 
 - [ ] **Dashboard `canShowPartial` nudge** — low priority; revisit after ~2 weeks traffic ([ROADMAP.md](./ROADMAP.md))

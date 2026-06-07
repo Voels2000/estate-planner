@@ -28,6 +28,7 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run cleanup:rolobe` | Retire listed `@rolobe.resend.app` accounts only (legacy) |
 | `npm run test:e2e:consumer` | consumer-setup + consumer |
 | `npm run test:e2e:go-live-profile` | **Go-live pre-flight:** profile save + spouse layout + inline prompts (`--workers=1`) |
+| `npm run test:e2e:mobile` | **Mobile review mode:** LAUNCH_CHECKLIST Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `--workers=1`) |
 | `npm run test:e2e:partial-patch` | Partial PATCH API smoke only (3 cases) |
 | `npm run test:e2e:advisor` | advisor-setup + advisor |
 | `npm run test:e2e:attorney` | attorney-setup + attorney |

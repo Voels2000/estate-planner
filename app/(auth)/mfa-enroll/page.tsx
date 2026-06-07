@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function MfaEnrollPage() {
+function MfaEnrollForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -202,5 +202,13 @@ export default function MfaEnrollPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function MfaEnrollPage() {
+  return (
+    <Suspense>
+      <MfaEnrollForm />
+    </Suspense>
   )
 }

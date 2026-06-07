@@ -1,6 +1,33 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (Estate verification suite phases 1–4)
+# Last updated: 2026-06-07 (L2 mobile E2E + mfa-enroll build fix)
+
+---
+
+## L2 mobile E2E + mfa-enroll build fix — shipped ✅ (2026-06-07)
+
+**L2 (competitive backlog):** Automate LAUNCH_CHECKLIST Track 2 steps 13–19 at iPhone 12 viewport (390×844).
+
+**Command:**
+```bash
+npm run test:e2e:mobile
+```
+
+| Step | Coverage |
+|------|----------|
+| 13 | Mobile amber alert banner when open alerts or pending advisor recs |
+| 14 | Dashboard — no horizontal overflow |
+| 15–17 | Projections (Table tab), RMD, Scenarios — `overflow-x-auto` scroll wrappers |
+| 18 | Stacked full-width Accept/Decline (skips if no pending recs) |
+| 19 | Hamburger → Profile → drawer closes |
+
+**Files:** `tests/e2e/consumer/consumer-mobile-review.spec.ts` · `tests/e2e/helpers/mobile-review.ts`
+
+**Skips:** Steps 15–16 skip when E2E household lacks projection/RMD table data; step 18 skips without pending advisor recommendations.
+
+**Build fix:** `/mfa-enroll` — wrap `useSearchParams()` in `<Suspense>` (same pattern as `/mfa-challenge`); fixes Vercel prerender failure.
+
+**Docs:** COMPETITIVE_SCAN (L2 `[x]`) · LAUNCH_CHECKLIST · PLAYWRIGHT_E2E · GO_LIVE_E2E
 
 ---
 
@@ -1293,7 +1320,7 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 | `advisor-prospect-mode.spec.ts` | Prospect tool smoke |
 | `advisor-first-client-playbook.spec.ts` | Playbook panel + empty state |
 | `consumer-health-score-narrative.spec.ts` | Score badge + context sentence |
-| `consumer-mobile-review.spec.ts` | Mobile banner + table scroll |
+| `consumer-mobile-review.spec.ts` | LAUNCH_CHECKLIST Track 2 steps 13–19 — `npm run test:e2e:mobile` |
 
 **Follow-ups (not in scope):** Manual 18-step health/playbook and 19-step prospect/mobile checklists.
 
@@ -1357,7 +1384,7 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 
 **Automated verify (2026-05-29):** `npm run test:import:unit` 24/24 pass; ESLint on sprint files — 0 errors; TypeScript clean except pre-existing `consumer-import.spec.ts`.
 
-**Manual smoke:** 19-step checklist in [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29) — **not run in CI** (requires Resend inbox, advisor2 login, DevTools 390px).
+**Manual smoke:** 19-step checklist in [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29) — Track 1 still manual (Resend inbox, advisor login). **Track 2 automated:** `npm run test:e2e:mobile` (steps 13–19).
 
 **CA note for step 4:** CA has no state estate tax — sunset delta should appear; state tax card should not. Use **WA** or **OR** to verify state tax figure.
 
