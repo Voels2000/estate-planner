@@ -10,6 +10,17 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## B2B2C connection billing columns + attorney_managed (2026-06-07)
+
+**Migration:** `20260704120000_b2b2c_connection_billing.sql`
+
+- `advisor_clients` + `attorney_clients`: `billing_transferred`, `billing_transferred_at`, `previous_consumer_tier`, `consumer_subscription_cancel_at`
+- `profiles.subscription_status`: adds `attorney_managed`
+
+**Application:** `lib/billing/managedConsumerBilling.ts` — env toggles `B2B2C_*`. Policy: [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md).
+
+---
+
 ## Admin deletion email lookup (2026-06-07)
 
 **Session 133** — No migration. Admin portal UX:

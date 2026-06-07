@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
@@ -92,6 +93,13 @@ export async function POST(request: Request) {
   if (updateError) {
     console.error('Update error:', updateError)
     return NextResponse.json({ error: 'Failed to accept request' }, { status: 500 })
+  }
+
+  if (household?.owner_id) {
+    await applyAttorneyConnectionBilling(admin, {
+      clientId: household.owner_id,
+      attorneyClientRowId: row.id,
+    })
   }
 
   await admin

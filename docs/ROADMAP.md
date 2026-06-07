@@ -1493,7 +1493,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ## Backlog (not yet scheduled — confirmed post-launch)
 
-**Competitive gap backlog (prioritized):** [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) — H1–H4 + L1–L4 complete (2026-06-07). **Next:** M5 attorney Stripe at go-live, L5 attorney multi-seat. Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) before open signups.
+**Competitive gap backlog (prioritized):** [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) — H1–H4 + L1–L4 complete. **Next:** M5 attorney Stripe at go-live, L5 attorney multi-seat. **Pricing:** [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md). Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) before open signups.
 
 The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
 (see DECISION_LOG.md) documenting the reasoning.

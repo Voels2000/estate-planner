@@ -494,24 +494,24 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ### Stripe — Advisor & B2B2C billing (prior to go-live)
 
-**No new consumer Stripe products are required** for advisor-managed clients — connected consumers get Tier 3 via `subscription_status = 'advisor_managed'` (not a separate Stripe price).
+**No new consumer Stripe products are required** for advisor-managed clients — connected consumers get Tier 3 via `subscription_status = 'advisor_managed'` (not a separate Stripe price). **Policy + toggles:** [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) — advisor handoff default ON; attorney handoff default OFF (`B2B2C_ATTORNEY_CONSUMER_BILLING`).
 
 **Required before advisor B2B2C flows in production:**
 
 | Item | Stripe Dashboard action | App dependency |
 |------|-------------------------|----------------|
 | Consumer checkout (existing) | 6 consumer prices (Phase 1/2 below) | Connect + disconnect pause/resume use `STRIPE_SECRET_KEY` |
-| Webhook `customer.subscription.updated` | Must be enabled | Webhook **skips** `advisor_managed` profiles (no overwrite) |
+| Webhook `customer.subscription.updated` | Must be enabled | Webhook **skips** `advisor_managed` / `attorney_managed` profiles (no overwrite) |
 | API access | Live/test secret key in env | `applyAdvisorConnectionBilling`, `restoreConsumerBillingOnDisconnect` |
 | Customer Portal | Cancel + update payment method enabled | Consumer self-serve after disconnect if subscription lapsed |
 
 **Create before billing advisor firms (Month 2 / when invoicing stops):**
 
-| Product | Suggested price | Code reference |
-|---------|-----------------|----------------|
-| Advisor Firm — Starter | $149/mo | `ADVISOR_FIRM_PRICE_IDS.starter` in `lib/tiers.ts` |
-| Advisor Firm — Growth | $349/mo | `ADVISOR_FIRM_PRICE_IDS.growth` |
-| Advisor Firm — Enterprise | Custom / seat | `ADVISOR_FIRM_PRICE_IDS.enterprise` |
+| Product | Suggested price | Code reference | Competitive note |
+|---------|-----------------|----------------|------------------|
+| Advisor Firm — Starter | **$149/seat/mo** ($1,499/yr optional) | `ADVISOR_FIRM_PRICE_IDS.starter` | RightCapital ~$150; eMoney $250+/seat |
+| Advisor Firm — Growth | **$99/seat/mo** | `ADVISOR_FIRM_PRICE_IDS.growth` | Volume 11–50 seats |
+| Advisor Firm — Enterprise | **$79/seat/mo** (placeholder $75 in code) | `ADVISOR_FIRM_PRICE_IDS.enterprise` | Enterprise floor |
 
 - [ ] Create **3 advisor firm products** in Stripe test mode (then live on go-live day)
 - [ ] Record test `price_…` IDs → update env or replace test IDs in `lib/tiers.ts` before production

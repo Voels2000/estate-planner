@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (release routine; L1–L4 competitive backlog complete)
+# Last updated: 2026-06-07 (B2B2C billing + competitive seat pricing)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -90,7 +90,8 @@ Consumers and advisors share one **household** data model but operate in separat
 | Life-event at connect | `pickConnectionLifeEvent()` on accept — priority: `funnel_events.event_slug` → `referral_clicks.event_slug` (via `profiles.referral_code`) → `life_events`; stored on `advisor_clients.connection_life_event_*`; banner on advisor Overview |
 | Invite-your-advisor | `/onboarding/invite-advisor`; `POST /api/consumer/invite-advisor` (Resend + deep link); `profiles.onboarding_invite_advisor_completed_at` (skip sets same timestamp); layout gate in `(dashboard)/layout.tsx` |
 | Advisor invite accept | `/invite/[token]` → `POST /api/invite/accept`; signup `?invite=` → `/auth/callback?next=/invite/{token}`; fallback `POST /api/advisor/link-pending` on dashboard load |
-| Advisor billing handoff | `lib/advisor/applyAdvisorConnectionBilling.ts` — invite accept, link-pending, accept-request |
+| Advisor billing handoff | `lib/billing/managedConsumerBilling.ts` — toggle `B2B2C_ADVISOR_CONSUMER_BILLING` (default ON) |
+| Attorney billing handoff | Same module — toggle `B2B2C_ATTORNEY_CONSUMER_BILLING` (default OFF). Policy: [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) |
 | Advisor disconnect billing | `lib/advisor/restoreConsumerBillingOnDisconnect.ts` — consumer disconnect, advisor remove-client |
 | Advisor client limits | `lib/advisor/advisorClientLimits.ts` — invite + accept-request |
 | Advisor activation drip | `lib/emails/advisor-drip-templates.ts`, `POST /api/email/advisor-drip`, cron step 8 |

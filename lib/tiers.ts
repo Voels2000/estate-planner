@@ -146,9 +146,9 @@ export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = {
 }
 
 export const ADVISOR_FIRM_SEAT_RATES: Record<string, number> = {
-  starter:    149,
-  growth:     99,
-  enterprise: 75,
+  starter:    149, // go-live target — see docs/BILLING_B2B2C_POLICY.md (vs RightCapital ~$150, eMoney $250+)
+  growth:     99,  // volume band 11–50 seats
+  enterprise: 75,  // consider $79 at go-live; enterprise floor vs eMoney enterprise
 }
 
 // Attorney plan price IDs — set in Vercel before go-live:
@@ -167,7 +167,7 @@ export const ATTORNEY_PLAN_NAMES: Record<AttorneyPlanKey, string> = {
 }
 
 export const ATTORNEY_PLAN_LIMITS: Record<AttorneyPlanKey, { clientCap: number; priceMonthly: number }> = {
-  starter: { clientCap: 15, priceMonthly: 99 },
+  starter: { clientCap: 15, priceMonthly: 99 },  // vs Clio Essentials ~$89 — adjunct pricing; see BILLING_B2B2C_POLICY.md
   growth: { clientCap: 50, priceMonthly: 249 },
 }
 

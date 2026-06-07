@@ -135,6 +135,8 @@ export default async function DashboardLayout({
   const isActive = subscriptionStatus === 'active'
   const isStripeTrial = subscriptionStatus === 'trialing'
   const isAdvisorManaged = subscriptionStatus === 'advisor_managed'
+  const isAttorneyManaged = subscriptionStatus === 'attorney_managed'
+  const isProfessionallyManaged = isAdvisorManaged || isAttorneyManaged
   const needsBillingRedirect = subscriptionStatus === 'past_due' || subscriptionStatus === 'unpaid'
 
   const stripeTrialEndsAt = profileFull?.subscription_period_end
@@ -158,7 +160,7 @@ export default async function DashboardLayout({
     isAdminResolved ||
     isAdvisorResolved ||
     isAdvisorClient ||
-    isAdvisorManaged ||
+    isProfessionallyManaged ||
     isActive ||
     isStripeTrial ||
     subscriptionStatus === 'canceling' ||
@@ -168,8 +170,10 @@ export default async function DashboardLayout({
   if (!hasAccess) redirect('/billing')
 
   const tier =
-    isAdvisorResolved || isAdvisorClient || isAdvisorManaged || isAdminResolved
-      ? 3
+    isAdvisorResolved || isAdvisorClient || isProfessionallyManaged || isAdminResolved
+      ? isProfessionallyManaged
+        ? (profileFull?.consumer_tier ?? 3)
+        : 3
       : (profileFull?.consumer_tier ?? 1)
 
   const showStripeTrialBanner =

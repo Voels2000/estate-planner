@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
@@ -103,6 +104,11 @@ export async function POST(req: NextRequest) {
     console.error('grant-access insert error:', insertError)
     return NextResponse.json({ error: 'Failed to create connection' }, { status: 500 })
   }
+
+  await applyAttorneyConnectionBilling(createAdminClient(), {
+    clientId: user.id,
+    attorneyClientRowId: connection.id,
+  })
 
   // ── 7. Get consumer profile ─────────────────────────────────
   const { data: consumerProfile } = await supabase

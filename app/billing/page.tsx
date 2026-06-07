@@ -135,6 +135,27 @@ export default async function BillingPage({
     )
   }
 
+  const isAttorneyManaged =
+    profile?.subscription_status === 'attorney_managed' ||
+    profile?.subscription_plan === 'attorney_managed'
+
+  if (isAttorneyManaged) {
+    return (
+      <div className="mx-auto mt-16 max-w-2xl px-6">
+        <Card className="border-blue-200 bg-blue-50 px-6 py-5">
+          <h2 className="mb-1 text-lg font-semibold text-blue-900">
+            Your plan is managed by your attorney
+          </h2>
+          <p className="text-sm text-blue-800">
+            No payment required for this planning access while connected. Your attorney&apos;s firm
+            covers MyWealthMaps as part of your engagement. Contact your attorney if you have billing
+            questions.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
   const { data: clientRow } = await supabase
     .from('advisor_clients')
     .select('id')

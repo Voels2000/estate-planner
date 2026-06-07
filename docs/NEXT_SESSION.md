@@ -1,6 +1,28 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (release routine + environment doc alignment)
+# Last updated: 2026-06-07 (B2B2C billing + competitive seat pricing)
+
+---
+
+## B2B2C billing policy — configurable handoff ✅ (2026-06-07)
+
+**Canonical:** [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md)
+
+| Toggle | Default | Purpose |
+|--------|---------|---------|
+| `B2B2C_ADVISOR_CONSUMER_BILLING` | ON | Consumer pay drop + `advisor_managed` on advisor connect |
+| `B2B2C_ATTORNEY_CONSUMER_BILLING` | OFF | Optional attorney-sponsored tier — flip per market |
+| `B2B2C_*_MANAGED_TIER` | Advisor 3, Attorney 2 | Tier granted when handoff ON |
+
+**Pricing:** Consumer + advisor firm seats + attorney solo tiers — [competitive benchmarks](./BILLING_B2B2C_POLICY.md#competitive-pricing-benchmarks-2026) in policy doc; Stripe live IDs TBD at go-live.
+
+| Launch target | $/mo |
+|---------------|------|
+| Advisor seat Starter | $149 |
+| Advisor seat Growth | $99 |
+| Advisor seat Enterprise | $79 |
+| Attorney solo Starter (15 clients) | $99 |
+| Attorney solo Growth (50 clients) | $249 |
 
 ---
 

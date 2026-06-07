@@ -287,10 +287,10 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .select('id')
           .eq('stripe_customer_id', customerId)
-          .eq('subscription_status', 'advisor_managed')
+          .in('subscription_status', ['advisor_managed', 'attorney_managed'])
           .limit(1)
         if (managedRows?.length) {
-          console.log('customer.subscription.updated — skipping advisor_managed profile')
+          console.log('customer.subscription.updated — skipping managed B2B2C profile')
           break
         }
         const renewalIso = new Date(

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
+import { restoreAttorneyConsumerBillingOnDisconnect } from '@/lib/attorney/restoreAttorneyConsumerBillingOnDisconnect'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -66,6 +68,22 @@ export async function POST(req: NextRequest) {
   if (updateError) {
     console.error('revoke-access update error:', updateError)
     return NextResponse.json({ error: 'Failed to revoke connection' }, { status: 500 })
+  }
+
+  const admin = createAdminClient()
+  const { data: consumerHousehold } = await admin
+    .from('households')
+    .select('owner_id')
+    .eq('id', connection.client_id)
+    .maybeSingle()
+
+  if (consumerHousehold?.owner_id) {
+    await restoreAttorneyConsumerBillingOnDisconnect(admin, {
+      clientId: consumerHousehold.owner_id,
+      attorneyClientRowId: connection_id,
+      attorneyListingId: connection.attorney_id,
+      sendEmail: false,
+    })
   }
 
   // ── 7. Get profiles for notifications ──────────────────────

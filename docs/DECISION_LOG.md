@@ -1,8 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (release routine gates)
+# Last updated: 2026-06-07 (B2B2C billing policy + seat pricing benchmarks)
 
 ---
+
+---
+
+## B2B2C consumer billing handoff — configurable per role (2026-06-07)
+
+**Decision:** Configurable B2B2C consumer billing handoff per professional role — advisor default ON (eMoney-class norm), attorney default OFF until market validates. Shared `lib/billing/managedConsumerBilling.ts`; env toggles `B2B2C_*`. Pricing matrix TBD in Stripe before open signups.
+
+**Canonical doc:** [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) — includes [competitive seat pricing benchmarks](./BILLING_B2B2C_POLICY.md#competitive-pricing-benchmarks-2026) (eMoney, RightCapital, Clio, Holistiplan).
 
 ---
 

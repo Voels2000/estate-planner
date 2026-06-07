@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveConsumerTier } from '@/lib/tiers'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { isManagedSubscriptionStatus } from '@/lib/billing/b2b2cBillingPolicy'
 import { cache } from 'react'
 
 export type UserAccess = {
@@ -49,7 +50,7 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
     subscriptionStatus === 'active' ||
     isTrial ||
     subscriptionStatus === 'canceling'
-  const isAdvisorManaged = subscriptionStatus === 'advisor_managed'
+  const isProfessionallyManaged = isManagedSubscriptionStatus(subscriptionStatus)
 
   let isAdvisorClient = false
   if (!isAdvisor) {
@@ -62,8 +63,11 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
     isAdvisorClient = !!clientRow
   }
 
-  if (isAdvisor || isAdvisorClient || isAdvisorManaged) {
-    return { tier: 3, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
+  if (isAdvisor || isAdvisorClient || isProfessionallyManaged) {
+    const tier = isProfessionallyManaged
+      ? (profile?.consumer_tier ?? 3)
+      : 3
+    return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
   }
 
   if (!isActive) {

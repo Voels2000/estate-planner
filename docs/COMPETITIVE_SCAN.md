@@ -73,7 +73,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 | L2 | Mobile E2E expansion (automate LAUNCH_CHECKLIST mobile smoke items) | `[x]` `consumer-mobile-review.spec.ts` Track 2 steps 13–19; `npm run test:e2e:mobile` |
 | L3 | Post-migration RLS verify script in CI against staging | `[x]` `verify:rls` — CI: JWT on staging; SQL: local post-deploy only ([ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)) |
 | L4 | OpenAPI or typed API contract for `/api/consumer/*` | `[x]` `GET /api/consumer/openapi`; `npm run verify:consumer-openapi` in CI |
-| L5 | Firm multi-seat for attorneys (parity with advisor firms) | `[ ]` |
+| L5 | Attorney firm multi-seat (team logins + seat billing — **not** client 3/15 caps) | `[ ]` |
 
 ---
 
@@ -291,7 +291,7 @@ You store estate values, beneficiary names, document vault PDFs, and WCPA deleti
 | Priority | Item | Notes |
 |----------|------|-------|
 | **M5** | Attorney Stripe products + attorney E2E expansion | Go-live day — live `STRIPE_PRICE_ATTORNEY_*`, expand `tests/e2e/attorney/` |
-| **L5** | Attorney firm multi-seat | Parity with advisor firm seats — after M5 or in parallel if no billing dependency |
+| **L5** | Attorney firm **team** multi-seat | Parity with advisor `/advisor/firm` — multiple attorney logins + seat billing; separate from solo client caps |
 
 **Ops (not competitive backlog):** Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) gates before `PUBLIC_SIGNUP_OPEN`.
 
@@ -332,6 +332,7 @@ Quarter 2 (growth)
 
 | Date | Change |
 |------|--------|
+| 2026-06-07 | B2B2C configurable handoff + competitive advisor/attorney seat pricing — [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) |
 | 2026-06-07 | L1–L4 shipped (a11y, mobile E2E, RLS verify, consumer OpenAPI); grades updated; release routine documented |
 | 2026-06-07 | Voels cron MC self-heal — daily `/api/cron/post-deploy-verify` backfills then verifies |
 | 2026-06-07 | M1–M4 shipped: household access sweep, consumer document vault, post-deploy verify cron, Upstash rate limits |

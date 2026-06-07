@@ -55,6 +55,8 @@ Key life event triggers: large RSU vest, IPO/acquisition, job change, divorce.
 
 **Pricing philosophy:** This segment pays $5K–$50K for estate attorney work annually. A $50–200/month planning tool is a rounding error on their professional services spend. Price as professional planning infrastructure, not a consumer app. Never price-compare to LegalZoom.
 
+**B2B2C professional pricing (advisors & attorneys):** Separate from consumer tiers — firm **per-seat** billing for advisors, solo **client-cap** tiers for attorneys today, optional consumer handoff toggles. Competitive benchmarks and go-live targets: [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (advisor seats **$79–149/mo** vs eMoney/RightCapital; attorney solo **$99–249/mo** vs Clio adjunct positioning).
+
 ---
 
 ## Two-zone product architecture

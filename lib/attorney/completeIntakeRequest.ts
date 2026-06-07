@@ -5,6 +5,7 @@ import {
   FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
+import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 
 export async function completeIntakeRequestForUser(
   userSupabase: SupabaseClient,
@@ -95,17 +96,24 @@ export async function completeIntakeRequestForUser(
     }
 
     const now = new Date().toISOString()
-    const { error: insertError } = await userSupabase.from('attorney_clients').insert({
+    const { data: inserted, error: insertError } = await userSupabase.from('attorney_clients').insert({
       attorney_id: attorneyListingId,
       client_id: household.id,
       status: 'active',
       granted_at: now,
       granted_by: userId,
-    })
+    }).select('id').single()
 
     if (insertError) {
       console.error('completeIntakeRequest insert error:', insertError)
       return { ok: false, error: 'Failed to grant attorney access', status: 500 }
+    }
+
+    if (inserted?.id) {
+      await applyAttorneyConnectionBilling(admin, {
+        clientId: userId,
+        attorneyClientRowId: inserted.id,
+      })
     }
   }
 

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAttorneyProfileId } from '@/lib/attorney/resolveAttorneyProfileId'
 import { resolveConsumerHouseholdId } from '@/lib/attorney/verifyAttorneyHouseholdAccess'
@@ -45,6 +46,11 @@ export default async function AttorneyInvitePage({ params }: Props) {
     if (!acceptError) {
       const attorneyProfileId = await resolveAttorneyProfileId(admin, invite.attorney_id)
       const clientId = user.id
+
+      await applyAttorneyConnectionBilling(admin, {
+        clientId,
+        attorneyClientRowId: invite.id,
+      })
 
       after(() => {
         const admin = createAdminClient()

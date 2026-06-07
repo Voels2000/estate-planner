@@ -79,7 +79,7 @@ export async function POST(request: Request) {
           advisorClientRowId: invite.id,
         })
 
-        if (billing.ok) {
+        if (billing.ok && billing.billingTransferred) {
           await adminAfter.rpc('create_notification', {
             p_user_id: clientId,
             p_type: 'estate_milestone',
@@ -92,6 +92,17 @@ export async function POST(request: Request) {
               unlocked_tier: 3,
               cancel_at: billing.cancelAt,
             },
+            p_cooldown: '1 hour',
+          })
+        } else if (billing.ok) {
+          await adminAfter.rpc('create_notification', {
+            p_user_id: clientId,
+            p_type: 'estate_milestone',
+            p_title: '🎉 Connected to your advisor',
+            p_body:
+              'Your advisor has added you to their practice. You can collaborate on your estate plan in MyWealthMaps.',
+            p_delivery: 'both',
+            p_metadata: { advisor_id: advisorId },
             p_cooldown: '1 hour',
           })
         }
