@@ -470,6 +470,9 @@ After each schema-affecting session:
 - `20260625120000_sprint_c6_deletion_compliance.sql` — Sprint C-6 — `deletion_audit_log`, `deletion_schedule` ✅ prod (`4d9571e`, `01b997a`)
 - `20260602150000_sprint_f2_import_traceability.sql` — Sprint F-2 — `ingestion_job_id` on financial tables; `header_row_index`, `sheet_name` on `ingestion_jobs`
 - `20260602140000_sprint_f1_ingestion_jobs.sql` — Sprint F-1 — `ingestion_jobs` 14-column schema + RLS (verified prod)
+- `20260701120000_restore_atg_in_calculate_estate_composition.sql` — ATG add-back in `calculate_estate_composition` RPC
+- `20260702120000_attorney_collaboration_workflow.sql` — `attorney_clients` workflow columns; `attorney_notes`; `attorney_document_requests`
+- `20260703120000_attorney_digest_sent_at.sql` — `profiles.attorney_digest_sent_at` (weekly digest cooldown for cron §10)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 
@@ -478,7 +481,7 @@ After each schema-affecting session:
 
 ## Schema changelog (session notes)
 
-Session-by-session migration and application-layer notes (Sessions 43–127) live in **[SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md)**.
+Session-by-session migration and application-layer notes (Sessions 43–128) live in **[SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md)**.
 
 When you change schema or RPCs, update the **table/RPC sections above** in this file and add a short entry to the changelog (schema migrations only need a one-line pointer if details are in the migration file).
 

@@ -1455,6 +1455,8 @@ invite-your-advisor Path A onboarding; A/B exit criteria.
 
 - **Attorney drip cron verification (ops)** — After the first real attorney registers, confirm steps 2–3 fire via daily `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Cron schedules step 2 when `attorney_drip_step_1_sent_at` is ≥3 days ago; step 3 when step 1 is ≥7 days ago (same pattern as advisor drip — **not** `profiles.created_at`). Manual check ~3 days after first signup: SQL + Resend inbox. See [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops), [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
+- **Attorney weekly digest email** — Schema shipped (`profiles.attorney_digest_sent_at`, migration `20260703120000`). **Code backlog:** Resend template + send route + cron §10 (6-day cooldown); content: document gaps (`getMissingDocumentAlerts`), pending `attorney_document_requests`, stale `matter_stage`. See [NEXT_SESSION.md § Attorney weekly digest](./NEXT_SESSION.md#attorney-weekly-digest--schema-prep-2026-06-07).
+
 ---
 
 ## How this document relates to engineering docs

@@ -212,6 +212,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Attorney weekly digest cooldown (2026-06-07)
+
+**Migration:** `20260703120000_attorney_digest_sent_at.sql`
+
+| Change | Detail |
+|--------|--------|
+| `profiles.attorney_digest_sent_at` | Timestamptz — last weekly digest email sent; 6-day cooldown for cron §10 |
+
+**Code (planned):** `GET /api/cron/notifications` §10 → `POST /api/email/attorney-digest`; template + send helper mirroring attorney drip. Not shipped yet — schema only.
+
+**Apply on remote:** `20260703120000_attorney_digest_sent_at.sql`.
+
+---
+
 ## Projections empty state fix (2026-05-29) — code only
 
 | Change | Files |
@@ -1730,6 +1744,11 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
   - `/api/advisor/presets` — GET (default first, then `created_at` DESC), POST (`is_preset` explicit); `/api/advisor/presets/[id]` — PATCH/DELETE with ownership guard; `/api/advisor/presets/[id]/default` — clear all advisor preset defaults then set one.
   - `/advisor/presets` — `PresetManager` (CRUD + set default); `MonteCarloAssumptionsPanel` auto-loads default on mount + “Load preset” dropdown (UI-only until advisor saves scenario).
 - E2E: `tests/e2e/advisor/advisor-presets.spec.ts` (API CRUD, consumer 403, UI pre-fill). Playwright seeds: `scripts/seed-michael-johnson-advisor-demo.ts` (Johnson client for advisor2), `scripts/seed-advisor2-playwright-fixture.ts` (household `90cc8759-…` strategy-recommendation link).
+
+## Session 128 Note
+
+- Schema: migration **`20260703120000_attorney_digest_sent_at.sql`** — **`profiles.attorney_digest_sent_at`** (weekly digest send timestamp; 6-day cron cooldown).
+- Application-layer — attorney weekly digest email + cron §10 **not yet implemented** (schema prep only).
 
 ## Session 127 Note
 

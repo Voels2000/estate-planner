@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (attorney portal collaboration v2)
+# Last updated: 2026-06-07 (attorney digest schema prep)
+
+---
+
+## Attorney weekly digest — schema prep (2026-06-07)
+
+**Migration:** `20260703120000_attorney_digest_sent_at.sql` — **`profiles.attorney_digest_sent_at`** (last send; 6-day cooldown for cron §10).
+
+**Next (code):** Weekly digest email — document gaps, pending **`attorney_document_requests`**, stale **`matter_stage`**; mirror attorney drip Resend pattern (`lib/emails/attorney-drip-templates.ts`, `sendAttorneyDripStep.ts`); add cron §10 in **`app/api/cron/notifications/route.ts`**.
+
+**Apply migration:** `supabase db push` when ready.
 
 ---
 
