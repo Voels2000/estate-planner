@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (titling perf / memoization)
+# Last updated: 2026-06-07 (titling modal code-split)
+
+---
+
+## Titling modal code-split — lazy-load edit dialogs (2026-06-07)
+
+**Decision:** Extract **`TitlingModal`**, **`BeneficiaryModal`**, and **`BeneficiaryGapModal`** to **`components/titling/`** and load via **`next/dynamic`** (`ssr: false`) only when opened. Shared **`ModalShell`** / form constants in **`titlingModalShared.tsx`**; beneficiary picklist logic in **`lib/titling/beneficiaryPicklist.ts`**; row types in **`lib/titling/titlingEntityTypes.ts`**.
+
+**Deferred:** table virtualization for large asset lists on `/titling`.
+
+**Files:** `components/titling/TitlingModal.tsx` · `BeneficiaryModal.tsx` · `BeneficiaryGapModal.tsx` · `app/(dashboard)/titling/_titling-client.tsx`
 
 ---
 
@@ -8,7 +18,7 @@
 
 **Decision:** Extract O(1) titling/beneficiary lookups to **`lib/titling/buildTitlingLookups.ts`**; memoize **`getTitlingWarnings`** in **`lib/titling/getTitlingWarnings.ts`**; extract memoized **`AssetTitlingCard`**; share display helpers in **`lib/titling/titlingDisplayHelpers.ts`**. **`/titling`** page loads **`household_people`** in parallel with other queries (join on **`households.owner_id`**).
 
-**Deferred:** modal code-split (lazy-load **`TitlingModal`** / **`BeneficiaryModal`** / **`BeneficiaryGapModal`**) · table virtualization for large asset lists.
+**Deferred:** table virtualization for large asset lists.
 
 **Files:** `lib/titling/*` · `components/titling/AssetTitlingCard.tsx` · `app/(dashboard)/titling/_titling-client.tsx` · `app/(dashboard)/titling/page.tsx`
 

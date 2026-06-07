@@ -32,7 +32,7 @@
 | Perf — memo `EstateOutlookChart`, extract `MonteCarloFanChart`, scenarios row `Map` index | `[x]` |
 | Fetch dedup — `getFullHouseholdForOwner` (`React.cache`) on dashboard | `[x]` |
 
-**Deferred:** titling table virtualization · modal code-split.
+**Deferred:** titling table virtualization.
 
 ---
 
