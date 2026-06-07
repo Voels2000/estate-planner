@@ -154,7 +154,7 @@
 | **Titling perf / memoization** | `[ ]` deferred |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 06):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315`
+**Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569`
 
 ---
 
