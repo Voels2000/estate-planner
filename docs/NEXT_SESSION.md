@@ -1,10 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-07 (titling list virtualization)
+# Updated: 2026-06-07 (ATG intake + Consumer MC parity)
 
 ---
 
-## Titling list virtualization — shipped ✅ (2026-06-07)
+## ATG intake + Consumer MC parity — shipped ✅ (2026-06-07)
+
+**ATG (IRC §2001(b)):** Gifting tab **`AdjustedTaxableGiftsSection`** (`components/gifting/`) — CRUD via **`GET/POST/PATCH/DELETE /api/consumer/adjusted-taxable-gifts`**. Distinct from Form 709 prior gifts in **`gift_history`**. Migration **`20260701120000`** restores ATG sum in **`calculate_estate_composition`**; **`EstateCompositionCard`** shows add-back when &gt; 0.
+
+**Consumer Monte Carlo:** All **7** advisor assumption fields on **`/monte-carlo`** — return, volatility, withdrawal rate, success goal, simulations, planning horizon, inflation — via **`applyConsumerMCAssumptionsToInputs`**; engine uses portfolio return override in **`lib/monte-carlo.ts`**. Accept/revert applies full set (not inflation + sim count only).
+
+**Apply migration:** `supabase db push` ( **`20260701120000`** ) when ready.
+
+**Next code sprint:** (pick from ROADMAP backlog — go-live blockers Sprint 17).
+
+---
 
 **Shipped:** Window-scrolled virtual lists for titling cards via **`@tanstack/react-virtual`** and **`VirtualTitlingCardList`** — activates at **`TITLING_VIRTUALIZE_THRESHOLD` (20)** rows per owner group / tab list; dynamic row measurement for variable-height beneficiary sections.
 

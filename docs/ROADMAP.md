@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-06 (doc sync — post-deploy verify scripts + sprint handoff)
+# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
 
 ---
 
@@ -151,6 +151,8 @@
 | **Logo file-upload UI** | `[x]` — `advisor-branding` bucket + settings upload |
 | **Titling perf / memoization** | `[x]` — lookups + memoized warnings + `AssetTitlingCard` + modal code-split |
 | **Titling list virtualization** | `[x]` — `VirtualTitlingCardList` + `@tanstack/react-virtual` (threshold 20) |
+| **ATG intake + composition** | `[x]` — gifting tab section + `/api/consumer/adjusted-taxable-gifts` + RPC `20260701120000` |
+| **Consumer MC full parity** | `[x]` — 7 advisor assumption fields on `/monte-carlo` |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569` · `23584f3` · `72fb91d` · `1649b77`
@@ -1432,11 +1434,8 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
 (see DECISION_LOG.md) documenting the reasoning.
 
-- **ATG / horizon wiring (IRC §2001(b))** — `adjusted_taxable_gifts` intake not designed;
-  `calculate_estate_composition` ATG add-back removed Session 121. Post-launch design required.
-  (MASTER_ARCHITECTURE.md Open Backlog #3)
-- **Consumer Monte Carlo full parity** — inflation + simulation count accepted from advisor today;
-  full assumption field parity deferred (MASTER_ARCHITECTURE.md Open Backlog #2)
+- ~~**ATG / horizon wiring (IRC §2001(b))**~~ — shipped: gifting tab ATG section, `/api/consumer/adjusted-taxable-gifts`, RPC add-back `20260701120000`.
+- ~~**Consumer Monte Carlo full parity**~~ — shipped: all 7 advisor assumption fields on `/monte-carlo`.
 - **`/api/businesses` + `/api/insurance` → `/api/consumer/*` rename** — canonical paths today;
   namespace cleanup deferred (MASTER_ARCHITECTURE.md Open Backlog #1, #4)
 - **"Ask your advisor →" in-app action for connected advisors** — currently links to

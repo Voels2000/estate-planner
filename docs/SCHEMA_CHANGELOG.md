@@ -1463,6 +1463,12 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - Engine: active consumer SLAT/ILIT rows flow through existing `outside_strategy_items` / `outside_strategy_total` aggregation in `calculate_estate_composition` (no RPC change).
 - Types: `StrategyLineItemSource` includes `slat` in `lib/estate/types.ts` (`ilit` was already present).
 
+## Session 123 Note
+
+- Schema: migration **`20260701120000_restore_atg_in_calculate_estate_composition.sql`** — restore **`v_atg`** sum from **`adjusted_taxable_gifts`**; add to **`taxable_estate`**; return **`adjusted_taxable_gifts`** in RPC JSON (reverses Session 121 Step 7B removal).
+- Application-layer — ATG: **`components/gifting/AdjustedTaxableGiftsSection.tsx`** on gifting tab; **`lib/gifting/adjustedTaxableGifts.ts`**; **`GET/POST/PATCH/DELETE /api/consumer/adjusted-taxable-gifts`** (`afterHouseholdWrite`, revalidate strategy/estate paths).
+- Application-layer — Consumer MC: **`lib/monte-carlo/applyConsumerAssumptionInputs.ts`**; **`_monte-carlo-client.tsx`** assumptions step + accept/revert apply all 7 fields; **`lib/monte-carlo.ts`** portfolio return override + success threshold on insights; **`POST /api/monte-carlo`** passes optional assumption fields.
+
 ## Session 122 Note
 
 - No database schema or migration changes were introduced in Session 122.

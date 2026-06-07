@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (titling list virtualization)
+# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
+
+---
+
+## ATG intake — separate table + gifting tab section (2026-06-07)
+
+**Decision:** Keep **`adjusted_taxable_gifts`** separate from **`gift_history`** (`gift_type='lifetime'`). ATG is IRC §2001(b) taxable-estate add-back, not lifetime exemption used. Intake: **`AdjustedTaxableGiftsSection`** on gifting tab; writes via **`/api/consumer/adjusted-taxable-gifts`** (same auth pattern as gift-history). Restore RPC add-back in migration **`20260701120000`**. Horizon **`lifetimeGiftsUsed`** unchanged — still from **`calculate_gifting_summary.lifetime_exemption_used`**.
+
+**Files:** `components/gifting/AdjustedTaxableGiftsSection.tsx` · `lib/gifting/adjustedTaxableGifts.ts` · `app/api/consumer/adjusted-taxable-gifts/route.ts` · `supabase/migrations/20260701120000_restore_atg_in_calculate_estate_composition.sql`
+
+---
+
+## Consumer Monte Carlo — full advisor assumption parity (2026-06-07)
+
+**Decision:** Consumer **`/monte-carlo`** applies the same **7** assumption fields as advisor MC when accepted or edited manually: return mean, volatility, withdrawal rate, success threshold, simulation count, planning horizon, inflation. **`applyConsumerMCAssumptionsToInputs`** maps to **`MonteCarloInputs`** optional overrides; **`annualPortfolioReturn`** in **`lib/monte-carlo.ts`** replaces stocks/bonds/cash blend when advisor return model is set. Accept/revert banner copy updated; assumptions step renders **`CONSUMER_MC_ASSUMPTION_FIELDS`**.
+
+**Files:** `lib/monte-carlo/applyConsumerAssumptionInputs.ts` · `app/(dashboard)/monte-carlo/_monte-carlo-client.tsx` · `lib/monte-carlo.ts` · `app/api/monte-carlo/route.ts`
 
 ---
 

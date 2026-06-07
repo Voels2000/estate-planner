@@ -17,6 +17,7 @@ import {
   type GiftDeleteChoice,
 } from '@/components/consumer/strategy/GiftDeleteWarningModal';
 import { withdrawStrategy } from '@/lib/consumer/consumerStrategyLineItems';
+import { AdjustedTaxableGiftsSection } from '@/components/gifting/AdjustedTaxableGiftsSection';
 
 interface ActiveGiftingPlanInfo {
   id: string;
@@ -831,6 +832,8 @@ export default function GiftingDashboard({
             )}
           </div>
         </CollapsibleSection>
+
+        <AdjustedTaxableGiftsSection />
 
         <CollapsibleSection
           title="Per-recipient annual exclusion audit"

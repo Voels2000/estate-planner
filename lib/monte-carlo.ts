@@ -46,6 +46,11 @@ export interface MonteCarloInputs {
   inflation_rate: number
   simulation_count: number
   include_rmd: boolean
+  /** When set (advisor or manual MC assumptions), overrides stocks/bonds/cash blend. */
+  portfolio_return_mean_pct?: number
+  portfolio_return_volatility_pct?: number
+  mc_success_threshold_pct?: number
+  mc_withdrawal_rate_pct?: number
 }
 
 export interface YearlyDataPoint {
@@ -97,6 +102,15 @@ function portfolioReturn(stocks: number, bonds: number, cash: number): number {
     randomNormal(ASSET_ASSUMPTIONS.bonds.mean, ASSET_ASSUMPTIONS.bonds.stdDev) * b +
     randomNormal(ASSET_ASSUMPTIONS.cash.mean, ASSET_ASSUMPTIONS.cash.stdDev) * c
   )
+}
+
+function annualPortfolioReturn(inputs: MonteCarloInputs): number {
+  const mean = inputs.portfolio_return_mean_pct
+  const vol = inputs.portfolio_return_volatility_pct
+  if (mean != null && vol != null) {
+    return randomNormal(mean / 100, vol / 100)
+  }
+  return portfolioReturn(inputs.stocks_pct, inputs.bonds_pct, inputs.cash_pct)
 }
 
 function getRMDDivisor(age: number): number {
@@ -163,7 +177,7 @@ export function runSimulation(inputs: MonteCarloInputs): MonteCarloResult {
       const p2Retired = has_spouse ? p2Age >= p2_retirement_age : true
       const bothRetired = p1Retired && p2Retired
 
-      const ret = portfolioReturn(stocks_pct, bonds_pct, cash_pct)
+      const ret = annualPortfolioReturn(inputs)
 
       if (!p1Retired && !p2Retired) {
         // Full accumulation phase
@@ -259,15 +273,16 @@ export function runSimulation(inputs: MonteCarloInputs): MonteCarloResult {
   const boostedFinals = runSimulationRaw({ ...inputs, monthly_contribution: monthly_contribution + 500, simulation_count: 1000 })
   const boostedSuccess = Math.round((boostedFinals.filter(b => b > 0).length / 1000) * 100)
 
-  const insight = success_rate >= 90
+  const successThreshold = inputs.mc_success_threshold_pct ?? 90
+  const insight = success_rate >= successThreshold
     ? `${success_rate}% of simulated scenarios reached the target you entered — a strong share of outcomes met your stated goal.`
-    : success_rate >= 75
+    : success_rate >= Math.max(60, successThreshold - 15)
     ? `${success_rate}% of simulated scenarios reached the target you entered.`
-    : success_rate >= 60
+    : success_rate >= Math.max(50, successThreshold - 30)
     ? `${success_rate}% of simulated scenarios reached the target you entered. Fewer scenarios reached your target than in higher ranges — you may want to discuss this with your advisor.`
     : `${success_rate}% of simulated scenarios reached the target you entered. Many households in this range discuss assumptions and spending targets with an advisor.`
 
-  const insight_boost = success_rate < 90
+  const insight_boost = success_rate < successThreshold
     ? `In this model, monthly contributions ${formatCurrency(500)} higher show ${boostedSuccess}% of scenarios reaching your target (vs ${success_rate}% with your current inputs).`
     : `At your current inputs, ${success_rate}% of simulated scenarios reached the target you entered.`
 
@@ -315,7 +330,7 @@ function runSimulationRaw(inputs: MonteCarloInputs): number[] {
       const p1Retired = p1Age >= retirement_age
       const p2Retired = has_spouse ? p2Age >= p2_retirement_age : true
       const bothRetired = p1Retired && p2Retired
-      const ret = portfolioReturn(stocks_pct, bonds_pct, cash_pct)
+      const ret = annualPortfolioReturn(inputs)
 
       if (!p1Retired && !p2Retired) {
         balance = balance * (1 + ret) + annualContribution

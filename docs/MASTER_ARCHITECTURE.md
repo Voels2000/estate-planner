@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (titling list virtualization)
+# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
 
 ---
 
@@ -1307,10 +1307,10 @@ succession, invite-advisor onboarding, A/B criteria in DECISION_LOG. See [ROADMA
 |------|---------|--------|--------|
 | Consumer strategy writes | `/api/strategy-line-items` | Optional `/api/consumer/strategy-*` rename | Canonical path today; do not duplicate |
 | Businesses / insurance writes | `/api/businesses`, `/api/insurance` | `/api/consumer/*` mirror (deferred) | Documented in CONSUMER_FLOWS |
-| ATG intake | `adjusted_taxable_gifts` table only; no unified UI | Single intake feeding §2001(b) | See [Open design decisions](#open-design-decisions) |
-| ATG → horizons / composition | Not wired; only `calculate_gifting_summary.lifetime_exemption_used` affects `lifetimeGiftsUsed` / `p_lifetime_gifts_used` | §2001(b) ATG in composition and horizon exemption | Backlog #3 |
+| ATG intake | Gifting tab `AdjustedTaxableGiftsSection` + `/api/consumer/adjusted-taxable-gifts` | Single intake feeding §2001(b) | Shipped — see Open design decisions |
+| ATG → horizons / composition | `calculate_estate_composition` sums `adjusted_taxable_gifts` (migration `20260701120000`) | §2001(b) ATG in composition | Shipped; horizon `lifetimeGiftsUsed` unchanged (separate concept) |
 | `gift_history` lifetime rows | Planning UX + `calculate_gifting_summary` | Stay separate until ATG design | Form 709 prior gifts section |
-| Consumer Monte Carlo | Inflation + simulation count from accepted advisor row | Full advisor assumption parity | Backlog item below |
+| Consumer Monte Carlo | Full advisor assumption set (7 fields) on `/monte-carlo` | Full advisor assumption parity | Shipped |
 | Federal income tax | `federal_tax_brackets` required in canonical projection | No hardcoded fallback | Implemented |
 | State income tax | `state_income_tax_brackets` in user paths | Retire `state_income_tax_rates` archive | Admin archive only |
 | Estate health recompute | Server `afterHouseholdWrite` + secret header; persists score, conflicts, recommendations | No client `/api/recompute-estate-health` | Session 101+; recommendations cache P-2 |
@@ -1328,9 +1328,9 @@ Two concepts must stay separate until product designs unified intake:
 | Concept | Storage | Used for |
 |---------|---------|----------|
 | Planning gifts | `gift_history` (+ `calculate_gifting_summary`) | Annual exclusion UI, lifetime meter, horizon `lifetimeGiftsUsed`, composition `p_lifetime_gifts_used` |
-| Adjusted taxable gifts (ATG) | `adjusted_taxable_gifts` | Future §2001(b) taxable-gift add-back intake |
+| Adjusted taxable gifts (ATG) | `adjusted_taxable_gifts` | §2001(b) taxable-estate add-back intake + composition sum |
 
-**Current:** Session 121 removed ATG add-back from `calculate_estate_composition`; `gift_history` `gift_type='lifetime'` rows are **not** ATG. Unified ATG intake is **not designed**.
+**Current:** `gift_history` `gift_type='lifetime'` rows are **not** ATG. ATG intake lives in `components/gifting/AdjustedTaxableGiftsSection.tsx` with CRUD via `/api/consumer/adjusted-taxable-gifts`. `calculate_estate_composition` adds back ATG sum (migration `20260701120000`).
 
 **When designing intake:** update this section, `DATABASE_SCHEMA_REFERENCE.md` (`adjusted_taxable_gifts`, `gift_history`), and [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) gifting tab.
 
@@ -1349,11 +1349,8 @@ Two concepts must stay separate until product designs unified intake:
 
 ### High priority — confirmed post-launch
 
-1. **ATG intake & horizon wiring (IRC §2001(b)):** Design unified `adjusted_taxable_gifts` intake;
-   wire §2001(b) ATG into estate composition and horizon `lifetimeGiftsUsed`. Session 121 removed
-   add-back from RPC. (See Open design decisions section.)
-2. **Consumer Monte Carlo full parity** — expand assumption fields beyond inflation/simulation count
-   to match full advisor assumption set.
+1. ~~**ATG intake & horizon wiring (IRC §2001(b))**~~ — shipped: gifting tab ATG section, consumer API, RPC add-back restored (`20260701120000`).
+2. ~~**Consumer Monte Carlo full parity**~~ — shipped: all 7 advisor assumption fields on `/monte-carlo` via `applyConsumerMCAssumptionsToInputs`.
 3. **`/api/strategy-line-items` → optional consumer namespace cleanup** — keep as canonical path
    for now; revisit during a broader `/api/consumer/*` label cleanup.
 4. **Mirror `/api/businesses` and `/api/insurance`** under `/api/consumer/*` or document permanent

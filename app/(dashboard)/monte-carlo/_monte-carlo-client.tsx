@@ -12,6 +12,13 @@ import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { MonteCarloInputs, YearlyDataPoint } from '@/lib/monte-carlo'
 import type { MonteCarloPrefillPayload } from '@/lib/monte-carlo/loadMonteCarloPrefill'
 import type { MonteCarloAdvisorAssumptionsPayload } from '@/lib/monte-carlo/loadMonteCarloAdvisorAssumptions'
+import {
+  applyConsumerMCAssumptionsToInputs,
+  CONSUMER_MC_ASSUMPTION_FIELDS,
+  defaultConsumerMCAssumptions,
+} from '@/lib/monte-carlo/applyConsumerAssumptionInputs'
+import type { ConsumerMCAssumptionSet } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'
 
 interface SavedRun {
   id: string
@@ -346,14 +353,24 @@ function applyPrefillToInputs(
 function applyAdvisorAssumptionsToInputs(
   inputs: MonteCarloInputs,
   advisorData: MonteCarloAdvisorAssumptionsPayload | null,
-): MonteCarloInputs {
+): { inputs: MonteCarloInputs; assumptions: ConsumerMCAssumptionSet } {
   const accepted = advisorData?.acceptedScenario
-  if (!accepted?.assumptions) return inputs
+  const assumptions = accepted?.assumptions
+    ? { ...accepted.assumptions }
+    : defaultConsumerMCAssumptions()
   return {
-    ...inputs,
-    inflation_rate: Number(accepted.assumptions.inflationRatePct ?? inputs.inflation_rate),
-    simulation_count: Number(accepted.assumptions.simulationCount ?? inputs.simulation_count),
+    inputs: applyConsumerMCAssumptionsToInputs(inputs, accepted?.assumptions ?? null),
+    assumptions,
   }
+}
+
+function stripConsumerAssumptionOverrides(inputs: MonteCarloInputs): MonteCarloInputs {
+  const next = { ...inputs }
+  delete next.portfolio_return_mean_pct
+  delete next.portfolio_return_volatility_pct
+  delete next.mc_success_threshold_pct
+  delete next.mc_withdrawal_rate_pct
+  return next
 }
 
 function buildInitialMonteCarloState(
@@ -364,10 +381,18 @@ function buildInitialMonteCarloState(
   if (initialPrefill?.prefill) {
     inputs = applyPrefillToInputs(inputs, initialPrefill)
   }
-  inputs = applyAdvisorAssumptionsToInputs(inputs, initialAdvisorAssumptions)
+  const { inputs: withAssumptions, assumptions } = applyAdvisorAssumptionsToInputs(
+    inputs,
+    initialAdvisorAssumptions,
+  )
 
   return {
-    inputs,
+    inputs: withAssumptions,
+    mcAssumptions: assumptions,
+    baselineHorizons: {
+      p1: inputs.life_expectancy,
+      p2: inputs.p2_life_expectancy,
+    },
     confidence: (initialPrefill?.confidence ?? {}) as Record<string, Confidence>,
     summary: initialPrefill?.summary ?? null,
     p1Name: initialPrefill?.person1_name
@@ -394,6 +419,8 @@ export function MonteCarloClient({
 
   const [step, setStep]             = useState<Step>('portfolio')
   const [inputs, setInputs]         = useState<MonteCarloInputs>(initialState.inputs)
+  const [mcAssumptions, setMcAssumptions] = useState<ConsumerMCAssumptionSet>(initialState.mcAssumptions)
+  const [baselineHorizons, setBaselineHorizons] = useState(initialState.baselineHorizons)
   const [confidence, setConfidence] = useState<Record<string, Confidence>>(initialState.confidence)
   const [summary, setSummary]       = useState<PrefillSummary | null>(initialState.summary)
   const [result, setResult]         = useState<SavedRun | null>(null)
@@ -418,6 +445,11 @@ export function MonteCarloClient({
 
   const set = (k: keyof MonteCarloInputs, v: number | boolean) =>
     setInputs(prev => ({ ...prev, [k]: v }))
+
+  const setAssumption = (key: keyof ConsumerMCAssumptionSet, value: number) =>
+    setMcAssumptions(prev => ({ ...prev, [key]: value }))
+
+  const simulationInputs = applyConsumerMCAssumptionsToInputs(inputs, mcAssumptions)
 
   const allocationTotal = inputs.stocks_pct + inputs.bonds_pct + inputs.cash_pct
   const allocationValid = allocationTotal === 100
@@ -446,6 +478,11 @@ export function MonteCarloClient({
           }
           setConfidence(prefillData.confidence ?? {})
           setSummary(prefillData.summary ?? null)
+          const prefillInputs = applyPrefillToInputs({ ...EMPTY_INPUTS }, prefillData)
+          setBaselineHorizons({
+            p1: prefillInputs.life_expectancy,
+            p2: prefillInputs.p2_life_expectancy,
+          })
         }
         if (Array.isArray(historyData)) setHistory(historyData)
         setPrefilling(false)
@@ -464,7 +501,8 @@ export function MonteCarloClient({
         setAcceptedAdvisorScenario(accepted)
         setLatestSharedAdvisorScenario(shared)
         if (accepted?.assumptions) {
-          setInputs((prev) => applyAdvisorAssumptionsToInputs(prev, data))
+          setMcAssumptions({ ...accepted.assumptions })
+          setInputs((prev) => applyConsumerMCAssumptionsToInputs(prev, accepted.assumptions))
         }
       })
       .catch(() => null)
@@ -485,11 +523,8 @@ export function MonteCarloClient({
       const accepted = data?.acceptedScenario ?? null
       setAcceptedAdvisorScenario(accepted)
       if (accepted?.assumptions) {
-        setInputs((prev) => ({
-          ...prev,
-          inflation_rate: Number(accepted.assumptions.inflationRatePct ?? prev.inflation_rate),
-          simulation_count: Number(accepted.assumptions.simulationCount ?? prev.simulation_count),
-        }))
+        setMcAssumptions({ ...accepted.assumptions })
+        setInputs((prev) => applyConsumerMCAssumptionsToInputs(prev, accepted.assumptions))
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unable to accept advisor assumptions')
@@ -510,10 +545,14 @@ export function MonteCarloClient({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Unable to revert assumptions')
       setAcceptedAdvisorScenario(null)
+      const defaults = data?.systemDefaults ?? MONTE_CARLO_SYSTEM_DEFAULTS
+      setMcAssumptions({ ...defaults })
       setInputs((prev) => ({
-        ...prev,
-        inflation_rate: Number(data?.systemDefaults?.inflationRatePct ?? prev.inflation_rate),
-        simulation_count: Number(data?.systemDefaults?.simulationCount ?? prev.simulation_count),
+        ...stripConsumerAssumptionOverrides(prev),
+        inflation_rate: Number(defaults.inflationRatePct),
+        simulation_count: Number(defaults.simulationCount),
+        life_expectancy: baselineHorizons.p1,
+        p2_life_expectancy: baselineHorizons.p2,
       }))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unable to revert assumptions')
@@ -530,7 +569,7 @@ export function MonteCarloClient({
       const res = await fetch('/api/monte-carlo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...inputs, label }),
+        body: JSON.stringify({ ...simulationInputs, label }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -582,7 +621,7 @@ export function MonteCarloClient({
             Advisor assumptions available: {latestSharedAdvisorScenario.scenarioName}
           </p>
           <p className="mt-1 text-xs text-[color:var(--mwm-navy)]">
-            Accept to apply advisor Monte Carlo assumptions to this page (inflation and simulation count).
+            Accept to apply all advisor Monte Carlo assumptions (returns, volatility, withdrawal rate, success goal, simulations, planning horizon, and inflation).
           </p>
           <div className="mt-3 flex gap-2">
             <button
@@ -602,7 +641,7 @@ export function MonteCarloClient({
             Using accepted advisor assumptions: {acceptedAdvisorScenario.scenarioName}
           </p>
           <p className="mt-1 text-xs text-green-700">
-            Applied fields on this page: inflation rate and simulation count.
+            Applied advisor assumptions: return model, volatility, withdrawal rate, success goal, simulation count, planning horizon, and inflation.
           </p>
           <div className="mt-3 flex gap-2">
             <button
@@ -846,21 +885,34 @@ export function MonteCarloClient({
 
           {step === 'assumptions' && (
             <div className="space-y-4">
-              <Field label="Inflation Rate %" hint="Historical avg: 2.5-3%" confidence={confidence.inflation_rate}>
-                <NumInput value={inputs.inflation_rate} onChange={v => set('inflation_rate', v)} step={0.1} />
-              </Field>
-              <Field label="Simulations" hint="More = slower but more accurate">
-                <select
-                  value={inputs.simulation_count}
-                  onChange={e => set('simulation_count', Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
+              {CONSUMER_MC_ASSUMPTION_FIELDS.map((field) => (
+                <Field
+                  key={field.key}
+                  label={field.label}
+                  hint={field.hint}
+                  confidence={field.key === 'inflationRatePct' ? confidence.inflation_rate : undefined}
                 >
-                  <option value={500}>500 - Fast</option>
-                  <option value={1000}>1,000 - Balanced</option>
-                  <option value={5000}>5,000 - Precise</option>
-                  <option value={10000}>10,000 - Maximum</option>
-                </select>
-              </Field>
+                  {field.key === 'simulationCount' ? (
+                    <select
+                      value={mcAssumptions.simulationCount}
+                      onChange={e => setAssumption('simulationCount', Number(e.target.value))}
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]"
+                    >
+                      <option value={500}>500 — Fast</option>
+                      <option value={1000}>1,000 — Balanced</option>
+                      <option value={5000}>5,000 — Precise</option>
+                      <option value={10000}>10,000 — Maximum</option>
+                    </select>
+                  ) : (
+                    <NumInput
+                      value={mcAssumptions[field.key]}
+                      onChange={v => setAssumption(field.key, v)}
+                      step={field.step}
+                      min={field.min}
+                    />
+                  )}
+                </Field>
+              ))}
               <Field label="Include RMDs" hint="SECURE 2.0: age 73 if born before 1960, age 75 if born 1960 or later">
                 <div className="flex items-center gap-2 mt-1">
                   <input type="checkbox" checked={inputs.include_rmd} onChange={e => set('include_rmd', e.target.checked)} className="w-4 h-4 accent-[var(--mwm-navy)]" />
@@ -897,8 +949,12 @@ export function MonteCarloClient({
                 {inputs.has_spouse && <div className="flex justify-between"><span className="text-gray-500">Survivor spending</span><span className="font-medium">{inputs.survivor_spending_pct}% of joint</span></div>}
                 <div className="flex justify-between"><span className="text-gray-500">P1 Social Security</span><span className="font-medium">{formatCurrency(inputs.social_security_monthly)}/mo at {inputs.social_security_start_age}</span></div>
                 {inputs.has_spouse && <div className="flex justify-between"><span className="text-gray-500">P2 Social Security</span><span className="font-medium">{formatCurrency(inputs.p2_social_security_monthly)}/mo at {inputs.p2_social_security_start_age}</span></div>}
-                <div className="flex justify-between"><span className="text-gray-500">Inflation</span><span className="font-medium">{inputs.inflation_rate}%</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Simulations</span><span className="font-medium">{inputs.simulation_count.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Plan horizon</span><span className="font-medium">Through age {simulationInputs.life_expectancy}{inputs.has_spouse ? ` / ${simulationInputs.p2_life_expectancy}` : ''}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Return model</span><span className="font-medium">{mcAssumptions.returnMeanPct}% ± {mcAssumptions.volatilityPct}%</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Success goal</span><span className="font-medium">{mcAssumptions.successThreshold}% of runs</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Target withdrawal rate</span><span className="font-medium">{mcAssumptions.withdrawalRatePct}%</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Inflation</span><span className="font-medium">{mcAssumptions.inflationRatePct}%</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Simulations</span><span className="font-medium">{mcAssumptions.simulationCount.toLocaleString()}</span></div>
               </div>
               <div className="text-xs text-gray-400 flex flex-wrap gap-3">
                 <span className="flex items-center gap-1"><span className="text-green-500">●</span> From your profile</span>
@@ -923,7 +979,7 @@ export function MonteCarloClient({
           {loading && (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-sm gap-3">
               <div className="w-10 h-10 border-4 border-[color:var(--mwm-border)] border-t-[color:var(--mwm-navy)] rounded-full animate-spin" />
-              <p>Running {inputs.simulation_count.toLocaleString()} simulations...</p>
+              <p>Running {simulationInputs.simulation_count.toLocaleString()} simulations...</p>
             </div>
           )}
           {result && !loading && (

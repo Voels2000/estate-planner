@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
     simulation_count:           body.simulation_count ?? 1000,
     include_rmd:                body.include_rmd ?? true,
     spending_schedule:          body.spending_schedule ?? [],
+    portfolio_return_mean_pct:  body.portfolio_return_mean_pct,
+    portfolio_return_volatility_pct: body.portfolio_return_volatility_pct,
+    mc_success_threshold_pct:   body.mc_success_threshold_pct,
+    mc_withdrawal_rate_pct:     body.mc_withdrawal_rate_pct,
   }
 
   const result = runSimulation(inputs)

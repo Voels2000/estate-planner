@@ -432,9 +432,9 @@ This page is a **two-level** navigation system: primary tabs (URL-driven) plus c
 | | |
 |--|--|
 | **Client** | `components/GiftingDashboard.tsx` (dynamic import) |
-| **Write APIs** | `POST/PATCH/DELETE /api/consumer/gift-history`; annual program via `POST /api/strategy-line-items` (`strategy_source: annual_gifting`) |
-| **Read APIs / RPCs** | `calculate_gifting_summary`, `gift_history` for current tax year |
-| **UX (not separate routes)** | Lifetime exemption meter; **Annual Exclusion Used** + **529 superfunding** labels with **`InfoTooltip`** (`annual_exclusion`, `superfunding`); per-recipient annual cap warnings; **Prior taxable gifts (Form 709)**; MFJ donor selector; **Gifting scenario** collapsible with **Save to my plan →** when no active plan, or **In your estate plan** card (amount, drift warning, Update plan, Return to sandbox, Withdraw) when `annual_gifting` line item is active |
+| **Write APIs** | `POST/PATCH/DELETE /api/consumer/gift-history`; **`POST/PATCH/DELETE /api/consumer/adjusted-taxable-gifts`** (ATG §2001(b), distinct from Form 709 prior gifts); annual program via `POST /api/strategy-line-items` (`strategy_source: annual_gifting`) |
+| **Read APIs / RPCs** | `calculate_gifting_summary`, `gift_history` for current tax year; ATG rows via adjusted-taxable-gifts API |
+| **UX (not separate routes)** | Lifetime exemption meter; **Annual Exclusion Used** + **529 superfunding** labels with **`InfoTooltip`** (`annual_exclusion`, `superfunding`); per-recipient annual cap warnings; **Prior taxable gifts (Form 709)**; **Adjusted taxable gifts (IRC §2001(b))** collapsible (`AdjustedTaxableGiftsSection`); MFJ donor selector; **Gifting scenario** collapsible with **Save to my plan →** when no active plan, or **In your estate plan** card (amount, drift warning, Update plan, Return to sandbox, Withdraw) when `annual_gifting` line item is active |
 | **Gift delete + plan** | Deleting a gift when plan has `metadata.synced_from_gift_history` → `GiftDeleteWarningModal`: delete only (drift warning) or delete + withdraw plan (`PATCH` `action: 'withdraw'`) |
 | **E2E** | `consumer-gift-history.spec.ts`, `consumer-strategy-writes.spec.ts`; manual smoke §10c gifting delete + plan |
 
@@ -513,7 +513,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 |---------|------------------|------------|
 | **Strategy recommendations** | Dashboard `StrategyRecommendationPanel`; Transfer Strategies sandbox + In My Plan; advisor Step 3 **Withdrawn by Client** when consumer withdraws accepted recommendation | Advisor: `/api/advisor/strategy-recommendation`. Consumer accept: `PATCH /api/consumer/strategy-recommendation`. Promote/reverse own rows: `PATCH /api/strategy-line-items` `{ id, action }`. Withdraw sets `consumer_withdrawn` + `is_active=false` (reason visible to advisor) |
 | **Advisor GST ledger (SLAT)** | Advisor client Strategy tab — `SLATILITPanel` “Save to GST ledger” | `POST /api/advisor/gst-entry` (not browser `gst_ledger`); validates `advisor_clients` then service-role insert. RLS: `20260527150000` |
-| **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy` | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions` |
+| **Monte Carlo** | `MonteCarloScenarioBanner` on `/dashboard`, `/my-estate-strategy`; **`/monte-carlo`** assumptions step (7 fields) + accept/revert | `/api/monte-carlo/advisor-assumptions`; table `advisor_projection_assumptions`; engine `applyConsumerMCAssumptionsToInputs` |
 | **Access** | `/my-advisor` (sidebar footer; never `isLockedUser`-gated) | `advisor_clients`, `connection_requests`, `advisor_directory`; `POST /api/consumer/invite-advisor` when no connection; disconnect via `POST /api/consumer/disconnect-advisor` (restores tier + resubscribe email); cancel directory pending via `POST /api/connection-requests/cancel`; dashboard `AdvisorConnectedBanner` when recently connected |
 | **Life event → advisor** | `LifeEventBanner` confirmation | `POST /api/consumer/life-events` notifies connected advisor (`create_notification`); cron backup in `/api/cron/notifications` |
 | **Plan readiness (advisor view)** | Advisor client Overview tab | `estate_health_scores` via `fetchHealthScore` → `PlanStatusCard` + gap workflow (`advisor_gap_statuses`, `GapStatusSelector`) |

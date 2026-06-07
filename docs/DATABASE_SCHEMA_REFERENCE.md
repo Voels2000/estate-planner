@@ -34,7 +34,7 @@ This is a developer reference, not a full SQL DDL dump.
 | Domicile | `domicile_analysis`, `domicile_schedule`, `domicile_checklist_items` | Residency and move planning |
 | Strategy tracking | `strategy_line_items`, `strategy_configs` | Recommendation and modeled strategy data |
 | Gifting activity | `gift_history` | Annual/lifetime/529/medical/tuition gifts; feeds `calculate_gifting_summary` |
-| Post-1976 ATG (legacy intake) | `adjusted_taxable_gifts` | Separate from `gift_history`; IRC §2001(b) ATG — not yet wired to horizons |
+| Post-1976 ATG | `adjusted_taxable_gifts` | IRC §2001(b) add-back; gifting tab intake + composition RPC sum |
 | Monte Carlo assumptions | `advisor_projection_assumptions`, `projection_assumption_audit` | Advisor override + consumer accept/revert workflow |
 
 ---
@@ -238,8 +238,9 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 - **Key columns:** `household_id`, `gift_year`, `amount`, `recipient_description`, `three_year_clawback`, `notes`
 - **Purpose:** post-1976 adjusted taxable gifts (IRC §2001(b)) — **distinct** from `gift_history` lifetime rows used for planning UX and `calculate_gifting_summary`.
-- **Last significant change:** Session 121 — removed ATG add-back from `calculate_estate_composition`; table remains for future intake only.
-- **Open design:** Unified ATG intake not built. See [MASTER_ARCHITECTURE.md → Open design decisions](./MASTER_ARCHITECTURE.md#open-design-decisions) (ATG vs `gift_history`).
+- **Consumer writes:** `GET` / `POST` / `PATCH` / `DELETE` `/api/consumer/adjusted-taxable-gifts` — same auth pattern as gift-history; `afterHouseholdWrite` + revalidate strategy/estate paths.
+- **UI:** `components/gifting/AdjustedTaxableGiftsSection.tsx` on gifting tab (distinct from Form 709 prior gifts in `GiftingDashboard`).
+- **Composition:** migration `20260701120000` restores ATG sum in `calculate_estate_composition`; `EstateCompositionCard` shows `adjusted_taxable_gifts` when &gt; 0.
 
 ### `strategy_line_items`
 
