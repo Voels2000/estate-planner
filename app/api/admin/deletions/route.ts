@@ -12,6 +12,66 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view') ?? 'schedule'
 
+  if (view === 'lookup') {
+    const email = searchParams.get('email')?.trim()
+    if (!email) {
+      return NextResponse.json({ error: 'email is required' }, { status: 400 })
+    }
+
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('id, email, full_name, role')
+      .ilike('email', email)
+      .maybeSingle()
+
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 500 })
+    }
+
+    if (profile) {
+      return NextResponse.json({
+        data: {
+          userId: profile.id,
+          email: profile.email,
+          fullName: profile.full_name,
+          role: profile.role,
+          hasProfile: true,
+        },
+      })
+    }
+
+    let page = 1
+    while (true) {
+      const { data: authData, error: authError } = await admin.auth.admin.listUsers({
+        page,
+        perPage: 1000,
+      })
+      if (authError) {
+        return NextResponse.json({ error: authError.message }, { status: 500 })
+      }
+
+      const authUser = authData.users.find(
+        (u) => u.email?.toLowerCase() === email.toLowerCase(),
+      )
+      if (authUser) {
+        return NextResponse.json({
+          data: {
+            userId: authUser.id,
+            email: authUser.email ?? email,
+            fullName: null,
+            role: null,
+            hasProfile: false,
+          },
+        })
+      }
+
+      if (authData.users.length < 1000) break
+      page++
+    }
+
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  }
+
   if (view === 'privacy') {
     const { data, error } = await admin
       .from('privacy_requests')

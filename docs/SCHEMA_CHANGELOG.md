@@ -10,6 +10,19 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Admin deletion email lookup (2026-06-07)
+
+**Session 133** — No migration. Admin portal UX:
+
+| Change | Detail |
+|--------|--------|
+| **`GET /api/admin/deletions?view=lookup&email=`** | Resolves UUID from `profiles` or auth users (admin-only) |
+| **`DeletionCompliance.tsx`** | Execute tab: email → **Look up** auto-fills UUID; **Execute →** from Scheduled Deletions / Privacy Requests |
+
+**Workflow:** `/admin` → Data & Compliance → Execute Deletion → enter email → Look up → dry run → execute.
+
+---
+
 ## Go-live auth purge + deleteUser coverage (2026-06-07)
 
 **Session 132** — No migration. Application-layer only:

@@ -30,12 +30,14 @@ Washington **WCPA** (RCW 19.255.010): respond to authenticated deletion requests
 ### Right-to-delete SOP (updated)
 
 1. Verify requestor identity (confirm email matches account)
-2. Look up user ID in Supabase Admin or admin portal
+2. Look up user: Admin Portal → Data & Compliance → Execute Deletion → enter email → **Look up**
+   (or Scheduled Deletions / Privacy Requests → **Execute →**)
+   Fallback: Supabase Auth dashboard or `npm run verify:deletion` after delete
 3. Dry run: `npx tsx scripts/gdpr-delete-user.ts --email user@example.com --dry-run`
-   OR: Admin Portal → Data & Compliance → Execute Deletion → check Dry Run
+   OR: Admin Portal → Execute Deletion → check **Dry run** → **Preview deletion**
 4. Review output — confirm correct household and row counts
 5. Execute: `npx tsx scripts/gdpr-delete-user.ts --email user@example.com`
-   OR: Admin Portal → Data & Compliance → Execute Deletion → uncheck Dry Run
+   OR: Admin Portal → Execute Deletion → uncheck Dry Run → **Execute permanent deletion**
 6. **Verify deletion**: `npm run verify:deletion -- --email user@example.com`
    Must show PASS before responding to the user
 7. Confirm deletion in Admin Portal → Data & Compliance → Audit Log

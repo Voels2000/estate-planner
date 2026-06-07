@@ -95,7 +95,7 @@ These must be complete before launch. Update status as sprints close them.
 
 - [x] **`deletion_audit_log` and `deletion_schedule` tables live** — `20260625120000_sprint_c6_deletion_compliance.sql` applied
 - [x] **30-day post-cancellation deletion automated** — webhook schedules; `GET /api/cron/process-deletions` 2am UTC; cron smoke `{"processed":0,"message":"No deletions due"}`
-- [x] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion
+- [x] **Admin portal Data & Compliance tab live** — `/admin` → Scheduled Deletions, Audit Log, Execute Deletion (email **Look up** → UUID auto-fill)
 - [x] **Plan-change guard** — `lib/compliance/deletionGuards.ts` in webhook + cron
 - [x] **CLI script** — `scripts/gdpr-delete-user.ts` → `deleteUser`
 - [x] **`deleteUser.ts` production hardening** — FK scan (`firms`, `firm_members`, `change_log` + full list), orphan Auth handling, hard/soft delete fallback, post-deletion verification (`aea4bf6`, `3cdd9b5`)

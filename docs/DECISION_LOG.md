@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (go-live purge + estate verification)
+# Last updated: 2026-06-07 (admin deletion email lookup)
+
+---
+
+---
+
+## Admin deletion email lookup (2026-06-07)
+
+**Decision:** Admin Execute Deletion form resolves UUID from email via `GET /api/admin/deletions?view=lookup&email=` (profiles first, then auth pagination). Scheduled deletions and privacy deletion requests link to Execute tab with pre-filled fields — no manual UUID copy from Supabase.
+
+**Files:** `app/api/admin/deletions/route.ts`, `app/admin/_components/DeletionCompliance.tsx`
 
 ---
 

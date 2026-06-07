@@ -2224,7 +2224,7 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 | **Table** | `privacy_requests` — five WCPA rights; `due_at` DEFAULT (+45 days) |
 | **Cron** | `GET /api/cron/compliance-reminders` — 8am UTC; emails only on issues or monthly summary (1st) |
 | **Consumer** | `/settings/security` → Privacy Rights; confirmation email with reference ID |
-| **Admin** | Privacy Requests sub-view; PATCH status via `/api/admin/deletions` |
+| **Admin** | Privacy Requests sub-view; PATCH status via `/api/admin/deletions`; Execute Deletion **Look up** by email (2026-06-07) |
 | **Ops email** | `COMPLIANCE_EMAIL=avoels@comcast.net` in Vercel Production |
 
 **Commits:** `ddbf079`, `1ce9110` (migration `due_at` fix)

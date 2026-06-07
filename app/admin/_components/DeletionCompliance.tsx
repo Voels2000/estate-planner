@@ -36,12 +36,21 @@ type ExecuteForm = {
 
 type PrivacyRequest = {
   id: string
+  user_id?: string | null
   email: string
   request_type: string
   status: string
   received_at: string
   due_at: string
   notes?: string | null
+}
+
+type LookupResult = {
+  userId: string
+  email: string
+  fullName: string | null
+  role: string | null
+  hasProfile: boolean
 }
 
 const inputClass =
@@ -65,6 +74,63 @@ export function DeletionCompliance() {
   })
   const [result, setResult] = useState<Record<string, unknown> | null>(null)
   const [executing, setExecuting] = useState(false)
+  const [lookupLoading, setLookupLoading] = useState(false)
+  const [lookupResult, setLookupResult] = useState<LookupResult | null>(null)
+  const [lookupError, setLookupError] = useState<string | null>(null)
+
+  function fillExecuteForm(params: {
+    userId: string
+    email: string
+    reason?: DeletionReason
+  }) {
+    setForm((prev) => ({
+      ...prev,
+      userId: params.userId,
+      email: params.email,
+      reason: params.reason ?? prev.reason,
+    }))
+    setLookupResult(null)
+    setLookupError(null)
+    setResult(null)
+    setView('execute')
+  }
+
+  async function lookupUserByEmail(emailOverride?: string) {
+    const email = (emailOverride ?? form.email).trim()
+    if (!email) {
+      setLookupError('Enter an email address first')
+      return
+    }
+
+    setLookupLoading(true)
+    setLookupError(null)
+    setLookupResult(null)
+    setFetchError(null)
+
+    try {
+      const res = await fetch(
+        `/api/admin/deletions?view=lookup&email=${encodeURIComponent(email)}`,
+      )
+      const data = await res.json()
+      if (!res.ok) {
+        setLookupError(data.error ?? 'User not found')
+        setForm((prev) => ({ ...prev, email, userId: '' }))
+        return
+      }
+
+      const resolved = data.data as LookupResult
+      setLookupResult(resolved)
+      setForm((prev) => ({
+        ...prev,
+        email: resolved.email,
+        userId: resolved.userId,
+      }))
+    } catch (err) {
+      setLookupError(err instanceof Error ? err.message : 'Lookup failed')
+    } finally {
+      setLookupLoading(false)
+    }
+  }
 
   const fetchData = useCallback(async () => {
     if (view === 'execute') return
@@ -198,16 +264,22 @@ export function DeletionCompliance() {
             <table className="min-w-full divide-y divide-neutral-100">
               <thead className="bg-neutral-50">
                 <tr>
-                  {['Email', 'Reason', 'Scheduled For', 'Status', 'Days Until', 'Cancel reason'].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    'Email',
+                    'Reason',
+                    'Scheduled For',
+                    'Status',
+                    'Days Until',
+                    'Cancel reason',
+                    '',
+                  ].map((h) => (
+                    <th
+                      key={h || 'actions'}
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
@@ -257,6 +329,30 @@ export function DeletionCompliance() {
                       </td>
                       <td className="px-4 py-3 text-xs text-neutral-500">
                         {row.cancel_reason?.replace(/_/g, ' ') ?? '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.status === 'pending' ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              fillExecuteForm({
+                                userId: row.user_id,
+                                email: row.email,
+                                reason:
+                                  row.reason === 'user_request'
+                                    ? 'user_request'
+                                    : row.reason === 'subscription_cancelled'
+                                      ? 'subscription_cancelled'
+                                      : 'admin_initiated',
+                              })
+                            }
+                            className="text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                          >
+                            Execute →
+                          </button>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   )
@@ -430,7 +526,7 @@ export function DeletionCompliance() {
                       <td className="px-4 py-3 text-xs text-neutral-500 max-w-[12rem]">
                         {row.notes ?? '—'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 space-y-1">
                         <button
                           type="button"
                           disabled={savingPrivacyId === row.id}
@@ -440,10 +536,44 @@ export function DeletionCompliance() {
                               void handlePrivacyStatusUpdate(row.id, row.status, notes)
                             }
                           }}
-                          className="text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                          className="block text-xs font-medium text-neutral-700 hover:text-neutral-900"
                         >
                           Edit notes
                         </button>
+                        {row.request_type === 'deletion' && row.status !== 'completed' ? (
+                          row.user_id ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                fillExecuteForm({
+                                  userId: row.user_id!,
+                                  email: row.email,
+                                  reason: 'user_request',
+                                })
+                              }
+                              className="block text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                            >
+                              Execute →
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  email: row.email,
+                                  userId: '',
+                                  reason: 'user_request',
+                                }))
+                                setView('execute')
+                                void lookupUserByEmail(row.email)
+                              }}
+                              className="block text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                            >
+                              Look up & execute →
+                            </button>
+                          )
+                        ) : null}
                       </td>
                     </tr>
                   )
@@ -467,27 +597,60 @@ export function DeletionCompliance() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 space-y-4">
             <div>
               <label className="block text-xs font-medium text-neutral-500 mb-1">
+                Email
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => {
+                    setForm({ ...form, email: e.target.value })
+                    setLookupResult(null)
+                    setLookupError(null)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      void lookupUserByEmail()
+                    }
+                  }}
+                  placeholder="user@example.com"
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={() => void lookupUserByEmail()}
+                  disabled={lookupLoading || !form.email.trim()}
+                  className="shrink-0 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  {lookupLoading ? 'Looking up…' : 'Look up'}
+                </button>
+              </div>
+              {lookupError ? (
+                <p className="mt-2 text-xs text-red-600">{lookupError}</p>
+              ) : null}
+              {lookupResult ? (
+                <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-900">
+                  <p className="font-medium">
+                    {lookupResult.fullName ?? 'No profile name'}
+                    {lookupResult.role ? ` · ${lookupResult.role}` : ''}
+                    {!lookupResult.hasProfile ? ' · auth only (no profile)' : ''}
+                  </p>
+                  <p className="mt-1 font-mono text-green-800">{lookupResult.userId}</p>
+                </div>
+              ) : null}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">
                 User ID (UUID)
               </label>
               <input
                 type="text"
                 value={form.userId}
                 onChange={(e) => setForm({ ...form, userId: e.target.value })}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                placeholder="Look up by email, or paste UUID manually"
                 className={`${inputClass} font-mono`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">
-                Email (audit record)
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="user@example.com"
-                className={inputClass}
               />
             </div>
 

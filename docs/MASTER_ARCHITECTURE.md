@@ -1213,7 +1213,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Webhook:** `customer.subscription.deleted` → schedule deletion +30 days via `scheduleDeletionOnCancel.ts` — **skipped** if customer has another active/trialing subscription (plan change) or profile role is advisor/attorney/admin (`deletionGuards.ts`).
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
 - **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded.
-- **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions`, `POST /api/admin/deletions/execute`.
+- **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions` (`view=schedule|audit|privacy|lookup`), `POST /api/admin/deletions/execute`. Execute tab: **Look up** by email auto-fills UUID; **Execute →** shortcuts from scheduled deletions and privacy requests.
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — ✅ applied in production.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
 

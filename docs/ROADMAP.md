@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (go-live purge + estate verification)
+# Last updated: 2026-06-07 (admin deletion email lookup)
 
 ---
 
@@ -160,6 +160,7 @@
 | **Estate verification suite** | `[x]` — `npm run verify:estate` matrix + lifecycle + HTTP + Security UI |
 | **E2E Johnson → advisor-client** | `[x]` — `e2e-advisor-client@`; Playwright `.auth/advisor-client.json` |
 | **Go-live auth purge** | `[x]` — `npm run cleanup:purge`; 10 prod accounts; `deleteUser` table coverage |
+| **Admin deletion email lookup** | `[x]` — Execute tab Look up → UUID; shortcuts from schedule/privacy |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `bff7ecd` · `9488024` · `996a087` · `4d22809`
