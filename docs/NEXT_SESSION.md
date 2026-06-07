@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-07 (advisor logo file-upload)
+# Updated: 2026-06-07 (titling perf / memoization)
+
+---
+
+## Titling & Beneficiaries perf — shipped ✅ (2026-06-07)
+
+**Shipped:** O(1) titling/beneficiary lookups via **`lib/titling/buildTitlingLookups.ts`**; memoized **`getTitlingWarnings`**; extracted memoized **`AssetTitlingCard`**; shared display helpers in **`lib/titling/titlingDisplayHelpers.ts`**; parallel **`household_people`** fetch on **`/titling`** page (join on `households.owner_id`).
+
+**Deferred:** modal code-split · table virtualization.
+
+**Next code sprint:** (pick from ROADMAP backlog).
 
 ---
 
@@ -12,7 +22,7 @@
 
 **Constraints:** PNG / JPEG / WebP · max 2 MB.
 
-**Next code sprint:** titling perf / memoization.
+**Next code sprint:** (see ROADMAP backlog).
 
 ---
 

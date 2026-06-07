@@ -54,6 +54,7 @@ export default async function TitlingPage() {
     { data: businesses },
     { data: insurancePolicyTitling },
     { data: businessTitling },
+    { data: householdPeople },
   ] = await Promise.all([
     supabase
       .from('titling_asset_categories')
@@ -107,15 +108,12 @@ export default async function TitlingPage() {
       .from('business_titling')
       .select('id, business_id, title_type, notes')
       .eq('owner_id', user.id),
+    supabase
+      .from('household_people')
+      .select('id, full_name, relationship, date_of_birth, is_gst_skip, households!inner(owner_id)')
+      .eq('households.owner_id', user.id)
+      .order('full_name', { ascending: true }),
   ])
-
-  const { data: householdPeople } = household?.id
-    ? await supabase
-        .from('household_people')
-        .select('id, full_name, relationship, date_of_birth, is_gst_skip')
-        .eq('household_id', household.id)
-        .order('full_name', { ascending: true })
-    : { data: [] as { id: string; full_name: string; relationship: string; date_of_birth: string | null; is_gst_skip: boolean }[] }
 
   return (
     <TitlingClient

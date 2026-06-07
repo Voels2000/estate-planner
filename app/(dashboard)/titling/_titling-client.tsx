@@ -5,11 +5,31 @@
 // Route: /titling
 // ─────────────────────────────────────────
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { displayPersonFirstName } from '@/lib/display-person-name'
+import AssetTitlingCard from '@/components/titling/AssetTitlingCard'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
+import { displayPersonFirstName } from '@/lib/display-person-name'
+import { buildTitlingLookups, beneficiaryMatchesEntity } from '@/lib/titling/buildTitlingLookups'
+import { getTitlingWarnings } from '@/lib/titling/getTitlingWarnings'
+import type {
+  AnyTitling,
+  AssetTitling,
+  Beneficiary,
+  BusinessTitlingRow,
+  InsurancePolicyTitling,
+  RealEstateTitling,
+  TitlingKind,
+} from '@/lib/titling/types'
+import {
+  buildAssetTitlingOptions,
+  groupRowsByOwnerBucket,
+  ownerLabel,
+  TITLE_TYPES,
+  titlingExemptFromBeneficiaryGap,
+  titlingFinancialOwnerLabel,
+} from '@/lib/titling/titlingDisplayHelpers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,49 +79,6 @@ type BusinessRow = {
   liquidity: string | null
   cost_basis: number | null
   basis_date: string | null
-}
-
-type AssetTitling = {
-  id: string
-  asset_id: string
-  title_type: string
-  notes: string | null
-}
-
-type RealEstateTitling = {
-  id: string
-  real_estate_id: string
-  title_type: string
-  notes: string | null
-}
-
-type InsurancePolicyTitling = {
-  id: string
-  insurance_policy_id: string
-  title_type: string
-  notes: string | null
-}
-
-type BusinessTitlingRow = {
-  id: string
-  business_id: string
-  title_type: string
-  notes: string | null
-}
-
-type Beneficiary = {
-  id: string
-  asset_id: string | null
-  real_estate_id: string | null
-  insurance_policy_id: string | null
-  business_id: string | null
-  beneficiary_type: 'primary' | 'contingent'
-  full_name: string
-  relationship: string | null
-  email: string | null
-  phone: string | null
-  allocation_pct: number
-  is_gst_skip?: boolean
 }
 
 type TitlingCategory = {
@@ -154,50 +131,6 @@ type TitlingClientProps = {
   person1LegalName: string | null
   person2LegalName: string | null
   categories: TitlingCategory[]
-}
-
-type TitlingKind = 'asset' | 're' | 'insurance' | 'business'
-
-type AnyTitling = AssetTitling | RealEstateTitling | InsurancePolicyTitling | BusinessTitlingRow
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const TITLE_TYPES = [
-  { value: 'sole',               label: 'Sole Ownership' },
-  { value: 'joint_wros',         label: 'Joint Tenancy (WROS)' },
-  { value: 'tenants_in_common',  label: 'Tenants in Common' },
-  { value: 'community_property', label: 'Community Property' },
-  { value: 'tod_pod',            label: 'TOD / POD' },
-  { value: 'trust_owned',        label: 'Trust Owned' },
-  { value: 'corporate',          label: 'Corporate / LLC' },
-]
-
-function buildAssetTitlingOptions(
-  person1LegalName: string | null,
-  person2LegalName: string | null,
-): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [
-    { value: '', label: 'Not set' },
-    {
-      value: 'individual_p1',
-      label: `Individual (${displayPersonFirstName(person1LegalName, 'Person 1')})`,
-    },
-  ]
-  if (person2LegalName?.trim()) {
-    options.push({
-      value: 'individual_p2',
-      label: `Individual (${displayPersonFirstName(person2LegalName)})`,
-    })
-  }
-  options.push(
-    { value: 'joint_tenants', label: 'Joint Tenants (JTWROS)' },
-    { value: 'tenants_in_common', label: 'Tenants in Common' },
-    { value: 'trust', label: 'Trust' },
-    { value: 'entity', label: 'Entity (LLC/Corp)' },
-    { value: 'pod', label: 'POD / Transfer on Death' },
-    { value: 'tod', label: 'TOD (Securities)' },
-  )
-  return options
 }
 
 const LIQUIDITY_OPTIONS = [
@@ -348,198 +281,6 @@ function picklistValueForFullName(
   return hit?.value ?? '__manual__'
 }
 
-function formatDollars(n: number) {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
-}
-
-function titleLabel(value: string) {
-  return TITLE_TYPES.find(t => t.value === value)?.label ?? value
-}
-
-function ownerLabel(owner: string | null, p1: string, p2: string) {
-  if (owner === 'person2') return p2
-  if (owner === 'joint') return 'Joint'
-  return p1
-}
-
-/** Owner line on Financial Assets & Insurance cards; includes trust/other/unassigned. */
-function titlingFinancialOwnerLabel(owner: string | null, p1: string, p2: string) {
-  if (owner === 'person2') return p2
-  if (owner === 'joint') return 'Joint'
-  if (owner === 'trust') return 'Trust'
-  if (owner === 'other') return 'Other'
-  if (owner == null || String(owner).trim() === '') return 'Unassigned'
-  return p1
-}
-
-/** Canonical buckets for grouping titling rows by `owner` (assets & insurance). */
-type OwnerBucketId = 'person1' | 'person2' | 'joint' | 'trust' | 'other' | 'unknown' | 'unassigned'
-
-const OWNER_BUCKET_ORDER: OwnerBucketId[] = [
-  'person1',
-  'person2',
-  'joint',
-  'trust',
-  'other',
-  'unknown',
-  'unassigned',
-]
-
-function normalizeOwnerBucket(owner: string | null): OwnerBucketId {
-  const o = owner?.trim().toLowerCase() ?? ''
-  if (!o) return 'unassigned'
-  if (o === 'person1' || o === 'person2' || o === 'joint' || o === 'trust' || o === 'other') return o
-  return 'unknown'
-}
-
-function ownerBucketLabel(
-  id: OwnerBucketId,
-  p1First: string,
-  p2First: string,
-): string {
-  switch (id) {
-    case 'person1':
-      return p1First
-    case 'person2':
-      return p2First
-    case 'joint':
-      return 'Joint'
-    case 'trust':
-      return 'Trust'
-    case 'other':
-      return 'Other'
-    case 'unknown':
-      return 'Unknown'
-    case 'unassigned':
-      return 'Unassigned'
-    default:
-      return 'Unknown'
-  }
-}
-
-function titlingOwnerStorageKey(tab: 'assets' | 'insurance', id: OwnerBucketId): string {
-  return `titling-${tab === 'assets' ? 'assets' : 'insurance'}-${id}`
-}
-
-function groupRowsByOwnerBucket<T extends { owner: string | null }>(
-  rows: T[],
-  p1First: string,
-  p2First: string,
-  tab: 'assets' | 'insurance',
-): { id: OwnerBucketId; title: string; storageKey: string; rows: T[] }[] {
-  const map = new Map<OwnerBucketId, T[]>()
-  for (const row of rows) {
-    const id = normalizeOwnerBucket(row.owner)
-    if (!map.has(id)) map.set(id, [])
-    map.get(id)!.push(row)
-  }
-  const out: { id: OwnerBucketId; title: string; storageKey: string; rows: T[] }[] = []
-  for (const id of OWNER_BUCKET_ORDER) {
-    const bucketRows = map.get(id)
-    if (!bucketRows?.length) continue
-    out.push({
-      id,
-      title: ownerBucketLabel(id, p1First, p2First),
-      storageKey: titlingOwnerStorageKey(tab, id),
-      rows: bucketRows,
-    })
-  }
-  return out
-}
-
-// ─── Warning helpers ──────────────────────────────────────────────────────────
-
-function benForItem(
-  item: { id: string; kind: TitlingKind },
-  b: Beneficiary
-): boolean {
-  if (item.kind === 'asset') return b.asset_id === item.id
-  if (item.kind === 're') return b.real_estate_id === item.id
-  if (item.kind === 'insurance') return b.insurance_policy_id === item.id
-  return b.business_id === item.id
-}
-
-function getTitlingWarnings(
-  assets: Asset[],
-  realEstate: RealEstateItem[],
-  insurance: InsurancePolicyRow[],
-  businesses: BusinessRow[],
-  assetTitling: AssetTitling[],
-  realEstateTitling: RealEstateTitling[],
-  insurancePolicyTitling: InsurancePolicyTitling[],
-  businessTitling: BusinessTitlingRow[],
-  beneficiaries: Beneficiary[]
-): string[] {
-  const warnings: string[] = []
-
-  const untitledAssets = assets.filter(a => !assetTitling.find(t => t.asset_id === a.id))
-  if (untitledAssets.length > 0) {
-    warnings.push(`${untitledAssets.length} asset(s) have no title type set`)
-  }
-
-  const untitledRE = realEstate.filter(r => !realEstateTitling.find(t => t.real_estate_id === r.id))
-  if (untitledRE.length > 0) {
-    warnings.push(`${untitledRE.length} property(ies) have no title type set`)
-  }
-
-  const untitledIns = insurance.filter(p => !insurancePolicyTitling.find(t => t.insurance_policy_id === p.id))
-  if (untitledIns.length > 0) {
-    warnings.push(`${untitledIns.length} insurance policy/policies have no title type set`)
-  }
-
-  const untitledBiz = businesses.filter(b => !businessTitling.find(t => t.business_id === b.id))
-  if (untitledBiz.length > 0) {
-    warnings.push(`${untitledBiz.length} business interest(s) have no title type set`)
-  }
-
-  const needsBeneficiaryAssets = assets.filter(a => {
-    const titling = assetTitling.find(t => t.asset_id === a.id)
-    if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
-    return !beneficiaries.find(b => b.asset_id === a.id && b.beneficiary_type === 'primary')
-  })
-  if (needsBeneficiaryAssets.length > 0) {
-    warnings.push(`${needsBeneficiaryAssets.length} asset(s) have no primary beneficiary`)
-  }
-
-  const needsBenIns = insurance.filter(p => {
-    const titling = insurancePolicyTitling.find(t => t.insurance_policy_id === p.id)
-    if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
-    return !beneficiaries.find(b => b.insurance_policy_id === p.id && b.beneficiary_type === 'primary')
-  })
-  if (needsBenIns.length > 0) {
-    warnings.push(`${needsBenIns.length} insurance policy/policies have no primary beneficiary`)
-  }
-
-  const needsBenBiz = businesses.filter(biz => {
-    const titling = businessTitling.find(t => t.business_id === biz.id)
-    if (titling && ['joint_wros', 'community_property'].includes(titling.title_type)) return false
-    return !beneficiaries.find(b => b.business_id === biz.id && b.beneficiary_type === 'primary')
-  })
-  if (needsBenBiz.length > 0) {
-    warnings.push(`${needsBenBiz.length} business interest(s) have no primary beneficiary`)
-  }
-
-  const allItems: { id: string; kind: TitlingKind }[] = [
-    ...assets.map(a => ({ id: a.id, kind: 'asset' as const })),
-    ...realEstate.map(r => ({ id: r.id, kind: 're' as const })),
-    ...insurance.map(p => ({ id: p.id, kind: 'insurance' as const })),
-    ...businesses.map(b => ({ id: b.id, kind: 'business' as const })),
-  ]
-  for (const item of allItems) {
-    for (const btype of ['primary', 'contingent'] as const) {
-      const bens = beneficiaries.filter(b => b.beneficiary_type === btype && benForItem(item, b))
-      if (bens.length === 0) continue
-      const total = bens.reduce((s, b) => s + Number(b.allocation_pct), 0)
-      if (Math.abs(total - 100) > 0.01) {
-        warnings.push(`${btype} beneficiary allocations for one or more items don't add up to 100%`)
-        break
-      }
-    }
-  }
-
-  return [...new Set(warnings)]
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TitlingClient({
@@ -635,16 +376,43 @@ export default function TitlingClient({
     beneficiaryType: 'primary' | 'contingent'
   } | null>(null)
 
-  const warnings = getTitlingWarnings(
-    assets,
-    realEstate,
-    insurance,
-    businesses,
-    assetTitling,
-    realEstateTitling,
-    insurancePolicyTitling,
-    businessTitling,
-    beneficiaries
+  const titlingLookups = useMemo(
+    () =>
+      buildTitlingLookups({
+        assetTitling,
+        realEstateTitling,
+        insurancePolicyTitling,
+        businessTitling,
+        beneficiaries,
+      }),
+    [assetTitling, realEstateTitling, insurancePolicyTitling, businessTitling, beneficiaries],
+  )
+  const { getTitling: getTitlingFor, getBeneficiaries: getBeneficiariesFor } = titlingLookups
+
+  const warnings = useMemo(
+    () =>
+      getTitlingWarnings({
+        assets,
+        realEstate,
+        insurance,
+        businesses,
+        assetTitling,
+        realEstateTitling,
+        insurancePolicyTitling,
+        businessTitling,
+        beneficiaries,
+      }),
+    [
+      assets,
+      realEstate,
+      insurance,
+      businesses,
+      assetTitling,
+      realEstateTitling,
+      insurancePolicyTitling,
+      businessTitling,
+      beneficiaries,
+    ],
   )
 
   const p1First = useMemo(
@@ -675,27 +443,6 @@ export default function TitlingClient({
     })
     if (!res.ok) return
     await refreshTitlingData()
-  }
-
-  const getBeneficiariesFor = useCallback((kind: TitlingKind, id: string, type: 'primary' | 'contingent') => {
-    return beneficiaries.filter(b => {
-      if (b.beneficiary_type !== type) return false
-      if (kind === 'asset') return b.asset_id === id
-      if (kind === 're') return b.real_estate_id === id
-      if (kind === 'insurance') return b.insurance_policy_id === id
-      return b.business_id === id
-    })
-  }, [beneficiaries])
-
-  const getTitlingFor = useCallback((kind: TitlingKind, id: string): AnyTitling | null => {
-    if (kind === 'asset') return assetTitling.find(t => t.asset_id === id) ?? null
-    if (kind === 're') return realEstateTitling.find(t => t.real_estate_id === id) ?? null
-    if (kind === 'insurance') return insurancePolicyTitling.find(t => t.insurance_policy_id === id) ?? null
-    return businessTitling.find(t => t.business_id === id) ?? null
-  }, [assetTitling, businessTitling, insurancePolicyTitling, realEstateTitling])
-
-  function titlingExemptFromBeneficiaryGap(t: AnyTitling | null): boolean {
-    return !!(t && ['joint_wros', 'community_property'].includes(t.title_type))
   }
 
   const incompleteBeneficiaryItems: GapItem[] = useMemo(() => {
@@ -731,14 +478,7 @@ export default function TitlingClient({
       pushIfIncomplete('business', biz.id, biz.name, (biz.entity_type ?? 'entity').replace(/_/g, ' '), null)
     }
     return out
-  }, [
-    assets,
-    realEstate,
-    insurance,
-    businesses,
-    getBeneficiariesFor,
-    getTitlingFor,
-  ])
+  }, [assets, realEstate, insurance, businesses, titlingLookups])
 
   async function refreshConflicts() {
     try {
@@ -862,8 +602,6 @@ export default function TitlingClient({
                   {group.rows.map(asset => (
                     <AssetTitlingCard
                       key={asset.id}
-                      kind="asset"
-                      id={asset.id}
                       name={asset.name}
                       subtitle={asset.type.replace(/_/g, ' ')}
                       value={asset.value}
@@ -907,8 +645,6 @@ export default function TitlingClient({
             realEstate.map(re => (
               <AssetTitlingCard
                 key={re.id}
-                kind="re"
-                id={re.id}
                 name={re.name}
                 subtitle={re.property_type.replace(/_/g, ' ')}
                 value={re.current_value}
@@ -961,8 +697,6 @@ export default function TitlingClient({
                     return (
                       <AssetTitlingCard
                         key={pol.id}
-                        kind="insurance"
-                        id={pol.id}
                         name={displayName}
                         subtitle={sub}
                         value={pol.death_benefit ?? 0}
@@ -1007,8 +741,6 @@ export default function TitlingClient({
             businesses.map(biz => (
               <AssetTitlingCard
                 key={biz.id}
-                kind="business"
-                id={biz.id}
                 name={biz.name}
                 subtitle={(biz.entity_type ?? 'entity').replace(/_/g, ' ')}
                 value={biz.estimated_value ?? 0}
@@ -1060,7 +792,7 @@ export default function TitlingClient({
           existing={beneficiaryModal.existing}
           defaultType={beneficiaryModal.beneficiaryType}
           allBeneficiariesForItem={beneficiaries.filter(b =>
-            benForItem({ id: beneficiaryModal.id, kind: beneficiaryModal.kind }, b) &&
+            beneficiaryMatchesEntity(beneficiaryModal.kind, beneficiaryModal.id, b) &&
             b.id !== beneficiaryModal.existing?.id
           )}
           picklistOptions={beneficiaryPicklistOptions}
@@ -1089,187 +821,6 @@ export default function TitlingClient({
             setGapModalOpen(false)
           }}
         />
-      )}
-    </div>
-  )
-}
-
-// ─── Asset / RE card ──────────────────────────────────────────────────────────
-
-function AssetTitlingCard({
-  kind, id, name, subtitle, value, ownerLabel, titling,
-  primaryBens, contingentBens,
-  onEditTitling, onAddBeneficiary, onEditBeneficiary, onDeleteBeneficiary,
-}: {
-  kind: TitlingKind
-  id: string
-  name: string
-  subtitle: string
-  value: number
-  ownerLabel: string
-  titling: AnyTitling | null
-  primaryBens: Beneficiary[]
-  contingentBens: Beneficiary[]
-  onEditTitling: () => void
-  onAddBeneficiary: (type: 'primary' | 'contingent') => void
-  onEditBeneficiary: (ben: Beneficiary) => void
-  onDeleteBeneficiary: (id: string) => void
-}) {
-  void kind
-  void id
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const primaryTotal = primaryBens.reduce((s, b) => s + Number(b.allocation_pct), 0)
-  const contingentTotal = contingentBens.reduce((s, b) => s + Number(b.allocation_pct), 0)
-
-  return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-      {/* Asset header */}
-      <div className="px-5 py-4 flex items-center justify-between border-b border-neutral-100">
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="text-sm font-semibold text-neutral-900">{name}</p>
-            <p className="text-xs text-neutral-400 capitalize mt-0.5">{subtitle} · {ownerLabel} · {formatDollars(value)}</p>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <div className="flex items-center gap-3">
-            {titling ? (
-              <span className="text-xs font-medium bg-neutral-100 text-neutral-600 rounded-full px-3 py-1">
-                {titleLabel(titling.title_type)}
-              </span>
-            ) : (
-              <span className="text-xs font-medium bg-amber-100 text-amber-700 rounded-full px-3 py-1">
-                No title set
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={onEditTitling}
-              className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
-            >
-              {titling ? 'Edit title' : 'Set title'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Notes */}
-      {titling?.notes && (
-        <div className="px-5 py-2 bg-neutral-50 border-b border-neutral-100">
-          <p className="text-xs text-neutral-500 italic">{titling.notes}</p>
-        </div>
-      )}
-
-      {/* Beneficiaries */}
-      <div className="px-5 py-4 space-y-4">
-        {/* Primary */}
-        <BeneficiarySection
-          label="Primary Beneficiaries"
-          bens={primaryBens}
-          total={primaryTotal}
-          confirmDeleteId={confirmDeleteId}
-          onAdd={() => onAddBeneficiary('primary')}
-          onEdit={onEditBeneficiary}
-          onDelete={(id) => { setConfirmDeleteId(id) }}
-          onConfirmDelete={(id) => { onDeleteBeneficiary(id); setConfirmDeleteId(null) }}
-          onCancelDelete={() => setConfirmDeleteId(null)}
-        />
-        {/* Contingent */}
-        <BeneficiarySection
-          label="Contingent Beneficiaries"
-          bens={contingentBens}
-          total={contingentTotal}
-          confirmDeleteId={confirmDeleteId}
-          onAdd={() => onAddBeneficiary('contingent')}
-          onEdit={onEditBeneficiary}
-          onDelete={(id) => { setConfirmDeleteId(id) }}
-          onConfirmDelete={(id) => { onDeleteBeneficiary(id); setConfirmDeleteId(null) }}
-          onCancelDelete={() => setConfirmDeleteId(null)}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ─── Beneficiary section ──────────────────────────────────────────────────────
-
-function BeneficiarySection({
-  label, bens, total, confirmDeleteId,
-  onAdd, onEdit, onDelete, onConfirmDelete, onCancelDelete,
-}: {
-  label: string
-  bens: Beneficiary[]
-  total: number
-  confirmDeleteId: string | null
-  onAdd: () => void
-  onEdit: (ben: Beneficiary) => void
-  onDelete: (id: string) => void
-  onConfirmDelete: (id: string) => void
-  onCancelDelete: () => void
-}) {
-  const allocationOk = bens.length === 0 || Math.abs(total - 100) < 0.01
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{label}</p>
-          {bens.length > 0 && (
-            <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${
-              allocationOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
-            }`}>
-              {total.toFixed(0)}%
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]"
-        >
-          + Add
-        </button>
-      </div>
-
-      {bens.length === 0 ? (
-        <p className="text-xs text-neutral-400 italic">None added</p>
-      ) : (
-        <div className="space-y-2">
-          {bens.map(ben => (
-            <div key={ben.id} className="flex items-center justify-between rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
-              <div>
-                <p className="text-sm font-medium text-neutral-900">
-                  {ben.full_name}
-                  {ben.is_gst_skip && (
-                    <span className="text-xs bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)] rounded-full px-2 py-0.5 ml-1">GST Skip</span>
-                  )}
-                </p>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {ben.relationship && <span>{ben.relationship}</span>}
-                  {ben.relationship && (ben.email || ben.phone) && <span> · </span>}
-                  {ben.email && <span>{ben.email}</span>}
-                  {ben.email && ben.phone && <span> · </span>}
-                  {ben.phone && <span>{ben.phone}</span>}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-neutral-700">{Number(ben.allocation_pct).toFixed(0)}%</span>
-                {confirmDeleteId === ben.id ? (
-                  <span className="inline-flex items-center gap-2 text-xs">
-                    <span className="text-neutral-500">Delete?</span>
-                    <button type="button" onClick={() => onConfirmDelete(ben.id)} className="text-red-600 font-medium hover:text-red-800">Yes</button>
-                    <button type="button" onClick={onCancelDelete} className="text-neutral-400 hover:text-neutral-600">No</button>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-2">
-                    <button type="button" onClick={() => onEdit(ben)} className="text-xs text-[color:var(--mwm-navy)] font-medium hover:text-[color:var(--mwm-navy)]">Edit</button>
-                    <button type="button" onClick={() => onDelete(ben.id)} className="text-xs text-red-500 font-medium hover:text-red-700">Delete</button>
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   )
