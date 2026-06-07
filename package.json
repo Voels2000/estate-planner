@@ -47,6 +47,7 @@
     "verify:estate": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts",
     "verify:estate:voels": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts --preset voels --check-goldens --http",
     "verify:post-deploy-voels": "dotenv -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts",
+    "smoke:mc-voels": "dotenv -e .env.local -- npx tsx scripts/smoke-mc-precompute-voels.ts",
     "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http"
   },
   "dependencies": {

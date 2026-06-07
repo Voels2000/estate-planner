@@ -115,8 +115,17 @@ export async function runPostDeployVoelsChecks(
   const scenarioId = household.base_case_scenario_id ?? VOELS_SCENARIO_ID
   const mc = await loadScenarioMonteCarlo(scenarioId, admin)
 
-  const stateExemption = await fetchStateExemption(admin, household.state_primary ?? 'WA')
   const bands = mc?.percentiles_by_year ?? []
+  if (!mc || bands.length === 0) {
+    record(
+      'mc-precompute',
+      false,
+      `No monte_carlo_results for scenario ${scenarioId} — run: npx dotenv -e .env.local -- npx tsx scripts/smoke-mc-precompute-voels.ts`,
+    )
+    return checks
+  }
+
+  const stateExemption = await fetchStateExemption(admin, household.state_primary ?? 'WA')
   const maxP90 = bands.length ? Math.max(...bands.map((b) => b.p90_gross)) : 0
   const thresholdOk =
     stateExemption != null && stateExemption > 0 && maxP90 > stateExemption && bands.length >= 5
